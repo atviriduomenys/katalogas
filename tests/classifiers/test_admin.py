@@ -2,8 +2,12 @@ import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 
-from vitrina.classifiers.factories import LicenceFactory, FrequencyFactory
-from vitrina.classifiers.models import Licence, Frequency
+from vitrina.classifiers.factories import (
+    LicenceFactory,
+    FrequencyFactory,
+    StatusFactory,
+)
+from vitrina.classifiers.models import Licence, Frequency, Status
 from vitrina.users.models import User
 
 
@@ -30,3 +34,18 @@ def test_change_default_frequency(app: DjangoTestApp):
     form['is_default'] = True
     form.submit()
     assert list(Frequency.objects.filter(is_default=True)) == [another_frequency]
+
+
+@pytest.mark.django_db
+def test_change_default_status(app: DjangoTestApp):
+    admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
+    default_status = StatusFactory(is_default=True)
+    another_status = StatusFactory(is_default=False)
+    app.set_user(admin)
+    form = app.get(
+        reverse("admin:vitrina_classifiers_status_change", args=[another_status.pk])
+    ).forms["status_form"]
+    form["is_default"] = True
+    form.submit()
+    assert list(Status.objects.filter(is_default=True)) == [another_status]
+    assert list(Status.objects.filter(is_default=False)) == [default_status]

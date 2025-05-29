@@ -4,6 +4,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
 
+from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
@@ -2349,3 +2350,193 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
         '3,,,,Model,,,,,,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,,,,\r\n'
     )
+
+@pytest.mark.django_db
+def test_structure_export__visibility_row(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        '1,example,,,,,,,,,,,,,,,,\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\n'
+        ',,,,,,,,,,,,,,,,,\n'
+        '3,,,,Pavadinimas,,,id,,,4,,package,protected,,,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,4,,package,protected,,,ID,\n'
+        '5,,,,,class,integer,,,,4,,package,protected,,,class,\n'
+        '6,,,,,,enum,,1,,4,,package,protected,,,Class One,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Pavadinimas",
+            description="Aprašymas"
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,resource,\r\n'
+        '3,,,,Pavadinimas,,,id,,,4,,package,protected,,,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,4,,package,protected,,,ID,\r\n'
+        '5,,,,,class,integer,,,,4,,package,protected,,,class,\r\n'
+        '6,,,,,,enum,,1,,,,package,protected,,,Class One,\r\n'
+        ',,,,,,,,,,,,,,,,,\r\n'
+    )
+
+@pytest.mark.django_db
+def test_structure_export__eli_row(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        '1,example,,,,,,,,,,,,,,,,\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\n'
+        ',,,,,,,,,,,,,,,,,\n'
+        '3,,,,Pavadinimas,,,id,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\n'
+        '5,,,,,class,integer,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\n'
+        '6,,,,,,enum,,1,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Pavadinimas",
+            description="Aprašymas"
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,resource,\r\n'
+        '3,,,,Pavadinimas,,,id,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\r\n'
+        '5,,,,,class,integer,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\r\n'
+        '6,,,,,,enum,,1,,,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\r\n'
+        ',,,,,,,,,,,,,,,,,\r\n'
+    )
+
+@pytest.mark.django_db
+def test_structure_export__status_row(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        '1,example,,,,,,,,,,,,,,,,\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\n'
+        ',,,,,,,,,,,,,,,,,\n'
+        '3,,,,Pavadinimas,,,id,,,4,completed,,protected,,,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,4,withdrawn,,protected,,,ID,\n'
+        '5,,,,,class,integer,,,,4,deprecated,,protected,,,class,\n'
+        '6,,,,,,enum,,1,,4,discont,,protected,,,Class One,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Pavadinimas",
+            description="Aprašymas"
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,resource,\r\n'
+        '3,,,,Pavadinimas,,,id,,,4,completed,,protected,,,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,4,withdrawn,,protected,,,ID,\r\n'
+        '5,,,,,class,integer,,,,4,deprecated,,protected,,,class,\r\n'
+        '6,,,,,,enum,,1,,,discont,,protected,,,Class One,\r\n'
+        ',,,,,,,,,,,,,,,,,\r\n'
+    )
+
+@pytest.mark.django_db
+def test_structure_models_props_and_enums_with_visibility_status_eli(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        '1,example,,,,,,,,,,,,,,,,\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\n'
+        ',,,,,,,,,,,,,,,,,\n'
+        '3,,,,Pavadinimas,,,id,,,4,completed,package,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,4,completed,package,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\n'
+        '5,,,,,class,integer,,,,4,discont,protected,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\n'
+        '6,,,,,,enum,,1,,4,deprecated,protected,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    models = Model.objects.all()
+    metadata = Metadata.objects.filter(
+        content_type=ContentType.objects.get_for_model(Model)
+    )
+    completed_status_id = Status.objects.filter(codename='completed').values_list('id', flat=True).first()
+
+    assert models.count() == 1
+    assert models[0].dataset == structure.dataset
+    assert metadata.count() == 1
+    assert list(metadata.values_list(
+        'visibility',
+        'status',
+        'eli'
+    )) == [
+        (Metadata.PACKAGE, completed_status_id, 'https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1')
+    ]
+
+    props = Property.objects.filter(model=models[0])
+    metadata = Metadata.objects.filter(
+        content_type=ContentType.objects.get_for_model(Property),
+        object_id__in=props.values_list('pk', flat=True)
+    )
+    discont_status_id = Status.objects.filter(codename='discont').values_list('id', flat=True).first()
+
+    assert props.count() == 2
+    assert metadata.count() == 2
+    assert list(metadata.values_list(
+        'visibility',
+        'status',
+        'eli'
+    )) == [
+            (Metadata.PACKAGE, completed_status_id, 'https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2'),
+            (Metadata.PROTECTED, discont_status_id, 'https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3'),
+          ]
+
+    prop = Property.objects.get(metadata__uuid='5')
+    prop_enum = Enum.objects.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk
+    )
+    deprecated_status_id = Status.objects.filter(codename='deprecated').values_list('id', flat=True).first()
+
+    assert prop_enum.count() == 1
+    assert list(prop_enum[0].enumitem_set.values_list('metadata__eli', 'metadata__visibility', 'metadata__status')) == [('https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1', Metadata.PROTECTED, deprecated_status_id)]

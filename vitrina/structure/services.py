@@ -1000,7 +1000,8 @@ def export_dataset_structure(dataset: Dataset) -> StringIO:
 
 
 def datasets_to_tabular(dataset: Dataset):
-    yield from _prefixes_to_tabular(dataset.current_structure, separator=True)
+    if dataset.current_structure:
+        yield from _prefixes_to_tabular(dataset.current_structure, separator=True)
     yield from _dataset_to_tabular(dataset, separator=True)
 
 

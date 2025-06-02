@@ -156,6 +156,32 @@ msgstr "Geoportal Access right"
 msgid "Geoportalo prieigos teisės"
 msgstr "Geoportal access rights"
 
+msgid ""
+"Savybė nurodanti prieigos prie metaduomenų lygį. DCAT-AP rekomenduoja "
+"naudoti šias klasifikatoriaus reikšmes: - develop - completed - discont - "
+"deprecated - withdrawn "
+msgstr ""
+"A property indicating the level of access to metadata. DCAT-AP recommends "
+"using the following classifier values: - develop - completed - discont - "
+"deprecated - withdrawn "
+
+msgid ""
+"Būsenos lauko pavadinimas. Šis pavadinimas yra skirtas skaityti žmonėms ir "
+"bus rodomas duomenų laukų sąrašuose ir antraštėse. "
+msgstr ""
+"Status field name. This name is intended for human readability and will be "
+"displayed in data field lists and headers. "
+
+msgid ""
+"Būsenos lauko aprašymas. Šis aprašymas yra skirtas skaityti žmonėms ir bus "
+"rodomas duomenų laukų sąrašuose ir antraštėse. "
+msgstr ""
+"Data field description. This description is intended for human readability "
+"and will be displayed in data field lists and headers. "
+
+msgid "Būsenos"
+msgstr "Statuses"
+
 msgid "ADP"
 msgstr "ADP"
 
@@ -830,6 +856,14 @@ msgstr "Geoportal API format value"
 
 msgid "Geoportalo API formato reikšmės"
 msgstr "Geoportal API format values"
+
+msgid ""
+"Duomenų lauko \"{name}\" metaduomenų matomumo lygis {prop.visibility} negali "
+"būti aukštesnis už modelio metaduomenų matomumo lygį \"{prop.model."
+"visibility}\". "
+msgstr ""
+"Data field \"{name}\" metadata visibility level {prop.visibility} must notbe "
+"higher than the model metadata visibility level \"{prop.model.visibility}\". "
 
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
@@ -2913,6 +2947,35 @@ msgstr "Statistics link"
 msgid "Statistikos nuorodos"
 msgstr "Statistics links"
 
+msgid "Nepasirinkta"
+msgstr "Not selected"
+
+msgid "Metaduomenys nepublikuojami (private)"
+msgstr "Metadata not published (private)"
+
+msgid "Taikomas IS lygmeniu (protected)"
+msgstr "Applicable at IS level (protected)"
+
+msgid ""
+"Nėra jokios Informacinės Sistemos, kurioje tvarkomi duomenys arba "
+"Informacinė Sistema nėra registruota Kataloge"
+msgstr ""
+"There is no Information System where the data is processed or The "
+"Information System is not registered in the Catalogue"
+
+msgid "Taikomas LT lygmeniu (package)"
+msgstr "Applicable at LT level (package)"
+
+msgid ""
+"Įteisintas Informacinės Sistemos nuostatuose ir kituose Lietuvos teisės "
+"aktuose"
+msgstr ""
+"Validated in the Information System regulations and other Lithuanian "
+"legislation acts"
+
+msgid "Taikomas EU lygmeniu (public)"
+msgstr "Applicable at EU level (public)"
+
 msgid "Fiksuotos reikšmės vertė."
 msgstr "Enum value."
 
@@ -2921,6 +2984,23 @@ msgstr "Source"
 
 msgid "Fiksuotos reikšmės vertė šaltinyje."
 msgstr "Enum source"
+
+msgid "Europos teisės aktų identifikatorius (ELI)"
+msgstr "European Legislative Identifier (ELI)"
+
+msgid ""
+"Teisės aktų identifikavimo standartas, leidžiantis nurodyti ne tik patį "
+"teisės akto dokumentą, bet ir konkrečią vietą dokumente. Pateikti konkrečią "
+"vietą teisės akto dokumente: po # pateikite konkrečią vietą: \"#17.2\" Tais "
+"atvejais, kai yra keli dokumentai su priedais:  \"#priedas1/17.2\"  "
+"\"17.2/17.2.5\", kur \"priedas1\" yra dokumento failo pavadinimas. "
+msgstr ""
+"A standard for identifying legal acts, allowing not only the  legal document "
+"itself to be identified, but also a specific location within the document. "
+"To provide a specific location in the legislative document: after the # "
+"provide a specific location: \"#17.2\" In cases where there are several "
+"documents with annexes: \"#attachment1/17.2\" \"17.2/17.2.5\" where "
+"\"attachment1\" is the name of the document's file. "
 
 msgid ""
 "Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės "
@@ -2933,11 +3013,27 @@ msgstr "Dataset title"
 msgid "Duomenų rinkinio ar vardų erdvės aprašymas."
 msgstr "Dataset or namespace description."
 
+msgid "Metaduomenų matomumas"
+msgstr "Metadata visibility"
+
+msgid "Savybė nurodanti modelio metaduomenų matomumo lygį. "
+msgstr "A property indicating the level of visibility of model metadata."
+
+msgid "Savybė nurodanti duomenų modelio gyvavimo ciklo būseną."
+msgstr "A property indicating the lifecycle state of a data model."
+
 msgid "Reikšmė turi būti integer tipo."
 msgstr "Value must be integer."
 
 msgid "Aprašymas neatitinka Markdown formato."
 msgstr "Description doesn't match Markdown format."
+
+msgid ""
+"Metaduomenų matomumas negali būti didesnis nei duomenų lauko matomumas "
+"{property_visibility}."
+msgstr ""
+"The visibility of the metadata shall not be greater than the visibility of "
+"the data field {property_visibility}."
 
 msgid "Nėra per ką sieti"
 msgstr "Nothing to link to"
@@ -2994,6 +3090,9 @@ msgstr ""
 
 msgid "Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."
 msgstr "Property indicating the data field name, a model attribute."
+
+msgid "ELI identifikatorius"
+msgstr "ELI Identifier"
 
 msgid "Duomenų šaltinis"
 msgstr "Dataset distribution"
@@ -3299,6 +3398,12 @@ msgstr ""
 msgid "Netinkami matavimo vienetai."
 msgstr "Invalid units of measure."
 
+msgid ""
+"Metaduomenų matomumas negali būti didesnis nei modelio matomumas "
+"{model_visibility}."
+msgstr ""
+"Metadata visibility shall not exceed model visibility {model_visibility}."
+
 msgid "Formulė"
 msgstr "Formula"
 
@@ -3361,6 +3466,9 @@ msgstr "Calculated maturity level"
 
 msgid "Prieiga"
 msgstr "Access"
+
+msgid "Europos teisės akto identifikatorius (ELI)"
+msgstr "European Legislation Identifier (ELI)"
 
 msgid "Žodyno atitikmuo"
 msgstr "Uri"
@@ -3493,6 +3601,21 @@ msgstr "Hide"
 
 msgid "Filtruoti"
 msgstr "Filter"
+
+msgid "Matomumas"
+msgstr "Visibility"
+
+msgid "Metaduomenys nepublikuojami"
+msgstr "Metadata is not published"
+
+msgid "Taikomas IS lygmeniu"
+msgstr "Applicable at IS level"
+
+msgid "Taikomas LT lygmeniu"
+msgstr "Applicable at LT level"
+
+msgid "Taikomas EU lygmeniu"
+msgstr "Applicable at EU level"
 
 msgid "Duomenų laukai"
 msgstr "Properties"

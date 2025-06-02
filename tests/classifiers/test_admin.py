@@ -38,6 +38,8 @@ def test_change_default_frequency(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_change_default_status(app: DjangoTestApp):
+    Status.objects.all().delete()
+
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
     default_status = StatusFactory(is_default=True)
     another_status = StatusFactory(is_default=False)
@@ -46,6 +48,9 @@ def test_change_default_status(app: DjangoTestApp):
         reverse("admin:vitrina_classifiers_status_change", args=[another_status.pk])
     ).forms["status_form"]
     form["is_default"] = True
+    form["name"] = "Test"
+
     form.submit()
+
     assert list(Status.objects.filter(is_default=True)) == [another_status]
     assert list(Status.objects.filter(is_default=False)) == [default_status]

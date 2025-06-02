@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from vitrina.structure.models import Metadata as StructureMetadata
+
 import pathlib
 from dataclasses import dataclass, field
 from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List
@@ -716,7 +718,15 @@ def _read_property(
 
     if prop.model.properties.get(name):
         prop.errors.append(_(f'Savybė "{name}" jau egzistuoja.'))
-
+    if prop.model.visibility and prop.visibility:
+        if _parse_visibility(prop.model.visibility) < _parse_visibility(
+            prop.visibility
+        ):
+            prop.errors.append(
+                _(
+                    f'Duomenų lauko "{name}" metaduomenų matomumo lygis {prop.visibility} negali būti aukštesnis už modelio metaduomenų matomumo lygį "{prop.model.visibility}". '
+                )
+            )
     prop.model.properties[name] = prop
 
     return prop
@@ -805,6 +815,13 @@ def _read_enum(
             last = node
 
     enum.meta = last
+    if enum.visibility and enum.meta.visibility:
+        if _parse_visibility(enum.visibility) > _parse_visibility(enum.meta.visibility):
+            enum.errors.append(
+                _(
+                    f'Duomenų reikšmės "{enum.title}" metaduomenų matomumo lygis {enum.visibility} negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{enum.meta.visibility}". '
+                )
+            )
     if enum.meta.enums.get(name):
         if enum.prepare in [e.prepare for e in enum.meta.enums[name]]:
             enum.errors.append(_(f'Galima reikšmė "{enum.prepare}" jau egzistuoja.'))
@@ -877,6 +894,17 @@ def _split_dim(
 
 def _parse_int(v: str) -> int | None:
     return int(v) if v else None
+
+
+def _parse_visibility(visibility_str: str) -> int:
+    visibility_mapping = {
+        "private": StructureMetadata.PRIVATE,
+        "protected": StructureMetadata.PROTECTED,
+        "package": StructureMetadata.PACKAGE,
+        "public": StructureMetadata.VISIBILITY_PUBLIC,
+    }
+
+    return visibility_mapping[visibility_str]
 
 
 def get_relative_model_name(dataset: Dataset, name: str) -> str:

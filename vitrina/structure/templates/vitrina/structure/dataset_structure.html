@@ -127,7 +127,7 @@
                         </small>
                     </div>
                     <div class="column is-2">
-                        {% if metadata.status %}
+                        {% if metadata.status.codename %}
                             {% if metadata.status.codename == "develop" %}
                                 <span class="tag" style="background-color: #eaedfa; color: #304cd3;">
                                     {% translate metadata.status.name %}

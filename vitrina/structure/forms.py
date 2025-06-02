@@ -27,12 +27,14 @@ from vitrina.structure.models import (
     Version,
 )
 
+
 class ModelChoiceTypeField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.description:
             return mark_safe(f'{obj.name}<br/><p class="help">{obj.description}</p>')
         else:
             return obj.name
+
 
 def _get_level_title(title: str, description: str | None = None) -> str:
     def _render() -> str:
@@ -43,6 +45,19 @@ def _get_level_title(title: str, description: str | None = None) -> str:
         return title_text
 
     return lazy(_render, str)()
+
+
+def _get_visibility(visibility: int) -> str:
+    if visibility == Metadata.PRIVATE:
+        return "private"
+    elif visibility == Metadata.PROTECTED:
+        return "protected"
+    elif visibility == Metadata.PACKAGE:
+        return "package"
+    elif visibility == Metadata.VISIBILITY_PUBLIC:
+        return "public"
+    return ""
+
 
 VISIBILITY_LEVEL_CHOICES = (
     (None, _get_level_title(_("Nepasirinkta"))),
@@ -55,7 +70,7 @@ VISIBILITY_LEVEL_CHOICES = (
     (
         1,
         _get_level_title(
-            _("Taikomas Informacinės Sistemos lygmeniu (protected)"),
+            _("Taikomas IS lygmeniu (protected)"),
             _(
                 "Nėra jokios Informacinės Sistemos, kurioje tvarkomi duomenys arba Informacinė Sistema nėra registruota Kataloge"
             ),
@@ -80,18 +95,33 @@ VISIBILITY_LEVEL_CHOICES = (
 
 
 class EnumForm(forms.ModelForm):
-    value = forms.CharField(label=_("Reikšmė"), help_text=_("Fiksuotos reikšmės vertė."))
+    value = forms.CharField(
+        label=_("Reikšmė"), help_text=_("Fiksuotos reikšmės vertė.")
+    )
     source = forms.CharField(
         label=_("Reikšmė šaltinyje"),
         required=False,
         help_text=_("Fiksuotos reikšmės vertė šaltinyje."),
     )
-    eli = forms.URLField(label=_("Europos teisės aktų identifikatorius (ELI)"), required=False, help_text=_("Teisės aktų identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente."))
+    eli = forms.URLField(
+        label=_("Europos teisės aktų identifikatorius (ELI)"),
+        required=False,
+        help_text=_(
+            "Teisės aktų identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. "
+            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" """
+            "Tais atvejais, kai yra keli dokumentai su priedais: "
+            """ "#priedas1/17.2" """
+            """ "17.2/17.2.5", """
+            """kur "priedas1" yra dokumento failo pavadinimas. """
+        ),
+    )
     access = forms.ChoiceField(
         label=_("Prieigos lygmuo"),
         choices=Metadata.ACCESS_TYPES,
         required=False,
-        help_text=_("Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės elementams."),
+        help_text=_(
+            "Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės elementams."
+        ),
     )
     title = forms.CharField(
         label=_("Pavadinimas"),
@@ -109,6 +139,9 @@ class EnumForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
+        help_text=_(
+            "Savybė nurodanti modelio metaduomenų matomumo lygį. "
+        )
     )
     status = ModelChoiceTypeField(
         label=_("Būsena"),
@@ -170,9 +203,7 @@ class EnumForm(forms.ModelForm):
             self.initial["title"] = metadata.title
             self.initial["description"] = metadata.description
             self.initial["visibility"] = (
-               metadata.visibility
-               if metadata.visibility is not None
-               else "None"
+                metadata.visibility if metadata.visibility is not None else "None"
             )
             self.initial["eli"] = metadata.eli
             self.initial["status"] = (
@@ -212,8 +243,13 @@ class EnumForm(forms.ModelForm):
         if visibility == "None":
             return None
         if metadata := self.prop.metadata.first():
-            if int(visibility) > Metadata.PRIVATE and metadata.visibility == Metadata.PRIVATE:
-                raise ValidationError(_("Metaduomenų matomumas negali būti didesnis nei private"))
+            if int(visibility) > metadata.visibility:
+                property_visibility = _get_visibility(metadata.visibility)
+                raise ValidationError(
+                    _(
+                        f"Metaduomenų matomumas negali būti didesnis nei duomenų lauko matomumas {property_visibility}."
+                    )
+                )
         return int(visibility)
 
 
@@ -418,16 +454,29 @@ class ModelCreateForm(forms.ModelForm):
         label=_("Kodinis pavadinimas"),
         help_text=_("Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."),
     )
-    eli = forms.URLField(label=_("ELI identifikatorius"), required=False)
+    eli = forms.URLField(label=_("ELI identifikatorius"), required=False,
+                         help_text=_(
+                             "Teisės aktų identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. "
+                             """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" """
+                             "Tais atvejais, kai yra keli dokumentai su priedais: "
+                             """ "#priedas1/17.2" """
+                             """ "17.2/17.2.5", """
+                             """kur "priedas1" yra dokumento failo pavadinimas. """
+                         ),
+                         )
     source = forms.CharField(
         label=_("Duomenų šaltinis"),
         required=False,
-        help_text=_("Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."),
+        help_text=_(
+            "Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."
+        ),
     )
     prepare = forms.CharField(
         label=_("Duomenų filtras"),
         required=False,
-        help_text=_("Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."),
+        help_text=_(
+            "Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."
+        ),
     )
     uri = forms.CharField(
         label=_("Klasė"),
@@ -449,6 +498,9 @@ class ModelCreateForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
+        help_text=_(
+            "Savybė nurodanti modelio metaduomenų matomumo lygį. "
+        )
     )
     status = ModelChoiceTypeField(
         label=_("Būsena"),
@@ -522,7 +574,9 @@ class ModelCreateForm(forms.ModelForm):
     is_parameterized = forms.BooleanField(
         label=_("Parametrizuotas"),
         required=False,
-        help_text=_("Žymė, nurodanti ar modelis yra parametrizuotas - t.y. turi dinamiškai kintančių dalių ar filtrų."),
+        help_text=_(
+            "Žymė, nurodanti ar modelis yra parametrizuotas - t.y. turi dinamiškai kintančių dalių ar filtrų."
+        ),
     )
 
     class Meta:
@@ -684,7 +738,11 @@ class ModelCreateForm(forms.ModelForm):
             return None
 
         if int(visibility) == Metadata.VISIBILITY_PUBLIC and not uri:
-            raise ValidationError(_("URI stulpelis turi būti užpildytas pasirenkant šį metaduomenų matomumo lygį."))
+            raise ValidationError(
+                _(
+                    "URI stulpelis turi būti užpildytas pasirenkant šį metaduomenų matomumo lygį."
+                )
+            )
 
         return visibility
 
@@ -761,9 +819,7 @@ class ModelUpdateForm(ModelCreateForm):
             self.initial["is_parameterized"] = model.is_parameterized
             self.initial["base_level"] = "None"
             self.initial["visibility"] = (
-               instance.visibility
-               if instance.visibility is not None
-               else "None"
+                instance.visibility if instance.visibility is not None else "None"
             )
             self.initial["status"] = (
                 instance.status if instance.status is not None else default_status
@@ -916,9 +972,18 @@ class PropertyForm(forms.ModelForm):
             "Galimi simboliai: lotyniškos mažosios raidės, skaičiai ir apatinio pabraukimo (`_`) simbolis."
         ),
     )
-    eli = forms.URLField(label=_("Europos teisės aktų identifikatorius (ELI)"), required=False,
-                         help_text=_(
-                             "Teisės aktų identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente."), )
+    eli = forms.URLField(
+        label=_("Europos teisės aktų identifikatorius (ELI)"),
+        required=False,
+        help_text=_(
+            "Teisės aktų identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. "
+            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" """
+            "Tais atvejais, kai yra keli dokumentai su priedais: "
+            """ "#priedas1/17.2" """
+            """ "17.2/17.2.5", """
+            """kur "priedas1" yra dokumento failo pavadinimas. """
+        ),
+    )
     type = forms.ChoiceField(
         label=_("Tipas"),
         choices=TYPES,
@@ -937,7 +1002,7 @@ class PropertyForm(forms.ModelForm):
         help_text=_(
             "Priklauso nuo property.type, nurodo matavimo vienetus, laiko ar vietos tikslumą, "
             "klasifikatorių arba ryšį su kitais modeliais."
-        )
+        ),
     )
     ref_others = forms.CharField(
         label=_("Ryšys"),
@@ -947,14 +1012,20 @@ class PropertyForm(forms.ModelForm):
     source = forms.CharField(
         label=_("Duomenų šaltinis"),
         required=False,
-        help_text=_("Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."),
+        help_text=_(
+            "Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."
+        ),
     )
     prepare = forms.CharField(
         label=_("Duomenų transformacija"),
         required=False,
-        help_text=_("Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."),
+        help_text=_(
+            "Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."
+        ),
     )
-    uri = forms.CharField(label=_("Klasė"), required=False, help_text=_("Sąsaja su išoriniu žodynu."))
+    uri = forms.CharField(
+        label=_("Klasė"), required=False, help_text=_("Sąsaja su išoriniu žodynu.")
+    )
     level = forms.ChoiceField(
         label=_("Brandos lygis"),
         required=False,
@@ -967,6 +1038,9 @@ class PropertyForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
+        help_text=_(
+            "Savybė nurodanti modelio metaduomenų matomumo lygį. "
+        )
     )
     status = ModelChoiceTypeField(
         label=_("Būsena"),
@@ -1066,9 +1140,7 @@ class PropertyForm(forms.ModelForm):
             self.initial["access"] = instance.access
             self.initial["eli"] = instance.eli
             self.initial["visibility"] = (
-                instance.visibility
-                if instance.visibility is not None
-                else "None"
+                instance.visibility if instance.visibility is not None else "None"
             )
             self.initial["status"] = (
                 instance.status if instance.status is not None else default_status
@@ -1185,8 +1257,13 @@ class PropertyForm(forms.ModelForm):
         if visibility == "None":
             return None
         if metadata := self.model.metadata.first():
-            if int(visibility) > Metadata.PRIVATE and metadata.visibility == Metadata.PRIVATE:
-                raise ValidationError(_("Metaduomenų matomumas negali būti didesnis nei private"))
+            if int(visibility) > metadata.visibility:
+                model_visibility = _get_visibility(metadata.visibility)
+                raise ValidationError(
+                    _(
+                        f"Metaduomenų matomumas negali būti didesnis nei modelio matomumas {model_visibility}."
+                    )
+                )
         return int(visibility)
 
 

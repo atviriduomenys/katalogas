@@ -18,6 +18,19 @@ from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 
 
+@pytest.fixture
+def setup_default_status_data():
+    defaults = [
+        ("Discont", "discont"),
+        ("Withdrawn", "withdrawn"),
+        ("Completed", "completed"),
+        ("Deprecated", "deprecated"),
+    ]
+
+    for name, codename in defaults:
+        Status.objects.get_or_create(codename=codename, defaults={"name": name})
+
+
 @pytest.mark.django_db
 def test_structure_with_file_error(app: DjangoTestApp):
     manifest = 'id,dataset,unknown'
@@ -2434,7 +2447,7 @@ def test_structure_export__eli_row(app: DjangoTestApp):
     )
 
 @pytest.mark.django_db
-def test_structure_export__status_row(app: DjangoTestApp):
+def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_data):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 

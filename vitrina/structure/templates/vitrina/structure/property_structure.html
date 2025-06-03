@@ -98,7 +98,8 @@
             {% endif %}
             {% if metadata.eli %}
                 <span class="mr-3 tag is-white is-white">
-                        <span class="icon is-small has-text-grey">
+                        <span class="icon is-small has-text-grey has-tooltip"
+                              data-tooltip="{% translate 'ELI nuoroda' %}">
                             <i class="fas fa-link mr-1"></i>
                             <span>ELI</span>
                         </span>
@@ -225,20 +226,24 @@
                             {% if enum_meta.visibility is not None %}
                                 {% if enum_meta.visibility == 0 %}
                                     <span class="mr-3 tag is-light is-light is-rounded" style="border-radius: 50%;">
-                                        <span class="icon is-small has-text-grey">
+                                        <span class="icon is-small has-tooltip-right has-text-grey"
+                                              data-tooltip="{% translate 'Metaduomenys nepublikuojami' %}" style="border-radius: 50%;">
                                             <i class="fas fa-eye-slash"></i>
                                         </span>
                                     </span>
                                 {% elif enum_meta.visibility == 1 %}
-                                <span class="mr-3 tag is-warning is-light is-rounded" style="border-radius: 50%;">
+                                <span class="mr-3 tag has-tooltip-right has-tooltip-multiline is-warning is-light is-rounded"
+                                      data-tooltip="{% translate 'Taikomas IS lygmeniu' %}" style="border-radius: 50%;">
                                     IS
                                 </span>
                                 {% elif enum_meta.visibility == 2 %}
-                                    <span class="mr-3 tag is-success is-light is-rounded" style="border-radius: 50%;">
+                                    <span class="mr-3 tag is-success has-tooltip-right is-light is-rounded"
+                                          data-tooltip="{% translate 'Taikomas LT lygmeniu' %}" style="border-radius: 50%;">
                                         LT
                                     </span>
                                 {% elif enum_meta.visibility == 3 %}
-                                    <span class="mr-3 tag is-info is-light is-rounded" style="border-radius: 50%;">
+                                    <span class="mr-3 tag is-info has-tooltip-right is-light is-rounded"
+                                          data-tooltip="{% translate 'Taikomas EU lygmeniu' %}" style="border-radius: 50%;">
                                         EU
                                     </span>
                                 {% endif %}
@@ -251,23 +256,28 @@
                             {% endif %}
                             {% if enum_meta.status.codename is not None %}
                                 {% if enum_meta.status.codename == "develop" %}
-                                    <span class="tag" style="background-color: #eaedfa; color: #304cd3;">
+                                    <span class="tag has-tooltip"
+                                          data-tooltip="{% translate 'Būsena' %}" style="background-color: #eaedfa; color: #304cd3;">
                                         {{ enum_meta.status.name }}
                                     </span>
                                 {% elif enum_meta.status.codename == "completed" %}
-                                    <span class="tag is-success is-light">
+                                    <span class="tag has-tooltip is-success is-light"
+                                          data-tooltip="{% translate 'Būsena' %}">
                                         {{ enum_meta.status.name }}
                                     </span>
                                 {% elif enum_meta.status.codename == "discont" %}
-                                   <span class="tag" style="background-color: #fff5e5; color: #ffa525;">
+                                   <span class="tag has-tooltip"
+                                         data-tooltip="{% translate 'Būsena' %}" style="background-color: #fff5e5; color: #ffa525;">
                                         {{ enum_meta.status.name }}
                                    </span>
                                 {% elif enum_meta.status.codename == "deprecated" %}
-                                    <span class="tag is-warning is-light">
+                                    <span class="tag has-tooltip is-warning is-light"
+                                          data-tooltip="{% translate 'Būsena' %}">
                                         {{ enum_meta.status.name }}
                                     </span>
                                 {% elif enum_meta.status.codename == "withdrawn" %}
-                                    <span class="tag is-danger is-light">
+                                    <span class="tag has-tooltip is-danger is-light"
+                                          data-tooltip="{% translate 'Būsena' %}">
                                         {{ enum_meta.status.name }}
                                     </span>
                                 {% endif %}
@@ -293,9 +303,10 @@
                             {% endif %}
                         </div>
                         <div class="column is-1">
-                            {% if metadata.eli %}
+                            {% if enum_meta.eli %}
                                 <span class="mr-3 tag is-white is-white">
-                                        <span class="icon is-small has-text-grey">
+                                        <span class="icon is-small has-text-grey has-tooltip"
+                                              data-tooltip="{% translate 'ELI nuoroda' %}">
                                             <i class="fas fa-link ml-3"></i>
                                             <span>ELI</span>
                                         </span>

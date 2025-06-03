@@ -104,15 +104,15 @@ class EnumForm(forms.ModelForm):
         help_text=_("Fiksuotos reikšmės vertė šaltinyje."),
     )
     eli = forms.URLField(
-        label=_("Europos teisės aktų identifikatorius (ELI)"),
+        label=_("Europos teisės akto identifikatorius (ELI)"),
         required=False,
         help_text=_(
-            "Teisės aktų identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. "
-            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" """
+            "Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> "
+            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>"""
             "Tais atvejais, kai yra keli dokumentai su priedais: "
             """ "#priedas1/17.2" """
             """ "17.2/17.2.5", """
-            """kur "priedas1" yra dokumento failo pavadinimas. """
+            """kur "priedas1" yra dokumento failo pavadinimas."""
         ),
     )
     access = forms.ChoiceField(
@@ -454,14 +454,14 @@ class ModelCreateForm(forms.ModelForm):
         label=_("Kodinis pavadinimas"),
         help_text=_("Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."),
     )
-    eli = forms.URLField(label=_("ELI identifikatorius"), required=False,
+    eli = forms.URLField(label=_("Europos teisės akto identifikatorius (ELI)"), required=False,
                          help_text=_(
-                             "Teisės aktų identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. "
-                             """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" """
+                             "Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> "
+                             """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>"""
                              "Tais atvejais, kai yra keli dokumentai su priedais: "
                              """ "#priedas1/17.2" """
                              """ "17.2/17.2.5", """
-                             """kur "priedas1" yra dokumento failo pavadinimas. """
+                             """kur "priedas1" yra dokumento failo pavadinimas."""
                          ),
                          )
     source = forms.CharField(
@@ -973,15 +973,15 @@ class PropertyForm(forms.ModelForm):
         ),
     )
     eli = forms.URLField(
-        label=_("Europos teisės aktų identifikatorius (ELI)"),
+        label=_("Europos teisės akto identifikatorius (ELI)"),
         required=False,
         help_text=_(
-            "Teisės aktų identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. "
-            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" """
+            "Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> "
+            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>"""
             "Tais atvejais, kai yra keli dokumentai su priedais: "
             """ "#priedas1/17.2" """
             """ "17.2/17.2.5", """
-            """kur "priedas1" yra dokumento failo pavadinimas. """
+            """kur "priedas1" yra dokumento failo pavadinimas."""
         ),
     )
     type = forms.ChoiceField(

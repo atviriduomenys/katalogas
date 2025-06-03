@@ -9,6 +9,7 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.models import UUIDBaseModel
+from vitrina.orgs import AgentClassification
 from vitrina.orgs.managers import PublicOrganizationManager
 
 from django.utils.translation import gettext_lazy as _
@@ -345,7 +346,7 @@ class Agent(UUIDBaseModel):
         verbose_name=_("Paskutinės sinchronizacijos data"),
         blank=True,
         null=True,
-        help_text=_("Nurodoma data, kada paskutįkart buvo bandyta vykdyti sinchronizaciją."),
+        help_text=_("Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."),
     )
     is_last_sync_successful = models.BooleanField(
         verbose_name=_("Ar paskutinė sinchronizacija įvyko sėkmingai?"),
@@ -364,11 +365,32 @@ class Agent(UUIDBaseModel):
         blank=True,
         help_text=_("Nurodomas Agento kodinis pavadinimas."),
     )
+    classification = models.CharField(max_length=64, choices=AgentClassification.choices, default=AgentClassification.SPINTA)
+    is_open_data_published = models.BooleanField(
+        verbose_name=_("Atviri duomenys publikuojami Saugykloje"),
+        default=False,
+        help_text=_("Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų duomenų Saugyklą.")
+    )
+    open_data_publish_url = models.URLField(
+        _("Atvirų duomenų publikavimo nuoroda"),
+        max_length=1024,
+        blank=True,
+        default="https://get.data.gov.lt/",
+        help_text=_("Nuoroda, kur turėtų būti publikuojami atviri duomenys.")
+    )
     is_enabled = models.BooleanField(
         verbose_name=_("Agentas įjungtas"),
         default=False,
         help_text=_("Nurodoma, ar Agentas yra įjungtas ar išjungtas."),
     )
+    is_archived = models.BooleanField(
+        verbose_name=_("Agentas archyvuotas"),
+        default=False,
+        help_text=_(
+            "Nurodo ar Agentas yra archyvuotas. Archyvuoti agentai nėra pasiekiami įprastiems platformos vartotojams"
+        )
+    )
+
 
     service = models.ForeignKey(
         "vitrina_datasets.Dataset",
@@ -382,6 +404,15 @@ class Agent(UUIDBaseModel):
         on_delete=models.CASCADE,
         help_text=_("Nurodoma organizacija, kuriai priskirtas Agentas."),
     )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["codename", "organization"],
+                condition=models.Q(is_archived=False),
+                name="unique_name_and_organization_for_not_archived_agents"
+            )
+        ]
 
     def save(self, *args, **kwargs) -> None:
         self.codename = slugify(self.title).replace('-', '_')

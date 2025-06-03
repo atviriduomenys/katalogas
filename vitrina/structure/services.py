@@ -949,15 +949,14 @@ def _parse_access(value: str):
 
 def _parse_visibility(value: str) -> int:
     visibility = None
+    mapper = {
+        "private": Metadata.PRIVATE,
+        "protected": Metadata.PROTECTED,
+        "package": Metadata.PACKAGE,
+        "public": Metadata.VISIBILITY_PUBLIC,
+    }
     if value:
-        if value == "private":
-            visibility = Metadata.PRIVATE
-        elif value == "protected":
-            visibility = Metadata.PROTECTED
-        elif value == "package":
-            visibility = Metadata.PACKAGE
-        elif value == "public":
-            visibility = Metadata.VISIBILITY_PUBLIC
+        visibility = mapper[value]
     return visibility
 
 def _get_status(value: str) -> Status:

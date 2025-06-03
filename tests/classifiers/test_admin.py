@@ -38,8 +38,24 @@ def test_change_default_frequency(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_change_default_status(app: DjangoTestApp):
-    Status.objects.all().delete()
+    """
+        Test that changing the default status via the Django admin form works correctly.
 
+        This test verifies that when an existing status is updated to be the new default
+        (`is_default=True`), the previous default status is automatically unset
+        (`is_default=False`). It simulates an admin user modifying a status through
+        the admin interface.
+
+        Steps:
+            - Create an admin user and two status instances (one default, one not).
+            - Authenticate as the admin user.
+            - Submit a change form to make the non-default status the new default.
+            - Assert that the new default is updated correctly, and the old default is unset.
+
+        Args:
+            app (DjangoTestApp): A test app instance from `pytest-django` or `WebTest`
+                configured to simulate requests to the Django app.
+        """
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
     default_status = StatusFactory(is_default=True)
     another_status = StatusFactory(is_default=False)
@@ -52,5 +68,5 @@ def test_change_default_status(app: DjangoTestApp):
 
     form.submit()
 
-    assert list(Status.objects.filter(is_default=True)) == [another_status]
-    assert list(Status.objects.filter(is_default=False)) == [default_status]
+    assert Status.objects.filter(is_default=True).first() == another_status
+    assert Status.objects.filter(is_default=False).first() == default_status

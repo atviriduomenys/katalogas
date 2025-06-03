@@ -219,22 +219,22 @@ class Status(TranslatableModel):
     codename = models.CharField(
         unique=True,
         max_length=255,
-        verbose_name="Kodinis pavadinimas",
+        verbose_name=_("Kodinis pavadinimas"),
         help_text=_(
             "Savybė nurodanti prieigos prie metaduomenų lygį. "
-            "DCAT-AP rekomenduoja naudoti šias klasifikatoriaus reikšmes: "
-            "- develop "
-            "- completed "
-            "- discont "
-            "- deprecated "
-            "- withdrawn "
+            "DCAT-AP rekomenduoja naudoti šias klasifikatoriaus reikšmes: <br>"
+            "- develop <br>"
+            "- completed <br>"
+            "- discont <br>"
+            "- deprecated <br>"
+            "- withdrawn <br>"
         ),
         blank=True,
         null=True,
     )
     url = models.CharField(
         max_length=512,
-        verbose_name="Nuoroda į kontroliuojamą EU žodyną",
+        verbose_name=_("Nuoroda į kontroliuojamą EU žodyną"),
         blank=True,
         null=True,
     )

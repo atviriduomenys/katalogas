@@ -5,6 +5,7 @@ import operator
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db.models import Q, Max, Avg
 from django.urls import reverse
@@ -78,8 +79,8 @@ class Metadata(models.Model):
     access = models.IntegerField(
         _("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True
     )
-    visibility = models.IntegerField(
-        _("Metaduomenų matomumas"), null=True, blank=True
+    visibility = models.PositiveIntegerField(
+        _("Metaduomenų matomumas"), null=True, blank=True, validators=[MaxValueValidator(3)]
     )
     eli = models.URLField(
         _("Europos teisės akto identifikatorius (ELI)"), blank=True, null=True, max_length=500

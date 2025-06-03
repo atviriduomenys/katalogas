@@ -493,8 +493,7 @@ class PropertyStructureView(
     can_manage_structure: bool
 
     def has_permission(self):
-        if metadata := self.property.metadata.first():
-            if metadata.visibility == Metadata.PRIVATE:
+        if (metadata := self.property.metadata.first()) and metadata.visibility == Metadata.PRIVATE:
                 return has_perm(self.request.user, Action.STRUCTURE, self.object) and self.property in self.props
         if self.object.is_public:
             return self.property in self.props

@@ -69,12 +69,11 @@
             {% endif %}
 
         </div>
-        <div class="control">
-        <div class="tags has-addons">
+        <div class="mb-2">
         {% if metadata.visibility is not None %}
             <span class="tag is-white has-text-grey-darker has-text-weight-semibold p-1 mr-2">{% translate "Matomumas" %}</span>
             {% if metadata.visibility == 0 %}
-                <span class="mr-3 tag icon is-small has-text-grey" style="background-color: #ffffff;">
+                <span class="mr-3 tag icon is-small has-text-grey is-rounded" style="background-color: #ffffff; border-radius: 50%;">
                     <i class="fas fa-eye-slash"></i>
                 </span>
                 <span class="tag mr-2 has-text-grey" style="background-color: #ffffff;">
@@ -82,7 +81,7 @@
                 </span>
             {% endif %}
             {% if metadata.visibility == 1 %}
-                <span class="mr-3 tag is-warning is-light" style="width: 25px; height: 25px; font-size: 0.8rem; border-radius: 50%;">
+                <span class="mr-3 tag is-warning is-light is-rounded" style="border-radius: 50%;">
                     IS
                 </span>
                 <span class="tag mr-2" style="color: #ad8d45; background-color: #ffffff;">
@@ -90,15 +89,15 @@
                 </span>
             {% endif %}
             {% if metadata.visibility == 2 %}
-                <span class="mr-3 tag is-success is-light" style="width: 25px; height: 25px; font-size: 0.8rem; border-radius: 50%;">
+                <span class="tag mr-2 is-success is-light is-rounded" style="border-radius: 50%;">
                     LT
                 </span>
-                <span class="tag mr-2" style="color: #498c6d; background-color: #ffffff;">
+                <span class="tag mr-2 is-rounded" style="color: #498c6d; background-color: #ffffff;">
                     {% translate "Taikomas LT lygmeniu" %}
                 </span>
             {% endif %}
             {% if metadata.visibility == 3 %}
-                <span class="mr-3 tag is-info is-light" style="width: 25px; height: 25px; font-size: 0.8rem; border-radius: 50%;">
+                <span class="mr-3 tag is-info is-light is-rounded" style="border-radius: 50%;">
                     EU
                 </span>
                 <span class="tag mr-2" style="color: #5c8fbc; background-color: #ffffff;">
@@ -128,7 +127,6 @@
                 <span class="tag is-info is-light" style="background-color: #fbeaed; color: #d22d4d;">{% translate metadata.status.name %}</span>
             {% endif %}
         {% endif %}
-        </div>
         </div>
         <div class="mb-2">
             {% if model.base %}
@@ -165,24 +163,24 @@
                      <div class="column is-8">
                          {% if prop_metadata.visibility is not None %}
                             {% if prop_metadata.visibility == 0 %}
-                                <span class="mr-3 tag is-light is-light" style="width: 30px; height: 30px; font-size: 0.8rem; border-radius: 50%;">
+                                <span class="mr-3 tag is-light is-light is-rounded">
                                     <span class="icon is-small has-text-grey">
                                         <i class="fas fa-eye-slash"></i>
                                     </span>
                                 </span>
                             {% endif %}
                             {% if prop_metadata.visibility == 1 %}
-                                <span class="mr-3 tag is-warning is-light" style="width: 30px; height: 30px; font-size: 0.8rem; border-radius: 50%;">
+                                <span class="mr-3 tag is-warning is-light is-rounded" style="border-radius: 50%;">
                                     IS
                                 </span>
                             {% endif %}
                             {% if prop_metadata.visibility == 2 %}
-                                <span class="mr-3 tag is-success is-light" style="width: 30px; height: 30px; font-size: 0.8rem; border-radius: 50%;">
+                                <span class="mr-3 tag is-success is-light is-rounded" style="border-radius: 50%;">
                                 LT
                                 </span>
                             {% endif %}
                             {% if prop_metadata.visibility == 3 %}
-                                <span class="mr-3 tag is-info is-light" style="width: 30px; height: 30px; font-size: 0.8rem; border-radius: 50%;">
+                                <span class="mr-3 tag is-info is-light is-rounded" style="border-radius: 50%;">
                                     EU
                                 </span>
                             {% endif %}
@@ -237,7 +235,7 @@
                             {% if prop_metadata.access is not None %}
                             <span class="mr-3 tag is-info is-light">{{ prop_metadata.get_access_display }}</span>
                             {% endif %}
-                            {% if metadata.status %}
+                            {% if metadata.status.codename %}
                                 {% if metadata.status.codename == "develop" %}
                                     <span class="tag" style="background-color: #eaedfa; color: #304cd3;">
                                         {% translate metadata.status.name %}

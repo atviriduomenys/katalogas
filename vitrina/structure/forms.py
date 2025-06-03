@@ -70,7 +70,7 @@ VISIBILITY_LEVEL_CHOICES = (
     (
         1,
         _get_level_title(
-            _("Taikomas IS lygmeniu (protected)"),
+            _("Taikomas Informacinės Sistemos lygmeniu (protected)"),
             _(
                 "Nėra jokios Informacinės Sistemos, kurioje tvarkomi duomenys arba Informacinė Sistema nėra registruota Kataloge"
             ),

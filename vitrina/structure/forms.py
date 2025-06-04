@@ -244,9 +244,10 @@ class EnumForm(forms.ModelForm):
         if metadata := self.prop.metadata.first():
             if int(visibility) > metadata.visibility:
                 property_visibility = _get_visibility(metadata.visibility)
+                enum_visibility = _get_visibility(int(visibility))
                 raise ValidationError(
                     _(
-                        f"Metaduomenų matomumas negali būti didesnis nei duomenų lauko matomumas {property_visibility}."
+                        f"Metaduomenų matomumas '{enum_visibility}' negali būti didesnis nei duomenų lauko matomumas '{property_visibility}'."
                     )
                 )
         return int(visibility)
@@ -1245,9 +1246,10 @@ class PropertyForm(forms.ModelForm):
         if metadata := self.model.metadata.first():
             if int(visibility) > metadata.visibility:
                 model_visibility = _get_visibility(metadata.visibility)
+                property_visibility = _get_visibility(int(visibility))
                 raise ValidationError(
                     _(
-                        f"Metaduomenų matomumas negali būti didesnis nei modelio matomumas {model_visibility}."
+                        f"Metaduomenų matomumas '{property_visibility}' negali būti didesnis nei modelio matomumas '{model_visibility}'."
                     )
                 )
         return int(visibility)

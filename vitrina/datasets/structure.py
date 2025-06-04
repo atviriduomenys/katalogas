@@ -718,13 +718,12 @@ def _read_property(
 
     if prop.model.properties.get(name):
         prop.errors.append(_(f'Savybė "{name}" jau egzistuoja.'))
-    if prop.model.visibility and prop.visibility:
-        if _parse_visibility(prop.model.visibility) < _parse_visibility(
-            prop.visibility
-        ):
+    model_visibility = _parse_visibility(prop.model.visibility)
+    prop_visibility = _parse_visibility(prop.visibility)
+    if model_visibility is not None and prop_visibility is not None and model_visibility < prop_visibility:
             prop.errors.append(
                 _(
-                    f'Duomenų lauko "{name}" metaduomenų matomumo lygis {prop.visibility} negali būti aukštesnis už modelio metaduomenų matomumo lygį "{prop.model.visibility}". '
+                    f'Duomenų lauko "{name}" metaduomenų matomumo lygis "{prop.visibility}" negali būti aukštesnis už modelio metaduomenų matomumo lygį "{prop.model.visibility}". '
                 )
             )
     prop.model.properties[name] = prop
@@ -815,11 +814,12 @@ def _read_enum(
             last = node
 
     enum.meta = last
-    if enum.visibility and enum.meta.visibility:
-        if _parse_visibility(enum.visibility) > _parse_visibility(enum.meta.visibility):
+    property_visibility = _parse_visibility(enum.visibility)
+    enum_visibility = _parse_visibility(enum.meta.visibility)
+    if property_visibility is not None and enum_visibility is not None and property_visibility < enum_visibility:
             enum.errors.append(
                 _(
-                    f'Duomenų reikšmės "{enum.title}" metaduomenų matomumo lygis {enum.visibility} negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{enum.meta.visibility}". '
+                    f'Duomenų reikšmės "{enum.title}" metaduomenų matomumo lygis "{enum.visibility}" negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{enum.meta.visibility}". '
                 )
             )
     if enum.meta.enums.get(name):
@@ -896,15 +896,14 @@ def _parse_int(v: str) -> int | None:
     return int(v) if v else None
 
 
-def _parse_visibility(visibility_str: str) -> int:
-    visibility_mapping = {
+def _parse_visibility(value: str) -> int:
+    visibility_mapper = {
         "private": StructureMetadata.PRIVATE,
         "protected": StructureMetadata.PROTECTED,
         "package": StructureMetadata.PACKAGE,
         "public": StructureMetadata.VISIBILITY_PUBLIC,
     }
-
-    return visibility_mapping[visibility_str]
+    return visibility_mapper.get(value)
 
 
 def get_relative_model_name(dataset: Dataset, name: str) -> str:

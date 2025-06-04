@@ -142,6 +142,7 @@ INSTALLED_APPS = [
     "crispy_bulma",
     "django_select2",
     "django_recaptcha",
+    "django_q",
     "vitrina",
     "vitrina.cms",
     "vitrina.api",
@@ -513,3 +514,12 @@ LANGUAGE_COOKIE_SECURE = True
 OTP_EMAIL_TOKEN_VALIDITY = 600
 
 USE_OTP_VALIDATION = env.bool("USE_OTP_VALIDATION", default=True)
+
+Q_CLUSTER = {
+    "name": "file_size_checker",
+    "timeout": 60,
+    "retry": 120,
+    "orm": "default",
+}
+
+FILE_SIZE_CHECK_INTERVAL_CRON = env("FILE_SIZE_CHECK_INTERVAL_CRON")

@@ -31,7 +31,8 @@ from vitrina.structure.models import (
 class ModelChoiceTypeField(forms.ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.description:
-            return mark_safe(f'{obj.name}<br/><p class="help">{obj.description}</p>')
+            return mark_safe(f"""{obj.name}<span class="icon info-icon has-tooltip-multiline is-middle" data-tooltip="{obj.description}">
+                <i class="fas fa-info-circle"></i></span>""")
         else:
             return obj.name
 
@@ -139,9 +140,7 @@ class EnumForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
-        help_text=_(
-            "Savybė nurodanti modelio metaduomenų matomumo lygį. "
-        )
+        help_text=_("Savybė nurodanti modelio metaduomenų matomumo lygį. "),
     )
     status = ModelChoiceTypeField(
         label=_("Būsena"),
@@ -251,17 +250,6 @@ class EnumForm(forms.ModelForm):
                     )
                 )
         return int(visibility)
-
-
-def _get_level_title(title: str, description: str | None = None) -> str:
-    def _render() -> str:
-        title_text = gettext(title)
-        if description:
-            description_text = gettext(description)
-            return mark_safe(f'{title_text}<br/><p class="help">{description_text}</p>')
-        return title_text
-
-    return lazy(_render, str)()
 
 
 MODEL_LEVEL_CHOICES = (
@@ -454,16 +442,18 @@ class ModelCreateForm(forms.ModelForm):
         label=_("Kodinis pavadinimas"),
         help_text=_("Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."),
     )
-    eli = forms.URLField(label=_("Europos teisės akto identifikatorius (ELI)"), required=False,
-                         help_text=_(
-                             "Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> "
-                             """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>"""
-                             "Tais atvejais, kai yra keli dokumentai su priedais: "
-                             """ "#priedas1/17.2" """
-                             """ "17.2/17.2.5", """
-                             """kur "priedas1" yra dokumento failo pavadinimas."""
-                         ),
-                         )
+    eli = forms.URLField(
+        label=_("Europos teisės akto identifikatorius (ELI)"),
+        required=False,
+        help_text=_(
+            "Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> "
+            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>"""
+            "Tais atvejais, kai yra keli dokumentai su priedais: "
+            """ "#priedas1/17.2" """
+            """ "17.2/17.2.5", """
+            """kur "priedas1" yra dokumento failo pavadinimas."""
+        ),
+    )
     source = forms.CharField(
         label=_("Duomenų šaltinis"),
         required=False,
@@ -498,9 +488,7 @@ class ModelCreateForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
-        help_text=_(
-            "Savybė nurodanti modelio metaduomenų matomumo lygį. "
-        )
+        help_text=_("Savybė nurodanti modelio metaduomenų matomumo lygį. "),
     )
     status = ModelChoiceTypeField(
         label=_("Būsena"),
@@ -1038,9 +1026,7 @@ class PropertyForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
-        help_text=_(
-            "Savybė nurodanti modelio metaduomenų matomumo lygį. "
-        )
+        help_text=_("Savybė nurodanti modelio metaduomenų matomumo lygį. "),
     )
     status = ModelChoiceTypeField(
         label=_("Būsena"),

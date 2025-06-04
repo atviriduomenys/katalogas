@@ -156,7 +156,7 @@
                 {% define prop.metadata.first as prop_metadata %}
                 <div class="mb-2">
                     <div class="columns no-margin-bottom">
-                     <div class="column is-8">
+                     <div class="column is-7">
                          {% if prop_metadata.visibility is not None %}
                             {% if prop_metadata.visibility == 0 %}
                                 <span class="mr-3 tag is-light is-light is-rounded" style="border-radius: 50%;">
@@ -232,6 +232,10 @@
                             {% if prop_metadata.access is not None %}
                             <span class="mr-3 tag is-info is-light">{{ prop_metadata.get_access_display }}</span>
                             {% endif %}
+                            <br/>
+                            <p class="ml-4">{{ prop_metadata.title }}</p>
+                        </div>
+                        <div class="column is-1">
                             {% if prop_metadata.status.codename %}
                                 {% if prop_metadata.status.codename == "develop" %}
                                     <span class="tag has-tooltip"
@@ -260,11 +264,8 @@
                                     </span>
                                 {% endif %}
                             {% endif %}
-                            <br/>
-                            <p class="ml-4">{{ prop_metadata.title }}</p>
                         </div>
-
-                        <div class="column is-1">
+                        <div class="column is-2">
                             {% if prop_metadata.level %}
                             <span class="is-pulled-right">
                                 <span>{{ prop_metadata.level }}</span>

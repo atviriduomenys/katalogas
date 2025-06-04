@@ -222,7 +222,7 @@
                     {% define enum_item.metadata.first as enum_meta %}
                     {% if enum_meta.visibility != 0 or can_manage_structure %}
                     <div class="columns no-margin-bottom">
-                        <div class="column is-8">
+                        <div class="column is-5">
                             {% if enum_meta.visibility is not None %}
                                 {% if enum_meta.visibility == 0 %}
                                     <span class="mr-3 tag is-light is-light is-rounded" style="border-radius: 50%;">
@@ -254,6 +254,17 @@
                             {% if enum_meta.title %}
                             <span class="has-text-weight-semibold">{{ enum_meta.title }}</span>
                             {% endif %}
+                             <div class="ml-4">
+                                {% if enum_meta.source %}
+                                <span>source: </span>
+                                <span class="has-text-weight-semibold">{{ enum_meta.source }}</span>
+                                {% endif %}
+                            </div>
+                            {% if enum_meta.description %}
+                                <div class="ml-4"><p>{{ enum_meta.description | markdown | safe }}</p></div>
+                            {% endif %}
+                        </div>
+                        <div class="column is-3">
                             {% if enum_meta.status.codename is not None %}
                                 {% if enum_meta.status.codename == "develop" %}
                                     <span class="tag has-tooltip"
@@ -282,17 +293,7 @@
                                     </span>
                                 {% endif %}
                             {% endif %}
-                             <div class="ml-4">
-                                {% if enum_meta.source %}
-                                <span>source: </span>
-                                <span class="has-text-weight-semibold">{{ enum_meta.source }}</span>
-                                {% endif %}
-                            </div>
-                            {% if enum_meta.description %}
-                                <div class="ml-4"><p>{{ enum_meta.description | markdown | safe }}</p></div>
-                            {% endif %}
                         </div>
-
                         <div class="column is-1">
                             {% if enum_meta.metadata_version and enum_meta.draft %}
                                 <span class="tag is-danger is-light">{{ metadata.metadata_version}} ({% translate "rengiama" %})</span>

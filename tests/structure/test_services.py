@@ -2274,6 +2274,10 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Dataset",
+            description="Dataset description"
         )
     )
 
@@ -2316,6 +2320,10 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
             file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Dataset",
+            description="Dataset description"
         )
     )
 

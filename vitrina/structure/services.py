@@ -13,7 +13,7 @@ import vitrina.datasets.structure as struct
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.translation import gettext_lazy as _
+from django.utils.translation import gettext_lazy as _, get_language
 
 from vitrina import settings
 from vitrina.comments.models import Comment
@@ -1040,6 +1040,8 @@ def _prefixes_to_tabular(obj: models.Model, separator: bool = False):
 
 
 def _dataset_to_tabular(dataset: Dataset, separator: bool = False):
+    if lang := get_language():
+        dataset.set_current_language(lang)
     if meta := dataset.metadata.first():
         yield to_row(
             DATASET,
@@ -1048,8 +1050,8 @@ def _dataset_to_tabular(dataset: Dataset, separator: bool = False):
                 "dataset": meta.name,
                 "level": meta.level_given,
                 "access": _get_access(meta.access),
-                "title": meta.title or dataset.title,
-                "description": meta.description or dataset.description,
+                "title": dataset.title,
+                "description": dataset.description,
             },
         )
     yield from _prefixes_to_tabular(dataset, separator=separator)
@@ -1199,6 +1201,8 @@ def _resource_models_to_tabular(resource: DatasetDistribution, separator: bool =
 
 
 def _resource_to_tabular(resource: DatasetDistribution):
+    if lang := get_language():
+        resource.set_current_language(lang)
     if meta := resource.metadata.first():
         yield to_row(
             DATASET,
@@ -1211,8 +1215,8 @@ def _resource_to_tabular(resource: DatasetDistribution):
                 "ref": meta.ref,
                 "level": meta.level_given,
                 "access": _get_access(meta.access),
-                "title": meta.title or resource.title,
-                "description": meta.description or resource.description,
+                "title": resource.title,
+                "description": resource.description,
             },
         )
     yield from _comments_to_tabular(resource)

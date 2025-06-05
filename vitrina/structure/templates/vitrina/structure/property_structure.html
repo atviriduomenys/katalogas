@@ -96,15 +96,7 @@
             {% if metadata.access is not None %}
                 <span class="mr-3 tag is-info is-light">{{ metadata.get_access_display }}</span>
             {% endif %}
-            {% if metadata.eli %}
-                <span class="mr-3 tag is-white is-white">
-                        <span class="icon is-small has-text-grey has-tooltip"
-                              data-tooltip="{% translate 'ELI nuoroda' %}">
-                            <i class="fas fa-link mr-1"></i>
-                            <span>ELI</span>
-                        </span>
-                </span>
-            {% endif %}
+
             {% if metadata.level %}
             <span class>{{ metadata.level }}</span>
             <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
@@ -116,6 +108,56 @@
                 <span class="tag is-success is-light">{{ metadata.metadata_version }}</span>
             {% elif not metadata.metadata_version and metadata.draft %}
                 <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+            {% endif %}
+
+            {% if metadata.status.codename %}
+                {% if metadata.status.codename == "develop" %}
+                    <span class="ml-3 tag" style="background-color: #eaedfa; color: #304cd3;">
+                        {{ metadata.status.name }}
+                    </span>
+                {% elif metadata.status.codename == "completed" %}
+                    <span class="ml-3 tag is-success is-light">
+                        {{ metadata.status.name }}
+                    </span>
+                {% elif metadata.status.codename == "discont" %}
+                   <span class="ml-3 tag" style="background-color: #fff5e5; color: #ffa525;">
+                        {{ metadata.status.name }}
+                   </span>
+                {% elif metadata.status.codename == "deprecated" %}
+                    <span class="ml-3 tag is-warning is-light">{{ metadata.status.name }}</span>
+                {% elif metadata.status.codename == "withdrawn" %}
+                    <span class="ml-3 tag is-danger is-light">{{ metadata.status.name }}</span>
+                {% endif %}
+            {% endif %}
+
+            {% if metadata.visibility is not None %}
+                {% if metadata.visibility == 0 %}
+                    <span class="ml-3 tag icon has-text-grey is-rounded">
+                        <i class="fas fa-eye-slash"></i>
+                    </span>
+                {% elif metadata.visibility == 1 %}
+                    <span class="ml-3 tag icon has-tooltip-right has-tooltip-multiline is-warning is-light is-rounded">
+                        <strong class="has-text-warning-dark">IS</strong>
+                    </span>
+                {% elif metadata.visibility == 2 %}
+                    <span class="ml-3 tag icon has-tooltip-right has-tooltip-multiline is-success is-light is-rounded">
+                        <strong class="has-text-success-dark">LT</strong>
+                    </span>
+                {% elif metadata.visibility == 3 %}
+                    <span class="ml-3 tag icon has-tooltip-right has-tooltip-multiline is-info is-light is-rounded">
+                        <strong class="has-text-info-dark">EU</strong>
+                    </span>
+                {% endif %}
+            {% endif %}
+
+            {% if metadata.eli %}
+                <span class="tag is-white is-white has-tooltip"
+                data-tooltip="{% translate 'ELI nuoroda' %}">
+                        <span class="ml-3 icon is-small has-text-grey">
+                            <i class="fas fa-link mr-1"></i>
+                            <span>ELI</span>
+                        </span>
+                </span>
             {% endif %}
 
         </div>
@@ -134,66 +176,6 @@
                 <span>source: </span>
                 <span class="has-text-weight-semibold">{{ metadata.source }}</span>
             {% endif %}
-        </div>
-        <div class="control">
-            <div class="tags has-addons">
-                {% if metadata.visibility is not None %}
-                    <span class="tag is-white has-text-grey-darker has-text-weight-semibold p-1 mr-2">{% translate "Matomumas" %}</span>
-                    {% if metadata.visibility == 0 %}
-                        <span class="mr-3 tag icon is-small has-text-grey" style="background-color: #ffffff;">
-                            <i class="fas fa-eye-slash"></i>
-                        </span>
-                        <span class="tag mr-2 has-text-grey" style="background-color: #ffffff;">
-                            {% translate "Metaduomenys nepublikuojami" %}
-                        </span>
-                    {% elif metadata.visibility == 1 %}
-                        <span class="mr-3 tag is-warning is-light is-rounded" style="border-radius: 50%;">
-                            IS
-                        </span>
-                        <span class="tag mr-2" style="color: #ad8d45; background-color: #ffffff;">
-                            {% translate "Taikomas IS lygmeniu" %}
-                        </span>
-                    {% elif metadata.visibility == 2 %}
-                        <span class="mr-3 tag is-success is-light is-rounded" style="border-radius: 50%;">
-                            LT
-                        </span>
-                        <span class="tag mr-2" style="color: #498c6d; background-color: #ffffff;">
-                            {% translate "Taikomas LT lygmeniu" %}
-                        </span>
-                    {% elif metadata.visibility == 3 %}
-                        <span class="mr-3 tag is-info is-light is-rounded" style="border-radius: 50%;">
-                            EU
-                        </span>
-                        <span class="tag mr-2" style="color: #5c8fbc; background-color: #ffffff;">
-                            {% translate "Taikomas EU lygmeniu" %}
-                        </span>
-                    {% endif %}
-                {% endif %}
-                {% if metadata.status.codename %}
-                    <span class="tag is-white has-text-grey-darker has-text-weight-semibold p-1 mr-2">{% translate "Būsena" %}</span>
-                    {% if metadata.status.codename == "develop" %}
-                        <span class="tag" style="background-color: #eaedfa; color: #304cd3;">
-                            {{ metadata.status.name }}
-                        </span>
-                    {% elif metadata.status.codename == "completed" %}
-                        <span class="tag is-success is-light">
-                            {{ metadata.status.name }}
-                        </span>
-                    {% elif metadata.status.codename == "discont" %}
-                       <span class="tag" style="background-color: #fff5e5; color: #ffa525;">
-                            {{ metadata.status.name }}
-                       </span>
-                    {% elif metadata.status.codename == "deprecated" %}
-                        <span class="tag is-warning is-light">
-                            {{ metadata.status.name }}
-                        </span>
-                    {% elif metadata.status.codename == "withdrawn" %}
-                        <span class="tag is-danger is-light">
-                            {{ metadata.status.name }}
-                        </span>
-                    {% endif %}
-                {% endif %}
-            </div>
         </div>
 
         {% if can_manage_structure and model.name and prop.name %}
@@ -222,29 +204,35 @@
                     {% define enum_item.metadata.first as enum_meta %}
                     {% if enum_meta.visibility != 0 or can_manage_structure %}
                     <div class="columns no-margin-bottom">
-                        <div class="column is-5">
+                        <div class="column is-6">
                             {% if enum_meta.visibility is not None %}
                                 {% if enum_meta.visibility == 0 %}
-                                    <span class="mr-3 tag is-light is-light is-rounded" style="border-radius: 50%;">
+                                    <span class="mr-1 tag is-light is-light is-rounded">
                                         <span class="icon is-small has-tooltip-right has-text-grey"
-                                              data-tooltip="{% translate 'Metaduomenys nepublikuojami' %}" style="border-radius: 50%;">
+                                              data-tooltip="{% translate 'Metaduomenys nepublikuojami' %}">
                                             <i class="fas fa-eye-slash"></i>
                                         </span>
                                     </span>
                                 {% elif enum_meta.visibility == 1 %}
-                                <span class="mr-3 tag has-tooltip-right has-tooltip-multiline is-warning is-light is-rounded"
-                                      data-tooltip="{% translate 'Taikomas IS lygmeniu' %}" style="border-radius: 50%;">
-                                    IS
-                                </span>
+                                    <span class="mr-1 tag is-warning is-light is-rounded"
+                                          data-tooltip="{% translate 'Taikomas IS lygmeniu' %}">
+                                        <span class="icon is-small has-tooltip-right has-tooltip-multiline">
+                                            <strong class="has-text-warning-dark">IS</strong>
+                                        </span>
+                                    </span>
                                 {% elif enum_meta.visibility == 2 %}
-                                    <span class="mr-3 tag is-success has-tooltip-right is-light is-rounded"
-                                          data-tooltip="{% translate 'Taikomas LT lygmeniu' %}" style="border-radius: 50%;">
-                                        LT
+                                    <span class="mr-1 tag is-success has-tooltip-right is-light is-rounded"
+                                          data-tooltip="{% translate 'Taikomas LT lygmeniu' %}">
+                                        <span class="icon is-small has-tooltip-right has-tooltip-multiline">
+                                            <strong class="has-text-success-dark">LT</strong>
+                                        </span>
                                     </span>
                                 {% elif enum_meta.visibility == 3 %}
-                                    <span class="mr-3 tag is-info has-tooltip-right is-light is-rounded"
-                                          data-tooltip="{% translate 'Taikomas EU lygmeniu' %}" style="border-radius: 50%;">
-                                        EU
+                                    <span class="mr-1 tag is-info has-tooltip-right is-light is-rounded"
+                                          data-tooltip="{% translate 'Taikomas EU lygmeniu' %}">
+                                        <span class="icon is-small has-tooltip-right has-tooltip-multiline is-info">
+                                            <strong class="has-text-info-dark">EU</strong>
+                                        </span>
                                     </span>
                                 {% endif %}
                             {% endif %}
@@ -264,7 +252,7 @@
                                 <div class="ml-4"><p>{{ enum_meta.description | markdown | safe }}</p></div>
                             {% endif %}
                         </div>
-                        <div class="column is-3">
+                        <div class="column is-2">
                             {% if enum_meta.status.codename is not None %}
                                 {% if enum_meta.status.codename == "develop" %}
                                     <span class="tag has-tooltip"
@@ -295,23 +283,23 @@
                             {% endif %}
                         </div>
                         <div class="column is-1">
+                            {% if enum_meta.eli %}
+                                <span class="ml-3 tag is-white is-white">
+                                        <span class="ml-3 icon is-small has-text-grey has-tooltip"
+                                              data-tooltip="{% translate 'ELI nuoroda' %}">
+                                            <i class="fas fa-link"></i>
+                                            <span>ELI</span>
+                                        </span>
+                                </span>
+                            {% endif %}
+                        </div>
+                        <div class="column is-1">
                             {% if enum_meta.metadata_version and enum_meta.draft %}
                                 <span class="tag is-danger is-light">{{ metadata.metadata_version}} ({% translate "rengiama" %})</span>
                             {% elif enum_meta.metadata_version and not enum_meta.draft %}
                                 <span class="tag is-success is-light">{{ enum_meta.metadata_version }}</span>
                             {% elif not enum_meta.metadata_version and enum_meta.draft %}
                                 <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
-                            {% endif %}
-                        </div>
-                        <div class="column is-1">
-                            {% if enum_meta.eli %}
-                                <span class="mr-3 tag is-white is-white">
-                                        <span class="icon is-small has-text-grey has-tooltip"
-                                              data-tooltip="{% translate 'ELI nuoroda' %}">
-                                            <i class="fas fa-link ml-3"></i>
-                                            <span>ELI</span>
-                                        </span>
-                                </span>
                             {% endif %}
                         </div>
                         <div class="column is-2">

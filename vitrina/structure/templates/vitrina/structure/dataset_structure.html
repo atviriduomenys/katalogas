@@ -72,26 +72,32 @@
                     <div class="column is-10">
                         {% if metadata.visibility is not None %}
                             {% if metadata.visibility == 0 %}
-                                <span class="mr-3 tag is-light is-light is-rounded" style="border-radius: 50%;">
+                                <span class="mr-1 tag is-light is-light is-rounded">
                                     <span class="icon is-small has-tooltip-right has-text-grey"
                                           data-tooltip="{% translate 'Metaduomenys nepublikuojami' %}">
                                         <i class="fas fa-eye-slash"></i>
                                     </span>
                                 </span>
                             {% elif metadata.visibility == 1 %}
-                                <span class="mr-3 tag is-warning has-tooltip-right has-tooltip-multiline is-light is-rounded"
-                                      data-tooltip="{% translate 'Taikomas IS lygmeniu' %}" style="border-radius: 50%;">
-                                    IS
+                                <span class="mr-1 tag is-warning is-light is-rounded"
+                                      data-tooltip="{% translate 'Taikomas IS lygmeniu' %}">
+                                    <span class="icon is-small has-tooltip-right">
+                                        <strong class="has-text-warning-dark">IS</strong>
+                                    </span>
                                 </span>
                             {% elif metadata.visibility == 2 %}
-                                <span class="mr-3 tag is-success has-tooltip-right is-light is-rounded"
-                                      data-tooltip="{% translate 'Taikomas LT lygmeniu' %}" style="border-radius: 50%;">
-                                    LT
+                                <span class="mr-1 tag is-success has-tooltip-right is-light is-rounded"
+                                      data-tooltip="{% translate 'Taikomas LT lygmeniu' %}">
+                                    <span class="icon is-small">
+                                        <strong class="has-text-success-dark">LT</strong>
+                                    </span>
                                 </span>
                             {% elif metadata.visibility == 3 %}
-                                <span class="mr-3 tag is-info has-tooltip-right is-light is-rounded"
-                                      data-tooltip="{% translate 'Taikomas EU lygmeniu' %}" style="border-radius: 50%;">
-                                    EU
+                                <span class="mr-1 tag is-info has-tooltip-right is-light is-rounded"
+                                      data-tooltip="{% translate 'Taikomas EU lygmeniu' %}">
+                                    <span class="icon is-small has-tooltip-right has-tooltip-multiline is-info">
+                                        <strong class="has-text-info-dark">EU</strong>
+                                    </span>
                                 </span>
                             {% endif %}
                         {% endif %}
@@ -146,7 +152,7 @@
                                </span>
                             {% elif metadata.status.codename == "deprecated" %}
                                 <span class="tag has-tooltip is-warning is-light"
-                                data-tooltip="{% translate 'Būsena' %}">>{{ metadata.status.name }}</span>
+                                data-tooltip="{% translate 'Būsena' %}">{{ metadata.status.name }}</span>
                             {% elif metadata.status.codename == "withdrawn" %}
                                 <span class="tag has-tooltip is-danger is-light"
                                 data-tooltip="{% translate 'Būsena' %}">

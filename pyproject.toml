@@ -83,6 +83,9 @@ xlsxwriter = "^3.0.3"
 django-browser-reload = "^1.10.0"
 ruff = "^0.9.3"
 djlint = "^1.36.4"
+weasyprint = "^62.0"
+markdown = "^3.6"
+pdfminer-six = "^20250506"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

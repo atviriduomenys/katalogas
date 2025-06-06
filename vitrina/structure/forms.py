@@ -70,25 +70,25 @@ VISIBILITY_LEVEL_CHOICES = (
     (
         1,
         _get_level_title(
-            _("Taikomas Informacinės Sistemos lygmeniu (protected)"),
+            _("Naudojamas informacinės sistemos (IS) lygmeniu (protected)"),
             _(
-                "Nėra jokios Informacinės Sistemos, kurioje tvarkomi duomenys arba Informacinė Sistema nėra registruota Kataloge"
+                "Nėra jokios Informacinės sistemos, kurioje tvarkomi duomenys arba Informacinė sistema nėra registruota Kataloge"
             ),
         ),
     ),
     (
         2,
         _get_level_title(
-            _("Taikomas LT lygmeniu (package)"),
+            _("Naudojamas LT lygmeniu (package)"),
             _(
-                "Įteisintas Informacinės Sistemos nuostatuose ir kituose Lietuvos teisės aktuose"
+                "Įteisintas Informacinės sistemos nuostatuose ir kituose LT teisės aktuose"
             ),
         ),
     ),
     (
         3,
         _get_level_title(
-            _("Taikomas EU lygmeniu (public)"),
+            _("Naudojamas EU lygmeniu (public)"),
         ),
     ),
 )
@@ -114,16 +114,16 @@ class EnumForm(forms.ModelForm):
     status = ModelChoiceTypeField(
         label=_("Būsena"),
         required=False,
-        queryset=Status.objects.all(),
+        queryset=Status.objects.all().order_by("id"),
         widget=forms.RadioSelect,
-        help_text=_("Savybė nurodanti duomenų modelio gyvavimo ciklo būseną."),
+        help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
     visibility = forms.ChoiceField(
         label=_("Metaduomenų matomumas"),
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
-        help_text=_("Savybė nurodanti modelio metaduomenų matomumo lygį. "),
+        help_text=_("Savybė nurodanti modelio metaduomenų matomumo ir prieinamumo lygį. "),
     )
     eli = forms.URLField(
         label=_("Europos teisės akto identifikatorius (ELI)"),
@@ -474,16 +474,16 @@ class ModelCreateForm(forms.ModelForm):
     status = ModelChoiceTypeField(
         label=_("Būsena"),
         required=False,
-        queryset=Status.objects.all(),
+        queryset=Status.objects.all().order_by("id"),
         widget=forms.RadioSelect,
-        help_text=_("Savybė nurodanti duomenų modelio gyvavimo ciklo būseną."),
+        help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
     visibility = forms.ChoiceField(
         label=_("Metaduomenų matomumas"),
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
-        help_text=_("Savybė nurodanti modelio metaduomenų matomumo lygį. "),
+        help_text=_("Savybė nurodanti modelio metaduomenų matomumo ir prieinamumo lygį."),
     )
     eli = forms.URLField(
         label=_("Europos teisės akto identifikatorius (ELI)"),
@@ -1012,16 +1012,16 @@ class PropertyForm(forms.ModelForm):
     status = ModelChoiceTypeField(
         label=_("Būsena"),
         required=False,
-        queryset=Status.objects.all(),
+        queryset=Status.objects.all().order_by("id"),
         widget=forms.RadioSelect,
-        help_text=_("Savybė nurodanti duomenų modelio gyvavimo ciklo būseną."),
+        help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
     visibility = forms.ChoiceField(
         label=_("Metaduomenų matomumas"),
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
-        help_text=_("Savybė nurodanti modelio metaduomenų matomumo lygį. "),
+        help_text=_("Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį."),
     )
     access = forms.ChoiceField(
         label=_("Prieigos lygis"),

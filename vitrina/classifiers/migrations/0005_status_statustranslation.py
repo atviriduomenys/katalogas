@@ -22,7 +22,7 @@ def create_initial_statuses(apps: Apps, schema_editor: BaseDatabaseSchemaEditor)
                     'description': '',
                 },
                 'en': {
-                    'name': 'Not chosen',
+                    'name': 'Not selected',
                     'description': '',
                 },
             },

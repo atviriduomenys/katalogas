@@ -861,8 +861,8 @@ msgid "Geoportalo API formato reikšmės"
 msgstr "Geoportal API format values"
 
 msgid ""
-"Duomenų lauko \"{name}\" metaduomenų matomumo lygis {prop.visibility} negali "
-"būti aukštesnis už modelio metaduomenų matomumo lygį \"{prop.model."
+"Duomenų lauko \"{name}\" metaduomenų matomumo lygis \"{prop.visibility}\" "
+"negali būti aukštesnis už modelio metaduomenų matomumo lygį \"{prop.model."
 "visibility}\". "
 msgstr ""
 "Data field \"{name}\" metadata visibility level {prop.visibility} must notbe "
@@ -2959,28 +2959,26 @@ msgstr "Not selected"
 msgid "Metaduomenys nepublikuojami (private)"
 msgstr "Metadata not published (private)"
 
-msgid "Taikomas Informacinės Sistemos lygmeniu (protected)"
-msgstr "Applicable at Information System level (protected)"
+msgid "Naudojamas informacinės sistemos (IS) lygmeniu (protected)"
+msgstr "Used at information system (IS) level (protected)"
 
 msgid ""
-"Nėra jokios Informacinės Sistemos, kurioje tvarkomi duomenys arba "
-"Informacinė Sistema nėra registruota Kataloge"
+"Nėra jokios Informacinės sistemos, kurioje tvarkomi duomenys arba "
+"Informacinė sistema nėra registruota Kataloge"
 msgstr ""
 "There is no Information System where the data is processed or The "
 "Information System is not registered in the Catalogue"
 
-msgid "Taikomas LT lygmeniu (package)"
-msgstr "Applicable at LT level (package)"
+msgid "Naudojamas LT lygmeniu (package)"
+msgstr "Used at LT level (package)"
 
 msgid ""
-"Įteisintas Informacinės Sistemos nuostatuose ir kituose Lietuvos teisės "
-"aktuose"
+"Įteisintas Informacinės sistemos nuostatuose ir kituose LT teisės aktuose"
 msgstr ""
-"Validated in the Information System regulations and other Lithuanian "
-"legislation acts"
+"Validated in the Information system regulations and other LT legislation acts"
 
-msgid "Taikomas EU lygmeniu (public)"
-msgstr "Applicable at EU level (public)"
+msgid "Naudojamas EU lygmeniu (public)"
+msgstr "Used at EU level (public)"
 
 msgid "Fiksuotos reikšmės vertė."
 msgstr "Enum value."
@@ -3000,8 +2998,8 @@ msgid ""
 "pavadinimas."
 msgstr ""
 "A standard for identifying legal acts, allowing not only the legal document "
-"itself to be identified, but also a specific location within the document. <br>"
-"To provide a specific location in the legislative document: after the # "
+"itself to be identified, but also a specific location within the document. "
+"<br>To provide a specific location in the legislative document: after the # "
 "provide a specific location: \"#17.2\" <br>In cases where there are several "
 "documents with annexes: \"#attachment1/17.2\" \"17.2/17.2.5\" where "
 "\"attachment1\" is the name of the document's file. "
@@ -3020,11 +3018,11 @@ msgstr "Dataset or namespace description."
 msgid "Metaduomenų matomumas"
 msgstr "Metadata visibility"
 
-msgid "Savybė nurodanti modelio metaduomenų matomumo lygį. "
+msgid "Savybė nurodanti modelio metaduomenų matomumo ir prieinamumo lygį."
 msgstr "A property indicating the level of visibility of model metadata."
 
-msgid "Savybė nurodanti duomenų modelio gyvavimo ciklo būseną."
-msgstr "A property indicating the lifecycle state of a data model."
+msgid "Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."
+msgstr "A property indicating the lifecycle state of a data model metadata."
 
 msgid "Reikšmė turi būti integer tipo."
 msgstr "Value must be integer."
@@ -3403,8 +3401,8 @@ msgid "Netinkami matavimo vienetai."
 msgstr "Invalid units of measure."
 
 msgid ""
-"Metaduomenų matomumas negali būti didesnis nei modelio matomumas "
-"{model_visibility}."
+"Metaduomenų matomumas '{property_visibility}' negali būti didesnis nei "
+"modelio matomumas '{model_visibility}'."
 msgstr ""
 "Metadata visibility should not exceed model visibility {model_visibility}."
 
@@ -3570,6 +3568,18 @@ msgstr "No released version."
 msgid "Peržiūrėti pilną keitimų sąrašą"
 msgstr "See full change list"
 
+msgid "Metaduomenys nepublikuojami"
+msgstr "Metadata is not published"
+
+msgid "Naudojamas informacinės sistemos (IS) lygmeniu"
+msgstr "Used at information system (IS) level"
+
+msgid "Naudojamas LT lygmeniu"
+msgstr "Used at LT level"
+
+msgid "Naudojamas EU lygmeniu"
+msgstr "Used at EU level"
+
 msgid "rengiama"
 msgstr "preparing"
 
@@ -3605,21 +3615,6 @@ msgstr "Hide"
 
 msgid "Filtruoti"
 msgstr "Filter"
-
-msgid "Matomumas"
-msgstr "Visibility"
-
-msgid "Metaduomenys nepublikuojami"
-msgstr "Metadata is not published"
-
-msgid "Taikomas IS lygmeniu"
-msgstr "Applicable at IS level"
-
-msgid "Taikomas LT lygmeniu"
-msgstr "Applicable at LT level"
-
-msgid "Taikomas EU lygmeniu"
-msgstr "Applicable at EU level"
 
 msgid "Duomenų laukai"
 msgstr "Properties"

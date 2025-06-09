@@ -2,7 +2,7 @@ from django.db import models
 
 from django.urls import reverse
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.models import Representative, Organization
+from vitrina.orgs.models import Representative, Organization, Agent
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.projects.models import Project
@@ -31,6 +31,7 @@ class ApiKey(models.Model):
         Organization, models.CASCADE, blank=True, null=True
     )
     project = models.ForeignKey(Project, models.CASCADE, blank=True, null=True)
+    agent = models.OneToOneField(Agent, models.CASCADE, blank=True, null=True)
     client_id = models.CharField(blank=True, null=True, max_length=255)
     client_name = models.CharField(blank=True, null=True, max_length=255)
 

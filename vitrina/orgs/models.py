@@ -1,6 +1,7 @@
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -416,6 +417,10 @@ class Agent(UUIDBaseModel):
 
     def save(self, *args, **kwargs) -> None:
         self.codename = slugify(self.title).replace('-', '_')
+
+        if not self.service.service:
+            raise ValidationError(_('Susietas duomenų išteklius turi būti "paslaugos" tipo.'))
+
         return super().save(*args, **kwargs)
 
     def __str__(self) -> str:

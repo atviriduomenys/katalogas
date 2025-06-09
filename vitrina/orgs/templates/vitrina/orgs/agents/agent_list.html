@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}
+    {% translate "Agentai" %}
+{% endblock %}
+
+{% block content %}
+
+    {% include 'vitrina/orgs/tabs.html' %}
+
+    <div class="buttons is-right">
+        <a class="button is-primary m-t-xs m-b-lg" href="{% url 'organization-agents-create' organization.pk %}">{% translate "Pridėti agentą" %}</a>
+    </div>
+
+    {% if agents %}
+        <table class="table is-fullwidth">
+            <thead>
+                <tr>
+                    <th></th>
+
+                    <th>
+                        {% translate "Būsena" %}
+                        <span class="icon info-icon has-tooltip-multiline is-middle"
+                              data-tooltip="{% translate 'Agento būsena: ar agentas yra įjungtas ir sinchronizacijos gali vykti, ar ne.' %}">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </th>
+
+                    <th>
+                        {% translate "Kodinis Pavadinimas" %}
+                        <span class="icon info-icon has-tooltip-multiline is-middle"
+                              data-tooltip="{% translate 'Unikalus agento kodinis pavadinimas, naudojamas sistemose.' %}">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </th>
+
+                    <th>
+                        {% translate "Pavadinimas" %}
+                        <span class="icon info-icon has-tooltip-multiline is-middle"
+                              data-tooltip="{% translate 'Agento pavadinimas.' %}">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </th>
+
+                    <th>
+                        {% translate "Sukurtas" %}
+                        <span class="icon info-icon has-tooltip-multiline is-middle"
+                              data-tooltip="{% translate 'Data ir laikas, kada agentas buvo pridėtas į Katalogą.' %}">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </th>
+
+                    <th>
+                        {% translate "Užklausa" %}
+                        <span class="icon info-icon has-tooltip-multiline is-middle"
+                              data-tooltip="{% translate 'Data ir laikas, kada buvo atlikta paskutinė užklausa iš Agento.' %}">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </th>
+
+                    <th>
+                        {% translate "Duomenų Paslauga" %}
+                        <span class="icon info-icon has-tooltip-multiline is-middle"
+                              data-tooltip="{% translate 'Agentui priskirta duomenų paslauga.' %}">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </th>
+
+                    <th colspan="3">
+                        {% translate "Veiksmai" %}
+                        <span class="icon info-icon has-tooltip-multiline is-middle"
+                              data-tooltip="{% translate 'Galimi veiksmai su agentu: žurnalas, redaguoti, pašalinti.' %}">
+                            <i class="fas fa-info-circle"></i>
+                        </span>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for agent in agents %}
+                    <tr>
+                        <td>
+                            <span class="has-text-{% if agent.is_last_sync_successful == True %}success{% elif agent.is_last_sync_successful == False %}danger{% else %}gray{% endif %}">●</span>
+                        </td>
+                        <td>
+                            {% if agent.is_enabled %}
+                                <span class="tag is-success is-light">{% translate "Įjungtas" %}</span>
+                            {% else %}
+                                <span class="tag is-danger is-light">{% translate "Išjungtas" %}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'organization-agents-detail' organization.pk agent.pk %}">
+                                {{ agent.codename|truncatechars:20 }}
+                            </a>
+                        </td>
+                        <td>{{ agent.title|truncatechars:15 }}</td>
+                        <td>{{ agent.created_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            {% if agent.synchronized_at %}
+                                {{ agent.synchronized_at|date:"Y-m-d H:i" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ agent.service|truncatechars:20 }}
+                        </td>
+                        <td>
+                            <a href="{% url 'organization-agents-detail' organization.pk agent.pk %}" class="button is-small">
+                                {% translate "Žurnalas" %}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'organization-agents-update' organization.pk agent.pk %}" class="button is-primary is-small">
+                                {% translate "Redaguoti" %}
+                            </a>
+                        </td>
+                        <td>
+                            <a href="{% url 'organization-agents-delete' organization.pk agent.pk %}" class="button is-danger is-small">
+                                {% translate "Pašalinti" %}
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% include "vitrina/common/pagination.html" %}
+    {% else %}
+        <p>{% translate "Nėra registruotų agentų." %}</p>
+    {% endif %}
+
+{% endblock %}

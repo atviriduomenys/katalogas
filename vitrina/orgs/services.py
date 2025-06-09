@@ -14,7 +14,7 @@ from vitrina.api_example.models import ApiExample
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Representative, Organization
+from vitrina.orgs.models import Representative, Organization, Agent
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
@@ -52,6 +52,10 @@ acl = {
     (Representative, Action.UPDATE): [Role.COORDINATOR],
     (Representative, Action.DELETE): [Role.COORDINATOR],
     (Representative, Action.VIEW): [Role.COORDINATOR],
+    (Agent, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
+    (Agent, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
+    (Agent, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
+    (Agent, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
     (Contact, Action.CREATE): [Role.COORDINATOR],
     (Contact, Action.UPDATE): [Role.COORDINATOR],
     (Contact, Action.DELETE): [Role.COORDINATOR],

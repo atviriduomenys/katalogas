@@ -2488,7 +2488,7 @@ def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_d
     )
 
 @pytest.mark.django_db
-def test_structure_models_props_and_enums_with_visibility_status_eli(app: DjangoTestApp):
+def test_structure_models_props_and_enums_with_visibility_status_eli(app: DjangoTestApp, setup_default_status_data):
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
         '1,example,,,,,,,,,,,,,,,,\n'

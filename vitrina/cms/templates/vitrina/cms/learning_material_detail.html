@@ -3,7 +3,67 @@
 
 {% block current_title %}{{ object.topic }}{% endblock %}
 
-{% block head %}{% endblock %}
+{% block head %}
+<style>
+.file-download-section {
+    background-color: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 6px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.file-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.5rem;
+    margin: 0.25rem 0;
+    background: white;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+}
+
+.file-info {
+    display: flex;
+    align-items: center;
+    flex-grow: 1;
+}
+
+.file-icon {
+    margin-right: 0.75rem;
+    font-size: 1.2rem;
+}
+
+.file-details h6 {
+    margin: 0;
+    font-weight: 600;
+}
+
+.file-size {
+    font-size: 0.85rem;
+    color: #6c757d;
+    margin: 0;
+}
+
+.download-btn {
+    margin-left: 1rem;
+}
+
+@media (max-width: 768px) {
+    .file-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .download-btn {
+        margin-left: 0;
+        margin-top: 0.5rem;
+        width: 100%;
+    }
+}
+</style>
+{% endblock %}
 
 {% block content %}
     <div class="columns">
@@ -21,16 +81,68 @@
                         <br/>
                         {{ object.description|safe }}
                     </div>
-                     {% if files %}
-                        <div class="m-t-sm m-b-sm is-bold">{% translate "Prie mokymo medžiagos pridėti failai" %}:</div>
-                        <div>
-                            {% for file in files %}
-                                <a href="{{ file.file.url }}" download class="button is-primary is-small m-b-xs">{{ file.filename_without_path }}</a>
+
+                    <!-- File Downloads Section -->
+                    {% if object.files.all %}
+                        <div class="file-download-section">
+                            <h5 class="title is-5 mb-3">
+                                <span class="icon">
+                                    <i class="fas fa-paperclip"></i>
+                                </span>
+                                {% translate "Prie mokymo medžiagos pridėti failai" %}
+                            </h5>
+
+                            {% for file in object.files.all %}
+                                <div class="file-item">
+                                    <div class="file-info">
+                                        <span class="file-icon">
+                                            {% if file.file.name|slice:"-4:" == ".pdf" %}
+                                                <i class="fas fa-file-pdf" style="color: #dc3545;"></i>
+                                            {% elif file.file.name|slice:"-4:" == ".doc" or file.file.name|slice:"-5:" == ".docx" %}
+                                                <i class="fas fa-file-word" style="color: #007bff;"></i>
+                                            {% elif file.file.name|slice:"-4:" == ".xls" or file.file.name|slice:"-5:" == ".xlsx" %}
+                                                <i class="fas fa-file-excel" style="color: #28a745;"></i>
+                                            {% elif file.file.name|slice:"-4:" == ".ppt" or file.file.name|slice:"-5:" == ".pptx" %}
+                                                <i class="fas fa-file-powerpoint" style="color: #fd7e14;"></i>
+                                            {% elif file.file.name|slice:"-4:" == ".zip" or file.file.name|slice:"-4:" == ".rar" %}
+                                                <i class="fas fa-file-archive" style="color: #6f42c1;"></i>
+                                            {% elif file.file.name|slice:"-4:" == ".jpg" or file.file.name|slice:"-4:" == ".png" or file.file.name|slice:"-4:" == ".gif" %}
+                                                <i class="fas fa-file-image" style="color: #20c997;"></i>
+                                            {% else %}
+                                                <i class="fas fa-file" style="color: #6c757d;"></i>
+                                            {% endif %}
+                                        </span>
+                                        <div class="file-details">
+                                            <h6>
+                                                {% if file.name %}
+                                                    {{ file.name }}
+                                                {% else %}
+                                                    {{ file.file.name|cut:"learning-material-files/" }}
+                                                {% endif %}
+                                            </h6>
+                                            <p class="file-size">
+                                                {{ file.file.size|filesizeformat }}
+                                                • {% translate "Įkeltas" %}: {{ file.uploaded_at|date:"SHORT_DATE_FORMAT" }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <a href="{{ file.file.url }}"
+                                       download="{% if file.name %}{{ file.name }}{% else %}{{ file.file.name|cut:'learning-material-files/' }}{% endif %}"
+                                       class="button is-primary is-small download-btn"
+                                       title="{% translate 'Atsisiųsti failą' %}">
+                                        <span>{% translate "Atsisiųsti" %}</span>
+                                    </a>
+                                </div>
                             {% endfor %}
+
+                            <div class="has-text-grey is-size-7 mt-3">
+                                <i class="fas fa-info-circle"></i>
+                                {% translate "Spustelėkite atsisiųsti mygtuką, kad išsaugotumėte failą savo kompiuteryje" %}
+                            </div>
                         </div>
                     {% endif %}
                     {% if object.video_url %}
-                        <figure>
+                        <figure class="mt-4">
                             <iframe class="has-ratio" style="width:800px;height:640px" src="https://www.youtube.com/embed/{{ object.video_url }}">
                             </iframe>
                         </figure>
@@ -42,4 +154,3 @@
         </div>
     </div>
 {% endblock %}
-{% block scripts %}{% endblock %}

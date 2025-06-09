@@ -203,6 +203,21 @@ class LearningMaterial(models.Model):
         return self.topic
 
 
+class LearningMaterialFile(models.Model):
+    learning_material = models.ForeignKey(LearningMaterial, on_delete=models.CASCADE, related_name="files")
+    file = models.FileField(upload_to="learning-material-files/")
+    name = models.CharField(max_length=255, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if self.name and len(self.name) > 100:
+            self.name = self.name[:100]
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name or self.file.name
+
+
 class NewsItem(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

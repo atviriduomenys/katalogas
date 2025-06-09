@@ -2553,3 +2553,91 @@ def test_structure_models_props_and_enums_with_visibility_status_eli(app: Django
 
     assert prop_enum.count() == 1
     assert list(prop_enum[0].enumitem_set.values_list('metadata__eli', 'metadata__visibility', 'metadata__status')) == [('https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1', Metadata.PROTECTED, deprecated_status_id)]
+
+@pytest.mark.django_db
+def test_structure_with_property_level_higher_then_model(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        '1,example,,,,,,,,,,,,,,,,\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\n'
+        ',,,,,,,,,,,,,,,,,\n'
+        '3,,,,Pavadinimas,,,id,,,4,,package,protected,,,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,4,,public,protected,,,ID,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert list(
+        Comment.objects.filter(
+            type=Comment.STRUCTURE_ERROR,
+            content_type=ContentType.objects.get_for_model(Model),
+        ).values_list('body', flat=True)
+    ) == [
+               'Duomenų lauko "id" metaduomenų matomumo lygis "public" '
+               'negali būti aukštesnis už modelio metaduomenų matomumo lygį "package". '
+    ]
+
+@pytest.mark.django_db
+def test_structure_with_enum_level_higher_then_property(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        '1,example,,,,,,,,,,,,,,,,\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\n'
+        ',,,,,,,,,,,,,,,,,\n'
+        '3,,,,Pavadinimas,,,id,,,4,,package,protected,,,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,4,,package,protected,,,ID,\n'
+        '5,,,,,class,integer,,,,4,,package,protected,,,class,\n'
+        '6,,,,,,enum,,1,,4,,public,protected,,,Class One,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert list(
+        Comment.objects.filter(
+            type=Comment.STRUCTURE_ERROR,
+            content_type=ContentType.objects.get_for_model(Property),
+        ).values_list('body', flat=True)
+    ) == [
+               'Duomenų reikšmės "Class One" metaduomenų matomumo lygis "public" '
+               'negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "package". '
+    ]
+
+@pytest.mark.django_db
+def test_structure_with_enum_level_higher_then_model(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        '1,example,,,,,,,,,,,,,,,,\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,\n'
+        ',,,,,,,,,,,,,,,,,\n'
+        '3,,,,Pavadinimas,,,id,,,4,,package,protected,,,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,4,,package,protected,,,ID,\n'
+        '5,,,,,class,integer,,,,4,,,protected,,,class,\n'
+        '6,,,,,,enum,,1,,4,,public,protected,,,Class One,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert list(
+        Comment.objects.filter(
+            type=Comment.STRUCTURE_ERROR,
+            content_type=ContentType.objects.get_for_model(Property),
+        ).values_list('body', flat=True)
+    ) == [
+               'Duomenų reikšmės "Class One" metaduomenų matomumo lygis "public" '
+               'negali būti aukštesnis už duomenų modelio metaduomenų matomumo lygį "package". '
+    ]

@@ -815,8 +815,13 @@ def _read_enum(
 
     enum.meta = last
 
-    model_visibility = _parse_visibility(state.model.visibility)
-    property_visibility = _parse_visibility(enum.meta.visibility)
+    model_visibility = None
+    property_visibility = None
+    
+    if state.model:
+        model_visibility = _parse_visibility(state.model.visibility)
+    if enum.meta:
+        property_visibility = _parse_visibility(enum.meta.visibility)
     enum_visibility = _parse_visibility(enum.visibility)
 
     if property_visibility is not None and enum_visibility is not None and property_visibility < enum_visibility:

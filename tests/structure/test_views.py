@@ -3322,7 +3322,7 @@ def test_property_create__higher_visibility_with_error(app: DjangoTestApp):
     form["type"] = "any"
     resp = form.submit()
     assert list(resp.context["form"].errors.values()) == [
-        ["Metaduomenų matomumas 'protected' negali būti didesnis nei modelio matomumas 'private'."]
+        ["Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų modelio matomumas 'private'."]
     ]
 
 

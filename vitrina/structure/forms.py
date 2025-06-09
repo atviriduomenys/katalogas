@@ -123,7 +123,7 @@ class EnumForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
-        help_text=_("Savybė nurodanti modelio metaduomenų matomumo ir prieinamumo lygį. "),
+        help_text=_("Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį. "),
     )
     eli = forms.URLField(
         label=_("Europos teisės akto identifikatorius (ELI)"),
@@ -240,16 +240,30 @@ class EnumForm(forms.ModelForm):
         visibility = self.cleaned_data.get("visibility")
         if visibility == "None":
             return None
+        visibility = int(visibility)
+        visibility_str = _get_visibility(visibility)
+
         if metadata := self.prop.metadata.first():
-            if int(visibility) > metadata.visibility:
-                property_visibility = _get_visibility(metadata.visibility)
-                enum_visibility = _get_visibility(int(visibility))
-                raise ValidationError(
-                    _(
-                        f"Metaduomenų matomumas '{enum_visibility}' negali būti didesnis nei duomenų lauko matomumas '{property_visibility}'."
+            if metadata.visibility is None:
+                model_metadata = self.prop.model.metadata.first()
+                if model_metadata and model_metadata.visibility is not None:
+                    if visibility > model_metadata.visibility:
+                        model_visibility_str = _get_visibility(model_metadata.visibility)
+                        raise ValidationError(
+                            _(
+                                "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų modelio matomumas '{1}'."
+                            ).format(visibility_str, model_visibility_str)
+                        )
+            else:
+                if visibility > metadata.visibility:
+                    property_visibility_str = _get_visibility(metadata.visibility)
+                    raise ValidationError(
+                        _(
+                            "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų lauko matomumas '{1}'."
+                        ).format(visibility_str, property_visibility_str)
                     )
-                )
-        return int(visibility)
+
+        return visibility
 
 
 MODEL_LEVEL_CHOICES = (
@@ -483,7 +497,7 @@ class ModelCreateForm(forms.ModelForm):
         required=False,
         widget=forms.RadioSelect,
         choices=VISIBILITY_LEVEL_CHOICES,
-        help_text=_("Savybė nurodanti modelio metaduomenų matomumo ir prieinamumo lygį."),
+        help_text=_("Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį."),
     )
     eli = forms.URLField(
         label=_("Europos teisės akto identifikatorius (ELI)"),
@@ -725,10 +739,12 @@ class ModelCreateForm(forms.ModelForm):
         if visibility == "None":
             return None
 
-        if int(visibility) == Metadata.VISIBILITY_PUBLIC and not uri:
+        visibility = int(visibility)
+
+        if visibility == Metadata.VISIBILITY_PUBLIC and not uri:
             raise ValidationError(
                 _(
-                    "URI stulpelis turi būti užpildytas pasirenkant šį metaduomenų matomumo lygį."
+                    "Stulpelis 'Klasė' turi būti užpildytas pasirenkant šį metaduomenų matomumo lygį."
                 )
             )
 
@@ -1242,14 +1258,18 @@ class PropertyForm(forms.ModelForm):
         visibility = self.cleaned_data.get("visibility")
         if visibility == "None":
             return None
+        visibility = int(visibility)
+        visibility_str = _get_visibility(visibility)
+
         if metadata := self.model.metadata.first():
+            if metadata.visibility is None:
+                return visibility
             if int(visibility) > metadata.visibility:
-                model_visibility = _get_visibility(metadata.visibility)
-                property_visibility = _get_visibility(int(visibility))
+                model_visibility_str = _get_visibility(metadata.visibility)
                 raise ValidationError(
                     _(
-                        f"Metaduomenų matomumas '{property_visibility}' negali būti didesnis nei modelio matomumas '{model_visibility}'."
-                    )
+                        "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų modelio matomumas '{1}'."
+                    ).format(visibility_str, model_visibility_str)
                 )
         return int(visibility)
 

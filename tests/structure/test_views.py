@@ -3295,7 +3295,7 @@ def test_model_create_with_public_visibility_without_uri_with_error(app: DjangoT
     form["visibility"] = Metadata.VISIBILITY_PUBLIC
     resp = form.submit()
     assert list(resp.context["form"].errors.values()) == [
-        ["URI stulpelis turi būti užpildytas pasirenkant šį metaduomenų matomumo lygį."]
+        ["Stulpelis 'Klasė' turi būti užpildytas pasirenkant šį metaduomenų matomumo lygį."]
     ]
 
 
@@ -3367,5 +3367,49 @@ def test_property_enum_item_create__higher_visibility_with_error(app: DjangoTest
     assert list(resp.context["form"].errors.values()) == [
         [
             "Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų lauko matomumas 'private'."
+        ]
+    ]
+
+@pytest.mark.django_db
+def test_property_enum_item_create__higher_visibility_then_model_with_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+    )
+    form = app.get(
+        reverse("enum-create", args=[dataset.pk, model.name, prop.name])
+    ).forms["enum-form"]
+    form["value"] = 2
+    form["source"] = 2
+    form["access"] = Metadata.OPEN
+    form["title"] = "Test value"
+    form["description"] = "For testing"
+    form["visibility"] = Metadata.PROTECTED
+    resp = form.submit()
+    assert list(resp.context["form"].errors.values()) == [
+        [
+            "Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų modelio matomumas 'private'."
         ]
     ]

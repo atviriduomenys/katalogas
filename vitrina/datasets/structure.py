@@ -723,8 +723,8 @@ def _read_property(
     if model_visibility is not None and prop_visibility is not None and model_visibility < prop_visibility:
             prop.errors.append(
                 _(
-                    f'Duomenų lauko "{name}" metaduomenų matomumo lygis "{prop.visibility}" negali būti aukštesnis už modelio metaduomenų matomumo lygį "{prop.model.visibility}". '
-                )
+                    'Duomenų lauko "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už modelio metaduomenų matomumo lygį "{2}". '
+                ).format(name, prop.visibility, prop.model.visibility)
             )
     prop.model.properties[name] = prop
 
@@ -814,13 +814,22 @@ def _read_enum(
             last = node
 
     enum.meta = last
-    property_visibility = _parse_visibility(enum.visibility)
-    enum_visibility = _parse_visibility(enum.meta.visibility)
+
+    model_visibility = _parse_visibility(state.model.visibility)
+    property_visibility = _parse_visibility(enum.meta.visibility)
+    enum_visibility = _parse_visibility(enum.visibility)
+
     if property_visibility is not None and enum_visibility is not None and property_visibility < enum_visibility:
             enum.errors.append(
                 _(
-                    f'Duomenų reikšmės "{enum.title}" metaduomenų matomumo lygis "{enum.visibility}" negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{enum.meta.visibility}". '
-                )
+                    'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{2}". '
+                ).format(enum.title, enum.visibility, enum.meta.visibility)
+            )
+    elif model_visibility is not None and enum_visibility is not None and model_visibility < enum_visibility:
+            enum.errors.append(
+                _(
+                    'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų modelio metaduomenų matomumo lygį "{2}". '
+                ).format(enum.title, enum.visibility, state.model.visibility)
             )
     if enum.meta.enums.get(name):
         if enum.prepare in [e.prepare for e in enum.meta.enums[name]]:

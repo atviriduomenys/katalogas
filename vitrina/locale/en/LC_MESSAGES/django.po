@@ -3106,9 +3106,6 @@ msgstr ""
 msgid "Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."
 msgstr "Property indicating the data field name, a model attribute."
 
-msgid "ELI nuoroda"
-msgstr "ELI link"
-
 msgid "Duomenų šaltinis"
 msgstr "Dataset distribution"
 

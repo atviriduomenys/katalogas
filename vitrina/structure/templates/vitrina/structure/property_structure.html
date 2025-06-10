@@ -151,13 +151,15 @@
             {% endif %}
 
             {% if metadata.eli %}
-                <span class="tag is-white is-white has-tooltip"
-                      data-tooltip=" {{metadata.eli}} ">
-                        <span class="ml-3 icon is-small has-text-grey">
-                            <i class="fas fa-link mr-1"></i>
-                            <span>ELI</span>
-                        </span>
-                </span>
+                <a href="{{ metadata.eli }}"
+                   class="tag is-white has-tooltip"
+                   data-tooltip="{% translate 'ELI nuoroda' %}"
+                   target="_blank" rel="noopener noreferrer">
+                  <span class="ml-3 icon is-small has-text-grey">
+                    <i class="fas fa-link mr-1"></i>
+                    <span>ELI</span>
+                  </span>
+                </a>
             {% endif %}
 
         </div>
@@ -284,13 +286,15 @@
                         </div>
                         <div class="column is-1">
                             {% if enum_meta.eli %}
-                                <span class="ml-3 tag is-white is-white">
-                                        <span class="ml-3 icon is-small has-text-grey has-tooltip"
-                                              data-tooltip=" {{enum_meta.eli}} ">
-                                            <i class="fas fa-link"></i>
-                                            <span>ELI</span>
-                                        </span>
-                                </span>
+                               <a href="{{ enum_meta.eli }}"
+                                   class="tag is-white has-tooltip"
+                                   data-tooltip="{% translate 'ELI nuoroda' %}"
+                                   target="_blank" rel="noopener noreferrer">
+                                  <span class="ml-3 icon is-small has-text-grey">
+                                    <i class="fas fa-link mr-1"></i>
+                                    <span>ELI</span>
+                                  </span>
+                               </a>
                             {% endif %}
                         </div>
                         <div class="column is-1">

@@ -3272,7 +3272,7 @@ class OrganizationAgentsDetailView(BaseOrganizationView):
         )
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.VIEW, Agent)
+        return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -3302,7 +3302,7 @@ class OrganizationAgentsCreateView(CreateView, BaseOrganizationView):
         self.object = None
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.CREATE, Agent)
+        return has_perm(self.request.user, Action.CREATE, Agent, self.organization)
 
     def form_valid(self, form: ModelForm) -> HttpResponse:
         title = form.cleaned_data["title"]
@@ -3365,7 +3365,7 @@ class OrganizationAgentsUpdateView(UpdateView, BaseOrganizationView):
         self.object = get_object_or_404(Agent, pk=kwargs["pk"], organization=self.organization, is_archived=False)
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, Agent)
+        return has_perm(self.request.user, Action.UPDATE, Agent, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -3397,7 +3397,7 @@ class OrganizationAgentsDeleteView(DeleteView, BaseOrganizationView):
         self.object = get_object_or_404(Agent, pk=kwargs["pk"], organization=self.organization, is_archived=False)
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.DELETE, Agent)
+        return has_perm(self.request.user, Action.DELETE, Agent, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)

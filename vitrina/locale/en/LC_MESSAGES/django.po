@@ -156,6 +156,35 @@ msgstr "Geoportal Access right"
 msgid "Geoportalo prieigos teisės"
 msgstr "Geoportal access rights"
 
+msgid ""
+"Savybė nurodanti prieigos prie metaduomenų lygį. DCAT-AP rekomenduoja "
+"naudoti šias klasifikatoriaus reikšmes: <br>- develop <br>- completed <br>- "
+"discont <br>- deprecated <br>- withdrawn <br>"
+msgstr ""
+"A property indicating the level of access to metadata. DCAT-AP recommends "
+"using the following classifier values: <br>- develop <br>- completed <br>- "
+"discont <br>- deprecated <br>- withdrawn <br>"
+
+msgid "Nuoroda į kontroliuojamą EU žodyną"
+msgstr "Link to a controlled EU URI"
+
+msgid ""
+"Būsenos lauko pavadinimas. Šis pavadinimas yra skirtas skaityti žmonėms ir "
+"bus rodomas duomenų laukų sąrašuose ir antraštėse. "
+msgstr ""
+"Status field name. This name is intended for human readability and will be "
+"displayed in data field lists and headers. "
+
+msgid ""
+"Būsenos lauko aprašymas. Šis aprašymas yra skirtas skaityti žmonėms ir bus "
+"rodomas duomenų laukų sąrašuose ir antraštėse. "
+msgstr ""
+"Status field description. This description is intended for human readability "
+"and will be displayed in data field lists and headers. "
+
+msgid "Būsenos"
+msgstr "Statuses"
+
 msgid "ADP"
 msgstr "ADP"
 
@@ -830,6 +859,27 @@ msgstr "Geoportal API format value"
 
 msgid "Geoportalo API formato reikšmės"
 msgstr "Geoportal API format values"
+
+msgid ""
+"Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
+"aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "
+msgstr ""
+"Data field \"{0}\" metadata visibility level \"{1}\" must not "
+"be higher than the model metadata visibility level \"{2}\". "
+
+msgid ""
+"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
+"aukštesnis už duomenų lauko metaduomenų matomumo lygį \"{2}\". "
+msgstr ""
+"Enum field \"{0}\" metadata visibility level \"{1}\" "
+"must not be higher than the property metadata visibility level \"{2}\" . "
+
+msgid ""
+"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
+"aukštesnis už duomenų modelio metaduomenų matomumo lygį \"{2}\". "
+msgstr ""
+"Enum field \"{0}\" metadata visibility level \"{1}\" "
+"must not be higher than the model metadata visibility level \"{2}\" . "
 
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
@@ -2913,6 +2963,33 @@ msgstr "Statistics link"
 msgid "Statistikos nuorodos"
 msgstr "Statistics links"
 
+msgid "Nepasirinkta"
+msgstr "Not selected"
+
+msgid "Metaduomenys nepublikuojami (private)"
+msgstr "Metadata not published (private)"
+
+msgid "Naudojamas informacinės sistemos (IS) lygmeniu (protected)"
+msgstr "Used at information system (IS) level (protected)"
+
+msgid ""
+"Nėra jokios Informacinės sistemos, kurioje tvarkomi duomenys arba "
+"Informacinė sistema nėra registruota Kataloge"
+msgstr ""
+"There is no Information system where the data is processed or The "
+"Information system is not registered in the Catalogue"
+
+msgid "Naudojamas LT lygmeniu (package)"
+msgstr "Used at LT level (package)"
+
+msgid ""
+"Įteisintas Informacinės sistemos nuostatuose ir kituose LT teisės aktuose"
+msgstr ""
+"Validated in the Information system regulations and other LT legislation acts"
+
+msgid "Naudojamas EU lygmeniu (public)"
+msgstr "Used at EU level (public)"
+
 msgid "Fiksuotos reikšmės vertė."
 msgstr "Enum value."
 
@@ -2921,6 +2998,21 @@ msgstr "Source"
 
 msgid "Fiksuotos reikšmės vertė šaltinyje."
 msgstr "Enum source"
+
+msgid ""
+"Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį "
+"teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> Pateikti "
+"konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "
+"\"#17.2\" <br>Tais atvejais, kai yra keli dokumentai su priedais:  "
+"\"#priedas1/17.2\"  \"17.2/17.2.5\", kur \"priedas1\" yra dokumento failo "
+"pavadinimas."
+msgstr ""
+"A standard for identifying legal acts, allowing not only the legal document "
+"itself to be identified, but also a specific location within the document. "
+"<br>To provide a specific location in the legislative document: after the # "
+"provide a specific location: \"#17.2\" <br>In cases where there are several "
+"documents with annexes: \"#attachment1/17.2\" \"17.2/17.2.5\" where "
+"\"attachment1\" is the name of the document's file. "
 
 msgid ""
 "Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės "
@@ -2933,11 +3025,27 @@ msgstr "Dataset title"
 msgid "Duomenų rinkinio ar vardų erdvės aprašymas."
 msgstr "Dataset or namespace description."
 
+msgid "Metaduomenų matomumas"
+msgstr "Metadata visibility"
+
+msgid "Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį."
+msgstr "A property indicating the level of visibility and availability of metadata for model fields."
+
+msgid "Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."
+msgstr "A property indicating the lifecycle state of a data model metadata."
+
 msgid "Reikšmė turi būti integer tipo."
 msgstr "Value must be integer."
 
 msgid "Aprašymas neatitinka Markdown formato."
 msgstr "Description doesn't match Markdown format."
+
+msgid ""
+"Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų lauko matomumas "
+"'{1}'."
+msgstr ""
+"The visibility of the metadata '{0}' should not be greater than the visibility of "
+"the data field '{1}'."
 
 msgid "Nėra per ką sieti"
 msgstr "Nothing to link to"
@@ -2994,6 +3102,9 @@ msgstr ""
 
 msgid "Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."
 msgstr "Property indicating the data field name, a model attribute."
+
+msgid "ELI nuoroda"
+msgstr "ELI link"
 
 msgid "Duomenų šaltinis"
 msgstr "Dataset distribution"
@@ -3299,6 +3410,10 @@ msgstr ""
 msgid "Netinkami matavimo vienetai."
 msgstr "Invalid units of measure."
 
+msgid "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų modelio matomumas '{1}'."
+msgstr ""
+"Metadata visibility '{0}' should not be higher than data model visibility '{1}'."
+
 msgid "Formulė"
 msgstr "Formula"
 
@@ -3361,6 +3476,9 @@ msgstr "Calculated maturity level"
 
 msgid "Prieiga"
 msgstr "Access"
+
+msgid "Europos teisės akto identifikatorius (ELI)"
+msgstr "European Legislation Identifier (ELI)"
 
 msgid "Žodyno atitikmuo"
 msgstr "Uri"
@@ -3457,6 +3575,18 @@ msgstr "No released version."
 
 msgid "Peržiūrėti pilną keitimų sąrašą"
 msgstr "See full change list"
+
+msgid "Metaduomenys nepublikuojami"
+msgstr "Metadata is not published"
+
+msgid "Naudojamas informacinės sistemos (IS) lygmeniu"
+msgstr "Used at information system (IS) level"
+
+msgid "Naudojamas LT lygmeniu"
+msgstr "Used at LT level"
+
+msgid "Naudojamas EU lygmeniu"
+msgstr "Used at EU level"
 
 msgid "rengiama"
 msgstr "preparing"

@@ -616,15 +616,15 @@ def test_private_model(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,private,dct:title,,\n'
-        ',,,,City,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,private,dct:identifier,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,private,dct:title,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,,,private,,dct:title,,\n'
+        ',,,,City,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -647,15 +647,15 @@ def test_private_model(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_private_model_with_access(app: DjangoTestApp):
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,private,dct:title,,\n'
-        ',,,,City,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,private,dct:identifier,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,private,dct:title,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
+        ',,,,City,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -688,12 +688,12 @@ def test_private_property(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,private,dct:title,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -718,12 +718,12 @@ def test_private_property(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_private_property_with_access(app: DjangoTestApp):
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,private,dct:title,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -757,13 +757,13 @@ def test_private_comment(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,\n'
-        ',,,,,,comment,type,,,,public,,Public comment,\n'
-        ',,,,,,comment,type,,,,private,,Private comment,\n'
-        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,\n'
+        ',,,,,,comment,type,,,,,,public,,,Public comment,\n'
+        ',,,,,,comment,type,,,,,,private,,,Private comment,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -783,13 +783,13 @@ def test_private_comment(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_private_comment_with_access(app: DjangoTestApp):
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',,,,,,prefix,dct,,,,,http://purl.org/dc/terms/,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
         ',,,,Country,,,,,,,,,,\n'
-        ',,,,,,comment,type,,,,public,,Public comment,\n'
-        ',,,,,,comment,type,,,,private,,Private comment,\n'
-        ',,,,,id,integer,,,,5,open,dct:identifier,Identifikatorius,\n'
+        ',,,,,,comment,type,,,,public,,,,,Public comment,\n'
+        ',,,,,,comment,type,,,,private,,,,,Private comment,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -3182,3 +3182,234 @@ def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
     app.set_user(user)
     response = app.get(reverse('getall-api', args=[dataset.pk, model.name]))
     assert response.context['model'] == model
+
+
+@pytest.mark.django_db
+def test_private_visibility_without_access(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,private,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
+        ",,,,,title,string,,,,5,,private,open,,dct:title,,\n"
+        ",,,,City,,,,,,,,protected,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
+        ",,,,,title,string,,,,5,,,open,dct:title,,,\n"
+        ",,,,,,enum,,1,,4,private,package,protected,,,Class One,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest))
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk]))
+    assert list(resp.context["models"].values_list("metadata__name", flat=True)) == [
+        "datasets/gov/ivpk/adp/City"
+    ]
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "Country"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "City"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_private_visibility_with_access(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,private,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
+        ",,,,,title,string,,,,5,,private,open,,dct:title,,\n"
+        ",,,,City,,,,,,,,protected,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
+        ",,,,,title,string,,,,5,,,open,dct:title,,,\n"
+        ",,,,,,enum,,1,,4,private,package,protected,,,Class One,\n"
+    )
+
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest))
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+
+    resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk]))
+    assert list(resp.context["models"].values_list("metadata__name", flat=True)) == [
+        "datasets/gov/ivpk/adp/City",
+        "datasets/gov/ivpk/adp/Country",
+    ]
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "Country"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "City"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_model_create_with_public_visibility_without_uri_with_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse("model-create", args=[dataset.pk])).forms["model-form"]
+    form["name"] = "Test"
+    form["visibility"] = Metadata.VISIBILITY_PUBLIC
+    resp = form.submit()
+    assert list(resp.context["form"].errors.values()) == [
+        ["Stulpelis 'Klasė' turi būti užpildytas pasirenkant šį metaduomenų matomumo lygį."]
+    ]
+
+
+@pytest.mark.django_db
+def test_property_create__higher_visibility_with_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE,
+    )
+    form = app.get(reverse("property-create", args=[dataset.pk, model.name])).forms[
+        "property-form"
+    ]
+    form["name"] = "property"
+    form["access"] = Metadata.OPEN
+    form["visibility"] = Metadata.PROTECTED
+    form["type"] = "any"
+    resp = form.submit()
+    assert list(resp.context["form"].errors.values()) == [
+        ["Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų modelio matomumas 'private'."]
+    ]
+
+
+@pytest.mark.django_db
+def test_property_enum_item_create__higher_visibility_with_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+        visibility=Metadata.PRIVATE,
+    )
+    form = app.get(
+        reverse("enum-create", args=[dataset.pk, model.name, prop.name])
+    ).forms["enum-form"]
+    form["value"] = 2
+    form["source"] = 2
+    form["access"] = Metadata.OPEN
+    form["title"] = "Test value"
+    form["description"] = "For testing"
+    form["visibility"] = Metadata.PROTECTED
+    resp = form.submit()
+    assert list(resp.context["form"].errors.values()) == [
+        [
+            "Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų lauko matomumas 'private'."
+        ]
+    ]
+
+@pytest.mark.django_db
+def test_property_enum_item_create__higher_visibility_then_model_with_error(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    model = ModelFactory()
+    dataset = model.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+    )
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+    )
+    form = app.get(
+        reverse("enum-create", args=[dataset.pk, model.name, prop.name])
+    ).forms["enum-form"]
+    form["value"] = 2
+    form["source"] = 2
+    form["access"] = Metadata.OPEN
+    form["title"] = "Test value"
+    form["description"] = "For testing"
+    form["visibility"] = Metadata.PROTECTED
+    resp = form.submit()
+    assert list(resp.context["form"].errors.values()) == [
+        [
+            "Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų modelio matomumas 'private'."
+        ]
+    ]

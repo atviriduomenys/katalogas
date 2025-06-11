@@ -9,7 +9,7 @@ from vitrina.classifiers.models import (
     GeoportalCategory,
     GeoportalFrequency,
     GeoportalLicence,
-    GeoportalAccessRights,
+    GeoportalAccessRights, Status,
 )
 
 
@@ -89,3 +89,10 @@ class GeoportalAccessRightsFactory(DjangoModelFactory):
 
     title = factory.Faker("catch_phrase")
     access_rights = GeoportalAccessRights.PUBLIC
+
+class StatusFactory(DjangoModelFactory):
+    class Meta:
+        model = Status
+        django_get_or_create = ("codename",)
+
+    codename = factory.Faker("word")

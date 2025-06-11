@@ -1,6 +1,7 @@
 from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.urls import reverse
 from django.utils.text import slugify
@@ -365,7 +366,13 @@ class Agent(UUIDBaseModel):
         blank=True,
         help_text=_("Nurodomas Agento kodinis pavadinimas."),
     )
-    object_type = models.CharField(max_length=64, choices=AgentType.choices, default=AgentType.SPINTA)
+    object_type = models.CharField(
+        verbose_name=_("Rūšis"),
+        max_length=64,
+        choices=AgentType.choices,
+        default=AgentType.SPINTA,
+        help_text=_('Nurodoma Agento rūšis t.y. ar bus naudojama "Spinta" ar kitas sprendimas.')
+    )
     is_open_data_published = models.BooleanField(
         verbose_name=_("Atviri duomenys publikuojami Saugykloje"),
         default=False,
@@ -415,8 +422,16 @@ class Agent(UUIDBaseModel):
         ]
 
     def save(self, *args, **kwargs) -> None:
-        self.codename = slugify(self.title).replace('-', '_')
+        self.codename = self.get_codename(self.title)
+
+        if not self.service.service:
+            raise ValidationError(_('Susietas duomenų išteklius turi būti "paslaugos" tipo.'))
+
         return super().save(*args, **kwargs)
 
     def __str__(self) -> str:
         return f"{self.title} ({self.codename})"
+
+    @staticmethod
+    def get_codename(title: str) -> str:
+        return slugify(title).replace('-', '_')

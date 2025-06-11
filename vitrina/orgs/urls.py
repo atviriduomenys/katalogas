@@ -29,6 +29,11 @@ from vitrina.orgs.views import (
     ContactDeleteView,
     create_remote_organization,
     check_organization,
+    OrganizationAgentsListView,
+    OrganizationAgentsCreateView,
+    OrganizationAgentsUpdateView,
+    OrganizationAgentsDeleteView,
+    OrganizationAgentsDetailView,
 )
 from vitrina.orgs.views import (
     OrganizationDetailView,
@@ -294,10 +299,29 @@ urlpatterns = [
     path(
         "orgs/remote-organization-check/", check_organization, name="check-organization"
     ),
-    # @GetMapping("/partner/register")
-    # @PostMapping("/partner/register")
-    # @GetMapping("/group")
-    # @GetMapping("/report")
-    # @PostMapping("/report")
-    # @GetMapping("/dictionary")
+    path(
+        "orgs/<int:organization_id>/agents/",
+        OrganizationAgentsListView.as_view(),
+        name="organization-agents-list",
+    ),
+    path(
+        "orgs/<int:organization_id>/agents/<uuid:pk>/",
+        OrganizationAgentsDetailView.as_view(),
+        name="organization-agents-detail",
+    ),
+    path(
+        "orgs/<int:organization_id>/agents/add/",
+        OrganizationAgentsCreateView.as_view(),
+        name="organization-agents-create",
+    ),
+    path(
+        "orgs/<int:organization_id>/agents/<uuid:pk>/update",
+        OrganizationAgentsUpdateView.as_view(),
+        name="organization-agents-update"
+    ),
+    path(
+        "orgs/<int:organization_id>/agents/<uuid:pk>/delete",
+        OrganizationAgentsDeleteView.as_view(),
+        name="organization-agents-delete"
+    ),
 ]

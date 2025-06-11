@@ -45,6 +45,7 @@ from vitrina.orgs.models import (
     Representative,
     RepresentativeRequest,
     Template,
+    Agent,
 )
 from vitrina.orgs.services import get_coordinators_count
 from vitrina.plans.models import Plan
@@ -1310,3 +1311,48 @@ class ContactUpdateForm(ModelForm):
             elif contact_type == "user":
                 return User.objects.get(pk=contact_id)
         return None
+
+
+class AgentForm(ModelForm):
+    class Meta:
+        model = Agent
+        fields = ["title", "is_enabled", "is_open_data_published", "open_data_publish_url", "object_type"]
+
+    def __init__(self, *args, **kwargs) -> None:
+        self.organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.attrs["novalidate"] = ""
+        self.helper.layout = Layout(
+            Field("title"),
+            Field("object_type"),
+            Field("is_enabled"),
+            Field("is_open_data_published"),
+            Field("open_data_publish_url"),
+            Submit(
+                "submit",
+                _("Sukurti") if self.instance._state.adding else _("Redaguoti"),
+                css_class="button is-primary",
+            ),
+        )
+
+    def clean(self) -> None:
+        cleaned_data = super().clean()
+        if cleaned_data.get("is_open_data_published") and not cleaned_data.get("open_data_publish_url"):
+            self.add_error(
+                "open_data_publish_url",
+                _('Šis laukas yra privalomas, jei nustatytas požymis "Atviri duomenys publikuojami Saugykloje".')
+            )
+
+        if (title := cleaned_data.get("title")) and self.organization:
+            existing_agent = Agent.objects.filter(
+                organization=self.organization, codename=Agent.get_codename(title)
+            ).exclude(
+                pk=self.instance.pk,
+            ).exists()
+            if existing_agent:
+                self.add_error(
+                    "title",
+                    _("Agentas su tokiu pavadinimu jau registruotas organizacijoje, pasirinkite kitą pavadinimą.")
+                )

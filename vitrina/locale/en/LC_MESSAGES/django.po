@@ -2812,9 +2812,6 @@ msgstr ""
 "storage. You must provide a direct link to the data. Smaller (5Mb or less) "
 "data files, can be stored inside the catalog"
 
-msgid "Duomenų paslauga"
-msgstr "Data service"
-
 msgid "Šaltinio pavadinimas"
 msgstr "Source title"
 

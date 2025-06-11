@@ -2,7 +2,6 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
-from webtest import Upload
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory

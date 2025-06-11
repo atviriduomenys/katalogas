@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-05-15 10:14+0300\n"
+"POT-Creation-Date: 2025-06-11 10:31+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1599,6 +1599,9 @@ msgstr "Subscription was created successfully"
 msgid "Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."
 msgstr "Found existing object subscription. It was updated successfully."
 
+msgid "Kita"
+msgstr "Other"
+
 msgid "organizacija"
 msgstr "organization"
 
@@ -1641,6 +1644,9 @@ msgstr "Data providers"
 
 msgid "Šablonas pakeistas sėkmingai."
 msgstr "Password was changed successfully"
+
+msgid "Agentai"
+msgstr "Agents"
 
 msgid "Organizations"
 msgstr "Organizations"
@@ -1833,6 +1839,70 @@ msgstr "Modified"
 
 msgid "Tekstas"
 msgstr "Rejected"
+
+msgid "Paskutinės sinchronizacijos data"
+msgstr "Date of last synchronization"
+
+msgid ""
+"Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."
+msgstr "Date when the last synchronization was attempted"
+
+msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
+msgstr "Was last synchronization successful?"
+
+msgid ""
+"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
+"klaidų."
+msgstr ""
+"Indicates whether the last synchronization was successful, i.e. if no errors "
+"were raised during it"
+
+msgid "Nurodomas Agento pavadinimas."
+msgstr "The agent's title"
+
+msgid "Nurodomas Agento kodinis pavadinimas."
+msgstr "The agent's codename"
+
+msgid "Atviri duomenys publikuojami Saugykloje"
+msgstr "Open data is published in Open Data Repository"
+
+msgid ""
+"Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų "
+"duomenų Saugyklą."
+msgstr ""
+"Specifies if the Agent additionally publishes `access=open` data to Open Data "
+"Repository"
+
+msgid "Atvirų duomenų publikavimo nuoroda"
+msgstr "Open data publish URL"
+
+msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
+msgstr "URL, where open data is published to"
+
+msgid "Agentas įjungtas"
+msgstr "Agent is enabled"
+
+msgid "Nurodoma, ar Agentas yra įjungtas ar išjungtas."
+msgstr "Indicates whether the agent is enabled or disabled"
+
+msgid "Agentas archyvuotas"
+msgstr "Agent is archived"
+
+msgid ""
+"Nurodo ar Agentas yra archyvuotas. Archyvuoti agentai nėra pasiekiami "
+"įprastiems platformos vartotojams"
+msgstr ""
+"Indicates, whether the Agent is archived. Archived agents are not available "
+"to regular platform users"
+
+msgid "Duomenų paslauga"
+msgstr "Data service"
+
+msgid "Nurodoma su Agentu susieta duomenų paslauga."
+msgstr "The data service associated with the agent"
+
+msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
+msgstr "The organization to which the agent is assigned"
 
 msgid "Galimi duomenų rinkiniai"
 msgstr "Assigned datasets"
@@ -2609,6 +2679,51 @@ msgstr "Edit request datasets"
 msgid "Geoportalo reikšmės"
 msgstr "Geoportal values"
 
+msgid "Nenurodyta"
+msgstr "Unspecified"
+
+msgid "Nėra identifikatoriaus"
+msgstr "No identifier"
+
+msgid ""
+"Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."
+msgstr "Data doesn't have field that would uniquely identify the object."
+
+msgid "Neunikalus identifikatorius"
+msgstr "Identifier is not unique"
+
+msgid ""
+"Duomenų laukas parinktas kaip identifikatorius nėra unikalus arba parinktas "
+"laukas nėra privalomas ir ne visi objektai gali turėti reikšmę."
+msgstr ""
+"The data field selected as an identifier is not unique, or the selected "
+"field is optional and not all objects can have a value."
+
+msgid "Nepatikimas identifikatorius"
+msgstr "Untrusted identifier"
+
+msgid ""
+"Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali "
+"keistis."
+msgstr ""
+"The values in the data field that is selected as an identifier can change."
+
+msgid "Patikimas identifikatorius"
+msgstr "Trusted identifier"
+
+msgid ""
+"Naudojamas patikimas lokalus identifikatorius, tačiau objektams nėra "
+"priskirtas globalus nekintantis identifikatorius."
+msgstr ""
+"A trusted locale identifier is used, but objects are not assigned a global "
+"static identifier."
+
+msgid "Globalus identifikatorius"
+msgstr "Global identifier"
+
+msgid "Objektams priskirtas globalus nekintantis identifikatorius."
+msgstr "Objects are assigned a global static identifier."
+
 msgid "Prieigos lygmuo"
 msgstr "Access"
 
@@ -2646,9 +2761,6 @@ msgstr ""
 "should be stored in n open data repository or by using other means of "
 "storage. You must provide a direct link to the data. Smaller (5Mb or less) "
 "data files, can be stored inside the catalog"
-
-msgid "Duomenų paslauga"
-msgstr "Data service"
 
 msgid "Šaltinio pavadinimas"
 msgstr "Source title"
@@ -2813,8 +2925,7 @@ msgstr "Enum source"
 msgid ""
 "Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės "
 "elementams."
-msgstr ""
-"The access level used as default for all elements of this namespace."
+msgstr "The access level used as default for all elements of this namespace."
 
 msgid "Duomenų rinkinio ar vardų erdvės pavadinimas."
 msgstr "Dataset title"
@@ -2827,51 +2938,6 @@ msgstr "Value must be integer."
 
 msgid "Aprašymas neatitinka Markdown formato."
 msgstr "Description doesn't match Markdown format."
-
-msgid "Nenurodyta"
-msgstr "Unspecified"
-
-msgid "Nėra identifikatoriaus"
-msgstr "No identifier"
-
-msgid ""
-"Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."
-msgstr "Data doesn't have field that would uniquely identify object."
-
-msgid "Neunikalus identifikatorius"
-msgstr "Not unique identifier"
-
-msgid ""
-"Duomenų laukas parinktas kaip identifikatorius nėra unikalus arba parinktas "
-"laukas nėra privalomas ir ne visi objektai gali turėti reikšmę."
-msgstr ""
-"The data field selected as an identifier is not unique, or the selected "
-"field is optional and not all objects can have a value."
-
-msgid "Nepatikimas identifikatorius"
-msgstr "Untrusted identifier"
-
-msgid ""
-"Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali "
-"keistis."
-msgstr ""
-"The values in the data field that is selected as an identifier can change."
-
-msgid "Patikimas identifikatorius"
-msgstr "Trusted identifier"
-
-msgid ""
-"Naudojamas patikimas lokalus identifikatorius, tačiau objektams nėra "
-"priskirtas globalus nekintantis identifikatorius."
-msgstr ""
-"A trusted locale identifier is used, but objects are not assigned a global "
-"static identifier."
-
-msgid "Globalus identifikatorius"
-msgstr "Global identifier"
-
-msgid "Objektams priskirtas globalus nekintantis identifikatorius."
-msgstr "Objects are assigned a global static identifier."
 
 msgid "Nėra per ką sieti"
 msgstr "Nothing to link to"

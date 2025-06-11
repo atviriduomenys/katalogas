@@ -1,3 +1,4 @@
+import secrets
 from http import HTTPStatus
 
 import pytest
@@ -142,10 +143,14 @@ def test_update_view(app: DjangoTestApp, representative_user: User, organization
 @pytest.mark.django_db
 def test_delete_view(app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):
     app.set_user(representative_user)
+    ApiKey.objects.create(api_key=hash_api_key(secrets.token_urlsafe()), enabled=True, agent=agent)
     url = reverse("organization-agents-delete", args=[organization.pk, agent.pk])
 
     response = app.post(url)
 
     assert response.status_code == HTTPStatus.FOUND
     assert Agent.objects.count() == 1
-    assert Agent.objects.first().is_archived is True
+    agent = Agent.objects.first()
+    assert agent.is_archived is True
+    assert agent.apikey.deleted is True
+    assert agent.apikey.deleted_on is not None

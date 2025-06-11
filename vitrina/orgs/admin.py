@@ -381,9 +381,14 @@ class AgentAdmin(admin.ModelAdmin):
         verbose_name = _("Agentas")
         verbose_name_plural = _("Agentai")
 
+    list_display = ["agent_name", "organization"]
     autocomplete_fields = ["service", "organization"]
-    search_fields = ["service", "organization"]
+    search_fields = ["codename", "service", "organization"]
     readonly_fields = ["codename", "synchronized_at" , "is_last_sync_successful"]
+
+    @staticmethod
+    def agent_name(obj: Agent) -> str:
+        return str(obj)
 
 
 site = SupervisorAdminSite(name="supervisor_admin")

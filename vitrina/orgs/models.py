@@ -9,7 +9,7 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.models import UUIDBaseModel
-from vitrina.orgs import AgentClassification
+from vitrina.orgs import AgentType
 from vitrina.orgs.managers import PublicOrganizationManager
 
 from django.utils.translation import gettext_lazy as _
@@ -365,7 +365,7 @@ class Agent(UUIDBaseModel):
         blank=True,
         help_text=_("Nurodomas Agento kodinis pavadinimas."),
     )
-    classification = models.CharField(max_length=64, choices=AgentClassification.choices, default=AgentClassification.SPINTA)
+    object_type = models.CharField(max_length=64, choices=AgentType.choices, default=AgentType.SPINTA)
     is_open_data_published = models.BooleanField(
         verbose_name=_("Atviri duomenys publikuojami Saugykloje"),
         default=False,
@@ -417,3 +417,6 @@ class Agent(UUIDBaseModel):
     def save(self, *args, **kwargs) -> None:
         self.codename = slugify(self.title).replace('-', '_')
         return super().save(*args, **kwargs)
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.codename})"

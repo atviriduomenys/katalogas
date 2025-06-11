@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_orgs', '0003_auto_20250604_1258'),
+        ('vitrina_orgs', '0003_auto_20250611_1020'),
         ('vitrina_api', '0005_create_redirects'),
     ]
 

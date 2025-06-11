@@ -1316,14 +1316,17 @@ class ContactUpdateForm(ModelForm):
 class AgentForm(ModelForm):
     class Meta:
         model = Agent
-        fields = ["title", "is_enabled", "is_open_data_published", "open_data_publish_url"]
+        fields = ["title", "is_enabled", "is_open_data_published", "open_data_publish_url", "object_type"]
 
     def __init__(self, *args, **kwargs) -> None:
+        self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
+
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.layout = Layout(
             Field("title"),
+            Field("object_type"),
             Field("is_enabled"),
             Field("is_open_data_published"),
             Field("open_data_publish_url"),
@@ -1341,3 +1344,15 @@ class AgentForm(ModelForm):
                 "open_data_publish_url",
                 _('Šis laukas yra privalomas, jei nustatytas požymis "Atviri duomenys publikuojami Saugykloje".')
             )
+
+        if (title := cleaned_data.get("title")) and self.organization:
+            existing_agent = Agent.objects.filter(
+                organization=self.organization, codename=Agent.get_codename(title)
+            ).exclude(
+                pk=self.instance.pk,
+            ).exists()
+            if existing_agent:
+                self.add_error(
+                    "title",
+                    _("Agentas su tokiu pavadinimu jau registruotas organizacijoje, pasirinkite kitą pavadinimą.")
+                )

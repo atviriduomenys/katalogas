@@ -49,7 +49,7 @@ from vitrina.helpers import (
     prepare_email_by_identifier,
 )
 from vitrina.api.models import ApiKey, ApiScope
-from vitrina.datasets.models import Dataset, Contact
+from vitrina.datasets.models import Dataset, Contact, Type
 from vitrina.helpers import (
     get_current_domain,
     send_email_with_logging,
@@ -3212,6 +3212,11 @@ class BaseOrganizationView(LoginRequiredMixin, PermissionRequiredMixin, Template
         super().setup(request, *args, **kwargs)
         self.organization = get_object_or_404(Organization, pk=kwargs.get(self.organization_url_kwarg))
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["organization"] = self.organization
+        return kwargs
+
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
         context.update({
@@ -3320,6 +3325,7 @@ class OrganizationAgentsCreateView(CreateView, BaseOrganizationView):
             endpoint_description_type=Format.objects.filter(extension="Open API").first(),
             is_public=False,
         )
+        form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
         form.instance.service.save_translations()
 
         self.object = form.save()
@@ -3331,11 +3337,12 @@ class OrganizationAgentsCreateView(CreateView, BaseOrganizationView):
         self.request.session["new_agent_api_key"] = raw_api_key
 
         messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))
-        messages.warning(
+        messages.error(
             self.request,
             _(
-                f"Išsisaugokite slaptą raktą ({raw_api_key}) rodomą prie credentials.cfg konfigūracijos prie eilutės "
-                f"prasidedančios 'secret'! Jis bus rodomas tik vieną kartą!"
+                "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį kartą!\n "
+                "Jei pasirinkote rūšį \"Spinta\", raktas vaizduojamas šalia stulpelio \"secret\" credentials.cfg "
+                "failo pavyzdyje"
             )
         )
         return redirect(reverse("organization-agents-detail", args=[self.organization.pk, self.object.pk]))

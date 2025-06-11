@@ -9,6 +9,7 @@ from django_webtest import DjangoTestApp
 from vitrina.api.models import ApiKey
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
+from vitrina.orgs import AgentType
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Agent, Organization
 from vitrina.orgs.services import Role, has_perm, Action, hash_api_key
@@ -104,6 +105,7 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
         "title": "Agent",
         "is_enabled": True,
         "is_open_data_published": True,
+        "object_type": AgentType.SPINTA,
         "open_data_publish_url": "https://data.gov.lt"
     }
 
@@ -126,6 +128,7 @@ def test_update_view(app: DjangoTestApp, representative_user: User, organization
         "title": "Updated Agent Title",
         "is_enabled": True,
         "is_open_data_published": False,
+        "object_type": AgentType.OTHER,
         "open_data_publish_url": "https://updated-data.gov.lt",
     }
 
@@ -137,6 +140,7 @@ def test_update_view(app: DjangoTestApp, representative_user: User, organization
     assert agent.title == data["title"]
     assert agent.is_enabled is data["is_enabled"]
     assert agent.is_open_data_published is data["is_open_data_published"]
+    assert agent.object_type == data["object_type"]
     assert agent.open_data_publish_url == data["open_data_publish_url"]
 
 

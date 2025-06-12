@@ -52,11 +52,11 @@ def test_failure_agent_create_form_open_data_is_published_but_no_url_is_provided
 def test_agent_form_duplicate_codename():
     organization = OrganizationFactory()
     dataset = DatasetFactory(service=True, organization=organization)
-    Agent.objects.create(title="Pasikartojantis", organization=organization, service=dataset)
+    Agent.objects.create(title="Repeating", organization=organization, service=dataset)
 
     form = AgentForm(
         data={
-            "title": "Pasikartojantis",
+            "title": "Repeating",
             "is_enabled": True,
             "is_open_data_published": False,
             "object_type": AgentType.SPINTA,
@@ -68,3 +68,23 @@ def test_agent_form_duplicate_codename():
     assert form.errors["title"] == [
         "Agentas su tokiu pavadinimu jau registruotas organizacijoje, pasirinkite kitą pavadinimą."
     ]
+
+
+@pytest.mark.django_db
+def test_agent_form_duplicate_codename_first_agent_is_archived():
+    """Only forbid creating an Agent with a repeating name if the initial Agent is not archived."""
+    organization = OrganizationFactory()
+    dataset = DatasetFactory(service=True, organization=organization)
+    Agent.objects.create(title="Repeating", organization=organization, service=dataset, is_archived=True)
+
+    form = AgentForm(
+        data={
+            "title": "Repeating",
+            "is_enabled": True,
+            "is_open_data_published": False,
+            "object_type": AgentType.SPINTA,
+        },
+        organization=organization
+    )
+    assert form.is_valid()
+

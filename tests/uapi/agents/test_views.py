@@ -9,10 +9,11 @@ from django_webtest import DjangoTestApp
 from vitrina.api.models import ApiKey
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
-from vitrina.orgs import AgentType
+from vitrina.uapi import AgentType
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
-from vitrina.orgs.models import Agent, Organization
-from vitrina.orgs.services import Role, has_perm, Action, hash_api_key
+from vitrina.orgs.models import Organization
+from vitrina.uapi.models import Agent
+from vitrina.orgs.services import Role, hash_api_key
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -53,7 +54,7 @@ def test_list_view(app: DjangoTestApp, representative_user: User, organization: 
     different_organization_agent = Agent.objects.create(
         title="Agent 4", organization=another_organization, service=dataset
     )
-    url = reverse("organization-agents-list", args=[organization.pk])
+    url = reverse("agent-list", args=[organization.pk])
 
     response = app.get(url)
 
@@ -74,7 +75,7 @@ def test_detail_view(
         data_service: Dataset
 ):
     app.set_user(representative_user)
-    url = reverse("organization-agents-detail", args=[organization.pk, agent.pk])
+    url = reverse("agent-detail", args=[organization.pk, agent.pk])
 
     response = app.get(url)
 
@@ -90,7 +91,7 @@ def test_detail_view_archived_agent(app: DjangoTestApp, representative_user: Use
     dataset = DatasetFactory(service=True, organization=organization)
     agent = Agent.objects.create(title="Agent", organization=organization, service=dataset, is_archived=True)
 
-    url = reverse("organization-agents-detail", args=[organization.pk, agent.pk])
+    url = reverse("agent-detail", args=[organization.pk, agent.pk])
     response = app.get(url, expect_errors=True)
 
     assert response.status_code == HTTPStatus.NOT_FOUND
@@ -100,7 +101,7 @@ def test_detail_view_archived_agent(app: DjangoTestApp, representative_user: Use
 def test_create_view(app: DjangoTestApp, representative_user: User, organization: Organization):
     app.set_user(representative_user)
 
-    url = reverse("organization-agents-create", args=[organization.pk])
+    url = reverse("agent-create", args=[organization.pk])
     data = {
         "title": "Agent",
         "is_enabled": True,
@@ -123,7 +124,7 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
 @pytest.mark.django_db
 def test_update_view(app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):
     app.set_user(representative_user)
-    url = reverse("organization-agents-update", args=[organization.pk, agent.pk])
+    url = reverse("agent-update", args=[organization.pk, agent.pk])
     data = {
         "title": "Updated Agent Title",
         "is_enabled": True,
@@ -148,7 +149,7 @@ def test_update_view(app: DjangoTestApp, representative_user: User, organization
 def test_delete_view(app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):
     app.set_user(representative_user)
     ApiKey.objects.create(api_key=hash_api_key(secrets.token_urlsafe()), enabled=True, agent=agent)
-    url = reverse("organization-agents-delete", args=[organization.pk, agent.pk])
+    url = reverse("agent-delete", args=[organization.pk, agent.pk])
 
     response = app.post(url)
 

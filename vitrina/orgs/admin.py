@@ -20,7 +20,7 @@ from vitrina.orgs.forms import (
     AdminPublisherOrganizationForm,
     AdminPublisherAssignedOrganizationForm,
 )
-from vitrina.orgs.models import Representative, Template, Agent
+from vitrina.orgs.models import Representative, Template
 
 from vitrina.orgs.models import (
     Organization,
@@ -373,22 +373,6 @@ class SupervisorAdminSite(AdminSite):
         Checks if the current user has access.
         """
         return request.user.is_supervisor or request.user.is_superuser
-
-
-@admin.register(Agent)
-class AgentAdmin(admin.ModelAdmin):
-    class Meta:
-        verbose_name = _("Agentas")
-        verbose_name_plural = _("Agentai")
-
-    list_display = ["agent_name", "organization"]
-    autocomplete_fields = ["service", "organization"]
-    search_fields = ["codename", "service", "organization"]
-    readonly_fields = ["codename", "synchronized_at" , "is_last_sync_successful"]
-
-    @staticmethod
-    def agent_name(obj: Agent) -> str:
-        return str(obj)
 
 
 site = SupervisorAdminSite(name="supervisor_admin")

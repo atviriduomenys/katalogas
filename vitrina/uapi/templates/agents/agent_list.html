@@ -10,7 +10,7 @@
     {% include 'vitrina/orgs/tabs.html' %}
 
     <div class="buttons is-right">
-        <a class="button is-primary m-t-xs m-b-lg" href="{% url 'organization-agents-create' organization.pk %}">{% translate "Pridėti agentą" %}</a>
+        <a class="button is-primary m-t-xs m-b-lg" href="{% url 'agent-create' organization.pk %}">{% translate "Pridėti agentą" %}</a>
     </div>
 
     {% if agents %}
@@ -90,7 +90,7 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'organization-agents-detail' organization.pk agent.pk %}">
+                            <a href="{% url 'agent-detail' organization.pk agent.pk %}">
                                 {{ agent.codename|truncatechars:20 }}
                             </a>
                         </td>
@@ -107,17 +107,17 @@
                             {{ agent.service|truncatechars:20 }}
                         </td>
                         <td>
-                            <a href="{% url 'organization-agents-detail' organization.pk agent.pk %}" class="button is-small">
+                            <a href="{% url 'agent-detail' organization.pk agent.pk %}" class="button is-small">
                                 {% translate "Žurnalas" %}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'organization-agents-update' organization.pk agent.pk %}" class="button is-primary is-small">
+                            <a href="{% url 'agent-update' organization.pk agent.pk %}" class="button is-primary is-small">
                                 {% translate "Redaguoti" %}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'organization-agents-delete' organization.pk agent.pk %}" class="button is-danger is-small">
+                            <a href="{% url 'agent-delete' organization.pk agent.pk %}" class="button is-danger is-small">
                                 {% translate "Pašalinti" %}
                             </a>
                         </td>

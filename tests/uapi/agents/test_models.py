@@ -4,7 +4,7 @@ from django.db import IntegrityError
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.orgs.models import Agent
+from vitrina.uapi.models import Agent
 
 
 @pytest.mark.django_db

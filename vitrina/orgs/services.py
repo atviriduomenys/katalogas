@@ -14,11 +14,12 @@ from vitrina.api_example.models import ApiExample
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Representative, Organization, Agent
+from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
 from vitrina.tasks.models import Task
+from vitrina.uapi.models import Agent
 from vitrina.users.models import User
 
 

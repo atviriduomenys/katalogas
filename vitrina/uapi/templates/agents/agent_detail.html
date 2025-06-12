@@ -7,7 +7,7 @@
 
 {% block content %}
     <p>
-        <a href="{% url 'organization-agents-list' organization.pk %}">
+        <a href="{% url 'agent-list' organization.pk %}">
             ← {% translate "Grįžti į agentus" %}
         </a>
     </p>
@@ -221,7 +221,7 @@ backends:
     {% endif %}
 
     <div class="is-flex is-justify-content-flex-end">
-        <a class="button is-primary is-light" href="{% url 'organization-agents-list' organization.pk %}">
+        <a class="button is-primary is-light" href="{% url 'agent-list' organization.pk %}">
             {% translate "Grįžti į agentus" %}
         </a>
     </div>

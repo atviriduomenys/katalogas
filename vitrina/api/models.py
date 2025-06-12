@@ -2,10 +2,11 @@ from django.db import models
 
 from django.urls import reverse
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.models import Representative, Organization, Agent
+from vitrina.orgs.models import Representative, Organization
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.projects.models import Project
+from vitrina.uapi.models import Agent
 
 
 class ApiKey(models.Model):

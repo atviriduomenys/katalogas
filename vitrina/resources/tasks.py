@@ -16,7 +16,7 @@ class FileInfo:
     last_modified: Optional[str] = None
 
 
-def check_and_update_file_sizes() -> dict:
+def check_and_update_remote_file_sizes() -> dict:
     results = {"total": 0, "updated": 0, "unchanged": 0, "errors": 0}
 
     distributions = DatasetDistribution.objects.filter(
@@ -31,9 +31,6 @@ def check_and_update_file_sizes() -> dict:
 
     for dist in distributions:
         try:
-            if update_local_file_size(dist, results):
-                continue
-
             if url := dist.get_download_url():
                 update_remote_file_size(dist, url, results)
         except Exception as e:
@@ -43,37 +40,6 @@ def check_and_update_file_sizes() -> dict:
             results["errors"] += 1
 
     return results
-
-
-def update_local_file_size(dist: DatasetDistribution, results: dict) -> bool:
-    if not dist.file or not dist.file.file:
-        return False
-
-    try:
-        if not dist.file.file.storage.exists(dist.file.file.name):
-            logger.warning(
-                f"File {dist.file.file.name} doesn't exist in storage for distribution {dist.pk}"
-            )
-            results["errors"] += 1
-            return True
-
-        current_size = dist.file.file.size
-        if dist.size == current_size:
-            results["unchanged"] += 1
-            return True
-
-        logger.info(
-            f"Updating local file size for distribution {dist.pk}: "
-            f"old={dist.size}, new={current_size}"
-        )
-        dist.size = current_size
-        dist.save(update_fields=["size"])
-        results["updated"] += 1
-        return True
-    except Exception as e:
-        logger.error(f"Error accessing local file for distribution {dist.pk}: {str(e)}")
-        results["errors"] += 1
-        return True
 
 
 def update_remote_file_size(
@@ -145,4 +111,3 @@ def get_remote_file_info(
         return FileInfo()
     except Exception as e:
         logger.error(f"Unexpected error accessing URL {url}: {str(e)}")
-        return FileInfo()

@@ -19,6 +19,6 @@ class ResourcesConfig(AppConfig):
             from django.conf import settings
 
             if "django_q" in settings.INSTALLED_APPS:
-                from .schedule import setup_file_size_check_schedule
+                from .schedule import setup_remote_file_size_check_schedule
 
-                setup_file_size_check_schedule()
+                setup_remote_file_size_check_schedule()

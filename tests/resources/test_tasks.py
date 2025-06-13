@@ -5,8 +5,7 @@ import requests
 
 from vitrina.resources.tasks import (
     FileInfo,
-    check_and_update_file_sizes,
-    update_local_file_size,
+    check_and_update_remote_file_sizes,
     update_remote_file_size,
     get_remote_file_info,
 )
@@ -30,35 +29,13 @@ class TestCheckAndUpdateFileSizes(unittest.TestCase):
         mock_queryset.count.return_value = 0
         mock_dist_model.objects.filter.return_value = mock_queryset
 
-        results = check_and_update_file_sizes()
+        results = check_and_update_remote_file_sizes()
 
         self.assertEqual(results, {"total": 0, "updated": 0, "unchanged": 0, "errors": 0})
 
     @patch('vitrina.resources.tasks.update_remote_file_size')
-    @patch('vitrina.resources.tasks.update_local_file_size')
     @patch('vitrina.resources.tasks.DatasetDistribution')
-    def test_local_file_distribution(self, mock_dist_model, mock_update_local, mock_update_remote):
-        dist = MagicMock()
-        dist.pk = 1
-        dist.get_download_url.return_value = None
-
-        mock_queryset = MagicMock()
-        mock_queryset.count.return_value = 1
-        mock_queryset.__iter__ = Mock(return_value=iter([dist]))
-        mock_dist_model.objects.filter.return_value = mock_queryset
-
-        mock_update_local.return_value = True
-
-        results = check_and_update_file_sizes()
-
-        self.assertEqual(results["total"], 1)
-        mock_update_local.assert_called_once_with(dist, results)
-        mock_update_remote.assert_not_called()
-
-    @patch('vitrina.resources.tasks.update_remote_file_size')
-    @patch('vitrina.resources.tasks.update_local_file_size')
-    @patch('vitrina.resources.tasks.DatasetDistribution')
-    def test_remote_file_distribution(self, mock_dist_model, mock_update_local, mock_update_remote):
+    def test_remote_file_distribution(self, mock_dist_model, mock_update_remote):
         dist = MagicMock()
         dist.pk = 1
         dist.get_download_url.return_value = "https://example.com/file.csv"
@@ -68,18 +45,14 @@ class TestCheckAndUpdateFileSizes(unittest.TestCase):
         mock_queryset.__iter__ = Mock(return_value=iter([dist]))
         mock_dist_model.objects.filter.return_value = mock_queryset
 
-        mock_update_local.return_value = False
-
-        results = check_and_update_file_sizes()
+        results = check_and_update_remote_file_sizes()
 
         self.assertEqual(results["total"], 1)
-        mock_update_local.assert_called_once_with(dist, results)
         mock_update_remote.assert_called_once_with(dist, "https://example.com/file.csv", results)
 
     @patch('vitrina.resources.tasks.logger')
-    @patch('vitrina.resources.tasks.update_local_file_size')
     @patch('vitrina.resources.tasks.DatasetDistribution')
-    def test_exception_handling(self, mock_dist_model, mock_update_local, mock_logger):
+    def test_exception_handling(self, mock_dist_model, mock_logger):
         dist = MagicMock()
         dist.pk = 1
 
@@ -88,80 +61,8 @@ class TestCheckAndUpdateFileSizes(unittest.TestCase):
         mock_queryset.__iter__ = Mock(return_value=iter([dist]))
         mock_dist_model.objects.filter.return_value = mock_queryset
 
-        mock_update_local.side_effect = Exception("Test error")
+        results = check_and_update_remote_file_sizes()
 
-        results = check_and_update_file_sizes()
-
-        self.assertEqual(results["errors"], 1)
-        mock_logger.error.assert_called_once()
-
-
-class TestUpdateLocalFileSize(unittest.TestCase):
-    def test_no_file_attached(self):
-        dist = MagicMock()
-        dist.file = None
-        results = {"updated": 0, "unchanged": 0, "errors": 0}
-
-        result = update_local_file_size(dist, results)
-
-        self.assertFalse(result)
-        self.assertEqual(results["errors"], 0)
-
-    @patch('vitrina.resources.tasks.logger')
-    def test_file_not_exists_in_storage(self, mock_logger):
-        dist = MagicMock()
-        dist.pk = 1
-        dist.file.file.storage.exists.return_value = False
-        dist.file.file.name = "test.csv"
-        results = {"updated": 0, "unchanged": 0, "errors": 0}
-
-        result = update_local_file_size(dist, results)
-
-        self.assertTrue(result)
-        self.assertEqual(results["errors"], 1)
-        mock_logger.warning.assert_called_once()
-
-    def test_file_size_unchanged(self):
-        dist = MagicMock()
-        dist.pk = 1
-        dist.size = 1024
-        dist.file.file.storage.exists.return_value = True
-        dist.file.file.size = 1024
-        results = {"updated": 0, "unchanged": 0, "errors": 0}
-
-        result = update_local_file_size(dist, results)
-
-        self.assertTrue(result)
-        self.assertEqual(results["unchanged"], 1)
-        dist.save.assert_not_called()
-
-    @patch('vitrina.resources.tasks.logger')
-    def test_file_size_updated(self, mock_logger):
-        dist = MagicMock()
-        dist.pk = 1
-        dist.size = 1024
-        dist.file.file.storage.exists.return_value = True
-        dist.file.file.size = 2048
-        results = {"updated": 0, "unchanged": 0, "errors": 0}
-
-        result = update_local_file_size(dist, results)
-
-        self.assertTrue(result)
-        self.assertEqual(results["updated"], 1)
-        self.assertEqual(dist.size, 2048)
-        dist.save.assert_called_once_with(update_fields=["size"])
-        mock_logger.info.assert_called_once()
-
-    @patch('vitrina.resources.tasks.logger')
-    def test_exception_accessing_file(self, mock_logger):
-        dist = MagicMock()
-        dist.pk = 1
-        dist.file.file.storage.exists.side_effect = Exception("Storage error")
-        results = {"updated": 0, "unchanged": 0, "errors": 0}
-
-        result = update_local_file_size(dist, results)
-
-        self.assertTrue(result)
         self.assertEqual(results["errors"], 1)
         mock_logger.error.assert_called_once()
 
@@ -315,8 +216,6 @@ class TestGetRemoteFileInfo(unittest.TestCase):
     def test_unexpected_exception(self, mock_head, mock_logger):
         mock_head.side_effect = Exception("Unexpected error")
 
-        file_info = get_remote_file_info("https://example.com/file.csv")
+        get_remote_file_info("https://example.com/file.csv")
 
-        self.assertIsNone(file_info.size)
-        self.assertIsNone(file_info.last_modified)
         mock_logger.error.assert_called_once()

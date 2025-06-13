@@ -54,6 +54,7 @@ urlpatterns = [
     path("", include("vitrina.cms.urls")),
     path("", include("vitrina.translate.urls")),
     path("", include("vitrina.statistics.urls")),
+    path("", include("vitrina.uapi.urls")),
     path("admin/", admin.site.urls),
     path("coordinator-admin/", site.urls),
     path("taggit-autosuggest/", include("taggit_autosuggest.urls")),

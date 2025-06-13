@@ -1,10 +1,10 @@
 import pytest
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.orgs import AgentType
+from vitrina.uapi import AgentType
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.orgs.forms import AgentForm
-from vitrina.orgs.models import Agent
+from vitrina.uapi.forms import AgentForm
+from vitrina.uapi.models import Agent
 
 
 def test_success_agent_create_form():

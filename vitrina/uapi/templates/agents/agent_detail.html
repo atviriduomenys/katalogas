@@ -12,28 +12,39 @@
         </a>
     </p>
     <br>
-    <div class="box mb-6 is-max-desktop">
-        <h2 class="title is-4">{{ agent.title }}</h2>
 
-        <div class="columns is-mobile">
-            <div class="column is-4 has-text-weight-semibold">{% translate "Sukurtas" %}:</div>
-            <div class="column is-7">{{ agent.created_at|date:"Y-m-d H:i" }}</div>
-        </div>
-
-        <div class="columns is-mobile">
-            <div class="column is-4 has-text-weight-semibold">{% translate "Kodinis pavadinimas" %}:</div>
-            <div class="column is-7">{{ agent.codename }}</div>
-        </div>
-
-        <div class="columns is-mobile">
-            <div class="column is-4 has-text-weight-semibold">{% translate "Servisas" %}:</div>
-            <div class="column is-7">
-                <a href="{% url 'dataset-detail' dataset.pk %}" class="has-text-link">{{ agent.service }}</a>
+    <div class="box is-max-desktop has-background-light">
+        <div class="is-flex is-align-items-center mb-4">
+            <div class="mr-4">
+                <span class="icon is-large has-text-grey-light">
+                    <i class="fas fa-user-circle fa-2x"></i>
+                </span>
+            </div>
+            <div>
+                <p class="title is-5 mb-1">{{ agent.title }}</p>
+                <p class="is-size-7 has-text-grey">
+                    {% translate "Sukurta" %}: <strong>{{ agent.created_at|date:"Y-m-d H:i" }}</strong> |
+                    {% translate "Atnaujinta" %}: <strong>{{ agent.updated_at|date:"Y-m-d H:i" }}</strong>
+                </p>
             </div>
         </div>
 
-        <div class="columns is-mobile">
-            <div class="column is-4 has-text-weight-semibold">{% translate "Būsena" %}:</div>
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Duomenų paslauga" %}:</div>
+            <div class="column is-7">
+                <a href="{% url 'dataset-detail' dataset.pk %}" class="has-text-link" target="_blank">
+                    {{ agent.service }} <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
+                </a>
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Kodinis pavadinimas" %}:</div>
+            <div class="column is-7">{{ agent.codename }}</div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Būsena" %}:</div>
             <div class="column is-7">
                 {% if agent.is_enabled %}
                     <span class="tag is-success is-light">{% translate "Įjungtas" %}</span>
@@ -43,13 +54,13 @@
             </div>
         </div>
 
-        <div class="columns is-mobile">
-            <div class="column is-4 has-text-weight-semibold">{% translate "Rūšis" %}:</div>
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Rūšis" %}:</div>
             <div class="column is-7">{{ agent.get_object_type_display }}</div>
         </div>
 
-        <div class="columns is-mobile">
-            <div class="column is-4 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos rezultatas" %}:</div>
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos rezultatas" %}:</div>
             <div class="column is-7">
                 {% if agent.is_last_sync_successful %}
                     <span class="tag is-success is-light">{% translate "Pavyko" %}</span>
@@ -61,19 +72,19 @@
             </div>
         </div>
 
-        <div class="columns is-mobile">
-            <div class="column is-4 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos data" %}:</div>
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos data" %}:</div>
             <div class="column is-7">
                 {% if agent.synchronized_at %}
                     {{ agent.synchronized_at|date:"Y-m-d H:i" }}
                 {% else %}
-                    <span class="has-text-grey">-</span>
+                    <span class="has-text-grey">—</span>
                 {% endif %}
             </div>
         </div>
 
-        <div class="columns is-mobile">
-            <div class="column is-4 has-text-weight-semibold">{% translate "Publikuojami atviri duomenys" %}:</div>
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Publikuojami atviri duomenys" %}:</div>
             <div class="column is-7">
                 {% if agent.is_open_data_published %}
                     <span class="tag is-success is-light">{% translate "Taip" %}</span>
@@ -83,18 +94,21 @@
             </div>
         </div>
 
-        <div class="columns is-mobile">
-            <div class="column is-4 has-text-weight-semibold">{% translate "Atvirų duomenų servisas" %}:</div>
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Atvirų duomenų servisas" %}:</div>
             <div class="column is-7">
                 {% if agent.open_data_publish_url %}
-                    <a href="{{ agent.open_data_publish_url }}" class="has-text-link"
-                       target="_blank">{{ agent.open_data_publish_url }}</a>
+                    <a href="{{ agent.open_data_publish_url }}" class="has-text-link" target="_blank">
+                        {{ agent.open_data_publish_url }}
+                    </a>
                 {% else %}
                     <span class="has-text-grey">—</span>
                 {% endif %}
             </div>
         </div>
     </div>
+
+    <hr>
 
     {% if agent.object_type == "SPINTA" %}
         <p><strong>credentials.cfg</strong></p>
@@ -145,7 +159,7 @@ scopes =
                 </div>
             </div>
         </div>
-
+        <hr>
         <p><strong>config.yml</strong></p>
         <div class="columns is-align-items-start mb-5 mt-4">
             <div class="column is-5">
@@ -206,8 +220,10 @@ backends:
                 <div class="has-background-light box p-4">
                     <div class="is-flex is-align-items-center is-justify-content-space-between is-flex-wrap-wrap">
                         {% if raw_api_key %}
-                            <code id="api-key-text" class="has-text-dark is-family-monospace mr-4">{{ raw_api_key }}</code>
-                            <button onclick="copyToClipboard('api-key-text')" class="button is-light is-small mt-2-mobile">
+                            <code id="api-key-text"
+                                  class="has-text-dark is-family-monospace mr-4">{{ raw_api_key }}</code>
+                            <button onclick="copyToClipboard('api-key-text')"
+                                    class="button is-light is-small mt-2-mobile">
                                 <span class="icon is-small"><i class="fas fa-copy"></i></span>
                                 <span>{% translate "Kopijuoti" %}</span>
                             </button>
@@ -219,12 +235,13 @@ backends:
             </div>
         </div>
     {% endif %}
+    <hr>
 
-    <div class="is-flex is-justify-content-flex-end">
-        <a class="button is-primary is-light" href="{% url 'agent-list' organization.pk %}">
-            {% translate "Grįžti į agentus" %}
+    <p class="is-flex is-justify-content-flex-end">
+        <a href="{% url 'agent-list' organization.pk %}">
+            ← {% translate "Grįžti į agentus" %}
         </a>
-    </div>
+    </p>
 
     <script>
         function copyToClipboard(id) {

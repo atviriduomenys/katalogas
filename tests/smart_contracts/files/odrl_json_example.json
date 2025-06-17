@@ -1,0 +1,56 @@
+{
+  "@context": {
+    "@vocab": "http://www.w3.org/ns/odrl.jsonld",
+    "ex": "http://example.org/vocab#"
+  },
+  "uid": "",
+  "type": "Agreement",
+  "profile": "http://www.w3.org/ns/odrl/profile/core",
+  "issued": "2025-05-22",
+  "assigner": [
+    {
+      "uid": "",
+      "ex:companyName": "Teikėjas",
+      "ex:companyCode": "123",
+      "ex:address": "Teikėjo g. 1-2, Vilnius, Lietuvos Respublika",
+      "ex:representative": "Teikėjo Atstovas",
+      "ex:email": "teikejo@email.com",
+      "ex:phone": "011111111",
+      "ex:personal_code": "30000000000"
+    }
+  ],
+  "assignee": [
+    {
+      "uid": "",
+      "ex:companyName": "Gavėjas",
+      "ex:companyCode": "456",
+      "ex:address": "Gavėjo g. 3-4, Kaunas, Lietuvos Respublika",
+      "ex:representative": "Gavėjo Atstovas",
+      "ex:email": "gavejo@email.com",
+      "ex:phone": "022222222",
+      "ex:personal_code": "30000000001"
+    }
+  ],
+  "permission": [
+    {
+      "target": {
+        "uid": "uuid:123e4567-e89b-12d3-a456-426614174000",
+        "ex:name": "Gyventojų registras",
+        "ex:scopes": [
+          "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getall",
+          "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getone"
+        ]
+      }
+    }
+  ],
+  "ex:paymentTerms": [
+    "Duomenys teikiami neatlygintinai.",
+    "Duomenys teikiami atlygintinai. Atlyginimo dydžiai nustatyti [nurodykite teisės aktą, reglamentuojantį atlyginimo dydžius]. Pasikeitus teisės aktams, Duomenų gavėjas moka pagal galiojančius įkainius.",
+    "PVM sąskaitos faktūros išrašomos iki kiekvieno mėnesio 5 dienos ir pateikiamos RISR priemonėmis.",
+    "PVM sąskaita faktūra apmokama per 14 kalendorinių dienų nuo jos išrašymo.",
+    "Už kiekvieną pavėluotą dieną skaičiuojami 0,04% delspinigiai nuo neapmokėtos sumos.",
+    "Teikėjas paskirsto gavėjo mokėjimus savo nuožiūra, teikdamas pirmenybę seniausiems įsiskolinimams."
+  ],
+  "ex:other_assigner_legislations": "kiti duomenų teikėjui taikomi teisės aktai, reglamentuojantys duomenų teikimą",
+  "ex:other_assignee_legislations": null
+}

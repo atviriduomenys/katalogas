@@ -23,7 +23,18 @@ RUN apt-get update && \
     libsnappy-dev \
     libgflags-dev \
     libgoogle-glog-dev \
-    npm
+    npm \
+    libpango1.0-0 \
+    libpango1.0-dev \
+    libgdk-pixbuf2.0-0 \
+    libffi-dev \
+    libxml2 \
+    libxslt1.1 \
+    fonts-liberation \
+    fonts-liberation2 \
+    fonts-dejavu-core \
+    fonts-dejavu-extra \
+    fonts-liberation
 
 RUN pip install --upgrade pip wheel --no-cache-dir
 RUN pip install gunicorn==20.1.0 poetry --no-cache-dir

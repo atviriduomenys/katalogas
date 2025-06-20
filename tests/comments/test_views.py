@@ -171,8 +171,10 @@ def test_reply_for_reply(app: DjangoTestApp):
 
     app.set_user(user)
     form = app.get(comment.content_object.get_absolute_url()).forms['reply-form']
-    form['is_public'] = True
-    form['body'] = "Test reply"
+    form.fields['is_public'][0].value = True
+    form.fields['body'][0].value = "Test reply"
+    form.fields['is_public'][1].value = True
+    form.fields['body'][1].value = "Test reply"
     resp = form.submit().follow()
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     new_reply = Comment.objects.filter(content_type=comment.content_type, parent=reply).first()

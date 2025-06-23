@@ -1,15 +1,20 @@
+import uuid
 import pytest
+from datetime import timedelta
+
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse
+from django.utils import timezone
+from django.test import Client
 from django_webtest import DjangoTestApp
 
 from vitrina import settings
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
-from vitrina.messages.models import Subscription
+from vitrina.messages.models import Subscription, NewsletterSubscriber
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization
 from vitrina.projects.models import Project
@@ -17,6 +22,7 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestFactory
 from vitrina.requests.models import Request
 from vitrina.users.factories import UserFactory
+from vitrina.users.models import User
 
 
 @pytest.fixture
@@ -618,3 +624,286 @@ def test_unsubscribe_with_not_approved_project_with_access(app: DjangoTestApp):
     app.set_user(user)
     response = app.post(reverse('unsubscribe', args=[ct.pk, project.pk, user.pk]))
     assert response.status_code == 302
+
+
+@pytest.fixture
+def client():
+    return Client()
+
+
+@pytest.fixture
+def user():
+    return User.objects.create_user(
+        email='testuser@example.com',
+        password='testpass123'
+    )
+
+
+@pytest.mark.django_db
+class TestNewsletterSubscribeView:
+    def test_subscribe_new_email_success(self, client):
+        response = client.post(reverse('newsletter-subscribe'), {
+            'email': 'newuser@example.com'
+        })
+
+        assert response.status_code == 302
+
+        subscriber = NewsletterSubscriber.objects.get(email='newuser@example.com')
+        assert subscriber.is_confirmed is False
+        assert subscriber.is_active is True
+        assert subscriber.confirmation_token is not None
+
+        # Should send confirmation email
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].to == ['newuser@example.com']
+        assert 'naujienlaiškio prenumeratos patvirtinimas' in mail.outbox[0].subject.lower()
+
+    def test_subscribe_already_confirmed_email(self, client):
+        NewsletterSubscriber.objects.create(
+            email='existing@example.com',
+            is_confirmed=True
+        )
+
+        response = client.post(reverse('newsletter-subscribe'), {
+            'email': 'existing@example.com'
+        })
+
+        assert response.status_code == 302
+
+        # Should not create new subscriber
+        subscribers = NewsletterSubscriber.objects.filter(email='existing@example.com')
+        assert subscribers.count() == 1
+
+        # Should not send email
+        assert len(mail.outbox) == 0
+
+    def test_subscribe_pending_email_resend(self, client):
+        old_token = uuid.uuid4()
+        subscriber = NewsletterSubscriber.objects.create(
+            email='pending@example.com',
+            is_confirmed=False,
+            confirmation_token=old_token
+        )
+
+        response = client.post(reverse('newsletter-subscribe'), {
+            'email': 'pending@example.com'
+        })
+
+        assert response.status_code == 302
+
+        # Should update token and expiry
+        subscriber.refresh_from_db()
+        assert subscriber.confirmation_token != old_token
+        assert subscriber.is_confirmed is False
+
+        # Should send new confirmation email
+        assert len(mail.outbox) == 1
+
+    def test_subscribe_empty_email(self, client):
+        response = client.post(reverse('newsletter-subscribe'), {
+            'email': ''
+        })
+
+        assert response.status_code == 302
+
+        # Should not create subscriber
+        assert NewsletterSubscriber.objects.count() == 0
+
+        # Should not send email
+        assert len(mail.outbox) == 0
+
+    def test_subscribe_invalid_email_format(self, client):
+        response = client.post(reverse('newsletter-subscribe'), {
+            'email': 'invalid-email'
+        })
+
+        # HTML validation should prevent this.
+        assert response.status_code == 302
+
+    def test_subscribe_ajax_request(self, client):
+        response = client.post(
+            reverse('newsletter-subscribe'),
+            {'email': 'ajax@example.com'},
+            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
+        )
+
+        assert response.status_code == 200
+        json_data = response.json()
+        assert json_data['status'] == 'success'
+        assert 'patvirtinimo' in json_data['message'].lower()
+
+
+@pytest.mark.django_db
+class TestNewsletterConfirmView:
+    def test_confirm_valid_token(self, client):
+        subscriber = NewsletterSubscriber.objects.create(
+            email='confirm@example.com',
+            is_confirmed=False,
+            is_active=True,
+        )
+
+        response = client.get(reverse('newsletter-confirm', kwargs={
+            'token': subscriber.confirmation_token
+        }))
+
+        assert response.status_code == 200
+        assert 'newsletter/confirmed.html' in [t.name for t in response.templates]
+
+        # Should confirm subscription
+        subscriber.refresh_from_db()
+        assert subscriber.is_confirmed is True
+        assert subscriber.confirmation_token is None
+        assert subscriber.confirmation_expires_at is None
+
+        # Should send welcome email
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].to == ['confirm@example.com']
+        assert 'welcome' in mail.outbox[0].subject.lower() or 'sveiki' in mail.outbox[0].subject.lower()
+
+    def test_confirm_expired_token(self, client):
+        past_time = timezone.now() - timedelta(hours=25)
+        subscriber = NewsletterSubscriber.objects.create(
+            email='expired@example.com',
+            is_confirmed=False,
+            confirmation_expires_at=past_time
+        )
+
+        response = client.get(reverse('newsletter-confirm', kwargs={
+            'token': subscriber.confirmation_token
+        }))
+
+        assert response.status_code == 302
+
+        # Should not confirm subscription
+        subscriber.refresh_from_db()
+        assert subscriber.is_confirmed is False
+
+    def test_confirm_nonexistent_token(self, client):
+        fake_token = uuid.uuid4()
+
+        response = client.get(reverse('newsletter-confirm', kwargs={
+            'token': fake_token
+        }))
+
+        assert response.status_code == 302  # Redirect
+
+    def test_confirm_already_confirmed_token(self, client):
+        NewsletterSubscriber.objects.create(
+            email='already@example.com',
+            is_confirmed=True,
+            confirmation_token=None
+        )
+
+        fake_token = uuid.uuid4()
+        response = client.get(reverse('newsletter-confirm', kwargs={
+            'token': fake_token
+        }))
+
+        assert response.status_code == 302  # Should redirect
+
+
+@pytest.mark.django_db
+class TestNewsletterUnsubscribeView:
+    def test_unsubscribe_get_shows_confirmation_page(self, client):
+        subscriber = NewsletterSubscriber.objects.create(
+            email='unsubscribe@example.com',
+            is_confirmed=True
+        )
+
+        response = client.get(reverse('newsletter-unsubscribe', kwargs={
+            'token': subscriber.unsubscribe_token,
+        }))
+
+        assert response.status_code == 200
+        assert 'newsletter/unsubscribe_confirm.html' in [t.name for t in response.templates]
+        assert subscriber.email in response.content.decode()
+
+    def test_unsubscribe_post_deactivates_subscription(self, client):
+        subscriber = NewsletterSubscriber.objects.create(
+            email='unsubscribe@example.com',
+            is_confirmed=True
+        )
+
+        response = client.post(reverse('newsletter-unsubscribe', kwargs={
+            'token': subscriber.unsubscribe_token
+        }))
+
+        assert response.status_code == 200
+        assert 'newsletter/unsubscribed.html' in [t.name for t in response.templates]
+
+        subscriber.refresh_from_db()
+        assert subscriber.is_active is False
+        assert subscriber.is_confirmed is True  # Should remain confirmed
+
+    def test_unsubscribe_invalid_token(self, client):
+        fake_token = uuid.uuid4()
+
+        response = client.get(reverse('newsletter-unsubscribe', kwargs={
+            'token': fake_token
+        }))
+
+        assert response.status_code == 404
+
+    def test_unsubscribe_inactive_subscription(self, client):
+        subscriber = NewsletterSubscriber.objects.create(
+            email='inactive@example.com',
+            is_confirmed=True,
+            is_active=False
+        )
+
+        response = client.get(reverse('newsletter-unsubscribe', kwargs={
+            'token': subscriber.unsubscribe_token
+        }))
+
+        assert response.status_code == 404
+
+
+@pytest.mark.django_db
+class TestNewsletterWorkflow:
+    def test_complete_subscription_workflow(self, client):
+        """Test complete workflow: subscribe -> confirm -> unsubscribe"""
+        email = 'workflow@example.com'
+
+        # Step 1: Subscribe
+        response = client.post(reverse('newsletter-subscribe'), {'email': email})
+        assert response.status_code == 302
+
+        subscriber = NewsletterSubscriber.objects.get(email=email)
+        assert subscriber.is_confirmed is False
+
+        # Step 2: Confirm
+        response = client.get(reverse('newsletter-confirm', kwargs={
+            'token': subscriber.confirmation_token
+        }))
+        assert response.status_code == 200
+
+        subscriber.refresh_from_db()
+        assert subscriber.is_confirmed is True
+
+        # Step 3: Unsubscribe
+        response = client.post(reverse('newsletter-unsubscribe', kwargs={
+            'token': subscriber.unsubscribe_token
+        }))
+        assert response.status_code == 200
+
+        subscriber.refresh_from_db()
+        assert subscriber.is_active is False
+
+    def test_resubscribe_after_unsubscribe(self, client):
+        email = 'resubscribe@example.com'
+
+        NewsletterSubscriber.objects.create(
+            email=email,
+            is_confirmed=True,
+            is_active=False
+        )
+
+        response = client.post(reverse('newsletter-subscribe'), {'email': email})
+        assert response.status_code == 302
+
+        subscribers = NewsletterSubscriber.objects.filter(email=email)
+        assert subscribers.count() == 1
+
+        new_subscriber = subscribers.filter(is_active=True).first()
+        assert new_subscriber is not None
+        assert new_subscriber.is_confirmed is False

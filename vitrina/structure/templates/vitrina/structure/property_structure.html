@@ -160,6 +160,15 @@
                   </span>
                 </a>
             {% endif %}
+            {% if metadata.count %}
+                <span 
+                    class="tag ml-5 icon is-small has-text-grey"
+                    data-tooltip="{% translate 'Eilučių kiekis' %}"
+                >
+                    <i class="fas fa-list mr-1"></i>
+                    <span>{{ metadata.count }}</span>
+                </span>
+            {% endif %}
 
         </div>
         <div class="mb-2">

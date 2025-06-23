@@ -541,6 +541,7 @@ def _create_or_update_metadata(
         metadata.uri = obj_meta.uri
         metadata.version = metadata.version + 1 if metadata.version else 1
         metadata.title = obj_meta.title
+        metadata.count = obj_meta.count
         metadata.description = obj_meta.description
         metadata.order = order
         metadata.required = obj_meta.required if hasattr(obj_meta, "required") else None
@@ -568,6 +569,7 @@ def _create_or_update_metadata(
             access=_parse_access(obj_meta.access),
             visibility=_parse_visibility(obj_meta.visibility),
             eli=obj_meta.eli,
+            count=obj_meta.count,
             status=_get_status(obj_meta.status),
             uri=obj_meta.uri,
             version=1,
@@ -995,6 +997,7 @@ DATASET = [
     "eli",
     "title",
     "description",
+    "count",
 ]
 
 
@@ -1105,6 +1108,7 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False):
                         "status": _get_title(meta.status),
                         "visibility": _get_visibility(meta.visibility),
                         "eli": meta.eli,
+                        "count": meta.count,
                     },
                 )
                 first = False
@@ -1135,6 +1139,7 @@ def _params_to_tabular(obj: models.Model, separator: bool = False):
                         "status": _get_title(meta.status),
                         "visibility": _get_visibility(meta.visibility),
                         "eli": meta.eli,
+                        "count": meta.count,
                     },
                 )
                 first = False
@@ -1177,6 +1182,7 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False):
                     "source": meta.source,
                     "status": _get_title(meta.status),
                     "visibility": _get_visibility(meta.visibility),
+                    "count": meta.count,
                     "eli": meta.eli,
                     "prepare": meta.prepare,
                     "ref": ", ".join(
@@ -1312,6 +1318,7 @@ def _properties_to_tabular(model: Model):
                     "status": _get_title(meta.status),
                     "visibility": _get_visibility(meta.visibility),
                     "eli": meta.eli,
+                    "count": meta.count,
                 },
             )
 

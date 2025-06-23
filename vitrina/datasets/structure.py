@@ -55,6 +55,7 @@ HEADER = [
     "eli",
     "title",
     "description",
+    "count",
 ]
 
 
@@ -227,6 +228,7 @@ class Metadata:
     eli: str = ""
     title: str = ""
     description: str = ""
+    count: int | None = None
 
 
 @dataclass
@@ -634,6 +636,7 @@ def _read_model(
         level_given=_parse_int(row["level"]),
         status=row["status"],
         visibility=row["visibility"],
+        count=_parse_int(row["count"]),
         access=row["access"],
         uri=row["uri"],
         eli=row["eli"],
@@ -694,6 +697,7 @@ def _read_property(
         level_given=_parse_int(row["level"]),
         status=row["status"],
         visibility=row["visibility"],
+        count=_parse_int(row["count"]),
         access=row["access"],
         uri=row["uri"],
         eli=row["eli"],
@@ -801,6 +805,7 @@ def _read_enum(
         level_given=_parse_int(row["level"]),
         status=row["status"],
         visibility=row["visibility"],
+        count=_parse_int(row["count"]),
         access=row["access"],
         uri=row["uri"],
         eli=row["eli"],

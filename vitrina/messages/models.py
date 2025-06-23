@@ -1,9 +1,12 @@
+import uuid
+from datetime import timedelta
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.utils import timezone
 
 from vitrina.users.models import User
-from vitrina.datasets.models import Dataset
 
 from django.utils.translation import gettext_lazy as _
 
@@ -108,3 +111,37 @@ class Subscription(models.Model):
             return self.content_object.get_absolute_url()
         else:
             return None
+
+
+class NewsletterSubscriber(models.Model):
+    email = models.EmailField(unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+    is_confirmed = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=True)
+
+    confirmation_token = models.UUIDField(
+        default=uuid.uuid4, unique=True, null=True, blank=True
+    )
+    confirmation_expires_at = models.DateTimeField(null=True, blank=True)
+
+    unsubscribe_token = models.UUIDField(default=uuid.uuid4, unique=True)
+
+    def save(self, *args, **kwargs):
+        if not self.is_confirmed and not self.confirmation_expires_at:
+            self.confirmation_expires_at = timezone.now() + timedelta(hours=24)
+        super().save(*args, **kwargs)
+
+    def is_confirmation_expired(self):
+        if self.is_confirmed or not self.confirmation_expires_at:
+            return False
+        return timezone.now() > self.confirmation_expires_at
+
+    def confirm_subscription(self):
+        self.is_confirmed = True
+        self.confirmation_token = None
+        self.confirmation_expires_at = None
+        self.save()
+
+    def __str__(self):
+        status = "confirmed" if self.is_confirmed else "pending"
+        return f"{self.email} ({status})"

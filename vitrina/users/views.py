@@ -29,7 +29,7 @@ from allauth.account.models import (
 
 from vitrina import settings
 from vitrina.helpers import email
-from vitrina.messages.models import Subscription
+from vitrina.messages.models import Subscription, NewsletterSubscriber
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.tasks.services import get_active_tasks
@@ -241,6 +241,11 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
             .exclude(sub_type=Subscription.COMMENT)
             .prefetch_related("content_object")
         )
+        newsletter_subscription = NewsletterSubscriber.objects.filter(
+            email=user.email,
+            is_active=True,
+            is_confirmed=True,
+        ).first()
         for sub in subscriptions:
             sub.fields = [(_("Laiškai"), sub.email_subscribed)]
             if sub.sub_type == Subscription.ORGANIZATION:
@@ -279,6 +284,7 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         extra_context_data = {
             "can_edit_profile": has_perm(self.request.user, Action.UPDATE, user),
             "subscriptions": subscriptions,
+            "newsletter_subscription": newsletter_subscription,
         }
         context_data.update(extra_context_data)
         return context_data

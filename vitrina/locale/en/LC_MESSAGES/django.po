@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-06-11 10:31+0300\n"
+"POT-Creation-Date: 2025-06-30 10:19+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -156,6 +156,9 @@ msgstr "Geoportal Access right"
 msgid "Geoportalo prieigos teisės"
 msgstr "Geoportal access rights"
 
+msgid "Kodinis pavadinimas"
+msgstr "Code name"
+
 msgid ""
 "Savybė nurodanti prieigos prie metaduomenų lygį. DCAT-AP rekomenduoja "
 "naudoti šias klasifikatoriaus reikšmes: <br>- develop <br>- completed <br>- "
@@ -175,12 +178,18 @@ msgstr ""
 "Status field name. This name is intended for human readability and will be "
 "displayed in data field lists and headers. "
 
+msgid "Aprašymas"
+msgstr "Description"
+
 msgid ""
 "Būsenos lauko aprašymas. Šis aprašymas yra skirtas skaityti žmonėms ir bus "
 "rodomas duomenų laukų sąrašuose ir antraštėse. "
 msgstr ""
 "Status field description. This description is intended for human readability "
 "and will be displayed in data field lists and headers. "
+
+msgid "Būsena"
+msgstr "Status"
 
 msgid "Būsenos"
 msgstr "Statuses"
@@ -211,9 +220,6 @@ msgstr "Frequently asked questions"
 
 msgid "Autorius"
 msgstr "Author"
-
-msgid "Aprašymas"
-msgstr "Description"
 
 msgid "Klausimas"
 msgstr "Question"
@@ -426,9 +432,6 @@ msgstr "Increase the frequency of data updates"
 msgid "Jei komentaras registruojamas kaip prašymas, jis privalo būti viešas"
 msgstr "If the comment is registered as a request, it must be public"
 
-msgid "Būsena"
-msgstr "Status"
-
 msgid "Šis laukas yra privalomas"
 msgstr "This field is required"
 
@@ -563,9 +566,6 @@ msgstr "API specification"
 
 msgid "Failai"
 msgstr "Files"
-
-msgid "Kodinis pavadinimas"
-msgstr "Code name"
 
 msgid "Kontaktinis asmuo ar organizacija"
 msgstr "Contact person or organization"
@@ -860,26 +860,29 @@ msgstr "Geoportal API format value"
 msgid "Geoportalo API formato reikšmės"
 msgstr "Geoportal API format values"
 
+#, python-brace-format
 msgid ""
 "Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
 "aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "
 msgstr ""
-"Data field \"{0}\" metadata visibility level \"{1}\" must not "
-"be higher than the model metadata visibility level \"{2}\". "
+"Data field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
+"the model metadata visibility level \"{2}\". "
 
+#, python-brace-format
 msgid ""
 "Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
 "aukštesnis už duomenų lauko metaduomenų matomumo lygį \"{2}\". "
 msgstr ""
-"Enum field \"{0}\" metadata visibility level \"{1}\" "
-"must not be higher than the property metadata visibility level \"{2}\" . "
+"Enum field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
+"the property metadata visibility level \"{2}\" . "
 
+#, python-brace-format
 msgid ""
 "Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
 "aukštesnis už duomenų modelio metaduomenų matomumo lygį \"{2}\". "
 msgstr ""
-"Enum field \"{0}\" metadata visibility level \"{1}\" "
-"must not be higher than the model metadata visibility level \"{2}\" . "
+"Enum field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
+"the model metadata visibility level \"{2}\" . "
 
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
@@ -1649,9 +1652,6 @@ msgstr "Subscription was created successfully"
 msgid "Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."
 msgstr "Found existing object subscription. It was updated successfully."
 
-msgid "Kita"
-msgstr "Other"
-
 msgid "organizacija"
 msgstr "organization"
 
@@ -1694,9 +1694,6 @@ msgstr "Data providers"
 
 msgid "Šablonas pakeistas sėkmingai."
 msgstr "Password was changed successfully"
-
-msgid "Agentai"
-msgstr "Agents"
 
 msgid "Organizations"
 msgstr "Organizations"
@@ -1889,70 +1886,6 @@ msgstr "Modified"
 
 msgid "Tekstas"
 msgstr "Rejected"
-
-msgid "Paskutinės sinchronizacijos data"
-msgstr "Date of last synchronization"
-
-msgid ""
-"Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."
-msgstr "Date when the last synchronization was attempted"
-
-msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
-msgstr "Was last synchronization successful?"
-
-msgid ""
-"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
-"klaidų."
-msgstr ""
-"Indicates whether the last synchronization was successful, i.e. if no errors "
-"were raised during it"
-
-msgid "Nurodomas Agento pavadinimas."
-msgstr "The agent's title"
-
-msgid "Nurodomas Agento kodinis pavadinimas."
-msgstr "The agent's codename"
-
-msgid "Atviri duomenys publikuojami Saugykloje"
-msgstr "Open data is published in Open Data Repository"
-
-msgid ""
-"Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų "
-"duomenų Saugyklą."
-msgstr ""
-"Specifies if the Agent additionally publishes `access=open` data to Open Data "
-"Repository"
-
-msgid "Atvirų duomenų publikavimo nuoroda"
-msgstr "Open data publish URL"
-
-msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
-msgstr "URL, where open data is published to"
-
-msgid "Agentas įjungtas"
-msgstr "Agent is enabled"
-
-msgid "Nurodoma, ar Agentas yra įjungtas ar išjungtas."
-msgstr "Indicates whether the agent is enabled or disabled"
-
-msgid "Agentas archyvuotas"
-msgstr "Agent is archived"
-
-msgid ""
-"Nurodo ar Agentas yra archyvuotas. Archyvuoti agentai nėra pasiekiami "
-"įprastiems platformos vartotojams"
-msgstr ""
-"Indicates, whether the Agent is archived. Archived agents are not available "
-"to regular platform users"
-
-msgid "Duomenų paslauga"
-msgstr "Data service"
-
-msgid "Nurodoma su Agentu susieta duomenų paslauga."
-msgstr "The data service associated with the agent"
-
-msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
-msgstr "The organization to which the agent is assigned"
 
 msgid "Galimi duomenų rinkiniai"
 msgstr "Assigned datasets"
@@ -2192,6 +2125,9 @@ msgstr "Registration is not allowed"
 msgid ""
 "Šios registravimosi nuorodos galiojimas baigėsi arba nuoroda yra klaidinga."
 msgstr "This registration link has expired or the link is incorrect."
+
+msgid "Agentai"
+msgstr "Agents"
 
 msgid "Raktas duomenų įkėlimui į saugyklą"
 msgstr "Key for uploading data to storage"
@@ -2812,6 +2748,9 @@ msgstr ""
 "storage. You must provide a direct link to the data. Smaller (5Mb or less) "
 "data files, can be stored inside the catalog"
 
+msgid "Duomenų paslauga"
+msgstr "Data service"
+
 msgid "Šaltinio pavadinimas"
 msgstr "Source title"
 
@@ -3000,6 +2939,26 @@ msgid "Fiksuotos reikšmės vertė šaltinyje."
 msgstr "Enum source"
 
 msgid ""
+"Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės "
+"elementams."
+msgstr "The access level used as default for all elements of this namespace."
+
+msgid "Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."
+msgstr "A property indicating the lifecycle state of a data model metadata."
+
+msgid "Metaduomenų matomumas"
+msgstr "Metadata visibility"
+
+msgid ""
+"Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį. "
+msgstr ""
+"A property indicating the level of visibility and availability of metadata "
+"for model fields."
+
+msgid "Europos teisės akto identifikatorius (ELI)"
+msgstr "European Legislation Identifier (ELI)"
+
+msgid ""
 "Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį "
 "teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> Pateikti "
 "konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "
@@ -3014,25 +2973,11 @@ msgstr ""
 "documents with annexes: \"#attachment1/17.2\" \"17.2/17.2.5\" where "
 "\"attachment1\" is the name of the document's file. "
 
-msgid ""
-"Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės "
-"elementams."
-msgstr "The access level used as default for all elements of this namespace."
-
 msgid "Duomenų rinkinio ar vardų erdvės pavadinimas."
 msgstr "Dataset title"
 
 msgid "Duomenų rinkinio ar vardų erdvės aprašymas."
 msgstr "Dataset or namespace description."
-
-msgid "Metaduomenų matomumas"
-msgstr "Metadata visibility"
-
-msgid "Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį."
-msgstr "A property indicating the level of visibility and availability of metadata for model fields."
-
-msgid "Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."
-msgstr "A property indicating the lifecycle state of a data model metadata."
 
 msgid "Reikšmė turi būti integer tipo."
 msgstr "Value must be integer."
@@ -3040,12 +2985,21 @@ msgstr "Value must be integer."
 msgid "Aprašymas neatitinka Markdown formato."
 msgstr "Description doesn't match Markdown format."
 
+#, python-brace-format
+msgid ""
+"Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų modelio "
+"matomumas '{1}'."
+msgstr ""
+"Metadata visibility '{0}' should not be higher than data model visibility "
+"'{1}'."
+
+#, python-brace-format
 msgid ""
 "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų lauko matomumas "
 "'{1}'."
 msgstr ""
-"The visibility of the metadata '{0}' should not be greater than the visibility of "
-"the data field '{1}'."
+"The visibility of the metadata '{0}' should not be greater than the "
+"visibility of the data field '{1}'."
 
 msgid "Nėra per ką sieti"
 msgstr "Nothing to link to"
@@ -3103,9 +3057,6 @@ msgstr ""
 msgid "Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."
 msgstr "Property indicating the data field name, a model attribute."
 
-msgid "ELI nuoroda"
-msgstr "ELI link"
-
 msgid "Duomenų šaltinis"
 msgstr "Dataset distribution"
 
@@ -3139,6 +3090,12 @@ msgstr ""
 "Model maturity level, indicating aspects such as whether a primary key is "
 "defined or whether the model name complies with naming requirements for code "
 "identifiers."
+
+msgid ""
+"Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį."
+msgstr ""
+"A property indicating the level of visibility and availability of metadata "
+"for model fields."
 
 msgid ""
 "Trumpas modelio pavadinimas. Pirmas žodis iš didžiosios raidės, pavadinimo "
@@ -3218,6 +3175,11 @@ msgstr ""
 
 msgid "Modelis su tokiu kodiniu pavadinimu jau egzistuoja."
 msgstr "Model with this code name already exists."
+
+msgid ""
+"Stulpelis 'Klasė' turi būti užpildytas pasirenkant šį metaduomenų matomumo "
+"lygį."
+msgstr "Column 'Class' must have a value if this metadata visibility level is selected"
 
 msgid "Duomenų nėra"
 msgstr "No data."
@@ -3410,10 +3372,6 @@ msgstr ""
 msgid "Netinkami matavimo vienetai."
 msgstr "Invalid units of measure."
 
-msgid "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų modelio matomumas '{1}'."
-msgstr ""
-"Metadata visibility '{0}' should not be higher than data model visibility '{1}'."
-
 msgid "Formulė"
 msgstr "Formula"
 
@@ -3476,9 +3434,6 @@ msgstr "Calculated maturity level"
 
 msgid "Prieiga"
 msgstr "Access"
-
-msgid "Europos teisės akto identifikatorius (ELI)"
-msgstr "European Legislation Identifier (ELI)"
 
 msgid "Žodyno atitikmuo"
 msgstr "Uri"
@@ -3587,6 +3542,9 @@ msgstr "Used at LT level"
 
 msgid "Naudojamas EU lygmeniu"
 msgstr "Used at EU level"
+
+msgid "ELI nuoroda"
+msgstr "ELI link"
 
 msgid "rengiama"
 msgstr "preparing"
@@ -3991,6 +3949,225 @@ msgstr "Dislike"
 msgid "Atsisakyti prenumeratos"
 msgstr "Cancel subscription"
 
+msgid "Kita"
+msgstr "Other"
+
+msgid ""
+"Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "
+"publikuojami Saugykloje\"."
+msgstr "This field is required if the property \"Open data "
+"is published in Open Data Repository\" is ticked."
+
+msgid ""
+"Agentas su tokiu pavadinimu jau registruotas organizacijoje, pasirinkite "
+"kitą pavadinimą."
+msgstr "An agent with the same name already exists in this organization, select a different name"
+
+msgid "Paskutinės sinchronizacijos data"
+msgstr "Date of last synchronization"
+
+msgid ""
+"Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."
+msgstr "Date when the last synchronization was attempted"
+
+msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
+msgstr "Was last synchronization successful?"
+
+msgid ""
+"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
+"klaidų."
+msgstr ""
+"Indicates whether the last synchronization was successful, i.e. if no errors "
+"were raised during it"
+
+msgid "Nurodomas Agento pavadinimas."
+msgstr "The agent's title"
+
+msgid "Nurodomas Agento kodinis pavadinimas."
+msgstr "The agent's codename"
+
+msgid "Rūšis"
+msgstr "Type"
+
+msgid ""
+"Nurodoma Agento rūšis t.y. ar bus naudojama \"Spinta\" ar kitas sprendimas."
+msgstr "Agent type, if \"Spinta\" or a different solution is used."
+
+msgid "Atviri duomenys publikuojami Saugykloje"
+msgstr "Open data is published in Open Data Repository"
+
+msgid ""
+"Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų "
+"duomenų Saugyklą."
+msgstr ""
+"Specifies if the Agent additionally publishes `access=open` data to Open "
+"Data Repository"
+
+msgid "Atvirų duomenų publikavimo nuoroda"
+msgstr "Open data publish URL"
+
+msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
+msgstr "URL, where open data is published to"
+
+msgid "Agentas įjungtas"
+msgstr "Agent is enabled"
+
+msgid "Nurodoma, ar Agentas yra įjungtas ar išjungtas."
+msgstr "Indicates whether the agent is enabled or disabled"
+
+msgid "Agentas archyvuotas"
+msgstr "Agent is archived"
+
+msgid ""
+"Nurodo ar Agentas yra archyvuotas. Archyvuoti agentai nėra pasiekiami "
+"įprastiems platformos vartotojams"
+msgstr ""
+"Indicates, whether the Agent is archived. Archived agents are not available "
+"to regular platform users"
+
+msgid "Nurodoma su Agentu susieta duomenų paslauga."
+msgstr "The data service associated with the agent"
+
+msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
+msgstr "The organization to which the agent is assigned"
+
+msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
+msgstr "The related data resource must be of type \"service\"."
+
+msgid "Grįžti į agentus"
+msgstr "Go back"
+
+msgid "Įjungtas"
+msgstr "Enabled"
+
+msgid "Išjungtas"
+msgstr "Disabled"
+
+msgid "Paskutinės sinchronizacijos rezultatas"
+msgstr "Date of last synchronization"
+
+msgid "Pavyko"
+msgstr "Success"
+
+msgid "Nepavyko"
+msgstr "Failure"
+
+msgid "Nevykdyta"
+msgstr "Not executed"
+
+msgid "Publikuojami atviri duomenys"
+msgstr "Open data is published"
+
+msgid "Atvirų duomenų servisas"
+msgstr "Open data service"
+
+msgid "Agento prisijungimo prie Katalogo konfigūracija"
+msgstr "Agent connection to the Catalog configuration"
+
+msgid ""
+"Norint publikuoti duomenis į Saugyklą per Katalogą, būtina užregistruoti "
+"agentą – specialų techninį klientą, kuris gauna teisę rašyti duomenis į "
+"konkrečią vardų erdvę."
+msgstr "To publish data to the Repository through the Catalogue, it is "
+"necessary to register an agent – a special technical client that is "
+"granted the right to write data to a specific namespace."
+
+msgid ""
+"Užregistravus Agentą būtina sukonfigūruoti jo prisijungimo duomenis, kitaip "
+"Agentas negalės pasiekti saugyklos."
+msgstr "After registering the Agent, it is necessary to configure its login "
+"credentials; otherwise, the Agent will not be able to access the repository."
+
+msgid "Daugiau apie credentials.cfg"
+msgstr "More about credentials.cfg"
+
+msgid "Agento prisijungimo prie Duomenų šaltinio konfigūracija"
+msgstr "Agent connection to the data source configuration"
+
+msgid ""
+"Konfigūracijos failas, kuriame nurodomi prisijungimo parametrai, kurie "
+"nebuvo nurodyti struktūros apraše."
+msgstr "A configuration file that specifies connection parameters not defined in the structure description."
+
+msgid "Daugiau apie config.yml"
+msgstr "More about config.yml"
+
+msgid "Slaptas raktas"
+msgstr "Secret key"
+
+msgid ""
+"Šis raktas rodomas tik vieną kartą po Agento sukūrimo. Išsisaugokite jį "
+"saugiai – jis naudojamas autentifikacijai jungiantis prie API."
+msgstr "This key is displayed only once after the Agent is created. "
+"Save it securely – it is used for authentication when connecting to the API."
+
+msgid "Kopijuoti"
+msgstr "Copy"
+
+msgid "Pridėti agentą"
+msgstr "Add an Agent"
+
+msgid ""
+"Nurodo ar paskutinė sinchronizacija buvo sėkminga/nesėkminga. Taip pat, ar "
+"Agentas yra įjungtas/išjungtas."
+msgstr ""
+"Indicates whether the last synchronization was successful, i.e. if no errors "
+"were raised during it"
+
+msgid "Kodinis Pavadinimas"
+msgstr "Code name"
+
+msgid "Unikalus agento kodinis pavadinimas, naudojamas sistemose."
+msgstr "The unique agent's codename."
+
+msgid "Agento pavadinimas."
+msgstr "The agent's title."
+
+msgid "Sukurtas"
+msgstr "Created"
+
+msgid "Data ir laikas, kada agentas buvo pridėtas į Katalogą."
+msgstr "Date and time, when the agent was added to the Catalogue"
+
+msgid "Data ir laikas, kada buvo atlikta paskutinė užklausa iš Agento."
+msgstr "Date and time, when the last request from the agent was made."
+
+msgid "Duomenų Paslauga"
+msgstr "Data service"
+
+msgid "Agentui priskirta duomenų paslauga."
+msgstr "The data service associated with the agent"
+
+msgid "Galimi veiksmai su agentu: žurnalas, redaguoti, pašalinti."
+msgstr "Available actions with the agent: journal, edit, remove."
+
+msgid "Žurnalas"
+msgstr "Journal"
+
+msgid "Nėra registruotų agentų."
+msgstr "No registered agents."
+
+msgid "Pridėti Agentą"
+msgstr "Add an Agent"
+
+msgid ""
+"Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį "
+"kartą!\n"
+" Jei pasirinkote rūšį \"Spinta\", raktas vaizduojamas šalia stulpelio "
+"\"secret\" credentials.cfg failo pavyzdyje"
+msgstr "Save the secret key shown at the bottom of the page — it will be "
+"displayed only this one time! If you selected the \"Spinta\" type, the key "
+"is shown next to the \"secret\" column in the credentials.cfg file example."
+
+msgid "Įvyko klaida, nepavyko sukurti agento."
+msgstr "An error occurred; the agent could not be created."
+
+msgid "Redaguoti Agentą"
+msgstr "Edit agent"
+
+msgid "Pašalinti Agentą"
+msgstr "Delete agent"
+
 msgid "Asmeninė informacija"
 msgstr "Personal information"
 
@@ -3999,9 +4176,6 @@ msgstr "Important dates"
 
 msgid "Vardas ir pavardė"
 msgstr "Name and surname;"
-
-msgid "Sukurtas"
-msgstr "Created"
 
 msgid "Paskutinis prisijungimas"
 msgstr "Last login"

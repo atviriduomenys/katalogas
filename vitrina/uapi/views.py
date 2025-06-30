@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.forms import ModelForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
@@ -141,40 +142,44 @@ class AgentCreateView(CreateView, BaseAgentView):
 
     def form_valid(self, form: ModelForm) -> HttpResponse:
         title = form.cleaned_data["title"]
-        form.instance.organization = self.organization
-        form.instance.service = Dataset.objects.create(
-            title=f'Agento "{title}" Duomenų Paslauga',
-            description="Ši duomenų paslauga buvo automatiškai sukurta kuriant Agentą.",
-            access_rights=Dataset.NON_PUBLIC,
-            organization=self.organization,
-            service=True,
-            endpoint_url=None,
-            endpoint_type=Format.objects.filter(extension="UAPI").first(),
-            endpoint_description="https://ivpk.github.io/uapi",
-            endpoint_description_type=Format.objects.filter(extension="Open API").first(),
-            is_public=False,
-        )
-        form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
-        form.instance.service.save_translations()
+        try:
+            with transaction.atomic():
+                form.instance.organization = self.organization
+                form.instance.service = Dataset.objects.create(
+                    title=f'Agento "{title}" Duomenų Paslauga',
+                    description="Ši duomenų paslauga buvo automatiškai sukurta kuriant Agentą.",
+                    access_rights=Dataset.NON_PUBLIC,
+                    organization=self.organization,
+                    service=True,
+                    endpoint_url=None,
+                    endpoint_type=Format.objects.filter(extension="UAPI").first(),
+                    endpoint_description="https://ivpk.github.io/uapi",
+                    endpoint_description_type=Format.objects.filter(extension="Open API").first(),
+                    is_public=False,
+                )
+                form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
+                form.instance.service.save_translations()
 
-        self.object = form.save()
+                self.object = form.save()
 
-        raw_api_key = secrets.token_urlsafe()
-        ApiKey.objects.create(
-            api_key=hash_api_key(raw_api_key), enabled=True, agent=self.object
-        )
-        self.request.session["new_agent_api_key"] = raw_api_key
-
-        messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))
-        messages.error(
-            self.request,
-            _(
-                "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį kartą!\n "
-                "Jei pasirinkote rūšį \"Spinta\", raktas vaizduojamas šalia stulpelio \"secret\" credentials.cfg "
-                "failo pavyzdyje"
-            )
-        )
-        return redirect(reverse("agent-detail", args=[self.organization.pk, self.object.pk]))
+                raw_api_key = secrets.token_urlsafe()
+                ApiKey.objects.create(
+                    api_key=hash_api_key(raw_api_key), enabled=True, agent=self.object
+                )
+                self.request.session["new_agent_api_key"] = raw_api_key
+                messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))
+                messages.error(
+                    self.request,
+                    _(
+                        "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį kartą!\n "
+                        "Jei pasirinkote rūšį \"Spinta\", raktas vaizduojamas šalia stulpelio \"secret\" credentials.cfg "
+                        "failo pavyzdyje"
+                    )
+                )
+                return redirect(reverse("agent-detail", args=[self.organization.pk, self.object.pk]))
+        except Exception:
+            messages.error(self.request, _("Įvyko klaida, nepavyko sukurti agento."))
+            return self.form_invalid(form)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)

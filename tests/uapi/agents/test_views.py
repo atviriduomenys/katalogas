@@ -1,5 +1,6 @@
 import secrets
 from http import HTTPStatus
+from unittest.mock import patch
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -119,6 +120,27 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
     assert ApiKey.objects.count() == 1
     assert hash_api_key(app.session["new_agent_api_key"]) == ApiKey.objects.filter(agent=agent).first().api_key
 
+
+@pytest.mark.django_db
+def test_create_agent_transaction_rollback_on_error(app, representative_user, organization):
+    app.set_user(representative_user)
+
+    url = reverse("agent-create", args=[organization.pk])
+    data = {
+        "title": "New Agent",
+        "is_enabled": True,
+        "is_open_data_published": False,
+        "object_type": "other",
+        "open_data_publish_url": "https://data.gov.lt/agent",
+    }
+
+    with patch("vitrina.uapi.views.ApiKey.objects.create", side_effect=Exception("Simulated error")):
+        response = app.post(url, data)
+
+    assert response.status_code == HTTPStatus.OK  # Re-rendered due to `form_invalid()`.
+    assert Agent.objects.count() == 0
+    assert Dataset.objects.filter(service=True, translations__title__icontains="Agento").count() == 0
+    assert ApiKey.objects.count() == 0
 
 
 @pytest.mark.django_db

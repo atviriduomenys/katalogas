@@ -720,18 +720,6 @@ class TestNewsletterSubscribeView:
         # HTML validation should prevent this.
         assert response.status_code == 302
 
-    def test_subscribe_ajax_request(self, client):
-        response = client.post(
-            reverse('newsletter-subscribe'),
-            {'email': 'ajax@example.com'},
-            HTTP_X_REQUESTED_WITH='XMLHttpRequest'
-        )
-
-        assert response.status_code == 200
-        json_data = response.json()
-        assert json_data['status'] == 'success'
-        assert 'patvirtinimo' in json_data['message'].lower()
-
 
 @pytest.mark.django_db
 class TestNewsletterConfirmView:

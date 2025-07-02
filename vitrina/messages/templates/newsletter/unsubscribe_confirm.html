@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block current_title %}
-    {% trans "Atšaukti prenumeratą" %}
+    {% translate "Atšaukti prenumeratą" %}
 {% endblock %}
 
 {% block content %}
@@ -14,16 +14,16 @@
                 </div>
 
                 <h2 class="title is-3">
-                    {% trans "Atšaukti naujienlaiškio prenumeratą" %}
+                    {% translate "Atšaukti naujienlaiškio prenumeratą" %}
                 </h2>
 
                 <div class="content">
                     <p class="is-size-5">
-                        {% trans "Ar tikrai norite atšaukti prenumeratą el. pašto adresui" %} <strong>{{ subscriber.email }}</strong>?
+                        {% translate "Ar tikrai norite atšaukti prenumeratą el. pašto adresui" %} <strong>{{ subscriber.email }}</strong>?
                     </p>
 
                     <p class="has-text-grey">
-                        {% trans "Po prenumeratos atšaukimo nebegausite mūsų naujienlaiškių." %}
+                        {% translate "Po prenumeratos atšaukimo nebegausite mūsų naujienlaiškių." %}
                     </p>
                 </div>
 
@@ -36,22 +36,22 @@
                             <span class="icon">
                                 <i class="fas fa-times"></i>
                             </span>
-                            <span>{% trans "Taip, atšaukti prenumeratą" %}</span>
+                            <span>{% translate "Taip, atšaukti prenumeratą" %}</span>
                         </button>
 
                         <a href="/" class="button is-light is-medium">
                             <span class="icon">
                                 <i class="fas fa-arrow-left"></i>
                             </span>
-                            <span>{% trans "Ne, grįžti atgal" %}</span>
+                            <span>{% translate "Ne, grįžti atgal" %}</span>
                         </a>
                     </div>
                 </form>
 
                 <div class="notification is-info is-light mt-4">
                     <p class="is-size-7">
-                        <strong>{% trans "Pastaba:" %}</strong>
-                        {% trans "Jei pakeisite nuomonę, galėsite bet kada prenumeruoti iš naujo mūsų svetainėje." %}
+                        <strong>{% translate "Pastaba:" %}</strong>
+                        {% translate "Jei pakeisite nuomonę, galėsite bet kada prenumeruoti iš naujo mūsų svetainėje." %}
                     </p>
                 </div>
             </div>

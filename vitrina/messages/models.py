@@ -131,6 +131,7 @@ class NewsletterSubscriber(models.Model):
             self.confirmation_expires_at = timezone.now() + timedelta(hours=24)
         super().save(*args, **kwargs)
 
+    @property
     def is_confirmation_expired(self):
         if self.is_confirmed or not self.confirmation_expires_at:
             return False

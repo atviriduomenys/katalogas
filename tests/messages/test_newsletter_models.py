@@ -40,7 +40,7 @@ class TestNewsletterSubscriber:
             email="test@example.com", confirmation_expires_at=future_time
         )
 
-        assert subscriber.is_confirmation_expired() is False
+        assert subscriber.is_confirmation_expired is False
 
     def test_is_confirmation_expired_true_when_expired(self):
         past_time = timezone.now() - timedelta(hours=1)
@@ -48,7 +48,7 @@ class TestNewsletterSubscriber:
             email="test@example.com", confirmation_expires_at=past_time
         )
 
-        assert subscriber.is_confirmation_expired() is True
+        assert subscriber.is_confirmation_expired is True
 
     def test_is_confirmation_expired_false_when_already_confirmed(self):
         past_time = timezone.now() - timedelta(hours=1)
@@ -58,7 +58,7 @@ class TestNewsletterSubscriber:
             confirmation_expires_at=past_time,
         )
 
-        assert subscriber.is_confirmation_expired() is False
+        assert subscriber.is_confirmation_expired is False
 
     def test_confirm_subscription(self):
         subscriber = NewsletterSubscriber.objects.create(email="test@example.com")

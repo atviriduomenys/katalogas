@@ -75,7 +75,7 @@ def update_remote_file_size(
 def get_remote_file_info(
     url: str,
     max_size: int = 10 * 1024 * 1024,
-    timeout: int = 5,
+    timeout: int = 30,
 ) -> FileInfo:
     try:
         head_response = requests.head(url, allow_redirects=True, timeout=timeout)

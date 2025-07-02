@@ -145,7 +145,7 @@ class TestGetRemoteFileInfo(unittest.TestCase):
         mock_head.assert_called_once_with(
             "https://example.com/file.csv",
             allow_redirects=True,
-            timeout=5
+            timeout=30
         )
 
     @patch('vitrina.resources.tasks.logger')

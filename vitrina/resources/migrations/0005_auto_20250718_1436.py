@@ -6,15 +6,10 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_resources', '0003_auto_20250428_0653'),
+        ('vitrina_resources', '0004_auto_20250714_0804'),
     ]
 
     operations = [
-        migrations.AddField(
-            model_name='datasetdistribution',
-            name='last_modified_header',
-            field=models.CharField(blank=True, max_length=255, null=True),
-        ),
         migrations.AddField(
             model_name='datasetdistribution',
             name='last_size_check',

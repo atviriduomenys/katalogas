@@ -229,6 +229,7 @@ class DatasetDistribution(TranslatableModel):
     licence = models.ForeignKey(
         Licence, models.SET_NULL, blank=True, null=True, verbose_name=_("Licencija"),
     )
+    last_size_check = models.DateTimeField(blank=True, null=True)
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)

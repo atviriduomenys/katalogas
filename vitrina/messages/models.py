@@ -7,6 +7,7 @@ from django.db import models
 from django.utils import timezone
 
 from vitrina.users.models import User
+from vitrina.datasets.models import Dataset
 
 from django.utils.translation import gettext_lazy as _
 
@@ -184,6 +185,7 @@ class NewsletterSubscriber(models.Model):
             self.confirmation_expires_at = timezone.now() + timedelta(hours=24)
         super().save(*args, **kwargs)
 
+    @property
     def is_confirmation_expired(self):
         if self.is_confirmed or not self.confirmation_expires_at:
             return False

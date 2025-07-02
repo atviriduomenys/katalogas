@@ -268,7 +268,7 @@ class NewsletterConfirmView(View):
                 NewsletterSubscriber, confirmation_token=token, is_confirmed=False
             )
 
-            if subscriber.is_confirmation_expired():
+            if subscriber.is_confirmation_expired:
                 messages.error(
                     request,
                     _(

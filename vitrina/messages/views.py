@@ -5,7 +5,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -202,23 +202,22 @@ class NewsletterSubscribeView(View):
         email_input = request.POST.get("email", "").strip()
 
         if not email_input:
-            message = _("Prašome įvesti el. pašto adresą.")
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return JsonResponse({"status": "error", "message": str(message)})
-
-            messages.error(request, message)
+            messages.error(request, _("Prašome įvesti el. pašto adresą."))
             return self.redirect_back()
 
         subscriber, created = NewsletterSubscriber.objects.get_or_create(
-            email=email_input, defaults={"is_confirmed": False, "is_active": True}
+            email=email_input,
+            defaults={
+                "is_confirmed": False,
+                "is_active": True,
+            },
         )
 
         if not created and subscriber.is_confirmed and subscriber.is_active:
-            message = _("Šis el. pašto adresas jau prenumeruoja naujienlaiškį.")
-            if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-                return JsonResponse({"status": "info", "message": str(message)})
-
-            messages.info(request, message)
+            messages.info(
+                request,
+                _("Šis el. pašto adresas jau prenumeruoja naujienlaiškį."),
+            )
             return self.redirect_back()
 
         if not created:
@@ -245,12 +244,13 @@ class NewsletterSubscribeView(View):
             },
         )
 
-        message = _(
-            "Patvirtinimo nuoroda išsiųsta į jūsų el. paštą. Nuoroda galioja 24 valandas."
+        messages.success(
+            request,
+            _(
+                "Patvirtinimo nuoroda išsiųsta į jūsų el. paštą. "
+                "Nuoroda galioja 24 valandas."
+            ),
         )
-        if request.headers.get("X-Requested-With") == "XMLHttpRequest":
-            return JsonResponse({"status": "success", "message": str(message)})
-        messages.success(request, message)
 
         return self.redirect_back()
 

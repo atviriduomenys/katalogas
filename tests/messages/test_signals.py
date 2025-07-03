@@ -60,12 +60,12 @@ def test_no_content_yields_no_newsletter():
 
 
 @pytest.mark.django_db
-def test_soft_deleted_dataset_not_sent(last_month, subscriber):
+def test_deleted_on_dataset_not_sent(last_month, subscriber):
     Dataset.objects.create(
         title='Hidden Dataset',
         description='...',
         created=last_month,
-        soft_deleted=timezone.now(),
+        deleted_on=timezone.now(),
         status=Dataset.HAS_DATA,
     )
 

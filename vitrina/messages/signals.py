@@ -30,7 +30,7 @@ def send_newsletter_to_subscribers(sender, **kwargs):
         is_public=True,
         published__gte=last_month_start,
         published__lte=last_month_end,
-        soft_deleted__isnull=True,
+        deleted_on__isnull=True,
         deleted__isnull=True,
     )
 

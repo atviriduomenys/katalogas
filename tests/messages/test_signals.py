@@ -26,7 +26,9 @@ def subscriber():
 
 @pytest.mark.django_db
 @patch('vitrina.messages.signals.email')
-def test_newsletter_with_blog_and_dataset(mock_email, last_month, subscriber):
+@patch('djangocms_blog.models.Post.get_absolute_url')
+def test_newsletter_with_blog_and_dataset(mock_get_absolute_url, mock_email, last_month, subscriber):
+    mock_get_absolute_url.return_value = '/blog/test-blog/'
     Post.objects.create(
         title='Test Blog',
         slug='test-blog',

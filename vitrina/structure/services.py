@@ -989,6 +989,7 @@ DATASET = [
     "ref",
     "source",
     "prepare",
+    "count",
     "level",
     "status",
     "visibility",
@@ -997,7 +998,6 @@ DATASET = [
     "eli",
     "title",
     "description",
-    "count",
 ]
 
 

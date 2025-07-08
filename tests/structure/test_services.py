@@ -1640,11 +1640,11 @@ def test_structure_export__prefixes(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
-        '1,,,,,,prefix,spinta,,,,,,,https://github.com/atviriduomenys/spinta/issues/,,,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
+        '1,,,,,,prefix,spinta,,,,,,,,https://github.com/atviriduomenys/spinta/issues/,,,\n'
         '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        '3,,,,,,prefix,dcat,,,,,,,http://www.w3.org/ns/dcat#,,,,\n'
-        '4,,,,,,,dct,,,,,,,http://purl.org/dc/terms/,,,,'
+        '3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\n'
+        '4,,,,,,,dct,,,,,,,,http://purl.org/dc/terms/,,,'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -1662,12 +1662,12 @@ def test_structure_export__prefixes(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,,,,,,prefix,spinta,,,,,,,https://github.com/atviriduomenys/spinta/issues/,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,,,,,,prefix,spinta,,,,,,,,https://github.com/atviriduomenys/spinta/issues/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
-        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,Title,Description,\r\n'
-        '3,,,,,,prefix,dcat,,,,,,,http://www.w3.org/ns/dcat#,,,,\r\n'
-        '4,,,,,,,dct,,,,,,,http://purl.org/dc/terms/,,,,\r\n'
+        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\r\n'
+        '4,,,,,,,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 
@@ -1677,16 +1677,16 @@ def test_structure_export__models_and_props(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\n'
-        '4,,,,Licence,,,id,,page(id),,,,,,,Licence,,\n'
-        '5,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
-        '6,,,,,title,string,,,,2,,,open,dct:title,,,,\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
+        '4,,,,Licence,,,id,,page(id),,,,,,,,Licence,\n'
+        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        '6,,,,,title,string,,,,,2,,,open,dct:title,,,\n'
         ',,,,,,,,,,,,,,,,,,\n'
-        '7,,,,Catalog,,,id,,,,,,,,,Catalog,,\n'
-        '8,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        '7,,,,Catalog,,,id,,,,,,,,,,Catalog,\n'
+        '8,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -1704,17 +1704,17 @@ def test_structure_export__models_and_props(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,Title,Description,\r\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\r\n'
-        '4,,,,Licence,,,id,,page(id),,,,,,,Licence,,\r\n'
-        '5,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\r\n'
-        '6,,,,,title,string,,,,2,,,open,dct:title,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
+        '4,,,,Licence,,,id,,page(id),,,,,,,,Licence,\r\n'
+        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '6,,,,,title,string,,,,,2,,,open,dct:title,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
-        '7,,,,Catalog,,,id,,,,,,,,,Catalog,,\r\n'
-        '8,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\r\n'
+        '7,,,,Catalog,,,id,,,,,,,,,,Catalog,\r\n'
+        '8,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 
@@ -1724,16 +1724,16 @@ def test_structure_export__base_model(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
         '4,,,,Base,,,,,,,,,,,,,,\n'
-        '5,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
         ',,,,,,,,,,,,,,,,,,\n'
         '6,,,Base,,,,,,,,,,,,,,,\n'
         '7,,,,Catalog,,,,,,,,,,,,,,\n'
-        '8,,,,,title,string,,,,2,,,open,dct:title,,,,\n'
+        '8,,,,,title,string,,,,,2,,,open,dct:title,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -1751,17 +1751,17 @@ def test_structure_export__base_model(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,Title,Description,\r\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
         '4,,,,Base,,,,,,,,,,,,,,\r\n'
-        '5,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\r\n'
+        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
         '6,,,Base,,,,,,,,,,,,,,,\r\n'
         '7,,,,Catalog,,,,,,,,,,,,,,\r\n'
-        '8,,,,,title,string,,,,2,,,open,dct:title,,,,\r\n'
+        '8,,,,,title,string,,,,,2,,,open,dct:title,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 
@@ -1771,16 +1771,16 @@ def test_structure_export__property_ref(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
         '4,,,,Country,,,,,,,,,,,,,,\n'
-        '5,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
-        '6,,,,,title,string,,,,5,,,open,dct:title,,,,\n'
-        '7,,,,,continent,ref,Continent[id],,,5,,,open,dct:continent,,,,\n'
+        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        '6,,,,,title,string,,,,,5,,,open,dct:title,,,\n'
+        '7,,,,,continent,ref,Continent[id],,,,5,,,open,dct:continent,,,\n'
         '8,,,,Continent,,,,,,,,,,,,,,\n'
-        '9,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        '9,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -1798,18 +1798,18 @@ def test_structure_export__property_ref(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,Title,Description,\r\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
         '4,,,,Country,,,,,,,,,,,,,,\r\n'
-        '5,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\r\n'
-        '6,,,,,title,string,,,,5,,,open,dct:title,,,,\r\n'
-        '7,,,,,continent,ref,Continent[id],,,5,,,open,dct:continent,,,,\r\n'
+        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '6,,,,,title,string,,,,,5,,,open,dct:title,,,\r\n'
+        '7,,,,,continent,ref,Continent[id],,,,5,,,open,dct:continent,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
         '8,,,,Continent,,,,,,,,,,,,,,\r\n'
-        '9,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\r\n'
+        '9,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 
@@ -1819,14 +1819,14 @@ def test_structure_export__model_ref(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
         '4,,,,Country,,,"id, title",,,,,,,,,,,\n'
-        '5,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
-        '6,,,,,title,string,,,,5,,,open,dct:title,,,,\n'
-        '7,,,,,continent,ref,Continent,,,5,,,open,dct:continent,,,,\n'
+        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        '6,,,,,title,string,,,,,5,,,open,dct:title,,,\n'
+        '7,,,,,continent,ref,Continent,,,,5,,,open,dct:continent,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -1844,15 +1844,15 @@ def test_structure_export__model_ref(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,Title,Description,\r\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
         '4,,,,Country,,,"id, title",,,,,,,,,,,\r\n'
-        '5,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\r\n'
-        '6,,,,,title,string,,,,5,,,open,dct:title,,,,\r\n'
-        '7,,,,,continent,ref,Continent,,,5,,,open,dct:continent,,,,\r\n'
+        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '6,,,,,title,string,,,,,5,,,open,dct:title,,,\r\n'
+        '7,,,,,continent,ref,Continent,,,,5,,,open,dct:continent,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 
@@ -1862,14 +1862,14 @@ def test_structure_export__comments(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
         '4,,,,Country,,,,,,,,,,,,,,\n'
-        '5,,,,,,comment,type,,,,,,open,,,Model comment,,\n'
-        '6,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
-        '7,,,,,,comment,type,,,,,,open,,,Property comment,,\n'
+        '5,,,,,,comment,type,,,,,,,open,,,Model comment,\n'
+        '6,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        '7,,,,,,comment,type,,,,,,,open,,,Property comment,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -1886,15 +1886,15 @@ def test_structure_export__comments(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,Title,Description,\r\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
         '4,,,,Country,,,,,,,,,,,,,,\r\n'
-        '5,,,,,,comment,type,,,,,,open,,,Model comment,,\r\n'
-        '6,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\r\n'
-        '7,,,,,,comment,type,,,,,,open,,,Property comment,,\r\n'
+        '5,,,,,,comment,type,,,,,,,open,,,Model comment,\r\n'
+        '6,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '7,,,,,,comment,type,,,,,,,open,,,Property comment,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 
@@ -1904,17 +1904,17 @@ def test_structure_export__enums(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
-        '3,,,,,,enum,Size,,SMALL,,,,,,,,,\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
+        '3,,,,,,enum,Size,,SMALL,,,,,,,,,,\n'
         '4,,,,,,,,,MEDIUM,,,,,,,,,\n'
         '5,,,,,,,,,BIG,,,,,,,,,\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
         '7,,,,City,,,,,,,,,,,,,,\n'
-        '8,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
-        '9,,,,,size,Size,,,,5,,,open,dct:size,,,,\n'
-        '10,,,,,type,string,,,,5,,,open,dct:type,,,,\n'
+        '8,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        '9,,,,,size,Size,,,,,5,,,open,dct:size,,,\n'
+        '10,,,,,type,string,,,,,5,,,open,dct:type,,,\n'
         '11,,,,,,enum,Type,,CREATED,,,,,,,,,\n'
         '12,,,,,,,,,MODIFIED,,,,,,,,,\n'
     )
@@ -1933,19 +1933,19 @@ def test_structure_export__enums(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,Title,Description,\r\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
         '3,,,,,,enum,Size,,SMALL,,,,,,,,,\r\n'
         '4,,,,,,,,,MEDIUM,,,,,,,,,\r\n'
         '5,,,,,,,,,BIG,,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\r\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
         '7,,,,City,,,,,,,,,,,,,,\r\n'
-        '8,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\r\n'
-        '9,,,,,size,Size,,,,5,,,open,dct:size,,,,\r\n'
-        '10,,,,,type,string,,,,5,,,open,dct:type,,,,\r\n'
+        '8,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '9,,,,,size,Size,,,,,5,,,open,dct:size,,,\r\n'
+        '10,,,,,type,string,,,,,5,,,open,dct:type,,,\r\n'
         '11,,,,,,enum,Type,,CREATED,,,,,,,,,\r\n'
         '12,,,,,,,,,MODIFIED,,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
@@ -1957,18 +1957,18 @@ def test_structure_export__params(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
         '3,,,,,,param,country,,lt,,,,,,,,,\n'
         '4,,,,,,,,,lv,,,,,,,,,\n'
         '5,,,,,,,,,ee,,,,,,,,,\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
         '7,,,,City,,,,,,,,,,,,,,\n'
         '8,,,,,,param,type,,created,,,,,,,,,\n'
         '9,,,,,,,,,modified,,,,,,,,,\n'
-        '10,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
-        '11,,,,,type,string,,,,5,,,open,dct:type,,,,\n'
+        '10,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        '11,,,,,type,string,,,,,5,,,open,dct:type,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -1985,20 +1985,20 @@ def test_structure_export__params(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,Title,Description,\r\n'
-        '2,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
         '3,,,,,,param,country,,lt,,,,,,,,,\r\n'
         '4,,,,,,,,,lv,,,,,,,,,\r\n'
         '5,,,,,,,,,ee,,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,,,Title,Description,\r\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
         '7,,,,City,,,,,,,,,,,,,,\r\n'
         '8,,,,,,param,type,,created,,,,,,,,,\r\n'
         '9,,,,,,,,,modified,,,,,,,,,\r\n'
-        '10,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\r\n'
-        '11,,,,,type,string,,,,5,,,open,dct:type,,,,\r\n'
+        '10,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '11,,,,,type,string,,,,,5,,,open,dct:type,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 
@@ -2165,9 +2165,9 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,test_dataset,,,,,,,,,,,,,,,,,\n'
-        '2,,resource1,,,,,,http://www.example.com,,,,,,,,Title,Description,\n'
+        '2,,resource1,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
         '3,,,,Model,,,id,,,,,,,,,,,\n'
         '4,,,,,id,integer,,,,,,,,,,,,\n'
         ',,,,,,,,,,,,,,,,,,\n'
@@ -2222,9 +2222,9 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,test_dataset,,,,,,,,,,,,,,,Title,Description,\r\n'
-        '2,,resource1,,,,,,http://www.example.com,,,,,,,,Title,Description,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,resource1,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
         '3,,,,Modelis,,,id,,,,,,,,,,,\r\n'
         '4,,,,,id,integer,,,,,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
@@ -2246,8 +2246,8 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
-        '1,test_dataset,,,,,,,,,,,,,,,Title,Description,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,prepare,level,status,visibility,access,uri,eli,title,description\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,Title,Description\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -2270,8 +2270,8 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,test_dataset,,,,,,,,,,,,,,,Edited title,Edited description,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,Edited title,Edited description\r\n'
     )
 
 
@@ -2280,9 +2280,9 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
-        '1,test_dataset,,,,,,,,,,,,,,,Dataset,Dataset description,\n'
-        '2,,test_resource,,,,,,https://example.com,,,,,,,,Resource,Resource description,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,Dataset,Dataset description\n'
+        '2,,test_resource,,,,,,https://example.com,,,,,,,,,Resource,Resource description\n'
         '3,,,,Model,,,,,,,,,,,,,,\n'
     )
     structure = DatasetStructureFactory(
@@ -2313,9 +2313,9 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,test_dataset,,,,,,,,,,,,,,,Dataset,Dataset description,\r\n'
-        '2,,test_resource,,,,,,https://example.com,,,,,,,,Edited title,Edited description,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,Dataset,Dataset description\r\n'
+        '2,,test_resource,,,,,,https://example.com,,,,,,,,,Edited title,Edited description\r\n'
         '3,,,,Model,,,,,,,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
@@ -2326,9 +2326,9 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
-        '1,test_dataset,,,,,,,,,,,,,,,Dataset,Dataset description,\n'
-        '2,,test_resource,,,,,,https://example.com,,,,,,,,Resource,Resource description,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,Dataset,Dataset description\n'
+        '2,,test_resource,,,,,,https://example.com,,,,,,,,,Resource,Resource description\n'
         '3,,,,Model,,,,,,,,,,,,,,\n'
     )
     structure = DatasetStructureFactory(
@@ -2357,9 +2357,9 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,test_dataset,,,,,,,,,,,,,,,Dataset,Dataset description,\r\n'
-        '2,,test_resource,,,,,,https://example.com,,2,,,,,,Resource,Resource description,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,Dataset,Dataset description\r\n'
+        '2,,test_resource,,,,,,https://example.com,,,2,,,,,,Resource,Resource description\r\n'
         '3,,,,Model,,,,,,,,,,,,,,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
@@ -2370,14 +2370,14 @@ def test_structure_export__visibility_row(app: DjangoTestApp):
     app.set_user(user)
 
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,example,,,,,,,,,,,,,,,,,\n'
         '2,,resource,,,,xml,,resource.xml,,,,,,,,,,\n'
         ',,,,,,,,,,,,,,,,,,\n'
-        '3,,,,Pavadinimas,,,id,,,4,,package,protected,,,Pavadinimas,,\n'
-        '4,,,,,id,integer,,,,4,,package,protected,,,ID,,\n'
-        '5,,,,,class,integer,,,,4,,package,protected,,,class,,\n'
-        '6,,,,,,enum,,1,,4,,package,protected,,,Class One,,\n'
+        '3,,,,Pavadinimas,,,id,,,,4,,package,protected,,,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,,4,,package,protected,,,ID,\n'
+        '5,,,,,class,integer,,,,,4,,package,protected,,,class,\n'
+        '6,,,,,,enum,,1,,,4,,package,protected,,,Class One,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -2395,13 +2395,13 @@ def test_structure_export__visibility_row(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,example,,,,,,,,,,,,,,,Pavadinimas,Aprašymas,\r\n'
-        '2,,resource,,,,xml,,resource.xml,,,,,,,,resource,,\r\n'
-        '3,,,,Pavadinimas,,,id,,,4,,package,protected,,,Pavadinimas,,\r\n'
-        '4,,,,,id,integer,,,,4,,package,protected,,,ID,,\r\n'
-        '5,,,,,class,integer,,,,4,,package,protected,,,class,,\r\n'
-        '6,,,,,,enum,,1,,,,package,protected,,,Class One,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,resource,\r\n'
+        '3,,,,Pavadinimas,,,id,,,,4,,package,protected,,,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,,4,,package,protected,,,ID,\r\n'
+        '5,,,,,class,integer,,,,,4,,package,protected,,,class,\r\n'
+        '6,,,,,,enum,,1,,,,,package,protected,,,Class One,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 
@@ -2411,14 +2411,14 @@ def test_structure_export__eli_row(app: DjangoTestApp):
     app.set_user(user)
 
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,example,,,,,,,,,,,,,,,,,\n'
         '2,,resource,,,,xml,,resource.xml,,,,,,,,,,\n'
         ',,,,,,,,,,,,,,,,,,\n'
-        '3,,,,Pavadinimas,,,id,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,,\n'
-        '4,,,,,id,integer,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,,\n'
-        '5,,,,,class,integer,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,,\n'
-        '6,,,,,,enum,,1,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,,\n'
+        '3,,,,Pavadinimas,,,id,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\n'
+        '5,,,,,class,integer,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\n'
+        '6,,,,,,enum,,1,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -2436,13 +2436,13 @@ def test_structure_export__eli_row(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,example,,,,,,,,,,,,,,,Pavadinimas,Aprašymas,\r\n'
-        '2,,resource,,,,xml,,resource.xml,,,,,,,,resource,,\r\n'
-        '3,,,,Pavadinimas,,,id,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,,\r\n'
-        '4,,,,,id,integer,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,,\r\n'
-        '5,,,,,class,integer,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,,\r\n'
-        '6,,,,,,enum,,1,,,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,resource,\r\n'
+        '3,,,,Pavadinimas,,,id,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\r\n'
+        '5,,,,,class,integer,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\r\n'
+        '6,,,,,,enum,,1,,,,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 
@@ -2452,14 +2452,14 @@ def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_d
     app.set_user(user)
 
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
         '1,example,,,,,,,,,,,,,,,,,\n'
         '2,,resource,,,,xml,,resource.xml,,,,,,,,,,\n'
         ',,,,,,,,,,,,,,,,,,\n'
-        '3,,,,Pavadinimas,,,id,,,4,completed,,protected,,,Pavadinimas,,\n'
-        '4,,,,,id,integer,,,,4,withdrawn,,protected,,,ID,,\n'
-        '5,,,,,class,integer,,,,4,deprecated,,protected,,,class,,\n'
-        '6,,,,,,enum,,1,,4,discont,,protected,,,Class One,,\n'
+        '3,,,,Pavadinimas,,,id,,,,4,completed,,protected,,,Pavadinimas,\n'
+        '4,,,,,id,integer,,,,,4,withdrawn,,protected,,,ID,\n'
+        '5,,,,,class,integer,,,,,4,deprecated,,protected,,,class,\n'
+        '6,,,,,,enum,,1,,,4,discont,,protected,,,Class One,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -2477,13 +2477,13 @@ def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_d
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\r\n'
-        '1,example,,,,,,,,,,,,,,,Pavadinimas,Aprašymas,\r\n'
-        '2,,resource,,,,xml,,resource.xml,,,,,,,,resource,,\r\n'
-        '3,,,,Pavadinimas,,,id,,,4,completed,,protected,,,Pavadinimas,,\r\n'
-        '4,,,,,id,integer,,,,4,withdrawn,,protected,,,ID,,\r\n'
-        '5,,,,,class,integer,,,,4,deprecated,,protected,,,class,,\r\n'
-        '6,,,,,,enum,,1,,,discont,,protected,,,Class One,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,resource,\r\n'
+        '3,,,,Pavadinimas,,,id,,,,4,completed,,protected,,,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,,4,withdrawn,,protected,,,ID,\r\n'
+        '5,,,,,class,integer,,,,,4,deprecated,,protected,,,class,\r\n'
+        '6,,,,,,enum,,1,,,,discont,,protected,,,Class One,\r\n'
         ',,,,,,,,,,,,,,,,,,\r\n'
     )
 

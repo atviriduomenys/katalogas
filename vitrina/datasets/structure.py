@@ -47,6 +47,7 @@ HEADER = [
     "ref",
     "source",
     "prepare",
+    "count",
     "level",
     "status",
     "visibility",
@@ -55,7 +56,6 @@ HEADER = [
     "eli",
     "title",
     "description",
-    "count",
 ]
 
 

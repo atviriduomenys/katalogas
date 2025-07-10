@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-07 10:53+0300\n"
+"POT-Creation-Date: 2025-07-10 08:58+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3324,6 +3324,9 @@ msgstr ""
 msgid "ELI nuoroda"
 msgstr ""
 
+msgid "Objektų kiekis"
+msgstr ""
+
 msgid "rengiama"
 msgstr ""
 
@@ -3361,6 +3364,9 @@ msgid "Filtruoti"
 msgstr ""
 
 msgid "Duomenų laukai"
+msgstr ""
+
+msgid "Reikšmių kiekis"
 msgstr ""
 
 msgid "Duomenų laukų nėra."

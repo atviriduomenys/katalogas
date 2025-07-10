@@ -88,6 +88,7 @@ class Metadata(models.Model):
     status = models.ForeignKey(
         Status, models.SET_NULL, verbose_name=_("Būsena"), null=True, blank=True
     )
+    count = models.PositiveIntegerField(_("Eilučių kiekis"), null=True, blank=True)
     prefix = models.ForeignKey(
         Prefix, models.SET_NULL, verbose_name=_("Prefiksas"), null=True, blank=True
     )

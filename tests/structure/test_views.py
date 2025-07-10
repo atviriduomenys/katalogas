@@ -616,15 +616,15 @@ def test_private_model(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
-        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,,,private,,dct:title,,\n'
-        ',,,,City,,,,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,,dct:title,,,\n'
+        ',,,,City,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -647,15 +647,15 @@ def test_private_model(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_private_model_with_access(app: DjangoTestApp):
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
-        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
-        ',,,,City,,,,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,,\n'
+        ',,,,City,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -688,12 +688,12 @@ def test_private_property(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
-        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -718,12 +718,12 @@ def test_private_property(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_private_property_with_access(app: DjangoTestApp):
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
-        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,,,,\n'
-        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
-        ',,,,,title,string,,,,5,,,private,dct:title,,,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -757,13 +757,13 @@ def test_private_comment(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
-        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,,,,\n'
-        ',,,,,,comment,type,,,,,,public,,,Public comment,\n'
-        ',,,,,,comment,type,,,,,,private,,,Private comment,\n'
-        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,,comment,type,,,,,,public,,,Public comment,,\n'
+        ',,,,,,comment,type,,,,,,private,,,Private comment,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -783,13 +783,13 @@ def test_private_comment(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_private_comment_with_access(app: DjangoTestApp):
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n'
-        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n'
-        ',,,,Country,,,,,,,,,,\n'
-        ',,,,,,comment,type,,,,public,,,,,Public comment,\n'
-        ',,,,,,comment,type,,,,private,,,,,Private comment,\n'
-        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,\n'
+        ',,,,,,comment,type,,,,public,,,,,Public comment,,\n'
+        ',,,,,,comment,type,,,,private,,,,,Private comment,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(
@@ -3189,16 +3189,16 @@ def test_private_visibility_without_access(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     manifest = (
-        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n"
-        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n"
-        ",,,,Country,,,,,,,,private,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
-        ",,,,,title,string,,,,5,,private,open,,dct:title,,\n"
-        ",,,,City,,,,,,,,protected,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
-        ",,,,,title,string,,,,5,,,open,dct:title,,,\n"
-        ",,,,,,enum,,1,,4,private,package,protected,,,Class One,\n"
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,private,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,private,open,,dct:title,,,\n"
+        ",,,,City,,,,,,,,protected,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,,1,,4,private,package,protected,,,Class One,,\n"
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest))
@@ -3234,16 +3234,16 @@ def test_private_visibility_without_access(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_private_visibility_with_access(app: DjangoTestApp):
     manifest = (
-        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,\n"
-        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,\n"
-        ",,,,Country,,,,,,,,private,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
-        ",,,,,title,string,,,,5,,private,open,,dct:title,,\n"
-        ",,,,City,,,,,,,,protected,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
-        ",,,,,title,string,,,,5,,,open,dct:title,,,\n"
-        ",,,,,,enum,,1,,4,private,package,protected,,,Class One,\n"
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,private,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,private,open,,dct:title,,,\n"
+        ",,,,City,,,,,,,,protected,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,,1,,4,private,package,protected,,,Class One,,\n"
     )
 
     structure = DatasetStructureFactory(

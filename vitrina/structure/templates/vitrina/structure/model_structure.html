@@ -111,6 +111,16 @@
                 </a>
             {% endif %}
 
+            {% if metadata.count %}
+                <span 
+                    class="tag ml-5 icon is-small has-text-grey"
+                    data-tooltip="{% translate 'Objektų kiekis' %}"
+                >
+                    <i class="fas fa-list mr-1"></i>
+                    <span>{{ metadata.count }}</span>
+                </span>
+            {% endif %}
+
         </div>
         <div class="mb-2">
             {% if model.base %}
@@ -281,6 +291,17 @@
                             </a>
                             {% endif %}
                         </div>
+                        <div class="column is-1">
+                            {% if prop_metadata.count %}
+                                <span 
+                                    class="tag ml-3 icon is-small has-text-grey"
+                                    data-tooltip="{% translate 'Reikšmių kiekis' %}"
+                                >
+                                <i class="fas fa-list mr-1"></i>
+                                <span>{{ prop_metadata.count }}</span>
+                              </span>
+                        {% endif %}
+                    </div>
                         <div class="column is-1">
                             {% if prop_metadata.metadata_version and prop_metadata.draft %}
                                 <span class="tag is-danger is-light">{{ prop_metadata.metadata_version}} ({% translate "rengiama" %})</span>

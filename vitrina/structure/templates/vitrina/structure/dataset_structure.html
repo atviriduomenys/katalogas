@@ -183,6 +183,17 @@
                         {% endif %}
                     </div>
                     <div class="column is-1">
+                        {% if metadata.count %}
+                             <span 
+                             class="tag ml-3 icon is-small has-text-grey"
+                             data-tooltip="{% translate 'Objektų kiekis' %}"
+                             >
+                                <i class="fas fa-list mr-1"></i>
+                                <span>{{ metadata.count }}</span>
+                              </span>
+                        {% endif %}
+                    </div>
+                    <div class="column is-1">
                         {% if metadata.metadata_version and metadata.draft %}
                             <span class="tag is-danger is-light">{{ metadata.metadata_version}} ({% translate "rengiama" %})</span>
                         {% elif metadata.metadata_version and not metadata.draft %}

@@ -16,3 +16,17 @@ class PublicDatasetManager(TranslatableManager):
 
     def get_from_url_args(self, **kwargs):
         return self.get(id=kwargs.get("pk"))
+
+
+class ProtectedDatasetManager(TranslatableManager):
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                access_rights=self.model.RESTRICTED,
+                deleted__isnull=True,
+                deleted_on__isnull=True,
+                organization_id__isnull=False,
+            )
+        )

@@ -22,7 +22,7 @@ from vitrina.users.models import User
 from vitrina.orgs.models import Organization, Representative
 from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Frequency
-from vitrina.datasets.managers import PublicDatasetManager
+from vitrina.datasets.managers import PublicDatasetManager, EdpRestrictedDatasetManager
 
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
@@ -398,6 +398,7 @@ class Dataset(TranslatableModel):
 
     objects = TranslatableManager()
     public = PublicDatasetManager()
+    edp_restricted = EdpRestrictedDatasetManager()
 
     class Meta:
         db_table = "dataset"

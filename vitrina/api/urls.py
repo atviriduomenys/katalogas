@@ -20,6 +20,7 @@ from vitrina.api.views import (
     edp_dcat_ap_rdf,
     TaskViewSet,
     DistributionCreateAfterUploadToStorage,
+    edp_dcat_ap_protected_rdf,
 )
 
 router = DefaultRouter(trailing_slash=False)
@@ -153,4 +154,9 @@ urlpatterns = [
         name="public-api",
     ),
     path("edp/dcat-ap.rdf", edp_dcat_ap_rdf, name="edp-dcat-ap-rdf"),
+    path(
+        "edp/dcat-ap-restricted.rdf",
+        edp_dcat_ap_restricted_rdf,
+        name="edp-dcat-ap-restricted-rdf",
+    ),
 ]

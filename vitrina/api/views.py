@@ -796,12 +796,26 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
 
+DCAT_AP_RDF_TEMPLATE_NAME = "vitrina/api/edp/dcat_ap_rdf.html"
+
+
 def edp_dcat_ap_rdf(request: HttpRequest) -> HttpResponse:
     return render(
         request,
-        "vitrina/api/edp/dcat_ap_rdf.html",
+        DCAT_AP_RDF_TEMPLATE_NAME,
         {
             "datasets": get_datasets_for_rdf(Dataset.public.all()),
+        },
+        content_type="application/rdf+xml",
+    )
+
+
+def edp_dcat_ap_restricted_rdf(request: HttpRequest) -> HttpResponse:
+    return render(
+        request,
+        DCAT_AP_RDF_TEMPLATE_NAME,
+        {
+            "datasets": get_datasets_for_rdf(Dataset.edp_restricted.all()),
         },
         content_type="application/rdf+xml",
     )

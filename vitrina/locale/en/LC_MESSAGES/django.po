@@ -4659,3 +4659,12 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+msgid "Išmaniųjų sutarčių numatytasis šablonas"
+msgstr "Smart contracts default template"
+
+msgid "Išmaniųjų sutarčių numatytieji šablonai"
+msgstr "Smart contracts default templates"
+
+msgid "Nurodoma organizacija, kuriai priskirtas šablonas."
+msgstr "Specifies the organization to which the template is assigned."

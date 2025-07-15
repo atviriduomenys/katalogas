@@ -140,6 +140,7 @@ INSTALLED_APPS = [
     "vitrina.translate",
     "vitrina.uapi",
     "vitrina.likes",
+    "vitrina.smart_contracts"
 ]
 
 SERIALIZATION_MODULES = {

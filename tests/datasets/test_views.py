@@ -874,7 +874,7 @@ def dataset_structure_data():
 def test_public_manager_filtering(app: DjangoTestApp):
     organization = OrganizationFactory(slug="org", kind="gov")
 
-    DatasetFactory(is_public=False, organization=organization)
+    DatasetFactory(access_rights=Dataset.NON_PUBLIC, organization=organization)
     DatasetFactory(deleted=True, deleted_on=timezone.localize(datetime.now()), organization=organization)
     DatasetFactory(deleted=True, deleted_on=None, organization=organization)
     DatasetFactory(deleted=None, deleted_on=None, organization=organization)
@@ -1888,12 +1888,11 @@ def test_dataset_create_non_public(app: DjangoTestApp):
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     form['title'] = 'Test dataset'
     form['description'] = 'Test dataset description'
-    form['is_public'] = False
+    form['access_rights'] = Dataset.NON_PUBLIC
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
     assert added_dataset.count() == 2
-    assert added_dataset.first().is_public is False
-    assert added_dataset.first().published is None
+    assert added_dataset.first().access_rights == Dataset.NON_PUBLIC
 
 
 @pytest.mark.django_db
@@ -1906,11 +1905,11 @@ def test_dataset_create_public(app: DjangoTestApp):
     form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
     form['title'] = 'Test dataset'
     form['description'] = 'Test dataset description'
-    form['is_public'] = True
+    form['access_rights'] = Dataset.PUBLIC
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
     assert added_dataset.count() == 2
-    assert added_dataset.first().is_public is True
+    assert added_dataset.first().access_rights == Dataset.PUBLIC
     assert added_dataset.first().published is not None
 
 
@@ -1922,16 +1921,15 @@ def test_dataset_update_from_public_to_non_public(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    assert dataset.is_public is True
+    assert dataset.access_rights == Dataset.PUBLIC
     assert dataset.published is not None
 
     form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['is_public'] = False
+    form['access_rights'] = Dataset.NON_PUBLIC
     form.submit()
     dataset.refresh_from_db()
 
-    assert dataset.is_public is False
-    assert dataset.published is None
+    assert dataset.access_rights == Dataset.NON_PUBLIC
 
 
 @pytest.mark.django_db
@@ -1939,21 +1937,21 @@ def test_dataset_update_from_non_public_to_public(app: DjangoTestApp):
     LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
     dataset = DatasetFactory(
-        is_public=False,
+        access_rights=Dataset.NON_PUBLIC,
         published=None,
     )
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    assert dataset.is_public is False
+    assert dataset.access_rights == Dataset.NON_PUBLIC
     assert dataset.published is None
 
     form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['is_public'] = True
+    form['access_rights'] = Dataset.PUBLIC
     form.submit()
     dataset.refresh_from_db()
 
-    assert dataset.is_public is True
+    assert dataset.access_rights == Dataset.PUBLIC
     assert dataset.published is not None
 
 

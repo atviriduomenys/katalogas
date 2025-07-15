@@ -2016,6 +2016,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
             title='Data Enterprise',
             email='data@example.com',
         ),
+        access_rights=Dataset.PUBLIC,
     )
     dist1 = DatasetDistributionFactory(
         dataset=dataset,

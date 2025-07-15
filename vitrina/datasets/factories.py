@@ -61,6 +61,7 @@ class DatasetFactory(DjangoModelFactory):
     status = Dataset.HAS_DATA
     licence = factory.SubFactory(LicenceFactory)
     frequency = factory.SubFactory(FrequencyFactory)
+    access_rights = Dataset.PUBLIC
     published = factory.Faker(
         "date_time",
         tzinfo=timezone.get_current_timezone(),

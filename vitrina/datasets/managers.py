@@ -7,7 +7,7 @@ class PublicDatasetManager(TranslatableManager):
             super()
             .get_queryset()
             .filter(
-                is_public=True,
+                access_rights=self.model.PUBLIC,
                 deleted__isnull=True,
                 deleted_on__isnull=True,
                 organization_id__isnull=False,

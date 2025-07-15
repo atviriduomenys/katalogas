@@ -60,6 +60,7 @@ class DatasetFactory(DjangoModelFactory):
     will_be_financed = False
     status = Dataset.HAS_DATA
     frequency = factory.SubFactory(FrequencyFactory)
+    access_rights = Dataset.PUBLIC
     published = factory.Faker(
         "date_time",
         tzinfo=timezone.get_current_timezone(),

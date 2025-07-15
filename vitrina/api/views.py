@@ -804,7 +804,7 @@ def edp_dcat_ap_rdf(request: HttpRequest) -> HttpResponse:
         request,
         DCAT_AP_RDF_TEMPLATE_NAME,
         {
-            "datasets": get_datasets_for_rdf(Dataset.public.all()),
+            "datasets": get_datasets_for_rdf(Dataset.edp_public.all()),
         },
         content_type="application/rdf+xml",
     )

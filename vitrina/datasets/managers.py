@@ -18,6 +18,20 @@ class PublicDatasetManager(TranslatableManager):
         return self.get(id=kwargs.get("pk"))
 
 
+class EdpPublicDatasetManager(TranslatableManager):
+    def get_queryset(self):
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                access_rights=self.model.PUBLIC,
+                deleted__isnull=True,
+                deleted_on__isnull=True,
+                organization_id__isnull=False,
+            )
+        )
+
+
 class EdpRestrictedDatasetManager(TranslatableManager):
     def get_queryset(self):
         return (

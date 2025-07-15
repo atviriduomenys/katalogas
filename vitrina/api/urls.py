@@ -18,9 +18,9 @@ from vitrina.api.views import (
     PartnerApiView,
     UploadToStorageViewSet,
     edp_dcat_ap_rdf,
+    edp_dcat_ap_restricted_rdf,
     TaskViewSet,
     DistributionCreateAfterUploadToStorage,
-    edp_dcat_ap_protected_rdf,
 )
 
 router = DefaultRouter(trailing_slash=False)

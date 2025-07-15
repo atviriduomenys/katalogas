@@ -2006,6 +2006,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
             title='Data Enterprise',
             email='data@example.com',
         ),
+        access_rights=Dataset.PUBLIC,
     )
     dist1 = DatasetDistributionFactory(
         dataset=dataset,
@@ -2254,3 +2255,39 @@ class EdpDcatApRestrictedRdfTests(TestCase):
         )
         response = self.client.get(reverse("edp-dcat-ap-restricted-rdf"))
         self.assertNotIn(b"Public Dataset", response.content)
+
+class EdpDcatApPublicRdfTests(TestCase):
+    def test_edp_dcat_ap_public_rdf_returns_rdf(self):
+        organization = OrganizationFactory()
+        Dataset.objects.create(
+            title="Public Dataset",
+            access_rights=Dataset.PUBLIC,
+            deleted=None,
+            deleted_on=None,
+            organization_id=organization.pk,
+        )
+
+        response = self.client.get(reverse("edp-dcat-ap-rdf"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/rdf+xml")
+        self.assertIn(b"Public Dataset", response.content)
+
+
+    def test_edp_dcat_ap_public_rdf_with_no_datasets(self):
+        response = self.client.get(reverse("edp-dcat-ap-rdf"))
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/rdf+xml")
+        self.assertNotIn(b"<dcat:Dataset>", response.content)
+
+    def test_edp_dcat_ap_public_rdf_excludes_restricted(self):
+        organization = OrganizationFactory()
+        Dataset.objects.create(
+            title="Restricted Dataset",
+            access_rights=Dataset.RESTRICTED,  # Not Dataset.PUBLIC
+            deleted=None,
+            deleted_on=None,
+            organization_id=organization.pk,
+        )
+        response = self.client.get(reverse("edp-dcat-ap-rdf"))
+        self.assertNotIn(b"Restricted Dataset", response.content)

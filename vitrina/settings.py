@@ -58,7 +58,7 @@ SPINTA_SERVER_NAME = env("SPINTA_SERVER_NAME")
 SPINTA_PATH = BASE_DIR / env("SPINTA_PATH")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG", default=True)
+DEBUG = env.bool("DEBUG", default=False)
 
 IS_DEV_FEATURES_ENABLED = env("IS_DEV_FEATURES_ENABLED", default=False)
 

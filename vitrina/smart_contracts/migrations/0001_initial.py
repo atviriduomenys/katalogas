@@ -12,6 +12,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('vitrina_orgs', '0005_delete_agent'),
+        ('vitrina_projects', '0002_auto_20250313_1841'),
     ]
 
     operations = [

@@ -2535,14 +2535,14 @@ def test_structure_models_props_and_enums_with_visibility_status_eli(app: Django
 
     assert props.count() == 2
     assert metadata.count() == 2
-    assert list(metadata.values_list(
+    assert set(metadata.values_list(
         'visibility',
         'status',
         'eli'
-    )) == [
-            (Metadata.PACKAGE, completed_status_id, 'https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2'),
-            (Metadata.PROTECTED, discont_status_id, 'https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3'),
-          ]
+    )) == {
+        (Metadata.PACKAGE, completed_status_id, 'https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2'),
+        (Metadata.PROTECTED, discont_status_id, 'https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3'),
+    }
 
     prop = Property.objects.get(metadata__uuid='5')
     prop_enum = Enum.objects.filter(

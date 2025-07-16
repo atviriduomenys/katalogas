@@ -49,6 +49,12 @@ class DatasetDistributionFactory(DjangoModelFactory):
             "lt": factory.Faker("text", locale="lt_LT"),
         }
     )
+    conditions = factory.Dict(
+        {
+            "en": factory.Faker("text", locale="en_US"),
+            "lt": factory.Faker("text", locale="lt_LT"),
+        }
+    )
     dataset = factory.SubFactory(DatasetFactory)
     format = factory.SubFactory(FileFormat)
     period_start = date(2022, 1, 1)
@@ -67,11 +73,13 @@ class DatasetDistributionFactory(DjangoModelFactory):
     def _create(cls, model_class, *args, **kwargs):
         title = kwargs.pop("title")
         description = kwargs.pop("description")
+        conditions = kwargs.pop("conditions")
         dataset = model_class(*args, **kwargs)
         for lang in ("en", "lt"):
             dataset.set_current_language(lang)
             dataset.title = _get_language_value(lang, title)
             dataset.description = _get_language_value(lang, description)
+            dataset.conditions = _get_language_value(lang, conditions)
         dataset.save()
         return dataset
 

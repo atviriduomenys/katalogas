@@ -10,6 +10,7 @@ from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
+from vitrina.classifiers.models import Licence
 from vitrina.datasets.models import Dataset
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
@@ -136,6 +137,7 @@ class DatasetDistribution(TranslatableModel):
     translations = TranslatedFields(
         title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
         description=models.TextField(_("Aprašymas"), blank=True),
+        conditions=models.TextField(_("Platinimo sąlygos"), blank=True, null=True),
     )
 
     access_url = models.CharField(
@@ -221,6 +223,9 @@ class DatasetDistribution(TranslatableModel):
     )
     imported = models.BooleanField(
         default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas")
+    )
+    licence = models.ForeignKey(
+        Licence, models.SET_NULL, blank=True, null=True, verbose_name=_("Licencija"),
     )
 
     # Deprecated fields bellow
@@ -308,6 +313,12 @@ class DatasetDistribution(TranslatableModel):
     def en_title(self):
         return self.safe_translation_getter("title", language_code="en")
 
+    def lt_conditions(self):
+        return self.safe_translation_getter("conditions", language_code="lt")
+
+    def en_conditions(self):
+        return self.safe_translation_getter("conditions", language_code="en")
+
     def lt_description(self):
         return self.safe_translation_getter("description", language_code="lt")
 
@@ -321,9 +332,11 @@ class DatasetDistribution(TranslatableModel):
             not self.has_translation(language_code="en")
             or not self.en_title()
             or not self.en_description()
+            or not self.en_conditions()
         ):
             lt_title = self.lt_title()
             lt_description = self.lt_description()
+            lt_conditions = self.lt_conditions()
 
             if not self.has_translation(language_code="en"):
                 self.create_translation(language_code="en")
@@ -362,3 +375,20 @@ class DatasetDistribution(TranslatableModel):
                 )
                 en_description = response_desc.json()
                 self.description = en_description
+
+            if lt_conditions and not self.en_conditions():
+                response_conditions = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_conditions,
+                        "options": "",
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8",
+                    },
+                )
+                en_conditions = response_conditions.json()
+                self.conditions = en_conditions

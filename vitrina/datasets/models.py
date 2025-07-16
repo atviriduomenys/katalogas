@@ -186,15 +186,6 @@ class Dataset(TranslatableModel):
         verbose_name=_("Duomenų tvarkytojas"),
     )
 
-    licence = models.ForeignKey(
-        Licence,
-        models.SET_NULL,
-        db_column="licence",
-        blank=False,
-        null=True,
-        verbose_name=_("Licenzija"),
-    )
-
     status = models.CharField(
         max_length=255,
         choices=STATUSES,
@@ -248,11 +239,6 @@ class Dataset(TranslatableModel):
         null=True,
         choices=ACCESS_RIGHTS,
         max_length=255,
-    )
-    distribution_conditions = models.TextField(
-        blank=True,
-        null=True,
-        verbose_name=_("Platinimo salygos"),
     )
 
     tags = TagField(
@@ -1055,14 +1041,6 @@ class Dataset(TranslatableModel):
     def is_opened(self):
         return self.status == self.HAS_DATA
 
-    def get_license_url(self):
-        url = (
-            Licence.objects.filter(title=self.licence)
-            .values_list("url", flat=True)
-            .first()
-        )
-        return url
-
     def get_json_ld(self, model_url: str = None):
         formats: list = ["CSV", "JSON", "JSONL", "ASCII", "RDF"]
         json_ld = {
@@ -1071,7 +1049,6 @@ class Dataset(TranslatableModel):
             "name": self.title or None,
             "description": self.description or None,
             "url": self.get_absolute_url() or None,
-            "license": self.get_license_url() or None,
             "creator": {
                 "@type": "Organization",
                 "name": str(self.organization) if self.organization else None,

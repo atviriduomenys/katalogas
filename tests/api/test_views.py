@@ -340,7 +340,6 @@ def test_get_all_datasets(app: DjangoTestApp):
         "language": dataset.language_array,
         "publisher": None,
         "spatial": dataset.spatial_coverage,
-        "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
         'publisher': None,
         "keyword": dataset.tag_name_array,
@@ -410,7 +409,6 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         "language": dataset.language_array,
         "publisher": None,
         "spatial": dataset.spatial_coverage,
-        "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
         'publisher': None,
         "keyword": dataset.tag_name_array,
@@ -470,7 +468,6 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         "language": dataset.language_array,
         "publisher": None,
         "spatial": dataset.spatial_coverage,
-        "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
         'publisher': None,
         "keyword": dataset.tag_name_array,
@@ -509,7 +506,6 @@ def test_create_dataset_with_errors(app: DjangoTestApp):
 def test_create_dataset(app: DjangoTestApp):
     domain = Site.objects.get_current().domain
     organization = OrganizationFactory()
-    licence = LicenceFactory()
     frequency = FrequencyFactory()
     category = CategoryFactory()
     ct = ContentType.objects.get_for_model(organization)
@@ -532,7 +528,6 @@ def test_create_dataset(app: DjangoTestApp):
             'tag1',
             'tag2'
         ],
-        'licence': licence.identifier,
         'periodicity': frequency.title,
         'theme': [category.title]
     })
@@ -540,7 +535,6 @@ def test_create_dataset(app: DjangoTestApp):
     dataset = Dataset.objects.first()
     assert dataset.language == "en lt"
     assert list(dataset.tags.all()) == ['tag1', 'tag2']
-    assert dataset.licence == licence
     assert dataset.frequency == frequency
     assert list(dataset.category.all()) == [category]
     assert dataset.organization == organization
@@ -561,7 +555,6 @@ def test_create_dataset(app: DjangoTestApp):
         "language": ['en', 'lt'],
         "publisher": None,
         "spatial": dataset.spatial_coverage,
-        "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
         'publisher': None,
         "keyword": ['tag1', 'tag2'],
@@ -636,7 +629,6 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         "language": dataset.language_array,
         "publisher": None,
         "spatial": dataset.spatial_coverage,
-        "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
         'publisher': None,
         "keyword": dataset.tag_name_array,
@@ -682,7 +674,6 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         "language": dataset.language_array,
         "publisher": None,
         "spatial": dataset.spatial_coverage,
-        "licence": dataset.licence.identifier,
         "periodicity": dataset.frequency.title,
         'publisher': None,
         "keyword": dataset.tag_name_array,
@@ -2002,7 +1993,6 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
             'en': 'Dataset description.',
         },
         published=datetime(2016, 8, 1),
-        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
         frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
         category=[
             CategoryFactory(title='Energy'),
@@ -2024,6 +2014,8 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
             uri=f'{po}/file-type/CSV',
             media_type_uri=f'{iana}/media-types/text/csv',
         ),
+        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
+        conditions="platinimo sąlygos",
     )
     dist2 = DatasetDistributionFactory(
         dataset=dataset,
@@ -2034,6 +2026,8 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
             uri=f'{po}/file-type/JSON',
             media_type_uri=f'{iana}/media-types/application/json',
         ),
+        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
+        conditions="platinimo sąlygos",
     )
 
     res = app.get('/edp/dcat-ap.rdf')
@@ -2098,7 +2092,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="http://example.com{dist1.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://example.com{dist1.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -2121,7 +2115,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="http://example.com{dist2.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://example.com{dist2.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>

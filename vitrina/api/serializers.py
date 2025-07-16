@@ -111,13 +111,6 @@ class DatasetSerializer(serializers.ModelSerializer):
         label="",
         help_text="dct:spatial - Spatial information",
     )
-    licence = serializers.CharField(
-        source="licence.identifier",
-        required=False,
-        allow_blank=True,
-        label="",
-        help_text="Licence",
-    )
     periodicity = serializers.CharField(
         source="frequency.title",
         required=False,
@@ -166,7 +159,6 @@ class DatasetSerializer(serializers.ModelSerializer):
             "language",
             "publisher",
             "spatial",
-            "licence",
             "periodicity",
             "contactPoint",
             "keyword",
@@ -222,7 +214,6 @@ class PostDatasetSerializer(DatasetSerializer):
             "language",
             "publisher",
             "spatial",
-            "licence",
             "periodicity",
             "contactPoint",
             "keyword",
@@ -232,7 +223,6 @@ class PostDatasetSerializer(DatasetSerializer):
 
     def create(self, validated_data):
         languages = validated_data.pop("language_array", [])
-        licence = validated_data.pop("licence", None)
         periodicity = validated_data.pop("frequency", None)
         keywords = validated_data.pop("tag_name_array", [])
         theme = validated_data.pop("category_titles", [])
@@ -247,13 +237,6 @@ class PostDatasetSerializer(DatasetSerializer):
         instance.organization = self.context.get("organization")
         if languages:
             instance.language = " ".join(languages)
-        if (
-            licence
-            and Licence.objects.filter(identifier=licence["identifier"]).exists()
-        ):
-            instance.licence = Licence.objects.filter(
-                identifier=licence["identifier"]
-            ).first()
         if (
             periodicity
             and Frequency.objects.filter(title=periodicity["title"]).exists()
@@ -285,7 +268,6 @@ class PatchDatasetSerializer(PostDatasetSerializer):
 
     def update(self, instance, validated_data):
         languages = validated_data.pop("language_array", [])
-        licence = validated_data.pop("licence", None)
         periodicity = validated_data.pop("frequency", None)
         keywords = validated_data.pop("tag_name_array", [])
         theme = validated_data.pop("category_titles", [])
@@ -298,13 +280,6 @@ class PatchDatasetSerializer(PostDatasetSerializer):
         instance = super().update(instance, validated_data)
         if languages:
             instance.language = " ".join(languages)
-        if (
-            licence
-            and Licence.objects.filter(identifier=licence["identifier"]).exists()
-        ):
-            instance.licence = Licence.objects.filter(
-                identifier=licence["identifier"]
-            ).first()
         if (
             periodicity
             and Frequency.objects.filter(title=periodicity["title"]).exists()

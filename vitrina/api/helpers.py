@@ -13,7 +13,6 @@ from vitrina.classifiers.models import Licence
 def get_datasets_for_rdf(qs):
     datasets = (
         qs.select_related("organization")
-        .select_related("licence")
         .prefetch_related("category")
         .prefetch_related("translations")
         .prefetch_related("datasetdistribution_set")
@@ -58,7 +57,6 @@ def get_datasets_for_rdf(qs):
             "modified": dataset.modified,
             "organization": dataset.organization,
             "frequency": _get_frequency(dataset.frequency),
-            "licence": _get_licence(dataset.licence),
             "distributions": distributions,
             "contact": _get_contact_email(dataset),
             "landing_page": dataset.landing_page,
@@ -71,6 +69,7 @@ def get_datasets_for_rdf(qs):
                 _get_rel_dataset(relation)
                 for relation in dataset.related_datasets.filter(relation__name=Relation.SERVICE)
             ),
+            "access_rights": dataset.access_rights,
         }
 
 
@@ -102,7 +101,8 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
         "download_url": dist.get_download_url(),
         "access_url": dist.get_access_url(),
         "access_service": dist.data_service.get_absolute_url() if dist.data_service else None,
-        "licence": _get_licence(dataset.licence),
+        "licence": _get_licence(dist.licence),
+        "conditions": dist.conditions or "",
         "format": _get_format(dist.format),
         "compression_format": _get_format(dist.compression_format),
         "packaging_format": _get_format(dist.packaging_format),

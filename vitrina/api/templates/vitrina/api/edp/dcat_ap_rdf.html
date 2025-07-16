@@ -57,7 +57,9 @@
         {% if dataset.modified %}
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dataset.modified|date:"SHORT_DATE_FORMAT" }}</dct:modified>
         {% endif %}
-        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+        {% if dataset.access_rights %}
+        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/{{ dataset.access_rights }}"/>
+        {% endif %}
         <dct:publisher>
             <foaf:Organization>
                 <foaf:name>{{ dataset.organization.title }}</foaf:name>
@@ -151,7 +153,9 @@
         {% if dataset.modified %}
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dataset.modified|date:"SHORT_DATE_FORMAT" }}</dct:modified>
         {% endif %}
-        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+        {% if dataset.access_rights %}
+        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/{{ dataset.access_rights }}"/>
+        {% endif %}
         <dct:publisher>
             <foaf:Organization>
                 <foaf:name>{{ dataset.organization.title }}</foaf:name>
@@ -214,12 +218,14 @@
                 {% if dist.access_service %}
                 <dcat:accessService rdf:resource="{{ current_domain_full }}{{ dist.access_service|cut:' ' }}"/>
                 {% endif %}
+                {% if dist.conditions %}
                 <dct:rights>
-                    <dct:RightsStatement rdf:about="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+                    <dct:RightsStatement>{{ dist.conditions }}</dct:RightsStatement>
                 </dct:rights>
+                {% endif %}
                 {% if dist.licence %}
                 <dct:license>
-                    <dct:LicenseDocument rdf:about="{{ dataset.licence.uri|cut:' ' }}"/>
+                    <dct:LicenseDocument rdf:about="{{ dist.licence.uri|cut:' ' }}"/>
                 </dct:license>
                 {% endif %}
                 {% if dist.media_type %}

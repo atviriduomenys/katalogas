@@ -8,6 +8,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from parler.forms import TranslatedField, TranslatableModelForm
 
+from vitrina.classifiers.models import Licence
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
@@ -156,6 +157,8 @@ class DatasetResourceForm(TranslatableModelForm):
             "is_parameterized",
             "upload_to_storage",
             "imported",
+            "licence",
+            "conditions",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -191,8 +194,14 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("imported"),
             Field("data_service"),
             Field("upload_to_storage"),
+            Field("licence"),
+            Field("conditions"),
             Submit("submit", button, css_class="button is-primary"),
         )
+
+        if not self.resource:
+            if default_licence := Licence.objects.filter(is_default=True).first():
+                self.initial["licence"] = default_licence
 
         if self.resource and self.resource.metadata.first():
             metadata = self.resource.metadata.first()

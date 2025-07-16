@@ -34,7 +34,7 @@ RUN apt-get update && \
 
 ENV DJANGO_SETTINGS_MODULE="vitrina.settings"
 ENV STATIC_ROOT="/app/static"
-ENV DEBUG="false"
+ENV DEBUG="False"
 ENV PATH="/opt/venv/bin:$PATH"
 ENV VITRINA_LOCALE_PATH="/app/locale"
 

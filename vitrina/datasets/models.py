@@ -21,7 +21,7 @@ from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization, Representative
 from vitrina.catalogs.models import Catalog, HarvestingJob
-from vitrina.classifiers.models import Category, Licence, Frequency
+from vitrina.classifiers.models import Category, Frequency
 from vitrina.datasets.managers import PublicDatasetManager
 
 from vitrina.settings import TRANSLATION_CLIENT_ID

@@ -4,13 +4,19 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.models import UUIDBaseModel
 from vitrina.projects.models import Project
+from vitrina.smart_contracts import AgreementStatuses
 
 
 class SmartContractTemplate(UUIDBaseModel):
     default_template = models.FileField(
         upload_to="data/files/smart_contract_default_templates",
         verbose_name=_("Išmaniųjų sutarčių numatytasis šablonas"),
-        validators=[FileExtensionValidator(allowed_extensions=["md"], message=_("Failas turi būti Markdown formato (.md)."))],
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=["md"],
+                message=_("Failas turi būti Markdown formato (.md)."),
+            )
+        ],
     )
     organization = models.ForeignKey(
         "vitrina_orgs.Organization",
@@ -23,51 +29,39 @@ class SmartContractTemplate(UUIDBaseModel):
 
 
 class Agreement(UUIDBaseModel):
-    CREATED = "CREATED"
-    FORMED = "FORMED"
-    INITIATED = "INITIATED"
-    SIGNED = "SIGNED"
-    ACTIVE = "ACTIVE"
-    DEACTIVATED = "DEACTIVATED"
-
-    STATUSES = (
-        (CREATED, _("Pateiktas")),
-        (FORMED, _("Suformuotas")),
-        (INITIATED, _("Inicijuota")),
-        (SIGNED, _("Pasirašyta")),
-        (ACTIVE, _("Aktyvi")),
-        (DEACTIVATED, _("Nutraukta")),
-    )
-
-    use_case = models.ForeignKey(
+    project = models.ForeignKey(
         Project,
-        related_name="agreement_set",
         on_delete=models.PROTECT,
-        verbose_name=_("Panaudos atvejis"),
+        verbose_name=_("Panaudojimo atvejis"),
     )
-    organization = models.ForeignKey(
+    assigner_organization = models.ForeignKey(
         "vitrina_orgs.Organization",
         models.PROTECT,
-        verbose_name=_("Organizacija"),
+        verbose_name=_("Duomenis teikianti organizacija"),
     )
     status = models.CharField(
-        max_length=255, choices=STATUSES, blank=False, null=True, verbose_name=_("Statusas")
+        max_length=255,
+        choices=AgreementStatuses.choices,
+        default=AgreementStatuses.CREATED,
+        verbose_name=_("Būsena"),
     )
 
-    agent_sync_enabled = models.BooleanField(default=False, verbose_name=_("Agento sinchronizacija įjungta"))
-    last_sync_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Paskutinė sinchronizacijos data"))
+    is_agent_sync_enabled = models.BooleanField(
+        default=False, verbose_name=_("Agento sinchronizacija įjungta")
+    )
+    last_sync_date = models.DateTimeField(
+        null=True, blank=True, verbose_name=_("Paskutinės sinchronizacijos data")
+    )
 
     class Meta:
-        managed = True
-        db_table = "usecase_agreement"
         verbose_name = _("Sutartis")
         verbose_name_plural = _("Sutartys")
 
     def __str__(self) -> str:
-        return f"{self.use_case} - {self.organization} sutartis. Statusas: {self.status}"
+        return f"{self.project} - {self.assigner_organization} sutartis. Statusas: {self.status}"
 
 
-class AgreementScope(models.Model):
+class AgreementScope(UUIDBaseModel):
     agreement = models.ForeignKey(
         Agreement,
         models.PROTECT,
@@ -77,7 +71,5 @@ class AgreementScope(models.Model):
     action = models.CharField(max_length=255, verbose_name=_("Leidimo veiksmas"))
 
     class Meta:
-        managed = True
-        db_table = "usecase_agreement_scope"
         verbose_name = _("Sutarties leidimas")
         verbose_name_plural = _("Sutarties leidimai")

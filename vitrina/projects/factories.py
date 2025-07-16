@@ -1,7 +1,10 @@
+from typing import Iterable
+
 import factory
 from factory.django import DjangoModelFactory
 
 from vitrina.cms.factories import FilerImageFactory
+from vitrina.datasets.models import Dataset
 from vitrina.projects.models import Project
 
 
@@ -15,3 +18,10 @@ class ProjectFactory(DjangoModelFactory):
     title = factory.Faker("catch_phrase")
     image = factory.SubFactory(FilerImageFactory)
     status = Project.APPROVED
+
+    @factory.post_generation
+    def datasets(self, create: bool, extracted: Iterable[Dataset], **kwargs) -> None:
+        if not create or not extracted:
+            return
+
+        self.datasets.add(*extracted)

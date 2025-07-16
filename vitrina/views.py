@@ -1,11 +1,16 @@
-from typing import Type
+from typing import Type, Any
 
+from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Model
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.forms import BaseFormSet
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
 from django.db.models import Count
+from django.views.generic.base import TemplateResponseMixin, ContextMixin
+from django.views.generic.edit import ProcessFormView
 
 from reversion.models import Version
 
@@ -234,3 +239,43 @@ class ChartMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         return context
+
+
+class FormsetView(TemplateResponseMixin, ContextMixin, ProcessFormView):
+    success_url = None
+
+    def setup(self, request: HttpRequest, *args: Any, **kwargs: Any) -> None:
+        super().setup(request, *args, **kwargs)
+
+    def get_formset_kwargs(self) -> dict:
+        formset_kwargs = {}
+        if self.request.method in ("POST", "PUT"):
+            formset_kwargs = {"data": self.request.POST, "files": self.request.FILES}
+
+        return formset_kwargs
+
+    def get_formset(self) -> BaseFormSet:
+        raise ImproperlyConfigured("get_formset method must be implemented")
+
+    def get_context_data(self, **kwargs):
+        if "formset" not in kwargs:
+            kwargs["formset"] = self.get_formset()
+        return super().get_context_data(**kwargs)
+
+    def get_success_url(self) -> str:
+        if not self.success_url:
+            raise ImproperlyConfigured("No URL to redirect to. Provide a success_url.")
+        return str(self.success_url)
+
+    def formset_valid(self, formset: BaseFormSet) -> HttpResponse:
+        return HttpResponseRedirect(self.get_success_url())
+
+    def formset_invalid(self, formset: BaseFormSet) -> HttpResponse:
+        return self.render_to_response(self.get_context_data(formset=formset))
+
+    def post(self, request, *args, **kwargs) -> HttpResponse:
+        formset = self.get_formset()
+        if formset.is_valid():
+            return self.formset_valid(formset)
+        else:
+            return self.formset_invalid(formset)

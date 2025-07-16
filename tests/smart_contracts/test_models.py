@@ -15,8 +15,7 @@ def test_valid_markdown_file_is_accepted():
     md_file = SimpleUploadedFile("template.md", content)
 
     template = SmartContractTemplate.objects.create(
-        default_template=md_file,
-        organization=organization
+        default_template=md_file, organization=organization
     )
 
     assert template.default_template.name.endswith(".md")
@@ -33,8 +32,7 @@ def test_invalid_file_extension_raises_validation_error():
     txt_file = SimpleUploadedFile("template.txt", b"Not a markdown")
 
     template = SmartContractTemplate(
-        default_template=txt_file,
-        organization=organization
+        default_template=txt_file, organization=organization
     )
 
     with pytest.raises(ValidationError) as exc_info:

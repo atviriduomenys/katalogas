@@ -3,13 +3,12 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from filer.fields.image import FilerImageField
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.orgs.managers import PublicOrganizationManager
-
-from django.utils.translation import gettext_lazy as _
 
 
 class Region(models.Model):

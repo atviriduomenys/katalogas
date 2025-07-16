@@ -32,6 +32,11 @@
                 </a>
             </li>
         {% endif %}
+        <li class="{% if request.resolver_match.url_name == 'agent-list' %} is-active {% endif %}">
+            <a href="{% url 'agent-list' organization_id %}">
+                {% translate "Agentai" %}
+            </a>
+        </li>
         <li class="{% if request.resolver_match.url_name == 'organization-apikeys' %} is-active {% endif %}">
             <a href="{% url 'organization-apikeys' organization_id %}">
                 <span class="has-tooltip-right" data-tooltip="{% translate 'Raktas duomenų įkėlimui į saugyklą' %}">

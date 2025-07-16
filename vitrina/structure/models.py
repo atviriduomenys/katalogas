@@ -5,11 +5,13 @@ import operator
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db.models import Q, Max, Avg
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.classifiers.models import Status
 from vitrina.structure.helpers import get_type_repr
 
 
@@ -52,6 +54,8 @@ class Metadata(models.Model):
     PROTECTED = 1
     PUBLIC = 2
     OPEN = 3
+    PACKAGE = 2
+    VISIBILITY_PUBLIC = 3
     ACCESS_TYPES = (
         (UNDEFINED, _("nepasirinkta")),
         (PRIVATE, _("private")),
@@ -75,6 +79,16 @@ class Metadata(models.Model):
     access = models.IntegerField(
         _("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True
     )
+    visibility = models.PositiveIntegerField(
+        _("Metaduomenų matomumas"), null=True, blank=True, validators=[MaxValueValidator(3)]
+    )
+    eli = models.URLField(
+        _("Europos teisės akto identifikatorius (ELI)"), blank=True, null=True, max_length=500
+    )
+    status = models.ForeignKey(
+        Status, models.SET_NULL, verbose_name=_("Būsena"), null=True, blank=True
+    )
+    count = models.PositiveIntegerField(_("Eilučių kiekis"), null=True, blank=True)
     prefix = models.ForeignKey(
         Prefix, models.SET_NULL, verbose_name=_("Prefiksas"), null=True, blank=True
     )

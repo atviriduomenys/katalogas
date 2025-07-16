@@ -1,0 +1,2 @@
+class InvalidAdocError(Exception):
+    pass

@@ -16,6 +16,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _, get_language
 
 from vitrina import settings
+from vitrina.classifiers.models import Status
 from vitrina.comments.models import Comment
 from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
@@ -470,7 +471,8 @@ def _create_or_update_metadata(
             else None
         )
         access = _parse_access(obj_meta.access)
-
+        visibility = _parse_visibility(obj_meta.visibility)
+        status = _get_status(obj_meta.status)
         if latest_version := metadata.metadataversion_set.order_by(
             "-version__created"
         ).first():
@@ -523,7 +525,6 @@ def _create_or_update_metadata(
                 metadata.draft = True
             else:
                 metadata.draft = False
-
         metadata.uuid = obj_meta.id
         metadata.name = obj_meta.name if hasattr(obj_meta, "name") else ""
         metadata.type = obj_meta.type if hasattr(obj_meta, "type") else ""
@@ -534,9 +535,13 @@ def _create_or_update_metadata(
         metadata.level = obj_meta.level
         metadata.level_given = obj_meta.level_given
         metadata.access = access
+        metadata.visibility = visibility
+        metadata.eli = obj_meta.eli
+        metadata.status = status
         metadata.uri = obj_meta.uri
         metadata.version = metadata.version + 1 if metadata.version else 1
         metadata.title = obj_meta.title
+        metadata.count = obj_meta.count
         metadata.description = obj_meta.description
         metadata.order = order
         metadata.required = obj_meta.required if hasattr(obj_meta, "required") else None
@@ -562,6 +567,10 @@ def _create_or_update_metadata(
             level=obj_meta.level,
             level_given=obj_meta.level_given,
             access=_parse_access(obj_meta.access),
+            visibility=_parse_visibility(obj_meta.visibility),
+            eli=obj_meta.eli,
+            count=obj_meta.count,
+            status=_get_status(obj_meta.status),
             uri=obj_meta.uri,
             version=1,
             title=obj_meta.title,
@@ -940,6 +949,20 @@ def _parse_access(value: str):
             access = Metadata.OPEN
     return access
 
+def _parse_visibility(value: str) -> int:
+    visibility_mapper = {
+        "private": Metadata.PRIVATE,
+        "protected": Metadata.PROTECTED,
+        "package": Metadata.PACKAGE,
+        "public": Metadata.VISIBILITY_PUBLIC,
+    }
+    return visibility_mapper.get(value)
+
+def _get_status(value: str) -> Status:
+    if value:
+        return Status.objects.filter(codename=value).first()
+    return Status.objects.filter(is_default=True).first()
+
 
 def get_model_name(dataset: Dataset, name: str) -> str:
     if name.startswith("/"):
@@ -966,9 +989,13 @@ DATASET = [
     "ref",
     "source",
     "prepare",
+    "count",
     "level",
+    "status",
+    "visibility",
     "access",
     "uri",
+    "eli",
     "title",
     "description",
 ]
@@ -990,7 +1017,6 @@ def export_dataset_structure(dataset: Dataset) -> StringIO:
     cols = DATASET
     rows = datasets_to_tabular(dataset)
     rows = ({c: row[c] for c in cols} for row in rows)
-
     stream = IterableFile()
     writer = csv.DictWriter(stream, fieldnames=cols)
     writer.writeheader()
@@ -1079,6 +1105,10 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False):
                         "access": _get_access(meta.access),
                         "title": meta.title,
                         "description": meta.description,
+                        "status": _get_title(meta.status),
+                        "visibility": _get_visibility(meta.visibility),
+                        "eli": meta.eli,
+                        "count": meta.count,
                     },
                 )
                 first = False
@@ -1106,6 +1136,10 @@ def _params_to_tabular(obj: models.Model, separator: bool = False):
                         "access": _get_access(meta.access),
                         "title": meta.title,
                         "description": meta.description,
+                        "status": _get_title(meta.status),
+                        "visibility": _get_visibility(meta.visibility),
+                        "eli": meta.eli,
+                        "count": meta.count,
                     },
                 )
                 first = False
@@ -1146,6 +1180,10 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False):
                     "description": meta.description,
                     "uri": meta.uri,
                     "source": meta.source,
+                    "status": _get_title(meta.status),
+                    "visibility": _get_visibility(meta.visibility),
+                    "count": meta.count,
+                    "eli": meta.eli,
                     "prepare": meta.prepare,
                     "ref": ", ".join(
                         [prop.property.name for prop in model.property_list.all()]
@@ -1277,6 +1315,10 @@ def _properties_to_tabular(model: Model):
                     "source": meta.source,
                     "prepare": meta.prepare,
                     "ref": _prop_ref_to_tabular(prop, meta),
+                    "status": _get_title(meta.status),
+                    "visibility": _get_visibility(meta.visibility),
+                    "eli": meta.eli,
+                    "count": meta.count,
                 },
             )
 
@@ -1302,6 +1344,20 @@ def _get_access(acess: int) -> str:
     elif acess == Metadata.OPEN:
         return "open"
     return ""
+
+def _get_visibility(visibility: int) -> str:
+    if visibility == Metadata.PRIVATE:
+        return "private"
+    elif visibility == Metadata.PROTECTED:
+        return "protected"
+    elif visibility == Metadata.PACKAGE:
+        return "package"
+    elif visibility == Metadata.VISIBILITY_PUBLIC:
+        return "public"
+    return ""
+
+def _get_title(obj: Status | None) -> str:
+    return "" if obj is None else obj.codename
 
 
 def _prop_ref_to_tabular(prop: Property, meta: Metadata) -> str:

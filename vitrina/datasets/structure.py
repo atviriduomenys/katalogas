@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from vitrina.structure.models import Metadata as StructureMetadata
+
 import pathlib
 from dataclasses import dataclass, field
 from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List
@@ -45,9 +47,13 @@ HEADER = [
     "ref",
     "source",
     "prepare",
+    "count",
     "level",
+    "status",
+    "visibility",
     "access",
     "uri",
+    "eli",
     "title",
     "description",
 ]
@@ -215,10 +221,14 @@ class Metadata:
     prepare: str = ""
     level: int | None = None
     level_given: int | None = None
+    status: str = ""
+    visibility: str = ""
     access: str = ""
     uri: str = ""
+    eli: str = ""
     title: str = ""
     description: str = ""
+    count: int | None = None
 
 
 @dataclass
@@ -624,8 +634,12 @@ def _read_model(
         prepare=row["prepare"],
         level=_parse_int(_get_level(row)),
         level_given=_parse_int(row["level"]),
+        status=row["status"],
+        visibility=row["visibility"],
+        count=_parse_int(row["count"]),
         access=row["access"],
         uri=row["uri"],
+        eli=row["eli"],
         title=row["title"],
         description=row["description"],
     )
@@ -681,8 +695,12 @@ def _read_property(
         prepare=row["prepare"],
         level=_parse_int(_get_level(row)),
         level_given=_parse_int(row["level"]),
+        status=row["status"],
+        visibility=row["visibility"],
+        count=_parse_int(row["count"]),
         access=row["access"],
         uri=row["uri"],
+        eli=row["eli"],
         title=row["title"],
         description=row["description"],
         required=dtype["required"],
@@ -704,7 +722,14 @@ def _read_property(
 
     if prop.model.properties.get(name):
         prop.errors.append(_(f'Savybė "{name}" jau egzistuoja.'))
-
+    model_visibility = _parse_visibility(prop.model.visibility)
+    prop_visibility = _parse_visibility(prop.visibility)
+    if model_visibility is not None and prop_visibility is not None and model_visibility < prop_visibility:
+            prop.errors.append(
+                _(
+                    'Duomenų lauko "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už modelio metaduomenų matomumo lygį "{2}". '
+                ).format(name, prop.visibility, prop.model.visibility)
+            )
     prop.model.properties[name] = prop
 
     return prop
@@ -778,8 +803,12 @@ def _read_enum(
         prepare=row["prepare"],
         level=_parse_int(row["level"]),
         level_given=_parse_int(row["level"]),
+        status=row["status"],
+        visibility=row["visibility"],
+        count=_parse_int(row["count"]),
         access=row["access"],
         uri=row["uri"],
+        eli=row["eli"],
         title=row["title"],
         description=row["description"],
     )
@@ -790,6 +819,28 @@ def _read_enum(
             last = node
 
     enum.meta = last
+
+    model_visibility = None
+    property_visibility = None
+    
+    if state.model:
+        model_visibility = _parse_visibility(state.model.visibility)
+    if enum.meta:
+        property_visibility = _parse_visibility(enum.meta.visibility)
+    enum_visibility = _parse_visibility(enum.visibility)
+
+    if property_visibility is not None and enum_visibility is not None and property_visibility < enum_visibility:
+            enum.errors.append(
+                _(
+                    'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{2}". '
+                ).format(enum.title, enum.visibility, enum.meta.visibility)
+            )
+    elif model_visibility is not None and enum_visibility is not None and model_visibility < enum_visibility:
+            enum.errors.append(
+                _(
+                    'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų modelio metaduomenų matomumo lygį "{2}". '
+                ).format(enum.title, enum.visibility, state.model.visibility)
+            )
     if enum.meta.enums.get(name):
         if enum.prepare in [e.prepare for e in enum.meta.enums[name]]:
             enum.errors.append(_(f'Galima reikšmė "{enum.prepare}" jau egzistuoja.'))
@@ -862,6 +913,16 @@ def _split_dim(
 
 def _parse_int(v: str) -> int | None:
     return int(v) if v else None
+
+
+def _parse_visibility(value: str) -> int:
+    visibility_mapper = {
+        "private": StructureMetadata.PRIVATE,
+        "protected": StructureMetadata.PROTECTED,
+        "package": StructureMetadata.PACKAGE,
+        "public": StructureMetadata.VISIBILITY_PUBLIC,
+    }
+    return visibility_mapper.get(value)
 
 
 def get_relative_model_name(dataset: Dataset, name: str) -> str:

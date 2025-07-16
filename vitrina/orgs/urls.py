@@ -294,10 +294,4 @@ urlpatterns = [
     path(
         "orgs/remote-organization-check/", check_organization, name="check-organization"
     ),
-    # @GetMapping("/partner/register")
-    # @PostMapping("/partner/register")
-    # @GetMapping("/group")
-    # @GetMapping("/report")
-    # @PostMapping("/report")
-    # @GetMapping("/dictionary")
 ]

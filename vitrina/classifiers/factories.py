@@ -8,6 +8,7 @@ from vitrina.classifiers.models import (
     AreaOfManagement,
     GeoportalCategory,
     GeoportalFrequency,
+    Status,
 )
 
 
@@ -70,3 +71,10 @@ class GeoportalFrequencyFactory(DjangoModelFactory):
     title = factory.Faker("catch_phrase")
     frequency = factory.SubFactory(FrequencyFactory)
 
+
+class StatusFactory(DjangoModelFactory):
+    class Meta:
+        model = Status
+        django_get_or_create = ("codename",)
+
+    codename = factory.Faker("word")

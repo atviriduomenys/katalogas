@@ -19,6 +19,7 @@ from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
 from vitrina.tasks.models import Task
+from vitrina.uapi.models import Agent
 from vitrina.users.models import User
 
 
@@ -52,6 +53,10 @@ acl = {
     (Representative, Action.UPDATE): [Role.COORDINATOR],
     (Representative, Action.DELETE): [Role.COORDINATOR],
     (Representative, Action.VIEW): [Role.COORDINATOR],
+    (Agent, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
+    (Agent, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
+    (Agent, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
+    (Agent, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
     (Contact, Action.CREATE): [Role.COORDINATOR],
     (Contact, Action.UPDATE): [Role.COORDINATOR],
     (Contact, Action.DELETE): [Role.COORDINATOR],

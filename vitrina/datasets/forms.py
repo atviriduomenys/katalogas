@@ -111,7 +111,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
     creator = forms.ModelChoiceField(
         queryset=Organization.public.all(),
-        label=_("Duomenų rinkinio kūrėjas"),
+        label=_("Institucija teikianti duomenis"),
         required=False,
     )
 

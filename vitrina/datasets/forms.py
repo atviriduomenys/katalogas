@@ -6,7 +6,7 @@ from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
-from django_select2.forms import ModelSelect2Widget
+from django_select2.forms import ModelSelect2Widget, Select2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
 from parler.views import TranslatableModelFormMixin
 from django import forms
@@ -112,12 +112,16 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     creator = forms.ModelChoiceField(
         queryset=Organization.public.all(),
         label=_("Institucija teikianti duomenis"),
+        widget=Select2Widget(),
+        empty_label=None,
         required=False,
     )
 
     publisher = forms.ModelChoiceField(
         queryset=Organization.public.filter(publisher=True),
         label=_("Paslaugų teikėjas"),
+        widget=Select2Widget(),
+        empty_label=None,
         required=False,
     )  # TODO: This attribute is meant for DatasetDistribution not Dataset.
 

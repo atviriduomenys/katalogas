@@ -122,7 +122,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     )  # TODO: This attribute is meant for DatasetDistribution not Dataset.
 
     managed_by_publisher = forms.BooleanField(
-        label=_("Ar esate šio duomenų rinkinio atvėrimo paslaugos tiekėjas?"),
+        label=_("Ar esate institucija, atsakinga už duomenų atvėrimą?"),
         required=False,
     )
 

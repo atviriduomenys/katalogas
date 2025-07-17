@@ -9,8 +9,8 @@ from reversion.models import Version
 from scripts.geoportal_import import main as geoportal_import
 from vitrina import settings
 from vitrina.classifiers.factories import FrequencyFactory, LicenceFactory, CategoryFactory, GeoportalCategoryFactory, \
-    GeoportalFrequencyFactory, GeoportalLicenceFactory, GeoportalAccessRightsFactory
-from vitrina.classifiers.models import GeoportalCategory, GeoportalAccessRights
+    GeoportalFrequencyFactory
+from vitrina.classifiers.models import GeoportalCategory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, RelationFactory
 from vitrina.datasets.models import Dataset, Relation
@@ -63,7 +63,8 @@ def test_geoportal_import__title_and_description_create(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -117,7 +118,8 @@ def test_geoportal_import__title_and_description_update(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -165,7 +167,8 @@ def test_geoportal_import__title_and_description_create_without_translation(app:
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -231,7 +234,8 @@ def test_geoportal_import__tags_create(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -294,7 +298,8 @@ def test_geoportal_import__tags_update(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -346,7 +351,8 @@ def test_geoportal_import__frequency_create_with_existing_value(app: DjangoTestA
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -396,7 +402,8 @@ def test_geoportal_import__frequency_create_with_not_existing_value(app: DjangoT
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -453,7 +460,8 @@ def test_geoportal_import__frequency_update(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -462,11 +470,7 @@ def test_geoportal_import__frequency_update(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_geoportal_import__access_rights_and_licence_create_with_existing_value(app: DjangoTestApp):
-    licence = LicenceFactory(title="Creative Commons Attribution 4.0")
-    GeoportalLicenceFactory(title='copyright', licence=licence)
-    GeoportalAccessRightsFactory(title="copyright", access_rights=GeoportalAccessRights.PUBLIC)
-
+def test_geoportal_import__access_rights_public(app: DjangoTestApp):
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
@@ -498,29 +502,27 @@ def test_geoportal_import__access_rights_and_licence_create_with_existing_value(
                     <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
                     <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
                 </gmd:abstract>
-                <gmd:resourceConstraints>
-                    <gmd:accessConstraints>
-                        <gmd:MD_RestrictionCode>copyright</gmd:MD_RestrictionCode>
-                    </gmd:accessConstraints>
-                </gmd:resourceConstraints>
+                <gmd:descriptiveKeywords>
+                    <gmd:keyword>
+                        <gco:CharacterString>atviri duomenys</gco:CharacterString>
+                    </gmd:keyword>  
+                </gmd:descriptiveKeywords>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
     assert dataset.access_rights == Dataset.PUBLIC
-    assert dataset.licence == licence
 
 
 @pytest.mark.django_db
-def test_geoportal_import__access_rights_and_licence_create_with_not_existing_value(app: DjangoTestApp):
-    UserFactory(is_superuser=True)
-
+def test_geoportal_import__access_rights_restricted(app: DjangoTestApp):
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
@@ -552,36 +554,23 @@ def test_geoportal_import__access_rights_and_licence_create_with_not_existing_va
                     <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
                     <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
                 </gmd:abstract>
-                <gmd:resourceConstraints>
-                    <gmd:accessConstraints>
-                        <gmd:MD_RestrictionCode>copyright</gmd:MD_RestrictionCode>
-                    </gmd:accessConstraints>
-                </gmd:resourceConstraints>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
-    assert dataset.access_rights is None
-    assert dataset.licence is None
-
-    assert Task.objects.count() == 1
-    task = Task.objects.first()
-    assert 'Nerastos prieigos teisės: "copyright"' in task.description
-    assert 'Nerasta licencija: "copyright"' in task.description
+    assert dataset.access_rights == Dataset.RESTRICTED
 
 
 @pytest.mark.django_db
-def test_geoportal_import__access_rights_and_licence_update(app: DjangoTestApp):
+def test_geoportal_import__access_rights_public_update(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1", access_rights=Dataset.RESTRICTED)
-    licence = LicenceFactory(title="Creative Commons Attribution 4.0")
-    GeoportalLicenceFactory(title="copyright", licence=licence)
-    GeoportalAccessRightsFactory(title="copyright", access_rights=GeoportalAccessRights.PUBLIC)
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
@@ -614,23 +603,262 @@ def test_geoportal_import__access_rights_and_licence_update(app: DjangoTestApp):
                     <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
                     <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
                 </gmd:abstract>
-                <gmd:resourceConstraints>
-                    <gmd:accessConstraints>
-                        <gmd:MD_RestrictionCode>copyright</gmd:MD_RestrictionCode>
-                    </gmd:accessConstraints>
-                </gmd:resourceConstraints>
+                <gmd:descriptiveKeywords>
+                    <gmd:keyword>
+                        <gco:CharacterString>atviri duomenys</gco:CharacterString>
+                    </gmd:keyword>  
+                </gmd:descriptiveKeywords>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
     assert Dataset.objects.count() == 1
     assert dataset.access_rights == Dataset.PUBLIC
-    assert dataset.licence == licence
+
+
+@pytest.mark.django_db
+def test_geoportal_import__access_rights_restricted_update(app: DjangoTestApp):
+    dataset = DatasetFactory(geoportal_id="1", access_rights=Dataset.PUBLIC)
+
+    with patch('scripts.geoportal_import.requests.get') as get_data:
+        get_all = '''
+        <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+            xmlns:dct="http://purl.org/dc/terms/"
+            xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <csw:SearchResults numberOfRecordsMatched="1">
+                <csw:Record>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">1</dc:identifier>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">
+                        http://www.data.com
+                    </dct:references>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">
+                        https://www.metadata.com
+                    </dct:references>
+                </csw:Record>
+            </csw:SearchResults>
+        </csw:GetRecordsResponse>              
+        '''
+
+        get_one = '''
+        <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+            <gmd:identificationInfo>
+                <gmd:title>
+                    <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
+                </gmd:title>
+                <gmd:abstract>
+                    <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
+                </gmd:abstract>
+            </gmd:identificationInfo>
+        </gmd:MD_Metadata>
+        '''
+        get_all_mock = Mock(content=get_all)
+        get_one_mock = Mock(content=get_one)
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
+        geoportal_import()
+
+    dataset.refresh_from_db()
+    assert Dataset.objects.count() == 1
+    assert dataset.access_rights == Dataset.RESTRICTED
+
+
+@pytest.mark.django_db
+def test_geoportal_import__distribution_conditions_create(app: DjangoTestApp):
+    with patch('scripts.geoportal_import.requests.get') as get_data:
+        get_all = '''
+        <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+            xmlns:dct="http://purl.org/dc/terms/"
+            xmlns:dc="http://purl.org/dc/elements/1.1/">
+            <csw:SearchResults numberOfRecordsMatched="1">
+                <csw:Record>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
+                    <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">1</dc:identifier>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">https://example.com/file.csv</dct:references>
+                    <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">https://www.metadata.com</dct:references>
+                </csw:Record>
+            </csw:SearchResults>
+        </csw:GetRecordsResponse>              
+        '''
+
+        get_one = '''
+        <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+            <gmd:identificationInfo>
+                <gmd:title>
+                    <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
+                </gmd:title>
+                <gmd:abstract>
+                    <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
+                </gmd:abstract>
+                <gmd:resourceConstraints>
+                    <gmd:accessConstraints>
+                        <gmd:MD_RestrictionCode>copyright</gmd:MD_RestrictionCode>
+                    </gmd:accessConstraints>
+                    <gmd:useConstraints>
+                        <gmd:MD_RestrictionCode>license</gmd:MD_RestrictionCode>
+                    </gmd:useConstraints>
+                    <gmd:otherConstraints>
+                        <gmd:MD_RestrictionCode>restricted</gmd:MD_RestrictionCode>
+                    </gmd:otherConstraints>
+                    <gmd:useLimitation>
+                        <gco:CharacterString>limitations</gco:CharacterString>
+                    </gmd:useLimitation>
+                </gmd:resourceConstraints>
+            </gmd:identificationInfo>
+            <gmd:distributionInfo>
+                <gmd:distributionFormat>
+                    <gmd:MD_Format_GC>CSV</gmd:MD_Format_GC>
+                </gmd:distributionFormat>
+                <gmd:transferOptions>
+                    <gmd:CI_OnlineResource>
+                        <gmd:URL>https://example.com/file.csv</gmd:URL>
+                    </gmd:CI_OnlineResource>
+                </gmd:transferOptions>
+            </gmd:distributionInfo>
+        </gmd:MD_Metadata>
+        '''
+
+        get_conditions = '''
+        <CT_CodelistCatalogue xmlns="http://www.isotc211.org/2005/gmx"  xmlns:gml="http://www.opengis.net/gml/3.2">
+            <CodeListDictionary gml:id="MD_RestrictionCode">
+                <CodeDefinition gml:id="MD_RestrictionCode_copyright">
+                    <gml:description>copyright</gml:description>
+                    <gml:identifier codeSpace="ISOTC211/19115">copyright</gml:identifier>
+                </CodeDefinition>
+                <CodeDefinition gml:id="MD_RestrictionCode_license">
+                    <gml:description>license</gml:description>
+                    <gml:identifier codeSpace="ISOTC211/19115">license</gml:identifier>
+                </CodeDefinition>
+                <CodeDefinition gml:id="MD_RestrictionCode_restricted">
+                    <gml:description>restricted</gml:description>
+                    <gml:identifier codeSpace="ISOTC211/19115">restricted</gml:identifier>
+                </CodeDefinition>
+                </CodeListDictionary>
+        </CT_CodelistCatalogue>
+        '''
+
+        get_all_mock = Mock(content=get_all)
+        get_one_mock = Mock(content=get_one)
+        get_conditions_mock = Mock(content=get_conditions)
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
+        geoportal_import()
+
+    assert Dataset.objects.count() == 1
+    dataset = Dataset.objects.first()
+    assert dataset.datasetdistribution_set.count() == 1
+    distribution = dataset.datasetdistribution_set.first()
+    assert distribution.download_url == "https://example.com/file.csv"
+    assert distribution.conditions == \
+           'Prieigos apribojimai: autorių teisės (copyright). Code space - ISOTC211/19115.\n' \
+           'Naudojimo apribojimai: licencija (license). Code space - ISOTC211/19115.\n'\
+           'Kiti apribojimai: apribota (restricted). Code space - ISOTC211/19115.\n'\
+           'Naudojimo ribotumas: limitations'
+
+
+@pytest.mark.django_db
+def test_geoportal_import__distribution_conditions_update(app: DjangoTestApp):
+    dataset = DatasetFactory(geoportal_id="1")
+    distribution = DatasetDistributionFactory(
+        dataset=dataset,
+        download_url="https://example.com/file.csv",
+        conditions="old conditions"
+    )
+
+    with patch('scripts.geoportal_import.requests.get') as get_data:
+        get_all = '''
+                <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+                    xmlns:dct="http://purl.org/dc/terms/"
+                    xmlns:dc="http://purl.org/dc/elements/1.1/">
+                    <csw:SearchResults numberOfRecordsMatched="1">
+                        <csw:Record>
+                            <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
+                            <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">1</dc:identifier>
+                            <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">https://example.com/file.csv</dct:references>
+                            <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">https://www.metadata.com</dct:references>
+                        </csw:Record>
+                    </csw:SearchResults>
+                </csw:GetRecordsResponse>              
+                '''
+
+        get_one = '''
+                <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+                    <gmd:identificationInfo>
+                        <gmd:title>
+                            <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
+                            <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
+                        </gmd:title>
+                        <gmd:abstract>
+                            <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
+                            <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
+                        </gmd:abstract>
+                        <gmd:resourceConstraints>
+                            <gmd:accessConstraints>
+                                <gmd:MD_RestrictionCode>copyright</gmd:MD_RestrictionCode>
+                            </gmd:accessConstraints>
+                            <gmd:useConstraints>
+                                <gmd:MD_RestrictionCode>license</gmd:MD_RestrictionCode>
+                            </gmd:useConstraints>
+                            <gmd:otherConstraints>
+                                <gmd:MD_RestrictionCode>restricted</gmd:MD_RestrictionCode>
+                            </gmd:otherConstraints>
+                            <gmd:useLimitation>
+                                <gco:CharacterString>limitations</gco:CharacterString>
+                            </gmd:useLimitation>
+                        </gmd:resourceConstraints>
+                    </gmd:identificationInfo>
+                    <gmd:distributionInfo>
+                        <gmd:distributionFormat>
+                            <gmd:MD_Format_GC>CSV</gmd:MD_Format_GC>
+                        </gmd:distributionFormat>
+                        <gmd:transferOptions>
+                            <gmd:CI_OnlineResource>
+                                <gmd:URL>https://example.com/file.csv</gmd:URL>
+                            </gmd:CI_OnlineResource>
+                        </gmd:transferOptions>
+                    </gmd:distributionInfo>
+                </gmd:MD_Metadata>
+                '''
+
+        get_conditions = '''
+        <CT_CodelistCatalogue xmlns="http://www.isotc211.org/2005/gmx"  xmlns:gml="http://www.opengis.net/gml/3.2">
+            <CodeListDictionary gml:id="MD_RestrictionCode">
+                <CodeDefinition gml:id="MD_RestrictionCode_copyright">
+                    <gml:description>copyright</gml:description>
+                    <gml:identifier codeSpace="ISOTC211/19115">copyright</gml:identifier>
+                </CodeDefinition>
+                <CodeDefinition gml:id="MD_RestrictionCode_license">
+                    <gml:description>license</gml:description>
+                    <gml:identifier codeSpace="ISOTC211/19115">license</gml:identifier>
+                </CodeDefinition>
+                <CodeDefinition gml:id="MD_RestrictionCode_restricted">
+                    <gml:description>restricted</gml:description>
+                    <gml:identifier codeSpace="ISOTC211/19115">restricted</gml:identifier>
+                </CodeDefinition>
+                </CodeListDictionary>
+        </CT_CodelistCatalogue>
+        '''
+        get_all_mock = Mock(content=get_all)
+        get_one_mock = Mock(content=get_one)
+        get_conditions_mock = Mock(content=get_conditions)
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
+        geoportal_import()
+
+    distribution.refresh_from_db()
+    assert distribution.conditions == \
+           'Prieigos apribojimai: autorių teisės (copyright). Code space - ISOTC211/19115.\n' \
+           'Naudojimo apribojimai: licencija (license). Code space - ISOTC211/19115.\n'\
+           'Kiti apribojimai: apribota (restricted). Code space - ISOTC211/19115.\n'\
+           'Naudojimo ribotumas: limitations'
 
 
 @pytest.mark.django_db
@@ -681,7 +909,8 @@ def test_geoportal_import__existing_publisher(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -731,7 +960,8 @@ def test_geoportal_import__not_existing_publisher(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -788,7 +1018,8 @@ def test_geoportal_import__existing_creator(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -841,7 +1072,8 @@ def test_geoportal_import__existing_creator_municipality(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -897,7 +1129,8 @@ def test_geoportal_import__existing_creator_alternative_title(app: DjangoTestApp
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -950,7 +1183,8 @@ def test_geoportal_import__not_existing_creator(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1011,7 +1245,8 @@ def test_geoportal_import__distribution_create_with_url(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1064,7 +1299,8 @@ def test_geoportal_import__distribution_create_without_url(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1122,7 +1358,8 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1192,7 +1429,8 @@ def test_geoportal_import__distribution_create_with_multiple_formats(app: Django
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1262,7 +1500,8 @@ def test_geoportal_import__distribution_update_with_url(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -1327,7 +1566,8 @@ def test_geoportal_import__distribution_update_with_format(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -1389,7 +1629,8 @@ def test_geoportal_import__distribution_update_with_not_existing_format(app: Dja
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -1454,7 +1695,8 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1531,7 +1773,8 @@ def test_geoportal_import__distribution_update_with_multiple_formats(app: Django
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1602,7 +1845,8 @@ def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1660,7 +1904,8 @@ def test_geoportal_import__service_create_without_url(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1724,7 +1969,8 @@ def test_geoportal_import__service_create_with_not_existing_format(app: DjangoTe
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -1800,7 +2046,8 @@ def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -1872,7 +2119,8 @@ def test_geoportal_import__service_update_with_format(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -1938,7 +2186,8 @@ def test_geoportal_import__service_update_with_not_existing_format(app: DjangoTe
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -2012,7 +2261,8 @@ def test_geoportal_import__categories_create_existing_values(app: DjangoTestApp)
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -2074,7 +2324,8 @@ def test_geoportal_import__categories_create_not_existing_values(app: DjangoTest
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -2144,7 +2395,8 @@ def test_geoportal_import__categories_update(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -2213,7 +2465,8 @@ def test_geoportal_import__removed_categories_update(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -2268,13 +2521,15 @@ def test_geoportal_import__recurring_error_message(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
         # import two times, to repeat the error
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -2332,7 +2587,8 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
         get_one = '''
@@ -2354,7 +2610,8 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -2428,7 +2685,8 @@ def test_geoportal_import__subscription_create(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -2495,7 +2753,8 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -2519,7 +2778,7 @@ def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp):
         object_id=organization.pk,
         dataset_update_sub=True,
     )
-    dataset = DatasetFactory(geoportal_id="1", organization=organization)
+    dataset = DatasetFactory(geoportal_id="1", organization=organization, access_rights=Dataset.RESTRICTED)
     dataset.set_current_language("lt")
     dataset.title = "Naujas duomenų rinkinys"
     dataset.description = "Naujo duomenų rinkinio aprašymas"
@@ -2566,7 +2825,8 @@ def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 1
@@ -2612,7 +2872,8 @@ def test_geoportal_import__history_create(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     sys_user = User.objects.get(email=settings.SYSTEM_USER_EMAIL)
@@ -2663,7 +2924,8 @@ def test_geoportal_import__history_update(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     sys_user = User.objects.get(email=settings.SYSTEM_USER_EMAIL)
@@ -2676,7 +2938,7 @@ def test_geoportal_import__history_update(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__history_update_no_changes(app: DjangoTestApp):
-    dataset = DatasetFactory(geoportal_id="1")
+    dataset = DatasetFactory(geoportal_id="1", access_rights=Dataset.RESTRICTED)
     dataset.set_current_language("lt")
     dataset.title = "Naujas duomenų rinkinys"
     dataset.description = "Naujo duomenų rinkinio aprašymas"
@@ -2718,7 +2980,8 @@ def test_geoportal_import__history_update_no_changes(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     dataset.refresh_from_db()
@@ -2767,7 +3030,8 @@ def test_geoportal_import__add_to_geoportal_catalog(app: DjangoTestApp):
         '''
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
-        get_data.side_effect = [get_all_mock, get_one_mock]
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
     assert Dataset.objects.count() == 2

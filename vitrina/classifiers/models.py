@@ -159,56 +159,6 @@ class GeoportalFrequency(models.Model):
         return self.title
 
 
-class GeoportalLicence(models.Model):
-    title = models.CharField(_("Pavadinimas"), max_length=255)
-    licence = models.ForeignKey(
-        Licence,
-        verbose_name=_("Atitinkanti licencija"),
-        null=True,
-        blank=True,
-        on_delete=models.CASCADE,
-    )
-
-    objects = models.Manager()
-
-    class Meta:
-        db_table = "geoportal_licence"
-        verbose_name = _("Geoportalo licencija")
-        verbose_name_plural = _("Geoportalo licencijos")
-
-    def __str__(self):
-        return self.title
-
-
-class GeoportalAccessRights(models.Model):
-    PUBLIC = "PUBLIC"
-    RESTRICTED = "RESTRICTED"
-    NON_PUBLIC = "NON_PUBLIC"
-    ACCESS_RIGHTS = (
-        (PUBLIC, _("Atviri duomenys")),
-        (RESTRICTED, _("Apsaugoti duomenys")),
-        (NON_PUBLIC, _("Uždari duomenys")),
-    )
-    title = models.CharField(_("Pavadinimas"), max_length=255)
-    access_rights = models.CharField(
-        _("Atitinkančios prieigos teisės"),
-        null=True,
-        blank=True,
-        choices=ACCESS_RIGHTS,
-        max_length=255,
-    )
-
-    objects = models.Manager()
-
-    class Meta:
-        db_table = "geoportal_access_rights"
-        verbose_name = _("Geoportalo prieigos teisė")
-        verbose_name_plural = _("Geoportalo prieigos teisės")
-
-    def __str__(self):
-        return self.title
-
-
 class Status(TranslatableModel):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

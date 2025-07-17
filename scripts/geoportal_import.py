@@ -20,8 +20,7 @@ from vitrina.users.models import User
 from vitrina.tasks.models import Task
 from vitrina.helpers import email
 from django.contrib.contenttypes.models import ContentType
-from vitrina.classifiers.models import GeoportalCategory, GeoportalFrequency, GeoportalLicence, \
-    GeoportalAccessRights
+from vitrina.classifiers.models import GeoportalCategory, GeoportalFrequency
 from vitrina.resources.models import DatasetDistribution, GeoportalFormatValue
 from vitrina.comments.models import Comment
 from vitrina.messages.models import Subscription
@@ -62,22 +61,49 @@ def _get_frequency(title):
     return frequency
 
 
-def _get_licence(title):
-    licence = None
-    if mapping := GeoportalLicence.objects.filter(title=title).first():
-        licence = mapping.licence
-    else:
-        GeoportalLicence.objects.create(title=title)
-    return licence
+def _get_condition_descriptions():
+    condition_info = {}
+    try:
+        resp = requests.get(
+            "https://www.isotc211.org/2005/resources/Codelist/gmxCodelists.xml#MD_RestrictionCode"
+        )
+    except requests.RequestException as e:
+        print(f"Got error while receiving distribution condition data: {str(e)}")
+        return condition_info
 
+    if resp:
+        xml = ET.XML(resp.content)
+        namespaces = xml.nsmap
+        gml = namespaces.get('gml')
+        gmx = namespaces.get(None)
+        restriction_code_list = _get_elem(".//{%s}CodeListDictionary[@{%s}id='MD_RestrictionCode']" % (gmx, gml), xml)
+        restriction_code_list = _get_elem(".//{%s}CodeDefinition" % gmx, restriction_code_list, find_all=True)
+        for code in restriction_code_list:
+            description = _get_elem(".//{%s}description" % gml, code)
+            identifier = _get_elem(".//{%s}identifier" % gml, code)
+            code_space = identifier.get('codeSpace') if identifier is not None else ""
+            if description is not None and identifier is not None:
+                lt_description = requests.post(
+                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    json={
+                        "appId": "",
+                        "systemID": "smt-d01dca4d-e827-46e6-acaa-e5cb1201bc16",
+                        "text": description.text,
+                        "options": "",
+                    },
+                    headers={
+                        "client-id": settings.TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8",
+                    },
+                )
+                description = lt_description.json()
 
-def _get_access_rights(title):
-    access_rights = None
-    if mapping := GeoportalAccessRights.objects.filter(title=title).first():
-        access_rights = mapping.access_rights
-    else:
-        GeoportalAccessRights.objects.create(title=title)
-    return access_rights
+                condition_info[identifier.text] = {
+                    "description": description,
+                    "code_space": code_space,
+                }
+
+    return condition_info
 
 
 def main():
@@ -121,6 +147,8 @@ def main():
 
     pbar = tqdm("Importing Geoportal datasets", total=total_results)
     sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+
+    condition_info = _get_condition_descriptions()
 
     while records:
         for record in records:
@@ -239,28 +267,14 @@ def main():
                             dataset.frequency = None
                             errors.append(f'Nerastas atnaujinimo periodiškumas: "{frequency_value.text}"')
 
-                # access rights and licence
-                access_rights_value = _get_elem(".//{%s}accessConstraints" % gmd, dataset_info)
-                access_rights_value = _get_elem(".//{%s}MD_RestrictionCode" % gmd, access_rights_value)
-                if access_rights_value is not None:
-                    access_rights = _get_access_rights(access_rights_value.text)
-
-                    if created or dataset.access_rights != access_rights:
-                        changed = True
-                        if access_rights:
-                            dataset.access_rights = access_rights
-                        else:
-                            dataset.access_rights = None
-                            errors.append(f'Nerastos prieigos teisės: "{access_rights_value.text}"')
-
-                    licence = _get_licence(access_rights_value.text)
-                    if created or dataset.licence != licence:
-                        changed = True
-                        if licence:
-                            dataset.licence = licence
-                        else:
-                            dataset.licence = None
-                            errors.append(f'Nerasta licencija: "{access_rights_value.text}"')
+                # access rights
+                access_rights = dataset.access_rights
+                if "atviri duomenys" in keyword_list:
+                    dataset.access_rights = Dataset.PUBLIC
+                else:
+                    dataset.access_rights = Dataset.RESTRICTED
+                if dataset.access_rights != access_rights:
+                    changed = True
 
                 # organization
                 if created:
@@ -306,6 +320,53 @@ def main():
                             dataset.creator_text = organization_name.text
                             errors.append(f'Nerasta organizacija: "{organization_name.text}"')
 
+                # distribution conditions
+                conditions = ""
+                if not dataset.service:
+                    access_constraints = _get_elem(".//{%s}accessConstraints" % gmd, dataset_info)
+                    access_constraints = _get_elem(".//{%s}MD_RestrictionCode" % gmd, access_constraints)
+
+                    use_constraints = _get_elem(".//{%s}useConstraints" % gmd, dataset_info)
+                    use_constraints = _get_elem(".//{%s}MD_RestrictionCode" % gmd, use_constraints)
+
+                    other_constraints = _get_elem(".//{%s}otherConstraints" % gmd, dataset_info)
+                    other_constraints = _get_elem(".//{%s}MD_RestrictionCode" % gmd, other_constraints)
+
+                    use_limitation = _get_elem(".//{%s}useLimitation" % gmd, dataset_info)
+                    use_limitation = _get_elem(".//{%s}CharacterString" % gco, use_limitation)
+
+                    if condition_info:
+                        condition_list = []
+                        if access_constraints is not None and access_constraints.text != "":
+                            access_constraints_info = condition_info.get(access_constraints.text)
+                            if access_constraints_info:
+                                condition_list.append(f"Prieigos apribojimai: "
+                                                      f"{access_constraints_info.get('description')} "
+                                                      f"({access_constraints.text}). "
+                                                      f"Code space - {access_constraints_info.get('code_space')}.")
+
+                        if use_constraints is not None and use_constraints.text != "":
+                            use_constraints_info = condition_info.get(use_constraints.text)
+                            if use_constraints_info:
+                                condition_list.append(f"Naudojimo apribojimai: "
+                                                      f"{use_constraints_info.get('description')} "
+                                                      f"({use_constraints.text}). "
+                                                      f"Code space - {use_constraints_info.get('code_space')}.")
+
+                        if other_constraints is not None and other_constraints.text != "":
+                            other_constraints_info = condition_info.get(other_constraints.text)
+                            if other_constraints_info:
+                                condition_list.append(f"Kiti apribojimai: "
+                                                      f"{other_constraints_info.get('description')} "
+                                                      f"({other_constraints.text}). "
+                                                      f"Code space - {other_constraints_info.get('code_space')}.")
+
+                        if use_limitation is not None and use_limitation.text != "":
+                            condition_list.append(f"Naudojimo ribotumas: {use_limitation.text}")
+
+                        if condition_list:
+                            conditions = "\n".join(condition_list)
+
                 # distribution
                 distribution_info = _get_elem(".//{%s}distributionInfo" % gmd, xml)
 
@@ -350,32 +411,58 @@ def main():
                                         value__iexact=frm
                                     ).first():
                                         dist_format = dist_format.geoportal_format.format
-                                        if not dataset.datasetdistribution_set.filter(
+                                        if distribution := dataset.datasetdistribution_set.filter(
                                             download_url=data_url,
                                             format=dist_format
-                                        ):
+                                        ).first():
+                                            if distribution.conditions != conditions:
+                                                changed = True
+                                                distribution.set_current_language("lt")
+                                                distribution.conditions = conditions
+                                                distribution.save_translations()
+                                                distribution.save()
+                                        else:
                                             changed = True
-                                            DatasetDistribution.objects.create(
+                                            distribution = DatasetDistribution.objects.create(
                                                 dataset=dataset,
                                                 download_url=data_url,
-                                                format=dist_format
+                                                format=dist_format,
                                             )
+                                            distribution.set_current_language("lt")
+                                            distribution.conditions = conditions
+                                            distribution.save_translations()
+                                            distribution.save()
                                     else:
-                                        if not dataset.datasetdistribution_set.filter(
+                                        if distribution := dataset.datasetdistribution_set.filter(
                                             download_url=data_url,
-                                        ):
+                                        ).first():
+                                            if distribution.conditions != conditions:
+                                                changed = True
+                                                distribution.set_current_language("lt")
+                                                distribution.conditions = conditions
+                                                distribution.save_translations()
+                                                distribution.save()
+                                        else:
                                             changed = True
-                                            DatasetDistribution.objects.create(
+                                            distribution = DatasetDistribution.objects.create(
                                                 dataset=dataset,
-                                                download_url=data_url
+                                                download_url=data_url,
                                             )
+                                            distribution.set_current_language("lt")
+                                            distribution.conditions = conditions
+                                            distribution.save_translations()
+                                            distribution.save()
                                         errors.append(f'Nerastas formatas: "{frm}"')
                         elif not dataset.datasetdistribution_set.filter(download_url=data_url):
                             changed = True
-                            DatasetDistribution.objects.create(
+                            distribution = DatasetDistribution.objects.create(
                                 dataset=dataset,
-                                download_url=data_url
+                                download_url=data_url,
                             )
+                            distribution.set_current_language("lt")
+                            distribution.conditions = conditions
+                            distribution.save_translations()
+                            distribution.save()
                     else:
                         dataset.status = Dataset.INVENTORED
                         comment_status = Comment.INVENTORED

@@ -8,8 +8,7 @@ from vitrina.classifiers.models import (
     AreaOfManagement,
     GeoportalCategory,
     GeoportalFrequency,
-    GeoportalLicence,
-    GeoportalAccessRights, Status,
+    Status,
 )
 
 
@@ -72,23 +71,6 @@ class GeoportalFrequencyFactory(DjangoModelFactory):
     title = factory.Faker("catch_phrase")
     frequency = factory.SubFactory(FrequencyFactory)
 
-
-class GeoportalLicenceFactory(DjangoModelFactory):
-    class Meta:
-        model = GeoportalLicence
-        django_get_or_create = ("title",)
-
-    title = factory.Faker("catch_phrase")
-    licence = factory.SubFactory(LicenceFactory)
-
-
-class GeoportalAccessRightsFactory(DjangoModelFactory):
-    class Meta:
-        model = GeoportalAccessRights
-        django_get_or_create = ("title",)
-
-    title = factory.Faker("catch_phrase")
-    access_rights = GeoportalAccessRights.PUBLIC
 
 class StatusFactory(DjangoModelFactory):
     class Meta:

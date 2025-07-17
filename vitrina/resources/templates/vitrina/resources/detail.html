@@ -115,6 +115,27 @@
                                         {% endif %}
                                     </td>
                                 </tr>
+                                {% if resource.licence %}
+                                <tr>
+                                    <th>
+                                        {% translate "Licencija" %}
+                                        <span class="icon info-icon has-tooltip-multiline is-middle"
+                                              data-tooltip="{% translate 'Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga' %}">
+                                            <i class="fas fa-info-circle"></i>
+                                        </span>
+                                    </th>
+                                    <td>
+                                        <a href="{{ resource.licence.url }}" target="_blank"
+                                           title="{{ resource.licence.description }}">{{ resource.licence.title }}</a>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                                {% if resource.conditions %}
+                                    <tr>
+                                        <th>{% translate "Platinimo sąlygos" %}</th>
+                                        <td>{{ resource.conditions|linebreaks }}</td>
+                                    </tr>
+                                {% endif %}
                         </table>
                     </div>
                 </div>

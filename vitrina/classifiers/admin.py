@@ -12,8 +12,6 @@ from vitrina.classifiers.models import (
     AreaOfManagement,
     GeoportalCategory,
     GeoportalFrequency,
-    GeoportalLicence,
-    GeoportalAccessRights,
     Status,
 )
 from vitrina.classifiers.models import Licence
@@ -206,20 +204,6 @@ class GeoportalFrequencyAdmin(admin.ModelAdmin):
     )
 
 
-class GeoportalLicenceAdmin(admin.ModelAdmin):
-    list_display = (
-        "title",
-        "licence",
-    )
-
-
-class GeoportalAccessRightsAdmin(admin.ModelAdmin):
-    list_display = (
-        "title",
-        "access_rights",
-    )
-
-
 class StatusAdmin(TranslatableAdmin):
     list_display = (
         "name",
@@ -241,6 +225,4 @@ admin.site.register(Licence, LicenceAdmin)
 admin.site.register(Frequency, FrequencyAdmin)
 admin.site.register(GeoportalCategory, GeoportalCategoryAdmin)
 admin.site.register(GeoportalFrequency, GeoportalFrequencyAdmin)
-admin.site.register(GeoportalLicence, GeoportalLicenceAdmin)
-admin.site.register(GeoportalAccessRights, GeoportalAccessRightsAdmin)
 admin.site.register(Status, StatusAdmin)

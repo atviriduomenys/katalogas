@@ -107,6 +107,7 @@ INSTALLED_APPS = [
     "django.contrib.humanize",
     "django.contrib.sitemaps",
     "extra_settings",
+    "oauth2_provider",
     "rest_framework",
     "drf_yasg",
     "allauth",

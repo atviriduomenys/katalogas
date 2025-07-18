@@ -2,6 +2,7 @@ import pathlib
 from enum import StrEnum
 
 import requests
+import reversion
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.urls import reverse
@@ -125,6 +126,7 @@ class PackagingFormat(models.Model):
         return self.title
 
 
+@reversion.register()
 class DatasetDistribution(TranslatableModel):
     UPLOAD_TO = "data"
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

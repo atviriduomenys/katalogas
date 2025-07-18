@@ -110,4 +110,3 @@ class Agent(UUIDBaseModel):
     @property
     def global_codename(self) -> str:
         return f"{self.codename}_{self.organization_id}"
-    

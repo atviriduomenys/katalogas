@@ -1,5 +1,6 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 
@@ -545,3 +546,23 @@ def test_distribution_detail_dynamic_resource_rdf(app: DjangoTestApp):
     assert list(response.context['resource']['models']) == list(resource.model_set.all())
     assert response.context['format'] == 'RDF'
     assert response.context['resource']['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_uploaded_file_size_saved(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    file_format = FileFormat()
+    app.set_user(user)
+
+    file_content = b"test,data\n1,2\n3,4"
+
+    form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
+    form["title"] = "File size test"
+    form["format"] = file_format.pk
+    form["file"] = ("test.csv", file_content, "text/csv")
+    resp = form.submit()
+
+    assert resp.status_code == 302
+    resource = DatasetDistribution.objects.first()
+    assert resource.size == len(file_content)

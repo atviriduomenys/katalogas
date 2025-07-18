@@ -283,6 +283,14 @@ class DatasetResourceForm(TranslatableModelForm):
             return int(level)
         return None
 
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if self.cleaned_data.get("file"):
+            instance.size = self.cleaned_data["file"].size
+        if commit:
+            instance.save()
+        return instance
+
 
 class FormatAdminForm(forms.ModelForm):
     extension = forms.CharField(label=_("Failo plėtinys"))

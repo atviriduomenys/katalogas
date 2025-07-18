@@ -9,8 +9,8 @@ from webtest import Upload
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.comments.models import Comment
-from vitrina.projects.factories import ProjectFactory
-from vitrina.projects.models import Project
+from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory
+from vitrina.projects.models import Project, UseCaseClient
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
 
@@ -204,3 +204,83 @@ def test_not_approved_project_view_with_permission(app: DjangoTestApp):
 
     resp = app.get(reverse('project-detail', args=[project.pk]))
     assert resp.context['object'] == project
+
+
+@pytest.mark.django_db
+def test_client_view_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory()
+    app.set_user(user)
+    resp = app.get(reverse('project-clients', args=[project.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_client_create_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    project = ProjectFactory()
+
+    resp = app.get(
+        reverse("project-clients-create", args=[project.pk]),
+        expect_errors=True
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_client_create(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    project = ProjectFactory()
+
+    form = app.get(reverse("project-clients-create", args=[project.pk])).forms['client-form']
+    form['name'] = "Client"
+    resp = form.submit()
+
+    added_client = UseCaseClient.objects.filter(name='Client')
+    assert added_client.exists()
+    assert resp.status_code == 302
+
+
+@pytest.mark.django_db
+def test_client_update_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    project = ProjectFactory()
+    client = UseCaseClientFactory()
+    resp = app.get(
+        reverse("project-clients-update", args=[project.pk, client.id]),
+        expect_errors=True
+    )
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_client_update(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    project = ProjectFactory()
+    client = UseCaseClientFactory()
+    form = app.get(reverse("project-clients-update", args=[project.pk, client.id])).forms['client-form']
+    form['name'] = "Client"
+    resp = form.submit()
+
+    added_client = UseCaseClient.objects.filter(name='Client')
+    clients = UseCaseClient.objects.all()
+    assert clients.count() == 1
+    assert added_client.exists()
+    assert resp.status_code == 302
+
+
+@pytest.mark.django_db
+def test_client_scopes_create_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    project = ProjectFactory()
+    client = UseCaseClientFactory()
+    resp = app.get(
+        reverse("project-clients-scopes-create", args=[project.pk, client.id]),
+        expect_errors=True
+    )
+    assert resp.status_code == 403

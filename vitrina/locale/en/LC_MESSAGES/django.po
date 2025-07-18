@@ -2300,6 +2300,51 @@ msgstr ""
 msgid "Paveiksliukas susijęs su pasiūlytu panaudojimo atveju."
 msgstr "Image related to the proposed use case."
 
+msgid "Kliento pavadinimas"
+msgstr "Agent name"
+
+msgid "Kliento identifikatorius"
+msgstr "Client ID"
+
+msgid "Klientas"
+msgstr "Client"
+
+msgid "Klientai"
+msgstr "Clients"
+
+msgid "Išteklius"
+msgstr "Resource"
+
+msgid "Kliento leidimas"
+msgstr "Client scope"
+
+msgid "Kliento leidimai"
+msgstr "Client scopes"
+
+msgid "Kliento peržiūra"
+msgstr "Client preview"
+
+msgid "Kliento ID"
+msgstr "Client ID"
+
+msgid "Naujas klientas"
+msgstr "New client"
+
+msgid "Pasirinkite leidimą"
+msgstr "Select a scope"
+
+msgid "Nėra leidimų, kuriuos būtų galima priskirti"
+msgstr "There is no scopes that can be attributed"
+
+msgid "Šiuo metu Panaudos atvejis klientų neturi"
+msgstr "Currently, there are no clients for this Use case"
+
+msgid "Šiuo metu klientas leidimų neturi"
+msgstr "Currently, there are no scopes for this client"
+
+msgid "Panaudos atvejis"
+msgstr "Use case"
+
 msgid "Panaudojimo atvejis"
 msgstr "Use case"
 

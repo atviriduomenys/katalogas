@@ -29,10 +29,10 @@ from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription
 from vitrina.orgs.forms import ProjectApiKeyRegenerateForm
 from vitrina.orgs.services import has_perm, Action, hash_api_key
-from vitrina.projects.forms import ProjectForm
-from vitrina.projects.models import Project
+from vitrina.projects.forms import ProjectForm, ClientCreateForm, ClientScopeCreateForm
+from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.settings import SPINTA_SERVER_URL
-from vitrina.smart_contracts.models import Agreement
+from vitrina.smart_contracts.models import Agreement, AgreementScope
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
@@ -549,6 +549,7 @@ class ProjectApiKeysDetailView(
             reverse("project-list"): _("Projektai"),
             reverse("project-detail", args=[self.object.pk]): self.object.title,
             reverse("project-permissions", args=[self.object.pk]): _("Leidimai"),
+            reverse("project-clients", args=[self.object.pk]): _("Kurti klientą"),
         }
 
         context_data["project_id"] = self.object.pk
@@ -654,3 +655,244 @@ class RemoveDatasetView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
     def get_success_url(self):
         return reverse("project-datasets", kwargs={"pk": self.object.pk})
+
+
+class ClientListView(HistoryMixin, PermissionRequiredMixin, TemplateView):
+    template_name = "vitrina/projects/client.html"
+
+    object: Project
+    detail_url_name = "project-detail"
+    history_url_name = "project-history"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Project, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_PROJECT_KEYS,
+            self.object,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.object
+        context["can_update_project"] = has_perm(
+            self.request.user, Action.UPDATE, self.object
+        )
+        context["success_message"] = "Klientas sukurtas sėkmingai."
+        context["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("project-list"): _("Panaudojimo atvejai"),
+            reverse("project-detail", args=[self.object.pk]): self.object,
+        }
+        usecases = UseCaseClient.objects.filter(use_case__id=self.object.pk)
+        context["usecases"] = usecases
+        return context
+
+
+class ClientCreateView(
+    LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, CreateView
+):
+    model = UseCaseClient
+    form_class = ClientCreateForm
+    template_name = "base_form.html"
+
+    project: Project
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_PROJECT_KEYS,
+            self.project,
+        )
+
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(Project, pk=kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.user = self.request.user
+        self.object.use_case = self.project
+        self.object.save()
+        return redirect(reverse("project-clients", args=[self.project.pk]))
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data["current_title"] = _("Kliento registracija")
+        context_data["success_message"] = _("Klientas sukurtas sėkmingai.")
+        context_data["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("project-list"): _("Panaudojimo atvejai"),
+            reverse("project-detail", args=[self.project.pk]): self.project,
+            reverse("project-clients", args=[self.project.pk]): _("Klientai"),
+        }
+        return context_data
+
+
+class ClientUpdateView(PermissionRequiredMixin, UpdateView):
+    model = UseCaseClient
+    form_class = ClientCreateForm
+    template_name = "base_form.html"
+    pk_url_kwarg = "client_id"
+
+    project: Project
+
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(Project, pk=kwargs["pk"])
+        self.client = get_object_or_404(UseCaseClient, pk=kwargs["client_id"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_PROJECT_KEYS,
+            self.project,
+        )
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data["current_title"] = _("Kliento redagavimas")
+        context_data["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("project-list"): _("Panaudojimo atvejai"),
+            reverse("project-detail", args=[self.project.pk]): self.project,
+            reverse("project-clients", args=[self.project.pk]): _("Klientai"),
+        }
+        return context_data
+
+    def form_valid(self, form):
+        self.object = form.save(commit=False)
+        self.object.user = self.request.user
+        self.object.use_case = self.project
+        self.object.save()
+        return redirect(reverse("project-clients", args=[self.project.pk]))
+
+
+class ClientDetailView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    template_name = "vitrina/projects/client_detail.html"
+    pk_url_kwarg = "client_id"
+
+    detail_url_name = "project-detail"
+    object: Project
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Project, pk=kwargs["pk"])
+        self.client = get_object_or_404(UseCaseClient, pk=kwargs["client_id"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_PROJECT_KEYS,
+            self.object,
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.object
+        context["client"] = self.client
+        context["can_update_project"] = has_perm(
+            self.request.user, Action.UPDATE, self.object
+        )
+        scopes = list(UseCaseClientScope.objects.filter(use_case_client__id=self.client.id))
+        context["scopes"] = scopes
+        context["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("project-list"): _("Panaudojimo atvejai"),
+            reverse("project-detail", args=[self.object.pk]): self.object,
+        }
+        context["detail_url_name"] = self.detail_url_name
+        return context
+
+class ClientScopeCreateView(
+    LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, CreateView
+):
+    model = UseCaseClientScope
+    form_class = ClientScopeCreateForm
+    template_name = "base_form.html"
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_PROJECT_KEYS,
+            self.project,
+        )
+
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(Project, pk=kwargs["pk"])
+        self.client = get_object_or_404(UseCaseClient, pk=kwargs["client_id"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        try:
+            agreement = Agreement.objects.get(use_case__id=self.project.pk, status=Agreement.ACTIVE)
+            scopes = AgreementScope.objects.filter(agreement_id=agreement.uuid)
+        except Agreement.DoesNotExist:
+            scopes = AgreementScope.objects.none()
+        kwargs["available_scopes"] = scopes
+        kwargs["use_case_client"] = self.client
+        return kwargs
+
+    def form_valid(self, form):
+        if not form.cleaned_data.get("scope"):
+            form.add_error("scope", _("Nėra leidimų, kuriuos būtų galima priskirti"))
+            return self.form_invalid(form)
+
+        selected_scope = form.cleaned_data["scope"]
+
+        UseCaseClientScope.objects.create(
+            resource=selected_scope.resource,
+            action=selected_scope.action,
+            use_case_client=self.client,
+            is_active=False
+        )
+
+        return redirect(reverse("project-clients-detail", args=[self.project.pk, self.client.id]))
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["project"] = self.project
+        context["client"] = self.client
+        context["current_title"] = _("Kliento leidimų registracija")
+        context["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("project-list"): _("Panaudojimo atvejai"),
+            reverse("project-detail", args=[self.project.pk]): self.project,
+            reverse("project-clients", args=[self.project.pk]): _("Klientai"),
+            reverse("project-clients-detail", args=[self.project.pk, self.client.id]): self.client
+        }
+        return context
+
+
+class ClientScopeToggleView(PermissionRequiredMixin, View):
+    template_name = "vitrina/projects/client_detail.html"
+
+    object: Project
+    pk_url_kwarg = "client_id"
+
+    project: Project
+
+    def dispatch(self, request, *args, **kwargs):
+        self.project = get_object_or_404(Project, pk=kwargs["pk"])
+        self.client = get_object_or_404(UseCaseClient, pk=kwargs["client_id"])
+        self.scope = get_object_or_404(UseCaseClientScope, pk=kwargs["scope_id"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(
+            self.request.user,
+            Action.MANAGE_PROJECT_KEYS,
+            self.project,
+        )
+
+    def get(self, request, **kwargs):
+        if self.scope.is_active:
+            self.scope.is_active = False
+        else:
+            self.scope.is_active = True
+        self.scope.save()
+        return redirect(reverse("project-clients-detail", args=[self.project.pk, self.client.id]))

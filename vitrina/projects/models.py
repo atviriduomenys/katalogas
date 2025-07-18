@@ -101,3 +101,41 @@ class UsecaseLike(models.Model):
     class Meta:
         managed = True
         db_table = "usecase_like"
+
+
+class UseCaseClient(models.Model):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    use_case = models.ForeignKey(
+        Project,
+        related_name="client_set",
+        on_delete=models.PROTECT,
+        verbose_name=_("Panaudos atvejis"),
+    )
+    name = models.CharField(max_length=255, verbose_name=_("Kliento pavadinimas"))
+    client_id = models.CharField(max_length=255, verbose_name=_("Kliento identifikatorius"))
+
+    class Meta:
+        verbose_name = _("Klientas")
+        verbose_name_plural = _("Klientai")
+        db_table = "usecase_client"
+
+    def __str__(self):
+        return self.name
+
+
+class UseCaseClientScope(models.Model):
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    resource = models.CharField(max_length=255, verbose_name=_("Išteklius"))
+    action = models.CharField(max_length=255, verbose_name=_("Veiksmas"))
+    use_case_client = models.ForeignKey(
+        UseCaseClient,
+        models.PROTECT,
+        verbose_name=_("Leidimai"),
+    )
+    is_active = models.BooleanField(blank=True, null=True)
+    class Meta:
+        db_table = "usecase_client_scope"
+        verbose_name = _("Kliento leidimas")
+        verbose_name_plural = _("Kliento leidimai")

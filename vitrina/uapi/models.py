@@ -62,7 +62,6 @@ class Agent(UUIDBaseModel):
             "Nurodo ar Agentas yra archyvuotas. Archyvuoti agentai nėra pasiekiami įprastiems platformos vartotojams"
         )
     )
-
     service = models.ForeignKey(
         "vitrina_datasets.Dataset",
         verbose_name=_("Duomenų paslauga"),
@@ -74,6 +73,12 @@ class Agent(UUIDBaseModel):
         verbose_name=_("Organizacija"),
         on_delete=models.CASCADE,
         help_text=_("Nurodoma organizacija, kuriai priskirtas Agentas."),
+    )
+    oauth_client_id = models.CharField(
+        verbose_name=_("Autorizacijos kliento identifikatorius"),
+        max_length=255,
+        blank=True,
+        help_text=_("Jei kliento identifikatorius egzistuoja - agentas gali vykdyti užklausas į katalogą."),
     )
 
 
@@ -101,3 +106,7 @@ class Agent(UUIDBaseModel):
     @staticmethod
     def get_codename(title: str) -> str:
         return slugify(title).replace('-', '_')
+
+    @property
+    def global_codename(self) -> str:
+        return f"{self.codename}_{self.organization_id}"

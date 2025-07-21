@@ -78,10 +78,11 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         organization = get_object_or_404(Organization, kind=self.kwargs["form"], name=self.kwargs["org"])
 
+        serializer_context = self.get_serializer_context()
         serializer = self.get_serializer(
             data=request.data,
             context={
-                **self.get_serializer_context(),
+                **serializer_context,
                 "organization": organization,
             }
         )
@@ -104,7 +105,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         response_serializer = UAPIDatasetSerializer(
             instance,
             context={
-                **self.get_serializer_context(),
+                **serializer_context,
                 "_type": extract_type_from_url(self.request.build_absolute_uri()),
             },
         )
@@ -217,10 +218,11 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer_context = self.get_serializer_context()
         serializer = self.get_serializer(
             data=request.data,
             context={
-                **self.get_serializer_context(),
+                **serializer_context,
                 "dataset": Dataset.objects.get(pk=request.data.get("dataset")),
             }
         )
@@ -231,7 +233,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         response_serializer = UAPIDistributionSerializer(
             instance,
             context={
-                **self.get_serializer_context(),
+                **serializer_context,
                 "_type": extract_type_from_url(self.request.build_absolute_uri()),
             },
         )

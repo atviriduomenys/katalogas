@@ -1,4 +1,4 @@
-from unittest.mock import patch, PropertyMock, ANY
+from unittest.mock import patch, PropertyMock
 from urllib.parse import quote
 
 import pytest
@@ -18,10 +18,10 @@ from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
 
 
+pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
 
 
-@pytest.mark.django_db
 def test_create(
     app: DjangoTestApp,
     organization: Organization,
@@ -72,7 +72,6 @@ def test_create(
     }
 
 
-@pytest.mark.django_db
 def test_create_serialization_validation_error(
     app: DjangoTestApp,
     organization: Organization,
@@ -104,7 +103,6 @@ def test_create_serialization_validation_error(
     }
 
 
-@pytest.mark.django_db
 def test_create_unexpected_exception_raised_and_rollback_executed(
     app: DjangoTestApp,
     organization: Organization,
@@ -139,7 +137,6 @@ def test_create_unexpected_exception_raised_and_rollback_executed(
     }
 
 
-@pytest.mark.django_db
 def test_list(
     app: DjangoTestApp,
     organization: Organization,
@@ -184,7 +181,6 @@ def test_list(
     }
 
 
-@pytest.mark.django_db
 def test_list_with_query_parameters(
     app: DjangoTestApp,
     organization: Organization,
@@ -244,7 +240,6 @@ def test_list_with_query_parameters(
     }
 
 
-@pytest.mark.django_db
 def test_list_no_datasets_exist(
     app: DjangoTestApp,
     organization: Organization,
@@ -262,7 +257,6 @@ def test_list_no_datasets_exist(
     }
 
 
-@pytest.mark.django_db
 def test_list_only_archived_datasets(
     app: DjangoTestApp,
     organization: Organization,
@@ -296,7 +290,6 @@ def test_list_only_archived_datasets(
     }
 
 
-@pytest.mark.django_db
 def test_list_with_query_parameters_archived_dataset(
     app: DjangoTestApp,
     organization: Organization,
@@ -332,7 +325,6 @@ def test_list_with_query_parameters_archived_dataset(
     }
 
 
-@pytest.mark.django_db
 def test_list_no_datasets_for_the_organization_passed_in_path_parameters(
     app: DjangoTestApp,
     organization: Organization,
@@ -357,7 +349,6 @@ def test_list_no_datasets_for_the_organization_passed_in_path_parameters(
     }
 
 
-@pytest.mark.django_db
 def test_action_upload_dataset_structure(
     app: DjangoTestApp,
     organization: Organization,
@@ -376,7 +367,6 @@ def test_action_upload_dataset_structure(
     assert file.label == f"dataset_{dataset.id}_structure.csv"
 
 
-@pytest.mark.django_db
 def test_action_upload_dataset_structure_no_object(
     app: DjangoTestApp,
     organization: Organization,
@@ -404,7 +394,6 @@ def test_action_upload_dataset_structure_no_object(
     }
 
 
-@pytest.mark.django_db
 def test_action_upload_dataset_structure_empty_csv(
     app: DjangoTestApp,
     organization: Organization,
@@ -423,7 +412,6 @@ def test_action_upload_dataset_structure_empty_csv(
     }
 
 
-@pytest.mark.django_db
 def test_action_upload_dataset_structure_file_only_contains_special_characters(
     app: DjangoTestApp,
     organization: Organization,
@@ -441,7 +429,6 @@ def test_action_upload_dataset_structure_file_only_contains_special_characters(
         "additionalProperties": None,
     }
 
-@pytest.mark.django_db
 def test_action_upload_dataset_structure_transaction_rollback_on_failure(
     app: DjangoTestApp,
     organization: Organization,
@@ -466,7 +453,6 @@ def test_action_upload_dataset_structure_transaction_rollback_on_failure(
     }
 
 
-@pytest.mark.django_db
 def test_action_update_dataset_structure_update(
     app: DjangoTestApp,
     organization: Organization,

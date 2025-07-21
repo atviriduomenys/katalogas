@@ -17,10 +17,10 @@ from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.factories import MetadataFactory
 
 
+pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
 
 
-@pytest.mark.django_db
 def test_create(
     app: DjangoTestApp,
     organization: Organization,
@@ -66,7 +66,6 @@ def test_create(
     }
 
 
-@pytest.mark.django_db
 def test_create_serializer_is_invalid(
     app: DjangoTestApp,
     organization: Organization,
@@ -87,7 +86,6 @@ def test_create_serializer_is_invalid(
     }
 
 
-@pytest.mark.django_db
 def test_create_unexpected_exception_raised(
     app: DjangoTestApp,
     organization: Organization,
@@ -120,7 +118,6 @@ def test_create_unexpected_exception_raised(
     }
 
 
-@pytest.mark.django_db
 def test_list(
     app: DjangoTestApp,
     organization: Organization,
@@ -160,7 +157,6 @@ def test_list(
     }
 
 
-@pytest.mark.django_db
 def test_list_with_query_parameters(
     app: DjangoTestApp,
     organization: Organization,
@@ -218,7 +214,6 @@ def test_list_with_query_parameters(
     }
 
 
-@pytest.mark.django_db
 def test_list_with_query_parameters_dataset_does_not_exist(
     app: DjangoTestApp,
     organization: Organization,
@@ -244,7 +239,6 @@ def test_list_with_query_parameters_dataset_does_not_exist(
 
 
 
-@pytest.mark.django_db
 def test_list_with_query_parameters_no_given_distribution(
     app: DjangoTestApp,
     organization: Organization,
@@ -270,7 +264,6 @@ def test_list_with_query_parameters_no_given_distribution(
     }
 
 
-@pytest.mark.django_db
 def test_list_distributions_the_distributions_dataset_is_deleted(
     app: DjangoTestApp,
     organization: Organization,
@@ -301,7 +294,6 @@ def test_list_distributions_the_distributions_dataset_is_deleted(
     }
 
 
-@pytest.mark.django_db
 def test_list_distributions_the_distribution_is_deleted(
     app: DjangoTestApp,
     organization: Organization,
@@ -332,7 +324,6 @@ def test_list_distributions_the_distribution_is_deleted(
     }
 
 
-@pytest.mark.django_db
 def test_list_unexpected_exception_raised(
     app: DjangoTestApp,
     organization: Organization,

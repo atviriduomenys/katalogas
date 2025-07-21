@@ -756,7 +756,7 @@ msgid "Duomenų atvėrimo paslaugų teikėjas"
 msgstr "Data open service provider"
 
 msgid "Prieigos nuoroda"
-msgstr "Access url"
+msgstr "Landing page"
 
 msgid "Duomenų rinkinio ryšiai"
 msgstr "Dataset relations"

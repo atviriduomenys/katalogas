@@ -54,25 +54,30 @@
             {% else %}
                 <td>{{ r.modified|default:"-"|date:"SHORT_DATE_FORMAT" }}</td>
             {% endif %}
-            {% if r.is_external_url %}
-                {% if r.get_download_url %}
-                <td>
-                    <a class="button is-primary is-small is-pulled-right" href="{{ r.get_download_url }}"
-                       target="_blank">{% translate "Atidaryti" %}</a>
-                </td>
-                {% endif %}
-            {% else %}
+
+            {% if r.file %}
                 <td>
                     <div style="display:inline-flex; gap: 2px">
                         {% if r.is_previewable %}
                             <a class="button is-link is-small preview-button"
                                id="{{ r.pk }}">{% translate "Peržiūrėti" %}</a>
                         {% endif %}
-                    <a href="{{ r.get_download_url }}" download
+                    <a href="{{ r.file.url }}" download
                        class="button is-link is-small is-pulled-right">{% translate "Atsisiųsti" %}</a>
                     </div>
                 </td>
+            {% elif r.download_url %}
+                <td>
+                    <a class="button is-primary is-small is-pulled-right" href="{{ r.download_url }}"
+                       target="_blank">{% translate "Atidaryti" %}</a>
+                </td>
+            {% elif r.access_url %}
+                <td>
+                    <a class="button is-primary is-small is-pulled-right" href="{{ r.access_url }}"
+                       target="_blank">{% translate "Atidaryti" %}</a>
+                </td>
             {% endif %}
+
             {% if can_add_resource %}
             <td>
                 <a href="{%url 'resource-change' pk=r.id %}"

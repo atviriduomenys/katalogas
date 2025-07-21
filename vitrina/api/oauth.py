@@ -113,7 +113,8 @@ class OAuth2AuthenticationWithLocalJWK(BaseAuthentication):
 class IsOAuthTokenValid(BasePermission):
 
     def has_permission(self, request, view):
-        return isinstance(request.auth, JWTClaims) and request.auth.validate()
+        request.auth.validate()
+        return isinstance(request.auth, JWTClaims)
 
 class OAuthTokenHasScopes(BasePermission):
 

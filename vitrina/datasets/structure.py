@@ -4,7 +4,7 @@ from vitrina.structure.models import Metadata as StructureMetadata
 
 import pathlib
 from dataclasses import dataclass, field
-from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List, NotRequired
+from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List
 from django.utils.translation import gettext_lazy as _
 
 DIMS = [

@@ -18,6 +18,7 @@ from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
+from vitrina.smart_contracts.models import Agreement
 from vitrina.tasks.models import Task
 from vitrina.uapi.models import Agent
 from vitrina.users.models import User
@@ -57,6 +58,8 @@ acl = {
     (Agent, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
     (Agent, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
     (Agent, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
+    (Agreement, Action.CREATE): [Role.AUTHOR],
+    (Agreement, Action.VIEW): [Role.AUTHOR],
     (Contact, Action.CREATE): [Role.COORDINATOR],
     (Contact, Action.UPDATE): [Role.COORDINATOR],
     (Contact, Action.DELETE): [Role.COORDINATOR],
@@ -83,6 +86,7 @@ acl = {
     (Project, Action.CREATE): [Role.ALL],
     (Project, Action.UPDATE): [Role.AUTHOR],
     (Project, Action.DELETE): [Role.AUTHOR],
+    (Project, Action.VIEW): [Role.AUTHOR],
     (User, Action.UPDATE): [Role.AUTHOR],
     (User, Action.VIEW): [Role.AUTHOR],
     (Task, Action.UPDATE): [Role.ALL],
@@ -90,7 +94,7 @@ acl = {
     (Project, Action.MANAGE_PROJECT_KEYS): [Role.AUTHOR, Role.SUPERVISOR],
     (RequestAssignment, Action.CREATE): [Role.COORDINATOR],
     (RequestAssignment, Action.DELETE): [Role.COORDINATOR],
-    (ApiExample, Action.CREATE): [Role.COORDINATOR, Role.MANAGER]
+    (ApiExample, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
 }
 
 
@@ -101,6 +105,8 @@ def is_author(user: User, node: Model) -> bool:
         return node == user
     elif isinstance(node, Organization):
         return False
+    elif isinstance(node, Agreement):
+        return node.project.user == user
     raise NotImplementedError(f"Don't know how to get author of {type(node)}.")
 
 

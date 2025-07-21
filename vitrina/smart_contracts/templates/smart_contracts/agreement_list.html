@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}
+    {% translate "Sutartys" %}
+{% endblock %}
+
+{% block content %}
+
+    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
+
+    <div class="buttons is-right">
+        <a class="button is-primary m-t-xs m-b-lg" href="{% url 'agreement-create' project.pk %}">{% translate "Generuoti sutartį" %}</a>
+    </div>
+
+    {% if agreements %}
+        <table class="table is-fullwidth">
+            <thead>
+                <tr>
+                    <th>{% translate "Duomenis teikianti organizacija" %}</th>
+                    <th>{% translate "Būsena" %}</th>
+                    <th>
+                        {% translate "Paskutinės sinchronizacijos data" %}
+                        <span class="icon info-icon has-tooltip-multiline is-middle"
+                              data-tooltip="{% translate 'Nurodo ar agento sichronizacija yra įjungta ir paskutinę sichronizacijos datą' %}">
+                             <i class="fas fa-info-circle"></i>
+                        </span>
+                    </th>
+                    <th colspan="1">{% translate "Veiksmai" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for agreement in agreements %}
+                    <tr>
+                        <td>
+                            {{ agreement.assigner_organization }}
+                        </td>
+                        <td>
+                            {{ agreement.get_status_display }}
+                            <span class="icon info-icon has-tooltip-multiline is-middle"
+                                data-tooltip="{{ agreement_status_descriptions|get_item:agreement.status }}">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </td>
+                        <td>
+                            <span class="has-text-{% if agreement.is_agent_sync_enabled %}success{% else %}danger{% endif %}">●</span>
+                            {% if agent.last_sync_data %}
+                                {{ agent.last_sync_data|date:"Y-m-d H:i" }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'agreement-detail' project.pk agreement.pk %}">
+                                {% translate "Peržiūrėti" %}
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% include "vitrina/common/pagination.html" %}
+    {% else %}
+        <p>{% translate "Nėra sutarčių." %}</p>
+    {% endif %}
+
+{% endblock %}

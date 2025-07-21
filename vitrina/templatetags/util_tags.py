@@ -1,6 +1,6 @@
 import numbers
 from datetime import date
-from typing import Iterable
+from typing import Iterable, Any
 
 from django import template
 from django.contrib.contenttypes.models import ContentType
@@ -35,6 +35,11 @@ def is_dict(value):
 @register.filter
 def get_list(dictionary, key):
     return dictionary.getlist(key)
+
+
+@register.filter
+def get_item(dictionary: dict, key: Any) -> Any:
+    return dictionary.get(key)
 
 
 @register.filter(name="range")

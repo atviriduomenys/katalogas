@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-18 09:23+0300\n"
+"POT-Creation-Date: 2025-07-21 12:07+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2388,6 +2388,9 @@ msgstr "Key title"
 msgid "Šiuo metu raktas leidimų neturi"
 msgstr "Currently the key does not have permissions"
 
+msgid "Sutartys"
+msgstr "Agreements"
+
 msgid "Panaudos atvejo registracija"
 msgstr "Use case registration"
 
@@ -2908,23 +2911,29 @@ msgstr "Active"
 msgid "Nutraukta"
 msgstr "Terminated"
 
+msgid "Sutartis sukurta. Sutarties dokumentas dar nesukurtas."
+msgstr "Agreement is created. Agreement document is not created yet."
+
+msgid "Sutarties dokumentas sukurtas, bet nepasirašytas."
+msgstr "Agreement document is created, but not signed yet."
+
+msgid "Sutarties dokumentas pasirašytas duomenų gavėjo."
+msgstr "Agreement document is signed by data receiver."
+
+msgid "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų tiekėjo."
+msgstr "Agreement document is signed by data receiver and data provider."
+
+msgid "Sutartis sėkmingai sinchronizuota su agentu."
+msgstr "Agreement is successfully synchronized with agent."
+
+msgid "Sutartis nutraukta."
+msgstr "Agreement is terminated."
+
 msgid "Išmaniųjų sutarčių numatytasis šablonas"
 msgstr "Smart contracts default template"
 
 msgid "Išmaniųjų sutarčių numatytieji šablonai"
 msgstr "Smart contracts default templates"
-
-msgid "Sutartis"
-msgstr "Agreement"
-
-msgid "Sutartys"
-msgstr "Agreements"
-
-msgid "Sutarties leidimas"
-msgstr "Agreement scope"
-
-msgid "Sutarties leidimai"
-msgstr "Agreement scopes"
 
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr "File must be in Markdown format (.md)."
@@ -2935,20 +2944,67 @@ msgstr "Specifies the organization to which the template is assigned."
 msgid "Duomenis teikianti organizacija"
 msgstr "Data provider organization"
 
+msgid "Sutarties šablonas"
+msgstr "Agreement template"
+
 msgid "Agento sinchronizacija įjungta"
 msgstr "Agent synchronization is enabled"
 
 msgid "Paskutinės sinchronizacijos data"
 msgstr "Date of last synchronization"
 
+msgid "Sutartis"
+msgstr "Agreement"
+
 msgid "Leidimo veiksmas"
 msgstr "Scope action"
+
+msgid "Sutarties leidimas"
+msgstr "Agreement scope"
+
+msgid "Sutarties leidimai"
+msgstr "Agreement scopes"
+
+msgid "Sutarties dokumentas"
+msgstr "Agreement file"
+
+msgid "Dokumentas gali būti pdf arba adoc formato."
+msgstr "Dokumentas must be in pdf or adoc format."
+
+msgid "Sutarties dokumentai"
+msgstr "Agreement files"
 
 msgid "Pasirinkite turinio redagavimo kalbą"
 msgstr "Choose a language to edit"
 
 msgid "Generuoti sutartį"
 msgstr "Generate agreement"
+
+msgid "Grįžti į sutartis"
+msgstr "Go back"
+
+msgid "Sutarties id"
+msgstr "Agreement id"
+
+msgid "Duomenis gaunanti organizacija"
+msgstr "Data receiver organization"
+
+msgid "Sukūrimo data"
+msgstr "Creation date"
+
+msgid "Nėra sutarčių dokumentų."
+msgstr "No agreement documents."
+
+msgid ""
+"Nurodo ar agento sichronizacija yra įjungta ir paskutinę sichronizacijos datą"
+msgstr ""
+
+msgid "Nėra sutarčių."
+msgstr "No agreements."
+
+#, python-brace-format
+msgid "Sutartis: {organization}"
+msgstr "Agreement: {organization}"
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančią sutartį."
 msgstr "This use case already has existing agreement."
@@ -3568,9 +3624,6 @@ msgstr "Parameter"
 
 msgid "Parametro dalis"
 msgstr "Parameter item"
-
-msgid "Sukūrimo data"
-msgstr "Creation date"
 
 msgid "Išleidimo data"
 msgstr "Publication date"
@@ -4722,3 +4775,12 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+#~ msgid "Sutarčių dokumentų nėra"
+#~ msgstr "There are no agreement documents"
+
+#~ msgid "Sutarties failas"
+#~ msgstr "Agreement file"
+
+#~ msgid "Sutarties failai"
+#~ msgstr "Agreement files"

@@ -149,6 +149,7 @@ def main():
     sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
 
     condition_info = _get_condition_descriptions()
+    geoportal_dataset_ids = []
 
     while records:
         for record in records:
@@ -197,6 +198,7 @@ def main():
                         geoportal_id=dataset_id,
                         published=timezone.now()
                     )
+                geoportal_dataset_ids.append(dataset.pk)
 
                 # type
                 dataset_type = _get_elem("{%s}hierarchyLevel" % gmd, xml)
@@ -662,6 +664,19 @@ def main():
             records = _get_elem(".//{%s}Record" % csw, xml, find_all=True)
         else:
             records = []
+
+    # update deleted datasets
+    deleted_datasets = Dataset.objects.filter(
+        geoportal_id__isnull=False,
+        deleted__isnull=True,
+        deleted_on__isnull=True,
+    ).exclude(
+        pk__in=geoportal_dataset_ids,
+    )
+    for dataset in deleted_datasets:
+        dataset.deleted = True
+        dataset.deleted_on = timezone.now()
+        dataset.save()
 
 
 if __name__ == '__main__':

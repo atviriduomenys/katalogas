@@ -22,23 +22,26 @@ AccessToken = str
 
 # TODO migrate to Gravitee once its ready.
 
+
 class OAuthClientManagement:
     @staticmethod
-    def _bencode(value: bytes) -> str:
-        return base64.urlsafe_b64encode(value).decode().rstrip('=')
+    def _to_urlsafe_base64(value: bytes) -> str:
+        return base64.urlsafe_b64encode(value).decode().rstrip("=")
 
     @staticmethod
-    def generate_secret(size:int=32):
+    def generate_secret(size: int = 32):
         value = math.floor(math.log(64, 256) * size) + 1
-        return OAuthClientManagement._bencode(os.urandom(value))[:size]
+        return OAuthClientManagement._to_urlsafe_base64(os.urandom(value))[:size]
 
     @staticmethod
-    def create_oauth_client(client_name: str, scopes: list[str], secret:Secret=None, **extra_claims) -> tuple[ClientId, Secret]:
+    def create_oauth_client(
+        client_name: str, scopes: list[str], secret: Secret = None, **extra_claims
+    ) -> tuple[ClientId, Secret]:
         secret = secret or OAuthClientManagement.generate_secret()
         response = requests.post(
             settings.OAUTH_SERVER_CLIENTS_URL,
             headers={"Authorization": f"Bearer {OAuthClientManagement.get_access_token()}"},
-            json={"client_name": client_name, "scopes":scopes, "secret":secret, **extra_claims},
+            json={"client_name": client_name, "scopes": scopes, "secret": secret, **extra_claims},
         )
         response.raise_for_status()
         client_id = response.json()["client_id"]
@@ -60,27 +63,28 @@ class OAuthClientManagement:
         response.raise_for_status()
         return response.json()["access_token"]
 
+
 class OAuthClientAuthenticator:
 
     @staticmethod
-    def retrieve_access_token_from_request(request:Request) -> str | None:
-        auth_header = request.META.get('HTTP_AUTHORIZATION')
+    def retrieve_access_token_from_request(request: Request) -> str | None:
+        auth_header = request.META.get("HTTP_AUTHORIZATION")
 
         if not auth_header:
             return None
 
         try:
-            token_type, token_value = auth_header.split(' ', 1)
+            token_type, token_value = auth_header.split(" ", 1)
         except ValueError:
             return None
 
-        if token_type.lower() != 'bearer':
+        if token_type.lower() != "bearer":
             return None
 
         return token_value
 
     @staticmethod
-    def retrieve_and_verify_token(request:Request) -> JWTClaims | None:
+    def retrieve_and_verify_token(request: Request) -> JWTClaims | None:
         access_token = OAuthClientAuthenticator.retrieve_access_token_from_request(request)
         if not access_token:
             return None
@@ -90,31 +94,34 @@ class OAuthClientAuthenticator:
         return decoded_token
 
     @staticmethod
-    def resolve_organization_from_token(decoded_token:JWTClaims) -> Organization | None:
+    def resolve_organization_from_token(decoded_token: JWTClaims) -> Organization | None:
         organization_id = decoded_token.get("organization_id")
         return Organization.objects.get(pk=organization_id) if organization_id else None
 
     @staticmethod
-    def resolve_client_id_from_token(decoded_token:JWTClaims) -> str:
+    def resolve_client_id_from_token(decoded_token: JWTClaims) -> str:
         return decoded_token["sub"]
+
 
 class OAuth2AuthenticationWithLocalJWK(BaseAuthentication):
 
-    def authenticate(self, request:Request) -> tuple[AnonymousUser, JWTClaims] | None:
+    def authenticate(self, request: Request) -> tuple[AnonymousUser, JWTClaims] | None:
         try:
             verified_token = OAuthClientAuthenticator.retrieve_and_verify_token(request)
         except (BadSignatureError, TokenExpiredError) as e:
             raise AuthenticationFailed(e.error)
         if not verified_token:
             raise AuthenticationFailed("Token not supplied")
-        user  = AnonymousUser() # Workaround for django-cms middleware, as we authenticate on behalf of an organization.
+        user = AnonymousUser()  # Workaround for django-cms middleware, as we authenticate on behalf of an organization.
         return user, verified_token
+
 
 class IsOAuthTokenValid(BasePermission):
 
     def has_permission(self, request, view):
         request.auth.validate()
         return isinstance(request.auth, JWTClaims)
+
 
 class OAuthTokenHasScopes(BasePermission):
 
@@ -138,9 +145,8 @@ class OAuthTokenHasScopes(BasePermission):
         try:
             return getattr(view, "required_scopes")
         except AttributeError:
-            raise ImproperlyConfigured(
-                "TokenHasScope requires the view to define the required_scopes attribute"
-            )
+            raise ImproperlyConfigured("TokenHasScope requires the view to define the required_scopes attribute")
+
 
 class OAuthTokenHasValidOrganizationClaim(BasePermission):
 
@@ -148,7 +154,7 @@ class OAuthTokenHasValidOrganizationClaim(BasePermission):
         organization = OAuthClientAuthenticator.resolve_organization_from_token(request.auth)
         if not organization:
             return False
-        url_path_organization_id :str= view.kwargs.get('organization_id') or view.kwargs.get('organization-id')
+        url_path_organization_id: str = view.kwargs.get("organization_id") or view.kwargs.get("organization-id")
         if url_path_organization_id and str(organization.pk) != url_path_organization_id:
             return False
         setattr(request, "organization", organization)

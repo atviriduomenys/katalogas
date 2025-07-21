@@ -7,8 +7,9 @@ from authlib.jose import jwt, JsonWebKey, JWTClaims
 from authlib.jose.errors import BadSignatureError
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
-from oauth2_provider.contrib.rest_framework import TokenHasScope, OAuth2Authentication
+from django.core.exceptions import ImproperlyConfigured
 from oauthlib.oauth2 import TokenExpiredError
+from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
@@ -97,7 +98,7 @@ class OAuthClientAuthenticator:
     def resolve_client_id_from_token(decoded_token:JWTClaims) -> str:
         return decoded_token["sub"]
 
-class OAuth2AuthenticationWithLocalJWK(OAuth2Authentication):
+class OAuth2AuthenticationWithLocalJWK(BaseAuthentication):
 
     def authenticate(self, request:Request) -> tuple[AnonymousUser, JWTClaims] | None:
         try:
@@ -112,9 +113,9 @@ class OAuth2AuthenticationWithLocalJWK(OAuth2Authentication):
 class IsOAuthTokenValid(BasePermission):
 
     def has_permission(self, request, view):
-        return isinstance(request.auth, JWTClaims)
+        return isinstance(request.auth, JWTClaims) and request.auth.validate()
 
-class OAuthTokenHasScopes(TokenHasScope):
+class OAuthTokenHasScopes(BasePermission):
 
     def has_permission(self, request, view):
         token = request.auth
@@ -130,6 +131,15 @@ class OAuthTokenHasScopes(TokenHasScope):
             return False
         missing_scopes = set(required_scopes) - set(scopes)
         return not bool(missing_scopes)
+
+    @staticmethod
+    def get_scopes(request, view):
+        try:
+            return getattr(view, "required_scopes")
+        except AttributeError:
+            raise ImproperlyConfigured(
+                "TokenHasScope requires the view to define the required_scopes attribute"
+            )
 
 class OAuthTokenHasValidOrganizationClaim(BasePermission):
 

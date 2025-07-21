@@ -70,7 +70,6 @@ psutil = "^7.0.0"
 weasyprint = "^62.0"
 pdfminer-six = "^20250506"
 authlib = "^1.6.0"
-oauth2-provider = "^0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"

@@ -2470,20 +2470,6 @@ files = [
 ]
 
 [[package]]
-name = "oauth2-provider"
-version = "0.0"
-description = "UNKNOWN"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "oauth2_provider-0.0.tar.gz", hash = "sha256:9f8fb12a3f6d9dbcc572f2d824f251788d50927ec01569c90da909a1c14ca1e7"},
-]
-
-[package.dependencies]
-setuptools = "*"
-
-[[package]]
 name = "oauthlib"
 version = "3.3.1"
 description = "A generic, spec-compliant, thorough implementation of the OAuth request-signing logic"
@@ -4498,4 +4484,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "f4abaf7da10ad39276b0352d26a31cdf5855f5e3ac3fda73a42f28ca9ee332a9"
+content-hash = "6aa5daa9cc36255824c105a60919085fa69ede701d3cba8db0bcd8321f5552ca"

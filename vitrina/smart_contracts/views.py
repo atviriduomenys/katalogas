@@ -63,13 +63,9 @@ class AgreementListView(
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
 
-        project_agreements = (
-            Agreement.objects.filter(
-                project=self.object,
-            )
-            .order_by("-created_at")
-            .all()
-        )
+        project_agreements = Agreement.objects.filter(
+            project=self.object,
+        ).order_by("-created_at")
 
         paginator = Paginator(project_agreements, 10)
         page_number = self.request.GET.get("page")

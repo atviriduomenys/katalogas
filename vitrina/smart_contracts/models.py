@@ -36,7 +36,7 @@ class Agreement(UUIDBaseModel):
     )
     assigner_organization = models.ForeignKey(
         "vitrina_orgs.Organization",
-        models.PROTECT,
+        on_delete=models.PROTECT,
         verbose_name=_("Duomenis teikianti organizacija"),
     )
     status = models.CharField(
@@ -44,6 +44,13 @@ class Agreement(UUIDBaseModel):
         choices=AgreementStatuses.choices,
         default=AgreementStatuses.CREATED,
         verbose_name=_("Būsena"),
+    )
+    template = models.ForeignKey(
+        SmartContractTemplate,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        verbose_name=_("Sutarties šablonas"),
     )
 
     is_agent_sync_enabled = models.BooleanField(
@@ -60,11 +67,14 @@ class Agreement(UUIDBaseModel):
     def __str__(self) -> str:
         return f"{self.project} - {self.assigner_organization} sutartis. Statusas: {self.status}"
 
+    def get_acl_parents(self) -> list["Agreement"]:
+        return [self]
+
 
 class AgreementScope(UUIDBaseModel):
     agreement = models.ForeignKey(
         Agreement,
-        models.PROTECT,
+        on_delete=models.PROTECT,
         verbose_name=_("Leidimai"),
     )
     resource = models.CharField(max_length=255, verbose_name=_("Leidimas"))
@@ -73,3 +83,29 @@ class AgreementScope(UUIDBaseModel):
     class Meta:
         verbose_name = _("Sutarties leidimas")
         verbose_name_plural = _("Sutarties leidimai")
+
+
+class AgreementFile(UUIDBaseModel):
+    agreement = models.ForeignKey(
+        Agreement,
+        on_delete=models.PROTECT,
+        verbose_name=_("Sutartis"),
+    )
+    file_name = models.CharField(max_length=255)
+    file = models.FileField(
+        upload_to="data/files/agreements",
+        verbose_name=_("Sutarties dokumentas"),
+        validators=[
+            FileExtensionValidator(
+                allowed_extensions=["pdf", "adoc"],
+                message=_("Dokumentas gali būti pdf arba adoc formato."),
+            )
+        ],
+    )
+
+    class Meta:
+        verbose_name = _("Sutarties dokumentas")
+        verbose_name_plural = _("Sutarties dokumentai")
+
+    def __str__(self) -> str:
+        return f"{self.agreement} - {self.file_name}"

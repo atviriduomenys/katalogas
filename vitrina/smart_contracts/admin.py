@@ -6,6 +6,7 @@ from vitrina.smart_contracts.models import (
     Agreement,
     AgreementScope,
     SmartContractTemplate,
+    AgreementFile,
 )
 
 
@@ -18,10 +19,6 @@ class SmartContractTemplateAdmin(admin.ModelAdmin):
 
 @admin.register(Agreement)
 class AgreementAdmin(admin.ModelAdmin):
-    class Meta:
-        verbose_name = _("Sutartis")
-        verbose_name_plural = _("Sutartys")
-
     list_display = [
         "project",
         "assigner_organization",
@@ -34,18 +31,38 @@ class AgreementAdmin(admin.ModelAdmin):
     readonly_fields = ["last_sync_date", "created_at", "updated_at"]
 
     def get_queryset(self, request) -> QuerySet:
-        return super().get_queryset(request).select_related("project", "assigner_organization")
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("project", "assigner_organization")
+        )
 
 
 @admin.register(AgreementScope)
 class AgreementScopeAdmin(admin.ModelAdmin):
-    class Meta:
-        verbose_name = _("Sutarties leidimas")
-        verbose_name_plural = _("Sutarties leidimai")
-
     list_display = ["agreement", "resource"]
     autocomplete_fields = ["agreement"]
-    search_fields = ["agreement__project__title", "agreement__assigner_organization__title"]
+    search_fields = [
+        "agreement__project__title",
+        "agreement__assigner_organization__title",
+    ]
+
+    def get_queryset(self, request) -> QuerySet:
+        return (
+            super()
+            .get_queryset(request)
+            .select_related("agreement__project", "agreement__assigner_organization")
+        )
+
+
+@admin.register(AgreementFile)
+class AgreementFileAdmin(admin.ModelAdmin):
+    list_display = ["agreement", "file_name"]
+    autocomplete_fields = ["agreement"]
+    search_fields = [
+        "agreement__project__title",
+        "agreement__assigner_organization__title",
+    ]
 
     def get_queryset(self, request) -> QuerySet:
         return (

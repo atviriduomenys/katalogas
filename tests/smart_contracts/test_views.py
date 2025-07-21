@@ -1,10 +1,14 @@
+from uuid import uuid4
+
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory
@@ -13,6 +17,102 @@ from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
+
+
+class TestAgreementListView:
+    def test_cannot_list_without_permission(self, app: DjangoTestApp) -> None:
+        user = UserFactory()
+        project = ProjectFactory()
+        app.set_user(user)
+
+        response = app.get(
+            reverse("agreement-create", args=[project.pk]), expect_errors=True
+        )
+        assert response.status_code == 403
+
+    def test_list_agreements(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
+        user = UserFactory(organization=organization)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        app.set_user(user)
+        AgreementFactory(project=project, assigner_organization=organization)
+
+        response = app.get(reverse("agreement-list", args=[project.pk]))
+
+        assert response.status_code == 200
+        assert response.context["agreements"].count() == 1
+
+    def test_list_no_agreements(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
+        user = UserFactory(organization=organization)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        app.set_user(user)
+
+        response = app.get(reverse("agreement-list", args=[project.pk]))
+
+        assert response.status_code == 200
+        assert response.context["agreements"].count() == 0
+
+
+class TestAgreementDetailView:
+    def test_cannot_show_details_without_permission(
+        self, app: DjangoTestApp, organization: Organization
+    ) -> None:
+        user = UserFactory()
+        app.set_user(user)
+        project = ProjectFactory()
+        agreement = AgreementFactory(
+            project=project, assigner_organization=organization
+        )
+
+        response = app.get(
+            reverse("agreement-detail", args=[project.pk, agreement.pk]),
+            expect_errors=True,
+        )
+        assert response.status_code == 403
+
+    def test_http_404_when_agreement_does_not_exist(self, app: DjangoTestApp) -> None:
+        user = UserFactory()
+        app.set_user(user)
+        project = ProjectFactory()
+
+        response = app.get(
+            reverse("agreement-detail", args=[project.pk, uuid4()]), expect_errors=True
+        )
+        assert response.status_code == 404
+
+    def test_http_404_when_agreement_does_not_exist_in_project(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        agreement = AgreementFactory(
+            project=project, assigner_organization=organization
+        )
+        different_project = ProjectFactory()
+
+        response = app.get(
+            reverse("agreement-detail", args=[different_project.pk, agreement.pk]),
+            expect_errors=True,
+        )
+        assert response.status_code == 404
+
+    def test_agreement_details(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        agreement = AgreementFactory(
+            project=project, assigner_organization=organization
+        )
+
+        response = app.get(reverse("agreement-detail", args=[project.pk, agreement.pk]))
+        assert response.status_code == 200
+        assert response.context["agreement"] == agreement
 
 
 class TestAgreementCreateView:
@@ -41,9 +141,8 @@ class TestAgreementCreateView:
         assert response.status_code == 404
 
     def test_cannot_create_agreement_for_project_if_one_already_exists(
-        self, app: DjangoTestApp
+        self, app: DjangoTestApp, organization: Organization
     ) -> None:
-        organization = OrganizationFactory()
         user = UserFactory(organization=organization)
         project = ProjectFactory(user=user)
         AgreementFactory(project=project, assigner_organization=organization)
@@ -51,17 +150,11 @@ class TestAgreementCreateView:
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
         assert response.status_code == 302
-        assert response.url == reverse("project-datasets", args=[project.pk])
+        assert response.url == reverse("agreement-list", args=[project.pk])
 
-    def test_creates_agreement_and_scopes(self, app: DjangoTestApp) -> None:
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            dataset=dataset,
-            name="test/dataset",
-        )
+    def test_creates_agreement_and_scopes(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
         user = UserFactory(organization=organization)
         project = ProjectFactory(user=user, datasets=[dataset])
         app.set_user(user)
@@ -72,9 +165,11 @@ class TestAgreementCreateView:
         response = form.submit()
 
         assert response.status_code == 302
-        assert response.url == reverse("project-detail", args=[project.pk])
+        assert response.url == reverse("agreement-list", args=[project.pk])
 
-        agreement = Agreement.objects.get(project=project, assigner_organization=organization)
+        agreement = Agreement.objects.get(
+            project=project, assigner_organization=organization
+        )
         assert agreement.status == AgreementStatuses.CREATED
         assert agreement.is_agent_sync_enabled is False
         assert agreement.agreementscope_set.count() == 1
@@ -83,8 +178,9 @@ class TestAgreementCreateView:
         assert agreement_scope.resource == "test_dataset_getall"
         assert agreement_scope.action == "getall"
 
-    def test_creates_multiple_agreements_and_scopes(self, app: DjangoTestApp) -> None:
-        organization = OrganizationFactory()
+    def test_creates_multiple_agreements_and_scopes(
+        self, app: DjangoTestApp, organization: Organization
+    ) -> None:
         dataset1 = DatasetFactory(organization=organization)
         MetadataFactory(
             content_type=ContentType.objects.get_for_model(dataset1),
@@ -122,7 +218,7 @@ class TestAgreementCreateView:
         response = form.submit()
 
         assert response.status_code == 302
-        assert response.url == reverse("project-detail", args=[project.pk])
+        assert response.url == reverse("agreement-list", args=[project.pk])
 
         assert Agreement.objects.filter(project=project).count() == 2
         assert set(
@@ -137,16 +233,8 @@ class TestAgreementCreateView:
         ) == {"datasets_gov_org_dataset_getall"}
 
     def test_cannot_create_agreement_with_invalid_scopes(
-        self, app: DjangoTestApp
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            dataset=dataset,
-            name="test/dataset",
-        )
         user = UserFactory(organization=organization)
         project = ProjectFactory(user=user, datasets=[dataset])
         app.set_user(user)

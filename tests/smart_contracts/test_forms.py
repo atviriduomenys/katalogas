@@ -1,31 +1,24 @@
 import pytest
-from django.contrib.contenttypes.models import ContentType
 from django_webtest import DjangoTestApp
 
-from vitrina.datasets.factories import DatasetFactory
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Organization
 from vitrina.smart_contracts.forms import SmartContractForm
-from vitrina.structure.factories import MetadataFactory
 
 pytestmark = pytest.mark.django_db
 
 
 class TestSmartContractForm:
-    def test_generates_no_scope_choices_if_datasets_by_organization_not_given(self):
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            dataset=dataset,
-            name="test/dataset",
-        )
+    def test_generates_no_scope_choices_if_datasets_by_organization_not_given(
+        self, organization: Organization, dataset: Dataset
+    ) -> None:
         form = SmartContractForm(instance=organization)
 
         assert form.fields["scopes"].choices == []
 
-    def test_generates_no_scope_choices_if_organization_has_no_datasets(self):
-        organization = OrganizationFactory()
+    def test_generates_no_scope_choices_if_organization_has_no_datasets(
+        self, organization: Organization
+    ) -> None:
         form = SmartContractForm(
             instance=organization, datasets_by_organization={organization: []}
         )
@@ -33,17 +26,8 @@ class TestSmartContractForm:
         assert form.fields["scopes"].choices == []
 
     def test_generates_scope_choices_from_each_dataset(
-        self, app: DjangoTestApp
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            dataset=dataset,
-            name="test/dataset",
-        )
-
         form = SmartContractForm(
             instance=organization, datasets_by_organization={organization: [dataset]}
         )

@@ -35,12 +35,19 @@
                             <i class="fas fa-lg fa-file-code"></i>
                         {% endif %}
                     </span>
-                    {% if resource.is_external_url %}
-                        {% if resource.get_download_url %}
-                            <a href="{{ resource.get_download_url }}">{% translate "Atidaryti duomenų šaltinį" %}</a>
-                        {% endif %}
-                    {% else %}
-                        <a href="{{ resource.get_download_url }}" download>{% translate "Atsisiųsti duomenų šaltinį" %}</a>
+
+                    {% if resource.file %}
+                        <a href="{{ resource.file.url }}" download >
+                            {% translate "Atsisiųsti duomenų šaltinį" %}
+                        </a>
+                    {% elif resource.download_url %}
+                        <a href="{{ resource.download_url }}" target="_blank">
+                            {% translate "Atidaryti duomenų šaltinį" %}
+                        </a>
+                    {% elif resource.access_url %}
+                        <a href="{{ resource.access_url }}" target="_blank">
+                            {% translate "Atidaryti duomenų šaltinį" %}
+                        </a>
                     {% endif %}
                 </div>
 

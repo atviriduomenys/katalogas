@@ -3039,3 +3039,60 @@ def test_geoportal_import__add_to_geoportal_catalog(app: DjangoTestApp):
     assert dataset.dataset_relations.count() == 1
     assert dataset.dataset_relations.first().relation == relation
     assert dataset.dataset_relations.first().part_of == geoportal_catalog
+
+
+@pytest.mark.django_db
+def test_geoportal_import__deleted_dataset(app: DjangoTestApp):
+    dataset = DatasetFactory(geoportal_id="1", access_rights=Dataset.RESTRICTED)
+    OrganizationFactory(title="VšĮ Statybos sektoriaus vystymo agentūra")
+
+    with patch('scripts.geoportal_import.requests.get') as get_data:
+        get_all = '''
+            <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+                xmlns:dct="http://purl.org/dc/terms/"
+                xmlns:dc="http://purl.org/dc/elements/1.1/">
+                <csw:SearchResults numberOfRecordsMatched="1">
+                    <csw:Record>
+                        <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:FileID">0</dc:identifier>
+                        <dc:identifier scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:DocID">2</dc:identifier>
+                        <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Server">
+                            http://www.data.com
+                        </dct:references>
+                        <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">
+                            https://www.metadata.com
+                        </dct:references>
+                    </csw:Record>
+                </csw:SearchResults>
+            </csw:GetRecordsResponse>              
+            '''
+
+        get_one = '''
+        <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+            <gmd:identificationInfo>
+                <gmd:title>
+                    <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset</gmd:LocalisedCharacterString>
+                </gmd:title>
+                <gmd:abstract>
+                    <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
+                    <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
+                </gmd:abstract>
+                <gmd:pointOfContact>
+                    <gmd:organisationName>
+                        <gco:CharacterString>Statybos sektoriaus vystymo agentūra, VšĮ</gco:CharacterString>
+                    </gmd:organisationName>
+                </gmd:pointOfContact>
+            </gmd:identificationInfo>
+        </gmd:MD_Metadata>
+        '''
+        get_all_mock = Mock(content=get_all)
+        get_one_mock = Mock(content=get_one)
+        get_conditions_mock = None
+        get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
+        geoportal_import()
+
+    dataset.refresh_from_db()
+    assert Dataset.objects.count() == 2
+    assert Dataset.public.count() == 1
+    assert dataset.deleted is True
+    assert dataset.deleted_on is not None

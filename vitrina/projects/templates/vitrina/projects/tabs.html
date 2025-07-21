@@ -27,7 +27,7 @@
             </li>
         {% endif %}
         {% if has_perm %}
-            <li class="{%if request.resolver_match.url_name == 'project-clients' %} is-active {% endif %}">
+            <li class="{% if request.resolver_match.url_name == 'project-clients' %} is-active {% endif %}">
                 <a href="{% url 'project-clients' request.resolver_match.kwargs.pk %}">
                     {% translate "Klientai" %}
                 </a>

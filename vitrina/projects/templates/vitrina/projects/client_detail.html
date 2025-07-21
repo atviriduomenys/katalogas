@@ -43,7 +43,7 @@
         </h5>
     </div>
     <div class="column is-narrow">
-        <a href="{% url 'project-clients-scopes-create' project.pk client.id %}"
+        <a href="{% url 'project-clients-scopes-create' project.pk client.uuid %}"
             class="button is-primary is-normal m-t-md is-size-6-mobile"
             id="create_client">
             {% translate "Naujas leidimas" %}
@@ -52,7 +52,7 @@
 </div>
 
 
-    {% if scopes %}
+{% if scopes %}
     <div class="row is-full">
         <table class="table is-fullwidth">
             <thead>
@@ -64,9 +64,9 @@
             <tbody>
                 {% for scope in scopes %}
                     <tr>
-                        <th scope="row">{{ scope.resource }}_{{ scope.action }}</th>
+                        <th scope="row">{{ scope.resource }}</th>
                         <td style="width:10%">
-                            <a href="{% url 'project-clients-scopes-toggle' project.pk client.id scope.id %}"
+                            <a href="{% url 'project-clients-scopes-detail-toggle' project.pk client.uuid scope.uuid %}"
                                  class="button is-warning is-small">
                                 {% if scope.is_active %}
                                     {% translate "Išjungti" %}
@@ -81,8 +81,8 @@
         </table>
     </div>
 {% else %}
-        <div class="">
-            <p>{% translate 'Šiuo metu klientas leidimų neturi' %}</p>
-        </div>
-      {% endif %}
+    <div>
+        <p>{% translate "Šiuo metu klientas leidimų neturi" %}</p>
+    </div>
+  {% endif %}
 {% endblock %}

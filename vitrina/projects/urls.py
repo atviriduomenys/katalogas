@@ -50,24 +50,24 @@ urlpatterns = [
         name="project-clients-create"
     ),
     path(
-        "projects/<int:pk>/client/<int:client_id>/change/",
+        "projects/<int:pk>/client/<uuid:client_id>/change/",
         ClientUpdateView.as_view(),
         name="project-clients-update"
     ),
     path(
-        "projects/<int:pk>/client/<int:client_id>/",
+        "projects/<int:pk>/client/<uuid:client_id>/",
         ClientDetailView.as_view(),
         name="project-clients-detail",
     ),
     path(
-        "projects/<int:pk>/client/<int:client_id>/scopes/add/",
+        "projects/<int:pk>/client/<uuid:client_id>/scopes/add/",
         ClientScopeCreateView.as_view(),
         name="project-clients-scopes-create"
     ),
     path(
-        "projects/<int:pk>/client/<int:client_id>/scopes/<int:scope_id>/toggle/",
+        "projects/<int:pk>/client/<uuid:client_id>/scopes/<uuid:scope_id>/toggle/",
         ClientScopeToggleView.as_view(),
-        name="project-clients-scopes-toggle",
+        name="project-clients-scopes-detail-toggle",
     ),
     path(
         "projects/<int:pk>/permissions/<int:apikey_id>/",

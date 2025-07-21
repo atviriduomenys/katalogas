@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from filer.fields.image import FilerImageField
 
+from vitrina.models import UUIDBaseModel
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
 
@@ -103,9 +104,7 @@ class UsecaseLike(models.Model):
         db_table = "usecase_like"
 
 
-class UseCaseClient(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+class UseCaseClient(UUIDBaseModel):
     use_case = models.ForeignKey(
         Project,
         related_name="client_set",
@@ -113,7 +112,7 @@ class UseCaseClient(models.Model):
         verbose_name=_("Panaudos atvejis"),
     )
     name = models.CharField(max_length=255, verbose_name=_("Kliento pavadinimas"))
-    client_id = models.CharField(max_length=255, verbose_name=_("Kliento identifikatorius"))
+    client_id = models.CharField(max_length=255, verbose_name=_("Kliento ID"))
 
     class Meta:
         verbose_name = _("Klientas")
@@ -124,9 +123,7 @@ class UseCaseClient(models.Model):
         return self.name
 
 
-class UseCaseClientScope(models.Model):
-    created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+class UseCaseClientScope(UUIDBaseModel):
     resource = models.CharField(max_length=255, verbose_name=_("Išteklius"))
     action = models.CharField(max_length=255, verbose_name=_("Veiksmas"))
     use_case_client = models.ForeignKey(
@@ -136,6 +133,5 @@ class UseCaseClientScope(models.Model):
     )
     is_active = models.BooleanField(blank=True, null=True)
     class Meta:
-        db_table = "usecase_client_scope"
         verbose_name = _("Kliento leidimas")
         verbose_name_plural = _("Kliento leidimai")

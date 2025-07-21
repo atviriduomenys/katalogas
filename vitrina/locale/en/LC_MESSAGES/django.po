@@ -2301,10 +2301,7 @@ msgid "Paveiksliukas susijęs su pasiūlytu panaudojimo atveju."
 msgstr "Image related to the proposed use case."
 
 msgid "Kliento pavadinimas"
-msgstr "Agent name"
-
-msgid "Kliento identifikatorius"
-msgstr "Client ID"
+msgstr "Client name"
 
 msgid "Klientas"
 msgstr "Client"

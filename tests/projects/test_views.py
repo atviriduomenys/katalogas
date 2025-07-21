@@ -14,6 +14,8 @@ from vitrina.projects.models import Project, UseCaseClient
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
 
+pytestmark = pytest.mark.django_db
+
 
 def generate_photo_file() -> bytes:
     file = io.BytesIO()
@@ -23,7 +25,6 @@ def generate_photo_file() -> bytes:
     return file.getvalue()
 
 
-@pytest.mark.django_db
 def test_project_create(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
@@ -45,7 +46,6 @@ def test_project_create(app: DjangoTestApp):
     assert added_project.first().image.original_filename == "example.png"
 
 
-@pytest.mark.django_db
 def test_project_update(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory(user=user)
@@ -66,7 +66,6 @@ def test_project_update(app: DjangoTestApp):
     assert Version.objects.get_for_object(project).first().revision.comment == Project.EDITED
 
 
-@pytest.mark.django_db
 def test_project_history_view_without_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory()
@@ -75,7 +74,6 @@ def test_project_history_view_without_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db
 def test_project_history_view_with_permission(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     project = ProjectFactory()
@@ -93,7 +91,6 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
     assert resp.context['history'][0]['user'] == user
 
 
-@pytest.mark.django_db
 def test_request_comment_with_status(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     project = ProjectFactory(status=Project.CREATED)
@@ -114,7 +111,6 @@ def test_request_comment_with_status(app: DjangoTestApp):
     assert version.revision.comment == Project.STATUS_CHANGED
 
 
-@pytest.mark.django_db
 def test_request_comment_with_status_rejected(app: DjangoTestApp):
     project = ProjectFactory()
     user = UserFactory(is_staff=True)
@@ -135,7 +131,6 @@ def test_request_comment_with_status_rejected(app: DjangoTestApp):
     assert version.revision.comment == Project.STATUS_CHANGED
 
 
-@pytest.mark.django_db
 def test_request_comment_with_same_status(app: DjangoTestApp):
     project = ProjectFactory(status=Project.APPROVED)
     user = UserFactory(is_staff=True)
@@ -149,7 +144,6 @@ def test_request_comment_with_same_status(app: DjangoTestApp):
     assert Version.objects.get_for_object(project).count() == 0
 
 
-@pytest.mark.django_db
 def test_remove_dataset_no_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory()
@@ -166,7 +160,6 @@ def test_remove_dataset_no_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db
 def test_remove_dataset_with_permission(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     project = ProjectFactory()
@@ -187,7 +180,6 @@ def test_remove_dataset_with_permission(app: DjangoTestApp):
     assert project.datasets.all().count() == 0
 
 
-@pytest.mark.django_db
 def test_not_approved_project_view_without_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory(status=Project.CREATED)
@@ -196,7 +188,6 @@ def test_not_approved_project_view_without_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db
 def test_not_approved_project_view_with_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory(user=user, status=Project.CREATED)
@@ -206,7 +197,6 @@ def test_not_approved_project_view_with_permission(app: DjangoTestApp):
     assert resp.context['object'] == project
 
 
-@pytest.mark.django_db
 def test_client_view_without_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory()
@@ -215,7 +205,6 @@ def test_client_view_without_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db
 def test_client_create_without_permission(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
@@ -228,7 +217,6 @@ def test_client_create_without_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db
 def test_client_create(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -243,26 +231,24 @@ def test_client_create(app: DjangoTestApp):
     assert resp.status_code == 302
 
 
-@pytest.mark.django_db
 def test_client_update_without_permission(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     project = ProjectFactory()
     client = UseCaseClientFactory()
     resp = app.get(
-        reverse("project-clients-update", args=[project.pk, client.id]),
+        reverse("project-clients-update", args=[project.pk, client.uuid]),
         expect_errors=True
     )
     assert resp.status_code == 403
 
 
-@pytest.mark.django_db
 def test_client_update(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     project = ProjectFactory()
     client = UseCaseClientFactory()
-    form = app.get(reverse("project-clients-update", args=[project.pk, client.id])).forms['client-form']
+    form = app.get(reverse("project-clients-update", args=[project.pk, client.uuid])).forms['client-form']
     form['name'] = "Client"
     resp = form.submit()
 
@@ -273,14 +259,13 @@ def test_client_update(app: DjangoTestApp):
     assert resp.status_code == 302
 
 
-@pytest.mark.django_db
 def test_client_scopes_create_without_permission(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     project = ProjectFactory()
     client = UseCaseClientFactory()
     resp = app.get(
-        reverse("project-clients-scopes-create", args=[project.pk, client.id]),
+        reverse("project-clients-scopes-create", args=[project.pk, client.uuid]),
         expect_errors=True
     )
     assert resp.status_code == 403

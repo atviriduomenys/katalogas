@@ -23,30 +23,32 @@
             </div>
     {% if usecases %}
         <table class="table is-fullwidth">
-            <tbody>
-            <tr>
-                <th>{% translate "Pavadinimas" %}</th>
+            <thead>
+                <tr>
+                    <th>{% translate "Pavadinimas" %}</th>
                     <td></td>
-            </tr>
+                </tr>
+            </thead>
+            <tbody>
             {% for usecase in usecases %}
                 <tr>
                     <td>
-                        <a href="{% url 'project-clients-detail' project.pk usecase.id %}">
+                        <a href="{% url 'project-clients-detail' project.pk usecase.uuid %}">
                             {{ usecase.name }}
                         </a>
                     </td>
-                        <td style="width:10%">
-                            <a href="{% url 'project-clients-update' project.pk usecase.id %}"
-                               class="button is-primary is-small">
-                                {% translate "Redaguoti" %}
-                            </a>
-                        </td>
+                    <td style="width:10%">
+                        <a href="{% url 'project-clients-update' project.pk usecase.uuid %}"
+                           class="button is-primary is-small">
+                            {% translate "Redaguoti" %}
+                        </a>
+                    </td>
                 </tr>
             {% endfor %}
             </tbody>
         </table>
       {% else %}
-        <div class="">
+        <div>
             <p>{% translate 'Šiuo metu Panaudos atvejis klientų neturi' %}</p>
         </div>
       {% endif %}

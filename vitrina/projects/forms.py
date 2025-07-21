@@ -1,5 +1,6 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
+from django.core.exceptions import ValidationError
 from django.forms import ModelForm, CharField, Textarea, ModelChoiceField
 
 from vitrina.fields import FilerImageField
@@ -79,22 +80,25 @@ class ClientScopeCreateForm(ModelForm):
         model = UseCaseClientScope
         fields = ["scope"]
 
-    def __init__(self, *args, available_scopes=None, use_case_client=None, **kwargs):
+    def __init__(self, *args, available_scopes: UseCaseClientScope = None, use_case_client: UseCaseClient = None, **kwargs):
         super().__init__(*args, **kwargs)
-        if available_scopes is not None and use_case_client is not None:
-            existing_pairs = set(
-                UseCaseClientScope.objects.filter(use_case_client=use_case_client)
-                .values_list("resource", "action")
-            )
-            filtered_scopes = [
-                scope for scope in available_scopes
-                if (scope.resource, scope.action) not in existing_pairs
-            ]
-            self.fields["scope"].queryset = AgreementScope.objects.filter(
-                pk__in=[s.pk for s in filtered_scopes]
+        if available_scopes and use_case_client:
+            existing_scopes = set(
+                UseCaseClientScope.objects
+                .filter(use_case_client=use_case_client)
+                .values_list("resource", flat=True)
             )
 
-            self.fields["scope"].label_from_instance = lambda obj: str(obj.resource) + "_" + str(obj.action)
+            filtered_scopes = [
+                scope for scope in available_scopes
+                if scope.resource not in existing_scopes
+            ]
+            self.fields["scope"] = ModelChoiceField(
+                queryset=AgreementScope.objects.filter(pk__in=[s.pk for s in filtered_scopes]),
+                label=_("Leidimas"),
+                help_text=_("Pasirinkite leidimą")
+            )
+            self.fields["scope"].label_from_instance = lambda obj: str(obj.resource)
         if not self.fields["scope"].queryset.exists():
             self.fields["scope"].required = False
         button = _("Pridėti")
@@ -105,3 +109,9 @@ class ClientScopeCreateForm(ModelForm):
             Field("scope", placeholder=_("Leidimai")),
             Submit("submit", button, css_class="button is-primary"),
         )
+
+    def clean_scope(self):
+        scope = self.cleaned_data.get("scope")
+        if not scope:
+            raise ValidationError(_("Nėra leidimų, kuriuos būtų galima priskirti"))
+        return scope

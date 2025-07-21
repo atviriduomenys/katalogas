@@ -4,7 +4,7 @@ from vitrina.structure.models import Metadata as StructureMetadata
 
 import pathlib
 from dataclasses import dataclass, field
-from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List
+from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List, NotRequired
 from django.utils.translation import gettext_lazy as _
 
 DIMS = [
@@ -634,12 +634,12 @@ def _read_model(
         prepare=row["prepare"],
         level=_parse_int(_get_level(row)),
         level_given=_parse_int(row["level"]),
-        status=row["status"],
-        visibility=row["visibility"],
-        count=_parse_int(row["count"]),
+        status=row.get("status"),
+        visibility=row.get("visibility"),
+        count=_parse_int(row.get("count")),
         access=row["access"],
         uri=row["uri"],
-        eli=row["eli"],
+        eli=row.get("eli"),
         title=row["title"],
         description=row["description"],
     )
@@ -695,12 +695,12 @@ def _read_property(
         prepare=row["prepare"],
         level=_parse_int(_get_level(row)),
         level_given=_parse_int(row["level"]),
-        status=row["status"],
-        visibility=row["visibility"],
-        count=_parse_int(row["count"]),
+        status=row.get("status"),
+        visibility=row.get("visibility"),
+        count=_parse_int(row.get("count")),
         access=row["access"],
         uri=row["uri"],
-        eli=row["eli"],
+        eli=row.get("eli"),
         title=row["title"],
         description=row["description"],
         required=dtype["required"],
@@ -803,12 +803,12 @@ def _read_enum(
         prepare=row["prepare"],
         level=_parse_int(row["level"]),
         level_given=_parse_int(row["level"]),
-        status=row["status"],
-        visibility=row["visibility"],
-        count=_parse_int(row["count"]),
+        status=row.get["status"],
+        visibility=row.get["visibility"],
+        count=_parse_int(row.get["count"]),
         access=row["access"],
         uri=row["uri"],
-        eli=row["eli"],
+        eli=row.get["eli"],
         title=row["title"],
         description=row["description"],
     )

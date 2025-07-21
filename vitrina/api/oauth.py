@@ -120,7 +120,7 @@ class IsOAuthTokenValid(BasePermission):
 
     def has_permission(self, request, view):
         request.auth.validate()
-        return isinstance(request.auth, JWTClaims) and request.auth.validate()
+        return isinstance(request.auth, JWTClaims)
 
 
 class OAuthTokenHasScopes(BasePermission):

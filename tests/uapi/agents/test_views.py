@@ -83,7 +83,7 @@ def test_detail_view(
     assert response.status_code == HTTPStatus.OK
     assert response.context["agent"] == agent
     assert response.context["dataset"] == data_service
-    assert not response.context["raw_api_key"]
+    assert not response.context["secret"]
 
 
 @pytest.mark.django_db
@@ -111,14 +111,16 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
         "open_data_publish_url": "https://data.gov.lt"
     }
 
-    response = app.post(url, data)
+
+    with patch("vitrina.uapi.views.OAuthClientManagement.create_oauth_client", return_value=("some-id", "some-secret")):
+        response = app.post(url, data)
+
 
     assert response.status_code == HTTPStatus.FOUND
     assert Agent.objects.count() == 1
     agent = Agent.objects.filter(title=data["title"], organization=organization).first()
     assert agent is not None
-    assert ApiKey.objects.count() == 1
-    assert hash_api_key(app.session["new_agent_api_key"]) == ApiKey.objects.filter(agent=agent).first().api_key
+    assert ApiKey.objects.count() == 0 # No longer relying on API keys, using oauth client file instead.
 
 
 @pytest.mark.django_db
@@ -134,7 +136,7 @@ def test_create_agent_transaction_rollback_on_error(app, representative_user, or
         "open_data_publish_url": "https://data.gov.lt/agent",
     }
 
-    with patch("vitrina.uapi.views.ApiKey.objects.create", side_effect=Exception("Simulated error")):
+    with patch("vitrina.uapi.views.OAuthClientManagement.create_oauth_client", side_effect=Exception("Simulated error")):
         response = app.post(url, data)
 
     assert response.status_code == HTTPStatus.OK  # Re-rendered due to `form_invalid()`.

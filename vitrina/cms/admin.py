@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.cms.forms import (
     LearningMaterialAdminForm,
@@ -6,7 +7,7 @@ from vitrina.cms.forms import (
     ExternalSiteAdminForm,
     PublishedReportAdminForm,
 )
-from vitrina.cms.models import LearningMaterial, Faq, ExternalSite
+from vitrina.cms.models import LearningMaterial, Faq, ExternalSite, Deployment
 from vitrina.orgs.models import PublishedReport
 
 
@@ -70,7 +71,31 @@ class PublishedReportAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
+class DeploymentAdmin(admin.ModelAdmin):
+    list_display = (
+        'message_lt_display',
+        'message_en_display',
+        'start_date',
+        'end_date',
+    )
+
+    def message_lt_display(self, obj):
+        if obj.message_lt and len(obj.message_lt) >= 40:
+            return obj.message_lt[:50] + "..."
+        else:
+            return obj.message_lt or ""
+    message_lt_display.short_description = _("Pranešimas (lietuvių kalba)")
+
+    def message_en_display(self, obj):
+        if obj.message_en and len(obj.message_en) >= 40:
+            return obj.message_en[:50] + "..."
+        else:
+            return obj.message_en or ""
+    message_en_display.short_description = _("Pranešimas (anglų kalba)")
+
+
 admin.site.register(LearningMaterial, LearningMaterialAdmin)
 admin.site.register(Faq, FaqAdmin)
 admin.site.register(ExternalSite, ExternalSiteAdmin)
 admin.site.register(PublishedReport, PublishedReportAdmin)
+admin.site.register(Deployment, DeploymentAdmin)

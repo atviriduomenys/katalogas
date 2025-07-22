@@ -1,9 +1,12 @@
 import pytest
+from django.contrib.contenttypes.models import ContentType
 from django_webtest import DjangoTestApp
 
+from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.smart_contracts.forms import SmartContractForm
+from vitrina.structure.factories import MetadataFactory
 
 pytestmark = pytest.mark.django_db
 
@@ -23,6 +26,21 @@ class TestSmartContractForm:
             instance=organization, datasets_by_organization={organization: []}
         )
 
+        assert form.fields["scopes"].choices == []
+
+    def test_generates_no_scope_choices_if_dataset_metadata_has_empty_name(
+        self, organization: Organization
+    ) -> None:
+        dataset = DatasetFactory(organization=organization)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            dataset=dataset,
+            name="",
+        )
+        form = SmartContractForm(
+            instance=organization, datasets_by_organization={organization: [dataset]}
+        )
         assert form.fields["scopes"].choices == []
 
     def test_generates_scope_choices_from_each_dataset(

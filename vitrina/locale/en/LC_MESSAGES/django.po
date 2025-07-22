@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-21 14:27+0300\n"
+"POT-Creation-Date: 2025-07-22 11:21+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2944,9 +2944,6 @@ msgstr "Specifies the organization to which the template is assigned."
 msgid "Duomenis teikianti organizacija"
 msgstr "Data provider organization"
 
-msgid "Sutarties šablonas"
-msgstr "Agreement template"
-
 msgid "Agento sinchronizacija įjungta"
 msgstr "Agent synchronization is enabled"
 
@@ -2955,6 +2952,9 @@ msgstr "Date of last synchronization"
 
 msgid "Sutartis"
 msgstr "Agreement"
+
+msgid "Leidimo resursas"
+msgstr "Scope resource"
 
 msgid "Leidimo veiksmas"
 msgstr "Scope action"
@@ -2968,8 +2968,11 @@ msgstr "Agreement scopes"
 msgid "Sutarties dokumentas"
 msgstr "Agreement file"
 
-msgid "Dokumentas gali būti pdf arba adoc formato."
-msgstr "The document must be in pdf or adoc format."
+msgid "Dokumentas gali būti md, pdf arba adoc formato."
+msgstr "The document must be in md, pdf or adoc format."
+
+msgid "Sutarties šablonas"
+msgstr "Agreement template"
 
 msgid "Sutarties dokumentai"
 msgstr "Agreement files"
@@ -2977,8 +2980,8 @@ msgstr "Agreement files"
 msgid "Pasirinkite turinio redagavimo kalbą"
 msgstr "Choose a language to edit"
 
-msgid "Generuoti sutartį"
-msgstr "Generate agreement"
+msgid "Generuoti sutartis"
+msgstr "Generate agreements"
 
 msgid "Grįžti į sutartis"
 msgstr "Go back"
@@ -2995,11 +2998,6 @@ msgstr "Creation date"
 msgid "Nėra sutarčių dokumentų."
 msgstr "No agreement documents."
 
-msgid ""
-"Nurodo ar agento sichronizacija yra įjungta ir paskutinę sichronizacijos datą"
-msgstr ""
-"Specifies if agent synchronization is enabled and shows newest synchronization date"
-
 msgid "Nėra sutarčių."
 msgstr "No agreements."
 
@@ -3007,14 +3005,14 @@ msgstr "No agreements."
 msgid "Sutartis: {organization}"
 msgstr "Agreement: {organization}"
 
-msgid "Šis panaudojimo atvejis jau turi egzistuojančią sutartį."
-msgstr "This use case already has existing agreement."
+msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
+msgstr "This use case already has existing agreements."
 
-msgid "Sutartis sėkmingai sugeneruota"
-msgstr "Agreement generated successfully"
+msgid "Sutartys sėkmingai sugeneruotos"
+msgstr "Agreements generated successfully"
 
-msgid "Sutarties generavime kilo klaidų"
-msgstr "Errors occurred while generating agreement"
+msgid "Sutarčių generavime kilo klaidų"
+msgstr "Errors occurred while generating agreements"
 
 msgid "Rodoma tituliniame puslapyje"
 msgstr "Shown in home page"

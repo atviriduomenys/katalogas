@@ -11,7 +11,7 @@
     {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
 
     <div class="buttons is-right">
-        <a class="button is-primary m-t-xs m-b-lg" href="{% url 'agreement-create' project.pk %}">{% translate "Generuoti sutartį" %}</a>
+        <a class="button is-primary m-t-xs m-b-lg" href="{% url 'agreement-create' project.pk %}">{% translate "Generuoti sutartis" %}</a>
     </div>
 
     {% if agreements %}
@@ -20,13 +20,7 @@
                 <tr>
                     <th>{% translate "Duomenis teikianti organizacija" %}</th>
                     <th>{% translate "Būsena" %}</th>
-                    <th>
-                        {% translate "Paskutinės sinchronizacijos data" %}
-                        <span class="icon info-icon has-tooltip-multiline is-middle"
-                              data-tooltip="{% translate 'Nurodo ar agento sichronizacija yra įjungta ir paskutinę sichronizacijos datą' %}">
-                             <i class="fas fa-info-circle"></i>
-                        </span>
-                    </th>
+                    <th>{% translate "Paskutinės sinchronizacijos data" %}</th>
                     <th colspan="1">{% translate "Veiksmai" %}</th>
                 </tr>
             </thead>
@@ -34,7 +28,7 @@
                 {% for agreement in agreements %}
                     <tr>
                         <td>
-                            {{ agreement.assigner_organization }}
+                            {{ agreement.assigner }}
                         </td>
                         <td>
                             {{ agreement.get_status_display }}
@@ -44,7 +38,6 @@
                             </span>
                         </td>
                         <td>
-                            <span class="has-text-{% if agreement.is_agent_sync_enabled %}success{% else %}danger{% endif %}">●</span>
                             {% if agent.last_sync_data %}
                                 {{ agent.last_sync_data|date:"Y-m-d H:i" }}
                             {% else %}

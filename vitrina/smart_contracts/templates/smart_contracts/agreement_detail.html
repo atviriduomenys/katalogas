@@ -43,8 +43,8 @@
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Duomenis teikianti organizacija" %}:</div>
             <div class="column is-7">
-                <a href="{% url 'organization-detail' agreement.assigner_organization_id %}" class="has-text-link" target="_blank">
-                    {{ agreement.assigner_organization }} <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
+                <a href="{% url 'organization-detail' agreement.assigner_id %}" class="has-text-link" target="_blank">
+                    {{ agreement.assigner }} <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
                 </a>
             </div>
         </div>
@@ -73,21 +73,10 @@
             <div class="column is-3 has-text-weight-semibold">{% translate "Sutarties leidimai" %}:</div>
             <div class="column is-7">
                 {% for scope in agreement.agreementscope_set.all %}
-                    {{ scope.resource }}<br>
+                    {{ scope.scope }}<br>
                 {% empty %}
                     <span class="has-text-grey">—</span>
                 {% endfor %}
-            </div>
-        </div>
-
-        <div class="columns is-mobile mb-1">
-            <div class="column is-3 has-text-weight-semibold">{% translate "Agento sinchronizacija įjungta" %}:</div>
-            <div class="column is-7">
-                {% if agreement.is_agent_sync_enabled %}
-                    <span class="tag is-success is-light">{% translate "Taip" %}</span>
-                {% else %}
-                    <span class="tag is-danger is-light">{% translate "Ne" %}</span>
-                {% endif %}
             </div>
         </div>
 

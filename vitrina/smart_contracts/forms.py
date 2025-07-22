@@ -33,7 +33,7 @@ class SmartContractForm(forms.ModelForm):
     def create_scope_choices(datasets: list[Dataset]) -> list[tuple[str, str]]:
         choices = []
         for dataset in datasets:
-            if dataset_metadata := dataset.metadata.first():
+            if (dataset_metadata := dataset.metadata.first()) and dataset_metadata.name:
                 choice_name = dataset_metadata.name.replace("/", "_")
                 choices.extend(
                     [

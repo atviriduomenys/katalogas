@@ -34,7 +34,7 @@ class Agreement(UUIDBaseModel):
         on_delete=models.PROTECT,
         verbose_name=_("Panaudojimo atvejis"),
     )
-    assigner_organization = models.ForeignKey(
+    assigner = models.ForeignKey(
         "vitrina_orgs.Organization",
         on_delete=models.PROTECT,
         verbose_name=_("Duomenis teikianti organizacija"),
@@ -45,14 +45,6 @@ class Agreement(UUIDBaseModel):
         default=AgreementStatuses.CREATED,
         verbose_name=_("Būsena"),
     )
-    template = models.ForeignKey(
-        SmartContractTemplate,
-        on_delete=models.PROTECT,
-        blank=True,
-        null=True,
-        verbose_name=_("Sutarties šablonas"),
-    )
-
     is_agent_sync_enabled = models.BooleanField(
         default=False, verbose_name=_("Agento sinchronizacija įjungta")
     )
@@ -65,7 +57,7 @@ class Agreement(UUIDBaseModel):
         verbose_name_plural = _("Sutartys")
 
     def __str__(self) -> str:
-        return f"{self.project} - {self.assigner_organization} sutartis. Statusas: {self.status}"
+        return f"{self.project} - {self.assigner} sutartis. Statusas: {self.status}"
 
     def get_acl_parents(self) -> list["Agreement"]:
         return [self]
@@ -77,8 +69,9 @@ class AgreementScope(UUIDBaseModel):
         on_delete=models.PROTECT,
         verbose_name=_("Leidimai"),
     )
-    resource = models.CharField(max_length=255, verbose_name=_("Leidimas"))
+    resource = models.CharField(max_length=255, verbose_name=_("Leidimo resursas"))
     action = models.CharField(max_length=255, verbose_name=_("Leidimo veiksmas"))
+    scope = models.CharField(max_length=255, verbose_name=_("Leidimas"))
 
     class Meta:
         verbose_name = _("Sutarties leidimas")
@@ -97,10 +90,14 @@ class AgreementFile(UUIDBaseModel):
         verbose_name=_("Sutarties dokumentas"),
         validators=[
             FileExtensionValidator(
-                allowed_extensions=["pdf", "adoc"],
-                message=_("Dokumentas gali būti pdf arba adoc formato."),
+                allowed_extensions=["md", "pdf", "adoc"],
+                message=_("Dokumentas gali būti md, pdf arba adoc formato."),
             )
         ],
+    )
+    is_template = models.BooleanField(
+        default=False,
+        verbose_name=_("Sutarties šablonas"),
     )
 
     class Meta:

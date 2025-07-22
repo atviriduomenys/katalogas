@@ -7,6 +7,6 @@ from vitrina.smart_contracts.models import Agreement
 class AgreementFactory(DjangoModelFactory):
     class Meta:
         model = Agreement
-        django_get_or_create = ("project", "assigner_organization")
+        django_get_or_create = ("project", "assigner")
 
     status = AgreementStatuses.CREATED

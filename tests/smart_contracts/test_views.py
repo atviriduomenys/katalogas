@@ -36,7 +36,7 @@ class TestAgreementListView:
         user = UserFactory(organization=organization)
         project = ProjectFactory(user=user, datasets=[dataset])
         app.set_user(user)
-        AgreementFactory(project=project, assigner_organization=organization)
+        AgreementFactory(project=project, assigner=organization)
 
         response = app.get(reverse("agreement-list", args=[project.pk]))
 
@@ -63,9 +63,7 @@ class TestAgreementDetailView:
         user = UserFactory()
         app.set_user(user)
         project = ProjectFactory()
-        agreement = AgreementFactory(
-            project=project, assigner_organization=organization
-        )
+        agreement = AgreementFactory(project=project, assigner=organization)
 
         response = app.get(
             reverse("agreement-detail", args=[project.pk, agreement.pk]),
@@ -89,9 +87,7 @@ class TestAgreementDetailView:
         user = UserFactory(organization=organization)
         app.set_user(user)
         project = ProjectFactory(user=user, datasets=[dataset])
-        agreement = AgreementFactory(
-            project=project, assigner_organization=organization
-        )
+        agreement = AgreementFactory(project=project, assigner=organization)
         different_project = ProjectFactory()
 
         response = app.get(
@@ -106,9 +102,7 @@ class TestAgreementDetailView:
         user = UserFactory(organization=organization)
         app.set_user(user)
         project = ProjectFactory(user=user, datasets=[dataset])
-        agreement = AgreementFactory(
-            project=project, assigner_organization=organization
-        )
+        agreement = AgreementFactory(project=project, assigner=organization)
 
         response = app.get(reverse("agreement-detail", args=[project.pk, agreement.pk]))
         assert response.status_code == 200
@@ -145,7 +139,7 @@ class TestAgreementCreateView:
     ) -> None:
         user = UserFactory(organization=organization)
         project = ProjectFactory(user=user)
-        AgreementFactory(project=project, assigner_organization=organization)
+        AgreementFactory(project=project, assigner=organization)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -167,16 +161,15 @@ class TestAgreementCreateView:
         assert response.status_code == 302
         assert response.url == reverse("agreement-list", args=[project.pk])
 
-        agreement = Agreement.objects.get(
-            project=project, assigner_organization=organization
-        )
+        agreement = Agreement.objects.get(project=project, assigner=organization)
         assert agreement.status == AgreementStatuses.CREATED
         assert agreement.is_agent_sync_enabled is False
         assert agreement.agreementscope_set.count() == 1
 
         agreement_scope = agreement.agreementscope_set.first()
-        assert agreement_scope.resource == "test_dataset_getall"
+        assert agreement_scope.resource == "test_dataset"
         assert agreement_scope.action == "getall"
+        assert agreement_scope.scope == "test_dataset_getall"
 
     def test_creates_multiple_agreements_and_scopes(
         self, app: DjangoTestApp, organization: Organization
@@ -222,14 +215,14 @@ class TestAgreementCreateView:
 
         assert Agreement.objects.filter(project=project).count() == 2
         assert set(
-            AgreementScope.objects.filter(
-                agreement__assigner_organization=organization
-            ).values_list("resource", flat=True)
+            AgreementScope.objects.filter(agreement__assigner=organization).values_list(
+                "scope", flat=True
+            )
         ) == {"test_dataset1_getall", "test_dataset2_search", "test_dataset2_select"}
         assert set(
             AgreementScope.objects.filter(
-                agreement__assigner_organization=diff_organization
-            ).values_list("resource", flat=True)
+                agreement__assigner=diff_organization
+            ).values_list("scope", flat=True)
         ) == {"datasets_gov_org_dataset_getall"}
 
     def test_cannot_create_agreement_with_invalid_scopes(

@@ -5,6 +5,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Prefetch
 from django.forms import modelformset_factory, BaseFormSet
 from django.http import HttpResponseRedirect
@@ -119,7 +120,7 @@ class AgreementDetailView(
         super().setup(request, *args, **kwargs)
         self.agreement = get_object_or_404(
             Agreement.objects.all()
-            .select_related("assigner_organization")
+            .select_related("assigner")
             .prefetch_related("agreementscope_set"),
             project=self.object,
             pk=kwargs["agreement_id"],
@@ -128,7 +129,7 @@ class AgreementDetailView(
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
         page_title = _("Sutartis: {organization}").format(
-            organization=self.agreement.assigner_organization
+            organization=self.agreement.assigner
         )
 
         context.update(
@@ -182,7 +183,7 @@ class AgreementCreateView(
         if Agreement.objects.filter(project=self.object).exists():
             messages.error(
                 self.request,
-                _("Šis panaudojimo atvejis jau turi egzistuojančią sutartį."),
+                _("Šis panaudojimo atvejis jau turi egzistuojančias sutartis."),
             )
             return HttpResponseRedirect(self.get_success_url())
 
@@ -218,12 +219,12 @@ class AgreementCreateView(
             {
                 "project": self.object,
                 "formset_helper": SmartContractFormSetHelper(),
-                "current_title": _("Generuoti sutartį"),
+                "current_title": _("Generuoti sutartis"),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("project-list"): _("Panaudojimo atvejai"),
                     reverse("project-detail", args=[self.object.pk]): self.object,
-                    None: _("Generuoti sutartį"),
+                    None: _("Generuoti sutartis"),
                 },
             }
         )
@@ -233,25 +234,30 @@ class AgreementCreateView(
     def get_success_url(self) -> str:
         return reverse("agreement-list", args=[self.object.pk])
 
+    @transaction.atomic
     def formset_valid(self, formset: BaseFormSet) -> HttpResponse:
         for form in formset:
             agreement = Agreement.objects.create(
                 project=self.object,
-                assigner_organization=form.instance,
+                assigner=form.instance,
                 status=AgreementStatuses.CREATED,
             )
-            AgreementScope.objects.bulk_create(
-                [
+            agreement_scopes = []
+            for scope in form.cleaned_data["scopes"]:
+                resource, action = scope.rsplit("_", 1)
+                agreement_scopes.append(
                     AgreementScope(
-                        agreement=agreement, resource=scope, action=scope.split("_")[-1]
+                        agreement=agreement,
+                        scope=scope,
+                        resource=resource,
+                        action=action,
                     )
-                    for scope in form.cleaned_data["scopes"]
-                ]
-            )
+                )
+            AgreementScope.objects.bulk_create(agreement_scopes)
 
-        messages.success(self.request, _("Sutartis sėkmingai sugeneruota"))
+        messages.success(self.request, _("Sutartys sėkmingai sugeneruotos"))
         return super().formset_valid(formset)
 
     def formset_invalid(self, formset: BaseFormSet) -> HttpResponse:
-        messages.error(self.request, _("Sutarties generavime kilo klaidų"))
+        messages.error(self.request, _("Sutarčių generavime kilo klaidų"))
         return super().formset_invalid(formset)

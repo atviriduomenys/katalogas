@@ -266,3 +266,5 @@ class Deployment(models.Model):
 
     class Meta:
         db_table = "deployment"
+        verbose_name = _("Diegimo pranešimas")
+        verbose_name_plural = _("Diegimo pranešimai")

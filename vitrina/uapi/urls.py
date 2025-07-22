@@ -1,6 +1,6 @@
 from django.urls import path
 
-from vitrina.uapi.views.template_views import AgentDeleteView, AgentUpdateView, AgentCreateView, AgentDetailView, AgentListView, AgentSync
+from vitrina.uapi.views.template_views import AgentDeleteView, AgentUpdateView, AgentCreateView, AgentDetailView, AgentListView
 from vitrina.uapi.views.views import DatasetViewSet, DistributionViewSet
 
 
@@ -50,10 +50,5 @@ urlpatterns = [
         f"{UAPI_BASE_PATH}Distribution/",
         DistributionViewSet.as_view({"post": "create", "get": "list"}),
         name="distribution",
-    ),
-    path(
-        "organizations/agents/sync",
-        AgentSync.as_view(),
-        name="agent-sync"
     ),
 ]

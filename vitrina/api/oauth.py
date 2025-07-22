@@ -151,11 +151,12 @@ class OAuthTokenHasScopes(BasePermission):
 class OAuthTokenHasValidOrganizationClaim(BasePermission):
 
     def has_permission(self, request, view):
-        organization = OAuthClientAuthenticator.resolve_organization_from_token(request.auth)
-        if not organization:
+        if not (organization := OAuthClientAuthenticator.resolve_organization_from_token(request.auth)):
             return False
-        url_path_organization_id: str = view.kwargs.get("organization_id") or view.kwargs.get("organization-id")
-        if url_path_organization_id and str(organization.pk) != url_path_organization_id:
+
+        url_path_organization_kind, url_path_organization_name = view.kwargs["form"], view.kwargs["org"]
+        if organization.kind != url_path_organization_kind or organization.name != url_path_organization_name:
             return False
+
         setattr(request, "organization", organization)
         return True

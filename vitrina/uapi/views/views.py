@@ -152,7 +152,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
         # Mimics file upload done via DatasetStructureImportView.
         file_name = f"dataset_{dataset.id}_structure.csv"
-        content_file = ContentFile(request.body, name=file_name)
+        content_file = ContentFile(request.body.decode(), name=file_name)
         filer_file = File.objects.create(
             original_filename=file_name,
             file=content_file,

@@ -1,11 +1,12 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
-from vitrina.smart_contracts.forms import SmartContractForm
+from vitrina.smart_contracts.forms import SmartContractForm, AgreementUploadForm
 from vitrina.structure.factories import MetadataFactory
 
 pytestmark = pytest.mark.django_db
@@ -55,3 +56,23 @@ class TestSmartContractForm:
             ("test_dataset_search", "test_dataset_search"),
             ("test_dataset_select", "test_dataset_select"),
         }
+
+
+class TestAgreementUploadForm:
+    def test_not_valid_when_uploading_file_other_than_adoc(self) -> None:
+        uploaded_file = SimpleUploadedFile("bad_file.md", b"md file content")
+        form = AgreementUploadForm(files={"file": uploaded_file})
+
+        assert form.is_valid() is False
+        assert form.errors == {"file": ["Dokumentas turi būti adoc formato."]}
+
+    def test_not_valid_when_uploading_unsigned_adoc(self) -> None:
+        file_path = (
+            "tests/smart_contracts/files/test_contracts/sutartis_not_signed.adoc"
+        )
+        with open(file_path, "rb") as f:
+            uploaded_file = SimpleUploadedFile("sutartis_not_signed.adoc", f.read())
+
+        form = AgreementUploadForm(files={"file": uploaded_file})
+        assert form.is_valid() is False
+        assert form.errors == {"file": ["Įkelta sutartis nepasirašyta."]}

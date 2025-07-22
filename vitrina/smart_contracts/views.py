@@ -13,7 +13,8 @@ from django.http.response import HttpResponseBase, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views.generic import TemplateView
+from django.views import View
+from django.views.generic import TemplateView, FormView
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
@@ -23,12 +24,13 @@ from vitrina.smart_contracts import AgreementStatuses, AGREEMENT_STATUS_DESCRIPT
 from vitrina.smart_contracts.forms import (
     SmartContractForm,
     SmartContractFormSetHelper,
+    AgreementUploadForm,
 )
-from vitrina.smart_contracts.models import Agreement, AgreementScope
+from vitrina.smart_contracts.models import Agreement, AgreementScope, AgreementFile
 from vitrina.views import FormsetView, HistoryMixin
 
 
-class BaseAgreementMixin:
+class BaseProjectMixin:
     def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
         super().setup(request, *args, **kwargs)
         self.object = get_object_or_404(
@@ -43,10 +45,22 @@ class BaseAgreementMixin:
         )
 
 
+class BaseAgreementMixin:
+    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
+        super().setup(request, *args, **kwargs)
+        self.agreement = get_object_or_404(
+            Agreement.objects.all()
+            .select_related("assigner")
+            .prefetch_related("agreementscope_set"),
+            project=self.object,
+            pk=kwargs["agreement_id"],
+        )
+
+
 class AgreementListView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
-    BaseAgreementMixin,
+    BaseProjectMixin,
     HistoryMixin,
     TemplateView,
 ):
@@ -101,6 +115,7 @@ class AgreementDetailView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     BaseAgreementMixin,
+    BaseProjectMixin,
     HistoryMixin,
     TemplateView,
 ):
@@ -115,16 +130,6 @@ class AgreementDetailView(
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, self.agreement)
-
-    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
-        super().setup(request, *args, **kwargs)
-        self.agreement = get_object_or_404(
-            Agreement.objects.all()
-            .select_related("assigner")
-            .prefetch_related("agreementscope_set"),
-            project=self.object,
-            pk=kwargs["agreement_id"],
-        )
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -163,7 +168,7 @@ class AgreementDetailView(
 class AgreementCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
-    BaseAgreementMixin,
+    BaseProjectMixin,
     FormsetView,
 ):
     object: Project
@@ -261,3 +266,124 @@ class AgreementCreateView(
     def formset_invalid(self, formset: BaseFormSet) -> HttpResponse:
         messages.error(self.request, _("Sutarčių generavime kilo klaidų"))
         return super().formset_invalid(formset)
+
+
+class AgreementGeneratePdf(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    BaseAgreementMixin,
+    BaseProjectMixin,
+    View,
+):
+    def has_permission(self) -> bool:
+        return (
+            has_perm(self.request.user, Action.UPDATE, self.agreement)
+            or self.request.user == self.object.user
+        )
+
+    def dispatch(
+        self, request: WSGIRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponseBase:
+        if self.agreement.status == AgreementStatuses.CREATED:
+            return super().dispatch(request, *args, **kwargs)
+
+        error_msg = _(
+            "Sutarties dokumentas gali būti generuojamas sutarčiai su "
+            "būsena {accepted_status}. Dabartinė būsena: {current_status}"
+        ).format(
+            accepted_status=AgreementStatuses.CREATED,
+            current_status=self.agreement.status,
+        )
+        messages.error(request, error_msg)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self) -> str:
+        return reverse("agreement-detail", args=[self.object.pk, self.agreement.pk])
+
+    def post(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.agreement.status = AgreementStatuses.FORMED
+        self.agreement.save()
+
+        messages.success(request, _("Sutarties dokumentas sukurtas"))
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class AgreementUploadSignedFile(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    BaseAgreementMixin,
+    BaseProjectMixin,
+    FormView,
+):
+    form_class = AgreementUploadForm
+    template_name = "base_form.html"
+
+    def has_permission(self) -> bool:
+        return (
+            has_perm(self.request.user, Action.UPDATE, self.agreement)
+            or self.request.user == self.object.user
+        )
+
+    def dispatch(
+        self, request: WSGIRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponseBase:
+        accepted_statuses = (AgreementStatuses.FORMED, AgreementStatuses.INITIATED)
+        if self.agreement.status in accepted_statuses:
+            return super().dispatch(request, *args, **kwargs)
+
+        error_msg = _(
+            "Sutarties dokumentas gali būti generuojamas sutarčiai su "
+            "būsenomis {accepted_statuses}. Dabartinė būsena: {current_status}"
+        ).format(
+            accepted_statuses=", ".join(accepted_statuses),
+            current_status=self.agreement.status,
+        )
+        messages.error(request, error_msg)
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+        agreement_details_title = _("Sutartis: {organization}").format(
+            organization=self.agreement.assigner
+        )
+        page_title = (
+            _("Įkelti gavėjo pasirašytą dokumentą")
+            if self.agreement.status == AgreementStatuses.FORMED
+            else _("Įkelti tiekėjo pasirašytą dokumentą")
+        )
+
+        context.update(
+            {
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("project-list"): _("Panaudojimo atvejai"),
+                    reverse("project-detail", args=[self.object.pk]): self.object,
+                    reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
+                    reverse(
+                        "agreement-detail", args=[self.object.pk, self.agreement.pk]
+                    ): agreement_details_title,
+                    None: page_title,
+                },
+            }
+        )
+
+        return context
+
+    def get_success_url(self) -> str:
+        return reverse("agreement-detail", args=[self.object.pk, self.agreement.pk])
+
+    def form_valid(self, form: AgreementUploadForm) -> HttpResponse:
+        self.agreement.status = (
+            AgreementStatuses.INITIATED
+            if self.agreement.status == AgreementStatuses.FORMED
+            else AgreementStatuses.SIGNED
+        )
+        self.agreement.save()
+        AgreementFile.objects.create(
+            agreement=self.agreement,
+            file_name=form.cleaned_data["file"].name,
+            file=form.cleaned_data["file"],
+        )
+
+        messages.success(self.request, _("Sutarties dokumentas įkeltas sėkmingai"))
+        return HttpResponseRedirect(self.get_success_url())

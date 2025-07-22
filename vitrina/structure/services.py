@@ -144,7 +144,8 @@ def _load_datasets(state: struct.State, dataset: Dataset):
             _link_models(dataset, meta)
             loaded_metadata.append(metadata)
 
-        _create_errors(meta.errors, dataset.current_structure)
+        if errors := meta.errors:
+            _create_errors(errors, dataset.current_structure)
 
     removed_metadata = list(set(existing_metadata) - set(loaded_metadata))
     for meta in removed_metadata:
@@ -646,7 +647,8 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset):
                         model.save()
 
                 distribution.save()
-                _create_errors(resource_meta.errors, dataset.current_structure)
+                if errors := resource_meta.errors:
+                    _create_errors(errors, dataset.current_structure)
     else:
         title = dataset_meta.title or dataset_meta.name.split("/")[-1]
         name = dataset_meta.name.split("/")[-1]
@@ -710,7 +712,8 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset):
                 model.save()
 
         distribution.save()
-        _create_errors(resource_meta.errors, dataset.current_structure)
+        if errors := resource_meta.errors:
+            _create_errors(errors, dataset.current_structure)
 
 
 def _link_models(dataset: Dataset, dataset_meta: struct.Dataset):

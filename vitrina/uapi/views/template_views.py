@@ -127,6 +127,7 @@ class AgentDetailView(BaseAgentView):
             },
             "agent": self.object,
             "dataset": self.object.service,
+            "organization": self.organization,
             "secret": self.request.session.pop("secret", None),
             "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
             "auth_server_host": settings.OAUTH_SERVER_HOST,
@@ -285,21 +286,3 @@ class AgentDeleteView(DeleteView, BaseAgentView):
 
     def get_success_url(self) -> str:
         return reverse("agent-list", kwargs={"organization_id": self.organization.id})
-
-
-class AgentSync(APIView):
-    authentication_classes = [OAuth2AuthenticationWithLocalJWK]
-    permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
-    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES # TODO update scopes
-
-    @csrf_exempt
-    def post(self, request, format=None):
-        # TODO add sync logic https://github.com/atviriduomenys/spinta/issues/1310
-        agent = Agent.objects.filter(
-            organization=request.organization,
-            oauth_client_id=OAuthClientAuthenticator.resolve_client_id_from_token(request.auth)
-        ).first()
-        return Response(
-            status=status.HTTP_501_NOT_IMPLEMENTED,
-            data={"message": f"Authentication successful for {request.organization=}, {agent=}. Sync not implemented."}
-        )

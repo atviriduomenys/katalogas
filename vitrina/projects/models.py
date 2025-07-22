@@ -124,12 +124,13 @@ class UseCaseClient(UUIDBaseModel):
 
 
 class UseCaseClientScope(UUIDBaseModel):
-    resource = models.CharField(max_length=255, verbose_name=_("Išteklius"))
-    action = models.CharField(max_length=255, verbose_name=_("Veiksmas"))
+    resource = models.CharField(max_length=255, verbose_name=_("Leidimo resursas"))
+    action = models.CharField(max_length=255, verbose_name=_("Leidimo veiksmas"))
+    scope = models.CharField(max_length=255, verbose_name=_("Leidimas"))
     use_case_client = models.ForeignKey(
         UseCaseClient,
         models.PROTECT,
-        verbose_name=_("Leidimai"),
+        verbose_name=_("Klientas"),
     )
     is_active = models.BooleanField(blank=True, null=True)
     class Meta:

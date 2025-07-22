@@ -64,7 +64,7 @@
             <tbody>
                 {% for scope in scopes %}
                     <tr>
-                        <th scope="row">{{ scope.resource }}</th>
+                        <th scope="row">{{ scope.scope }}</th>
                         <td style="width:10%">
                             <a href="{% url 'project-clients-scopes-detail-toggle' project.pk client.uuid scope.uuid %}"
                                  class="button is-warning is-small">

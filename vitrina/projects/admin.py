@@ -20,7 +20,7 @@ class UseCaseClientAdmin(VersionAdmin):
 
 @admin.register(UseCaseClientScope)
 class UseCaseClientScopeAdmin(VersionAdmin):
-    list_display = ["resource", "action", "use_case_client"]
+    list_display = ["resource", "action", "scope", "use_case_client"]
     autocomplete_fields = ["use_case_client"]
     search_fields = ["use_case_client__name"]
 

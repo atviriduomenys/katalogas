@@ -862,11 +862,11 @@ class ClientScopeCreateView(
         use_case_client_scopes = set(
             UseCaseClientScope.objects
             .filter(use_case_client=self.client)
-            .values_list("resource", flat=True)
+            .values_list("scope", flat=True)
         )
         return AgreementScope.objects.filter(agreement__project_id=self.project.pk,
                                              agreement__status=AgreementStatuses.ACTIVE).exclude(
-                                             resource__in=use_case_client_scopes)
+                                             scope__in=use_case_client_scopes)
 
     def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
@@ -879,6 +879,7 @@ class ClientScopeCreateView(
         UseCaseClientScope.objects.create(
             resource=selected_scope.resource,
             action=selected_scope.action,
+            scope=selected_scope.scope,
             use_case_client=self.client,
             is_active=False
         )

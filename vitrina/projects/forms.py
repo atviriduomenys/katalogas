@@ -83,7 +83,7 @@ class ClientScopeCreateForm(ModelForm):
     def __init__(self, *args, available_scopes: UseCaseClientScope = None, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["scope"].queryset = available_scopes
-        self.fields["scope"].label_from_instance = lambda obj: str(obj.resource)
+        self.fields["scope"].label_from_instance = lambda obj: str(obj.scope)
         button = _("Pridėti")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""

@@ -92,9 +92,3 @@ class ClientScopeCreateForm(ModelForm):
             Field("scope", placeholder=_("Leidimai")),
             Submit("submit", button, css_class="button is-primary"),
         )
-
-    def clean_scope(self):
-        scope = self.cleaned_data.get("scope")
-        if not scope:
-            raise ValidationError(_("Nėra leidimų, kuriuos būtų galima priskirti"))
-        return scope

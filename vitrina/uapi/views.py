@@ -294,7 +294,7 @@ class AgentSync(APIView):
 
     @csrf_exempt
     def post(self, request, format=None):
-        # TODO add sync logic
+        # TODO add sync logic https://github.com/atviriduomenys/spinta/issues/1310
         agent = Agent.objects.filter(
             organization=request.organization,
             oauth_client_id=OAuthClientAuthenticator.resolve_client_id_from_token(request.auth)

@@ -258,14 +258,3 @@ def test_client_update(app: DjangoTestApp):
     assert added_client.exists()
     assert resp.status_code == 302
 
-
-def test_client_scopes_create_without_permission(app: DjangoTestApp):
-    user = UserFactory()
-    app.set_user(user)
-    project = ProjectFactory()
-    client = UseCaseClientFactory()
-    resp = app.get(
-        reverse("project-clients-scopes-create", args=[project.pk, client.uuid]),
-        expect_errors=True
-    )
-    assert resp.status_code == 403

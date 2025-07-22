@@ -109,7 +109,7 @@ class UseCaseClient(UUIDBaseModel):
         Project,
         related_name="client_set",
         on_delete=models.PROTECT,
-        verbose_name=_("Panaudos atvejis"),
+        verbose_name=_("Panaudojimo atvejis"),
     )
     name = models.CharField(max_length=255, verbose_name=_("Kliento pavadinimas"))
     client_id = models.CharField(max_length=255, verbose_name=_("Kliento ID"))

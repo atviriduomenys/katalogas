@@ -720,6 +720,13 @@ class ClientCreateView(
         self.object.user = self.request.user
         self.object.use_case = self.project
         self.object.save()
+
+        success_message = _(
+            'Klientas "{0}" sukurtas sėkmingai'
+        ).format(self.object.name)
+        messages.success(
+            self.request,
+            success_message)
         return redirect(reverse("project-clients", args=[self.project.pk]))
 
     def get_context_data(self, **kwargs) -> dict:
@@ -774,6 +781,14 @@ class ClientUpdateView(PermissionRequiredMixin, UpdateView):
         self.object.user = self.request.user
         self.object.use_case = self.project
         self.object.save()
+
+        success_message = _(
+            'Klientas "{0}" atnaujintas sėkmingai'
+        ).format(self.object.name)
+        messages.success(
+            self.request,
+            success_message
+        )
         return redirect(reverse("project-clients", args=[self.project.pk]))
 
 
@@ -834,18 +849,28 @@ class ClientScopeCreateView(
     def dispatch(self, request, *args, **kwargs) -> HttpResponseBase:
         self.project = get_object_or_404(Project, pk=kwargs["pk"])
         self.client = get_object_or_404(UseCaseClient, pk=kwargs["client_id"])
+
+        self.available_scopes = self.get_available_scopes()
+
+        if not self.available_scopes.exists():
+            messages.error(request, _("Šiam klientui aktyvių leidimų nėra"))
+            return redirect(reverse("project-clients-detail", args=[self.project.pk, self.client.uuid]))
+
         return super().dispatch(request, *args, **kwargs)
+
+    def get_available_scopes(self):
+        use_case_client_scopes = set(
+            UseCaseClientScope.objects
+            .filter(use_case_client=self.client)
+            .values_list("resource", flat=True)
+        )
+        return AgreementScope.objects.filter(agreement__project_id=self.project.pk,
+                                             agreement__status=AgreementStatuses.ACTIVE).exclude(
+                                             resource__in=use_case_client_scopes)
 
     def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
-        try:
-            agreement = Agreement.objects.prefetch_related("agreementscope_set").get(project__id=self.project.pk, status=AgreementStatuses.ACTIVE)
-            scopes = agreement.agreementscope_set.all()
-        except Agreement.DoesNotExist:
-            agreement = None
-            scopes = AgreementScope.objects.none()
-        kwargs["available_scopes"] = scopes
-        kwargs["use_case_client"] = self.client
+        kwargs["available_scopes"] = self.available_scopes
         return kwargs
 
     def form_valid(self, form) -> HttpResponse:
@@ -856,6 +881,14 @@ class ClientScopeCreateView(
             action=selected_scope.action,
             use_case_client=self.client,
             is_active=False
+        )
+
+        success_message = _(
+            'Leidimas "{0}" sukurtas sėkmingai'
+        ).format(selected_scope.resource)
+        messages.success(
+            self.request,
+            success_message
         )
         return redirect(reverse("project-clients-detail", args=[self.project.pk, self.client.uuid]))
 

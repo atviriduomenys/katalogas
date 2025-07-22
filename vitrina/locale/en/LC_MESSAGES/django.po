@@ -662,9 +662,6 @@ msgstr "Groups"
 msgid "Kategorija"
 msgstr "Category"
 
-msgid "Rodyti pasirinktas kategorijas"
-msgstr "Show selected categories"
-
 msgid "Išsaugoti"
 msgstr "Save"
 
@@ -781,9 +778,6 @@ msgstr "Addition to dataset"
 
 msgid "Duomenų atvėrimas"
 msgstr "Data opening"
-
-msgid "Jau įtraukta į versiją"
-msgstr "Already included in the version"
 
 msgid "Duomenų rinkinių atnaujinimo ataskaita"
 msgstr "Dataset update report"
@@ -2303,6 +2297,24 @@ msgstr "Image related to the proposed use case."
 msgid "Kliento pavadinimas"
 msgstr "Client name"
 
+msgid "Leidimas"
+msgstr "Permission"
+
+msgid "Pasirinkite leidimą"
+msgstr "Select a scope"
+
+msgid "Leidimai"
+msgstr "Permissions"
+
+msgid "Nėra leidimų, kuriuos būtų galima priskirti"
+msgstr "There is no scopes that can be attributed"
+
+msgid "Panaudojimo atvejis"
+msgstr "Use case"
+
+msgid "Kliento ID"
+msgstr "Client ID"
+
 msgid "Klientas"
 msgstr "Client"
 
@@ -2318,38 +2330,20 @@ msgstr "Client scope"
 msgid "Kliento leidimai"
 msgstr "Client scopes"
 
-msgid "Kliento peržiūra"
-msgstr "Client preview"
-
-msgid "Kliento ID"
-msgstr "Client ID"
+msgid "Šiuo metu raktas galiojančių leidimų neturi."
+msgstr "Currently the key does not have any valid permissions."
 
 msgid "Naujas klientas"
 msgstr "New client"
 
-msgid "Pasirinkite leidimą"
-msgstr "Select a scope"
-
-msgid "Nėra leidimų, kuriuos būtų galima priskirti"
-msgstr "There is no scopes that can be attributed"
-
-msgid "Šiuo metu Panaudos atvejis klientų neturi"
+msgid "Šiuo metu Panaudojimo atvejis klientų neturi"
 msgstr "Currently, there are no clients for this Use case"
+
+msgid "Kliento peržiūra"
+msgstr "Client preview"
 
 msgid "Šiuo metu klientas leidimų neturi"
 msgstr "Currently, there are no scopes for this client"
-
-msgid "Panaudos atvejis"
-msgstr "Use case"
-
-msgid "Panaudojimo atvejis"
-msgstr "Use case"
-
-msgid "Leidimas"
-msgstr "Permission"
-
-msgid "Šiuo metu raktas galiojančių leidimų neturi."
-msgstr "Currently the key does not have any valid permissions."
 
 msgid "Duomenų rinkinių sąrašas"
 msgstr "Dataset list"
@@ -2412,9 +2406,6 @@ msgstr "rejected"
 msgid "Nėra panaudojimo atvejo"
 msgstr "No use case"
 
-msgid "Leidimai"
-msgstr "Permissions"
-
 msgid "Projektas leidimų neturi"
 msgstr "Project doesn't have permissions"
 
@@ -2443,6 +2434,18 @@ msgid ""
 "API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas "
 "raktas: "
 msgstr "API key will be shown only one time, so you must copy it. Created key:"
+
+msgid "Klientas \"{0}\" sukurtas sėkmingai"
+msgstr "Client \"{0}\" created successfully"
+
+msgid "Klientas \"{0}\" atnaujintas sėkmingai"
+msgstr "Client \"{0}\" changed successfully"
+
+msgid "Šiam klientui aktyvių leidimų nėra"
+msgstr "There are no active scopes for this client"
+
+msgid "Leidimas \"{0}\" sukurtas sėkmingai"
+msgstr "Use case \"{0}\" created successfully"
 
 msgid "Trumpas poreikio pavadinimas."
 msgstr "Request title"
@@ -4055,9 +4058,6 @@ msgstr "Action history"
 
 msgid "Data/laikas"
 msgstr "Date/Time"
-
-msgid "Veiksmas"
-msgstr "Action"
 
 msgid "Rodyti daugiau"
 msgstr "Show more"

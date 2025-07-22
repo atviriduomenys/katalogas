@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
                 ('updated_at', models.DateTimeField(auto_now=True, null=True)),
                 ('name', models.CharField(max_length=255, verbose_name='Kliento pavadinimas')),
                 ('client_id', models.CharField(max_length=255, verbose_name='Kliento ID')),
-                ('use_case', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='client_set', to='vitrina_projects.project', verbose_name='Panaudos atvejis')),
+                ('use_case', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='client_set', to='vitrina_projects.project', verbose_name='Panaudojimo atvejis')),
             ],
             options={
                 'verbose_name': 'Klientas',

@@ -80,27 +80,10 @@ class ClientScopeCreateForm(ModelForm):
         model = UseCaseClientScope
         fields = ["scope"]
 
-    def __init__(self, *args, available_scopes: UseCaseClientScope = None, use_case_client: UseCaseClient = None, **kwargs):
+    def __init__(self, *args, available_scopes: UseCaseClientScope = None, **kwargs):
         super().__init__(*args, **kwargs)
-        if available_scopes and use_case_client:
-            existing_scopes = set(
-                UseCaseClientScope.objects
-                .filter(use_case_client=use_case_client)
-                .values_list("resource", flat=True)
-            )
-
-            filtered_scopes = [
-                scope for scope in available_scopes
-                if scope.resource not in existing_scopes
-            ]
-            self.fields["scope"] = ModelChoiceField(
-                queryset=AgreementScope.objects.filter(pk__in=[s.pk for s in filtered_scopes]),
-                label=_("Leidimas"),
-                help_text=_("Pasirinkite leidimą")
-            )
-            self.fields["scope"].label_from_instance = lambda obj: str(obj.resource)
-        if not self.fields["scope"].queryset.exists():
-            self.fields["scope"].required = False
+        self.fields["scope"].queryset = available_scopes
+        self.fields["scope"].label_from_instance = lambda obj: str(obj.resource)
         button = _("Pridėti")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""

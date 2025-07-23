@@ -685,6 +685,9 @@ class ClientListView(HistoryMixin, PermissionRequiredMixin, TemplateView):
             "can_update_project": has_perm(
             self.request.user, Action.UPDATE, self.object
             ),
+            "can_view_agreements": has_perm(
+            self.request.user, Action.VIEW, Agreement, self.object
+            ),
             "parent_links": {
             reverse("home"): _("Pradžia"),
             reverse("project-list"): _("Panaudojimo atvejai"),
@@ -821,7 +824,10 @@ class ClientDetailView(HistoryMixin, LoginRequiredMixin, PermissionRequiredMixin
             "client": self.client,
             "can_update_project": has_perm(
             self.request.user, Action.UPDATE, self.object
-        ),
+            ),
+            "can_view_agreements": has_perm(
+                self.request.user, Action.VIEW, Agreement, self.object
+            ),
             "scopes": scopes,
             "parent_links": {
             reverse("home"): _("Pradžia"),

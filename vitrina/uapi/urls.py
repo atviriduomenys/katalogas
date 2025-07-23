@@ -1,6 +1,7 @@
 from django.urls import path
 
-from vitrina.uapi.views import AgentDeleteView, AgentUpdateView, AgentCreateView, AgentDetailView, AgentListView
+from vitrina.uapi.views import AgentDeleteView, AgentUpdateView, AgentCreateView, AgentDetailView, AgentListView, \
+    AgentSync
 
 urlpatterns = [
     path(
@@ -27,5 +28,10 @@ urlpatterns = [
         "organizations/<int:organization_id>/agents/<uuid:pk>/delete",
         AgentDeleteView.as_view(),
         name="agent-delete"
+    ),
+    path(
+        "organizations/agents/sync",
+        AgentSync.as_view(),
+        name="agent-sync"
     ),
 ]

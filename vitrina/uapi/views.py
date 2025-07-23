@@ -1,4 +1,4 @@
-import secrets
+import logging
 from typing import Any
 
 from django.contrib import messages
@@ -7,31 +7,36 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
 from django.db import transaction
 from django.forms import ModelForm
-from django.http import HttpResponseRedirect
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (
     CreateView,
     UpdateView,
     DeleteView,
     TemplateView,
 )
+from django_otp.plugins.otp_email.conf import settings
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-from vitrina.resources.models import Format
-from vitrina.api.models import ApiKey
+from vitrina.api.oauth import Secret, OAuthClientAuthenticator, OAuthClientManagement, OAuth2AuthenticationWithLocalJWK, \
+    IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim
 from vitrina.datasets.models import Dataset, Contact, Type
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import (
     has_perm,
     Action,
-    hash_api_key,
 )
-from django.http import HttpResponse
-
+from vitrina.resources.models import Format
 from vitrina.uapi.forms import AgentForm
 from vitrina.uapi.models import Agent
+
+logger = logging.getLogger(__name__)
 
 
 class BaseAgentView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
@@ -122,7 +127,10 @@ class AgentDetailView(BaseAgentView):
             },
             "agent": self.object,
             "dataset": self.object.service,
-            "raw_api_key": self.request.session.pop("new_agent_api_key", None),
+            "secret": self.request.session.pop("secret", None),
+            "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
+            "auth_server_host": settings.OAUTH_SERVER_HOST,
+            "resource_server_host": f"{self.request.scheme }://{ self.request.get_host()}",
         })
 
         return context
@@ -139,6 +147,18 @@ class AgentCreateView(CreateView, BaseAgentView):
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE, Agent, self.organization)
+
+
+    @staticmethod
+    def _create_oauth_client(agent: Agent) -> Secret:
+        client_id, secret = OAuthClientManagement.create_oauth_client(
+            client_name=agent.global_codename,
+            scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
+            organization_id=agent.organization_id
+        )
+        agent.oauth_client_id = client_id
+        agent.save()
+        return secret
 
     def form_valid(self, form: ModelForm) -> HttpResponse:
         title = form.cleaned_data["title"]
@@ -162,11 +182,9 @@ class AgentCreateView(CreateView, BaseAgentView):
 
                 self.object = form.save()
 
-                raw_api_key = secrets.token_urlsafe()
-                ApiKey.objects.create(
-                    api_key=hash_api_key(raw_api_key), enabled=True, agent=self.object
-                )
-                self.request.session["new_agent_api_key"] = raw_api_key
+                self.request.session["secret"] = self._create_oauth_client(agent=self.object)
+                self.request.session["scopes"] = settings.OAUTH_AGENT_DEFAULT_SCOPES
+
                 messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))
                 messages.error(
                     self.request,
@@ -265,6 +283,23 @@ class AgentDeleteView(DeleteView, BaseAgentView):
         messages.success(self.request, _(f"Agentas {self.object.title} pašalintas sėkmingai!"))
         return HttpResponseRedirect(self.get_success_url())
 
-
     def get_success_url(self) -> str:
         return reverse("agent-list", kwargs={"organization_id": self.organization.id})
+
+
+class AgentSync(APIView):
+    authentication_classes = [OAuth2AuthenticationWithLocalJWK]
+    permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
+    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES # TODO update scopes
+
+    @csrf_exempt
+    def post(self, request, format=None):
+        # TODO add sync logic https://github.com/atviriduomenys/spinta/issues/1310
+        agent = Agent.objects.filter(
+            organization=request.organization,
+            oauth_client_id=OAuthClientAuthenticator.resolve_client_id_from_token(request.auth)
+        ).first()
+        return Response(
+            status=status.HTTP_501_NOT_IMPLEMENTED,
+            data={"message": f"Authentication successful for {request.organization=}, {agent=}. Sync not implemented."}
+        )

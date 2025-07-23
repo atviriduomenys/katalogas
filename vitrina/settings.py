@@ -9,7 +9,8 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
-
+import base64
+import json
 import os
 import environ
 from pathlib import Path
@@ -51,6 +52,25 @@ SECRET_KEY = env(
 VIISP_AUTHORIZE_URL = env("VIISP_AUTHORIZE_URL")
 VIISP_PROXY_AUTH = env("VIISP_PROXY_AUTH")
 VIISP_PID = env("VIISP_PID")
+
+OAUTH_SERVER_PUBLIC_JWK_JSON = json.loads(env("OAUTH_SERVER_PUBLIC_JWK_JSON", default="{}"))
+OAUTH_SERVER_HOST = env("OAUTH_SERVER_HOST")
+OAUTH_SERVER_CLIENTS_PATH =  env("OAUTH_SERVER_CLIENTS_PATH", default="/auth/clients")
+OAUTH_SERVER_TOKEN_PATH =  env("OAUTH_SERVER_TOKEN_PATH", default="/auth/token")
+OAUTH_SERVER_CLIENTS_URL =  OAUTH_SERVER_HOST + OAUTH_SERVER_CLIENTS_PATH
+OAUTH_SERVER_TOKEN_URL =  OAUTH_SERVER_HOST + OAUTH_SERVER_TOKEN_PATH
+OAUTH_CLIENT_SECRET =  env("OAUTH_CLIENT_SECRET")
+OAUTH_CLIENT_NAME = env("OAUTH_CLIENT_NAME")
+OAUTH_CLIENT_SECRET_BASE64 = base64.b64encode(f"{OAUTH_CLIENT_NAME}:{OAUTH_CLIENT_SECRET}".encode()).decode()
+OAUTH_CLIENTS_MANAGEMENT_SCOPE = env("OAUTH_CLIENTS_MANAGEMENT_SCOPE", default="spinta_auth_clients")
+OAUTH_AGENT_DEFAULT_SCOPES = (
+    "spinta_datasets_gov_vssa_dataset_getall",
+    "spinta_datasets_gov_vssa_dataset_insert",
+    "spinta_datasets_gov_vssa_distribution_getall",
+    "spinta_datasets_gov_vssa_distribution_insert",
+    "spinta_datasets_gov_vssa_distribution_dsa_getone",
+    "spinta_datasets_gov_vssa_distribution_dsa_update"
+)
 
 SPINTA_EXECUTABLE = BASE_DIR / env("SPINTA_EXECUTABLE")
 SPINTA_SERVER_URL = env("SPINTA_SERVER_URL")

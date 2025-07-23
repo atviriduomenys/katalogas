@@ -1,6 +1,5 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
-from django.core.exceptions import ValidationError
 from django.forms import ModelForm, CharField, Textarea, ModelChoiceField
 
 from vitrina.fields import FilerImageField

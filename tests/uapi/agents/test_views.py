@@ -85,7 +85,10 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
     }
 
 
-    with patch("vitrina.uapi.views.OAuthClientManagement.create_oauth_client", return_value=("some-id", "some-secret")):
+    with patch(
+            "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
+            return_value=("some-id", "some-secret")
+    ):
         response = app.post(url, data)
 
 
@@ -108,7 +111,10 @@ def test_create_agent_transaction_rollback_on_error(app, representative_user, or
         "open_data_publish_url": "https://data.gov.lt/agent",
     }
 
-    with patch("vitrina.uapi.views.OAuthClientManagement.create_oauth_client", side_effect=Exception("Simulated error")):
+    with patch(
+        "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
+        side_effect=Exception("Simulated error")
+    ):
         response = app.post(url, data)
 
     assert response.status_code == HTTPStatus.OK  # Re-rendered due to `form_invalid()`.

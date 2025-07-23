@@ -5,6 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.models import UUIDBaseModel
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
+from vitrina.smart_contracts.utils import generate_pdf_checksum
 
 
 class SmartContractTemplate(UUIDBaseModel):
@@ -99,6 +100,8 @@ class AgreementFile(UUIDBaseModel):
         default=False,
         verbose_name=_("Sutarties šablonas"),
     )
+    checksum = models.CharField(max_length=128, blank=True,null=True, editable=False)
+
 
     class Meta:
         verbose_name = _("Sutarties dokumentas")
@@ -106,3 +109,8 @@ class AgreementFile(UUIDBaseModel):
 
     def __str__(self) -> str:
         return f"{self.agreement} - {self.file_name}"
+
+    def save(self, *args, **kwargs):
+        if not self.pk and not self.checksum and self.file_name.endswith(".pdf"):
+            self.checksum = generate_pdf_checksum(self.file.path)
+        return super().save(*args, **kwargs)

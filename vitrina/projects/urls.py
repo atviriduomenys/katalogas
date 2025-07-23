@@ -12,7 +12,8 @@ from vitrina.projects.views import (
     ProjectPermissionsCreateView,
     ProjectApiKeysRegenerateView,
     ProjectApiKeysDetailView,
-    ProjectPermissionsToggleView,
+    ProjectPermissionsToggleView, ClientCreateView, ClientListView, ClientUpdateView, ClientDetailView,
+    ClientScopeCreateView, ClientScopeToggleView,
 )
 
 urlpatterns = [
@@ -37,6 +38,36 @@ urlpatterns = [
         "projects/<int:pk>/permissions/",
         ProjectPermissionsView.as_view(),
         name="project-permissions",
+    ),
+    path(
+        "projects/<int:pk>/client/",
+        ClientListView.as_view(),
+        name="project-clients",
+    ),
+    path(
+        "projects/<int:pk>/client/add/",
+        ClientCreateView.as_view(),
+        name="project-clients-create"
+    ),
+    path(
+        "projects/<int:pk>/client/<uuid:client_id>/change/",
+        ClientUpdateView.as_view(),
+        name="project-clients-update"
+    ),
+    path(
+        "projects/<int:pk>/client/<uuid:client_id>/",
+        ClientDetailView.as_view(),
+        name="project-clients-detail",
+    ),
+    path(
+        "projects/<int:pk>/client/<uuid:client_id>/scopes/add/",
+        ClientScopeCreateView.as_view(),
+        name="project-clients-scopes-create"
+    ),
+    path(
+        "projects/<int:pk>/client/<uuid:client_id>/scopes/<uuid:scope_id>/toggle/",
+        ClientScopeToggleView.as_view(),
+        name="project-clients-scopes-detail-toggle",
     ),
     path(
         "projects/<int:pk>/permissions/<int:apikey_id>/",

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}{% translate "Klientai" %}{% endblock%}
+
+{% block head %}
+    <style>
+        .list_item {
+		  	list-style-type: disc;
+		  	margin-left: 1em;
+		}
+    </style>
+{% endblock %}
+{% block content %}
+    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
+
+    <div class="columns">
+        <div class="column">
+            <h4 class="custom-title is-size-4-mobile">{% translate 'Kliento peržiūra' %}</h4>
+        </div>
+    </div>
+
+    <div class="row is-full mb-5">
+        <table class="table is-fullwidth">
+            <tbody>
+            <tr>
+                <th>{% translate "Pavadinimas" %}</th>
+                <th>{% translate "Kliento ID" %}</th>
+            </tr>
+            <tr>
+                <td>{{client.name}}</td>
+                <td>{{client.client_id}}</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="columns is-vcentered is-mobile">
+    <div class="column">
+        <h5 class="custom-title is-size-4-mobile">
+            {% translate 'Leidimai' %}
+        </h5>
+    </div>
+    <div class="column is-narrow">
+        <a href="{% url 'project-clients-scopes-create' project.pk client.uuid %}"
+            class="button is-primary is-normal m-t-md is-size-6-mobile"
+            id="create_client">
+            {% translate "Naujas leidimas" %}
+        </a>
+    </div>
+</div>
+
+
+{% if scopes %}
+    <div class="row is-full">
+        <table class="table is-fullwidth">
+            <thead>
+                <tr>
+                    <th>{% translate "Leidimas" %}</th>
+                    <th>{% translate "Būsena" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for scope in scopes %}
+                    <tr>
+                        <th scope="row">{{ scope.scope }}</th>
+                        <td style="width:10%">
+                            <a href="{% url 'project-clients-scopes-detail-toggle' project.pk client.uuid scope.uuid %}"
+                                 class="button is-warning is-small">
+                                {% if scope.is_active %}
+                                    {% translate "Išjungti" %}
+                                {% else %}
+                                    {% translate "Įjungti" %}
+                                {% endif %}
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% else %}
+    <div>
+        <p>{% translate "Šiuo metu klientas leidimų neturi" %}</p>
+    </div>
+  {% endif %}
+{% endblock %}

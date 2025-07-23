@@ -26,6 +26,13 @@
                 </a>
             </li>
         {% endif %}
+        {% if has_perm %}
+            <li class="{% if request.resolver_match.url_name == 'project-clients' %} is-active {% endif %}">
+                <a href="{% url 'project-clients' request.resolver_match.kwargs.pk %}">
+                    {% translate "Klientai" %}
+                </a>
+            </li>
+        {% endif %}
         {% if can_manage_history %}
             <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
                 <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">

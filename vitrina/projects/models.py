@@ -7,6 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 
 from filer.fields.image import FilerImageField
 
+from vitrina.models import UUIDBaseModel
 from vitrina.users.models import User
 from vitrina.projects.managers import PublicProjectManager
 
@@ -101,3 +102,37 @@ class UsecaseLike(models.Model):
     class Meta:
         managed = True
         db_table = "usecase_like"
+
+
+class UseCaseClient(UUIDBaseModel):
+    use_case = models.ForeignKey(
+        Project,
+        related_name="client_set",
+        on_delete=models.PROTECT,
+        verbose_name=_("Panaudojimo atvejis"),
+    )
+    name = models.CharField(max_length=255, verbose_name=_("Kliento pavadinimas"))
+    client_id = models.CharField(max_length=255, verbose_name=_("Kliento ID"))
+
+    class Meta:
+        verbose_name = _("Klientas")
+        verbose_name_plural = _("Klientai")
+        db_table = "usecase_client"
+
+    def __str__(self):
+        return self.name
+
+
+class UseCaseClientScope(UUIDBaseModel):
+    resource = models.CharField(max_length=255, verbose_name=_("Leidimo resursas"))
+    action = models.CharField(max_length=255, verbose_name=_("Leidimo veiksmas"))
+    scope = models.CharField(max_length=255, verbose_name=_("Leidimas"))
+    use_case_client = models.ForeignKey(
+        UseCaseClient,
+        models.PROTECT,
+        verbose_name=_("Klientas"),
+    )
+    is_active = models.BooleanField(blank=True, null=True)
+    class Meta:
+        verbose_name = _("Kliento leidimas")
+        verbose_name_plural = _("Kliento leidimai")

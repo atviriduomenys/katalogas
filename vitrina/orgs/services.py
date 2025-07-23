@@ -18,6 +18,7 @@ from vitrina.orgs.models import Representative, Organization
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
+from vitrina.smart_contracts.models import Agreement
 from vitrina.tasks.models import Task
 from vitrina.uapi.models import Agent
 from vitrina.users.models import User
@@ -46,51 +47,54 @@ class Role(Enum):
 
 
 acl = {
-    (Organization, Action.UPDATE): [Role.COORDINATOR],
-    (Organization, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
-    (Organization, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
-    (Representative, Action.CREATE): [Role.COORDINATOR],
-    (Representative, Action.UPDATE): [Role.COORDINATOR],
-    (Representative, Action.DELETE): [Role.COORDINATOR],
-    (Representative, Action.VIEW): [Role.COORDINATOR],
-    (Agent, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
-    (Agent, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
-    (Agent, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
-    (Agent, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
-    (Contact, Action.CREATE): [Role.COORDINATOR],
-    (Contact, Action.UPDATE): [Role.COORDINATOR],
-    (Contact, Action.DELETE): [Role.COORDINATOR],
-    (Contact, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
-    (Dataset, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
-    (Dataset, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
-    (Dataset, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
-    (Dataset, Action.HISTORY_VIEW): [Role.COORDINATOR, Role.MANAGER],
-    (Dataset, Action.STRUCTURE): [Role.COORDINATOR, Role.MANAGER],
-    (Dataset, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
-    (Dataset, Action.VIEW): [Role.COORDINATOR, Role.MANAGER],
-    (Dataset, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
-    (DatasetDistribution, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
-    (DatasetDistribution, Action.UPDATE): [Role.COORDINATOR, Role.MANAGER],
-    (DatasetDistribution, Action.DELETE): [Role.COORDINATOR, Role.MANAGER],
-    (DatasetStructure, Action.CREATE): [Role.COORDINATOR, Role.MANAGER],
-    (Request, Action.CREATE): [Role.ALL],
-    (Request, Action.UPDATE): [Role.AUTHOR],
-    (Request, Action.DELETE): [Role.AUTHOR],
-    (Request, Action.COMMENT): [Role.COORDINATOR, Role.MANAGER],
-    (Request, Action.VIEW): [Role.AUTHOR, Role.COORDINATOR, Role.MANAGER],
-    (Request, Action.PLAN): [Role.COORDINATOR, Role.MANAGER],
-    (Request, Action.ASSIGN): [Role.COORDINATOR, Role.MANAGER],
-    (Project, Action.CREATE): [Role.ALL],
-    (Project, Action.UPDATE): [Role.AUTHOR],
-    (Project, Action.DELETE): [Role.AUTHOR],
-    (User, Action.UPDATE): [Role.AUTHOR],
-    (User, Action.VIEW): [Role.AUTHOR],
-    (Task, Action.UPDATE): [Role.ALL],
-    (Organization, Action.MANAGE_KEYS): [Role.COORDINATOR, Role.MANAGER],
-    (Project, Action.MANAGE_PROJECT_KEYS): [Role.AUTHOR, Role.SUPERVISOR],
-    (RequestAssignment, Action.CREATE): [Role.COORDINATOR],
-    (RequestAssignment, Action.DELETE): [Role.COORDINATOR],
-    (ApiExample, Action.CREATE): [Role.COORDINATOR, Role.MANAGER]
+    (Organization, Action.UPDATE): (Role.COORDINATOR,),
+    (Organization, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
+    (Organization, Action.HISTORY_VIEW): (Role.COORDINATOR, Role.MANAGER),
+    (Representative, Action.CREATE): (Role.COORDINATOR,),
+    (Representative, Action.UPDATE): (Role.COORDINATOR,),
+    (Representative, Action.DELETE): (Role.COORDINATOR,),
+    (Representative, Action.VIEW): (Role.COORDINATOR,),
+    (Agent, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
+    (Agent, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
+    (Agent, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER),
+    (Agent, Action.DELETE): (Role.COORDINATOR, Role.MANAGER),
+    (Agreement, Action.CREATE): (Role.AUTHOR,),
+    (Agreement, Action.VIEW): (Role.AUTHOR,),
+    (Contact, Action.CREATE): (Role.COORDINATOR,),
+    (Contact, Action.UPDATE): (Role.COORDINATOR,),
+    (Contact, Action.DELETE): (Role.COORDINATOR,),
+    (Contact, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
+    (Dataset, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
+    (Dataset, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER),
+    (Dataset, Action.DELETE): (Role.COORDINATOR, Role.MANAGER),
+    (Dataset, Action.HISTORY_VIEW): (Role.COORDINATOR, Role.MANAGER),
+    (Dataset, Action.STRUCTURE): (Role.COORDINATOR, Role.MANAGER),
+    (Dataset, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
+    (Dataset, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
+    (Dataset, Action.COMMENT): (Role.COORDINATOR, Role.MANAGER),
+    (DatasetDistribution, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
+    (DatasetDistribution, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER),
+    (DatasetDistribution, Action.DELETE): (Role.COORDINATOR, Role.MANAGER),
+    (DatasetStructure, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
+    (Request, Action.CREATE): (Role.ALL,),
+    (Request, Action.UPDATE): (Role.AUTHOR,),
+    (Request, Action.DELETE): (Role.AUTHOR,),
+    (Request, Action.COMMENT): (Role.COORDINATOR, Role.MANAGER),
+    (Request, Action.VIEW): (Role.AUTHOR, Role.COORDINATOR, Role.MANAGER),
+    (Request, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
+    (Request, Action.ASSIGN): (Role.COORDINATOR, Role.MANAGER),
+    (Project, Action.CREATE): (Role.ALL,),
+    (Project, Action.UPDATE): (Role.AUTHOR,),
+    (Project, Action.DELETE): (Role.AUTHOR,),
+    (Project, Action.VIEW): (Role.AUTHOR,),
+    (User, Action.UPDATE): (Role.AUTHOR,),
+    (User, Action.VIEW): (Role.AUTHOR,),
+    (Task, Action.UPDATE): (Role.ALL,),
+    (Organization, Action.MANAGE_KEYS): (Role.COORDINATOR, Role.MANAGER),
+    (Project, Action.MANAGE_PROJECT_KEYS): (Role.AUTHOR, Role.SUPERVISOR),
+    (RequestAssignment, Action.CREATE): (Role.COORDINATOR,),
+    (RequestAssignment, Action.DELETE): (Role.COORDINATOR,),
+    (ApiExample, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
 }
 
 
@@ -101,6 +105,8 @@ def is_author(user: User, node: Model) -> bool:
         return node == user
     elif isinstance(node, Organization):
         return False
+    elif isinstance(node, Agreement):
+        return node.project.user == user
     raise NotImplementedError(f"Don't know how to get author of {type(node)}.")
 
 

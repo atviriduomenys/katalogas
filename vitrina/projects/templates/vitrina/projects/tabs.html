@@ -12,6 +12,13 @@
                 {% translate "Duomenų rinkiniai" %}
             </a>
         </li>
+        {% if can_view_agreements %}
+            <li class="{%if request.resolver_match.url_name == "agreement-list" %} is-active {% endif %}">
+                <a href="{% url "agreement-list" request.resolver_match.kwargs.pk %}">
+                    {% translate "Sutartys" %}
+                </a>
+            </li>
+        {% endif %}
         {% if has_perm %}
             <li class="{%if request.resolver_match.url_name == 'project-permissions' %} is-active {% endif %}">
                 <a href="{% url 'project-permissions' request.resolver_match.kwargs.pk %}">

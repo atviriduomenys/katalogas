@@ -25,4 +25,5 @@
 /docker/scripts/
 /docker/static/
 /docker/locale/
-/vitrina/static/js/
+/vitrina/static/
+/static/

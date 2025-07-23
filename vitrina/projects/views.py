@@ -32,6 +32,7 @@ from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.projects.forms import ProjectForm
 from vitrina.projects.models import Project
 from vitrina.settings import SPINTA_SERVER_URL
+from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
@@ -94,6 +95,9 @@ class ProjectDetailView(PermissionRequiredMixin, HistoryMixin, DetailView):
         context = super().get_context_data(**kwargs)
         context["can_update_project"] = has_perm(
             self.request.user, Action.UPDATE, self.object
+        )
+        context["can_view_agreements"] = has_perm(
+            self.request.user, Action.VIEW, Agreement, self.object
         )
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
@@ -206,6 +210,9 @@ class ProjectHistoryView(HistoryView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["has_perm"] = has_perm(self.request.user, Action.UPDATE, self.object)
+        context["can_view_agreements"] = has_perm(
+            self.request.user, Action.VIEW, Agreement, self.object
+        )
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("project-list"): _("Panaudojimo atvejai"),
@@ -247,6 +254,10 @@ class ProjectDatasetsView(PermissionRequiredMixin, HistoryMixin, ListView):
         context["can_update_project"] = has_perm(
             self.request.user, Action.UPDATE, self.object
         )
+        context["can_view_agreements"] = has_perm(
+            self.request.user, Action.VIEW, Agreement, self.object
+        )
+
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("project-list"): _("Panaudojimo atvejai"),
@@ -276,6 +287,9 @@ class ProjectPermissionsView(HistoryMixin, PermissionRequiredMixin, TemplateView
         context["project"] = self.object
         context["can_update_project"] = has_perm(
             self.request.user, Action.UPDATE, self.object
+        )
+        context["can_view_agreements"] = has_perm(
+            self.request.user, Action.VIEW, Agreement, self.object
         )
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
@@ -580,6 +594,9 @@ class ProjectApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
         context["project"] = self.project
         context["can_update_project"] = has_perm(
             self.request.user, Action.UPDATE, self.project
+        )
+        context["can_view_agreements"] = has_perm(
+            self.request.user, Action.VIEW, Agreement, self.object
         )
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),

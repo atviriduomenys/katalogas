@@ -1,0 +1,36 @@
+{% extends "base_form.html" %}
+{% load i18n crispy_forms_tags %}
+
+{% block content %}
+    <div class="columns is-centered">
+        <div class="column is-half">
+            {% if language_tabs %}
+                <h>{% translate "Pasirinkite turinio redagavimo kalbą" %}</h>
+                <div class="parler-language-tabs" style="padding-bottom: 2em">
+                    {% for tab in language_tabs %}
+                        <span class="{{tab.3}}">
+                            <a class="button" style="border-color: #767676;" href="{{tab.0}}">{{tab.1}}</a>
+                        </span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <form method="post" id="agreement-create">
+                {% csrf_token %}
+                {% crispy formset.management_form formset_helper %}
+                {% for form in formset %}
+                    <div class="multiField">
+                        <h5 class="custom-title is-size-5-mobile">{% translate "Organizacija" %}: {{ form.instance }}</h5>
+                        {% crispy form form.helper %}
+                    </div>
+                    <br>
+                {% endfor %}
+                <div class="field">
+                    <div class="control">
+                        <input type="submit" name="submit" value="{% translate "Generuoti sutartis" %}" class="btn btn-primary button is-primary" id="submit-id-submit">
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+{% endblock %}

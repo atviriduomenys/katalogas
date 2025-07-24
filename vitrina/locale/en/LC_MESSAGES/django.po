@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-22 11:21+0300\n"
+"POT-Creation-Date: 2025-07-22 19:12+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2980,6 +2980,15 @@ msgstr "Smart contracts default template"
 msgid "Išmaniųjų sutarčių numatytieji šablonai"
 msgstr "Smart contracts default templates"
 
+msgid "Dokumentas turi būti adoc formato."
+msgstr "The document must be in adoc format."
+
+msgid "Įkelti dokumentą"
+msgstr "Upload document"
+
+msgid "Įkelta sutartis nepasirašyta."
+msgstr "Uploaded document is not signed."
+
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr "File must be in Markdown format (.md)."
 
@@ -3011,7 +3020,7 @@ msgid "Sutarties leidimai"
 msgstr "Agreement scopes"
 
 msgid "Sutarties dokumentas"
-msgstr "Agreement file"
+msgstr "Agreement document"
 
 msgid "Dokumentas gali būti md, pdf arba adoc formato."
 msgstr "The document must be in md, pdf or adoc format."
@@ -3020,7 +3029,7 @@ msgid "Sutarties šablonas"
 msgstr "Agreement template"
 
 msgid "Sutarties dokumentai"
-msgstr "Agreement files"
+msgstr "Agreement documents"
 
 msgid "Pasirinkite turinio redagavimo kalbą"
 msgstr "Choose a language to edit"
@@ -3030,6 +3039,15 @@ msgstr "Generate agreements"
 
 msgid "Grįžti į sutartis"
 msgstr "Go back"
+
+msgid "Generuoti sutarties dokumentą"
+msgstr "Generate agreement document"
+
+msgid "Įkelti gavėjo pasirašytą dokumentą"
+msgstr "Upload document signed by data receiver"
+
+msgid "Įkelti tiekėjo pasirašytą dokumentą"
+msgstr "Upload document signed by data provider"
 
 msgid "Sutarties identifikatorius"
 msgstr "Agreement id"
@@ -3058,6 +3076,28 @@ msgstr "Agreements generated successfully"
 
 msgid "Sutarčių generavime kilo klaidų"
 msgstr "Errors occurred while generating agreements"
+
+#, python-brace-format
+msgid ""
+"Sutarties dokumentas gali būti generuojamas sutarčiai su būsena "
+"{accepted_status}. Dabartinė būsena: {current_status}"
+msgstr ""
+"Agreement document can only be generated for agreement with status"
+"{accepted_status}. Current status: {current_status}"
+
+msgid "Sutarties dokumentas sukurtas"
+msgstr "Agreement document is created"
+
+#, python-brace-format
+msgid ""
+"Sutarties dokumentas gali būti generuojamas sutarčiai su būsenomis "
+"{accepted_statuses}. Dabartinė būsena: {current_status}"
+msgstr ""
+"Agreement document can only be generated for agreement with statuses"
+"{accepted_statuses}. Current status: {current_status}"
+
+msgid "Sutarties dokumentas įkeltas sėkmingai"
+msgstr "Agreement document uploaded successfully"
 
 msgid "Rodoma tituliniame puslapyje"
 msgstr "Shown in home page"

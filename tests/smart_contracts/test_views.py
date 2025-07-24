@@ -244,3 +244,163 @@ class TestAgreementCreateView:
 
         assert response.status_code == 200
         assert Agreement.objects.filter(project=project).count() == 0
+
+
+class TestAgreementGeneratePdf:
+    def test_cannot_generate_pdf_without_permission(
+        self, app: DjangoTestApp, organization: Organization
+    ) -> None:
+        user = UserFactory()
+        app.set_user(user)
+        project = ProjectFactory()
+        agreement = AgreementFactory(project=project, assigner=organization)
+
+        response = app.get(
+            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
+            expect_errors=True,
+        )
+        assert response.status_code == 403
+
+    @pytest.mark.parametrize(
+        "status",
+        [
+            AgreementStatuses.FORMED,
+            AgreementStatuses.INITIATED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
+    def test_cannot_generate_pdf_for_agreement_with_status_other_than_created(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        status: AgreementStatuses,
+    ) -> None:
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        agreement = AgreementFactory(
+            project=project, assigner=organization, status=status
+        )
+
+        response = app.get(
+            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk])
+        )
+        agreement.refresh_from_db()
+        assert response.status_code == 302
+        assert agreement.status == status
+
+    def test_generate_pdf_changes_agreement_status_to_formed(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        agreement = AgreementFactory(
+            project=project, assigner=organization, status=AgreementStatuses.CREATED
+        )
+
+        response = app.post(
+            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk])
+        )
+        agreement.refresh_from_db()
+        assert response.status_code == 302
+        assert agreement.status == AgreementStatuses.FORMED
+
+
+class TestAgreementUploadSignedFile:
+    def test_cannot_upload_adoc_without_permission(
+        self, app: DjangoTestApp, organization: Organization
+    ) -> None:
+        user = UserFactory()
+        app.set_user(user)
+        project = ProjectFactory()
+        agreement = AgreementFactory(
+            project=project, assigner=organization, status=AgreementStatuses.FORMED
+        )
+
+        response = app.get(
+            reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
+            expect_errors=True,
+        )
+        assert response.status_code == 403
+
+    @pytest.mark.parametrize(
+        "status",
+        [
+            AgreementStatuses.CREATED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
+    def test_cannot_upload_adoc_for_agreement_with_statuses_other_than_formed_initiated(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        status: AgreementStatuses,
+    ) -> None:
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        agreement = AgreementFactory(
+            project=project, assigner=organization, status=status
+        )
+
+        response = app.get(
+            reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk])
+        )
+        agreement.refresh_from_db()
+        assert response.status_code == 302
+        assert agreement.status == status
+
+    def test_upload_adoc_and_change_status_to_initiated_if_agreement_status_formed(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        agreement = AgreementFactory(
+            project=project, assigner=organization, status=AgreementStatuses.FORMED
+        )
+
+        file_path = "tests/smart_contracts/files/test_contracts/sutartis_signed.adoc"
+        response = app.get(
+            reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
+        )
+        with open(file_path, "rb") as f:
+            form = response.forms["agreement-upload-form"]
+            form["file"] = (file_path, f.read())
+            form.submit()
+
+        agreement.refresh_from_db()
+        assert response.status_code == 200
+        assert agreement.status == AgreementStatuses.INITIATED
+        assert agreement.agreementfile_set.exists()
+
+    def test_upload_adoc_and_change_status_to_signed_if_agreement_status_initiated(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        agreement = AgreementFactory(
+            project=project, assigner=organization, status=AgreementStatuses.INITIATED
+        )
+
+        file_path = "tests/smart_contracts/files/test_contracts/sutartis_signed.adoc"
+        response = app.get(
+            reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
+        )
+        with open(file_path, "rb") as f:
+            form = response.forms["agreement-upload-form"]
+            form["file"] = (file_path, f.read())
+            form.submit()
+
+        agreement.refresh_from_db()
+        assert response.status_code == 200
+        assert agreement.status == AgreementStatuses.SIGNED
+        assert agreement.agreementfile_set.exists()

@@ -117,6 +117,7 @@ INSTALLED_APPS = [
     "django_otp",
     "django_otp.plugins.otp_email",
     "sass_processor",
+    "fontawesomefree",
     "sekizai",
     "cms",
     "menus",

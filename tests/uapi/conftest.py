@@ -14,12 +14,16 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
+from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import OAUTH_AGENT_DEFAULT_SCOPES
+from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.factories import MetadataFactory
 from vitrina.uapi.factories import AgentFactory
 from vitrina.uapi.models import Agent
+from vitrina.users.factories import UserFactory
+from vitrina.users.models import User
 
 
 def _build_reverse_uapi_url(name: str, **kwargs: Any) -> str:
@@ -93,6 +97,16 @@ def dataset(organization: Organization) -> Dataset:
         name="test/dataset/TestModel",
     )
     return dataset
+
+
+@pytest.fixture
+def user(organization: Organization) -> User:
+    return UserFactory(organization=organization)
+
+
+@pytest.fixture
+def project(user: User, dataset: Dataset) -> Agreement:
+    return ProjectFactory(user=user, datasets=[dataset])
 
 
 @pytest.fixture

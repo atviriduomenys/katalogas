@@ -8,7 +8,6 @@ from django.db.models.fields.files import FieldFile
 from django.forms import CheckboxSelectMultiple
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.models import (
@@ -17,6 +16,7 @@ from vitrina.smart_contracts.models import (
     Agreement,
 )
 from vitrina.smart_contracts.services import has_valid_signature
+from vitrina.structure.models import Metadata
 
 
 class SmartContractForm(forms.ModelForm):
@@ -32,28 +32,32 @@ class SmartContractForm(forms.ModelForm):
         fields = ("scopes",)
 
     def __init__(self, *args, **kwargs) -> None:
-        datasets_by_organization = kwargs.pop("datasets_by_organization", {})
+        dataset_metadata_by_organization = kwargs.pop(
+            "dataset_metadata_by_organization", {}
+        )
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_tag = False
 
         self.fields["scopes"].choices = self.create_scope_choices(
-            datasets_by_organization.get(self.instance, [])
+            dataset_metadata_by_organization.get(self.instance.id, [])
         )
 
     @staticmethod
-    def create_scope_choices(datasets: list[Dataset]) -> list[tuple[str, str]]:
+    def create_scope_choices(dataset_metadata: list[Metadata]) -> list[tuple[str, str]]:
         choices = []
-        for dataset in datasets:
-            if (dataset_metadata := dataset.metadata.first()) and dataset_metadata.name:
-                choice_name = dataset_metadata.name.replace("/", "_")
-                choices.extend(
-                    [
-                        (f"{choice_name}_getall", f"{choice_name}_getall"),
-                        (f"{choice_name}_search", f"{choice_name}_search"),
-                        (f"{choice_name}_select", f"{choice_name}_select"),
-                    ]
-                )
+        for metadata in dataset_metadata:
+            if not metadata.name:
+                continue
+
+            choice_name = metadata.name.replace("/", "_")
+            choices.extend(
+                [
+                    (f"{choice_name}_getall", f"{choice_name}_getall"),
+                    (f"{choice_name}_search", f"{choice_name}_search"),
+                    (f"{choice_name}_select", f"{choice_name}_select"),
+                ]
+            )
 
         return choices
 

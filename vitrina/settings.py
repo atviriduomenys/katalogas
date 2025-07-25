@@ -71,6 +71,7 @@ OAUTH_AGENT_DEFAULT_SCOPES = (
     "spinta_datasets_gov_vssa_dataset_dsa_update",
     "spinta_datasets_gov_vssa_distribution_getall",
     "spinta_datasets_gov_vssa_distribution_insert",
+    "spinta_datasets_gov_vssa_agreement_update",
 )
 
 SPINTA_EXECUTABLE = BASE_DIR / env("SPINTA_EXECUTABLE")

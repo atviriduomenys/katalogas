@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-08 14:22+0300\n"
+"POT-Creation-Date: 2025-08-11 08:28+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -558,8 +558,11 @@ msgstr "Contact object"
 msgid "Datasets"
 msgstr "Datasets"
 
-msgid "Duomenų ištekliaus tipas"
-msgstr "Resource type"
+msgid "Duomenų ištekliaus rūšis"
+msgstr "Resource subclass"
+
+msgid "Šis laukas yra privalomas."
+msgstr "This field is required."
 
 msgid "API adresas"
 msgstr "API address"
@@ -592,12 +595,6 @@ msgstr "Tags"
 msgid "Katalogas"
 msgstr "Directory"
 
-msgid "Redaguoti"
-msgstr "Edit"
-
-msgid "Sukurti"
-msgstr "Create"
-
 msgid "Ar duomenys vieši"
 msgstr "Is the data public"
 
@@ -627,6 +624,9 @@ msgstr "Code name can only include lowercase letters."
 
 msgid "Failas"
 msgstr "File"
+
+msgid "Sukurti"
+msgstr "Create"
 
 msgid "Negalima užpildyti abiejų \"Organizacija\" ir \"Agentas\" laukų."
 msgstr "Both \"Organization\" and \"Agent\" fields cannot be assigned."
@@ -940,6 +940,9 @@ msgstr "Export"
 msgid "Organizacijos priskyrimas"
 msgstr "Organization attribution"
 
+msgid "Grįžti į duomenų išteklius"
+msgstr "Go back to resources"
+
 msgid "Duomenų išteklių kategorijos"
 msgstr "Resource categories"
 
@@ -1124,6 +1127,9 @@ msgstr "Download"
 
 msgid "Atidaryti"
 msgstr "Open"
+
+msgid "Redaguoti"
+msgstr "Edit"
 
 msgid "Trinti"
 msgstr "Delete"
@@ -1337,11 +1343,17 @@ msgstr "Add request"
 msgid "Šis duomenų rinkinys neturi jam registruotų poreikių."
 msgstr "This dataset doesn't have requests."
 
-msgid "Grįžti į duomenų išteklius"
-msgstr "Go back to resources"
+msgid "Pasirinkite turinio redagavimo kalbą"
+msgstr "Choose a language to edit"
 
-msgid "Pasirinkite duomenų ištekliaus poklasį"
-msgstr "Choose a resource subclass"
+msgid "Atšaukti"
+msgstr "Cancel"
+
+msgid "Toliau"
+msgstr "Continue"
+
+msgid "Grįžti"
+msgstr "Go back"
 
 msgid ""
 "Šioje sistemoje duomenų išteklius – tai bet kokio tipo informacija ar "
@@ -1349,13 +1361,10 @@ msgid ""
 "Tai gali būti tiek viešai prieinami duomenys, tiek ribotos prieigos "
 "duomenys, prieinami tik turint sutartį ar specialų leidimą (ACL)."
 msgstr ""
-"In this system, a data resource is any type of information or "
-" data service that can be described and included in a catalog. "
-"This can be either publicly available data or restricted access "
-"data that is only available with a contract or a special permission (ACL)."
-
-msgid "Toliau"
-msgstr "Continue"
+"In this system, a data resource is any type of information or  data service "
+"that can be described and included in a catalog. This can be either publicly "
+"available data or restricted access data that is only available with a "
+"contract or a special permission (ACL)."
 
 msgid "Duomenų rinkinių statistika"
 msgstr "Dataset statistics"
@@ -1396,17 +1405,17 @@ msgstr "Most relevant"
 msgid "Nepavyko nuskaityti failo"
 msgstr "Failed to read the file"
 
-msgid "Naujas duomenų rinkinys"
-msgstr "New dataset"
-
-msgid "Duomenų ištekliaus redagavimas"
-msgstr "Resource edit"
+msgid "Organizacijos"
+msgstr "Organizations"
 
 msgid "Duomenų išteklius sukurtas sėkmingai"
 msgstr "Resource created successfully"
 
 msgid "Pasirinkite duomenų ištekliaus rūšį"
 msgstr "Select a type of resource"
+
+msgid "Duomenų ištekliaus redagavimas"
+msgstr "Resource edit"
 
 msgid "Struktūros importas"
 msgstr "Structure import"
@@ -1515,9 +1524,6 @@ msgstr "Dataset count by years"
 msgid "Termino pašalinimas"
 msgstr "Delete term"
 
-msgid "Organizacijos"
-msgstr "Organizations"
-
 msgid "Pasirinkti failą"
 msgstr "Select a file"
 
@@ -1580,6 +1586,51 @@ msgstr "Coordinator count"
 
 msgid "Tvarkytojų skaičius"
 msgstr "Manager count"
+
+msgid "Identifikatoriai"
+msgstr "Identifiers"
+
+msgid "Schemos atstovybės pavadinimas"
+msgstr "Agency name"
+
+msgid "Schemos atstovybės URI"
+msgstr "Schema authority URI"
+
+msgid "adms:schemeAgency – schemos atstovybės URI"
+msgstr "adms:schemeAgency – schema authority URI"
+
+msgid "Atstovybė"
+msgstr "Agency"
+
+msgid "Atstovybės"
+msgstr "Agencies"
+
+msgid "Nuoroda (URI)"
+msgstr "URI"
+
+msgid "Lokalus"
+msgstr "LOCAL"
+
+msgid "Kita"
+msgstr "Other"
+
+msgid "Resursas"
+msgstr "Resource"
+
+msgid "Žymėjimas"
+msgstr "Notation"
+
+msgid "skos:notation – identifikatorius išorinėje sistemoje"
+msgstr "skos:notation – identifier in an external system"
+
+msgid "Identifikatoriaus tipas"
+msgstr "Type of the identifier"
+
+msgid "dct:type – identifikatoriaus tipas"
+msgstr "dct:type – type of the identifier"
+
+msgid "Identifikatorius"
+msgstr "Identifier"
 
 msgid "Gavėjai"
 msgstr "Recipients"
@@ -1738,9 +1789,6 @@ msgstr "Password was changed successfully"
 
 msgid "Organizations"
 msgstr "Organizations"
-
-msgid "Šis laukas yra privalomas."
-msgstr "This field is required."
 
 msgid "Registracijos numeris"
 msgstr "Registration number"
@@ -1967,9 +2015,6 @@ msgstr ""
 
 msgid "Patvirtinkite pakeitimus"
 msgstr "Confirm changes"
-
-msgid "Atšaukti"
-msgstr "Cancel"
 
 msgid "Privaloma nurodyti koordinatorių naujai organizacijai."
 msgstr "It is mandatory to specify a coordinator for the new organization."
@@ -2372,9 +2417,6 @@ msgstr "Scope resource"
 msgid "Leidimo veiksmas"
 msgstr "Scope action"
 
-msgid "Išteklius"
-msgstr "Resource"
-
 msgid "Kliento leidimas"
 msgstr "Client scope"
 
@@ -2506,6 +2548,7 @@ msgstr "Client \"{0}\" changed successfully"
 msgid "Šiam klientui aktyvių leidimų nėra"
 msgstr "There are no active scopes for this client"
 
+#, python-brace-format
 msgid "Leidimas \"{0}\" sukurtas sėkmingai"
 msgstr "Use case \"{0}\" created successfully"
 
@@ -3062,6 +3105,18 @@ msgstr "Upload document"
 msgid "Įkelta sutartis nepasirašyta."
 msgstr "Uploaded document is not signed."
 
+msgid "Pasirinkite šabloną (privaloma)"
+msgstr "Choose a template (required)"
+
+msgid "Papildomi teikėjo teisės aktai"
+msgstr "Other assigner legislations"
+
+msgid "Papildomi gavėjo teisės aktai"
+msgstr "Other assignee legislations"
+
+msgid "Mokėjimo sąlygos"
+msgstr "Payment terms"
+
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr "File must be in Markdown format (.md)."
 
@@ -3071,11 +3126,20 @@ msgstr "Specifies the organization to which the template is assigned."
 msgid "Duomenis teikianti organizacija"
 msgstr "Data provider organization"
 
+msgid "Duomenis gaunanti organizacija"
+msgstr "Data receiver organization"
+
 msgid "Agento sinchronizacija įjungta"
 msgstr "Agent synchronization is enabled"
 
 msgid "Paskutinės sinchronizacijos data"
 msgstr "Date of last synchronization"
+
+msgid "Sutarties iniciatorius"
+msgstr "Creator of an agreement"
+
+msgid "Papildomi tiekėjo teisės aktai"
+msgstr "Other assigner legislations"
 
 msgid "Sutartis"
 msgstr "Agreement"
@@ -3095,20 +3159,17 @@ msgstr "The document must be in md, pdf or adoc format."
 msgid "Sutarties šablonas"
 msgstr "Agreement template"
 
+msgid "Failo turinio kontrolinė suma."
+msgstr "File content checksum"
+
 msgid "Sutarties dokumentai"
 msgstr "Agreement documents"
-
-msgid "Pasirinkite turinio redagavimo kalbą"
-msgstr "Choose a language to edit"
 
 msgid "Generuoti sutartis"
 msgstr "Generate agreements"
 
 msgid "Grįžti į sutartis"
 msgstr "Go back to agreements"
-
-msgid "Grįžti į sutartį"
-msgstr "Go back to agreement"
 
 msgid "Generuoti sutarties dokumentą"
 msgstr "Generate agreement document"
@@ -3122,14 +3183,14 @@ msgstr "Upload document signed by data provider"
 msgid "Sutarties identifikatorius"
 msgstr "Agreement id"
 
-msgid "Duomenis gaunanti organizacija"
-msgstr "Data receiver organization"
-
 msgid "Sukūrimo data"
 msgstr "Creation date"
 
 msgid "Nėra sutarčių dokumentų."
 msgstr "No agreement documents."
+
+msgid "Generuoti"
+msgstr "Generate"
 
 msgid "Nėra sutarčių."
 msgstr "No agreements."
@@ -3146,6 +3207,10 @@ msgstr "Agreements generated successfully"
 
 msgid "Sutarčių generavime kilo klaidų"
 msgstr "Errors occurred while generating agreements"
+
+#, python-brace-format
+msgid "Sutarties generavimas: {organization}"
+msgstr "Agreement generation: {organization}"
 
 #, python-brace-format
 msgid ""
@@ -4132,9 +4197,6 @@ msgstr "Are you sure you want ro confirm"
 msgid "prašymą"
 msgstr "request"
 
-msgid "Grįžti"
-msgstr "Go back"
-
 msgid "Ar tikrai norite uždaryti"
 msgstr "Are you sure you want to close"
 
@@ -4231,9 +4293,6 @@ msgstr "Dislike"
 
 msgid "Atsisakyti prenumeratos"
 msgstr "Cancel subscription"
-
-msgid "Kita"
-msgstr "Other"
 
 msgid "Nesėkminga"
 msgstr "Fail"
@@ -5023,64 +5082,3 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
-
-msgid "Sutaries iniciatorius"
-msgstr "Creator of an agreement"
-
-msgid "Mokėjimo sąlygos"
-msgstr "Payment terms"
-
-msgid "Failo turinio kontrolinė suma"
-msgstr "File content checksum"
-
-msgid "ODRL kuris buvo naudotas genertuoti sutartį"
-msgstr "ODRL which have been used for agreement file generation"
-
-msgid "Sutarties iniciatorius"
-msgstr "Creator of an agreement"
-
-msgid "Papildomi tiekėjo teisės aktai"
-msgstr "Other assigner legislations"
-
-msgid "Papildomi gavėjo teisės aktai"
-msgstr "Other assignee legislations"
-
-msgid "dct:type – identifikatoriaus tipas"
-msgstr "dct:type – type of the identifier"
-
-msgid "Identifikatoriaus tipas"
-msgstr "Type of the identifier"
-
-msgid "adms:schemeAgency – schemos atstovybės URI"
-msgstr "adms:schemeAgency – schema authority URI"
-
-msgid "Schemos atstovybės URI"
-msgstr "Schema authority URI"
-
-msgid "skos:notation – identifikatorius išorinėje sistemoje"
-msgstr "skos:notation – identifier in an external system"
-
-msgid "Žymėjimas"
-msgstr "Notation"
-
-msgid "Resursas"
-msgstr "Resource"
-
-msgid "Nuoroda (URI)"
-msgstr "URI"
-
-msgid "Lokalus"
-msgstr "LOCAL"
-
-msgid "Schemos atstovybės pavadinimas"
-msgstr "Agency name"
-
-msgid "Atstovybė"
-msgstr "Agency"
-
-msgid "Atstovybės"
-msgstr "Agencies"
-
-#, python-brace-format
-msgid "Sutarties generavimas: {organization}"
-msgstr "Agreement generation: {organization}"

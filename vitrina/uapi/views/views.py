@@ -6,6 +6,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import QuerySet, Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.functional import cached_property
 from filer.models import File
 from rest_framework import viewsets, status
@@ -25,6 +26,8 @@ from vitrina.api.serializers import PostDatasetDistributionSerializer
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.exceptions import UAPIException
 from vitrina.resources.models import DatasetDistribution
+from vitrina.smart_contracts import AgreementStatuses
+from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import create_structure_objects
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer
@@ -32,7 +35,8 @@ from vitrina.uapi.serializers.serializers import (
     UAPIDatasetSerializer,
     DatasetQueryParameterSerializer,
     DistributionQueryParameterSerializer,
-    UAPIDistributionSerializer, UAPIDatasetCreateSerializer
+    UAPIDistributionSerializer,
+    UAPIDatasetCreateSerializer,
 )
 from vitrina.uapi.utils.utils import extract_type_from_url
 from vitrina.uapi.utils.views import UAPIExceptionHandlerMixin
@@ -40,7 +44,11 @@ from vitrina.uapi.utils.views import UAPIExceptionHandlerMixin
 
 class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
     authentication_classes = [OAuth2AuthenticationWithLocalJWK]
-    permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
+    permission_classes = [
+        IsOAuthTokenValid,
+        OAuthTokenHasScopes,
+        OAuthTokenHasValidOrganizationClaim,
+    ]
     required_scopes = {
         "create": ["spinta_datasets_gov_vssa_dataset_insert"],
         "list": ["spinta_datasets_gov_vssa_dataset_getall"],
@@ -72,7 +80,9 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         )
 
         if request_params := self.request.query_params:
-            query_parameter_serializer = DatasetQueryParameterSerializer(data=request_params)
+            query_parameter_serializer = DatasetQueryParameterSerializer(
+                data=request_params
+            )
             query_parameter_serializer.is_valid(raise_exception=True)
 
             if name := query_parameter_serializer.validated_data.get("name"):
@@ -85,11 +95,12 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             "create": UAPIDatasetCreateSerializer,
             "list": BaseObjectListSerializer,
         }
-        return action_to_serializer_mapper.get(getattr(self, "action", None), UAPIDatasetSerializer)
+        return action_to_serializer_mapper.get(
+            getattr(self, "action", None), UAPIDatasetSerializer
+        )
 
     @transaction.atomic
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-
         serializer_context = self.get_serializer_context()
         serializer = self.get_serializer(
             data=request.data,
@@ -143,7 +154,9 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     @action(detail=False, methods=["post"], url_path="dsa")
-    def upload_dataset_structure(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def upload_dataset_structure(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> Response:
         dataset = get_object_or_404(
             Dataset,
             ~Q(deleted=True),
@@ -158,7 +171,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
                 type="EmptyCSVContent",
                 template="The uploaded file is empty or contains only whitespace.",
                 message="CSV content is missing or invalid.",
-                status_code=status.HTTP_400_BAD_REQUEST
+                status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         # Mimics file upload done via DatasetStructureImportView.
@@ -183,7 +196,9 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     @action(detail=False, methods=["put"], url_path="dsa")
-    def update_dataset_structure(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+    def update_dataset_structure(
+        self, request: Request, *args: Any, **kwargs: Any
+    ) -> Response:
         # TODO: This will be implemented with the upcoming functionalities. Not in the scope of the MVP.
         # - https://github.com/atviriduomenys/katalogas/issues/1598
         return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
@@ -191,7 +206,11 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
 class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
     authentication_classes = [OAuth2AuthenticationWithLocalJWK]
-    permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
+    permission_classes = [
+        IsOAuthTokenValid,
+        OAuthTokenHasScopes,
+        OAuthTokenHasValidOrganizationClaim,
+    ]
     required_scopes = {
         "create": ["spinta_datasets_gov_vssa_distribution_insert"],
         "list": ["spinta_datasets_gov_vssa_distribution_getall"],
@@ -216,7 +235,9 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         )
 
         if request_params := self.request.query_params:
-            query_parameter_serializer = DistributionQueryParameterSerializer(data=request_params)
+            query_parameter_serializer = DistributionQueryParameterSerializer(
+                data=request_params
+            )
             query_parameter_serializer.is_valid(raise_exception=True)
             validated_data = query_parameter_serializer.validated_data
             if name := validated_data.get("name"):
@@ -231,7 +252,9 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             "create": PostDatasetDistributionSerializer,
             "list": BaseObjectListSerializer,
         }
-        return action_to_serializer_mapper.get(getattr(self, "action", None), UAPIDistributionSerializer)
+        return action_to_serializer_mapper.get(
+            getattr(self, "action", None), UAPIDistributionSerializer
+        )
 
     @transaction.atomic
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -241,7 +264,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             context={
                 **serializer_context,
                 "dataset": Dataset.objects.get(pk=request.data.get("dataset")),
-            }
+            },
         )
         serializer.is_valid(raise_exception=True)
         with create_revision():
@@ -274,3 +297,36 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             _type=extract_type_from_url(self.request.build_absolute_uri()),
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AgentSyncDoneViewSet(viewsets.ModelViewSet):
+    authentication_classes = [OAuth2AuthenticationWithLocalJWK]
+    permission_classes = [
+        IsOAuthTokenValid,
+        OAuthTokenHasScopes,
+        OAuthTokenHasValidOrganizationClaim,
+    ]
+    required_scopes = {"update": ["spinta_datasets_gov_vssa_agreement_update"]}
+
+    lookup_url_kwarg = "agreement_id"
+
+    def get_queryset(self) -> QuerySet:
+        queryset = Agreement.objects.filter(
+            is_agent_sync_enabled=True,
+            assignee=self.request.organization,
+        )
+
+        return queryset
+
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        agreement = self.get_object()
+        agreement.last_sync_date = timezone.now()
+        agreement.status = AgreementStatuses.ACTIVE
+
+        # Agent Sync changes are determined by time between Agreement.updated_at
+        # and Agreement.last_sync_date. This endpoint should not update
+        # Agreement.updated_at in case changes were made since start of sync that
+        # haven't been synced.
+        agreement.save(update_fields=["last_sync_date", "status"])
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

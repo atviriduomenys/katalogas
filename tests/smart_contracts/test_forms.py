@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -5,7 +7,9 @@ from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
+from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.smart_contracts.forms import SmartContractForm, AgreementUploadForm
 from vitrina.structure.factories import MetadataFactory
 
@@ -13,7 +17,7 @@ pytestmark = pytest.mark.django_db
 
 
 class TestSmartContractForm:
-    def test_generates_no_scope_choices_if_datasets_by_organization_not_given(
+    def test_generates_no_scope_choices_if_dataset_metadata_by_organization_not_given(
         self, organization: Organization, dataset: Dataset
     ) -> None:
         form = SmartContractForm(instance=organization)
@@ -24,7 +28,8 @@ class TestSmartContractForm:
         self, organization: Organization
     ) -> None:
         form = SmartContractForm(
-            instance=organization, datasets_by_organization={organization: []}
+            instance=organization,
+            dataset_metadata_by_organization={organization.id: []},
         )
 
         assert form.fields["scopes"].choices == []
@@ -40,7 +45,10 @@ class TestSmartContractForm:
             name="",
         )
         form = SmartContractForm(
-            instance=organization, datasets_by_organization={organization: [dataset]}
+            instance=organization,
+            dataset_metadata_by_organization={
+                organization.id: [dataset.metadata.first()]
+            },
         )
         assert form.fields["scopes"].choices == []
 
@@ -48,7 +56,10 @@ class TestSmartContractForm:
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
         form = SmartContractForm(
-            instance=organization, datasets_by_organization={organization: [dataset]}
+            instance=organization,
+            dataset_metadata_by_organization={
+                organization.id: [dataset.metadata.first()]
+            },
         )
 
         assert set(form.fields["scopes"].choices) == {
@@ -67,8 +78,11 @@ class TestAgreementUploadForm:
         assert form.errors == {"file": ["Dokumentas turi būti adoc formato."]}
 
     def test_not_valid_when_uploading_unsigned_adoc(self) -> None:
-        file_path = (
-            "tests/smart_contracts/files/test_contracts/sutartis_not_signed.adoc"
+        file_path = str(
+            Path(__file__).parent
+            / "files"
+            / "test_contracts"
+            / "sutartis_not_signed.adoc"
         )
         with open(file_path, "rb") as f:
             uploaded_file = SimpleUploadedFile("sutartis_not_signed.adoc", f.read())

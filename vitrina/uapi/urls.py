@@ -1,7 +1,18 @@
 from django.urls import path
-from vitrina.uapi.views.template_views import AgentDeleteView, AgentUpdateView, AgentCreateView, AgentDetailView, AgentListView, RequestDetailView
-from vitrina.uapi.views.views import DatasetViewSet, DistributionViewSet
 
+from vitrina.uapi.views.template_views import (
+    AgentDeleteView,
+    AgentUpdateView,
+    AgentCreateView,
+    AgentDetailView,
+    AgentListView,
+    RequestDetailView,
+)
+from vitrina.uapi.views.views import (
+    DatasetViewSet,
+    DistributionViewSet,
+    AgentSyncDoneViewSet,
+)
 
 STATIC_UAPI_BASE_PATH = "uapi/datasets/org/vssa/isris/dcat/"
 
@@ -30,12 +41,12 @@ urlpatterns = [
     path(
         "organizations/<int:organization_id>/agents/<uuid:pk>/update/",
         AgentUpdateView.as_view(),
-        name="agent-update"
+        name="agent-update",
     ),
     path(
         "organizations/<int:organization_id>/agents/<uuid:pk>/delete/",
         AgentDeleteView.as_view(),
-        name="agent-delete"
+        name="agent-delete",
     ),
     path(
         f"{STATIC_UAPI_BASE_PATH}Dataset/",
@@ -44,15 +55,22 @@ urlpatterns = [
     ),
     path(
         f"{STATIC_UAPI_BASE_PATH}Dataset/<str:dataset_id>/dsa/",
-        DatasetViewSet.as_view({
-            "post": "upload_dataset_structure",
-            "put": "update_dataset_structure",
-        }),
+        DatasetViewSet.as_view(
+            {
+                "post": "upload_dataset_structure",
+                "put": "update_dataset_structure",
+            }
+        ),
         name="uapi-dataset-structure",
     ),
     path(
         f"{STATIC_UAPI_BASE_PATH}Distribution/",
         DistributionViewSet.as_view({"post": "create", "get": "list"}),
         name="uapi-distribution",
+    ),
+    path(
+        f"{STATIC_UAPI_BASE_PATH}Agreement/<uuid:agreement_id>/sync-done/",
+        AgentSyncDoneViewSet.as_view({"put": "update"}),
+        name="uapi-agent-sync-done",
     ),
 ]

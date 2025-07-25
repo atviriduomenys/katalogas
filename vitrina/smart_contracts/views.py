@@ -27,6 +27,7 @@ from vitrina.smart_contracts.forms import (
     AgreementUploadForm,
 )
 from vitrina.smart_contracts.models import Agreement, AgreementScope, AgreementFile
+from vitrina.users.models import User
 from vitrina.views import FormsetView, HistoryMixin
 
 
@@ -51,7 +52,7 @@ class BaseAgreementMixin:
         self.agreement = get_object_or_404(
             Agreement.objects.all()
             .select_related("assigner")
-            .prefetch_related("agreementscope_set"),
+            .prefetch_related("scopes"),
             project=self.object,
             pk=kwargs["agreement_id"],
         )
@@ -141,9 +142,7 @@ class AgreementDetailView(
             {
                 "project": self.object,
                 "agreement": self.agreement,
-                "agreement_files": self.agreement.agreementfile_set.all().order_by(
-                    "-created_at"
-                ),
+                "agreement_files": self.agreement.files.all().order_by("-created_at"),
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_title": page_title,
                 "can_update_project": has_perm(
@@ -241,11 +240,14 @@ class AgreementCreateView(
 
     @transaction.atomic
     def formset_valid(self, formset: BaseFormSet) -> HttpResponse:
+        current_user :User = self.request.user
         for form in formset:
             agreement = Agreement.objects.create(
                 project=self.object,
                 assigner=form.instance,
                 status=AgreementStatuses.CREATED,
+                created_by=current_user,
+                assignee=current_user.organization,
             )
             agreement_scopes = []
             for scope in form.cleaned_data["scopes"]:

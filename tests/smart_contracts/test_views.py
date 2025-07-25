@@ -164,9 +164,9 @@ class TestAgreementCreateView:
         agreement = Agreement.objects.get(project=project, assigner=organization)
         assert agreement.status == AgreementStatuses.CREATED
         assert agreement.is_agent_sync_enabled is False
-        assert agreement.agreementscope_set.count() == 1
+        assert agreement.scopes.count() == 1
 
-        agreement_scope = agreement.agreementscope_set.first()
+        agreement_scope = agreement.scopes.first()
         assert agreement_scope.resource == "test_dataset"
         assert agreement_scope.action == "getall"
         assert agreement_scope.scope == "test_dataset_getall"
@@ -379,7 +379,7 @@ class TestAgreementUploadSignedFile:
         agreement.refresh_from_db()
         assert response.status_code == 200
         assert agreement.status == AgreementStatuses.INITIATED
-        assert agreement.agreementfile_set.exists()
+        assert agreement.files.exists()
 
     def test_upload_adoc_and_change_status_to_signed_if_agreement_status_initiated(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
@@ -403,4 +403,4 @@ class TestAgreementUploadSignedFile:
         agreement.refresh_from_db()
         assert response.status_code == 200
         assert agreement.status == AgreementStatuses.SIGNED
-        assert agreement.agreementfile_set.exists()
+        assert agreement.files.exists()

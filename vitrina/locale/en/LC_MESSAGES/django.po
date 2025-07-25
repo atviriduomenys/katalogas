@@ -4988,6 +4988,24 @@ msgid ""
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
 
+msgid "Sutarties iniciatorius"
+msgstr "Creator of an agreement"
+
+msgid "Papildomi tiekėjo teisės aktai"
+msgstr "Other assigner legislations"
+
+msgid "Papildomi gavėjo teisės aktai"
+msgstr "Other assignee legislations"
+
+msgid "Mokėjimo sąlygos"
+msgstr "Payment terms"
+
+msgid "Failo turinio kontrolinė suma"
+msgstr "File content checksum"
+
+msgid "ODRL kuris buvo naudotas genertuoti sutartį"
+msgstr "ODRL which have been used for agreement file generation"
+
 msgid "Identifikatorius"
 msgstr "Identifier"
 

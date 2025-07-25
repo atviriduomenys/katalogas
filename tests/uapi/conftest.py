@@ -12,12 +12,17 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
+from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
+from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.factories import MetadataFactory
+from vitrina.users.factories import UserFactory
+from vitrina.users.models import User
 
 
-def _build_reverse_uapi_url(name: str, organization: Organization, **kwargs: Any) -> str:
+def build_reverse_uapi_url(name: str, organization: Organization, **kwargs: Any) -> str:
     return reverse(
         name,
         kwargs={
@@ -65,6 +70,16 @@ def dataset(organization: Organization) -> Dataset:
 
 
 @pytest.fixture
+def user(organization: Organization) -> User:
+    return UserFactory(organization=organization)
+
+
+@pytest.fixture
+def project(user: User, dataset: Dataset) -> Agreement:
+    return ProjectFactory(user=user, datasets=[dataset])
+
+
+@pytest.fixture
 def domain() -> str:
     return Site.objects.get_current().domain
 
@@ -87,17 +102,17 @@ def distribution(organization: Organization, dataset: Dataset) -> DatasetDistrib
 
 @pytest.fixture
 def url_dataset(organization: Organization) -> str:
-    return _build_reverse_uapi_url("dataset", organization)
+    return build_reverse_uapi_url("dataset", organization)
 
 
 @pytest.fixture
 def url_distribution(organization: Organization) -> str:
-    return _build_reverse_uapi_url("distribution", organization)
+    return build_reverse_uapi_url("distribution", organization)
 
 
 @pytest.fixture
 def url_dataset_structure(organization: Organization, dataset: Dataset) -> str:
-    return _build_reverse_uapi_url("dataset-structure", organization, dataset_id=dataset.id)
+    return build_reverse_uapi_url("dataset-structure", organization, dataset_id=dataset.id)
 
 
 @pytest.fixture

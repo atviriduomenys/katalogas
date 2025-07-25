@@ -3,15 +3,17 @@ from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, Q
 from django.forms import modelformset_factory, BaseFormSet
 from django.http import HttpResponseRedirect
 from django.http.response import HttpResponseBase, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import TemplateView, FormView
@@ -27,12 +29,14 @@ from vitrina.smart_contracts.forms import (
     AgreementUploadForm,
 )
 from vitrina.smart_contracts.models import Agreement, AgreementScope, AgreementFile
+from vitrina.structure.models import Metadata
 from vitrina.views import FormsetView, HistoryMixin
 
 
 class BaseProjectMixin:
-    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
-        super().setup(request, *args, **kwargs)
+    def dispatch(
+        self, request: WSGIRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponseBase:
         self.object = get_object_or_404(
             Project.public.all().prefetch_related(
                 Prefetch(
@@ -44,10 +48,13 @@ class BaseProjectMixin:
             pk=kwargs["pk"],
         )
 
+        return super().dispatch(request, *args, **kwargs)
+
 
 class BaseAgreementMixin:
-    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
-        super().setup(request, *args, **kwargs)
+    def dispatch(
+        self, request: WSGIRequest, *args: Any, **kwargs: Any
+    ) -> HttpResponseBase:
         self.agreement = get_object_or_404(
             Agreement.objects.all()
             .select_related("assigner")
@@ -56,11 +63,13 @@ class BaseAgreementMixin:
             pk=kwargs["agreement_id"],
         )
 
+        return super().dispatch(request, *args, **kwargs)
+
 
 class AgreementListView(
     LoginRequiredMixin,
-    PermissionRequiredMixin,
     BaseProjectMixin,
+    PermissionRequiredMixin,
     HistoryMixin,
     TemplateView,
 ):
@@ -113,9 +122,9 @@ class AgreementListView(
 
 class AgreementDetailView(
     LoginRequiredMixin,
-    PermissionRequiredMixin,
-    BaseAgreementMixin,
     BaseProjectMixin,
+    BaseAgreementMixin,
+    PermissionRequiredMixin,
     HistoryMixin,
     TemplateView,
 ):
@@ -167,8 +176,8 @@ class AgreementDetailView(
 
 class AgreementCreateView(
     LoginRequiredMixin,
-    PermissionRequiredMixin,
     BaseProjectMixin,
+    PermissionRequiredMixin,
     FormsetView,
 ):
     object: Project
@@ -185,34 +194,64 @@ class AgreementCreateView(
     def dispatch(
         self, request: WSGIRequest, *args: Any, **kwargs: Any
     ) -> HttpResponseBase:
-        if Agreement.objects.filter(project=self.object).exists():
+        dispatch = super().dispatch(request, *args, **kwargs)
+        if not self.get_dataset_metadata_by_organization:
             messages.error(
                 self.request,
                 _("Šis panaudojimo atvejis jau turi egzistuojančias sutartis."),
             )
             return HttpResponseRedirect(self.get_success_url())
 
-        return super().dispatch(request, *args, **kwargs)
+        return dispatch
+
+    @cached_property
+    def get_dataset_metadata_by_organization(self) -> dict[int, list[Metadata]]:
+        agreement_organization_ids = Agreement.objects.filter(
+            project=self.object
+        ).values_list("assigner_id", flat=True)
+        dataset_metadata_query = Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id__in=(d.id for d in self.object.public_datasets),
+        ).exclude(
+            Q(dataset__organization_id__in=agreement_organization_ids)
+            | Q(name="")
+            | Q(name__isnull=True),
+        )
+
+        # Assign only one metadata for each dataset, in case there are more.
+        # There shouldn't be more, but DB schema allows it.
+        dataset_metadata = {}
+        for metadata in dataset_metadata_query:
+            dataset_metadata.setdefault(metadata.dataset_id, metadata)
+
+        sorted_dataset_metadata = sorted(
+            dataset_metadata.values(), key=lambda m: m.dataset.organization_id
+        )
+        metadata_by_organization = {
+            organization_id: list(organization_metadata)
+            for organization_id, organization_metadata in groupby(
+                sorted_dataset_metadata, lambda m: m.dataset.organization_id
+            )
+        }
+
+        return metadata_by_organization
 
     def get_formset(self) -> BaseFormSet:
         formset_kwargs = self.get_formset_kwargs()
-        datasets_by_organization = {
-            organization: list(organization_datasets)
-            for organization, organization_datasets in groupby(
-                self.object.public_datasets, lambda d: d.organization
-            )
-        }
+        dataset_metadata_by_organization = self.get_dataset_metadata_by_organization
 
         SmartContractFormset = modelformset_factory(
             Organization, form=SmartContractForm, extra=0
         )
         organization_queryset = Organization.objects.filter(
-            pk__in=(o.pk for o in datasets_by_organization.keys())
+            pk__in=dataset_metadata_by_organization.keys()
         ).order_by("pk")
         formset = SmartContractFormset(
             **formset_kwargs,
             queryset=organization_queryset,
-            form_kwargs={"datasets_by_organization": datasets_by_organization},
+            form_kwargs={
+                "dataset_metadata_by_organization": dataset_metadata_by_organization
+            },
         )
 
         return formset
@@ -270,9 +309,9 @@ class AgreementCreateView(
 
 class AgreementGeneratePdf(
     LoginRequiredMixin,
-    PermissionRequiredMixin,
-    BaseAgreementMixin,
     BaseProjectMixin,
+    BaseAgreementMixin,
+    PermissionRequiredMixin,
     View,
 ):
     def has_permission(self) -> bool:
@@ -284,8 +323,9 @@ class AgreementGeneratePdf(
     def dispatch(
         self, request: WSGIRequest, *args: Any, **kwargs: Any
     ) -> HttpResponseBase:
+        dispatch = super().dispatch(request, *args, **kwargs)
         if self.agreement.status == AgreementStatuses.CREATED:
-            return super().dispatch(request, *args, **kwargs)
+            return dispatch
 
         error_msg = _(
             "Sutarties dokumentas gali būti generuojamas sutarčiai su "
@@ -310,9 +350,9 @@ class AgreementGeneratePdf(
 
 class AgreementUploadSignedFile(
     LoginRequiredMixin,
-    PermissionRequiredMixin,
-    BaseAgreementMixin,
     BaseProjectMixin,
+    BaseAgreementMixin,
+    PermissionRequiredMixin,
     FormView,
 ):
     form_class = AgreementUploadForm
@@ -327,9 +367,10 @@ class AgreementUploadSignedFile(
     def dispatch(
         self, request: WSGIRequest, *args: Any, **kwargs: Any
     ) -> HttpResponseBase:
+        dispatch = super().dispatch(request, *args, **kwargs)
         accepted_statuses = (AgreementStatuses.FORMED, AgreementStatuses.INITIATED)
         if self.agreement.status in accepted_statuses:
-            return super().dispatch(request, *args, **kwargs)
+            return dispatch
 
         error_msg = _(
             "Sutarties dokumentas gali būti generuojamas sutarčiai su "
@@ -373,12 +414,13 @@ class AgreementUploadSignedFile(
         return reverse("agreement-detail", args=[self.object.pk, self.agreement.pk])
 
     def form_valid(self, form: AgreementUploadForm) -> HttpResponse:
-        self.agreement.status = (
-            AgreementStatuses.INITIATED
-            if self.agreement.status == AgreementStatuses.FORMED
-            else AgreementStatuses.SIGNED
-        )
+        if self.agreement.status == AgreementStatuses.FORMED:
+            self.agreement.status = AgreementStatuses.INITIATED
+        else:
+            self.agreement.status = AgreementStatuses.SIGNED
+            self.agreement.is_agent_sync_enabled = True
         self.agreement.save()
+
         AgreementFile.objects.create(
             agreement=self.agreement,
             file_name=form.cleaned_data["file"].name,

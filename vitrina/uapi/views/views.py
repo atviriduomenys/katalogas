@@ -6,6 +6,7 @@ from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import QuerySet, Q
 from django.shortcuts import get_object_or_404
+from django.utils import timezone
 from django.utils.functional import cached_property
 from filer.models import File
 from rest_framework import viewsets, status
@@ -27,6 +28,8 @@ from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.exceptions import UAPIException
 from vitrina.orgs.models import Organization
 from vitrina.resources.models import DatasetDistribution
+from vitrina.smart_contracts import AgreementStatuses
+from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import create_structure_objects
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer
@@ -272,3 +275,30 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             _type=extract_type_from_url(self.request.build_absolute_uri()),
         )
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AgentSyncDoneViewSet(viewsets.ModelViewSet):
+    authentication_classes = [OAuth2AuthenticationWithLocalJWK]
+    permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
+    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES
+
+    lookup_url_kwarg = "agreement_id"
+
+    def get_queryset(self) -> QuerySet:
+        queryset = Agreement.objects.filter(
+            is_agent_sync_enabled=True,
+            project__user__organization__kind=self.kwargs["form"],
+            project__user__organization__name=self.kwargs["org"]
+        )
+
+        return queryset
+
+    def update(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        agreement = self.get_object()
+        agreement.last_sync_date = timezone.now()
+        agreement.status = AgreementStatuses.ACTIVE
+
+        # Agreement.updated_at must not be updated
+        agreement.save(update_fields=["last_sync_date", "status"])
+
+        return Response(status=status.HTTP_200_OK)

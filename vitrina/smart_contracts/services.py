@@ -59,11 +59,8 @@ def is_checksum_valid(adoc_path: str, expected_checksum: str) -> bool:
             os.remove(TEMP_PDF_PATH)
 
 
-def generate_contract(template_path: str, json_path: str, output_path: str) -> None:
-    with open(json_path, encoding="utf-8") as file:
-        odrl_data = json.load(file)
-        json_checksum = generate_text_checksum(json.dumps(odrl_data, sort_keys=True))
-
+def generate_contract(template_path: str, odrl_data: dict, output_path: str) -> None:
+    json_checksum = generate_text_checksum(json.dumps(odrl_data, sort_keys=True))
     md_template = Path(template_path).read_text(encoding="utf-8")
     template_checksum = generate_text_checksum(md_template)
     template = Template(md_template)

@@ -24,8 +24,8 @@ toliau Duomenų teikėjas ir Duomenų gavėjas kartu vadinami Šalimis, o kiekvi
 
 3.1.1. Reglamento 6 straipsnio 1 dalies c punktu
 
-{% if odrl_data["ex:other_assigner_legislations"] %}
-3.1.2. **{{ odrl_data["ex:other_assigner_legislations"] }}**
+{% if odrl_data["ex:otherAssignerLegislations"] %}
+3.1.2. **{{ odrl_data["ex:otherAssignerLegislations"] }}**
 
 3.1.3. Kitais Duomenų teikėjo veiklą reglamentuojančiais Lietuvos Respublikoje galiojančiais teisės aktais.
 {% else %}
@@ -36,8 +36,8 @@ toliau Duomenų teikėjas ir Duomenų gavėjas kartu vadinami Šalimis, o kiekvi
 
 3.2.1. Reglamento 6 straipsnio 1 dalies c punktu
 
-{% if odrl_data["ex:other_assignee_legislations"] %}
-3.2.2. **{{ odrl_data["ex:other_assignee_legislations"] }}**
+{% if odrl_data["ex:otherAssigneeLegislations"] %}
+3.2.2. **{{ odrl_data["ex:otherAssigneeLegislations"] }}**
 
 3.2.3. Kitais Duomenų gavėjo veiklą reglamentuojančiais Lietuvos Respublikoje galiojančiais teisės aktais.
 {% else %}
@@ -71,7 +71,7 @@ toliau Duomenų teikėjas ir Duomenų gavėjas kartu vadinami Šalimis, o kiekvi
 | {{ odrl_data["assigner"][0]["ex:address"] }}        | {{ odrl_data["assignee"][0]["ex:address"] }}        |
 | {{ odrl_data["assigner"][0]["ex:email"] }}          | {{ odrl_data["assignee"][0]["ex:email"] }}          |
 | {{ odrl_data["assigner"][0]["ex:phone"] }}          | {{ odrl_data["assignee"][0]["ex:phone"] }}          |
-| {{ odrl_data["assigner"][0]["ex:personal_code"] }}  | {{ odrl_data["assignee"][0]["ex:personal_code"] }}  |
+| {{ odrl_data["assigner"][0]["ex:personalCode"] }}  | {{ odrl_data["assignee"][0]["ex:personalCode"] }}  |
 | {{ odrl_data["assigner"][0]["ex:representative"] }} | {{ odrl_data["assignee"][0]["ex:representative"] }} |
 | `_________________________`                         | `_________________________`                         |
 | _Vardas, pavardė, parašas_                          | _Vardas, pavardė, parašas_                          |

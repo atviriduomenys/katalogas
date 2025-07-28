@@ -15,7 +15,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from reversion import create_revision
 
-from vitrina import settings
 from vitrina.api.oauth import (
     OAuth2AuthenticationWithLocalJWK,
     IsOAuthTokenValid,

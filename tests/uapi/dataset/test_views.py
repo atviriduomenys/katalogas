@@ -1,8 +1,10 @@
+from typing import Iterable
 from unittest.mock import patch, PropertyMock
 from urllib.parse import quote
 
 import pytest
 import pytz
+from authlib.jose import RSAKey
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
@@ -10,9 +12,11 @@ from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
 from reversion.models import Version
 
+from tests.uapi.conftest import _generate_test_token
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
@@ -73,6 +77,158 @@ def test_create(
         "theme": [],
         "organization_id": organization.id,
         "organization_title": organization.title,
+    }
+
+
+def test_create_specific_scope(
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset: str,
+    domain: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(
+        test_jwk,
+        organization_id=organization.id,
+        scopes=["spinta_datasets_gov_vssa_dataset_insert"],
+    )
+    data = {
+        "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
+        "title": "DataSet 1",
+        "description": "DataSet 1 description",
+    }
+    response = app.post(
+        url_dataset,
+        data,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+
+    assert Metadata.objects.count() == 1
+    dataset = Dataset.objects.filter(
+        metadata__name=data["name"],
+        access_rights=Dataset.NON_PUBLIC,
+        organization=organization,
+    ).first()
+    assert dataset
+    assert response.json == {
+        "@context": "",
+        "_type": url_dataset.rstrip("/"),
+        "_id": str(dataset.id),
+        "_revision": str(Version.objects.get_for_object(dataset).first().revision_id),
+        "_txn": "",
+        "_created": dataset.created.astimezone(timezone).isoformat(),
+        "_updated": dataset.modified.astimezone(timezone).isoformat(),
+        "created": dataset.created.astimezone(timezone).isoformat(),
+        "modified": dataset.modified.astimezone(timezone).isoformat(),
+        "id": str(dataset.id),
+        "internalId": dataset.internal_id,
+        "origin": dataset.origin,
+        "title": data["title"],
+        "description": data["description"],
+        "temporalCoverage": dataset.temporal_coverage,
+        "language": [],
+        "publisher": dataset.publisher,
+        "spatial": dataset.spatial_coverage,
+        "keyword": dataset.tag_name_array,
+        "landingPage": f"http://{domain}{reverse('dataset-detail', args=[dataset.id])}",
+        "theme": [],
+        "organization_id": organization.id,
+        "organization_title": organization.title,
+    }
+
+
+@pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
+def test_create_token_does_not_have_necessary_scopes(
+    invalid_scopes: Iterable[str],
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset: str,
+    domain: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+    response = app.post(
+        url_dataset,
+        {},  # Empty data, since it should not get to the part where it is used.
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }
+
+
+def test_create_no_organization_id_inside_token_payload(
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset: str,
+    domain: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
+    response = app.post(
+        url_dataset,
+        {},  # Empty data, since it should not get to the part where it is used.
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }
+
+
+def test_create_organization_retrieved_from_token_mismatch_from_provided_in_url(
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset: str,
+    domain: str,
+    test_jwk: RSAKey,
+):
+    """Tests that the organization inside the JWT matches the organization provided in the URL `org` part.
+
+    E.g., if the url is: uapi/datasets/gov/vssa/isris/dcat/uapi/Model.
+    - The organization in the system identified by `organization_id` inside JWT should match the `name = 'vssa'`.
+    """
+    organization_2 = OrganizationFactory()
+    token = _generate_test_token(
+        test_jwk,
+        organization_id=organization_2.id,
+        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
+    )
+    response = app.post(
+        url_dataset,  # Builds a URL for `organization` (not `organization_2`)
+        {},  # Empty data, since it should not get to the part where it is used.
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
     }
 
 
@@ -195,6 +351,141 @@ def test_list(
                 "id": str(dataset.id),
             }
         ]
+    }
+
+
+def test_list_specific_scope(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    url_dataset: str,
+    domain: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(
+        test_jwk,
+        organization_id=organization.id,
+        scopes=["spinta_datasets_gov_vssa_dataset_getall"],
+    )
+
+    response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"})
+
+    assert response.status_code == status.HTTP_200_OK
+    assert Dataset.objects.filter(organization=organization).count() == 1
+    assert response.json == {
+        "_type": url_dataset.rstrip("/"),
+        "_data": [
+            {
+                "@context": "",
+                "_type": url_dataset.rstrip("/"),
+                "_id": str(dataset.id),
+                "_revision": "",
+                "_txn": "",
+                "_created": dataset.created.astimezone(timezone).isoformat(),
+                "_updated": dataset.modified.astimezone(timezone).isoformat(),
+                "created": dataset.created.astimezone(timezone).isoformat(),
+                "internalId": dataset.internal_id,
+                "origin": dataset.origin,
+                "title": dataset.title,
+                "description": dataset.description,
+                "modified": dataset.modified.astimezone(timezone).isoformat(),
+                "temporalCoverage": dataset.temporal_coverage,
+                "language": [],
+                "publisher": dataset.publisher,
+                "spatial": dataset.spatial_coverage,
+                "periodicity": dataset.frequency.title,
+                "keyword": dataset.tag_name_array,
+                "landingPage": f"http://{domain}{reverse('dataset-detail', args=[dataset.id])}",
+                "theme": [],
+                "organization_id": organization.id,
+                "organization_title": organization.title,
+                "id": str(dataset.id),
+            }
+        ]
+    }
+
+
+@pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
+def test_list_token_does_not_have_necessary_scopes(
+    invalid_scopes: Iterable[str],
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    url_dataset: str,
+    domain: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+
+    response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }
+
+
+def test_list_no_organization_id_inside_token_payload(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    url_dataset: str,
+    domain: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
+
+    response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }
+
+
+def test_list_organization_retrieved_from_token_mismatch_from_provided_in_url(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    url_dataset: str,
+    domain: str,
+    test_jwk: RSAKey,
+):
+    """Tests that the organization inside the JWT matches the organization provided in the URL `org` part.
+
+    E.g., if the url is: uapi/datasets/gov/vssa/isris/dcat/uapi/Model.
+    - The organization in the system identified by `organization_id` inside JWT should match the `name = 'vssa'`.
+    """
+    organization_2 = OrganizationFactory()
+    token = _generate_test_token(
+        test_jwk,
+        organization_id=organization_2.id,
+        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
+    )
+
+    response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
     }
 
 
@@ -406,6 +697,132 @@ def test_action_upload_dataset_structure(
     assert file.label == f"dataset_{dataset.id}_structure.csv"
 
 
+def test_action_upload_dataset_structure_specific_scope(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(
+        test_jwk,
+        organization_id=organization.id,
+        scopes=["spinta_datasets_gov_vssa_dataset_dsa_insert"],
+    )
+    response = app.post(
+        url_dataset_structure,
+        dsa,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        content_type="text/csv",
+    )
+
+    assert response.status_code == status.HTTP_204_NO_CONTENT
+    assert not response.body
+    # Dataset is saved and stored in DatasetStructure.
+    assert dataset.datasetstructure_set.count() == 1
+    file = dataset.datasetstructure_set.first().file
+    assert file is not None
+    assert file.label == f"dataset_{dataset.id}_structure.csv"
+
+
+@pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
+def test_action_upload_dataset_structure_token_does_not_have_necessary_scopes(
+    invalid_scopes: Iterable[str],
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+
+    response = app.post(
+        url_dataset_structure,
+        dsa,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        content_type="text/csv",
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }
+
+
+def test_action_upload_dataset_structure_no_organization_id_inside_token_payload(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
+
+    response = app.post(
+        url_dataset_structure,
+        dsa,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        content_type="text/csv",
+        expect_errors=True
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }
+
+
+def test_action_upload_dataset_structure_organization_retrieved_from_token_mismatch_from_provided_in_url(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    test_jwk: RSAKey,
+):
+    organization_2 = OrganizationFactory()
+    token = _generate_test_token(
+        test_jwk,
+        organization_id=organization_2.id,
+        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
+    )
+
+    response = app.post(
+        url_dataset_structure,
+        dsa,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        content_type="text/csv",
+        expect_errors=True
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }
+
+
 def test_action_upload_dataset_structure_no_object(
     app: DjangoTestApp,
     organization: Organization,
@@ -520,7 +937,7 @@ def test_action_upload_dataset_structure_transaction_rollback_on_failure(
     }
 
 
-def test_action_update_dataset_structure_update(
+def test_action_update_dataset_structure(
     app: DjangoTestApp,
     organization: Organization,
     dataset: Dataset,
@@ -538,3 +955,125 @@ def test_action_update_dataset_structure_update(
     )
 
     assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
+
+
+def test_action_update_dataset_structure_specific_scope(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(
+        test_jwk,
+        organization_id=organization.id,
+        scopes=["spinta_datasets_gov_vssa_dataset_dsa_update"],
+    )
+
+    response = app.put(
+        url_dataset_structure,
+        dsa,
+        content_type="text/csv",
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
+
+
+@pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
+def test_action_update_dataset_structure_token_does_not_have_necessary_scopes(
+    invalid_scopes: Iterable[str],
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+
+    response = app.put(
+        url_dataset_structure,
+        dsa,
+        content_type="text/csv",
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }
+
+
+def test_action_update_dataset_structure_no_organization_id_inside_token_payload(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    test_jwk: RSAKey,
+):
+    token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
+
+    response = app.put(
+        url_dataset_structure,
+        dsa,
+        content_type="text/csv",
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }
+
+
+def test_action_update_dataset_structure_organization_retrieved_from_token_mismatch_from_provided_in_url(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    test_jwk: RSAKey,
+):
+    organization_2 = OrganizationFactory()
+    token = _generate_test_token(
+        test_jwk,
+        organization_id=organization_2.id,
+        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
+    )
+
+    response = app.put(
+        url_dataset_structure,
+        dsa,
+        content_type="text/csv",
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    response_json = response.json
+    response_json.pop("context")  # Full error traceback is removed.
+    assert response_json == {
+        "code": "server_error",
+        "type": "PermissionDenied",
+        "template": "An unexpected server error occurred.",
+        "message": "You do not have permission to perform this action.",
+        "additionalProperties": None,
+    }

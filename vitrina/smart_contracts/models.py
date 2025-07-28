@@ -1,4 +1,5 @@
 from datetime import datetime
+from io import BytesIO
 
 from django.core.files.base import ContentFile
 from django.core.validators import FileExtensionValidator
@@ -11,7 +12,7 @@ from vitrina.orgs.models import Representative
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.services import generate_contract
-from vitrina.smart_contracts.utils import generate_pdf_checksum
+from vitrina.smart_contracts.utils import generate_pdf_checksum, format_lithuanian_datetime
 from vitrina.users.models import User
 
 
@@ -83,6 +84,78 @@ class Agreement(UUIDBaseModel):
 
     def get_acl_parents(self) -> list["Agreement"]:
         return [self]
+
+    @staticmethod
+    def get_default_smart_contract_template() -> SmartContractTemplate:
+        # TODO improve storage of default template. Probably by using django-solo lib.
+        return SmartContractTemplate.objects.filter(organization__isnull=True).first()
+
+    def generate_contract_pdf_file(self) -> "AgreementFile":
+        odrl_jsonld = self.generate_odrl_jsonld()
+        file_name = slugify(f"{self.project}_{self.assigner}_{self.assignee}_{datetime.now().isoformat()}") + ".pdf"
+        contract_template = self.get_default_smart_contract_template()
+        pdf_buffer = BytesIO()
+        generate_contract(contract_template.default_template.path, odrl_jsonld, pdf_buffer)
+        pdf_buffer.seek(0)
+
+        return self.files.create(
+            file=ContentFile(pdf_buffer.read(), name=file_name),
+            odrl=odrl_jsonld,
+            file_name=file_name,
+        )
+
+
+    def generate_odrl_jsonld(self):
+        NON_VALUE = " - "
+
+        assignee_representative: Representative = (
+            (Representative.objects.filter(user=self.created_by).first()) if self.created_by else None
+        )
+        scopes = list(self.scopes.values_list("scope", flat=True))
+        return {
+            "@context": {"@vocab": "http://www.w3.org/ns/odrl.jsonld", "ex": "http://example.org/vocab#"},
+            "uid": f"uuid:{self.pk}",
+            "type": "Agreement",
+            "profile": "http://www.w3.org/ns/odrl/profile/core",
+            "issued": format_lithuanian_datetime(),
+            "assigner": [
+                {
+                    "uid": f"{self.assigner.pk}",
+                    "ex:companyName": self.assigner.title,
+                    "ex:companyCode": self.assigner.company_code,
+                    "ex:address": self.assigner.address,
+                    "ex:representative": assignee_representative.email if assignee_representative else NON_VALUE,
+                    "ex:email": self.assigner.email or NON_VALUE,
+                    "ex:phone": self.assigner.phone or NON_VALUE,
+                    "ex:personalCode": NON_VALUE,
+                }
+            ],
+            "assignee": [
+                {
+                    "uid": f"{self.assignee.pk}",
+                    "ex:companyName": self.assignee.title,
+                    "ex:companyCode": self.assignee.company_code,
+                    "ex:address": self.assignee.address,
+                    "ex:representative": NON_VALUE,
+                    "ex:email": self.assignee.email or NON_VALUE,
+                    "ex:phone": self.assignee.phone or NON_VALUE,
+                    "ex:personalCode": NON_VALUE,
+                }
+            ],
+            "permission": [
+                {
+                    "target": {
+                        "uid": dataset.pk,
+                        "ex:name": dataset.title,
+                        "ex:scopes": scopes,
+                    }
+                } for dataset in self.project.datasets.filter(organization=self.assigner)
+
+            ],
+            "ex:paymentTerms": self.payment_terms or NON_VALUE,
+            "ex:otherAssignerLegislations": self.other_assigner_legislations or NON_VALUE,
+            "ex:otherAssigneeLegislations": self.other_assignee_legislations or NON_VALUE,
+        }
 
 
 class AgreementScope(UUIDBaseModel):

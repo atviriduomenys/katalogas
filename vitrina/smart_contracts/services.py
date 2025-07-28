@@ -3,6 +3,7 @@ import os
 import re
 import xml.etree.ElementTree as ET
 import zipfile
+from io import BytesIO
 from pathlib import Path
 
 import markdown
@@ -59,7 +60,7 @@ def is_checksum_valid(adoc_path: str, expected_checksum: str) -> bool:
             os.remove(TEMP_PDF_PATH)
 
 
-def generate_contract(template_path: str, odrl_data: dict, output_path: str) -> None:
+def generate_contract(template_path: str, odrl_data: dict, output: str | BytesIO) -> None:
     json_checksum = generate_text_checksum(json.dumps(odrl_data, sort_keys=True))
     md_template = Path(template_path).read_text(encoding="utf-8")
     template_checksum = generate_text_checksum(md_template)
@@ -67,7 +68,7 @@ def generate_contract(template_path: str, odrl_data: dict, output_path: str) -> 
     md_filled = template.render(odrl_data=odrl_data, json_checksum=json_checksum, template_checksum=template_checksum)
 
     html_text = markdown.markdown(md_filled, extensions=["extra"])
-    HTML(string=html_text).write_pdf(output_path)
+    HTML(string=html_text).write_pdf(output)
 
 
 def extract_elements_from_adoc(adoc_path: str, regex: str) -> list[str]:

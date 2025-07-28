@@ -1,9 +1,12 @@
+from io import BytesIO
 from uuid import uuid4
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.base import ContentFile
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from pdfminer.high_level import extract_text
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
@@ -12,7 +15,7 @@ from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory
-from vitrina.smart_contracts.models import Agreement, AgreementScope
+from vitrina.smart_contracts.models import Agreement, AgreementScope, AgreementFile, SmartContractTemplate
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 
@@ -295,12 +298,38 @@ class TestAgreementGeneratePdf:
     def test_generate_pdf_changes_agreement_status_to_formed(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        user = UserFactory(organization=organization)
-        app.set_user(user)
-        project = ProjectFactory(user=user, datasets=[dataset])
-        agreement = AgreementFactory(
-            project=project, assigner=organization, status=AgreementStatuses.CREATED
+
+
+        SmartContractTemplate.objects.create(
+            default_template=ContentFile(open("tests/smart_contracts/files/contract_template.md").read(), name="contract_template.md")
         )
+        user = UserFactory(
+            organization=organization,
+            email="bethgarcia@example.net"
+        )
+        app.set_user(user)
+
+        organization.title = "Gonzalez Group"
+        organization.company_code = "LWGYU0W8S"
+        organization.address = "206 Weaver Trace\nNorth Danny, VA 96120"
+        organization.email = "lwolf@example.com"
+        organization.phone = "456.631.4059"
+        organization.save()
+
+        dataset.title = "Odit nostrum."
+        dataset.save()
+
+        project = ProjectFactory(user=user, datasets=[dataset])
+
+        agreement = AgreementFactory(
+            project=project,
+            assigner=organization,
+            assignee=organization,
+            created_by=user,
+            status=AgreementStatuses.CREATED
+        )
+
+        assert agreement.files.count() == 0
 
         response = app.post(
             reverse("agreement-generate-pdf", args=[project.pk, agreement.pk])
@@ -308,6 +337,103 @@ class TestAgreementGeneratePdf:
         agreement.refresh_from_db()
         assert response.status_code == 302
         assert agreement.status == AgreementStatuses.FORMED
+        assert agreement.files.count() == 1
+        contract: AgreementFile = agreement.files.first()
+        odrl = contract.odrl
+
+        expected_odrl = {
+            "@context": {
+                "@vocab": "http://www.w3.org/ns/odrl.jsonld",
+                "ex": "http://example.org/vocab#",
+            },
+            "uid": f"uuid:{agreement.pk}",
+            "type": "Agreement",
+            "profile": "http://www.w3.org/ns/odrl/profile/core",
+            "issued": odrl["issued"],  # Use actual value from file to avoid time mismatch
+            "assigner": [
+                {
+                    "uid": str(organization.pk),
+                    "ex:companyName": "Gonzalez Group",
+                    "ex:companyCode": "LWGYU0W8S",
+                    "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
+                    "ex:representative": " - ",
+                    "ex:email": "lwolf@example.com",
+                    "ex:phone": "456.631.4059",
+                    "ex:personalCode": " - ",
+                }
+            ],
+            "assignee": [
+                {
+                    "uid": str(organization.pk),
+                    "ex:companyName": "Gonzalez Group",
+                    "ex:companyCode": "LWGYU0W8S",
+                    "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
+                    "ex:representative": " - ",
+                    "ex:email": "lwolf@example.com",
+                    "ex:phone": "456.631.4059",
+                    "ex:personalCode": " - ",
+                }
+            ],
+            "permission": [
+                {
+                    "target": {
+                        "uid": dataset.pk,
+                        "ex:name": "Odit nostrum.",
+                        "ex:scopes": [],
+                    }
+                }
+            ],
+            "ex:paymentTerms": " - ",
+            "ex:otherAssignerLegislations": " - ",
+            "ex:otherAssigneeLegislations": " - ",
+        }
+
+        assert contract.odrl == expected_odrl
+        assert contract.file
+        assert contract.file_name
+        contract.file.seek(0)
+        pdf_text = extract_text(BytesIO(contract.file.read()))
+
+        # Pull specific expected values directly from the odrl JSON
+        expected_values = [
+            # Dates
+            odrl["issued"],  # Check only date portion to avoid microsecond mismatches
+
+            # Assigner
+            odrl["assigner"][0]["ex:companyName"],
+            odrl["assigner"][0]["ex:companyCode"],
+            odrl["assigner"][0]["ex:address"].split("\n")[0],  # Just street line
+            odrl["assigner"][0]["ex:email"],
+            odrl["assigner"][0]["ex:phone"],
+            odrl["assigner"][0]["ex:representative"],
+            odrl["assigner"][0]["ex:personalCode"],
+
+            # Assignee
+            odrl["assignee"][0]["ex:companyName"],
+            odrl["assignee"][0]["ex:companyCode"],
+            odrl["assignee"][0]["ex:address"].split("\n")[0],
+            odrl["assignee"][0]["ex:email"],
+            odrl["assignee"][0]["ex:phone"],
+            odrl["assignee"][0]["ex:representative"],
+            odrl["assignee"][0]["ex:personalCode"],
+
+            # Permission target
+            odrl["permission"][0]["target"]["ex:name"],
+            *odrl["permission"][0]["target"].get("ex:scopes", []),
+
+            # Misc fields
+            odrl["ex:paymentTerms"],
+            odrl["ex:otherAssignerLegislations"],
+            odrl["ex:otherAssigneeLegislations"],
+        ]
+
+        # Validate that each expected value appears in the PDF text
+        for i, value in enumerate(expected_values):
+            value = str(value).strip()
+            if value:
+                assert value in pdf_text, f"Expected '{value}' (index={i}) not found in PDF"
+
+
 
 
 class TestAgreementUploadSignedFile:

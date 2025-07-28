@@ -3,9 +3,12 @@ from __future__ import annotations
 import hashlib
 import xml.etree.ElementTree as ET
 import zipfile
+from datetime import datetime
+from typing import Optional
 
 from pdfminer.high_level import extract_text
 
+from vitrina.helpers import Monthly
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 
 MANIFEST_FILE_PATH = "META-INF/manifest.xml"
@@ -43,3 +46,8 @@ def get_pdf_path_in_adoc(adoc_archive: zipfile.ZipFile) -> str:
             if media_type == PDF_MEDIA_TYPE and full_path in adoc_archive.namelist():
                 return full_path
     raise InvalidAdocError("Invalid ADOC file: no pdf file found")
+
+
+def format_lithuanian_datetime(dt: Optional[datetime] = None) -> str:
+    dt = dt or datetime.now()
+    return f"{dt.year} m. {Monthly.titles[dt.month]} {dt.day} d."

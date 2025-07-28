@@ -35,6 +35,6 @@ def test_user_data_parsing(app: DjangoTestApp):
             'phone_number': '+37000000000',
             'company_name': 'test company',
             'email': 'test@test.lt',
-            'personalCode': '30000000000'
+            'personal_code': '30000000000'
         }
         assert expected_user_data == _parse_user_data(xmlFile.read())

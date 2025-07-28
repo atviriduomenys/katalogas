@@ -1,6 +1,7 @@
 import base64
 import math
 import os
+from typing import Iterable
 
 import requests
 from authlib.jose import jwt, JsonWebKey, JWTClaims
@@ -8,6 +9,7 @@ from authlib.jose.errors import BadSignatureError
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ImproperlyConfigured
+from django.views import View
 from oauthlib.oauth2 import TokenExpiredError
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
@@ -105,7 +107,7 @@ class OAuthClientAuthenticator:
 
 class OAuth2AuthenticationWithLocalJWK(BaseAuthentication):
 
-    def authenticate(self, request: Request) -> tuple[AnonymousUser, JWTClaims] | None:
+    def authenticate(self, request: Request) -> tuple[AnonymousUser, JWTClaims]:
         try:
             verified_token = OAuthClientAuthenticator.retrieve_and_verify_token(request)
         except (BadSignatureError, TokenExpiredError) as e:
@@ -118,39 +120,42 @@ class OAuth2AuthenticationWithLocalJWK(BaseAuthentication):
 
 class IsOAuthTokenValid(BasePermission):
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Request, view: View) -> bool:
         request.auth.validate()
         return isinstance(request.auth, JWTClaims)
 
 
 class OAuthTokenHasScopes(BasePermission):
 
-    def has_permission(self, request, view):
-        token = request.auth
-
-        if not token:
+    def has_permission(self, request: Request, view: View) -> bool:
+        if not (token := request.auth):
             return False
-        required_scopes = self.get_scopes(request, view)
-        if not required_scopes:
+
+        if not (required_scopes := self.get_scopes(request, view)):
             return True
 
-        scopes = token["scope"].split(" ")
-        if not scopes:
+        if not (scopes := token.get("scope", "").split(" ")):
             return False
+
         missing_scopes = set(required_scopes) - set(scopes)
         return not bool(missing_scopes)
 
     @staticmethod
-    def get_scopes(request, view):
+    def get_scopes(request: Request, view: View) -> Iterable[str]:
         try:
-            return getattr(view, "required_scopes")
+            scopes = getattr(view, "required_scopes")
         except AttributeError:
             raise ImproperlyConfigured("TokenHasScope requires the view to define the required_scopes attribute")
+
+        if isinstance(scopes, dict):
+            return scopes.get(view.action, [])
+
+        return scopes
 
 
 class OAuthTokenHasValidOrganizationClaim(BasePermission):
 
-    def has_permission(self, request, view):
+    def has_permission(self, request: Request, view: View) -> bool:
         if not (organization := OAuthClientAuthenticator.resolve_organization_from_token(request.auth)):
             return False
 

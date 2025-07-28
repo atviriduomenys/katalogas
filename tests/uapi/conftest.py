@@ -1,9 +1,10 @@
+from datetime import datetime, timedelta
+
 import pytest
-from typing import Any
-from unittest.mock import patch
+from typing import Any, Iterable
 
 import reversion
-from django.contrib.auth.models import AnonymousUser
+from authlib.jose import RSAKey, jwt, JsonWebKey
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.urls import reverse
@@ -14,6 +15,7 @@ from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
+from vitrina.settings import OAUTH_AGENT_DEFAULT_SCOPES
 from vitrina.structure.factories import MetadataFactory
 
 
@@ -30,17 +32,45 @@ def _build_reverse_uapi_url(name: str, organization: Organization, **kwargs: Any
     )
 
 
+def _generate_test_token(
+    jwk: RSAKey,
+    client_id: str = "test-client",
+    scopes: Iterable[str] = ("datasets:write",),
+    organization_id: int = 1,
+    expires_in: int = 900
+):
+    now = datetime.utcnow()
+    claims = {
+        "iss": "test-issuer",
+        "sub": client_id,
+        "scope": " ".join(scopes),
+        "organization_id": organization_id,
+        "iat": now,
+        "exp": now + timedelta(seconds=expires_in),
+    }
+
+    header = {"alg": "RS256", "kid": "test-key"}
+
+    return jwt.encode(header, claims, key=jwk).decode()
+
+
 @pytest.fixture(autouse=True)
-def mock_auth_and_permissions():
-    """A Fixture to avoid permission/auth checking for specific API's."""
-    with patch("vitrina.api.oauth.OAuth2AuthenticationWithLocalJWK.authenticate") as mock_auth:
-        mock_auth.return_value = (AnonymousUser(), {"scope": "read write", "organization_id": 1, "sub": "agentname"})
-        with (
-            patch("vitrina.api.oauth.IsOAuthTokenValid.has_permission", return_value=True),
-            patch("vitrina.api.oauth.OAuthTokenHasScopes.has_permission", return_value=True),
-            patch("vitrina.api.oauth.OAuthTokenHasValidOrganizationClaim.has_permission", return_value=True)
-        ):
-            yield
+def override_oauth_jwk(settings, test_jwk):
+    settings.OAUTH_SERVER_PUBLIC_JWK_JSON = test_jwk.as_dict(is_private=False)
+
+
+@pytest.fixture(scope="session")
+def test_jwk() -> RSAKey:
+    key = JsonWebKey.generate_key("RSA", crv_or_size=2048, is_private=True)
+    return key
+
+
+@pytest.fixture()
+def valid_token(
+    test_jwk: RSAKey,
+    organization: Organization
+) -> str:
+    return _generate_test_token(test_jwk, organization_id=organization.id, scopes=OAUTH_AGENT_DEFAULT_SCOPES)
 
 
 @pytest.fixture

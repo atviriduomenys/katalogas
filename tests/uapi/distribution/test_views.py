@@ -27,6 +27,7 @@ def test_create(
     dataset: Dataset,
     url_distribution: str,
     domain: str,
+    valid_token: str,
 ):
     file_content = b"Sample CSV content"
     data = {
@@ -34,7 +35,12 @@ def test_create(
         "title": "Title of the Distribution",
     }
 
-    response = app.post(url_distribution, data, upload_files=[("file", "test.csv", file_content)])
+    response = app.post(
+        url_distribution,
+        data,
+        upload_files=[("file", "test.csv", file_content)],
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+    )
 
     assert response.status_code == status.HTTP_201_CREATED
     distribution = DatasetDistribution.objects.filter(
@@ -71,8 +77,14 @@ def test_create_serializer_is_invalid(
     organization: Organization,
     dataset: Dataset,
     url_distribution: str,
+    valid_token: str,
 ):
-    response = app.post(url_distribution, {"dataset": str(dataset.id)}, expect_errors=True)
+    response = app.post(
+        url_distribution,
+        {"dataset": str(dataset.id)},
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True,
+    )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert DatasetDistribution.objects.count() == 0
@@ -91,6 +103,7 @@ def test_create_unexpected_exception_raised(
     organization: Organization,
     dataset: Dataset,
     url_distribution: str,
+    valid_token: str,
 ):
     file_content = b"Sample CSV content"
     data = {
@@ -103,7 +116,13 @@ def test_create_unexpected_exception_raised(
             new_callable=PropertyMock,
             side_effect=Exception("Unexpected error")
     ):
-        response = app.post(url_distribution, data, upload_files=[("file", "test.csv", file_content)], expect_errors=True,)
+        response = app.post(
+            url_distribution,
+            data,
+            upload_files=[("file", "test.csv", file_content)],
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+            expect_errors=True,
+        )
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert DatasetDistribution.objects.count() == 0
@@ -125,8 +144,9 @@ def test_list(
     distribution: DatasetDistribution,
     url_distribution: str,
     domain: str,
+    valid_token: str,
 ):
-    response = app.get(url_distribution)
+    response = app.get(url_distribution, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"})
 
     assert response.status_code == status.HTTP_200_OK
     assert response.json == {
@@ -164,6 +184,7 @@ def test_list_with_query_parameters(
     distribution: DatasetDistribution,
     url_distribution: str,
     domain: str,
+    valid_token: str,
 ):
     distribution_2 = DatasetDistributionFactory(
         dataset=dataset,
@@ -181,7 +202,8 @@ def test_list_with_query_parameters(
         params={
             "dataset._id": dataset.id,
             "name": distribution.metadata.first().name
-        }
+        },
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
     )  # w/ Query parameters, we should only get one.
 
     assert response.status_code == status.HTTP_200_OK
@@ -218,6 +240,7 @@ def test_list_with_query_parameters_dataset_does_not_exist(
     app: DjangoTestApp,
     organization: Organization,
     url_distribution: str,
+    valid_token: str,
 ):
     response = app.get(
         url_distribution,
@@ -225,6 +248,7 @@ def test_list_with_query_parameters_dataset_does_not_exist(
             "dataset._id": 1,
             "name": "not_existing_distribution"
         },
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
         expect_errors=True
     )
 
@@ -244,6 +268,7 @@ def test_list_with_query_parameters_no_given_distribution(
     organization: Organization,
     dataset: Dataset,
     url_distribution: str,
+    valid_token: str,
 ):
     response = app.get(
         url_distribution,
@@ -251,6 +276,7 @@ def test_list_with_query_parameters_no_given_distribution(
             "dataset._id": dataset.id,
             "name": "not_existing_distribution"
         },
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
         expect_errors=True
     )
 
@@ -270,6 +296,7 @@ def test_list_distributions_the_distributions_dataset_is_deleted(
     dataset: Dataset,
     distribution: DatasetDistribution,
     url_distribution: str,
+    valid_token: str,
 ):
     dataset.deleted = True
     dataset.save(update_fields=["deleted"])
@@ -280,6 +307,7 @@ def test_list_distributions_the_distributions_dataset_is_deleted(
             "dataset._id": dataset.id,
             "name": distribution.metadata.first().name,
         },
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
         expect_errors=True
     )
 
@@ -300,6 +328,7 @@ def test_list_distributions_the_distribution_is_deleted(
     dataset: Dataset,
     distribution: DatasetDistribution,
     url_distribution: str,
+    valid_token: str,
 ):
     distribution.deleted = True
     distribution.save(update_fields=["deleted"])
@@ -310,6 +339,7 @@ def test_list_distributions_the_distribution_is_deleted(
             "dataset._id": dataset.id,
             "name": distribution.metadata.first().name,
         },
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
         expect_errors=True
     )
 
@@ -330,6 +360,7 @@ def test_list_unexpected_exception_raised(
     dataset: Dataset,
     distribution: DatasetDistribution,
     url_distribution: str,
+    valid_token: str,
 ):
     with patch(
         "vitrina.uapi.views.views.BaseObjectListSerializer.data",
@@ -342,6 +373,7 @@ def test_list_unexpected_exception_raised(
                 "dataset._id": dataset.id,
                 "name": distribution.metadata.first().name,
             },
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True
         )
 

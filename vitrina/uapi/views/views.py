@@ -43,7 +43,7 @@ from vitrina.uapi.utils.views import UAPIExceptionHandlerMixin
 class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
     authentication_classes = [OAuth2AuthenticationWithLocalJWK]
     permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
-    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES
+    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES  # TODO: Update scopes to be specific per action.
 
     @cached_property
     def dataset_metadata_id(self) -> int:
@@ -192,7 +192,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
     authentication_classes = [OAuth2AuthenticationWithLocalJWK]
     permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
-    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES
+    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES  # TODO: Update scopes to be specific per action.
 
     @cached_property
     def distribution_metadata_id(self) -> int:

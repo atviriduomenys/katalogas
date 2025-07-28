@@ -27,14 +27,18 @@ def test_create(
     organization: Organization,
     url_dataset: str,
     domain: str,
+    valid_token: str,
 ):
     data = {
         "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
         "title": "DataSet 1",
         "description": "DataSet 1 description",
     }
-
-    response = app.post(url_dataset, data)
+    response = app.post(
+        url_dataset,
+        data,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+    )
 
     assert response.status_code == status.HTTP_201_CREATED
 
@@ -76,8 +80,14 @@ def test_create_serialization_validation_error(
     app: DjangoTestApp,
     organization: Organization,
     url_dataset: str,
+    valid_token: str,
 ):
-    response = app.post(url_dataset, {}, expect_errors=True)
+    response = app.post(
+        url_dataset,
+        {},
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True,
+    )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert Dataset.objects.filter(organization=organization).count() == 0
@@ -107,6 +117,7 @@ def test_create_unexpected_exception_raised_and_rollback_executed(
     app: DjangoTestApp,
     organization: Organization,
     url_dataset: str,
+    valid_token: str,
 ):
     """Check that unexpected errors still return a standard UAPI formatted response."""
     data = {
@@ -121,7 +132,12 @@ def test_create_unexpected_exception_raised_and_rollback_executed(
             new_callable=PropertyMock,
             side_effect=Exception("Unexpected error")
     ):
-        response = app.post(url_dataset, data, expect_errors=True)
+        response = app.post(
+            url_dataset,
+            data,
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+            expect_errors=True,
+        )
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert Dataset.objects.filter(organization=organization).count() == 0
@@ -143,8 +159,9 @@ def test_list(
     dataset: Dataset,
     url_dataset: str,
     domain: str,
+    valid_token: str,
 ):
-    response = app.get(url_dataset)
+    response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"})
 
     assert response.status_code == status.HTTP_200_OK
     assert Dataset.objects.filter(organization=organization).count() == 1
@@ -187,6 +204,7 @@ def test_list_with_query_parameters(
     dataset: Dataset,
     url_dataset: str,
     domain: str,
+    valid_token: str,
 ):
     dataset_2 = DatasetFactory(
         organization=organization,
@@ -203,6 +221,7 @@ def test_list_with_query_parameters(
     response = app.get(
         url_dataset,
         params={"name": dataset.metadata.first().name},
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
     )  # w/ Query parameters, we should only get one.
 
     assert response.status_code == status.HTTP_200_OK
@@ -244,8 +263,9 @@ def test_list_no_datasets_exist(
     app: DjangoTestApp,
     organization: Organization,
     url_dataset: str,
+    valid_token: str,
 ):
-    response = app.get(url_dataset, expect_errors=True)
+    response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert response.json == {
@@ -261,6 +281,7 @@ def test_list_only_archived_datasets(
     app: DjangoTestApp,
     organization: Organization,
     url_dataset: str,
+    valid_token: str,
 ):
     dataset = DatasetFactory(
         organization=organization,
@@ -275,7 +296,7 @@ def test_list_only_archived_datasets(
         name="test/dataset/TestModel",
     )
 
-    response = app.get(url_dataset, expect_errors=True)
+    response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True)
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert Dataset.objects.filter(organization=organization).count() == 1
@@ -294,6 +315,7 @@ def test_list_with_query_parameters_archived_dataset(
     app: DjangoTestApp,
     organization: Organization,
     url_dataset: str,
+    valid_token: str,
 ):
     dataset = DatasetFactory(
         organization=organization,
@@ -308,7 +330,12 @@ def test_list_with_query_parameters_archived_dataset(
         name="test/dataset/TestModel",
     )
 
-    response = app.get(url_dataset, params={"name": dataset.metadata.first().name}, expect_errors=True)
+    response = app.get(
+        url_dataset,
+        params={"name": dataset.metadata.first().name},
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True
+    )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert Dataset.objects.filter(organization=organization).count() == 1
@@ -330,8 +357,14 @@ def test_list_no_datasets_for_the_organization_passed_in_path_parameters(
     organization: Organization,
     dataset: Dataset,
     url_dataset: str,
+    valid_token: str,
 ):
-    response = app.get(url_dataset, params={"name": "dataset/that/does/not/exist"}, expect_errors=True)
+    response = app.get(
+        url_dataset,
+        params={"name": "dataset/that/does/not/exist"},
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True,
+    )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert Dataset.objects.filter(metadata__name="dataset/that/does/not/exist").count() == 0
@@ -355,8 +388,14 @@ def test_action_upload_dataset_structure(
     dataset: Dataset,
     dsa: str,
     url_dataset_structure: str,
+    valid_token: str,
 ):
-    response = app.post(url_dataset_structure, dsa, content_type="text/csv")
+    response = app.post(
+        url_dataset_structure,
+        dsa,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        content_type="text/csv",
+    )
 
     assert response.status_code == status.HTTP_204_NO_CONTENT
     assert not response.body
@@ -371,6 +410,7 @@ def test_action_upload_dataset_structure_no_object(
     app: DjangoTestApp,
     organization: Organization,
     dsa: str,
+    valid_token: str,
 ):
     url = reverse("dataset-structure", kwargs={
         "form": organization.kind,
@@ -380,7 +420,13 @@ def test_action_upload_dataset_structure_no_object(
         "dataset_id": 1,
     })
 
-    response = app.post(url, dsa, content_type="text/csv", expect_errors=True)
+    response = app.post(
+        url,
+        dsa,
+        content_type="text/csv",
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True,
+    )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
     assert Dataset.objects.filter(organization=organization).count() == 0
@@ -399,8 +445,15 @@ def test_action_upload_dataset_structure_empty_csv(
     organization: Organization,
     dataset: Dataset,
     url_dataset_structure: str,
+    valid_token: str,
 ):
-    response = app.post(url_dataset_structure, "", content_type="text/csv", expect_errors=True)
+    response = app.post(
+        url_dataset_structure,
+        "",
+        content_type="text/csv",
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True,
+    )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json == {
@@ -417,8 +470,15 @@ def test_action_upload_dataset_structure_file_only_contains_special_characters(
     organization: Organization,
     dataset: Dataset,
     url_dataset_structure: str,
+    valid_token: str,
 ):
-    response = app.post(url_dataset_structure, "\r\n\t ", content_type="text/csv", expect_errors=True)
+    response = app.post(
+        url_dataset_structure,
+        "\r\n\t ",
+        content_type="text/csv",
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True,
+    )
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert response.json == {
@@ -435,10 +495,17 @@ def test_action_upload_dataset_structure_transaction_rollback_on_failure(
     dataset: Dataset,
     dsa: str,
     url_dataset_structure: str,
+    valid_token: str,
 ):
 
     with patch("vitrina.uapi.views.views.Dataset.save", side_effect=Exception("Unexpected error")):
-        response = app.post(url_dataset_structure, dsa, content_type="text/csv", expect_errors=True)
+        response = app.post(
+            url_dataset_structure,
+            dsa,
+            content_type="text/csv",
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+            expect_errors=True,
+        )
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert DatasetStructure.objects.count() == 0
@@ -459,8 +526,15 @@ def test_action_update_dataset_structure_update(
     dataset: Dataset,
     dsa: str,
     url_dataset_structure: str,
+    valid_token: str,
 ):
     """This test currently proves that the endpoint returns 501 NOT IMPLEMENTED."""
-    response = app.put(url_dataset_structure, dsa, content_type="text/csv", expect_errors=True)
+    response = app.put(
+        url_dataset_structure,
+        dsa,
+        content_type="text/csv",
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True,
+    )
 
     assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED

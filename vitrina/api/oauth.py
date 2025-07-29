@@ -97,8 +97,12 @@ class OAuthClientAuthenticator:
 
     @staticmethod
     def resolve_organization_from_token(decoded_token: JWTClaims) -> Organization | None:
-        organization_id = decoded_token.get("organization_id")
-        return Organization.objects.get(pk=organization_id) if organization_id else None
+        if not (organization_id := decoded_token.get("organization_id")):
+            return None
+        try:
+            return Organization.objects.get(pk=organization_id)
+        except Organization.DoesNotExist:
+            return None
 
     @staticmethod
     def resolve_client_id_from_token(decoded_token: JWTClaims) -> str:

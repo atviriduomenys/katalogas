@@ -6,21 +6,17 @@ from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin
 
 class UAPIDatasetSerializer(BaseObjectMixin, DatasetSerializer):
     class Meta(DatasetSerializer.Meta):
-        fields = DatasetSerializer.Meta.fields + [
-            "_context", "_type", "_id", "_revision", "_txn", "_created", "_updated"
-        ]
+        fields = DatasetSerializer.Meta.fields + BaseObjectMixin.Meta.fields
 
 
 class UAPIDatasetCreateSerializer(PostDatasetSerializer):
     class Meta(PostDatasetSerializer.Meta):
-        fields = PostDatasetSerializer.Meta.fields + ["name"]
+        fields = PostDatasetSerializer.Meta.fields + ("name",)
 
 
 class UAPIDistributionSerializer(BaseObjectMixin, DatasetDistributionSerializer):
     class Meta(DatasetDistributionSerializer.Meta):
-        fields = DatasetDistributionSerializer.Meta.fields + [
-            "_context", "_type", "_id", "_revision", "_txn", "_created", "_updated"
-        ]
+        fields = DatasetDistributionSerializer.Meta.fields + BaseObjectMixin.Meta.fields
 
 
 class DatasetQueryParameterSerializer(serializers.Serializer):

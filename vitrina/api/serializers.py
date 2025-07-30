@@ -147,7 +147,7 @@ class DatasetSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Dataset
-        fields = [
+        fields = (
             "created",
             "id",
             "internalId",
@@ -166,7 +166,7 @@ class DatasetSerializer(serializers.ModelSerializer):
             "theme",
             "organization_id",
             "organization_title",
-        ]
+        )
 
     def get_landingPage(self, obj):
         landing_page = ""
@@ -205,7 +205,7 @@ class PostDatasetSerializer(DatasetSerializer):
     )
 
     class Meta(DatasetSerializer.Meta):
-        fields = [
+        fields = (
             "internalId",
             "published",
             "title",
@@ -219,7 +219,7 @@ class PostDatasetSerializer(DatasetSerializer):
             "keyword",
             "landingPage",
             "theme",
-        ]
+        )
 
     def create(self, validated_data):
         languages = validated_data.pop("language_array", [])
@@ -322,7 +322,7 @@ class DatasetDistributionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = DatasetDistribution
-        fields = [
+        fields = (
             "description",
             "file",
             "id",
@@ -337,7 +337,7 @@ class DatasetDistributionSerializer(serializers.ModelSerializer):
             "url",
             "version",
             "upload_to_storage",
-        ]
+        )
 
     def get_url(self, obj):
         if obj.type == "URL":
@@ -357,11 +357,11 @@ class UploadToStorageSerializer(DatasetDistributionSerializer):
     update_interval = serializers.SerializerMethodField()
 
     class Meta(DatasetDistributionSerializer.Meta):
-        fields = DatasetDistributionSerializer.Meta.fields + [
+        fields = DatasetDistributionSerializer.Meta.fields + (
             "organization_id",
             "dataset_id",
             "update_interval",
-        ]
+        )
 
     def get_organization_id(self, obj):
         if obj.dataset.organization:

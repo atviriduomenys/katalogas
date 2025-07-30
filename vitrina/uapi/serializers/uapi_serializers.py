@@ -23,6 +23,11 @@ class BaseObjectMixin(serializers.Serializer):
     _created = serializers.DateTimeField(source="created")
     _updated = serializers.DateTimeField(source="modified")
 
+
+    class Meta:
+        fields = ("_context", "_type", "_id", "_revision", "_txn", "_created", "_updated")
+
+
     def to_representation(self, instance: Model) -> dict:
         representation = super().to_representation(instance)
         representation["@context"] = representation.pop("_context", "") or ""

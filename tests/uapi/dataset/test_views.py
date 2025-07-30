@@ -16,7 +16,6 @@ from tests.uapi.conftest import _generate_test_token
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
@@ -178,43 +177,6 @@ def test_create_no_organization_id_inside_token_payload(
     token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
     response = app.post(
         url_dataset,
-        {},  # Empty data, since it should not get to the part where it is used.
-        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
-        expect_errors=True,
-    )
-
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
-    assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
-        "message": "You do not have permission to perform this action.",
-        "additionalProperties": None,
-    }
-
-
-def test_create_organization_retrieved_from_token_mismatch_from_provided_in_url(
-    app: DjangoTestApp,
-    organization: Organization,
-    url_dataset: str,
-    domain: str,
-    test_jwk: RSAKey,
-):
-    """Tests that the organization inside the JWT matches the organization provided in the URL `org` part.
-
-    E.g., if the url is: uapi/datasets/gov/vssa/isris/dcat/uapi/Model.
-    - The organization in the system identified by `organization_id` inside JWT should match the `name = 'vssa'`.
-    """
-    organization_2 = OrganizationFactory()
-    token = _generate_test_token(
-        test_jwk,
-        organization_id=organization_2.id,
-        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-    )
-    response = app.post(
-        url_dataset,  # Builds a URL for `organization` (not `organization_2`)
         {},  # Empty data, since it should not get to the part where it is used.
         extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
         expect_errors=True,
@@ -455,40 +417,6 @@ def test_list_no_organization_id_inside_token_payload(
     }
 
 
-def test_list_organization_retrieved_from_token_mismatch_from_provided_in_url(
-    app: DjangoTestApp,
-    organization: Organization,
-    dataset: Dataset,
-    url_dataset: str,
-    domain: str,
-    test_jwk: RSAKey,
-):
-    """Tests that the organization inside the JWT matches the organization provided in the URL `org` part.
-
-    E.g., if the url is: uapi/datasets/gov/vssa/isris/dcat/uapi/Model.
-    - The organization in the system identified by `organization_id` inside JWT should match the `name = 'vssa'`.
-    """
-    organization_2 = OrganizationFactory()
-    token = _generate_test_token(
-        test_jwk,
-        organization_id=organization_2.id,
-        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-    )
-
-    response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
-
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
-    assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
-        "message": "You do not have permission to perform this action.",
-        "additionalProperties": None,
-    }
-
-
 def test_list_with_query_parameters(
     app: DjangoTestApp,
     organization: Organization,
@@ -563,7 +491,9 @@ def test_list_no_datasets_exist(
         "code": "dataset_not_found",
         "type": "DatasetNotFound",
         "template": "The requested Dataset could not be found.",
-        "message": f"No dataset matched the provided query — http://testserver/uapi/datasets/org/{organization.name}/default/v1/Dataset/.",
+        "message": (
+            f"No dataset matched the provided query — http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/."
+        ),
         "additionalProperties": None
     }
 
@@ -596,7 +526,7 @@ def test_list_only_archived_datasets(
         "type": "DatasetNotFound",
         "template": "The requested Dataset could not be found.",
         "message": (
-            f"No dataset matched the provided query — http://testserver/uapi/datasets/{organization.kind}/{organization.name}/default/v1/Dataset/."
+            f"No dataset matched the provided query — http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/."
         ),
         "additionalProperties": None
     }
@@ -636,8 +566,7 @@ def test_list_with_query_parameters_archived_dataset(
         "template": "The requested Dataset could not be found.",
         "message": (
             f"No dataset matched the provided query — "
-            f"http://testserver/uapi/datasets/"
-            f"{organization.kind}/{organization.name}/default/v1/Dataset/?name={quote(metadata.name, safe='')}."
+            f"http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/?name={quote(metadata.name, safe='')}."
         ),
         "additionalProperties": None
     }
@@ -666,8 +595,7 @@ def test_list_no_datasets_for_the_organization_passed_in_path_parameters(
         "message": (
             f"No dataset matched the provided query — "
             f"http://testserver/uapi/datasets/"
-            f"{organization.kind}/{organization.name}"
-            f"/default/v1/Dataset/?name={quote('dataset/that/does/not/exist', safe='')}."
+            f"org/vssa/isris/dcat/Dataset/?name={quote('dataset/that/does/not/exist', safe='')}."
         ),
         "additionalProperties": None
     }
@@ -788,54 +716,13 @@ def test_action_upload_dataset_structure_no_organization_id_inside_token_payload
     }
 
 
-def test_action_upload_dataset_structure_organization_retrieved_from_token_mismatch_from_provided_in_url(
-    app: DjangoTestApp,
-    organization: Organization,
-    dataset: Dataset,
-    dsa: str,
-    url_dataset_structure: str,
-    test_jwk: RSAKey,
-):
-    organization_2 = OrganizationFactory()
-    token = _generate_test_token(
-        test_jwk,
-        organization_id=organization_2.id,
-        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-    )
-
-    response = app.post(
-        url_dataset_structure,
-        dsa,
-        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
-        content_type="text/csv",
-        expect_errors=True
-    )
-
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
-    assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
-        "message": "You do not have permission to perform this action.",
-        "additionalProperties": None,
-    }
-
-
 def test_action_upload_dataset_structure_no_object(
     app: DjangoTestApp,
     organization: Organization,
     dsa: str,
     valid_token: str,
 ):
-    url = reverse("dataset-structure", kwargs={
-        "form": organization.kind,
-        "org": organization.name,
-        "catalog": "default",
-        "catalog_sub": "v1",
-        "dataset_id": 1,
-    })
+    url = reverse("uapi-dataset-structure", kwargs={"dataset_id": 1})
 
     response = app.post(
         url,
@@ -1023,41 +910,6 @@ def test_action_update_dataset_structure_no_organization_id_inside_token_payload
     test_jwk: RSAKey,
 ):
     token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
-
-    response = app.put(
-        url_dataset_structure,
-        dsa,
-        content_type="text/csv",
-        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
-        expect_errors=True,
-    )
-
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
-    assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
-        "message": "You do not have permission to perform this action.",
-        "additionalProperties": None,
-    }
-
-
-def test_action_update_dataset_structure_organization_retrieved_from_token_mismatch_from_provided_in_url(
-    app: DjangoTestApp,
-    organization: Organization,
-    dataset: Dataset,
-    dsa: str,
-    url_dataset_structure: str,
-    test_jwk: RSAKey,
-):
-    organization_2 = OrganizationFactory()
-    token = _generate_test_token(
-        test_jwk,
-        organization_id=organization_2.id,
-        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-    )
 
     response = app.put(
         url_dataset_structure,

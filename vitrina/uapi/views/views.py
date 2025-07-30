@@ -69,8 +69,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         ).filter(
             ~Q(deleted=True),
             metadata__content_type_id=self.dataset_metadata_id,
-            organization__kind=self.kwargs["form"],
-            organization__name=self.kwargs["org"],
+            organization__id=self.request.auth["organization_id"],
         )
 
         if request_params := self.request.query_params:
@@ -91,7 +90,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        organization = get_object_or_404(Organization, kind=self.kwargs["form"], name=self.kwargs["org"])
+        organization = get_object_or_404(Organization, id=self.request.auth["organization_id"])
 
         serializer_context = self.get_serializer_context()
         serializer = self.get_serializer(
@@ -151,8 +150,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             Dataset,
             ~Q(deleted=True),
             id=self.kwargs["dataset_id"],
-            organization__kind=self.kwargs["form"],
-            organization__name=self.kwargs["org"],
+            organization__id=self.request.auth["organization_id"]
         )
 
         if not request.body or not request.body.strip(b"\r\n\t "):
@@ -216,8 +214,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             ~Q(deleted=True),
             ~Q(dataset__deleted=True),
             metadata__content_type_id=self.distribution_metadata_id,
-            dataset__organization__kind=self.kwargs["form"],
-            dataset__organization__name=self.kwargs["org"]
+            dataset__organization__id=self.request.auth["organization_id"],
         )
 
         if request_params := self.request.query_params:

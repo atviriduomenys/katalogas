@@ -163,9 +163,5 @@ class OAuthTokenHasValidOrganizationClaim(BasePermission):
         if not (organization := OAuthClientAuthenticator.resolve_organization_from_token(request.auth)):
             return False
 
-        url_path_organization_kind, url_path_organization_name = view.kwargs["form"], view.kwargs["org"]
-        if organization.kind != url_path_organization_kind or organization.name != url_path_organization_name:
-            return False
-
         setattr(request, "organization", organization)
         return True

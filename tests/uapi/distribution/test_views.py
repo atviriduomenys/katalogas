@@ -14,7 +14,6 @@ from reversion.models import Version
 from tests.uapi.conftest import _generate_test_token
 from vitrina import settings
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
@@ -175,40 +174,6 @@ def test_create_no_organization_id_inside_token_payload(
         organization_id=None,
         scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
     )
-    response = app.post(
-        url_distribution,
-        {},
-        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
-        expect_errors=True,
-    )
-
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
-    assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
-        "message": "You do not have permission to perform this action.",
-        "additionalProperties": None,
-    }
-
-
-def test_create_organization_retrieved_from_token_mismatch_from_provided_in_url(
-    app: DjangoTestApp,
-    organization: Organization,
-    dataset: Dataset,
-    url_distribution: str,
-    domain: str,
-    test_jwk: RSAKey,
-):
-    organization_2 = OrganizationFactory()
-    token = _generate_test_token(
-        test_jwk,
-        organization_id=organization_2.id,
-        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-    )
-
     response = app.post(
         url_distribution,
         {},
@@ -443,44 +408,6 @@ def test_list_no_organization_id_inside_token_payload(
         "additionalProperties": None,
     }
 
-
-def test_list_organization_retrieved_from_token_mismatch_from_provided_in_url(
-    app: DjangoTestApp,
-    organization: Organization,
-    dataset: Dataset,
-    distribution: DatasetDistribution,
-    url_distribution: str,
-    domain: str,
-    test_jwk: RSAKey,
-):
-    """Tests that the organization inside the JWT matches the organization provided in the URL `org` part.
-
-    E.g., if the url is: uapi/datasets/gov/vssa/isris/dcat/uapi/Model.
-    - The organization in the system identified by `organization_id` inside JWT should match the `name = 'vssa'`.
-    """
-    organization_2 = OrganizationFactory()
-    token = _generate_test_token(
-        test_jwk,
-        organization_id=organization_2.id,
-        scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-    )
-
-    response = app.get(
-        url_distribution,
-        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
-        expect_errors=True
-    )
-
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
-    response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
-    assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
-        "message": "You do not have permission to perform this action.",
-        "additionalProperties": None,
-    }
 
 def test_list_with_query_parameters(
     app: DjangoTestApp,

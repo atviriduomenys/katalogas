@@ -19,17 +19,8 @@ from vitrina.settings import OAUTH_AGENT_DEFAULT_SCOPES
 from vitrina.structure.factories import MetadataFactory
 
 
-def _build_reverse_uapi_url(name: str, organization: Organization, **kwargs: Any) -> str:
-    return reverse(
-        name,
-        kwargs={
-            "form": organization.kind,
-            "org": organization.name,
-            "catalog": "default",
-            "catalog_sub": "v1",
-            **kwargs,
-        }
-    )
+def _build_reverse_uapi_url(name: str, **kwargs: Any) -> str:
+    return reverse(name, kwargs=kwargs)
 
 
 def _generate_test_token(
@@ -116,18 +107,18 @@ def distribution(organization: Organization, dataset: Dataset) -> DatasetDistrib
 
 
 @pytest.fixture
-def url_dataset(organization: Organization) -> str:
-    return _build_reverse_uapi_url("dataset", organization)
+def url_dataset() -> str:
+    return _build_reverse_uapi_url("uapi-dataset")
 
 
 @pytest.fixture
-def url_distribution(organization: Organization) -> str:
-    return _build_reverse_uapi_url("distribution", organization)
+def url_distribution() -> str:
+    return _build_reverse_uapi_url("uapi-distribution")
 
 
 @pytest.fixture
-def url_dataset_structure(organization: Organization, dataset: Dataset) -> str:
-    return _build_reverse_uapi_url("dataset-structure", organization, dataset_id=dataset.id)
+def url_dataset_structure(dataset: Dataset) -> str:
+    return _build_reverse_uapi_url("uapi-dataset-structure", dataset_id=dataset.id)
 
 
 @pytest.fixture

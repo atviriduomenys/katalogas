@@ -283,20 +283,3 @@ def test_token_has_valid_organization_claim_no_organization_id_in_jwt_payload(
     result = OAuthTokenHasValidOrganizationClaim().has_permission(request, view)
     assert result is False
     assert not hasattr(request, "organization")
-
-
-@pytest.mark.django_db
-def test_token_has_valid_organization_claim_jwt_token_has_different_id_than_organization_in_url(
-    request_factory: APIRequestFactory,
-    decoded_jwt: JWTClaims,
-):
-    OrganizationFactory(id=decoded_jwt["organization_id"], kind="gov", name="not vssa")
-
-    request = request_factory.get("/")
-    request.auth = decoded_jwt
-
-    view = TestView(kwargs={"form": "org", "org": "vssa"})
-
-    result = OAuthTokenHasValidOrganizationClaim().has_permission(request, view)
-    assert result is False
-    assert not hasattr(request, "organization")

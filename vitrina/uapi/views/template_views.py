@@ -127,7 +127,6 @@ class AgentDetailView(BaseAgentView):
             },
             "agent": self.object,
             "dataset": self.object.service,
-            "organization": self.organization,
             "secret": self.request.session.pop("secret", None),
             "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
             "auth_server_host": settings.OAUTH_SERVER_HOST,

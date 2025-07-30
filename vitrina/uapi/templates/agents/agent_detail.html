@@ -149,8 +149,6 @@ resource_server = {{ resource_server_host }}
 client_id = {{ agent.oauth_client_id }}
 client = {{ agent.global_codename }}
 secret = {{ secret|default:"******" }}
-organization_name = {{ organization.name }}
-organization_form = {{ organization.kind }}
 scopes =
 {% for scope in scopes %}    {{ scope }}
 {% endfor %}

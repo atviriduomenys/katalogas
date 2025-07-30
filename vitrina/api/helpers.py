@@ -115,9 +115,7 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
 def _get_categories(dataset):
     categories = []
 
-    for c in dataset.category.exclude(
-        groups__translations__title="Didelės vertės rinkiniai"
-    ):
+    for c in dataset.category.all():
         root_category = c.get_root()
         if root_category not in categories:
             categories.append(root_category)

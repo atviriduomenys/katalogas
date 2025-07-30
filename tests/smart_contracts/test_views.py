@@ -300,7 +300,7 @@ class TestAgreementGeneratePdf:
     ) -> None:
 
 
-        SmartContractTemplate.objects.create(
+        template = SmartContractTemplate.objects.create(
             default_template=ContentFile(open("tests/smart_contracts/files/contract_template.md").read(), name="contract_template.md")
         )
         user = UserFactory(
@@ -330,15 +330,36 @@ class TestAgreementGeneratePdf:
         )
 
         assert agreement.files.count() == 0
-
+        other_assigner_legislations = "Bought data"
+        other_assignee_legislations = "Sold data"
+        payment_terms = "Cash only"
         response = app.post(
-            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk])
+            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]), {
+            "template": template.pk,
+            "other_assigner_legislations": other_assigner_legislations,
+            "other_assignee_legislations": other_assignee_legislations,
+            "payment_terms": payment_terms,
+        }
         )
         agreement.refresh_from_db()
         assert response.status_code == 302
         assert agreement.status == AgreementStatuses.FORMED
-        assert agreement.files.count() == 1
-        contract: AgreementFile = agreement.files.first()
+        agreement_files=  list(agreement.files.order_by("is_template"))
+        assert len(agreement_files) == 2
+        template_copy: AgreementFile = agreement_files[1]
+        assert template_copy.is_template
+        assert template_copy.file_name
+        for name_part in ("_copy.md", "contract_template"):
+            assert name_part in template_copy.file_name
+        assert "/" not in template_copy.file_name
+        assert template_copy.file.path != template.default_template.path  # check if is an hard copy
+        assert template_copy.file.read() == template.default_template.read()
+        assert template_copy.checksum
+
+        contract: AgreementFile = agreement_files[0]
+        assert not contract.is_template
+        assert contract.checksum
+
         odrl = contract.odrl
 
         expected_odrl = {
@@ -383,9 +404,9 @@ class TestAgreementGeneratePdf:
                     }
                 }
             ],
-            "ex:paymentTerms": " - ",
-            "ex:otherAssignerLegislations": " - ",
-            "ex:otherAssigneeLegislations": " - ",
+            "ex:paymentTerms": payment_terms,
+            "ex:otherAssignerLegislations": other_assigner_legislations,
+            "ex:otherAssigneeLegislations": other_assignee_legislations,
         }
 
         assert contract.odrl == expected_odrl

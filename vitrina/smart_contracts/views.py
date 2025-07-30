@@ -1,8 +1,10 @@
+import os
 from itertools import groupby
 from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.core.files.base import ContentFile
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -13,7 +15,6 @@ from django.http.response import HttpResponseBase, HttpResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from django.views import View
 from django.views.generic import TemplateView, FormView
 
 from vitrina.datasets.models import Dataset
@@ -24,9 +25,9 @@ from vitrina.smart_contracts import AgreementStatuses, AGREEMENT_STATUS_DESCRIPT
 from vitrina.smart_contracts.forms import (
     SmartContractForm,
     SmartContractFormSetHelper,
-    AgreementUploadForm,
+    AgreementUploadForm, AgreementGeneratePdfForm,
 )
-from vitrina.smart_contracts.models import Agreement, AgreementScope, AgreementFile
+from vitrina.smart_contracts.models import Agreement, AgreementScope, AgreementFile, SmartContractTemplate
 from vitrina.users.models import User
 from vitrina.views import FormsetView, HistoryMixin
 
@@ -132,11 +133,14 @@ class AgreementDetailView(
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, self.agreement)
 
-    def get_context_data(self, **kwargs: Any) -> dict:
-        context = super().get_context_data(**kwargs)
-        page_title = _("Sutartis: {organization}").format(
+    def get_page_tite(self) -> str:
+        return _("Sutartis: {organization}").format(
             organization=self.agreement.assigner
         )
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+        page_title = self.get_page_tite()
 
         context.update(
             {
@@ -271,12 +275,17 @@ class AgreementCreateView(
 
 
 class AgreementGeneratePdf(
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    BaseAgreementMixin,
-    BaseProjectMixin,
-    View,
+    AgreementDetailView,
+    FormView,
 ):
+    form_class = AgreementGeneratePdfForm
+    template_name = "smart_contracts/agreement_generate_pdf.html"
+
+    def get_page_tite(self) -> str:
+        return _("Sutarties generavimas: {organization}").format(
+            organization=self.agreement.assigner
+        )
+
     def has_permission(self) -> bool:
         return (
             has_perm(self.request.user, Action.UPDATE, self.agreement)
@@ -303,13 +312,27 @@ class AgreementGeneratePdf(
         return reverse("agreement-detail", args=[self.object.pk, self.agreement.pk])
 
     @transaction.atomic
-    def post(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+    def form_valid(self, form: AgreementGeneratePdfForm) -> HttpResponse:
+        contract_template :SmartContractTemplate = form.cleaned_data["template"]
         self.agreement.status = AgreementStatuses.FORMED
+        self.agreement.other_assigner_legislations = form.cleaned_data["other_assigner_legislations"]
+        self.agreement.other_assignee_legislations = form.cleaned_data["other_assignee_legislations"]
+        self.agreement.payment_terms = form.cleaned_data["payment_terms"]
         self.agreement.save()
-        self.agreement.generate_contract_pdf_file()
+        self.agreement.generate_contract_pdf_file(template=contract_template)
+        name_without_ext, ext = os.path.splitext(os.path.basename(contract_template.default_template.name))
 
-        messages.success(request, _("Sutarties dokumentas sukurtas"))
+        copy_filename = f"{name_without_ext}_copy{ext}"
+        with contract_template.default_template.open() as f:
+            self.agreement.files.create(file=ContentFile(content=f.read(), name=copy_filename), is_template=True, file_name=copy_filename)
+
+        messages.success(self.request, _("Sutarties dokumentas sukurtas"))
         return HttpResponseRedirect(self.get_success_url())
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["agreement"] = self.agreement
+        return kwargs
 
 
 class AgreementUploadSignedFile(

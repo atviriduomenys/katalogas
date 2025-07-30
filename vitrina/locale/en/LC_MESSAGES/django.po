@@ -3069,7 +3069,10 @@ msgid "Generuoti sutartis"
 msgstr "Generate agreements"
 
 msgid "Grįžti į sutartis"
-msgstr "Go back"
+msgstr "Go back to agreements"
+
+msgid "Grįžti į sutartį"
+msgstr "Go back to agreement"
 
 msgid "Generuoti sutarties dokumentą"
 msgstr "Generate agreement document"
@@ -5068,3 +5071,7 @@ msgstr "Agency"
 
 msgid "Atstovybės"
 msgstr "Agencies"
+
+#, python-brace-format
+msgid "Sutarties generavimas: {organization}"
+msgstr "Agreement generation: {organization}"

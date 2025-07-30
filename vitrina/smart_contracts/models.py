@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 from io import BytesIO
 
@@ -12,7 +13,7 @@ from vitrina.orgs.models import Representative
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.services import generate_contract
-from vitrina.smart_contracts.utils import generate_pdf_checksum, format_lithuanian_datetime
+from vitrina.smart_contracts.utils import generate_pdf_checksum, format_lithuanian_datetime, generate_checksum
 from vitrina.users.models import User
 
 
@@ -35,6 +36,13 @@ class SmartContractTemplate(UUIDBaseModel):
         null=True,
         blank=True,
     )
+
+    def __str__(self) -> str:
+        name = os.path.basename(self.default_template.name)
+        if self.organization:
+            name += f" ({self.organization.title})"
+        return name
+
 
 
 class Agreement(UUIDBaseModel):
@@ -85,17 +93,11 @@ class Agreement(UUIDBaseModel):
     def get_acl_parents(self) -> list["Agreement"]:
         return [self]
 
-    @staticmethod
-    def get_default_smart_contract_template() -> SmartContractTemplate:
-        # TODO improve storage of default template. Probably by using django-solo lib.
-        return SmartContractTemplate.objects.filter(organization__isnull=True).first()
-
-    def generate_contract_pdf_file(self) -> "AgreementFile":
+    def generate_contract_pdf_file(self, template: SmartContractTemplate) -> "AgreementFile":
         odrl_jsonld = self.generate_odrl_jsonld()
         file_name = slugify(f"{self.project}_{self.assigner}_{self.assignee}_{datetime.now().isoformat()}") + ".pdf"
-        contract_template = self.get_default_smart_contract_template()
         pdf_buffer = BytesIO()
-        generate_contract(contract_template.default_template.path, odrl_jsonld, pdf_buffer)
+        generate_contract(template.default_template.path, odrl_jsonld, pdf_buffer)
         pdf_buffer.seek(0)
 
         return self.files.create(
@@ -220,6 +222,10 @@ class AgreementFile(UUIDBaseModel):
         return self.AllowedFileTypes(self.file_name.split(".")[-1])
 
     def save(self, *args, **kwargs):
-        if not self.pk and not self.checksum and self.file_type == self.AllowedFileTypes.PDF:
-            self.checksum = generate_pdf_checksum(self.file.path)
-        return super().save(*args, **kwargs)
+        super().save(*args, **kwargs)
+        if not self.checksum and self.file:
+            if self.file_type == self.AllowedFileTypes.PDF:
+                self.checksum = generate_pdf_checksum(self.file.path)
+            else:
+                self.checksum = generate_checksum(self.file.read())
+            self.save()

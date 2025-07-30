@@ -18,10 +18,9 @@
 
     <div class="buttons is-right">
         {% if agreement.status == "CREATED" %}
-            <form method="post" action="{% url "agreement-generate-pdf" project.pk agreement.pk %}">
-                {% csrf_token %}
-                <input type="submit" name="submit" value="{% translate "Generuoti sutarties dokumentą" %}" class="button is-primary m-t-xs m-b-lg" id="submit-id-submit">
-            </form>
+            <a href="{% url "agreement-generate-pdf" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                {% translate "Generuoti sutarties dokumentą" %}
+            </a>
         {% elif agreement.status == "FORMED" %}
             <a class="button is-primary m-t-xs m-b-lg" href="{% url "agreement-upload-signed-adoc" project.pk agreement.pk %}">
                 {% translate "Įkelti gavėjo pasirašytą dokumentą" %}

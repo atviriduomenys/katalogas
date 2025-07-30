@@ -3,6 +3,7 @@ from crispy_forms.layout import Submit
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
+from django.db.models import Q
 from django.db.models.fields.files import FieldFile
 from django.forms import CheckboxSelectMultiple
 from django.utils.translation import gettext_lazy as _
@@ -10,7 +11,7 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.smart_contracts.exceptions import InvalidAdocError
-from vitrina.smart_contracts.models import AgreementFile
+from vitrina.smart_contracts.models import AgreementFile, SmartContractTemplate, Agreement
 from vitrina.smart_contracts.services import has_valid_signature
 
 
@@ -92,3 +93,32 @@ class AgreementUploadForm(forms.ModelForm):
             raise ValidationError(_("Įkelta sutartis nepasirašyta."))
 
         return file
+
+class AgreementGeneratePdfForm(forms.Form):
+    template = forms.ModelChoiceField(
+        label=_("Pasirinkite šabloną (privaloma)"),
+        queryset=SmartContractTemplate.objects.none(),  # will be dynamically set in __init__
+        required=True
+    )
+    other_assigner_legislations = forms.CharField(
+        label=_("Papildomi teikėjo teisės aktai"),
+        required=False,
+        widget=forms.Textarea()
+    )
+    other_assignee_legislations = forms.CharField(
+        label=_("Papildomi gavėjo teisės aktai"),
+        required=False,
+        widget=forms.Textarea()
+    )
+    payment_terms = forms.CharField(
+        label=_("Mokėjimo sąlygos"),
+        required=False,
+        widget=forms.Textarea()
+    )
+
+    def __init__(self, *args, **kwargs):
+        agreement:Agreement = kwargs.pop("agreement")
+        super().__init__(*args, **kwargs)
+        self.fields["template"].queryset = SmartContractTemplate.objects.filter(
+            Q(organization__isnull=True) | Q(organization=agreement.assigner)
+        ).order_by("organization", "default_template")

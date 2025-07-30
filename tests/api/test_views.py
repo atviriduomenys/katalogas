@@ -16,7 +16,7 @@ from vitrina.api.factories import APIKeyFactory
 from vitrina.api.models import ApiKey
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import CategoryFactory
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
@@ -2237,7 +2237,6 @@ class EdpDcatApRestrictedRdfTests(TestCase):
         self.assertEqual(response["Content-Type"], "application/rdf+xml")
         self.assertIn(b"Restricted Dataset", response.content)
 
-
     def test_edp_dcat_ap_restricted_rdf_with_no_datasets(self):
         response = self.client.get(reverse("edp-dcat-ap-restricted-rdf"))
         self.assertEqual(response.status_code, 200)
@@ -2256,6 +2255,7 @@ class EdpDcatApRestrictedRdfTests(TestCase):
         response = self.client.get(reverse("edp-dcat-ap-restricted-rdf"))
         self.assertNotIn(b"Public Dataset", response.content)
 
+
 class EdpDcatApPublicRdfTests(TestCase):
     def test_edp_dcat_ap_public_rdf_returns_rdf(self):
         organization = OrganizationFactory()
@@ -2272,7 +2272,6 @@ class EdpDcatApPublicRdfTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response["Content-Type"], "application/rdf+xml")
         self.assertIn(b"Public Dataset", response.content)
-
 
     def test_edp_dcat_ap_public_rdf_with_no_datasets(self):
         response = self.client.get(reverse("edp-dcat-ap-rdf"))
@@ -2291,3 +2290,97 @@ class EdpDcatApPublicRdfTests(TestCase):
         )
         response = self.client.get(reverse("edp-dcat-ap-rdf"))
         self.assertNotIn(b"Restricted Dataset", response.content)
+
+
+@pytest.mark.django_db
+def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
+    hvd_group = DatasetGroupFactory()
+    hvd_group.set_current_language("lt")
+    hvd_group.title = "Didelės vertės rinkiniai"
+    hvd_group.save()
+    parent_category = CategoryFactory(
+        title="Environment",
+        uri=f'http://publications.europa.eu/resource/authority/data-theme/ENVI',
+    )
+    hvd_category = parent_category.add_child(
+        instance=CategoryFactory.build(
+            title="Earth observation and environment",
+            uri="http://data.europa.eu/bna/c_dd313021"
+        )
+    )
+    hvd_category.groups.add(hvd_group)
+
+    dataset = DatasetFactory(
+        title={
+            'lt': 'Testas1',
+            'en': 'Test1',
+        },
+        description={
+            'lt': 'Duomenų rinkinio aprašymas.',
+            'en': 'Dataset description.',
+        },
+        published=datetime(2016, 8, 1),
+        frequency=FrequencyFactory(uri=f'http://publications.europa.eu/resource/authority/frequency/IRREG'),
+        category=[hvd_category],
+        organization=OrganizationFactory(
+            title='Data Enterprise',
+            email='data@example.com',
+        ),
+        access_rights=Dataset.PUBLIC,
+    )
+
+    res = app.get('/edp/dcat-ap.rdf')
+
+    assert res.status_code == 200
+    assert res.headers['Content-Type'] == 'application/rdf+xml'
+    assert strip_empty_lines(res.text) == f'''\
+<?xml version="1.0"?>
+<rdf:RDF
+    xml:base="http://example.com"
+    xmlns:edp="https://europeandataportal.eu/voc#"
+    xmlns:dct="http://purl.org/dc/terms/"
+    xmlns:spdx="http://spdx.org/rdf/terms#"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns:j.0="http://data.europa.eu/88u/ontology/dcatapop#"
+    xmlns:adms="http://www.w3.org/ns/adms#"
+    xmlns:dqv="http://www.w3.org/ns/dqv#"
+    xmlns:vcard="http://www.w3.org/2006/vcard/ns#"
+    xmlns:skos="http://www.w3.org/2004/02/skos/core#"
+    xmlns:schema="http://schema.org/"
+    xmlns:dcat="http://www.w3.org/ns/dcat#"
+    xmlns:foaf="http://xmlns.com/foaf/0.1/"
+    xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:eli="https://data.europa.eu/eli/">
+    <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
+        <dct:title xml:lang="en">Test1</dct:title>
+        <dct:description xml:lang="en">Dataset description.</dct:description>
+        <dct:title xml:lang="lt">Testas1</dct:title>
+        <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
+        <dcatap:applicableLegislation>
+            <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
+        </dcatap:applicableLegislation>
+        <dcat:hvdCategory>
+            <skos:Concept rdf:about="http://data.europa.eu/bna/c_dd313021"/>
+        </dcat:hvdCategory>
+        <dcat:theme>
+            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
+        </dcat:theme>
+        <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
+        <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
+        <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
+        <dct:publisher>
+            <foaf:Organization>
+                <foaf:name>Data Enterprise</foaf:name>
+                <foaf:mbox rdf:resource="mailto:data@example.com"/>
+            </foaf:Organization>
+        </dct:publisher>
+        <dct:accrualPeriodicity>
+            <dct:Frequency rdf:about="http://publications.europa.eu/resource/authority/frequency/IRREG"/>
+        </dct:accrualPeriodicity>
+        <dcat:contactPoint>
+            <vcard:Kind>
+                <vcard:hasEmail rdf:resource="mailto:data@example.com"/>
+            </vcard:Kind>
+        </dcat:contactPoint>
+    </dcat:Dataset>
+</rdf:RDF>'''

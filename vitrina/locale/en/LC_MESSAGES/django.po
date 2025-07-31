@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-07-22 19:12+0300\n"
+"POT-Creation-Date: 2025-07-31 14:50+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -129,33 +129,6 @@ msgstr "Geoportal update frequency"
 msgid "Geoportalo atnaujinimo periodiškumai"
 msgstr "Geoportal update frequencies"
 
-msgid "Atitinkanti licencija"
-msgstr "Corresponding license"
-
-msgid "Geoportalo licencija"
-msgstr "Geoportal license"
-
-msgid "Geoportalo licencijos"
-msgstr "Geoportal licenses"
-
-msgid "Atviri duomenys"
-msgstr "Public data"
-
-msgid "Apsaugoti duomenys"
-msgstr "Protected data"
-
-msgid "Uždari duomenys"
-msgstr "Private data"
-
-msgid "Atitinkančios prieigos teisės"
-msgstr "Corresponding access rights"
-
-msgid "Geoportalo prieigos teisė"
-msgstr "Geoportal Access right"
-
-msgid "Geoportalo prieigos teisės"
-msgstr "Geoportal access rights"
-
 msgid "Kodinis pavadinimas"
 msgstr "Code name"
 
@@ -193,6 +166,33 @@ msgstr "Status"
 
 msgid "Būsenos"
 msgstr "Statuses"
+
+msgid "uri"
+msgstr "uri"
+
+msgid "Sąvokų schema"
+msgstr "Concept schema"
+
+msgid "Sąvokų schemos"
+msgstr "Concept schemas"
+
+msgid "Galioja nuo"
+msgstr "Valid since"
+
+msgid "Galioja iki"
+msgstr "Valid until"
+
+msgid "Sąvoka"
+msgstr "Concept"
+
+msgid "Sąvokos"
+msgstr "Concepts"
+
+msgid "Pranešimas (lietuvių kalba)"
+msgstr "Message (in Lithuanian)"
+
+msgid "Pranešimas (anglų kalba)"
+msgstr "Message (in English)"
 
 msgid "ADP"
 msgstr "ADP"
@@ -266,11 +266,11 @@ msgstr "Deployment start"
 msgid "Diegimo darbų pabaiga"
 msgstr "Deployment end"
 
-msgid "Pranešimas (lietuvių kalba)"
-msgstr "Message (in Lithuanian)"
+msgid "Diegimo pranešimas"
+msgstr "Deployment message"
 
-msgid "Pranešimas (anglų kalba)"
-msgstr "Message (in English)"
+msgid "Diegimo pranešimai"
+msgstr "Deployment messages"
 
 msgid "Sąrašas tuščias"
 msgstr "List is empty"
@@ -570,14 +570,16 @@ msgstr "Files"
 msgid "Kontaktinis asmuo ar organizacija"
 msgstr "Contact person or organization"
 
-msgid "Duomenų rinkinio kūrėjas"
-msgstr "Dataset creator"
+msgid "Institucija teikianti duomenis"
+msgstr "The institution providing the data"
 
 msgid "Paslaugų teikėjas"
 msgstr "Service provider"
 
-msgid "Ar esate šio duomenų rinkinio atvėrimo paslaugos tiekėjas?"
-msgstr "Are you the data open service provider for this dataset?"
+msgid ""
+"Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio "
+"atvėrimą?"
+msgstr "Is the institution you are representing responsible for opening the data to the public?"
 
 msgid "Žymės"
 msgstr "Tags"
@@ -602,10 +604,6 @@ msgstr "Detailed description of the dataset"
 
 msgid "Surašykite aktualius raktinius žodžius"
 msgstr "List relevant keywords"
-
-msgid ""
-"Pateikite visas salygas kurios reikalingos norint platinti duomenų rinkinį"
-msgstr "Provide all of the conditions required to distribute the dataset"
 
 msgid "Organizacija:"
 msgstr "Organization:"
@@ -661,6 +659,9 @@ msgstr "Groups"
 
 msgid "Kategorija"
 msgstr "Category"
+
+msgid "Rodyti pasirinktas kategorijas"
+msgstr "Show selected categories"
 
 msgid "Išsaugoti"
 msgstr "Save"
@@ -722,14 +723,20 @@ msgstr "Added to project"
 msgid "Priskirta poreikiui"
 msgstr "Added to request"
 
+msgid "Atviri duomenys"
+msgstr "Public data"
+
+msgid "Apsaugoti duomenys"
+msgstr "Protected data"
+
+msgid "Uždari duomenys"
+msgstr "Private data"
+
 msgid "Description"
 msgstr "Description"
 
 msgid "Duomenų tvarkytojas"
 msgstr "Data editor"
-
-msgid "Licenzija"
-msgstr "Licence"
 
 msgid "Duomenų rinkinys viešinamas"
 msgstr "The dataset is public"
@@ -739,9 +746,6 @@ msgstr "Update frequency"
 
 msgid "Prieigos teisės"
 msgstr "Access rights"
-
-msgid "Platinimo salygos"
-msgstr "Terms of distribution"
 
 msgid "Pateikite kableliu atskirtą sąrašą žymių."
 msgstr "Provide a list of tags separated by commas"
@@ -778,6 +782,9 @@ msgstr "Addition to dataset"
 
 msgid "Duomenų atvėrimas"
 msgstr "Data opening"
+
+msgid "Jau įtraukta į versiją"
+msgstr "Already added to version"
 
 msgid "Duomenų rinkinių atnaujinimo ataskaita"
 msgstr "Dataset update report"
@@ -897,7 +904,7 @@ msgid "Paieškos rezultatai"
 msgstr "Search results"
 
 msgid "filter.results"
-msgstr ""
+msgstr "filter.results"
 
 msgid "Pridėti rinkinį"
 msgstr "Add a dataset"
@@ -983,14 +990,6 @@ msgstr "Harvested"
 
 msgid "Atlikto darbo būsena"
 msgstr "Harvesting status"
-
-msgid "Licencija"
-msgstr "License"
-
-msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
-msgstr ""
-"This property specifies the license under which the data service is "
-"distributed."
 
 msgid ""
 "Nurodoma konkreti informacinė sistema - valstybės informacinė sistema ar "
@@ -1098,14 +1097,14 @@ msgstr "Updated"
 msgid "pavadinimas nenurodytas"
 msgstr "unassigned name"
 
-msgid "Atidaryti"
-msgstr "Open"
-
 msgid "Peržiūrėti"
 msgstr "Review"
 
 msgid "Atsisiųsti"
 msgstr "Download"
+
+msgid "Atidaryti"
+msgstr "Open"
 
 msgid "Trinti"
 msgstr "Delete"
@@ -2306,9 +2305,6 @@ msgstr "Select a scope"
 msgid "Leidimai"
 msgstr "Permissions"
 
-msgid "Nėra leidimų, kuriuos būtų galima priskirti"
-msgstr "There is no scopes that can be attributed"
-
 msgid "Panaudojimo atvejis"
 msgstr "Use case"
 
@@ -2321,8 +2317,11 @@ msgstr "Client"
 msgid "Klientai"
 msgstr "Clients"
 
-msgid "Išteklius"
-msgstr "Resource"
+msgid "Leidimo resursas"
+msgstr "Scope resource"
+
+msgid "Leidimo veiksmas"
+msgstr "Scope action"
 
 msgid "Kliento leidimas"
 msgstr "Client scope"
@@ -2435,17 +2434,32 @@ msgid ""
 "raktas: "
 msgstr "API key will be shown only one time, so you must copy it. Created key:"
 
+msgid "Kurti klientą"
+msgstr "Create client"
+
+#, python-brace-format
 msgid "Klientas \"{0}\" sukurtas sėkmingai"
 msgstr "Client \"{0}\" created successfully"
 
+msgid "Kliento registracija"
+msgstr "Client registration"
+
+msgid "Kliento redagavimas"
+msgstr "Client edit"
+
+#, python-brace-format
 msgid "Klientas \"{0}\" atnaujintas sėkmingai"
 msgstr "Client \"{0}\" changed successfully"
 
 msgid "Šiam klientui aktyvių leidimų nėra"
 msgstr "There are no active scopes for this client"
 
+#, python-brace-format
 msgid "Leidimas \"{0}\" sukurtas sėkmingai"
 msgstr "Use case \"{0}\" created successfully"
+
+msgid "Kliento leidimų registracija"
+msgstr "Client scope registration"
 
 msgid "Trumpas poreikio pavadinimas."
 msgstr "Request title"
@@ -2896,14 +2910,22 @@ msgstr "Upload to storage"
 msgid "Importuojamas išorinis metaduomenų katalogas"
 msgstr "Importing external metadata catalog"
 
-msgid "Atidaryti duomenų šaltinį"
-msgstr "Open dataset distribution"
+msgid "Licencija"
+msgstr "License"
 
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"
 
+msgid "Atidaryti duomenų šaltinį"
+msgstr "Open dataset distribution"
+
 msgid "Publikuojamas saugykloje"
 msgstr "Published in storage"
+
+msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
+msgstr ""
+"This property specifies the license under which the data service is "
+"distributed."
 
 msgid "Modeliai"
 msgstr "Models"
@@ -2927,10 +2949,10 @@ msgid "Modelio pridėjimas"
 msgstr "Add model"
 
 msgid "Lithuanian"
-msgstr ""
+msgstr "Lietuvių"
 
 msgid "English"
-msgstr ""
+msgstr "Anglų"
 
 msgid "Puslapis be šoninio meniu"
 msgstr "Page without side menu"
@@ -3007,12 +3029,6 @@ msgstr "Date of last synchronization"
 msgid "Sutartis"
 msgstr "Agreement"
 
-msgid "Leidimo resursas"
-msgstr "Scope resource"
-
-msgid "Leidimo veiksmas"
-msgstr "Scope action"
-
 msgid "Sutarties leidimas"
 msgstr "Agreement scope"
 
@@ -3082,8 +3098,8 @@ msgid ""
 "Sutarties dokumentas gali būti generuojamas sutarčiai su būsena "
 "{accepted_status}. Dabartinė būsena: {current_status}"
 msgstr ""
-"Agreement document can only be generated for agreement with status"
-"{accepted_status}. Current status: {current_status}"
+"Agreement document can only be generated for agreement with "
+"status{accepted_status}. Current status: {current_status}"
 
 msgid "Sutarties dokumentas sukurtas"
 msgstr "Agreement document is created"
@@ -3093,8 +3109,8 @@ msgid ""
 "Sutarties dokumentas gali būti generuojamas sutarčiai su būsenomis "
 "{accepted_statuses}. Dabartinė būsena: {current_status}"
 msgstr ""
-"Agreement document can only be generated for agreement with statuses"
-"{accepted_statuses}. Current status: {current_status}"
+"Agreement document can only be generated for agreement with "
+"statuses{accepted_statuses}. Current status: {current_status}"
 
 msgid "Sutarties dokumentas įkeltas sėkmingai"
 msgstr "Agreement document uploaded successfully"
@@ -3441,79 +3457,76 @@ msgid "Duomenys susieti su standartiniais žodynais/ontologijomis."
 msgstr "Data is linked to standard dictionaries/ontologies."
 
 msgid "any"
-msgstr ""
+msgstr "any"
 
 msgid "pk"
-msgstr ""
+msgstr "pk"
 
 msgid "date"
-msgstr ""
+msgstr "date"
 
 msgid "time"
-msgstr ""
+msgstr "time"
 
 msgid "datetime"
-msgstr ""
+msgstr "datetime"
 
 msgid "temporal"
-msgstr ""
+msgstr "temporal"
 
 msgid "string"
-msgstr ""
+msgstr "string"
 
 msgid "binary"
-msgstr ""
+msgstr "binary"
 
 msgid "integer"
-msgstr ""
+msgstr "integer"
 
 msgid "number"
-msgstr ""
+msgstr "number"
 
 msgid "boolean"
-msgstr ""
+msgstr "boolean"
 
 msgid "url"
-msgstr ""
-
-msgid "uri"
-msgstr ""
+msgstr "url"
 
 msgid "image"
-msgstr ""
+msgstr "image"
 
 msgid "geometry"
-msgstr ""
+msgstr "geometry"
 
 msgid "spatial"
-msgstr ""
+msgstr "spatial"
 
 msgid "ref"
-msgstr ""
+msgstr "ref"
 
 msgid "backref"
-msgstr ""
+msgstr "backref"
 
 msgid "generic"
-msgstr ""
+msgstr "generic"
 
 msgid "object"
-msgstr ""
+msgstr "object"
 
 msgid "file"
-msgstr ""
+msgstr "file"
 
 msgid "rql"
-msgstr ""
+msgstr "rql"
 
 msgid "json"
-msgstr ""
+msgstr "json"
 
 msgid "denorm"
-msgstr ""
+msgstr "denorm"
 
 msgid "inherit"
-msgstr ""
+msgstr "inherit"
 
 msgid ""
 "Duomenų lauko kodinis pavadinimas. Galimi simboliai: lotyniškos mažosios "
@@ -3599,7 +3612,7 @@ msgid "Versija negali įsigalioti anksčiau už praėjusią versiją."
 msgstr "Version can be released not earlier than previous version."
 
 msgid "URI"
-msgstr ""
+msgstr "URI"
 
 msgid "Objekto tipas"
 msgstr "Object type"
@@ -3617,19 +3630,19 @@ msgid "nepasirinkta"
 msgstr "not selected"
 
 msgid "private"
-msgstr ""
+msgstr "private"
 
 msgid "protected"
-msgstr ""
+msgstr "protected"
 
 msgid "public"
-msgstr ""
+msgstr "public"
 
 msgid "open"
-msgstr ""
+msgstr "open"
 
 msgid "Id"
-msgstr ""
+msgstr "Id"
 
 msgid "Šaltinis"
 msgstr "Source"
@@ -3950,25 +3963,28 @@ msgid "Registracija"
 msgstr "Registration"
 
 msgid "Signup"
-msgstr ""
+msgstr "Signup"
 
 msgid "Account Connections"
-msgstr ""
+msgstr "Account Connections"
 
 msgid ""
 "You can sign in to your account using any of the following third party "
 "accounts:"
 msgstr ""
+"You can sign in to your account using any of the following third party "
+"accounts:"
 
 msgid "Remove"
-msgstr ""
+msgstr "Remove"
 
 msgid ""
 "You currently have no social network accounts connected to this account."
 msgstr ""
+"You currently have no social network accounts connected to this account."
 
 msgid "Add a 3rd Party Account"
-msgstr ""
+msgstr "Add a 3rd Party Account"
 
 msgid "Prisijungimas"
 msgstr "Login"
@@ -3980,13 +3996,15 @@ msgid "Ketinate prijungti naują trečiosios šalies paskyrą iš VIISP"
 msgstr "You are about to connect a new third party account from VIISP"
 
 msgid "Sign Up"
-msgstr ""
+msgstr "Prisijungti"
 
 #, python-format
 msgid ""
 "You are about to use your %(provider_name)s account to login to\n"
 "%(site_name)s. As a final stepie step, please complete the following form:"
 msgstr ""
+"You are about to use your %(provider_name)s account to login to\n"
+"%(site_name)s. As a final stepie step, please complete the following form:"
 
 msgid "Atsakymas į"
 msgstr "Answer to"
@@ -4010,7 +4028,7 @@ msgid "Komentuoti gali tik prisijungę naudotojai"
 msgstr "Only logged in users can leave a comment"
 
 msgid "VSSA Valstybės skaitmeninių sprendimų agentūra"
-msgstr ""
+msgstr "VSSA Valstybės skaitmeninių sprendimų agentūra"
 
 msgid "el. p."
 msgstr "e-mail:"
@@ -4098,6 +4116,9 @@ msgstr "Action history"
 
 msgid "Data/laikas"
 msgstr "Date/Time"
+
+msgid "Veiksmas"
+msgstr "Action"
 
 msgid "Rodyti daugiau"
 msgstr "Show more"
@@ -4241,6 +4262,14 @@ msgstr "The data service associated with the agent"
 
 msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
 msgstr "The organization to which the agent is assigned"
+
+msgid "Autorizacijos kliento identifikatorius"
+msgstr "Authorization client identifier"
+
+msgid ""
+"Jei kliento identifikatorius egzistuoja - agentas gali vykdyti užklausas į "
+"katalogą."
+msgstr "If client identifier exists - agent can do requests to catalog"
 
 msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
 msgstr "The related data resource must be of type \"service\"."
@@ -4809,13 +4838,13 @@ msgstr ""
 "digits, and special characters."
 
 msgid "key_content"
-msgstr ""
+msgstr "key_content"
 
 msgid "Pgp key content in base64 form"
-msgstr ""
+msgstr "Pgp key content in base64 form"
 
 msgid "Pgp key content"
-msgstr ""
+msgstr "Pgp key content"
 
 msgid "Prisijungti nepavyko"
 msgstr "Login failed"

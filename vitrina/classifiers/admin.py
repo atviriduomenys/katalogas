@@ -1,4 +1,6 @@
 from django.contrib import admin
+from django.db.models import QuerySet
+from django.http import HttpRequest
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -13,6 +15,8 @@ from vitrina.classifiers.models import (
     GeoportalCategory,
     GeoportalFrequency,
     Status,
+    Concept,
+    ConceptSchema,
 )
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
@@ -205,18 +209,27 @@ class GeoportalFrequencyAdmin(admin.ModelAdmin):
 
 
 class StatusAdmin(TranslatableAdmin):
-    list_display = (
-        "name",
-        "codename",
-        "is_default",
-        "url"
-    )
+    list_display = ("name", "codename", "is_default", "url")
     fields = ("name", "description", "codename", "url", "is_default")
 
     def save_model(self, request, obj, form, change):
         if obj.is_default:
             Status.objects.filter(is_default=True).update(is_default=False)
         super().save_model(request, obj, form, change)
+
+
+@admin.register(ConceptSchema)
+class ConceptSchemaAdmin(TranslatableAdmin):
+    list_display = ("label", "uri", "description")
+
+
+@admin.register(Concept)
+class ConceptAdmin(TranslatableAdmin):
+    list_display = ("code", "label", "description")
+    list_filter = ("concept_schemas",)
+
+    def get_queryset(self, request: HttpRequest) -> QuerySet:
+        return super().get_queryset(request).prefetch_related("concept_schemas")
 
 
 admin.site.register(AreaOfManagement, AreaOfManagementAdmin)

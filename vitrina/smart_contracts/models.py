@@ -116,7 +116,7 @@ class Agreement(UUIDBaseModel):
         scopes = list(self.scopes.values_list("scope", flat=True))
         return {
             "@context": {"@vocab": "http://www.w3.org/ns/odrl.jsonld", "ex": "http://example.org/vocab#"},
-            "uid": f"uuid:{self.pk}",
+            "uid": f"https://data.gov.lt/ID/datasets/gov/vssa/isris/dcat/Agreement/{self.pk}",
             "type": "Agreement",
             "profile": "http://www.w3.org/ns/odrl/profile/core",
             "issued": format_lithuanian_datetime(),

@@ -367,7 +367,7 @@ class TestAgreementGeneratePdf:
                 "@vocab": "http://www.w3.org/ns/odrl.jsonld",
                 "ex": "http://example.org/vocab#",
             },
-            "uid": f"uuid:{agreement.pk}",
+            "uid": f"https://data.gov.lt/ID/datasets/gov/vssa/isris/dcat/Agreement/{agreement.pk}",
             "type": "Agreement",
             "profile": "http://www.w3.org/ns/odrl/profile/core",
             "issued": odrl["issued"],  # Use actual value from file to avoid time mismatch

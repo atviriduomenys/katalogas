@@ -18,7 +18,7 @@ from vitrina.users.models import User
 
 
 class SmartContractTemplate(UUIDBaseModel):
-    default_template = models.FileField(
+    file = models.FileField(
         upload_to="data/files/smart_contract_default_templates",
         verbose_name=_("Išmaniųjų sutarčių numatytasis šablonas"),
         validators=[
@@ -38,7 +38,7 @@ class SmartContractTemplate(UUIDBaseModel):
     )
 
     def __str__(self) -> str:
-        name = os.path.basename(self.default_template.name)
+        name = os.path.basename(self.file.name)
         if self.organization:
             name += f" ({self.organization.title})"
         return name
@@ -97,7 +97,7 @@ class Agreement(UUIDBaseModel):
         odrl_jsonld = self.generate_odrl_jsonld()
         file_name = slugify(f"{self.project}_{self.assigner}_{self.assignee}_{datetime.now().isoformat()}") + ".pdf"
         pdf_buffer = BytesIO()
-        generate_contract(template.default_template.path, odrl_jsonld, pdf_buffer)
+        generate_contract(template.file.path, odrl_jsonld, pdf_buffer)
         pdf_buffer.seek(0)
 
         return self.files.create(

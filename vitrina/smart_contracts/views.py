@@ -320,10 +320,10 @@ class AgreementGeneratePdf(
         self.agreement.payment_terms = form.cleaned_data["payment_terms"]
         self.agreement.save()
         self.agreement.generate_contract_pdf_file(template=contract_template)
-        name_without_ext, ext = os.path.splitext(os.path.basename(contract_template.default_template.name))
+        name_without_ext, ext = os.path.splitext(os.path.basename(contract_template.file.name))
 
         copy_filename = f"{name_without_ext}_copy{ext}"
-        with contract_template.default_template.open() as f:
+        with contract_template.file.open() as f:
             self.agreement.files.create(file=ContentFile(content=f.read(), name=copy_filename), is_template=True, file_name=copy_filename)
 
         messages.success(self.request, _("Sutarties dokumentas sukurtas"))

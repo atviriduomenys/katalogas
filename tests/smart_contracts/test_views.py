@@ -301,7 +301,7 @@ class TestAgreementGeneratePdf:
 
 
         template = SmartContractTemplate.objects.create(
-            default_template=ContentFile(open("tests/smart_contracts/files/contract_template.md").read(), name="contract_template.md")
+            file=ContentFile(open("tests/smart_contracts/files/contract_template.md").read(), name="contract_template.md")
         )
         user = UserFactory(
             organization=organization,
@@ -352,8 +352,8 @@ class TestAgreementGeneratePdf:
         for name_part in ("_copy.md", "contract_template"):
             assert name_part in template_copy.file_name
         assert "/" not in template_copy.file_name
-        assert template_copy.file.path != template.default_template.path  # check if is an hard copy
-        assert template_copy.file.read() == template.default_template.read()
+        assert template_copy.file.path != template.file.path  # check if is an hard copy
+        assert template_copy.file.read() == template.file.read()
         assert template_copy.checksum
 
         contract: AgreementFile = agreement_files[0]

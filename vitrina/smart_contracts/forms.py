@@ -121,4 +121,4 @@ class AgreementGeneratePdfForm(forms.Form):
         super().__init__(*args, **kwargs)
         self.fields["template"].queryset = SmartContractTemplate.objects.filter(
             Q(organization__isnull=True) | Q(organization=agreement.assigner)
-        ).order_by("organization", "default_template")
+        ).order_by("organization", "file")

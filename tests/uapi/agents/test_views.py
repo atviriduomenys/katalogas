@@ -157,5 +157,3 @@ def test_delete_view(app: DjangoTestApp, representative_user: User, organization
     assert Agent.objects.count() == 1
     agent = Agent.objects.first()
     assert agent.is_archived is True
-    assert agent.apikey.deleted is True
-    assert agent.apikey.deleted_on is not None

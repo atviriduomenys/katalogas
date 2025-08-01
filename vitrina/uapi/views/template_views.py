@@ -270,9 +270,6 @@ class AgentDeleteView(DeleteView, BaseAgentView):
 
     def delete(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Object is soft-deleted (archived) so to not lose the related service and other related objects."""
-        self.object.apikey.deleted = True
-        self.object.apikey.deleted_on = timezone.now()
-        self.object.apikey.save(update_fields=["deleted", "deleted_on"])
         self.object.is_archived = True
         self.object.save(update_fields=["is_archived", "updated_at"])
         messages.success(self.request, _(f"Agentas {self.object.title} pašalintas sėkmingai!"))

@@ -907,7 +907,7 @@ class ResourceSubclassCreateView(
         context["organization"] = organization
         context["organization_id"] = organization.pk
         context["current_title"] = _("Pridėti duomenų išteklį")
-        context["form_title"] = _("Duomenų ištekliaus poklasis")
+        context["form_title"] = _("Ištekliaus poklasis")
         context["form_description"] = _(
             "Pasirinkite norimą sukurti duomenų ištekliaus poklasį"
         )

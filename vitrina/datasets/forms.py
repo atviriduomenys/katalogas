@@ -64,7 +64,7 @@ class ResourceSubclassTypeField(ModelChoiceField):
 
 class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
     subclass = ResourceSubclassTypeField(
-        label=_("Duomenų ištekliaus poklasis"),
+        label=_("Ištekliaus poklasis"),
         queryset=DCATResourceSubclass.objects.all(),
         widget=forms.RadioSelect,
     )

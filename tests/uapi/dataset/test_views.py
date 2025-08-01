@@ -88,7 +88,7 @@ def test_create_specific_scope(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=["spinta_datasets_gov_vssa_dataset_insert"],
     )
     data = {
@@ -147,7 +147,7 @@ def test_create_token_does_not_have_necessary_scopes(
     domain: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+    token = _generate_test_token(test_jwk, organization=organization, scopes=invalid_scopes)
     response = app.post(
         url_dataset,
         {},  # Empty data, since it should not get to the part where it is used.
@@ -174,7 +174,7 @@ def test_create_no_organization_id_inside_token_payload(
     domain: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
+    token = _generate_test_token(test_jwk, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
     response = app.post(
         url_dataset,
         {},  # Empty data, since it should not get to the part where it is used.
@@ -326,7 +326,7 @@ def test_list_specific_scope(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=["spinta_datasets_gov_vssa_dataset_getall"],
     )
 
@@ -377,7 +377,7 @@ def test_list_token_does_not_have_necessary_scopes(
     domain: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+    token = _generate_test_token(test_jwk, organization=organization, scopes=invalid_scopes)
 
     response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
 
@@ -401,7 +401,7 @@ def test_list_no_organization_id_inside_token_payload(
     domain: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
+    token = _generate_test_token(test_jwk, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
 
     response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
 
@@ -635,7 +635,7 @@ def test_action_upload_dataset_structure_specific_scope(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=["spinta_datasets_gov_vssa_dataset_dsa_insert"],
     )
     response = app.post(
@@ -664,7 +664,7 @@ def test_action_upload_dataset_structure_token_does_not_have_necessary_scopes(
     url_dataset_structure: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+    token = _generate_test_token(test_jwk, organization=organization, scopes=invalid_scopes)
 
     response = app.post(
         url_dataset_structure,
@@ -694,7 +694,7 @@ def test_action_upload_dataset_structure_no_organization_id_inside_token_payload
     url_dataset_structure: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
+    token = _generate_test_token(test_jwk, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
 
     response = app.post(
         url_dataset_structure,
@@ -854,7 +854,7 @@ def test_action_update_dataset_structure_specific_scope(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=["spinta_datasets_gov_vssa_dataset_dsa_update"],
     )
 
@@ -879,7 +879,7 @@ def test_action_update_dataset_structure_token_does_not_have_necessary_scopes(
     url_dataset_structure: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+    token = _generate_test_token(test_jwk, organization=organization, scopes=invalid_scopes)
 
     response = app.put(
         url_dataset_structure,
@@ -909,7 +909,7 @@ def test_action_update_dataset_structure_no_organization_id_inside_token_payload
     url_dataset_structure: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
+    token = _generate_test_token(test_jwk, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
 
     response = app.put(
         url_dataset_structure,

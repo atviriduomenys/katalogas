@@ -85,7 +85,7 @@ def test_create_specific_scope(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=["spinta_datasets_gov_vssa_distribution_insert"],
     )
     file_content = b"Sample CSV content"
@@ -141,7 +141,7 @@ def test_create_token_does_not_have_necessary_scopes(
     domain: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+    token = _generate_test_token(test_jwk, organization=organization, scopes=invalid_scopes)
     response = app.post(
         url_distribution,
         {},
@@ -171,7 +171,7 @@ def test_create_no_organization_id_inside_token_payload(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=None,
+        organization=None,
         scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
     )
     response = app.post(
@@ -309,7 +309,7 @@ def test_list_specific_scope(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=["spinta_datasets_gov_vssa_distribution_getall"],
     )
     response = app.get(url_distribution, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"})
@@ -356,7 +356,7 @@ def test_list_token_does_not_have_necessary_scopes(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=invalid_scopes,
     )
     response = app.get(
@@ -388,7 +388,7 @@ def test_list_no_organization_id_inside_token_payload(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=None,
+        organization=None,
         scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
     )
     response = app.get(

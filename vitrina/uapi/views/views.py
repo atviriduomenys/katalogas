@@ -24,7 +24,6 @@ from vitrina.api.oauth import (
 from vitrina.api.serializers import PostDatasetDistributionSerializer
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.exceptions import UAPIException
-from vitrina.orgs.models import Organization
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import create_structure_objects
@@ -69,7 +68,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         ).filter(
             ~Q(deleted=True),
             metadata__content_type_id=self.dataset_metadata_id,
-            organization__id=self.request.auth["organization_id"],
+            organization=self.request.organization,
         )
 
         if request_params := self.request.query_params:
@@ -90,14 +89,13 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        organization = get_object_or_404(Organization, id=self.request.auth["organization_id"])
 
         serializer_context = self.get_serializer_context()
         serializer = self.get_serializer(
             data=request.data,
             context={
                 **serializer_context,
-                "organization": organization,
+                "organization": self.request.organization,
             }
         )
         serializer.is_valid(raise_exception=True)
@@ -150,7 +148,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             Dataset,
             ~Q(deleted=True),
             id=self.kwargs["dataset_id"],
-            organization__id=self.request.auth["organization_id"]
+            organization=self.request.organization,
         )
 
         if not request.body or not request.body.strip(b"\r\n\t "):
@@ -214,7 +212,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             ~Q(deleted=True),
             ~Q(dataset__deleted=True),
             metadata__content_type_id=self.distribution_metadata_id,
-            dataset__organization__id=self.request.auth["organization_id"],
+            dataset__organization=self.request.organization,
         )
 
         if request_params := self.request.query_params:

@@ -1,3 +1,4 @@
+import uuid
 from datetime import datetime, timedelta
 
 import pytest
@@ -17,6 +18,8 @@ from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import OAUTH_AGENT_DEFAULT_SCOPES
 from vitrina.structure.factories import MetadataFactory
+from vitrina.uapi.factories import AgentFactory
+from vitrina.uapi.models import Agent
 
 
 def _build_reverse_uapi_url(name: str, **kwargs: Any) -> str:
@@ -25,17 +28,19 @@ def _build_reverse_uapi_url(name: str, **kwargs: Any) -> str:
 
 def _generate_test_token(
     jwk: RSAKey,
-    client_id: str = "test-client",
     scopes: Iterable[str] = ("datasets:write",),
-    organization_id: int = 1,
+    organization: Organization = None,
     expires_in: int = 900
 ):
+    oauth_client_id = None
+    if organization:
+        agent = AgentFactory(organization=organization, oauth_client_id=str(uuid.uuid4()))
+        oauth_client_id =agent.oauth_client_id
     now = datetime.utcnow()
     claims = {
         "iss": "test-issuer",
-        "sub": client_id,
+        "sub": oauth_client_id,
         "scope": " ".join(scopes),
-        "organization_id": organization_id,
         "iat": now,
         "exp": now + timedelta(seconds=expires_in),
     }
@@ -57,11 +62,16 @@ def test_jwk() -> RSAKey:
 
 
 @pytest.fixture()
+def agent(organization: Organization) -> Agent:
+    return AgentFactory(oauth_client_id="test-agent-oauth-client-id", organization=organization)
+
+
+@pytest.fixture()
 def valid_token(
     test_jwk: RSAKey,
-    organization: Organization
+    organization: Organization,
 ) -> str:
-    return _generate_test_token(test_jwk, organization_id=organization.id, scopes=OAUTH_AGENT_DEFAULT_SCOPES)
+    return _generate_test_token(test_jwk, organization=organization, scopes=OAUTH_AGENT_DEFAULT_SCOPES)
 
 
 @pytest.fixture

@@ -147,8 +147,7 @@ class AgentCreateView(CreateView, BaseAgentView):
     def _create_oauth_client(agent: Agent) -> Secret:
         client_id, secret = OAuthClientManagement.create_oauth_client(
             client_name=agent.global_codename,
-            scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-            organization_id=agent.organization_id
+            scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES
         )
         agent.oauth_client_id = client_id
         agent.save()

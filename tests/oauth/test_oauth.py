@@ -18,6 +18,7 @@ from vitrina.api.oauth import (
     OAuthClientAuthenticator
 )
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.uapi.factories import AgentFactory
 
 
 class TestView:
@@ -38,7 +39,6 @@ def encoded_decoded_jwt() -> Tuple[str, JWTClaims]:
         "iss": "issuer",
         "sub": "client",
         "scope": "test_scope",
-        "organization_id": 1,
         "iat": int(time.time()),
         "exp": int(time.time()) + 300
     }
@@ -55,7 +55,6 @@ def decoded_jwt() -> JWTClaims:
         "iss": "issuer",
         "sub": "client",
         "scope": "test_scope",
-        "organization_id": 1,
         "iat": int(time.time()),
         "exp": int(time.time()) + 300
     }
@@ -256,7 +255,8 @@ def test_token_has_valid_organization_claim_has_permission_success(
     request_factory: APIRequestFactory,
     decoded_jwt: JWTClaims,
 ):
-    organization = OrganizationFactory(id=decoded_jwt["organization_id"], kind="org", name="vssa")
+    organization = OrganizationFactory(kind="org", name="vssa")
+    AgentFactory(organization=organization, oauth_client_id=decoded_jwt["sub"])
 
     request = request_factory.get("/")
     request.auth = decoded_jwt
@@ -266,20 +266,3 @@ def test_token_has_valid_organization_claim_has_permission_success(
     result = OAuthTokenHasValidOrganizationClaim().has_permission(request, view)
     assert result is True
     assert request.organization == organization
-
-
-@pytest.mark.django_db
-def test_token_has_valid_organization_claim_no_organization_id_in_jwt_payload(
-    request_factory: APIRequestFactory,
-    decoded_jwt: JWTClaims,
-):
-    decoded_jwt["organization_id"] = 1_000_000 # Non-existent ID
-
-    request = request_factory.get("/")
-    request.auth = decoded_jwt
-
-    view = TestView(kwargs={"form": "org", "org": "vssa"})
-
-    result = OAuthTokenHasValidOrganizationClaim().has_permission(request, view)
-    assert result is False
-    assert not hasattr(request, "organization")

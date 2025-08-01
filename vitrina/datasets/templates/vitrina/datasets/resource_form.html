@@ -1,0 +1,157 @@
+{% extends "base_form.html" %}
+{% load i18n parler_tags %}
+{% load crispy_forms_tags %}
+
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block head %}
+    <style>
+        #div_id_category .select2-selection__arrow {
+            display: none;
+        }
+        #div_id_category #select2-id_category-container {
+            line-height: 2.25em;
+        }
+        #div_id_category .select2-selection--single {
+            height: 2.25em;
+            border-color: #dbdbdb;
+        }
+        #div_id_category .select2-selection--single:hover{
+            border-color: #b5b5b5;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+{% include 'vitrina/orgs/tabs.html' %}
+
+<div class="mb-4">
+  <a href="{% url 'organization-datasets' pk=organization_id %}" class="has-text-info is-flex is-align-items-center">
+    <span class="icon is-small mr-2">
+      <i class="fas fa-arrow-left"></i>
+    </span>
+    <span>{% translate "Grįžti į duomenų išteklius" %}</span>
+  </a>
+</div>
+
+<div class="columns">
+  <div class="column is-one-quarter">
+    <div class="has-background-info-light p-4">
+      <p class="mb-2 is-size-5" >
+        <span class="has-text-info has-text-weight-bold">
+          <i class="fas fa-info-circle"></i>
+            {% translate "Pasirinkite duomenų ištekliaus poklasį" %}
+        </span>
+      </p>
+      <p class="mt-0">
+      </p>
+    </div>
+  </div>
+
+  <div class="column is-three-quarters">
+    <div class="columns is-centered">
+      <div class="column">
+        <p class="title is-3">{{ form_title }}</p>
+        <p class="subtitle is-7">{{ form_description }}</p>
+      </div>
+      <div class="is-flex is-align-items-center" style="width: 20%;">
+      <div class="is-flex-grow-1 mr-2" style="display: flex; align-items: center;">
+        <progress class="progress is-info is-small" value="{{ current_percentage }}" max="100"></progress>
+      </div>
+      <p class="mb-0" style="line-height: 1;">{{ current_step }}/2</p>
+    </div>
+    </div>
+    <hr class="my-4">
+    <form method="post" class="form" novalidate>
+    {% csrf_token %}
+
+    {% if use_custom_radio %}
+      {% if form.subclass.errors %}
+        <p class="help is-danger">{{ form.subclass.errors.as_text }}</p>
+      {% endif %}
+      <div class="field">
+        <div class="columns is-multiline">
+        {% for radio in form.subclass %}
+          <div class="column is-one-third">
+            <label class="box" style="cursor: pointer;">
+              {{ radio.tag }}
+              {{ radio.choice_label|safe }}
+            </label>
+          </div>
+        {% endfor %}
+        </div>
+      </div>
+    {% else %}
+      <div class="column is-half">
+        {% if language_tabs %}
+          <h>{% translate "Pasirinkite turinio redagavimo kalbą" %}</h>
+          <div class="parler-language-tabs" style="padding-bottom: 2em">
+            {% for tab in language_tabs %}
+              <span class="{{tab.3}}">
+                <a class="button" style="border-color: #767676;" href="{{tab.0}}">{{tab.1}}</a>
+              </span>
+            {% endfor %}
+           </div>
+        {% endif %}
+
+        {% crispy form %}
+      </div>
+    {% endif %}
+
+      <div class="buttons is-right">
+        <a href="{% url 'organization-datasets' pk=organization_id %}" class="has-text-info mr-4" style="align-self: center;">
+            {% translate "Atšaukti" %}
+        </a>
+        {% if use_custom_radio %}
+          <button type="submit" class="button is-primary">{% translate "Toliau" %}</button>
+        {% else %}
+          <a href="{% url 'resource-subclass-add' pk=organization_id %}" class="has-text-info mr-4" style="align-self: center;">
+            {% translate "Grįžti" %}
+          </a>
+          <button type="submit" class="button is-primary">{% translate "Sukurti" %}</button>
+        {% endif %}
+      </div>
+    </form>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+   <script>
+    $(document).ready(function() {
+        $('#id_category').select2();
+        $('#id_category').on('select2:select', function (e) {
+            let value = $('#id_category').find(':selected')[0].innerText;
+            $('#select2-id_category-container')[0].innerHTML = $.trim(value);
+        });
+        $('#id_category').trigger('select2:select');
+
+        let serviceSubclass = "{{ service_subclass }}";
+        let selectedSubclassUUID = "{{ selected_subclass_uuid }}";
+
+        function toggleEndpointFields(subclassId) {
+            if (serviceSubclass === subclassId) {
+                $('div#div_id_endpoint_url').show();
+                $('div#div_id_endpoint_type').show();
+                $('div#div_id_endpoint_description').show();
+                $('div#div_id_endpoint_description_type').show();
+            } else {
+                $('div#div_id_endpoint_url').hide();
+                $('div#div_id_endpoint_type').hide();
+                $('div#div_id_endpoint_description').hide();
+                $('div#div_id_endpoint_description_type').hide();
+            }
+        }
+
+        toggleEndpointFields(selectedSubclassUUID);
+    });
+  </script>
+{% endblock %}

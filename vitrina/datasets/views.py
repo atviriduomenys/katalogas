@@ -86,6 +86,7 @@ from vitrina.datasets.forms import (
     DatasetPlanForm,
     PlanForm,
     AddRequestForm,
+    ResourceSubclassForm,
 )
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import (
@@ -114,6 +115,7 @@ from vitrina.datasets.models import (
     DatasetFile,
     Contact,
     DatasetExcludedGroups,
+    DCATResourceSubclass,
 )
 from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
 from vitrina.helpers import (
@@ -576,7 +578,7 @@ class DatasetRDFDownloadView(PermissionRequiredMixin, View):
             return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get(self, request, **kwargs):
-        dataset = Dataset.objects.filter(pk=kwargs.get('pk'))
+        dataset = Dataset.objects.filter(pk=kwargs.get("pk"))
         return render(
             request,
             "vitrina/api/edp/dcat_ap_rdf.html",
@@ -656,9 +658,16 @@ class DatasetCreateView(
     LanguageChoiceMixin,
 ):
     model = Dataset
-    template_name = "vitrina/datasets/form.html"
+    template_name = "vitrina/datasets/resource_form.html"
     context_object_name = "dataset"
     form_class = DatasetForm
+
+    def get_initial(self):
+        initial = super().get_initial()
+        subclass_uuid = self.kwargs.get("subclass_uuid")
+        if subclass_uuid:
+            initial["subclass_uuid"] = subclass_uuid
+        return initial
 
     def has_permission(self):
         next_url = self.request.GET.get("next")
@@ -673,10 +682,30 @@ class DatasetCreateView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["current_title"] = _("Naujas duomenų rinkinys")
-        context["service_types"] = list(
-            Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True)
+        organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
+
+        context["organization"] = organization
+        context["organization_id"] = organization.pk
+        context["current_title"] = _("Pridėti duomenų išteklį")
+        context["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("organization-list"): _("Organizacijos"),
+            reverse("organization-detail", args=[organization.pk]): organization.title,
+            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            "": _("Pridėti duomenų išteklį"),
+        }
+        context["current_title"] = _("Naujas duomenų išteklius")
+        subclass_uuid = self.kwargs.get("subclass_uuid")
+        context["selected_subclass_uuid"] = str(subclass_uuid)
+        context["service_subclass"] = str(
+            DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE).pk
         )
+        context["form_title"] = _("Duomenų ištekliaus informacija")
+        context["form_description"] = _(
+            "Užpildykite Jūsų pasirinkto duomenų ištekliaus informacija"
+        )
+        context["current_step"] = 2
+        context["current_percentage"] = 50
         return context
 
     def get_form_kwargs(self):
@@ -691,10 +720,12 @@ class DatasetCreateView(
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.organization_id = self.kwargs.get("pk")
+        self.subclass_uuid = self.kwargs.get("subclass_uuid")
+        subclass = DCATResourceSubclass.objects.get(pk=self.subclass_uuid)
+        self.object.subclass = subclass
         self.object.save()
 
-        types = form.cleaned_data.get("type")
-        if types.filter(name=Type.SERVICE):
+        if subclass.name == DCATResourceSubclass.SERVICE:
             self.object.service = True
         else:
             self.object.endpoint_url = None
@@ -702,7 +733,7 @@ class DatasetCreateView(
             self.object.endpoint_description = None
             self.object.endpoint_description_type = None
             self.object.service = False
-        if types.filter(name=Type.SERIES):
+        if subclass.name == DCATResourceSubclass.SERIES:
             self.object.series = True
         else:
             self.object.series = False
@@ -726,7 +757,6 @@ class DatasetCreateView(
         self.object.save()
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
-        self.object.type.set(types)
         self.object.save()
         set_comment(Dataset.CREATED)
         if not form.cleaned_data.get("creator"):
@@ -848,6 +878,66 @@ class DatasetCreateView(
         return HttpResponseRedirect(self.get_success_url())
 
 
+class ResourceSubclassCreateView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    CreateView,
+):
+    model = Dataset
+    template_name = "vitrina/datasets/resource_form.html"
+    context_object_name = "dataset"
+    form_class = ResourceSubclassForm
+
+    def has_permission(self):
+        next_url = self.request.GET.get("next")
+        if next_url:
+            match = resolve(next_url)
+            if match.url_name == "request-datasets":
+                if request_id := match.kwargs.get("pk"):
+                    request_obj = get_object_or_404(Request, pk=request_id)
+                    return has_perm(self.request.user, Action.ASSIGN, request_obj)
+        organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
+        return has_perm(self.request.user, Action.CREATE, Dataset, organization)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
+        context["organization"] = organization
+        context["organization_id"] = organization.pk
+        context["current_title"] = _("Pridėti duomenų išteklį")
+        context["form_title"] = _("Duomenų ištekliaus poklasis")
+        context["form_description"] = _(
+            "Pasirinkite norimą sukurti duomenų ištekliaus poklasį"
+        )
+        context["use_custom_radio"] = True
+
+        context["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("organization-list"): _("Organizacijos"),
+            reverse("organization-detail", args=[organization.pk]): organization.title,
+            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            "": _("Pridėti duomenų išteklį"),
+        }
+        context["current_step"] = 1
+        context["current_percentage"] = 5
+        return context
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["request"] = self.request
+        kwargs["organization"] = get_object_or_404(Organization, id=self.kwargs["pk"])
+        return kwargs
+
+    def form_valid(self, form):
+        pk = self.kwargs.get("pk")
+        subclass = form.cleaned_data.get("subclass")
+        return redirect(
+            reverse("dataset-add", kwargs={"pk": pk, "subclass_uuid": subclass.uuid})
+        )
+
+
 class DatasetUpdateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -874,8 +964,10 @@ class DatasetUpdateView(
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
         }
         switch_language(self.object, get_language())
-        context["service_types"] = list(
-            Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True)
+        subclass_uuid = self.kwargs.get("subclass_uuid")
+        context["selected_subclass_uuid"] = str(subclass_uuid)
+        context["service_subclass"] = str(
+            DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE).pk
         )
         context["request_user"] = (
             self.request.user if self.request.user.is_authenticated else None
@@ -895,26 +987,7 @@ class DatasetUpdateView(
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
 
-        types = form.cleaned_data.get("type")
-        self.object.type.set(types)
-        if types.filter(name=Type.SERVICE):
-            self.object.service = True
-            self.object.datasetdistribution_set.all().delete()
-        else:
-            self.object.endpoint_url = None
-            self.object.endpoint_type = None
-            self.object.endpoint_description = None
-            self.object.endpoint_description_type = None
-            self.object.service = False
-        if types.filter(name=Type.SERIES):
-            self.object.series = True
-            self.object.datasetdistribution_set.all().delete()
-        else:
-            self.object.series = False
-
-        if (
-            "endpoint_url" in form.changed_data or "type" in form.changed_data
-        ) or (
+        if ("endpoint_url" in form.changed_data) or (
             self.object.is_public and not self.object.published
         ):
             if self.object.is_public and not self.object.published:

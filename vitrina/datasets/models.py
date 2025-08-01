@@ -1,5 +1,7 @@
 import json
 import pathlib
+from datetime import datetime
+
 import requests
 import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
@@ -9,7 +11,7 @@ from django.db import models
 from django.db.models import Sum, ForeignKey
 from django.urls import reverse
 from django.utils.safestring import mark_safe
-
+from django.utils.timezone import make_aware
 
 from filer.fields.file import FilerFileField
 from tagulous.models import TagField
@@ -21,7 +23,7 @@ from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization, Representative
 from vitrina.catalogs.models import Catalog, HarvestingJob
-from vitrina.classifiers.models import Category, Frequency
+from vitrina.classifiers.models import Category, Frequency, Concept
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
     EdpRestrictedDatasetManager,
@@ -145,14 +147,18 @@ class Dataset(TranslatableModel):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     soft_deleted = models.DateTimeField(blank=True, null=True)
-    version = models.IntegerField(default=1)  # TODO: Deprecated, versioning is done w/ django-reversion
+    version = models.IntegerField(
+        default=1
+    )  # TODO: Deprecated, versioning is done w/ django-reversion
     slug = models.CharField(
         unique=True,
         max_length=255,
         blank=False,
         null=True,
     )  # TODO: Deprecated, slugs are formed from id's
-    uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)  # TODO: Remove blank and null
+    uuid = models.CharField(
+        unique=True, max_length=36, blank=True, null=True
+    )  # TODO: Remove blank and null
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     theme = models.CharField(
@@ -277,9 +283,11 @@ class Dataset(TranslatableModel):
         related_name="published_datasets",
         on_delete=models.SET_NULL,
         null=True,
-        verbose_name=_('Duomenų atvėrimo paslaugų teikėjas'),
+        verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"),
     )
-    landing_page = models.URLField(_("Prieigos nuoroda"), max_length=1024, null=True, blank=True)
+    landing_page = models.URLField(
+        _("Prieigos nuoroda"), max_length=1024, null=True, blank=True
+    )
 
     # DCAT 3 fields
     part_of = models.ManyToManyField(
@@ -327,6 +335,11 @@ class Dataset(TranslatableModel):
     series = models.BooleanField(
         _("DataSeries rinkinys"),
         default=False,
+    )
+    information_system_type = models.ForeignKey(
+        Concept,
+        on_delete=models.PROTECT,
+        verbose_name=_("Informacinės sistemos tipas"),
     )
 
     # TODO: To be removed:
@@ -417,6 +430,20 @@ class Dataset(TranslatableModel):
             )
             or " "
         )
+
+    def save(self, *args, **kwargs) -> None:
+        if not self.information_system_type_id:
+            default_concept, _ = Concept.objects.get_or_create(
+                code="NOT-SET",
+                defaults={
+                    "valid_since": make_aware(datetime(2020, 1, 1)),
+                    "valid_until": None,
+                    "label": "Nenurodyta",
+                    "description": "Informacija nėra nurodyta",
+                },
+            )
+            self.information_system_type = default_concept
+        super().save(*args, **kwargs)
 
     def lt_title(self):
         return self.safe_translation_getter("title", language_code="lt")

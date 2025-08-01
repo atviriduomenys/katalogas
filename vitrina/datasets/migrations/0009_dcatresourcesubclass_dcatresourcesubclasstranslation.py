@@ -24,8 +24,8 @@ class Migration(migrations.Migration):
                 ('uri', models.CharField(blank=True, max_length=255, verbose_name='Nuoroda į kontroliuojamą žodyną')),
             ],
             options={
-                'verbose_name': 'Resurso poklasis',
-                'verbose_name_plural': 'Resursų poklasiai',
+                'verbose_name': 'Ištekliaus poklasis',
+                'verbose_name_plural': 'Išteklių poklasiai',
             },
             bases=(parler.models.TranslatableModelMixin, models.Model),
         ),
@@ -39,7 +39,7 @@ class Migration(migrations.Migration):
                 ('master', parler.fields.TranslationsForeignKey(editable=False, null=True, on_delete=django.db.models.deletion.CASCADE, related_name='translations', to='vitrina_datasets.dcatresourcesubclass')),
             ],
             options={
-                'verbose_name': 'Resurso poklasis Translation',
+                'verbose_name': 'Ištekliaus poklasis Translation',
                 'db_table': 'vitrina_datasets_dcatresourcesubclass_translation',
                 'db_tablespace': '',
                 'managed': True,

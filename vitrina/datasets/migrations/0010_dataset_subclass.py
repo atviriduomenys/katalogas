@@ -14,6 +14,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dataset',
             name='subclass',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_datasets.dcatresourcesubclass', verbose_name='Resurso poklasis'),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_datasets.dcatresourcesubclass', verbose_name='Ištekliaus poklasis'),
         ),
     ]

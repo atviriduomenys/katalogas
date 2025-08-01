@@ -57,7 +57,7 @@ class TypeAdmin(TranslatableAdmin):
 
 
 class DCATResourceSubclassAdmin(TranslatableAdmin):
-    list_display = ("title","description")
+    list_display = ("title", "description")
 
 
 class RelationAdmin(TranslatableAdmin):

@@ -307,7 +307,7 @@ class Dataset(TranslatableModel):
         models.SET_NULL,
         blank=True,
         null=True,
-        verbose_name=_("Resurso poklasis"),
+        verbose_name=_("Ištekliaus poklasis"),
     )
     endpoint_url = models.URLField(
         _("API adresas"),
@@ -1512,6 +1512,9 @@ class Type(TranslatableModel):
 
 
 class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
+    SERIES = "series"
+    SERVICE = "service"
+
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
     uri = models.CharField(
         _("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
@@ -1523,8 +1526,8 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     )
 
     class Meta:
-        verbose_name = _("Resurso poklasis")
-        verbose_name_plural = _("Resursų poklasiai")
+        verbose_name = _("Ištekliaus poklasis")
+        verbose_name_plural = _("Išteklių poklasiai")
 
     def __str__(self):
         return self.safe_translation_getter(

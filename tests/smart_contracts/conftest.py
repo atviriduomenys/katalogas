@@ -24,4 +24,3 @@ def dataset(organization: Organization) -> Dataset:
     )
 
     return dataset
-

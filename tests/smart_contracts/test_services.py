@@ -14,7 +14,9 @@ SCOPES_REGEX = r"\buapi:/\S+"
 
 
 def test_has_valid_signature_success():
-    assert has_valid_signature("tests/smart_contracts/files/test_contracts/sutartis_signed.adoc")
+    assert has_valid_signature(
+        "tests/smart_contracts/files/test_contracts/sutartis_signed.adoc"
+    )
 
 
 def test_has_valid_signature_not_signed_adoc():
@@ -27,7 +29,9 @@ def test_has_valid_signature_invalid_adoc():
     with pytest.raises(
         InvalidAdocError, match=r"Invalid ADOC file:.*META-INF/manifest\.xml"
     ):
-        has_valid_signature("tests/smart_contracts/files/test_contracts/sutartis_no_manifest_file.adoc")
+        has_valid_signature(
+            "tests/smart_contracts/files/test_contracts/sutartis_no_manifest_file.adoc"
+        )
 
 
 def test_is_checksum_valid_success():
@@ -65,7 +69,10 @@ def test_extract_elements_from_adoc():
         "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getone",
     ]
     assert (
-        extract_elements_from_adoc("tests/smart_contracts/files/test_contracts/sutartis_signed.adoc", SCOPES_REGEX)
+        extract_elements_from_adoc(
+            "tests/smart_contracts/files/test_contracts/sutartis_signed.adoc",
+            SCOPES_REGEX,
+        )
         == expected_scopes
     )
 
@@ -74,4 +81,7 @@ def test_extract_scopes_from_adoc_not_supported_file():
     with pytest.raises(
         InvalidAdocError, match="Invalid ADOC file: File is not a zip file"
     ):
-        extract_elements_from_adoc("tests/smart_contracts/files/test_contracts/sutartis_valid.pdf", SCOPES_REGEX)
+        extract_elements_from_adoc(
+            "tests/smart_contracts/files/test_contracts/sutartis_valid.pdf",
+            SCOPES_REGEX,
+        )

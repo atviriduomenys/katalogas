@@ -31,9 +31,7 @@ def test_invalid_file_extension_raises_validation_error():
     organization = OrganizationFactory()
     txt_file = SimpleUploadedFile("template.txt", b"Not a markdown")
 
-    template = SmartContractTemplate(
-        file=txt_file, organization=organization
-    )
+    template = SmartContractTemplate(file=txt_file, organization=organization)
 
     with pytest.raises(ValidationError) as exc_info:
         template.full_clean()

@@ -25,9 +25,15 @@ from vitrina.smart_contracts import AgreementStatuses, AGREEMENT_STATUS_DESCRIPT
 from vitrina.smart_contracts.forms import (
     SmartContractForm,
     SmartContractFormSetHelper,
-    AgreementUploadForm, AgreementGeneratePdfForm,
+    AgreementUploadForm,
+    AgreementGeneratePdfForm,
 )
-from vitrina.smart_contracts.models import Agreement, AgreementScope, AgreementFile, SmartContractTemplate
+from vitrina.smart_contracts.models import (
+    Agreement,
+    AgreementScope,
+    AgreementFile,
+    SmartContractTemplate,
+)
 from vitrina.users.models import User
 from vitrina.views import FormsetView, HistoryMixin
 
@@ -313,18 +319,28 @@ class AgreementGeneratePdf(
 
     @transaction.atomic
     def form_valid(self, form: AgreementGeneratePdfForm) -> HttpResponse:
-        contract_template :SmartContractTemplate = form.cleaned_data["template"]
+        contract_template: SmartContractTemplate = form.cleaned_data["template"]
         self.agreement.status = AgreementStatuses.FORMED
-        self.agreement.other_assigner_legislations = form.cleaned_data["other_assigner_legislations"]
-        self.agreement.other_assignee_legislations = form.cleaned_data["other_assignee_legislations"]
+        self.agreement.other_assigner_legislations = form.cleaned_data[
+            "other_assigner_legislations"
+        ]
+        self.agreement.other_assignee_legislations = form.cleaned_data[
+            "other_assignee_legislations"
+        ]
         self.agreement.payment_terms = form.cleaned_data["payment_terms"]
         self.agreement.save()
         self.agreement.generate_contract_pdf_file(template=contract_template)
-        name_without_ext, ext = os.path.splitext(os.path.basename(contract_template.file.name))
+        name_without_ext, ext = os.path.splitext(
+            os.path.basename(contract_template.file.name)
+        )
 
         copy_filename = f"{name_without_ext}_copy{ext}"
         with contract_template.file.open() as f:
-            self.agreement.files.create(file=ContentFile(content=f.read(), name=copy_filename), is_template=True, file_name=copy_filename)
+            self.agreement.files.create(
+                file=ContentFile(content=f.read(), name=copy_filename),
+                is_template=True,
+                file_name=copy_filename,
+            )
 
         messages.success(self.request, _("Sutarties dokumentas sukurtas"))
         return HttpResponseRedirect(self.get_success_url())

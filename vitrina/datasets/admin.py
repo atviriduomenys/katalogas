@@ -26,7 +26,7 @@ from vitrina.datasets.models import (
     Relation,
     DatasetReport,
     Contact,
-    GeoportalDataServiceTypeValue,
+    GeoportalDataServiceTypeValue, DCATResourceSubclass,
 )
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
@@ -54,6 +54,10 @@ class GroupAdmin(TranslatableAdmin):
 
 class TypeAdmin(TranslatableAdmin):
     list_display = ("title",)
+
+
+class DCATResourceSubclassAdmin(TranslatableAdmin):
+    list_display = ("title","description")
 
 
 class RelationAdmin(TranslatableAdmin):
@@ -490,6 +494,7 @@ admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(Attribution, AttributionAdmin)
 admin.site.register(DatasetGroup, GroupAdmin)
 admin.site.register(Type, TypeAdmin)
+admin.site.register(DCATResourceSubclass, DCATResourceSubclassAdmin)
 admin.site.register(Relation, RelationAdmin)
 admin.site.register(DatasetReport, DatasetReportAdmin)
 admin.site.register(Contact, ContactAdmin)

@@ -3,7 +3,7 @@ from django.db import models
 from vitrina.models import UUIDBaseModel
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
-from vitrina.uapi import AgentType
+from vitrina.uapi import AgentType, ChangedBy, ChangeType, PossibleResults, HTTPMethods
 from django.utils.translation import gettext_lazy as _
 
 
@@ -110,3 +110,29 @@ class Agent(UUIDBaseModel):
     @property
     def global_codename(self) -> str:
         return f"{self.codename}_{self.organization_id}"
+
+
+class RequestHistory(UUIDBaseModel):
+    agent = models.ForeignKey("vitrina_uapi.Agent", on_delete=models.CASCADE, verbose_name=_("Agentas"), related_name="requesthistory")
+    endpoint = models.CharField(max_length=255, verbose_name=_("API galinis taškas"))
+    method = models.CharField(max_length=10, choices=HTTPMethods.choices, verbose_name=_("HTTP metodas"))
+    http_result = models.IntegerField(verbose_name=_("HTTP rezultatas"))
+    result = models.CharField(max_length=30, choices=PossibleResults.choices, verbose_name=_("Rezultatas"))
+    error = models.TextField(blank=True, null=True, verbose_name=_("Klaida"))
+
+    class Meta:
+        verbose_name = _("Užklausų istorija")
+        verbose_name_plural = _("Užklausų istorijos")
+
+
+class RequestHistoryChanges(UUIDBaseModel):
+    request_history = models.ForeignKey(
+        "RequestHistory", on_delete=models.CASCADE, related_name="changes", verbose_name=_("Užklausų istorija")
+    )
+    element = models.ForeignKey("vitrina_structure.Metadata", on_delete=models.CASCADE, verbose_name=_("Elementas"))
+    changed_by = models.CharField(max_length=255, choices=ChangedBy.choices, verbose_name=_("Pakeitimo autorius"))
+    change_type = models.CharField(max_length=255, choices=ChangeType.choices, verbose_name=_("Pakeitimo tipas"))
+
+    class Meta:
+        verbose_name = _("Užklausų istorijos pakeitimas")
+        verbose_name_plural = _("Užklausų istorijos pakeitimai")

@@ -26,6 +26,7 @@ from vitrina.orgs.services import (
     has_perm,
     Action,
 )
+from vitrina.uapi.models import RequestHistory
 from vitrina.resources.models import Format
 from vitrina.uapi.forms import AgentForm
 from vitrina.uapi.models import Agent
@@ -100,7 +101,7 @@ class AgentDetailView(BaseAgentView):
     def setup(self, request, *args, **kwargs) -> None:
         super().setup(request, *args, **kwargs)
         self.object = get_object_or_404(
-            Agent.objects.select_related("service"),
+            Agent.objects.select_related("service").prefetch_related(("requesthistory")),
             pk=kwargs.get("pk"),
             organization=self.organization,
             is_archived=False
@@ -275,3 +276,42 @@ class AgentDeleteView(DeleteView, BaseAgentView):
 
     def get_success_url(self) -> str:
         return reverse("agent-list", kwargs={"organization_id": self.organization.id})
+
+
+class RequestDetailView(BaseAgentView):
+    template_name = "requests/request_detail.html"
+    model = RequestHistory
+
+    def setup(self, request, *args, **kwargs) -> None:
+        self.object = get_object_or_404(
+            RequestHistory.objects.select_related("agent__organization"),
+            pk=kwargs.get("pk"),
+        )
+        kwargs[self.organization_url_kwarg] = self.object.agent.organization.pk
+        super().setup(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+
+        context.update(
+            {
+                "request_history": self.object,
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse(
+                        "organization-detail", args=[self.organization.pk]
+                    ): self.organization.title,
+                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
+                    reverse(
+                        "agent-detail",
+                        args=[self.organization.pk, self.object.agent.pk],
+                    ): self.object.agent.title,
+                    None: _("Užklausa"),
+                },
+            }
+        )
+        return context

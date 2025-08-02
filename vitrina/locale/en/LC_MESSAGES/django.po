@@ -3747,7 +3747,7 @@ msgid "Metaduomenų versija"
 msgstr "Metadata version"
 
 msgid "Užklausa"
-msgstr "Query"
+msgstr "Request"
 
 msgid "Duomenų rinkinio struktūra"
 msgstr "Dataset structure"
@@ -4199,6 +4199,30 @@ msgstr "Cancel subscription"
 msgid "Kita"
 msgstr "Other"
 
+msgid "Nesėkminga"
+msgstr "Fail"
+
+msgid "Atnaujinta su konfliktu"
+msgstr "Updated with conflict"
+
+msgid "Atnaujinta be pakeitimų"
+msgstr "Updated without changes"
+
+msgid "Statusas veikia"
+msgstr "Status alive"
+
+msgid "Statuso klaida"
+msgstr "Status error"
+
+msgid "Adminas"
+msgstr "Admin"
+
+msgid "Atnaujinti"
+msgstr "Update"
+
+msgid "Ištrinti"
+msgstr "Delete"
+
 msgid ""
 "Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "
 "publikuojami Saugykloje\"."
@@ -4289,6 +4313,41 @@ msgstr "If client identifier exists - agent can do requests to catalog"
 msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
 msgstr "The related data resource must be of type \"service\"."
 
+msgid "API galinis taškas"
+msgstr ""
+
+msgid "HTTP metodas"
+msgstr "HTTP method"
+
+msgid "HTTP rezultatas"
+msgstr "HTTP result"
+
+msgid "Rezultatas"
+msgstr "Result"
+
+msgid "Užklausų istorija"
+msgstr "Request history"
+
+msgid "Užklausų istorijos"
+msgstr "Request history"
+
+msgid "Elementas"
+msgstr "Element"
+
+msgid "Pakeitimo autorius"
+msgstr "Change author"
+
+msgid "Pakeitimo tipas"
+msgstr "Change type"
+
+
+msgid "Užklausų istorijos pakeitimas"
+msgstr "Request history change"
+
+
+msgid "Užklausų istorijos pakeitimai"
+msgstr "Request history changes"
+
 msgid "Grįžti į agentus"
 msgstr "Go back"
 
@@ -4364,6 +4423,24 @@ msgstr ""
 msgid "Kopijuoti"
 msgstr "Copy"
 
+msgid "Data ir laikas"
+msgstr "Date and Time"
+
+msgid "Klaidos pranešimas"
+msgstr "Error message"
+
+msgid "Sėkminga"
+msgstr "Success"
+
+msgid "Klaidos"
+msgstr "Errors"
+
+msgid "Nėra klaidų"
+msgstr "No errors."
+
+msgid "Nė viena užklausa dar nebuvo įvykdyta."
+msgstr ""
+
 msgid "Pridėti agentą"
 msgstr "Add an Agent"
 
@@ -4406,6 +4483,27 @@ msgstr "Journal"
 
 msgid "Nėra registruotų agentų."
 msgstr "No registered agents."
+
+msgid "Grįžti į agentą"
+msgstr "Back to agent"
+
+msgid "Užklausos informacija"
+msgstr "Request information"
+
+msgid "Užklausos API adresas"
+msgstr "Request API Address"
+
+msgid "NESĖKMINGA"
+msgstr "FAIL"
+
+msgid "SĖKMINGA"
+msgstr "SUCCESS"
+
+msgid "Statusas (HTTP)"
+msgstr "Status (HTTP)"
+
+msgid "Klaidų nėra"
+msgstr "No errors"
 
 msgid "Pridėti Agentą"
 msgstr "Add an Agent"
@@ -4632,9 +4730,6 @@ msgstr "Pagrindinis"
 
 msgid "Naujas naudotojas"
 msgstr "New user"
-
-msgid "Ištrinti"
-msgstr "Deleted"
 
 msgid ""
 "Naudotoją galima pašalinti tik panaikinus visus su naudotoju susijusius "

@@ -1,5 +1,7 @@
 from django.urls import path
 
+from vitrina.uapi.views.template_views import AgentDeleteView, AgentUpdateView, AgentCreateView, AgentDetailView, AgentListView, \
+     RequestDetailView
 from vitrina.uapi.views.template_views import AgentDeleteView, AgentUpdateView, AgentCreateView, AgentDetailView, AgentListView
 from vitrina.uapi.views.views import DatasetViewSet, DistributionViewSet
 
@@ -51,4 +53,5 @@ urlpatterns = [
         DistributionViewSet.as_view({"post": "create", "get": "list"}),
         name="uapi-distribution",
     ),
+    path('request-history/<uuid:pk>/', RequestDetailView.as_view(), name='request-history'),
 ]

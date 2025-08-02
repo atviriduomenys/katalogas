@@ -1,3 +1,5 @@
+from typing import Callable
+
 import pytest
 from django.contrib.contenttypes.models import ContentType
 
@@ -6,7 +8,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import Role
-from vitrina.uapi.models import Agent
+from vitrina.uapi.models import Agent, RequestHistory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -27,3 +29,15 @@ def data_service(organization: Organization) -> Dataset:
 @pytest.fixture
 def agent(organization: Organization, data_service: Dataset) -> Agent:
     return Agent.objects.create(title="Agent", organization=organization, service=data_service)
+
+
+@pytest.fixture
+def request_history(agent: Agent) -> RequestHistory:
+    return RequestHistory.objects.create(
+        agent=agent,
+        endpoint="/api/v1/resource",
+        method="GET",
+        http_result=200,
+        result="SUCCESS",
+        error="Error\nerror",
+    )

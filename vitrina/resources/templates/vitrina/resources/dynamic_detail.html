@@ -4,7 +4,7 @@
 {% block parent_links %}
     <ul class="p-t-sm">
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
-        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų ištekliai' %}</span></a></li>
         <li><a href="{{ resource.dataset.get_absolute_url }}"><span>{{ resource.dataset.title }}</span></a></li>
         <li><a href="{{ resource.dataset.get_absolute_url }}#resources"><span>{% translate 'Duomenų šaltiniai' %}</span></a></li>
     </ul>

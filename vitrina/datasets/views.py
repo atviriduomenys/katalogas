@@ -231,7 +231,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 Filter(
                     *filter_args,
                     "status",
-                    _("Rinkinio būsena"),
+                    _("Duomenų ištekliaus būsena"),
                     choices=Dataset.FILTER_STATUSES,
                     multiple=True,
                     is_int=False,
@@ -867,10 +867,10 @@ class DatasetUpdateView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["current_title"] = _("Duomenų rinkinio redagavimas")
+        context["current_title"] = _("Duomenų ištekliaus redagavimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
         }
         switch_language(self.object, get_language())
@@ -1173,7 +1173,7 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         )
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
         }
         return context
@@ -1246,7 +1246,7 @@ class DatasetStructureImportView(
             "current_title": _("Struktūros importas"),
             "parent_links": {
                 reverse("home"): _("Pradžia"),
-                reverse("dataset-list"): _("Duomenų rinkiniai"),
+                reverse("dataset-list"): _("Duomenų ištekliai"),
                 reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             },
             "parent_title": self.dataset.title,
@@ -1382,7 +1382,7 @@ class CreateMemberView(
         context["current_title"] = _("Tvarkytojo pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
         }
         return context
@@ -1569,7 +1569,7 @@ class UpdateMemberView(
         context["current_title"] = _("Tvarkytojo redagavimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
         }
         return context
@@ -1867,7 +1867,7 @@ class AddRequestView(
         context["parent_url"] = self.dataset.get_absolute_url()
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
         }
         context["current_title"] = _("Poreikių pridėjimas")
@@ -1958,7 +1958,7 @@ class AddProjectView(
         context["parent_url"] = self.dataset.get_absolute_url()
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
         }
         context["current_title"] = _("Projektų pridėjimas")
@@ -2079,7 +2079,7 @@ class DatasetStatsMixin(StatsMixin):
     def get_parent_links(self):
         return {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
         }
 
     def get_time_axis_title(self, indicator):
@@ -2425,7 +2425,7 @@ class DatasetsAccessRightsView(DatasetStatsMixin, DatasetListView):
 
 class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):
     title = _("Kategorija")
-    current_title = _("Duomenų rinkinių kategorijos")
+    current_title = _("Duomenų išteklių kategorijos")
     filter = "category"
     filter_model = Category
     use_str = True
@@ -3340,7 +3340,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
         context["current_title"] = _("Įtraukti į planą")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-plans", args=[self.dataset.pk]): _("Planas"),
         }
@@ -3450,7 +3450,7 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         context["current_title"] = _("Termino pašalinimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[dataset.pk]): dataset.title,
         }
         return context
@@ -3511,7 +3511,7 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         )
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
             reverse("dataset-plans", args=[self.object.pk]): _("Planas"),
         }
@@ -3744,7 +3744,7 @@ class DatasetRepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
         context["url"] = reverse("dataset-members", args=[self.dataset.pk])
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-members", args=[self.dataset.pk]): _("Tvarkytojai"),
         }

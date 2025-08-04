@@ -246,8 +246,8 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
             if sub.sub_type == Subscription.ORGANIZATION:
                 sub.fields.extend(
                     [
-                        (_("Duomenų rinkiniai"), sub.dataset_update_sub),
-                        (_("Duomenų rinkinių komentarai"), sub.dataset_comments_sub),
+                        (_("Duomenų ištekliai"), sub.dataset_update_sub),
+                        (_("Duomenų išteklių komentarai"), sub.dataset_comments_sub),
                         (_("Prašymai"), sub.request_update_sub),
                         (_("Prašymų komentarai"), sub.request_comments_sub),
                     ]
@@ -255,8 +255,8 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
             if sub.sub_type == Subscription.DATASET:
                 sub.fields.extend(
                     [
-                        (_("Duomenų rinkiniai"), sub.dataset_update_sub),
-                        (_("Duomenų rinkinių komentarai"), sub.dataset_comments_sub),
+                        (_("Duomenų ištekliai"), sub.dataset_update_sub),
+                        (_("Duomenų išteklių komentarai"), sub.dataset_comments_sub),
                     ]
                 )
             if sub.sub_type == Subscription.REQUEST:
@@ -264,8 +264,8 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
                     [
                         (_("Prašymai"), sub.request_update_sub),
                         (_("Prašymų komentarai"), sub.request_comments_sub),
-                        (_("Duomenų rinkiniai"), sub.dataset_update_sub),
-                        (_("Duomenų rinkinių komentarai"), sub.dataset_comments_sub),
+                        (_("Duomenų ištekliai"), sub.dataset_update_sub),
+                        (_("Duomenų išteklių komentarai"), sub.dataset_comments_sub),
                     ]
                 )
             if sub.sub_type == Subscription.PROJECT:

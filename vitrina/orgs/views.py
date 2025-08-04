@@ -3047,9 +3047,9 @@ class ConfirmOrganizationMergeView(
 
         # Related objects
         context["related_objects"] = {
-            _("Duomenų rinkiniai"): self.organization.dataset_set.all(),
+            _("Duomenų ištekliai"): self.organization.dataset_set.all(),
             _(
-                "Ryšiai su duomenų rinkiniais"
+                "Ryšiai su duomenų ištekliais"
             ): self.organization.datasetattribution_set.all(),
             _("Poreikiai ir pasiūlymai"): self.organization.request_set.all(),
             _("Tvarkytojai"): Representative.objects.filter(

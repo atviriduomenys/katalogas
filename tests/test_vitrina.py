@@ -29,7 +29,7 @@ def test_home(app: DjangoTestApp):
         for elem in resp.html.select('a.stats')
     ] == [
         ['1', 'Organizacijos'],
-        ['1', 'Duomenų rinkiniai'],
+        ['1', 'Duomenų ištekliai'],
         ['1', 'Panaudojimo atvejai'],
         # ['0', 'Koordinatoriai'],
         # ['0', 'Tvarkytojai'],

@@ -1425,7 +1425,7 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
         type=Comment.STRUCTURE_ERROR,
         content_type=ContentType.objects.get_for_model(structure),
     ).values_list('body', flat=True)) == [
-       'Duomenų rinkinys "datasets/gov/ivpk/adp" jau egzistuoja.'
+       'Duomenų išteklius "datasets/gov/ivpk/adp" jau egzistuoja.'
     ]
     assert Metadata.objects.filter(dataset=structure.dataset).count() == 0
 
@@ -1627,12 +1627,12 @@ def test_uri_prefix(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(Model),
         object_id=Model.objects.get(metadata__uuid=6).pk,
         type=Comment.STRUCTURE_ERROR
-    ).values_list('body', flat=True)) == ['Prefiksas "spinta" duomenų rinkinyje neegzistuoja.']
+    ).values_list('body', flat=True)) == ['Prefiksas "spinta" duomenų ištekliuje neegzistuoja.']
     assert list(Comment.objects.filter(
         content_type=ContentType.objects.get_for_model(Property),
         object_id=Property.objects.get(metadata__uuid=7).pk,
         type=Comment.STRUCTURE_ERROR
-    ).values_list('body', flat=True)) == ['Prefiksas "spinta" duomenų rinkinyje neegzistuoja.']
+    ).values_list('body', flat=True)) == ['Prefiksas "spinta" duomenų ištekliuje neegzistuoja.']
 
 
 @pytest.mark.django_db

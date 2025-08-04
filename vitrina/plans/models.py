@@ -135,7 +135,7 @@ class PlanDataset(models.Model):
     plan = models.ForeignKey(Plan, verbose_name=_("Planas"), on_delete=models.CASCADE)
     dataset = models.ForeignKey(
         "vitrina_datasets.Dataset",
-        verbose_name=_("Duomenų rinkinys"),
+        verbose_name=_("Duomenų išteklius"),
         on_delete=models.CASCADE,
     )
     created = models.DateTimeField(

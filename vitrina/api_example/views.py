@@ -47,7 +47,7 @@ class YamlFileImportView(
             "current_title": _("Pavyzdinio failo įkėlimas"),
             "parent_links": {
                 reverse("home"): _("Pradžia"),
-                reverse("dataset-list"): _("Duomenų rinkiniai"),
+                reverse("dataset-list"): _("Duomenų ištekliai"),
                 reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
                 reverse("model-data", args=[self.dataset.pk, self.models[0].name]): _(
                     f"{self.models[0].name}"

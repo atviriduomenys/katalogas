@@ -663,7 +663,7 @@ def get_stats_filter_options_based_on_model(
                         "value": "distribution-count",
                         "label": _("Duomenų šaltinių (distribucijų) skaičius"),
                     },
-                    {"value": "dataset-count", "label": _("Duomenų rinkinių skaičius")},
+                    {"value": "dataset-count", "label": _("Duomenų išteklių skaičius")},
                     {"value": "request-count", "label": _("Poreikių skaičius")},
                     {"value": "project-count", "label": _("Projektų skaičius")},
                 ]

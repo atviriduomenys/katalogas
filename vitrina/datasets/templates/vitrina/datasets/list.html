@@ -4,8 +4,8 @@
 {% load hitcount_tags %}
 {% load util_tags %}
 
-{% block pageTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
-{% block pageOgTitle %} | {% translate "Duomenų rinkiniai" %}{% endblock %}
+{% block pageTitle %} | {% translate "Duomenų ištekliai" %}{% endblock %}
+{% block pageOgTitle %} | {% translate "Duomenų ištekliai" %}{% endblock %}
 
 {% block head %}
     <style>
@@ -81,7 +81,7 @@
 {% if request.resolver_match.url_name == 'organization-datasets' %}
     {{ organization }}
 {% else %}
-    {% translate "Duomenų rinkiniai" %}
+    {% translate "Duomenų ištekliai" %}
 {% endif %}
 {% endblock %}
 
@@ -121,7 +121,7 @@
 
           {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
           <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
-              {% translate "Pridėti rinkinį" %}
+              {% translate "Pridėti duomenų išteklių" %}
           </a>
           {% endif %}
 
@@ -180,7 +180,7 @@
             <div class="buttons">
               <div class="control">
                 <div class="tags">
-                  <span class="tag is-white is-medium has-text-dark">{% translate "Rasta duomenų rinkinių" %}:</span>
+                  <span class="tag is-white is-medium has-text-dark">{% translate "Rasta duomenų išteklių" %}:</span>
                   <span class="tag is-medium">{{ paginator.count }}</span>
                 </div>
               </div>
@@ -237,7 +237,7 @@
                                       {% endif %}
                                     </div>
                                       <span class="tag is-white has-text-dark">
-                                          {% translate "Duomenų rinkinys viešinamas" %}:
+                                          {% translate "Duomenų išteklius viešinamas" %}:
                                           {% if i.object.is_public %}
                                           {% translate "Taip" %}
                                           {% else %}

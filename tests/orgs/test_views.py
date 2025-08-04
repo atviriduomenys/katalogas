@@ -73,7 +73,7 @@ def test_organization_dataset_tab(app: DjangoTestApp):
     dataset2 = DatasetFactory(organization=organization2)
     resp = app.get(reverse('organization-datasets', args=[organization1.pk]))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk]
-    assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų rinkiniai"]
+    assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų ištekliai"]
 
 
 @pytest.fixture

@@ -121,13 +121,14 @@ def test_oauth_token_get_scopes_missing_attribute():
 
 def test_oauth_token_valid_org_success():
     request = MagicMock()
-    claims = {"org_id": "123"}
+    claims = {"form": "org", "org": "VSSA"}
     request.auth = claims
 
     mock_org = MagicMock()
-    mock_org.pk = "123"
+    mock_org.kind = "org"
+    mock_org.name = "VSSA"
 
-    view = DummyView(kwargs={"organization_id": "123"})
+    view = DummyView(kwargs={"form": "org", "org": "VSSA"})
 
     with patch.object(OAuthClientAuthenticator, "resolve_organization_from_token", return_value=mock_org):
         permission = OAuthTokenHasValidOrganizationClaim()
@@ -137,11 +138,12 @@ def test_oauth_token_valid_org_success():
 
 def test_oauth_token_valid_org_mismatch():
     request = MagicMock()
-    request.auth = {"org_id": "123"}
-    view = DummyView(kwargs={"organization_id": "456"})
+    request.auth = {"form": "org", "org": "VSSA"}
+    view = DummyView(kwargs={"form": "org", "org": "Not VSSA"})
 
     mock_org = MagicMock()
-    mock_org.pk = "123"
+    mock_org.kind = "org"
+    mock_org.name = "VSSA"
 
     with patch.object(OAuthClientAuthenticator, "resolve_organization_from_token", return_value=mock_org):
         permission = OAuthTokenHasValidOrganizationClaim()

@@ -15,6 +15,13 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from reversion import create_revision
 
+from vitrina import settings
+from vitrina.api.oauth import (
+    OAuth2AuthenticationWithLocalJWK,
+    IsOAuthTokenValid,
+    OAuthTokenHasScopes,
+    OAuthTokenHasValidOrganizationClaim,
+)
 from vitrina.api.serializers import PostDatasetDistributionSerializer
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.exceptions import UAPIException
@@ -34,6 +41,10 @@ from vitrina.uapi.utils.views import UAPIExceptionHandlerMixin
 
 
 class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
+    authentication_classes = [OAuth2AuthenticationWithLocalJWK]
+    permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
+    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES
+
     @cached_property
     def dataset_metadata_id(self) -> int:
         return ContentType.objects.get_for_model(Dataset).id
@@ -152,7 +163,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
         # Mimics file upload done via DatasetStructureImportView.
         file_name = f"dataset_{dataset.id}_structure.csv"
-        content_file = ContentFile(request.body, name=file_name)
+        content_file = ContentFile(request.body.decode(), name=file_name)
         filer_file = File.objects.create(
             original_filename=file_name,
             file=content_file,
@@ -179,6 +190,10 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
 
 class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
+    authentication_classes = [OAuth2AuthenticationWithLocalJWK]
+    permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
+    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES
+
     @cached_property
     def distribution_metadata_id(self) -> int:
         return ContentType.objects.get_for_model(DatasetDistribution).id

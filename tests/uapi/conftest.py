@@ -1,7 +1,9 @@
-from typing import Any
-
 import pytest
+from typing import Any
+from unittest.mock import patch
+
 import reversion
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.urls import reverse
@@ -26,6 +28,19 @@ def _build_reverse_uapi_url(name: str, organization: Organization, **kwargs: Any
             **kwargs,
         }
     )
+
+
+@pytest.fixture(autouse=True)
+def mock_auth_and_permissions():
+    """A Fixture to avoid permission/auth checking for specific API's."""
+    with patch("vitrina.api.oauth.OAuth2AuthenticationWithLocalJWK.authenticate") as mock_auth:
+        mock_auth.return_value = (AnonymousUser(), {"scope": "read write", "organization_id": 1, "sub": "agentname"})
+        with (
+            patch("vitrina.api.oauth.IsOAuthTokenValid.has_permission", return_value=True),
+            patch("vitrina.api.oauth.OAuthTokenHasScopes.has_permission", return_value=True),
+            patch("vitrina.api.oauth.OAuthTokenHasValidOrganizationClaim.has_permission", return_value=True)
+        ):
+            yield
 
 
 @pytest.fixture

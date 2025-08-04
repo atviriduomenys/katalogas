@@ -7,7 +7,9 @@ from vitrina.orgs.factories import OrganizationFactory
 from vitrina.uapi.models import Agent
 
 
-@pytest.mark.django_db
+pytestmark = pytest.mark.django_db
+
+
 def test_codename_set_automatically_for_newly_created_agent():
     organization = OrganizationFactory()
     dataset = DatasetFactory(service=True)
@@ -20,7 +22,6 @@ def test_codename_set_automatically_for_newly_created_agent():
     assert agent.codename == "abc_def_123"
 
 
-@pytest.mark.django_db
 def test_unique_name_and_organization_for_not_archived_agents_constraint():
     organization = OrganizationFactory()
     dataset = DatasetFactory(service=True)
@@ -31,7 +32,6 @@ def test_unique_name_and_organization_for_not_archived_agents_constraint():
         Agent.objects.create(title="agent", organization=organization, service=dataset)
 
 
-@pytest.mark.django_db
 def test_unique_name_and_organization_for_archived_agents_constraint_name_duplicated_one_object_archived():
     """The uniqueness check should allow creating an object with a repeating code name if the others are archived."""
     organization = OrganizationFactory()
@@ -41,7 +41,6 @@ def test_unique_name_and_organization_for_archived_agents_constraint_name_duplic
     Agent.objects.create(title="agent", organization=organization, service=dataset)
 
 
-@pytest.mark.django_db
 def test_agent_created_with_attached_data_resource_that_is_not_service():
     organization = OrganizationFactory()
     dataset = DatasetFactory(service=False)

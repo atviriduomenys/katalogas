@@ -3,7 +3,6 @@ from http import HTTPStatus
 from unittest.mock import patch
 
 import pytest
-from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 
@@ -11,39 +10,16 @@ from vitrina.api.models import ApiKey
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.uapi import AgentType
-from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.uapi.models import Agent
-from vitrina.orgs.services import Role, hash_api_key
-from vitrina.users.factories import UserFactory
+from vitrina.orgs.services import hash_api_key
 from vitrina.users.models import User
 
 
-@pytest.fixture
-def organization() -> Organization:
-    return OrganizationFactory()
+pytestmark = pytest.mark.django_db
 
 
-@pytest.fixture
-def representative_user(organization: Organization) -> User:
-    user = UserFactory(is_staff=True)
-    content_type = ContentType.objects.get_for_model(organization)
-    RepresentativeFactory(user=user, content_type=content_type, object_id=organization.pk, role=Role.COORDINATOR)
-
-    return user
-
-
-@pytest.fixture
-def data_service(organization: Organization) -> Dataset:
-    return DatasetFactory(service=True, organization=organization)
-
-
-@pytest.fixture
-def agent(organization: Organization, data_service: Dataset) -> Agent:
-    return Agent.objects.create(title="Agent", organization=organization, service=data_service)
-
-
-@pytest.mark.django_db
 def test_list_view(app: DjangoTestApp, representative_user: User, organization: Organization):
     app.set_user(representative_user)
 
@@ -67,7 +43,6 @@ def test_list_view(app: DjangoTestApp, representative_user: User, organization: 
     assert different_organization_agent not in returned_agents
 
 
-@pytest.mark.django_db
 def test_detail_view(
         app: DjangoTestApp,
         representative_user: User,
@@ -86,7 +61,6 @@ def test_detail_view(
     assert not response.context["secret"]
 
 
-@pytest.mark.django_db
 def test_detail_view_archived_agent(app: DjangoTestApp, representative_user: User, organization: Organization):
     app.set_user(representative_user)
     dataset = DatasetFactory(service=True, organization=organization)
@@ -98,7 +72,6 @@ def test_detail_view_archived_agent(app: DjangoTestApp, representative_user: Use
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-@pytest.mark.django_db
 def test_create_view(app: DjangoTestApp, representative_user: User, organization: Organization):
     app.set_user(representative_user)
 
@@ -112,7 +85,10 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
     }
 
 
-    with patch("vitrina.uapi.views.OAuthClientManagement.create_oauth_client", return_value=("some-id", "some-secret")):
+    with patch(
+            "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
+            return_value=("some-id", "some-secret")
+    ):
         response = app.post(url, data)
 
 
@@ -123,7 +99,6 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
     assert ApiKey.objects.count() == 0 # No longer relying on API keys, using oauth client file instead.
 
 
-@pytest.mark.django_db
 def test_create_agent_transaction_rollback_on_error(app, representative_user, organization):
     app.set_user(representative_user)
 
@@ -136,7 +111,10 @@ def test_create_agent_transaction_rollback_on_error(app, representative_user, or
         "open_data_publish_url": "https://data.gov.lt/agent",
     }
 
-    with patch("vitrina.uapi.views.OAuthClientManagement.create_oauth_client", side_effect=Exception("Simulated error")):
+    with patch(
+        "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
+        side_effect=Exception("Simulated error")
+    ):
         response = app.post(url, data)
 
     assert response.status_code == HTTPStatus.OK  # Re-rendered due to `form_invalid()`.
@@ -145,7 +123,6 @@ def test_create_agent_transaction_rollback_on_error(app, representative_user, or
     assert ApiKey.objects.count() == 0
 
 
-@pytest.mark.django_db
 def test_update_view(app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):
     app.set_user(representative_user)
     url = reverse("agent-update", args=[organization.pk, agent.pk])
@@ -169,7 +146,6 @@ def test_update_view(app: DjangoTestApp, representative_user: User, organization
     assert agent.open_data_publish_url == data["open_data_publish_url"]
 
 
-@pytest.mark.django_db
 def test_delete_view(app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):
     app.set_user(representative_user)
     ApiKey.objects.create(api_key=hash_api_key(secrets.token_urlsafe()), enabled=True, agent=agent)

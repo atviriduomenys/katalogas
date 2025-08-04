@@ -12,7 +12,6 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import (
     CreateView,
     UpdateView,
@@ -20,12 +19,8 @@ from django.views.generic import (
     TemplateView,
 )
 from django_otp.plugins.otp_email.conf import settings
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
 
-from vitrina.api.oauth import Secret, OAuthClientAuthenticator, OAuthClientManagement, OAuth2AuthenticationWithLocalJWK, \
-    IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim
+from vitrina.api.oauth import Secret, OAuthClientManagement
 from vitrina.datasets.models import Dataset, Contact, Type
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import (

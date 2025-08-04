@@ -92,6 +92,14 @@ class Dataset(TranslatableModel):
         UNASSIGNED: _("Nepriskirta"),
     }
 
+    FILTER_SUBCLASSES = {
+        "dataset": _("Duomenų rinkinys"),
+        "catalog": _("Metaduomenų katalogas"),
+        "information_system": _("Informacinė sistema"),
+        "service": _("Duomenų publikavimo paslauga"),
+        "series": _("Duomenų rinkinių serija"),
+    }
+
     CREATED = "CREATED"
     EDITED = "EDITED"
     STATUS_CHANGED = "STATUS_CHANGED"
@@ -304,9 +312,7 @@ class Dataset(TranslatableModel):
     )
     subclass = models.ForeignKey(
         "DCATResourceSubclass",
-        models.SET_NULL,
-        blank=True,
-        null=True,
+        models.PROTECT,
         verbose_name=_("Ištekliaus poklasis"),
     )
     endpoint_url = models.URLField(
@@ -464,6 +470,12 @@ class Dataset(TranslatableModel):
 
     def en_description(self):
         return self.safe_translation_getter("description", language_code="en")
+
+    def lt_subclass_title(self):
+        return self.subclass.safe_translation_getter("title", language_code="lt")
+
+    def en_subclass_title(self):
+        return self.subclass.safe_translation_getter("title", language_code="en")
 
     def get_absolute_url(self):
         return reverse("dataset-detail", kwargs={"pk": self.pk})

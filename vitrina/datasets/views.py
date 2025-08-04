@@ -149,6 +149,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         "level",
         "type",
         "access_rights",
+        "subclass",
     ]
     form_class = DatasetSearchForm
     max_num_facets = 20
@@ -316,10 +317,9 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 ),
                 Filter(
                     *filter_args,
-                    "type",
-                    _("Tipas"),
-                    Type,
-                    multiple=True,
+                    "subclass",
+                    _("Ištekliaus poklasis"),
+                    choices=Dataset.FILTER_SUBCLASSES,
                     is_int=False,
                     stats=False,
                 ),
@@ -874,6 +874,8 @@ class DatasetCreateView(
             )
             rep.save()
             self.object.save()
+
+        messages.success(self.request, _("Išteklius sukurtas sėkmingai"))
 
         return HttpResponseRedirect(self.get_success_url())
 

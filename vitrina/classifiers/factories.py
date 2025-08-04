@@ -9,6 +9,7 @@ from vitrina.classifiers.models import (
     GeoportalCategory,
     GeoportalFrequency,
     Status,
+    Concept,
 )
 
 
@@ -78,3 +79,12 @@ class StatusFactory(DjangoModelFactory):
         django_get_or_create = ("codename",)
 
     codename = factory.Faker("word")
+
+
+class ConceptFactory(DjangoModelFactory):
+    class Meta:
+        model = Concept
+        django_get_or_create = ("code",)
+
+    code = factory.Faker("word")
+    valid_since = factory.Faker("date")

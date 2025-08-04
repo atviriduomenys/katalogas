@@ -4,6 +4,8 @@ from django.utils.translation import gettext_lazy as _, get_language
 from parler.models import TranslatableModel, TranslatedFields
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
+from vitrina.models import UUIDBaseModel
+
 
 class Category(MP_Node):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -215,3 +217,44 @@ class Status(TranslatableModel):
         db_table = "status"
         verbose_name = _("Būsena")
         verbose_name_plural = _("Būsenos")
+
+
+class ConceptSchema(TranslatableModel, UUIDBaseModel):
+    uri = models.URLField(max_length=255, unique=True, verbose_name=_("uri"))
+
+    translations = TranslatedFields(
+        label=models.CharField(max_length=255, verbose_name=_("Pavadinimas")),
+        description=models.TextField(verbose_name=_("Aprašymas")),
+    )
+
+    class Meta:
+        verbose_name = _("Sąvokų schema")
+        verbose_name_plural = _("Sąvokų schemos")
+
+    def __str__(self) -> str:
+        return f"{self.label} ({self.uri})"
+
+
+class Concept(TranslatableModel, UUIDBaseModel):
+    concept_schemas = models.ManyToManyField(
+        ConceptSchema,
+        related_name="concepts",
+        verbose_name=_("Sąvokų schemos"),
+    )
+    code = models.CharField(
+        unique=True, max_length=255, verbose_name=_("Kodinis pavadinimas")
+    )
+    valid_since = models.DateField(verbose_name=_("Galioja nuo"))
+    valid_until = models.DateField(null=True, blank=True, verbose_name=_("Galioja iki"))
+
+    translations = TranslatedFields(
+        label=models.CharField(max_length=255, verbose_name=_("Pavadinimas")),
+        description=models.TextField(verbose_name=_("Aprašymas")),
+    )
+
+    class Meta:
+        verbose_name = _("Sąvoka")
+        verbose_name_plural = _("Sąvokos")
+
+    def __str__(self) -> str:
+        return self.code

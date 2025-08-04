@@ -162,6 +162,7 @@ INSTALLED_APPS = [
     "vitrina.uapi",
     "vitrina.likes",
     "vitrina.smart_contracts",
+    "vitrina.identifiers",
 ]
 
 SERIALIZATION_MODULES = {

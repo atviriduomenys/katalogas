@@ -155,13 +155,12 @@ def test_create_token_does_not_have_necessary_scopes(
         expect_errors=True,
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -182,13 +181,12 @@ def test_create_no_organization_id_inside_token_payload(
         expect_errors=True,
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -269,6 +267,7 @@ def test_create_unexpected_exception_raised_and_rollback_executed(
         "message": "Unexpected error",
         "additionalProperties": None
     }
+
 
 
 def test_list(
@@ -381,13 +380,12 @@ def test_list_token_does_not_have_necessary_scopes(
 
     response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -405,13 +403,12 @@ def test_list_no_organization_id_inside_token_payload(
 
     response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -674,13 +671,12 @@ def test_action_upload_dataset_structure_token_does_not_have_necessary_scopes(
         expect_errors=True,
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -704,13 +700,12 @@ def test_action_upload_dataset_structure_no_organization_id_inside_token_payload
         expect_errors=True
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -824,6 +819,7 @@ def test_action_upload_dataset_structure_transaction_rollback_on_failure(
     }
 
 
+
 def test_action_update_dataset_structure(
     app: DjangoTestApp,
     organization: Organization,
@@ -889,13 +885,12 @@ def test_action_update_dataset_structure_token_does_not_have_necessary_scopes(
         expect_errors=True,
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -919,13 +914,12 @@ def test_action_update_dataset_structure_no_organization_id_inside_token_payload
         expect_errors=True,
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }

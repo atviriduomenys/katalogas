@@ -10,7 +10,6 @@ from django.forms import ModelForm
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     CreateView,
@@ -270,9 +269,6 @@ class AgentDeleteView(DeleteView, BaseAgentView):
 
     def delete(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Object is soft-deleted (archived) so to not lose the related service and other related objects."""
-        self.object.apikey.deleted = True
-        self.object.apikey.deleted_on = timezone.now()
-        self.object.apikey.save(update_fields=["deleted", "deleted_on"])
         self.object.is_archived = True
         self.object.save(update_fields=["is_archived", "updated_at"])
         messages.success(self.request, _(f"Agentas {self.object.title} pašalintas sėkmingai!"))

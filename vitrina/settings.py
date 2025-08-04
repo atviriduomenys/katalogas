@@ -66,10 +66,11 @@ OAUTH_CLIENTS_MANAGEMENT_SCOPE = env("OAUTH_CLIENTS_MANAGEMENT_SCOPE", default="
 OAUTH_AGENT_DEFAULT_SCOPES = (
     "spinta_datasets_gov_vssa_dataset_getall",
     "spinta_datasets_gov_vssa_dataset_insert",
+    "spinta_datasets_gov_vssa_dataset_dsa_getone",
+    "spinta_datasets_gov_vssa_dataset_dsa_insert",
+    "spinta_datasets_gov_vssa_dataset_dsa_update",
     "spinta_datasets_gov_vssa_distribution_getall",
     "spinta_datasets_gov_vssa_distribution_insert",
-    "spinta_datasets_gov_vssa_distribution_dsa_getone",
-    "spinta_datasets_gov_vssa_distribution_dsa_update"
 )
 
 SPINTA_EXECUTABLE = BASE_DIR / env("SPINTA_EXECUTABLE")

@@ -15,7 +15,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from reversion import create_revision
 
-from vitrina import settings
 from vitrina.api.oauth import (
     OAuth2AuthenticationWithLocalJWK,
     IsOAuthTokenValid,
@@ -43,7 +42,12 @@ from vitrina.uapi.utils.views import UAPIExceptionHandlerMixin
 class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
     authentication_classes = [OAuth2AuthenticationWithLocalJWK]
     permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
-    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES
+    required_scopes = {
+        "create": ["spinta_datasets_gov_vssa_dataset_insert"],
+        "list": ["spinta_datasets_gov_vssa_dataset_getall"],
+        "upload_dataset_structure": ["spinta_datasets_gov_vssa_dataset_dsa_insert"],
+        "update_dataset_structure": ["spinta_datasets_gov_vssa_dataset_dsa_update"],
+    }
 
     @cached_property
     def dataset_metadata_id(self) -> int:
@@ -65,8 +69,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         ).filter(
             ~Q(deleted=True),
             metadata__content_type_id=self.dataset_metadata_id,
-            organization__kind=self.kwargs["form"],
-            organization__name=self.kwargs["org"],
+            organization__id=self.request.auth["organization_id"],
         )
 
         if request_params := self.request.query_params:
@@ -87,7 +90,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        organization = get_object_or_404(Organization, kind=self.kwargs["form"], name=self.kwargs["org"])
+        organization = get_object_or_404(Organization, id=self.request.auth["organization_id"])
 
         serializer_context = self.get_serializer_context()
         serializer = self.get_serializer(
@@ -147,8 +150,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             Dataset,
             ~Q(deleted=True),
             id=self.kwargs["dataset_id"],
-            organization__kind=self.kwargs["form"],
-            organization__name=self.kwargs["org"],
+            organization__id=self.request.auth["organization_id"]
         )
 
         if not request.body or not request.body.strip(b"\r\n\t "):
@@ -192,7 +194,10 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
     authentication_classes = [OAuth2AuthenticationWithLocalJWK]
     permission_classes = [IsOAuthTokenValid, OAuthTokenHasScopes, OAuthTokenHasValidOrganizationClaim]
-    required_scopes = settings.OAUTH_AGENT_DEFAULT_SCOPES
+    required_scopes = {
+        "create": ["spinta_datasets_gov_vssa_distribution_insert"],
+        "list": ["spinta_datasets_gov_vssa_distribution_getall"],
+    }
 
     @cached_property
     def distribution_metadata_id(self) -> int:
@@ -209,8 +214,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             ~Q(deleted=True),
             ~Q(dataset__deleted=True),
             metadata__content_type_id=self.distribution_metadata_id,
-            dataset__organization__kind=self.kwargs["form"],
-            dataset__organization__name=self.kwargs["org"]
+            dataset__organization__id=self.request.auth["organization_id"],
         )
 
         if request_params := self.request.query_params:

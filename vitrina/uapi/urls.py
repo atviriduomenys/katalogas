@@ -4,7 +4,7 @@ from vitrina.uapi.views.template_views import AgentDeleteView, AgentUpdateView, 
 from vitrina.uapi.views.views import DatasetViewSet, DistributionViewSet
 
 
-UAPI_BASE_PATH = "uapi/datasets/<str:form>/<str:org>/<str:catalog>/<str:catalog_sub>/"
+STATIC_UAPI_BASE_PATH = "uapi/datasets/org/vssa/isris/dcat/"
 
 
 urlpatterns = [
@@ -34,21 +34,21 @@ urlpatterns = [
         name="agent-delete"
     ),
     path(
-        f"{UAPI_BASE_PATH}Dataset/",
+        f"{STATIC_UAPI_BASE_PATH}Dataset/",
         DatasetViewSet.as_view({"post": "create", "get": "list"}),
-        name="dataset",
+        name="uapi-dataset",
     ),
     path(
-        f"{UAPI_BASE_PATH}Dataset/<str:dataset_id>/dsa/",
+        f"{STATIC_UAPI_BASE_PATH}Dataset/<str:dataset_id>/dsa/",
         DatasetViewSet.as_view({
             "post": "upload_dataset_structure",
             "put": "update_dataset_structure",
         }),
-        name="dataset-structure",
+        name="uapi-dataset-structure",
     ),
     path(
-        f"{UAPI_BASE_PATH}Distribution/",
+        f"{STATIC_UAPI_BASE_PATH}Distribution/",
         DistributionViewSet.as_view({"post": "create", "get": "list"}),
-        name="distribution",
+        name="uapi-distribution",
     ),
 ]

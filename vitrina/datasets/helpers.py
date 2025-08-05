@@ -16,20 +16,20 @@ def is_manager_dataset_list(request: HttpRequest):
 def generate_dataset_name(organization: Organization, dataset_title: str) -> str:
     """
     Generates a dataset name by combining a slugified organization identifier and a slugified dataset title.
-    The organization identifier is determined by attempting to slugify the organization's name, 
-    then slug, then title (in that order), using ASCII characters and lowercase formatting. 
+    The organization identifier is determined by attempting to slugify the organization's name,
+    then slug, then title (in that order), using ASCII characters and lowercase formatting.
     The dataset title is also slugified in the same manner.
-    
+
     Returns:
         str: A string in the format "organization_part/dataset_part", where both parts are slugified.
     """
     slugify_ascii_lower = partial(slugify, lowercase=True, allow_unicode=False)
-    
+
     organization_part = (
-        slugify_ascii_lower(organization.name) 
-        or slugify_ascii_lower(organization.slug) 
+        slugify_ascii_lower(organization.name)
+        or slugify_ascii_lower(organization.slug)
         or slugify_ascii_lower(organization.title)
-    )    
+    )
     dataset_part = slugify_ascii_lower(dataset_title)
     return f"datasets/gov/{organization_part}/{dataset_part}"
 
@@ -45,13 +45,13 @@ def generate_unique_dataset_name(organization: Organization, dataset: Dataset) -
         organization (Organization): The organization to which the dataset belongs.
         dataset (Dataset): The dataset for which the unique name is to be generated.
     Returns:
-        str: A unique dataset name in format "organization_part/dataset_part" 
+        str: A unique dataset name in format "organization_part/dataset_part"
             or "organization_part/dataset_part_index".
     """
     base_name = generate_dataset_name(organization, dataset.title)
-    
+
     existing_names = Metadata.objects.filter(
-        content_type=ContentType.objects.get_for_model(Dataset), 
+        content_type=ContentType.objects.get_for_model(Dataset),
         name__startswith=base_name
     ).values_list("name", flat=True)
 
@@ -69,3 +69,4 @@ def generate_unique_dataset_name(organization: Organization, dataset: Dataset) -
                 max_index = index + 1
 
     return f"{base_name}_{max_index}"
+

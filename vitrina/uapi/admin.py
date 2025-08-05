@@ -1,6 +1,5 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
-from reversion.admin import VersionAdmin
 
 from vitrina.uapi.models import Agent, RequestHistory, RequestHistoryChanges
 
@@ -22,8 +21,9 @@ class AgentAdmin(admin.ModelAdmin):
 
 
 @admin.register(RequestHistory)
-class RequestHistoryAdmin(VersionAdmin):
-    list_filter = ("agent",)
+class RequestHistoryAdmin(admin.ModelAdmin):
+    autocomplete_fields = ["agent"]
+    list_filter = ["agent"]
 
 
 @admin.register(RequestHistoryChanges)

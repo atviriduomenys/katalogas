@@ -112,6 +112,12 @@ class AgentDetailView(BaseAgentView):
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
+
+        request_history = self.object.requesthistory.all()
+        paginator = Paginator(request_history, 10)
+        page_number = self.request.GET.get("page")
+        page = paginator.get_page(page_number)
+
         context.update({
             "parent_links": {
                 reverse("home"): _("Pradžia"),
@@ -125,7 +131,10 @@ class AgentDetailView(BaseAgentView):
             "secret": self.request.session.pop("secret", None),
             "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
             "auth_server_host": settings.OAUTH_SERVER_HOST,
-            "resource_server_host": f"{self.request.scheme }://{ self.request.get_host()}",
+            "resource_server_host": f"{self.request.scheme}://{self.request.get_host()}",
+            "page_obj": page,
+            "paginator": paginator,
+            "request_history": page.object_list,
         })
 
         return context
@@ -176,7 +185,7 @@ class AgentCreateView(CreateView, BaseAgentView):
 
                 self.object = form.save()
 
-                self.request.session["secret"] = self._create_oauth_client(agent=self.object)
+                # self.request.session["secret"] = self._create_oauth_client(agent=self.object)
                 self.request.session["scopes"] = settings.OAUTH_AGENT_DEFAULT_SCOPES
 
                 messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))
@@ -287,7 +296,7 @@ class RequestDetailView(BaseAgentView):
             RequestHistory.objects.select_related("agent__organization"),
             pk=kwargs.get("pk"),
         )
-        kwargs[self.organization_url_kwarg] = self.object.agent.organization.pk
+        kwargs[self.organization_url_kwarg] = self.object.agent.organization_id
         super().setup(request, *args, **kwargs)
 
     def has_permission(self) -> bool:

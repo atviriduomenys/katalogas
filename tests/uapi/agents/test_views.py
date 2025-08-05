@@ -165,8 +165,8 @@ def test_request_history_detail_view(
     data_service: Dataset,
     agent: Agent,
     request_history: RequestHistory
-
 ):
+
     app.set_user(representative_user)
     url = reverse("request-history", args=[request_history.pk])
 

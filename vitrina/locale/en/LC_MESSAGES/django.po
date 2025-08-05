@@ -4208,13 +4208,13 @@ msgstr "Updated with conflict"
 msgid "Atnaujinta be pakeitimų"
 msgstr "Updated without changes"
 
-msgid "Statusas veikia"
+msgid "Veikianti būsena"
 msgstr "Status alive"
 
-msgid "Statuso klaida"
+msgid "Klaidinga būsena"
 msgstr "Status error"
 
-msgid "Adminas"
+msgid "Administratorius"
 msgstr "Admin"
 
 msgid "Atnaujinti"
@@ -4314,7 +4314,7 @@ msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
 msgstr "The related data resource must be of type \"service\"."
 
 msgid "API galinis taškas"
-msgstr ""
+msgstr "API endpoint"
 
 msgid "HTTP metodas"
 msgstr "HTTP method"
@@ -4340,10 +4340,8 @@ msgstr "Change author"
 msgid "Pakeitimo tipas"
 msgstr "Change type"
 
-
 msgid "Užklausų istorijos pakeitimas"
 msgstr "Request history change"
-
 
 msgid "Užklausų istorijos pakeitimai"
 msgstr "Request history changes"
@@ -4439,7 +4437,7 @@ msgid "Nėra klaidų"
 msgstr "No errors."
 
 msgid "Nė viena užklausa dar nebuvo įvykdyta."
-msgstr ""
+msgstr "No requests were made"
 
 msgid "Pridėti agentą"
 msgstr "Add an Agent"
@@ -4492,12 +4490,6 @@ msgstr "Request information"
 
 msgid "Užklausos API adresas"
 msgstr "Request API Address"
-
-msgid "NESĖKMINGA"
-msgstr "FAIL"
-
-msgid "SĖKMINGA"
-msgstr "SUCCESS"
 
 msgid "Statusas (HTTP)"
 msgstr "Status (HTTP)"

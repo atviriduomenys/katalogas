@@ -6,7 +6,9 @@
 {% endblock %}
 
 {% block content %}
-    <p>
+{% include 'vitrina/orgs/tabs.html' %}
+
+<p>
         <a href="{% url 'agent-list' organization.pk %}">
             ← {% translate "Grįžti į agentus" %}
         </a>
@@ -235,7 +237,7 @@ backends:
     {% endif %}
     <hr>
 
-{% if agent.requesthistory.all %}
+{% if request_history %}
     <p class="is-size-4 has-text-weight-bold mb-3">{% translate "Užklausų istorija" %}</p>
         <table class="table is-fullwidth">
             <thead class="has-background-light">
@@ -259,7 +261,7 @@ backends:
             </thead>
 
             <tbody>
-                {% for request in agent.requesthistory.all %}
+                {% for request in request_history %}
                     <tr>
                         <td class="has-text-info has-text-weight-semibold is-size-6">
                             <a href="{% url 'request-history' request.uuid %}">
@@ -269,7 +271,7 @@ backends:
                         <td>{{ request.method }}</td>
                         <td>{{ request.endpoint|truncatechars:40 }}</td>
                         <td>
-                            {% if request.result in "UPDATED STATUS_ALIVE UPDATED_WITHOUT_CHANGES" %}
+                            {% if request.result in "UPDATED STATUS_ALIVE UPDATED_WITHOUT_CHANGES UPDATED_WITH_CONFLICT" %}
                                 <span class="has-text-success">
                                     <i class="fas fa-check-circle"></i>
                                     {% translate "Sėkminga" %}

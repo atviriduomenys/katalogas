@@ -20,13 +20,13 @@ class PossibleResults(TextChoices):
     UPDATED = "UPDATED", _("Atnaujinta")
     UPDATED_WITH_CONFLICT = "UPDATED_WITH_CONFLICT", _("Atnaujinta su konfliktu")
     UPDATED_WITHOUT_CHANGES = "UPDATED_WITHOUT_CHANGES", _("Atnaujinta be pakeitimų")
-    STATUS_ALIVE = "STATUS_ALIVE", _("Statusas veikia")
-    STATUS_ERROR = "STATUS_ERROR", _("Statuso klaida")
+    STATUS_ALIVE = "STATUS_ALIVE", _("Veikianti būsena")
+    STATUS_ERROR = "STATUS_ERROR", _("Klaidinga būsena")
 
 
 class ChangedBy(TextChoices):
     AGENT = "AGENT", _("Agentas")
-    ADMIN = "ADMIN", _("Adminas")
+    ADMIN = "ADMIN", _("Administratorius")
 
 
 class ChangeType(TextChoices):

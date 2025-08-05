@@ -31,7 +31,7 @@ def generate_dataset_name(organization: Organization, dataset_title: str) -> str
         or slugify_ascii_lower(organization.title)
     )    
     dataset_part = slugify_ascii_lower(dataset_title)
-    return f"{organization_part}/{dataset_part}"
+    return f"datasets/gov/{organization_part}/{dataset_part}"
 
 
 def generate_unique_dataset_name(organization: Organization, dataset: Dataset) -> str:

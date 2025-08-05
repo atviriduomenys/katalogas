@@ -3485,10 +3485,10 @@ def test_create_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
 @pytest.mark.parametrize(
     "dataset_name, dataset_title, organization_name, organization_slug, organization_title, expected_dataset_name",
     [
-        (None, "Test Datašet", "Test Organization", "", "", "test-organization/test-datashet"),  # generates automatically
+        (None, "Test Dataset", "Test Organization", "", "", "datasets/gov/test-organization/test-dataset"),  # generates automatically
         ("test-organization/my-test-dataset", "Test Dataset", "Test Organization", "", "", "test-organization/my-test-dataset"),  # uses provided name
-        (None, "Test Dataset", "", "test-organization-slug", "", "test-organization-slug/test-dataset"),  # generates automatically
-        (None, "Test Dataset", "", "", "Test Organization Title", "test-organization-title/test-dataset"),  # generates automatically
+        (None, "Test Dataset", "", "test-organization-slug", "", "datasets/gov/test-organization-slug/test-dataset"),  # generates automatically
+        (None, "Test Dataset", "", "", "Test Organization Title", "datasets/gov/test-organization-title/test-dataset"),  # generates automatically
     ]
 )
 def test_create_dataset_without_name_generates_automatically(app: DjangoTestApp, dataset_name, 
@@ -3520,13 +3520,13 @@ def test_create_dataset_without_name_generate_unique_name(app: DjangoTestApp):
     
     dataset1 = DatasetFactory(organization=org, title="Test Dataset")
     MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name='test-organization/test-dataset', 
+                    name='datasets/gov/test-organization/test-dataset', 
                     dataset=dataset1,
                     object_id=dataset1.pk
 )
     dataset2 = DatasetFactory(organization=org, title="Second Test Dataset")
     MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name='test-organization/test-dataset_3', 
+                    name='datasets/gov/test-organization/test-dataset_3', 
                     dataset=dataset2,
                     object_id=dataset2.pk
     )
@@ -3540,13 +3540,13 @@ def test_create_dataset_without_name_generate_unique_name(app: DjangoTestApp):
     assert Dataset.objects.count() == 3
     
     dataset1.refresh_from_db()
-    assert dataset1.name == "test-organization/test-dataset"
+    assert dataset1.name == "datasets/gov/test-organization/test-dataset"
     
     dataset2.refresh_from_db()
-    assert dataset2.name == "test-organization/test-dataset_3"
+    assert dataset2.name == "datasets/gov/test-organization/test-dataset_3"
     
     dataset3 = Dataset.objects.last()
-    assert dataset3.name == "test-organization/test-dataset_4"
+    assert dataset3.name == "datasets/gov/test-organization/test-dataset_4"
 
 
 @pytest.mark.django_db
@@ -3571,7 +3571,7 @@ def test_update_dateset_generates_name(app: DjangoTestApp):
     
     assert response.status_code == 302
     dataset.refresh_from_db()
-    assert dataset.name == "test-organization/updated-test-dataset"
+    assert dataset.name == "datasets/gov/test-organization/updated-test-dataset"
     
     
 @pytest.mark.django_db

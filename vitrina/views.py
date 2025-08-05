@@ -159,9 +159,12 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                 "tabs_template_name": self.tabs_template_name,
             }
         )
-        context["history"] = [
-            dict(t) for t in {tuple(d.items()) for d in context["history"]}
-        ]
+        context["history"] = sorted(
+            [dict(t) for t in {tuple(d.items()) for d in context["history"]}],
+            key=lambda x: x["date"],
+            reverse=True,
+        )
+
         return context
 
     def get_detail_url_name(self):

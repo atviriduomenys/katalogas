@@ -17,6 +17,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 
 from vitrina.orgs.models import Organization
+from vitrina.uapi.models import Agent
 
 Secret = str
 ClientId = str
@@ -97,12 +98,10 @@ class OAuthClientAuthenticator:
 
     @staticmethod
     def resolve_organization_from_token(decoded_token: JWTClaims) -> Organization | None:
-        if not (organization_id := decoded_token.get("organization_id")):
+        if not (client_id := OAuthClientAuthenticator.resolve_client_id_from_token(decoded_token)):
             return None
-        try:
-            return Organization.objects.get(pk=organization_id)
-        except Organization.DoesNotExist:
-            return None
+        agent = Agent.objects.filter(oauth_client_id=client_id).select_related("organization").first()
+        return agent.organization if agent else None
 
     @staticmethod
     def resolve_client_id_from_token(decoded_token: JWTClaims) -> str:

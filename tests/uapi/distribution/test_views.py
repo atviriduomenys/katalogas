@@ -85,7 +85,7 @@ def test_create_specific_scope(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=["spinta_datasets_gov_vssa_distribution_insert"],
     )
     file_content = b"Sample CSV content"
@@ -141,7 +141,7 @@ def test_create_token_does_not_have_necessary_scopes(
     domain: str,
     test_jwk: RSAKey,
 ):
-    token = _generate_test_token(test_jwk, organization_id=organization.id, scopes=invalid_scopes)
+    token = _generate_test_token(test_jwk, organization=organization, scopes=invalid_scopes)
     response = app.post(
         url_distribution,
         {},
@@ -149,13 +149,12 @@ def test_create_token_does_not_have_necessary_scopes(
         expect_errors=True,
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -171,7 +170,7 @@ def test_create_no_organization_id_inside_token_payload(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=None,
+        organization=None,
         scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
     )
     response = app.post(
@@ -181,13 +180,12 @@ def test_create_no_organization_id_inside_token_payload(
         expect_errors=True,
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -258,6 +256,7 @@ def test_create_unexpected_exception_raised(
     }
 
 
+
 def test_list(
     app: DjangoTestApp,
     organization: Organization,
@@ -309,7 +308,7 @@ def test_list_specific_scope(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=["spinta_datasets_gov_vssa_distribution_getall"],
     )
     response = app.get(url_distribution, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"})
@@ -356,7 +355,7 @@ def test_list_token_does_not_have_necessary_scopes(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=organization.id,
+        organization=organization,
         scopes=invalid_scopes,
     )
     response = app.get(
@@ -365,13 +364,12 @@ def test_list_token_does_not_have_necessary_scopes(
         expect_errors=True
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }
@@ -388,7 +386,7 @@ def test_list_no_organization_id_inside_token_payload(
 ):
     token = _generate_test_token(
         test_jwk,
-        organization_id=None,
+        organization=None,
         scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
     )
     response = app.get(
@@ -397,13 +395,12 @@ def test_list_no_organization_id_inside_token_payload(
         expect_errors=True
     )
 
-    assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
+    assert response.status_code == status.HTTP_403_FORBIDDEN
     response_json = response.json
-    response_json.pop("context")  # Full error traceback is removed.
     assert response_json == {
-        "code": "server_error",
-        "type": "PermissionDenied",
-        "template": "An unexpected server error occurred.",
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
         "message": "You do not have permission to perform this action.",
         "additionalProperties": None,
     }

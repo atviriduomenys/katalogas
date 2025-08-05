@@ -788,6 +788,12 @@ msgstr "Added to request"
 msgid "Pakeista kategrija(-os)"
 msgstr "Updated category(-ies)"
 
+msgid "Pridėtas ryšys"
+msgstr "Added relation"
+
+msgid "Ištrintas ryšys"
+msgstr "Deleted relation"
+
 msgid "Atviri duomenys"
 msgstr "Public data"
 

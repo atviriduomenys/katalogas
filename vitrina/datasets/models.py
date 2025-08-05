@@ -84,7 +84,7 @@ class Resource(MP_Node, TranslatableModel):
         abstract = True
 
 
-@reversion.register(follow=["category"]) 
+@reversion.register(follow=["category", "part_of"]) 
 class Dataset(Resource):
     node_order_by = ("organization_id", )
 
@@ -126,6 +126,8 @@ class Dataset(Resource):
     PROJECT_SET = "PROJECT_SET"
     REQUEST_SET = "REQUEST_SET"
     CATEGORY_UPDATED = "CATEGORY_UPDATED"
+    RELATION_ADDED = "RELATION_ADDED"
+    RELATION_DELETED = "RELATION_DELETED"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -137,6 +139,8 @@ class Dataset(Resource):
         PROJECT_SET: _("Priskirta projektui"),
         REQUEST_SET: _("Priskirta poreikiui"),
         CATEGORY_UPDATED: _("Pakeista kategrija(-os)"),
+        RELATION_ADDED: _("Pridėtas ryšys"),
+        RELATION_DELETED: _("Ištrintas ryšys")
     }
 
     PUBLIC = "PUBLIC"
@@ -1651,6 +1655,7 @@ class Relation(TranslatableModel):
         )
 
 
+@reversion.register()
 class DatasetRelation(models.Model):
     relation = models.ForeignKey(
         Relation, verbose_name=_("Ryšio tipas"), on_delete=models.PROTECT

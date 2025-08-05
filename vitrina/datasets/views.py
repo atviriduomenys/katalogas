@@ -40,7 +40,7 @@ from parler.views import (
     LanguageChoiceMixin,
     ViewUrlMixin,
 )
-from reversion import set_comment
+from reversion import set_comment, add_to_revision
 from reversion.models import Version
 from reversion.views import RevisionMixin
 
@@ -3401,7 +3401,7 @@ class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
         return self.dataset.get_absolute_url()
 
 
-class DatasetRelationCreateView(PermissionRequiredMixin, CreateView):
+class DatasetRelationCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
     model = DatasetRelation
     form_class = DatasetRelationForm
     template_name = "vitrina/datasets/relation_form.html"
@@ -3451,14 +3451,19 @@ class DatasetRelationCreateView(PermissionRequiredMixin, CreateView):
             # need to save to update search index
             self.object.dataset.save()
             self.object.part_of.save()
+            set_comment(Dataset.RELATION_ADDED)
 
         return redirect(self.dataset.get_absolute_url())
 
 
-class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
+class DatasetRelationDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
     model = DatasetRelation
 
     dataset: Dataset
+
+    # Enable reversion tracking for GET (default is POST only)
+    def revision_request_creates_revision(self, request):
+        return request.method in ("GET", "POST")
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("dataset_id"))
@@ -3469,6 +3474,11 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get(self, *args, **kwargs):
         return self.post(*args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        add_to_revision(self.dataset)
+        set_comment(Dataset.RELATION_DELETED)
+        return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
         return self.dataset.get_absolute_url()

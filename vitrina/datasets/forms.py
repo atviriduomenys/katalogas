@@ -73,18 +73,6 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
         model = Dataset
         fields = ("subclass",)
 
-    def __init__(self, request=None, organization=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-
-        self.helper = FormHelper()
-        self.helper.attrs["novalidate"] = ""
-        self.helper.form_id = "resource-subclass-form"
-        self.request = request
-        self.organization = organization
-        self.helper.layout = Layout(
-            Field("subclass"),
-        )
-
     def clean_subclass(self):
         subclass = self.cleaned_data.get("subclass")
         if not subclass:
@@ -377,8 +365,10 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         endpoint_url = self.cleaned_data.get("endpoint_url")
         subclass_uuid = self.initial.get("subclass_uuid")
         if not endpoint_url and subclass_uuid:
-            subclass = DCATResourceSubclass.objects.filter(pk=subclass_uuid).first()
-            if subclass and subclass.name == subclass.SERVICE:
+            service_subclass = DCATResourceSubclass.objects.filter(
+                pk=subclass_uuid, name=DCATResourceSubclass.SERVICE
+            ).first()
+            if service_subclass:
                 raise ValidationError(_("Šis laukas yra privalomas"))
         return endpoint_url
 

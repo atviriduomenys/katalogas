@@ -36,6 +36,10 @@ from vitrina.settings import TRANSLATION_CLIENT_ID
 from django.utils.translation import gettext_lazy as _
 
 
+def get_default_subclass():
+    return DCATResourceSubclass.objects.get(name="dataset").pk
+
+
 class DatasetGroup(TranslatableModel):
     translations = TranslatedFields(
         title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
@@ -313,7 +317,8 @@ class Dataset(TranslatableModel):
     subclass = models.ForeignKey(
         "DCATResourceSubclass",
         models.PROTECT,
-        verbose_name=_("Ištekliaus poklasis"),
+        verbose_name=_("Duomenų ištekliaus poklasis"),
+        default=get_default_subclass,
     )
     endpoint_url = models.URLField(
         _("API adresas"),
@@ -471,10 +476,10 @@ class Dataset(TranslatableModel):
     def en_description(self):
         return self.safe_translation_getter("description", language_code="en")
 
-    def lt_subclass_title(self):
+    def lt_subclass_title(self) -> str:
         return self.subclass.safe_translation_getter("title", language_code="lt")
 
-    def en_subclass_title(self):
+    def en_subclass_title(self) -> str:
         return self.subclass.safe_translation_getter("title", language_code="en")
 
     def get_absolute_url(self):
@@ -1527,7 +1532,7 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     SERIES = "series"
     SERVICE = "service"
 
-    name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255, unique=True)
     uri = models.CharField(
         _("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
     )
@@ -1538,8 +1543,8 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     )
 
     class Meta:
-        verbose_name = _("Ištekliaus poklasis")
-        verbose_name_plural = _("Išteklių poklasiai")
+        verbose_name = _("Duomenų ištekliaus poklasis")
+        verbose_name_plural = _("Duomenų išteklių poklasiai")
 
     def __str__(self):
         return self.safe_translation_getter(

@@ -664,8 +664,7 @@ class DatasetCreateView(
 
     def get_initial(self):
         initial = super().get_initial()
-        subclass_uuid = self.kwargs.get("subclass_uuid")
-        if subclass_uuid:
+        if subclass_uuid := self.kwargs.get("subclass_uuid"):
             initial["subclass_uuid"] = subclass_uuid
         return initial
 
@@ -720,8 +719,7 @@ class DatasetCreateView(
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.organization_id = self.kwargs.get("pk")
-        self.subclass_uuid = self.kwargs.get("subclass_uuid")
-        subclass = DCATResourceSubclass.objects.get(pk=self.subclass_uuid)
+        subclass = DCATResourceSubclass.objects.get(pk=self.kwargs.get("subclass_uuid"))
         self.object.subclass = subclass
         self.object.save()
 

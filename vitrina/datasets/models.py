@@ -1551,6 +1551,12 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
             "title", language_code=self.get_current_language()
         )
 
+    @property
+    def translated_description(self):
+        return self.safe_translation_getter(
+            "description", language_code=self.get_current_language()
+        )
+
 
 class Relation(TranslatableModel):
     PART_OF = "part-of"

@@ -32,6 +32,9 @@
 {% block content %}
 
 {% include 'vitrina/orgs/tabs.html' %}
+{% include "vitrina/datasets/form_shared_script.html" %}
+
+
 
 <div class="mb-4">
   <a href="{% url 'organization-datasets' pk=organization_id %}" class="has-text-info is-flex is-align-items-center">
@@ -48,10 +51,15 @@
       <p class="mb-2 is-size-5" >
         <span class="has-text-info has-text-weight-bold">
           <i class="fas fa-info-circle"></i>
-            {% translate "Pasirinkite ištekliaus poklasį" %}
+            {{ information_title }}
         </span>
       </p>
       <p class="mt-0">
+        {% if information_description %}
+          {{ information_description }}
+        {% else %}
+          {% translate "Šioje sistemoje duomenų išteklius – tai bet kokio tipo informacija ar duomenų paslauga, kuri gali būti aprašyta ir įtraukta į duomenų katalogą. Tai gali būti tiek viešai prieinami duomenys, tiek ribotos prieigos duomenys, prieinami tik turint sutartį ar specialų leidimą (ACL)." %}
+        {% endif %}
       </p>
     </div>
   </div>
@@ -124,34 +132,6 @@
 </div>
 {% endblock %}
 
-{% block scripts %}
-   <script>
-    $(document).ready(function() {
-        $('#id_category').select2();
-        $('#id_category').on('select2:select', function (e) {
-            let value = $('#id_category').find(':selected')[0].innerText;
-            $('#select2-id_category-container')[0].innerHTML = $.trim(value);
-        });
-        $('#id_category').trigger('select2:select');
+{% block script %}
 
-        let serviceSubclass = "{{ service_subclass }}";
-        let selectedSubclassUUID = "{{ selected_subclass_uuid }}";
-
-        function toggleEndpointFields(subclassId) {
-            if (serviceSubclass === subclassId) {
-                $('div#div_id_endpoint_url').show();
-                $('div#div_id_endpoint_type').show();
-                $('div#div_id_endpoint_description').show();
-                $('div#div_id_endpoint_description_type').show();
-            } else {
-                $('div#div_id_endpoint_url').hide();
-                $('div#div_id_endpoint_type').hide();
-                $('div#div_id_endpoint_description').hide();
-                $('div#div_id_endpoint_description_type').hide();
-            }
-        }
-
-        toggleEndpointFields(selectedSubclassUUID);
-    });
-  </script>
 {% endblock %}

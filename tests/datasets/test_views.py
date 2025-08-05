@@ -21,7 +21,7 @@ from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, AttributionFactory, \
     DatasetAttributionFactory, TypeFactory, RelationFactory, \
-    DatasetRelationFactory, ContactFactory
+    DatasetRelationFactory, ContactFactory, DCATResourceSubclassFactory
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
@@ -955,7 +955,18 @@ def test_click_edit_button(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_add_form_no_login(app: DjangoTestApp):
     org = OrganizationFactory()
-    response = app.get(reverse('dataset-add', kwargs={'pk': org.id}))
+    subclass = DCATResourceSubclassFactory()
+    response = app.get(
+        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+    )
+    assert response.status_code == 302
+    assert settings.LOGIN_URL in response.location
+
+
+@pytest.mark.django_db
+def test_add_subclass_form_no_login(app: DjangoTestApp):
+    org = OrganizationFactory()
+    response = app.get(reverse("resource-subclass-add", kwargs={"pk": org.id}))
     assert response.status_code == 302
     assert settings.LOGIN_URL in response.location
 
@@ -965,13 +976,29 @@ def test_add_form_wrong_login(app: DjangoTestApp):
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
     org = OrganizationFactory()
-    response = app.get(reverse('dataset-add', kwargs={'pk': org.id}), expect_errors=True)
+    subclass = DCATResourceSubclassFactory()
+    response = app.get(
+        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk}),
+        expect_errors=True,
+    )
+    assert response.status_code == 403
+
+
+@pytest.mark.django_db
+def test_add_subclass_form_wrong_login(app: DjangoTestApp):
+    user = User.objects.create_user(email="test@test.com", password="test123")
+    app.set_user(user)
+    org = OrganizationFactory()
+    response = app.get(
+        reverse("resource-subclass-add", kwargs={"pk": org.id}), expect_errors=True
+    )
     assert response.status_code == 403
 
 
 @pytest.mark.django_db
 def test_add_form_correct_login(app: DjangoTestApp):
     FrequencyFactory(is_default=True)
+    subclass = DCATResourceSubclassFactory()
     org = OrganizationFactory(
         title="Org_title",
         created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
@@ -981,7 +1008,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     )
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+    form = app.get(reverse('dataset-add', kwargs={'pk': org.id, 'subclass_uuid': subclass.pk})).forms['dataset-form']
     form['title'] = 'Added title'
     form['description'] = 'Added new dataset description'
     form['tags'] = ['test tag']
@@ -1047,10 +1074,15 @@ def test_language_change(app: DjangoTestApp, dataset):
 @pytest.mark.django_db
 def test_dataset_add_form_initial_values(app: DjangoTestApp):
     default_frequency = FrequencyFactory(is_default=True)
+    subclass = DCATResourceSubclassFactory()
     organization = OrganizationFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
+    form = app.get(
+        reverse(
+            'dataset-add', kwargs={'pk': organization.id, 'subclass_uuid': subclass.pk}
+        )
+    ).forms['dataset-form']
     assert form['frequency'].value == str(default_frequency.pk)
 
 
@@ -1735,46 +1767,26 @@ def test_dataset_delete_attribution(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_dataset_with_type_error(app: DjangoTestApp):
+def test_dataset_with_subclass(app: DjangoTestApp):
+    FrequencyFactory(is_default=True)
+    organization = OrganizationFactory()
+    subclass = DCATResourceSubclassFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
-    series_type = TypeFactory(name='series')
-    service_type = TypeFactory(name='service')
-
-    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
-    form['type'] = [service_type.pk, series_type.pk]
-    resp = form.submit()
-    assert list(resp.context['form'].errors.values()) == [[
-        'Tipai "service" ir "series" negali būti pažymėti abu kartu, gali būti pažymėtas tik vienas arba kitas.'
-    ]]
-
-
-@pytest.mark.django_db
-def test_dataset_with_type(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    dataset = DatasetFactory()
-    type = TypeFactory(name='service')
-    service_type = FileFormat()
-    service_spec_type = FileFormat()
-
-    form = app.get(reverse('dataset-change', args=[dataset.pk])).forms['dataset-form']
-    form['type'] = [type.pk]
-    form['endpoint_url'] = "https://test.com"
-    form['endpoint_type'] = service_type.pk
-    form['endpoint_description'] = "https://testdescription.com"
-    form['endpoint_description_type'] = service_spec_type.pk
-    resp = form.submit()
-    dataset.refresh_from_db()
-    assert resp.url == dataset.get_absolute_url()
-    assert list(dataset.type.all()) == [type]
-    assert dataset.series is False
-    assert dataset.service is True
-    assert dataset.endpoint_url == "https://test.com"
-    assert dataset.endpoint_type == service_type
-    assert dataset.endpoint_description == "https://testdescription.com"
-    assert dataset.endpoint_description_type == service_spec_type
+    form = app.get(
+        reverse(
+            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
+        )
+    ).forms["dataset-form"]
+    form["title"] = "Test dataset"
+    form["description"] = "Test dataset description"
+    form["is_public"] = True
+    form["access_rights"] = Dataset.PUBLIC
+    form.submit()
+    added_dataset = Dataset.objects.filter(translations__title="Test dataset")
+    assert added_dataset.count() == 2
+    assert added_dataset.first().is_public is True
+    assert added_dataset.first().subclass == subclass
 
 
 @pytest.mark.django_db
@@ -1879,13 +1891,18 @@ def test_add_dataset_to_plan(app: DjangoTestApp):
 def test_dataset_create_non_public(app: DjangoTestApp):
     FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
+    subclass = DCATResourceSubclassFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
-    form['title'] = 'Test dataset'
-    form['description'] = 'Test dataset description'
-    form['is_public'] = False
-    form['access_rights'] = Dataset.PUBLIC
+    form = app.get(
+        reverse(
+            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
+        )
+    ).forms["dataset-form"]
+    form["title"] = "Test dataset"
+    form["description"] = "Test dataset description"
+    form["is_public"] = False
+    form["access_rights"] = Dataset.PUBLIC
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
     assert added_dataset.count() == 2
@@ -1898,13 +1915,18 @@ def test_dataset_create_non_public(app: DjangoTestApp):
 def test_dataset_create_public(app: DjangoTestApp):
     FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
+    subclass = DCATResourceSubclassFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
-    form['title'] = 'Test dataset'
-    form['description'] = 'Test dataset description'
-    form['is_public'] = True
-    form['access_rights'] = Dataset.PUBLIC
+    form = app.get(
+        reverse(
+            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
+        )
+    ).forms["dataset-form"]
+    form["title"] = "Test dataset"
+    form["description"] = "Test dataset description"
+    form["is_public"] = True
+    form["access_rights"] = Dataset.PUBLIC
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
     assert added_dataset.count() == 2
@@ -1995,7 +2017,9 @@ def test_add_dataset_to_plan_title_with_distribution(app: DjangoTestApp):
     dataset = DatasetFactory(organization=organization)
     DatasetDistributionFactory(dataset=dataset)
 
-    form = app.get(reverse('dataset-plans-create', args=[dataset.pk])).forms['plan-form']
+    form = app.get(reverse("dataset-plans-create", args=[dataset.pk])).forms[
+        "plan-form"
+    ]
     form.submit()
 
     plan = Plan.objects.filter(plandataset__dataset=dataset)
@@ -2549,10 +2573,15 @@ def test_create_dataset_change_creator(app):
                                 content_type = ContentType.objects.get_for_model(org)
                                 )
 
+    subclass = DCATResourceSubclassFactory()
     user = UserFactory(is_staff=True, organization=publisher_org)
     app.set_user(user)
 
-    form = app.get(reverse('dataset-add', kwargs={'pk': publisher_org.id})).forms['dataset-form']
+    form = app.get(
+        reverse(
+            "dataset-add", kwargs={"pk": publisher_org.id, "subclass_uuid": subclass.pk}
+        )
+    ).forms["dataset-form"]
 
     assert isinstance(form.fields['publisher'][0], webtest.forms.Hidden)
     assert not isinstance(form.fields['creator'][0], webtest.forms.Hidden)
@@ -2578,18 +2607,21 @@ def test_create_dataset_change_publisher(app):
 
     org = OrganizationFactory()
     publisher_org = OrganizationFactory(publisher=True)
-
-    RepresentativeFactory(user=None,
-                          organization=publisher_org,
-                          role=Representative.MANAGER,
-                          object_id=org.pk,
-                          content_type=ContentType.objects.get_for_model(org)
-                          )
+    subclass = DCATResourceSubclassFactory()
+    RepresentativeFactory(
+        user=None,
+        organization=publisher_org,
+        role=Representative.MANAGER,
+        object_id=org.pk,
+        content_type=ContentType.objects.get_for_model(org),
+    )
 
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
 
-    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+    form = app.get(
+        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+    ).forms["dataset-form"]
 
     assert not isinstance(form.fields['publisher'][0], webtest.forms.Hidden)
     assert isinstance(form.fields['creator'][0], webtest.forms.Hidden)
@@ -2615,19 +2647,21 @@ def test_create_dataset_creator_options(app):
     org2 = OrganizationFactory()
     org3 = OrganizationFactory()
     publisher_org = OrganizationFactory(publisher=True)
-
+    subclass = DCATResourceSubclassFactory()
     for org_instance in [org, org2, org3]:
         RepresentativeFactory(
             user=None,
             organization=publisher_org,
             role=Representative.MANAGER,
             object_id=org_instance.pk,
-            content_type=ContentType.objects.get_for_model(org)
+            content_type=ContentType.objects.get_for_model(org),
         )
 
     user = UserFactory(is_staff=False, organization=publisher_org)
     app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+    form = app.get(
+        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+    ).forms["dataset-form"]
     options = [option[2] for option in form.fields["creator"][0].options]
     assert len(options) == 5 # includes default option
     assert org.title in options
@@ -2642,10 +2676,12 @@ def test_create_dataset_publisher_options(app):
     publisher_org = OrganizationFactory(publisher=True)
     publisher_org2 = OrganizationFactory(publisher=True)
     publisher_org3 = OrganizationFactory(publisher=True)
-
+    subclass = DCATResourceSubclassFactory()
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+    form = app.get(
+        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+    ).forms["dataset-form"]
     options = [option[2] for option in form.fields["publisher"][0].options]
     assert len(options) == 4 # includes default option
     assert publisher_org.title in options
@@ -2823,70 +2859,6 @@ def test_dataset_view_organization_contacts(app: DjangoTestApp):
 
     assert publisher_org.title in response.text
     assert publisher_org.website in response.text
-
-
-@pytest.mark.django_db
-def test_create_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
-    FrequencyFactory(is_default=True)
-    service_type = TypeFactory(name=Type.SERVICE)
-    organization = OrganizationFactory()
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
-    form['title'] = 'Added title'
-    form['description'] = 'Added new dataset description'
-    form['type'] = [service_type.pk]
-    form['endpoint_url'] = 'https://example.com'
-    form['access_rights'] = Dataset.PUBLIC
-    form.submit()
-    assert Dataset.objects.count() == 1
-    dataset = Dataset.objects.first()
-    assert dataset.service is True
-    assert dataset.endpoint_url == 'https://example.com'
-    assert dataset.status == Dataset.HAS_DATA
-    assert dataset.comments.count() == 1
-    assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.OPENED
-
-
-@pytest.mark.django_db
-def test_update_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
-    service_type = TypeFactory(name=Type.SERVICE)
-    organization = OrganizationFactory()
-    dataset = DatasetFactory(organization=organization)
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['type'] = [service_type.pk]
-    form['endpoint_url'] = 'https://example.com'
-    form.submit()
-    dataset.refresh_from_db()
-    assert dataset.service is True
-    assert dataset.endpoint_url == 'https://example.com'
-    assert dataset.status == Dataset.HAS_DATA
-    assert dataset.comments.count() == 1
-    assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.OPENED
-
-
-@pytest.mark.django_db
-def test_update_dataset_without_service_and_endpoint_url(app: DjangoTestApp):
-    service_type = TypeFactory(name=Type.SERVICE)
-    organization = OrganizationFactory()
-    dataset = DatasetFactory(organization=organization, service=True)
-    dataset.type.add(service_type)
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['type'] = []
-    form.submit()
-    dataset.refresh_from_db()
-    assert dataset.service is False
-    assert dataset.endpoint_url is None
-    assert dataset.status == Dataset.INVENTORED
-    assert dataset.comments.count() == 1
-    assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.INVENTORED
 
 
 @pytest.mark.django_db

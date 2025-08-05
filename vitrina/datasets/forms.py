@@ -64,7 +64,7 @@ class ResourceSubclassTypeField(ModelChoiceField):
 
 class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
     subclass = ResourceSubclassTypeField(
-        label=_("Ištekliaus poklasis"),
+        label=_("Duomenų ištekliaus rūšis"),
         queryset=DCATResourceSubclass.objects.all(),
         widget=forms.RadioSelect,
     )
@@ -72,6 +72,9 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
     class Meta:
         model = Dataset
         fields = ("subclass",)
+
+    def __init__(self, request=None, organization=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
 
     def clean_subclass(self):
         subclass = self.cleaned_data.get("subclass")

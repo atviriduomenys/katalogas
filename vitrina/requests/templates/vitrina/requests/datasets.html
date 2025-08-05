@@ -22,7 +22,7 @@
         <div class="column">
             {% if show_edit_buttons %}
                 <div class="buttons is-right">
-                    <a id="add-new-dataset" class="button is-primary" href="{% url 'dataset-add' pk=user.organization.id %}?next={% url 'request-datasets' pk=request_obj.pk %}">
+                    <a id="add-new-dataset" class="button is-primary" href="{% url 'resource-subclass-add' pk=user.organization.id %}?next={% url 'request-datasets' pk=request_obj.pk %}">
                         {% translate "Naujas rinkinys" %}
                     </a>
                     <a id="add-dataset" class="button is-primary" href="{% url 'request-datasets-edit' pk=request_obj.pk %}">

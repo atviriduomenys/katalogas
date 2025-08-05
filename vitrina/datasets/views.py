@@ -1403,12 +1403,19 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         plan_history_objects = Version.objects.get_for_model(Plan).filter(
             object_id__in=list(dataset_plan_ids)
         )
+        dataset_distribution_ids = DatasetDistribution.objects.filter(dataset=self.object).values_list(
+            "id", flat=True
+        )
+        dataset_distribution_history_objects = Version.objects.get_for_model(DatasetDistribution).filter(
+            object_id__in=list(dataset_distribution_ids)
+        )
 
         history_objects = (
             property_history_objects
             | model_history_objects
             | dataset_history_objects
             | plan_history_objects
+            | dataset_distribution_history_objects
         )
         return history_objects.order_by("-revision__date_created")
 

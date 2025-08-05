@@ -9,6 +9,8 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DeleteView, DetailView
 from parler.views import TranslatableCreateView, TranslatableUpdateView
+from reversion.views import RevisionMixin
+from reversion import set_comment
 
 from vitrina import settings
 from vitrina.comments.models import Comment
@@ -70,6 +72,7 @@ class ResourceDetailView(
 class ResourceCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    RevisionMixin,
     TranslatableCreateView,
 ):
     model = DatasetDistribution
@@ -106,6 +109,7 @@ class ResourceCreateView(
         resource = form.save(commit=False)
         resource.dataset = self.dataset
         resource.save()
+        set_comment(_("Pridėtas naujas duomenų šaltinis \"%(title)s\".") % {"title": resource.title})
 
         name = form.cleaned_data.get("name")
         if not name:
@@ -182,7 +186,10 @@ class ResourceCreateView(
 
 
 class ResourceUpdateView(
-    LoginRequiredMixin, PermissionRequiredMixin, TranslatableUpdateView
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    TranslatableUpdateView
 ):
     model = DatasetDistribution
     template_name = "vitrina/resources/form.html"
@@ -255,6 +262,7 @@ class ResourceUpdateView(
                 level_given=form.cleaned_data.get("level"),
             )
         resource.save()
+        set_comment(_("Redaguotas duomenų šaltinis \"%(title)s\".") % {"title": resource.title})
         return redirect(resource.get_absolute_url())
 
     def get_form_kwargs(self):
@@ -264,8 +272,12 @@ class ResourceUpdateView(
         return kwargs
 
 
-class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, DeleteView):
     model = DatasetDistribution
+
+    # Enable reversion tracking for GET (default is POST only)
+    def revision_request_creates_revision(self, request):
+        return request.method in ("GET", "POST")
 
     def has_permission(self):
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
@@ -287,6 +299,7 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
     def delete(self, request, *args, **kwargs):
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
+        set_comment(_("Ištrintas duomenų šaltinis \"%(title)s\".") % {"title": resource.title})
         resource.delete()
 
         if (

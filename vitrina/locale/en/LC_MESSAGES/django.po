@@ -785,6 +785,9 @@ msgstr "Added to project"
 msgid "Priskirta poreikiui"
 msgstr "Added to request"
 
+msgid "Pakeista kategrija(-os)"
+msgstr "Updated category(-ies)"
+
 msgid "Atviri duomenys"
 msgstr "Public data"
 

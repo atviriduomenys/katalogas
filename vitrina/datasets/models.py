@@ -84,6 +84,7 @@ class Resource(MP_Node, TranslatableModel):
         abstract = True
 
 
+@reversion.register(follow=["category"]) 
 class Dataset(Resource):
     node_order_by = ("organization_id", )
 
@@ -124,6 +125,7 @@ class Dataset(Resource):
     DELETED = "DELETED"
     PROJECT_SET = "PROJECT_SET"
     REQUEST_SET = "REQUEST_SET"
+    CATEGORY_UPDATED = "CATEGORY_UPDATED"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -134,6 +136,7 @@ class Dataset(Resource):
         DELETED: _("Ištrinta"),
         PROJECT_SET: _("Priskirta projektui"),
         REQUEST_SET: _("Priskirta poreikiui"),
+        CATEGORY_UPDATED: _("Pakeista kategrija(-os)"),
     }
 
     PUBLIC = "PUBLIC"

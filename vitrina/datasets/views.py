@@ -3246,7 +3246,7 @@ class QuarterStatsView(DatasetListView):
         return context
 
 
-class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
+class DatasetCategoryView(PermissionRequiredMixin, RevisionMixin, TemplateView):
     template_name = "vitrina/datasets/dataset_categories.html"
 
     dataset: Dataset
@@ -3271,6 +3271,7 @@ class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
             for category in form.cleaned_data.get("category"):
                 self.dataset.category.add(category)
             self.dataset.save()
+            set_comment(Dataset.CATEGORY_UPDATED)
 
             DatasetExcludedGroups.objects.filter(dataset=self.dataset).delete()
             for group in DatasetGroup.objects.filter(

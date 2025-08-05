@@ -594,6 +594,14 @@ msgstr ""
 msgid "Informacinės sistemos identifikatorius"
 msgstr ""
 
+msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
+msgstr ""
+
+msgid ""
+"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
+"pavadinimą."
+msgstr ""
+
 msgid "Failas"
 msgstr ""
 

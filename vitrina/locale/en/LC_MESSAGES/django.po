@@ -616,13 +616,6 @@ msgstr "Organization:"
 msgid "Naudotojai:"
 msgstr "Users:"
 
-msgid ""
-"Tipai \"service\" ir \"series\" negali būti pažymėti abu kartu, gali būti "
-"pažymėtas tik vienas arba kitas."
-msgstr ""
-"Both \"service\" and \"series\" types cannot be selected, select only one of "
-"them."
-
 msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
 msgstr "Dataset with this code name already exists."
 
@@ -701,6 +694,21 @@ msgstr "Inventory only"
 msgid "Planuojama atverti"
 msgstr "Planned to open"
 
+msgid "Metaduomenų katalogas"
+msgstr "Catalog"
+
+msgid "Informacinė sistema"
+msgstr "Information System"
+
+msgid "Duomenų publikavimo paslauga"
+msgstr "Data Service"
+
+msgid "Duomenų rinkinių serija"
+msgstr "Data Series"
+
+msgid "Išteklius sukurtas sėkmingai"
+msgstr "Resource created successfully"
+
 msgid "Sukurta"
 msgstr "Created"
 
@@ -767,6 +775,9 @@ msgstr "Landing page"
 msgid "Duomenų rinkinio ryšiai"
 msgstr "Dataset relations"
 
+msgid "Duomenų ištekliaus poklasis"
+msgstr "Resource subclass"
+
 msgid "API formatas"
 msgstr "API format"
 
@@ -817,6 +828,9 @@ msgstr "Show filter"
 
 msgid "Tipai"
 msgstr "Types"
+
+msgid "Duomenų išteklių poklasiai"
+msgstr "Resource subclasses"
 
 msgid "Atvirkštinio ryšio pavadinimas"
 msgstr "Reverse relation title"
@@ -1326,6 +1340,26 @@ msgstr "Add request"
 msgid "Šis duomenų rinkinys neturi jam registruotų poreikių."
 msgstr "This dataset doesn't have requests."
 
+msgid "Grįžti į duomenų išteklius"
+msgstr "Go back to resources"
+
+msgid "Pasirinkite duomenų ištekliaus poklasį"
+msgstr "Choose a resource subclass"
+
+msgid ""
+"Šioje sistemoje duomenų išteklius – tai bet kokio tipo informacija ar "
+"duomenų paslauga, kuri gali būti aprašyta ir įtraukta į duomenų katalogą. "
+"Tai gali būti tiek viešai prieinami duomenys, tiek ribotos prieigos "
+"duomenys, prieinami tik turint sutartį ar specialų leidimą (ACL)."
+msgstr ""
+"In this system, a data resource is any type of information or "
+" data service that can be described and included in a catalog. "
+"This can be either publicly available data or restricted access "
+"data that is only available with a contract or a special permission (ACL)."
+
+msgid "Toliau"
+msgstr "Continue"
+
 msgid "Duomenų rinkinių statistika"
 msgstr "Dataset statistics"
 
@@ -1370,6 +1404,21 @@ msgstr "New dataset"
 
 msgid "Duomenų ištekliaus redagavimas"
 msgstr "Resource edit"
+
+msgid "Duomenų ištekliaus informacija"
+msgstr "Resource information"
+
+msgid "Užpildykite Jūsų pasirinkto duomenų ištekliaus informacija"
+msgstr "Fill in the information for the resource of your choice"
+
+msgid "Duomenų išteklius sukurtas sėkmingai"
+msgstr "Resource created successfully"
+
+msgid "Pasirinkite duomenų ištekliaus rūšį"
+msgstr "Select a type of resource"
+
+msgid "Pasirinkite norimą sukurti duomenų ištekliaus rūšį"
+msgstr "Select the type of resource you want to create"
 
 msgid "Struktūros importas"
 msgstr "Structure import"
@@ -2338,6 +2387,9 @@ msgstr "Scope resource"
 msgid "Leidimo veiksmas"
 msgstr "Scope action"
 
+msgid "Išteklius"
+msgstr "Resource"
+
 msgid "Kliento leidimas"
 msgstr "Client scope"
 
@@ -2469,7 +2521,6 @@ msgstr "Client \"{0}\" changed successfully"
 msgid "Šiam klientui aktyvių leidimų nėra"
 msgstr "There are no active scopes for this client"
 
-#, python-brace-format
 msgid "Leidimas \"{0}\" sukurtas sėkmingai"
 msgstr "Use case \"{0}\" created successfully"
 

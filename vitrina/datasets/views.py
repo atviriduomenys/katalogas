@@ -109,7 +109,6 @@ from vitrina.datasets.models import (
     DatasetStructure,
     DatasetGroup,
     DatasetAttribution,
-    Type,
     DatasetRelation,
     Relation,
     DatasetFile,

@@ -114,7 +114,7 @@ def _load_datasets(state: struct.State, dataset: Dataset):
             .exclude(dataset=dataset)
             .first()
         ):
-            meta.errors.append(_(f'Duomenų rinkinys "{meta.name}" jau egzistuoja.'))
+            meta.errors.append(_(f'Duomenų išteklius "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
         elif not meta.name.isascii():
             meta.errors.append(
@@ -885,7 +885,7 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
         ):
             if hasattr(meta, "errors"):
                 meta.errors.append(
-                    _(f'Prefiksas "{prefix}" duomenų rinkinyje neegzistuoja.')
+                    _(f'Prefiksas "{prefix}" duomenų ištekliuje neegzistuoja.')
                 )
 
 

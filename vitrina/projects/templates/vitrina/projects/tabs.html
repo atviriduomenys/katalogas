@@ -9,7 +9,7 @@
         </li>
         <li class="{%if request.resolver_match.url_name == 'project-datasets' %} is-active {% endif %}">
             <a href="{% url 'project-datasets' request.resolver_match.kwargs.pk %}">
-                {% translate "Duomenų rinkiniai" %}
+                {% translate "Duomenų ištekliai" %}
             </a>
         </li>
         {% if can_view_agreements %}

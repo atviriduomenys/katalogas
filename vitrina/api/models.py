@@ -86,7 +86,7 @@ class ApiScope(models.Model):
         models.CASCADE,
         blank=True,
         null=True,
-        verbose_name=_("Duomenų rinkinys"),
+        verbose_name=_("Duomenų išteklius"),
     )
 
     class Meta:

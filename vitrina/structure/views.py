@@ -1484,7 +1484,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
         context["current_title"] = _("Galimos reikšmės pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
         }
@@ -1596,7 +1596,7 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
         context["current_title"] = _("Galimos reikšmės redagavimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
         }
@@ -1700,7 +1700,7 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
         context["current_title"] = _("Galimos reikšmės šalinimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
         }
@@ -1840,7 +1840,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         context["current_title"] = _("Modelio pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
         }
@@ -2023,7 +2023,7 @@ class ModelUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
         context["current_title"] = _("Modelio redagavimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
             reverse(
@@ -2109,7 +2109,7 @@ class PropertyCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         context["current_title"] = _("Duomenų lauko pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
         }
@@ -2217,7 +2217,7 @@ class PropertyUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
         context["current_title"] = _("Duomenų lauko redagavimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
             reverse(
@@ -2326,7 +2326,7 @@ class ParamCreateView(PermissionRequiredMixin, CreateView):
         context["current_title"] = _("Parametro pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
         }
         return context
@@ -2390,7 +2390,7 @@ class ParamUpdateView(PermissionRequiredMixin, UpdateView):
         context["current_title"] = _("Parametro redagavimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
         }
         return context
@@ -2509,7 +2509,7 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
         )
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
             reverse("dataset-structure", args=[self.object.pk]): _("Struktūra"),
         }
@@ -2621,7 +2621,7 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         )
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
             reverse("dataset-structure", args=[self.object.pk]): _("Struktūra"),
         }
@@ -2739,7 +2739,7 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         )
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
             reverse("dataset-structure", args=[self.object.pk]): _("Struktūra"),
         }

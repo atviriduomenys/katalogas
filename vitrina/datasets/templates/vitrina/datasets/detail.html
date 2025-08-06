@@ -18,7 +18,7 @@
               <i class="fas fa-home"></i>
             </span>
             <span>{% translate 'Pradžia' %}</span></a></li>
-        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų rinkiniai' %}</span></a></li>
+        <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų ištekliai' %}</span></a></li>
     </ul>
 {% endblock %}
 
@@ -47,14 +47,14 @@
     <div class="columns no-margin-bottom">
         <div class="column">
             <p>
-                {% translate "Duomenų rinkinio peržiūros" %}:
+                {% translate "Duomenų ištekliaus peržiūros" %}:
                 {% get_hit_count for dataset as total_hits %}
                 <b id="total_hits">{{ total_hits }}</b>
             </p>
             {% if can_update_dataset %}
                 <div class="buttons is-right">
                     <a href="{%url 'dataset-change' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="change_dataset">
-                        {% translate "Redaguoti rinkinį" %}
+                        {% translate "Redaguoti duomenų išteklių" %}
                     </a>
                 </div>
                 <div class="buttons is-right">
@@ -239,7 +239,7 @@
                 </p>
 
                 <div class="has-text-dark" id="dataset_subscription">
-                    {% translate "Užsiprenumeruokite naujienas, susijusias su duomenų rinkiniu" as description %}
+                    {% translate "Užsiprenumeruokite naujienas, susijusias su duomenų ištekliumi" as description %}
                     {% subscription obj=dataset user=request.user description=description %}
                 </div>
             </div>
@@ -260,7 +260,7 @@
     {% if can_update_dataset %}
         <div class="buttons is-right">
         <a href="{%url 'dataset-relation-add' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile is-flex">
-            {% translate "Susieti su duomenų rinkiniu" %}
+            {% translate "Susieti su duomenų ištekliumi" %}
         </a>
     </div>
     {% endif %}

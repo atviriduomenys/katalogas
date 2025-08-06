@@ -325,7 +325,7 @@ class ResourceModelCreateView(ModelCreateView):
         context["current_title"] = _("Modelio pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų rinkiniai"),
+            reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse(
                 "resource-detail", args=[self.dataset.pk, self.resource.pk]

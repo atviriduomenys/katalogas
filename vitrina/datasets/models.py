@@ -207,7 +207,7 @@ class Dataset(TranslatableModel):
     )
     is_public = models.BooleanField(
         default=True,
-        verbose_name=_("Duomenų rinkinys viešinamas"),
+        verbose_name=_("Duomenų išteklius viešinamas"),
     )
 
     language = models.CharField(

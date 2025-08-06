@@ -41,7 +41,7 @@ class Task(models.Model):
     ERROR_GEOPORTAL = "error_geoportal"
     TYPES = (
         (APIKEY, _("Raktas")),
-        (DATASET, _("Duomenų rinkinys")),
+        (DATASET, _("Duomenų išteklius")),
         (COMMENT, _("Komentaras")),
         (REQUEST, _("Prašymas")),
         (PROJECT, _("Project")),
@@ -52,7 +52,7 @@ class Task(models.Model):
     )
     FILTER_TYPES = {
         APIKEY: _("Raktas"),
-        DATASET: _("Duomenų rinkinys"),
+        DATASET: _("Duomenų išteklius"),
         COMMENT: _("Komentaras"),
         REQUEST: _("Prašymas"),
         PROJECT: _("Projektas"),

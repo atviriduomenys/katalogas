@@ -532,8 +532,8 @@ def main():
                     users = User.objects.filter(is_superuser=True)
 
                     errors = "<br/>".join(errors)
-                    title = f'Klaida importuojant Geoportal duomenų rinkinį id: {dataset.pk}'
-                    description = f"Importuojant duomenų rinkinį iš Geoportal (<a href='{metadata_url}'>" \
+                    title = f'Klaida importuojant Geoportal duomenų išteklių id: {dataset.pk}'
+                    description = f"Importuojant duomenų išteklių iš Geoportal (<a href='{metadata_url}'>" \
                                   f"metaduomenys</a>) įvyko klaida: <br/>{errors}"
 
                     for user in users:
@@ -591,8 +591,8 @@ def main():
                         sub_email_list = []
                         for sub in subs:
                             Task.objects.create(
-                                title=f"Duomenų rinkinys organizacijai: {dataset.organization}",
-                                description=f"Sukurtas naujas duomenų rinkinys organizacijai: {dataset.organization}.",
+                                title=f"Duomenų išteklius organizacijai: {dataset.organization}",
+                                description=f"Sukurtas naujas duomenų išteklius organizacijai: {dataset.organization}.",
                                 content_type=ContentType.objects.get_for_model(dataset),
                                 object_id=dataset.pk,
                                 organization=dataset.organization,
@@ -616,8 +616,8 @@ def main():
                     sub_email_list = []
                     for sub in subs:
                         Task.objects.create(
-                            title=f"Duomenų rinkinys: {dataset}",
-                            description=f"Atnaujintas duomenų rinkinys: {dataset}",
+                            title=f"Duomenų išteklius: {dataset}",
+                            description=f"Atnaujintas duomenų išteklius: {dataset}",
                             content_type=ContentType.objects.get_for_model(Dataset),
                             object_id=dataset.pk,
                             organization=dataset.organization,

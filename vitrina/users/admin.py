@@ -491,7 +491,7 @@ class UserAdmin(BaseUserAdmin):
                 )
             else:
                 rep_display = _(
-                    f'Duomenų rinkinio "{rep.content_object}" {rep.get_role_display().lower()}: '
+                    f'Duomenų ištekliaus "{rep.content_object}" {rep.get_role_display().lower()}: '
                     f'<a href="{reverse("admin:vitrina_orgs_representative_change", args=[rep.pk])}">'
                     f"{rep.email}</a>"
                 )

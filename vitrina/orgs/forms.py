@@ -1065,7 +1065,7 @@ class OrganizationSelectField(CharField):
 
 class AdminPublisherAssignedOrganizationForm(ModelForm):
     creator = OrganizationSelectField(
-        label=_("Pridėti duomenų rinkinio kūrėją iš registrų centro"),
+        label=_("Pridėti duomenų ištekliaus kūrėją iš registrų centro"),
         required=False,
         help_text=_("Įveskite organizacijos pavadinimą arba pilną įmonės kodą."),
     )
@@ -1088,10 +1088,10 @@ class AdminPublisherAssignedOrganizationForm(ModelForm):
     )
     datasets = ModelMultipleChoiceField(
         queryset=None,
-        label=_("Duomenų rinkiniai"),
+        label=_("Duomenų ištekliai"),
         required=False,
         widget=FilteredSelectMultiple(
-            verbose_name=_("Duomenų rinkiniai"),
+            verbose_name=_("Duomenų ištekliai"),
             is_stacked=False,
         ),
     )
@@ -1152,7 +1152,7 @@ class ContactCreateForm(ModelForm):
         required=False,
     )
     dataset = ModelChoiceField(
-        label=_("Duomenų rinkinys"), queryset=Dataset.objects.all()
+        label=_("Duomenų išteklius"), queryset=Dataset.objects.all()
     )
 
     object_model = Organization
@@ -1236,7 +1236,7 @@ class ContactUpdateForm(ModelForm):
         required=False,
     )
     dataset = ModelChoiceField(
-        label=_("Duomenų rinkinys"), queryset=Dataset.objects.all()
+        label=_("Duomenų išteklius"), queryset=Dataset.objects.all()
     )
 
     object_model = Organization

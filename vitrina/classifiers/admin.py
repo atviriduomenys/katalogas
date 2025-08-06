@@ -225,7 +225,7 @@ class ConceptSchemaAdmin(TranslatableAdmin):
 
 @admin.register(Concept)
 class ConceptAdmin(TranslatableAdmin):
-    list_display = ("code", "label", "description")
+    list_display = ("code", "uri", "label", "description")
     list_filter = ("concept_schemas",)
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:

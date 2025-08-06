@@ -241,6 +241,7 @@ class Concept(TranslatableModel, UUIDBaseModel):
         related_name="concepts",
         verbose_name=_("Sąvokų schemos"),
     )
+    uri = models.URLField(max_length=255, blank=True, null=True, verbose_name=_("uri"))
     code = models.CharField(
         unique=True, max_length=255, verbose_name=_("Kodinis pavadinimas")
     )

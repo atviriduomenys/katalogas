@@ -22,15 +22,17 @@ ATTR_MEDIA_TYPE = f"{{{NAMESPACE_URI}}}media-type"
 MANIFEST_FILE_ENTRY_TAG = "manifest:file-entry"
 
 
-def generate_text_checksum(text: str, algorithm: str = "sha256") -> str:
+def generate_checksum(data: str | bytes, algorithm: str = "sha256") -> str:
     hash_func = getattr(hashlib, algorithm)()
-    hash_func.update(text.encode("utf-8"))
+    if isinstance(data, str):
+        data = data.encode("utf-8")
+    hash_func.update(data)
     return hash_func.hexdigest()
 
 
 def generate_pdf_checksum(pdf_path: str, algorithm: str = "sha256") -> str:
     text = extract_text(pdf_path)
-    return generate_text_checksum(text, algorithm)
+    return generate_checksum(text, algorithm)
 
 
 def get_pdf_path_in_adoc(adoc_archive: zipfile.ZipFile) -> str:

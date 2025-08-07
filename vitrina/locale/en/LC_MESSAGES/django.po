@@ -3069,7 +3069,10 @@ msgid "Generuoti sutartis"
 msgstr "Generate agreements"
 
 msgid "Grįžti į sutartis"
-msgstr "Go back"
+msgstr "Go back to agreements"
+
+msgid "Grįžti į sutartį"
+msgstr "Go back to agreement"
 
 msgid "Generuoti sutarties dokumentą"
 msgstr "Generate agreement document"
@@ -4988,6 +4991,24 @@ msgid ""
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
 
+msgid "Sutaries iniciatorius"
+msgstr "Creator of an agreement"
+
+msgid "Papildomi tiekėjo teisės aktai"
+msgstr "Other assigner legislations"
+
+msgid "Papildomi gavėjo teisės aktai"
+msgstr "Other assignee legislations"
+
+msgid "Mokėjimo sąlygos"
+msgstr "Payment terms"
+
+msgid "Failo turinio kontrolinė suma"
+msgstr "File content checksum"
+
+msgid "ODRL kuris buvo naudotas genertuoti sutartį"
+msgstr "ODRL which have been used for agreement file generation"
+
 msgid "Sutarties iniciatorius"
 msgstr "Creator of an agreement"
 
@@ -5050,3 +5071,7 @@ msgstr "Agency"
 
 msgid "Atstovybės"
 msgstr "Agencies"
+
+#, python-brace-format
+msgid "Sutarties generavimas: {organization}"
+msgstr "Agreement generation: {organization}"

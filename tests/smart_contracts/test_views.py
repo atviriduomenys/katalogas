@@ -1,3 +1,4 @@
+import json
 from io import BytesIO
 from uuid import uuid4
 
@@ -15,7 +16,12 @@ from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory
-from vitrina.smart_contracts.models import Agreement, AgreementScope, AgreementFile, SmartContractTemplate
+from vitrina.smart_contracts.models import (
+    Agreement,
+    AgreementScope,
+    AgreementFile,
+    SmartContractTemplate,
+)
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 
@@ -299,14 +305,13 @@ class TestAgreementGeneratePdf:
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
 
-
-        SmartContractTemplate.objects.create(
-            default_template=ContentFile(open("tests/smart_contracts/files/contract_template.md").read(), name="contract_template.md")
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open("tests/smart_contracts/files/contract_template.md").read(),
+                name="contract_template.md",
+            )
         )
-        user = UserFactory(
-            organization=organization,
-            email="bethgarcia@example.net"
-        )
+        user = UserFactory(organization=organization, email="bethgarcia@example.net")
         app.set_user(user)
 
         organization.title = "Gonzalez Group"
@@ -326,30 +331,59 @@ class TestAgreementGeneratePdf:
             assigner=organization,
             assignee=organization,
             created_by=user,
-            status=AgreementStatuses.CREATED
+            status=AgreementStatuses.CREATED,
         )
 
         assert agreement.files.count() == 0
-
+        other_assigner_legislations = "Bought data"
+        other_assignee_legislations = "Sold data"
+        payment_terms = "Cash only"
         response = app.post(
-            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk])
+            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
+            {
+                "template": template.pk,
+                "other_assigner_legislations": other_assigner_legislations,
+                "other_assignee_legislations": other_assignee_legislations,
+                "payment_terms": payment_terms,
+            },
         )
         agreement.refresh_from_db()
         assert response.status_code == 302
         assert agreement.status == AgreementStatuses.FORMED
-        assert agreement.files.count() == 1
-        contract: AgreementFile = agreement.files.first()
-        odrl = contract.odrl
+        agreement_files = list(agreement.files.order_by("is_template", "created_at"))
+        assert len(agreement_files) == 3
+        contract: AgreementFile = agreement_files[1]
+        template_copy: AgreementFile = agreement_files[2]
+        odlr_file: AgreementFile = agreement_files[0]
+
+
+        assert template_copy.is_template
+        assert template_copy.file_name
+        for name_part in ("_copy.md", "contract_template"):
+            assert name_part in template_copy.file_name
+        assert "/" not in template_copy.file_name
+        assert template_copy.file.path != template.file.path  # check if is an hard copy
+        assert template_copy.file.read() == template.file.read()
+        assert template_copy.checksum
+
+        assert odlr_file.file_name.endswith(".json")
+
+        assert not contract.is_template
+        assert contract.checksum
+
+        odrl :dict= json.loads(odlr_file.file.read())
 
         expected_odrl = {
             "@context": {
                 "@vocab": "http://www.w3.org/ns/odrl.jsonld",
                 "ex": "http://example.org/vocab#",
             },
-            "uid": f"uuid:{agreement.pk}",
+            "uid": f"https://data.gov.lt/ID/datasets/gov/vssa/isris/dcat/Agreement/{agreement.pk}",
             "type": "Agreement",
             "profile": "http://www.w3.org/ns/odrl/profile/core",
-            "issued": odrl["issued"],  # Use actual value from file to avoid time mismatch
+            "issued": odrl[
+                "issued"
+            ],  # Use actual value from file to avoid time mismatch
             "assigner": [
                 {
                     "uid": str(organization.pk),
@@ -383,12 +417,12 @@ class TestAgreementGeneratePdf:
                     }
                 }
             ],
-            "ex:paymentTerms": " - ",
-            "ex:otherAssignerLegislations": " - ",
-            "ex:otherAssigneeLegislations": " - ",
+            "ex:paymentTerms": payment_terms,
+            "ex:otherAssignerLegislations": other_assigner_legislations,
+            "ex:otherAssigneeLegislations": other_assignee_legislations,
         }
 
-        assert contract.odrl == expected_odrl
+        assert odrl == expected_odrl
         assert contract.file
         assert contract.file_name
         contract.file.seek(0)
@@ -398,7 +432,6 @@ class TestAgreementGeneratePdf:
         expected_values = [
             # Dates
             odrl["issued"],  # Check only date portion to avoid microsecond mismatches
-
             # Assigner
             odrl["assigner"][0]["ex:companyName"],
             odrl["assigner"][0]["ex:companyCode"],
@@ -407,7 +440,6 @@ class TestAgreementGeneratePdf:
             odrl["assigner"][0]["ex:phone"],
             odrl["assigner"][0]["ex:representative"],
             odrl["assigner"][0]["ex:personalCode"],
-
             # Assignee
             odrl["assignee"][0]["ex:companyName"],
             odrl["assignee"][0]["ex:companyCode"],
@@ -416,11 +448,9 @@ class TestAgreementGeneratePdf:
             odrl["assignee"][0]["ex:phone"],
             odrl["assignee"][0]["ex:representative"],
             odrl["assignee"][0]["ex:personalCode"],
-
             # Permission target
             odrl["permission"][0]["target"]["ex:name"],
             *odrl["permission"][0]["target"].get("ex:scopes", []),
-
             # Misc fields
             odrl["ex:paymentTerms"],
             odrl["ex:otherAssignerLegislations"],
@@ -431,9 +461,9 @@ class TestAgreementGeneratePdf:
         for i, value in enumerate(expected_values):
             value = str(value).strip()
             if value:
-                assert value in pdf_text, f"Expected '{value}' (index={i}) not found in PDF"
-
-
+                assert (
+                    value in pdf_text
+                ), f"Expected '{value}' (index={i}) not found in PDF"
 
 
 class TestAgreementUploadSignedFile:

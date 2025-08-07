@@ -12,7 +12,11 @@ from pdfminer.high_level import extract_text
 from weasyprint import HTML
 
 from vitrina.smart_contracts.exceptions import InvalidAdocError
-from vitrina.smart_contracts.utils import generate_pdf_checksum, get_pdf_path_in_adoc, generate_text_checksum
+from vitrina.smart_contracts.utils import (
+    generate_pdf_checksum,
+    get_pdf_path_in_adoc,
+    generate_checksum,
+)
 
 SIGNATURE_FILE_PATH = "META-INF/signatures/signatures0.xml"
 MANIFEST_FILE_PATH = "META-INF/manifest.xml"
@@ -47,8 +51,10 @@ def is_checksum_valid(adoc_path: str, expected_checksum: str) -> bool:
         with zipfile.ZipFile(adoc_path, "r") as adoc_archive:
             pdf_path = get_pdf_path_in_adoc(adoc_archive)
 
-            with adoc_archive.open(pdf_path) as pdf_file, open(TEMP_PDF_PATH, "wb") as out_file:
-                    out_file.write(pdf_file.read())
+            with adoc_archive.open(pdf_path) as pdf_file, open(
+                TEMP_PDF_PATH, "wb"
+            ) as out_file:
+                out_file.write(pdf_file.read())
 
         actual_checksum = generate_pdf_checksum(TEMP_PDF_PATH)
         return actual_checksum == expected_checksum.lower()
@@ -60,12 +66,18 @@ def is_checksum_valid(adoc_path: str, expected_checksum: str) -> bool:
             os.remove(TEMP_PDF_PATH)
 
 
-def generate_contract(template_path: str, odrl_data: dict, output: str | BytesIO) -> None:
-    json_checksum = generate_text_checksum(json.dumps(odrl_data, sort_keys=True))
+def generate_contract(
+    template_path: str, odrl_data: dict, output: str | BytesIO
+) -> None:
+    json_checksum = generate_checksum(json.dumps(odrl_data, sort_keys=True))
     md_template = Path(template_path).read_text(encoding="utf-8")
-    template_checksum = generate_text_checksum(md_template)
+    template_checksum = generate_checksum(md_template)
     template = Template(md_template)
-    md_filled = template.render(odrl_data=odrl_data, json_checksum=json_checksum, template_checksum=template_checksum)
+    md_filled = template.render(
+        odrl_data=odrl_data,
+        json_checksum=json_checksum,
+        template_checksum=template_checksum,
+    )
 
     html_text = markdown.markdown(md_filled, extensions=["extra"])
     HTML(string=html_text).write_pdf(output)

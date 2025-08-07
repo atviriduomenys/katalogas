@@ -128,6 +128,8 @@ class Dataset(Resource):
     CATEGORY_UPDATED = "CATEGORY_UPDATED"
     RELATION_ADDED = "RELATION_ADDED"
     RELATION_DELETED = "RELATION_DELETED"
+    ATTRIBUTION_ADDED = "ATTRIBUTION_ADDED"
+    ATTRIBUTION_DELETED = "ATTRIBUTION_DELETED"
     HISTORY_MESSAGES = {
         CREATED: _("Sukurta"),
         EDITED: _("Redaguota"),
@@ -140,7 +142,9 @@ class Dataset(Resource):
         REQUEST_SET: _("Priskirta poreikiui"),
         CATEGORY_UPDATED: _("Pakeista kategrija(-os)"),
         RELATION_ADDED: _("Pridėtas ryšys"),
-        RELATION_DELETED: _("Ištrintas ryšys")
+        RELATION_DELETED: _("Ištrintas ryšys"),
+        ATTRIBUTION_ADDED: _("Priskirta organizacijai"),
+        ATTRIBUTION_DELETED: _("Pašalinta iš organizacijos")
     }
 
     PUBLIC = "PUBLIC"
@@ -1536,6 +1540,7 @@ class Attribution(models.Model):
         return self.title if self.title else self.name
 
 
+@reversion.register()
 class DatasetAttribution(models.Model):
     dataset = models.ForeignKey(
         Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys")

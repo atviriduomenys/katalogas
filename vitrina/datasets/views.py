@@ -40,7 +40,7 @@ from parler.views import (
     LanguageChoiceMixin,
     ViewUrlMixin,
 )
-from reversion import set_comment, add_to_revision
+from reversion import set_comment, add_to_revision, create_revision, set_user
 from reversion.models import Version
 from reversion.views import RevisionMixin
 
@@ -1409,6 +1409,11 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         dataset_distribution_history_objects = Version.objects.get_for_model(DatasetDistribution).filter(
             object_id__in=list(dataset_distribution_ids)
         )
+        attribution_history_objects_ids = [
+            v.pk for v in Version.objects.get_for_model(DatasetAttribution)
+            if v.field_dict['dataset_id'] == self.object.id
+        ]
+        attribution_history_objects = Version.objects.get_for_model(DatasetAttribution).filter(pk__in=attribution_history_objects_ids)
 
         history_objects = (
             property_history_objects
@@ -1416,6 +1421,7 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             | dataset_history_objects
             | plan_history_objects
             | dataset_distribution_history_objects
+            | attribution_history_objects
         )
         return history_objects.order_by("-revision__date_created")
 
@@ -3351,7 +3357,7 @@ class FilterCategoryView(LoginRequiredMixin, View):
         return JsonResponse({"categories": category_data})
 
 
-class DatasetAttributionCreateView(PermissionRequiredMixin, CreateView):
+class DatasetAttributionCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
     model = DatasetAttribution
     form_class = DatasetAttributionForm
     template_name = "vitrina/datasets/attribution_form.html"
@@ -3379,6 +3385,7 @@ class DatasetAttributionCreateView(PermissionRequiredMixin, CreateView):
         self.object: DatasetAttribution = form.save(commit=False)
         self.object.dataset = self.dataset
         self.object.save()
+        set_comment(Dataset.ATTRIBUTION_ADDED)
         return redirect(self.dataset.get_absolute_url())
 
 
@@ -3396,6 +3403,16 @@ class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        with create_revision():
+            self.object = self.get_object()
+            add_to_revision(self.object)
+            set_user(request.user)
+            set_comment(Dataset.ATTRIBUTION_DELETED)
+            self.object.save()
+
+        return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
         return self.dataset.get_absolute_url()

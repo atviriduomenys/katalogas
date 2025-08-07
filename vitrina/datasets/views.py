@@ -4,7 +4,7 @@ import secrets
 import uuid
 from datetime import datetime, date
 from functools import cached_property
-from typing import List, Any
+from typing import List, Any, Type as TypingType
 from urllib.parse import urlencode
 
 import numpy as np
@@ -1403,23 +1403,9 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         plan_history_objects = Version.objects.get_for_model(Plan).filter(
             object_id__in=list(dataset_plan_ids)
         )
-        distribution_history_objects_ids = [
-            v.pk for v in Version.objects.get_for_model(DatasetAttribution)
-            if v.field_dict['dataset_id'] == self.object.id
-        ]
-        dataset_distribution_history_objects = Version.objects.get_for_model(DatasetDistribution).filter(
-            pk__in=list(distribution_history_objects_ids)
-        )
-        attribution_history_objects_ids = [
-            v.pk for v in Version.objects.get_for_model(DatasetAttribution)
-            if v.field_dict['dataset_id'] == self.object.id
-        ]
-        attribution_history_objects = Version.objects.get_for_model(DatasetAttribution).filter(pk__in=attribution_history_objects_ids)
-        relation_history_objects_ids = [
-            v.pk for v in Version.objects.get_for_model(DatasetRelation)
-            if v.field_dict['dataset_id'] == self.object.id
-        ]
-        relation_history_objects = Version.objects.get_for_model(DatasetRelation).filter(pk__in=relation_history_objects_ids)
+        dataset_distribution_history_objects = self._get_history_objects_for_model(DatasetDistribution)
+        attribution_history_objects = self._get_history_objects_for_model(DatasetAttribution)
+        relation_history_objects = self._get_history_objects_for_model(DatasetRelation)
 
         history_objects = (
             property_history_objects
@@ -1431,6 +1417,14 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             | relation_history_objects
         )
         return history_objects.order_by("-revision__date_created")
+    
+    def _get_history_objects_for_model(self, model: TypingType[models.Model]) -> list[int]:
+        version_ids = [
+            version.pk for version in Version.objects.get_for_model(model)
+            if version.field_dict['dataset_id'] == self.object.id
+        ]
+
+        return Version.objects.get_for_model(model).filter(pk__in=version_ids)
 
 
 class DatasetStructureImportView(

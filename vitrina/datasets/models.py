@@ -196,6 +196,7 @@ class Dataset(TranslatableModel):
         db_column="catalog",
         blank=True,
         null=True,
+        verbose_name=_("Katalogas"),
     )
     # TODO: Should not be used anymore, instead:
     #  - https://github.com/atviriduomenys/katalogas/blob/1c2e6cf69f271a655700b196ae7fd7e0fb6d2807/vitrina/datasets/models.py#L1399
@@ -270,7 +271,7 @@ class Dataset(TranslatableModel):
         space_delimiter=False,
         autocomplete_view="autocomplete_tags",
         autocomplete_limit=20,
-        verbose_name="Žymės",
+        verbose_name=_("Žymės"),
         help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
         autocomplete_settings={"width": "100%"},
         autocomplete_view_fulltext=True,

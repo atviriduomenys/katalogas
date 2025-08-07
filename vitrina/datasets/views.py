@@ -733,9 +733,6 @@ class DatasetCreateView(
         kwargs["organization"] = get_object_or_404(Organization, id=self.kwargs["pk"])
         return kwargs
 
-    def get(self, request, *args, **kwargs):
-        return super(DatasetCreateView, self).get(request, *args, **kwargs)
-
     def form_valid(self, form):
         self.object = form.save(commit=False)
         self.object.organization_id = self.kwargs.get("pk")
@@ -1043,9 +1040,6 @@ class DatasetUpdateView(
             }
         )
         return context
-
-    def get(self, request, *args, **kwargs):
-        return super(DatasetUpdateView, self).get(request, *args, **kwargs)
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

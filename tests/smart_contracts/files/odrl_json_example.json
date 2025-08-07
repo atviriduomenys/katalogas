@@ -16,7 +16,7 @@
       "ex:representative": "Teikėjo Atstovas",
       "ex:email": "teikejo@email.com",
       "ex:phone": "011111111",
-      "ex:personal_code": "30000000000"
+      "ex:personalCode": "30000000000"
     }
   ],
   "assignee": [
@@ -28,7 +28,7 @@
       "ex:representative": "Gavėjo Atstovas",
       "ex:email": "gavejo@email.com",
       "ex:phone": "022222222",
-      "ex:personal_code": "30000000001"
+      "ex:personalCode": "30000000001"
     }
   ],
   "permission": [
@@ -51,6 +51,6 @@
     "Už kiekvieną pavėluotą dieną skaičiuojami 0,04% delspinigiai nuo neapmokėtos sumos.",
     "Teikėjas paskirsto gavėjo mokėjimus savo nuožiūra, teikdamas pirmenybę seniausiems įsiskolinimams."
   ],
-  "ex:other_assigner_legislations": "kiti duomenų teikėjui taikomi teisės aktai, reglamentuojantys duomenų teikimą",
-  "ex:other_assignee_legislations": null
+  "ex:otherAssignerLegislations": "kiti duomenų teikėjui taikomi teisės aktai, reglamentuojantys duomenų teikimą",
+  "ex:otherAssigneeLegislations": null
 }

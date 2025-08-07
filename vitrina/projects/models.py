@@ -133,6 +133,7 @@ class UseCaseClientScope(UUIDBaseModel):
         verbose_name=_("Klientas"),
     )
     is_active = models.BooleanField(blank=True, null=True)
+
     class Meta:
         verbose_name = _("Kliento leidimas")
         verbose_name_plural = _("Kliento leidimai")

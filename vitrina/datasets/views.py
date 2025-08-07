@@ -1403,11 +1403,12 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         plan_history_objects = Version.objects.get_for_model(Plan).filter(
             object_id__in=list(dataset_plan_ids)
         )
-        dataset_distribution_ids = DatasetDistribution.objects.filter(dataset=self.object).values_list(
-            "id", flat=True
-        )
+        distribution_history_objects_ids = [
+            v.pk for v in Version.objects.get_for_model(DatasetAttribution)
+            if v.field_dict['dataset_id'] == self.object.id
+        ]
         dataset_distribution_history_objects = Version.objects.get_for_model(DatasetDistribution).filter(
-            object_id__in=list(dataset_distribution_ids)
+            pk__in=list(distribution_history_objects_ids)
         )
         attribution_history_objects_ids = [
             v.pk for v in Version.objects.get_for_model(DatasetAttribution)

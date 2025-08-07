@@ -1,3 +1,4 @@
+import json
 from io import BytesIO
 from uuid import uuid4
 
@@ -349,9 +350,13 @@ class TestAgreementGeneratePdf:
         agreement.refresh_from_db()
         assert response.status_code == 302
         assert agreement.status == AgreementStatuses.FORMED
-        agreement_files = list(agreement.files.order_by("is_template"))
-        assert len(agreement_files) == 2
-        template_copy: AgreementFile = agreement_files[1]
+        agreement_files = list(agreement.files.order_by("is_template", "created_at"))
+        assert len(agreement_files) == 3
+        contract: AgreementFile = agreement_files[1]
+        template_copy: AgreementFile = agreement_files[2]
+        odlr_file: AgreementFile = agreement_files[0]
+
+
         assert template_copy.is_template
         assert template_copy.file_name
         for name_part in ("_copy.md", "contract_template"):
@@ -361,11 +366,12 @@ class TestAgreementGeneratePdf:
         assert template_copy.file.read() == template.file.read()
         assert template_copy.checksum
 
-        contract: AgreementFile = agreement_files[0]
+        assert odlr_file.file_name.endswith(".json")
+
         assert not contract.is_template
         assert contract.checksum
 
-        odrl = contract.odrl
+        odrl :dict= json.loads(odlr_file.file.read())
 
         expected_odrl = {
             "@context": {
@@ -416,7 +422,7 @@ class TestAgreementGeneratePdf:
             "ex:otherAssigneeLegislations": other_assignee_legislations,
         }
 
-        assert contract.odrl == expected_odrl
+        assert odrl == expected_odrl
         assert contract.file
         assert contract.file_name
         contract.file.seek(0)

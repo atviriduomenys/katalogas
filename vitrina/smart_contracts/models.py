@@ -1,3 +1,4 @@
+import json
 import os
 from datetime import datetime
 from io import BytesIO
@@ -109,20 +110,23 @@ class Agreement(UUIDBaseModel):
         self, template: SmartContractTemplate
     ) -> "AgreementFile":
         odrl_jsonld = self.generate_odrl_jsonld()
-        file_name = (
-            slugify(
+        slugified_name = slugify(
                 f"{self.project}_{self.assigner}_{self.assignee}_{datetime.now().isoformat()}"
             )
-            + ".pdf"
-        )
+        pdf_file_name = slugified_name  + ".pdf"
+        odrl_file_name = slugified_name  + "-odrl.json"
         pdf_buffer = BytesIO()
         generate_contract(template.file.path, odrl_jsonld, pdf_buffer)
         pdf_buffer.seek(0)
 
+        self.files.create(
+            file=ContentFile(json.dumps(odrl_jsonld), name=odrl_file_name),
+            file_name=odrl_file_name,
+        )
+
         return self.files.create(
-            file=ContentFile(pdf_buffer.read(), name=file_name),
-            odrl=odrl_jsonld,
-            file_name=file_name,
+            file=ContentFile(pdf_buffer.read(), name=pdf_file_name),
+            file_name=pdf_file_name,
         )
 
     def generate_odrl_jsonld(self):
@@ -210,6 +214,7 @@ class AgreementFile(UUIDBaseModel):
         MD = "md", "Markdown"
         PDF = "pdf", "PDF"
         ADOC = "adoc", "Adoc"
+        JSON = "json", "JSON"
 
     agreement = models.ForeignKey(
         Agreement,
@@ -238,12 +243,6 @@ class AgreementFile(UUIDBaseModel):
         default="",
         editable=False,
         help_text=_("Failo turinio kontrolinė suma."),
-    )
-    odrl = models.JSONField(
-        blank=True,
-        default=dict,
-        help_text=_("ODRL kuris buvo naudotas genertuoti sutartį."),
-        editable=False,
     )
 
     class Meta:

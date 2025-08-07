@@ -40,7 +40,7 @@ def set_subclass_for_datasets(apps, schema_editor: BaseDatabaseSchemaEditor) -> 
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("vitrina_datasets", "0009_auto_20250805_1458"),
+        ("vitrina_datasets", "0011_auto_20250805_1458"),
     ]
 
     operations = [

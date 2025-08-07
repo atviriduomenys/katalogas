@@ -75,7 +75,7 @@ def create_initial_dcat_subclasses(
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_datasets', '0008_auto_20250714_0816'),
+        ('vitrina_datasets', '0010_auto_20250806_1543'),
     ]
 
     operations = [

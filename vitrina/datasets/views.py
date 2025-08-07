@@ -40,7 +40,7 @@ from parler.views import (
     LanguageChoiceMixin,
     ViewUrlMixin,
 )
-from reversion import set_comment, add_to_revision, create_revision, set_user
+from reversion import set_comment, create_revision, set_user
 from reversion.models import Version
 from reversion.views import RevisionMixin
 

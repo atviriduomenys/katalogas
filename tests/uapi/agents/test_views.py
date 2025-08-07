@@ -5,14 +5,13 @@ from unittest.mock import patch
 import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
-
 from vitrina.api.models import ApiKey
-from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.factories import DatasetFactory, AgentFactory
 from vitrina.datasets.models import Dataset
 from vitrina.uapi import AgentType
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
-from vitrina.uapi.models import Agent
+from vitrina.uapi.models import Agent, RequestHistory
 from vitrina.orgs.services import hash_api_key
 from vitrina.users.models import User
 
@@ -157,3 +156,61 @@ def test_delete_view(app: DjangoTestApp, representative_user: User, organization
     assert Agent.objects.count() == 1
     agent = Agent.objects.first()
     assert agent.is_archived is True
+
+
+def test_request_history_detail_view(
+    app: DjangoTestApp,
+    representative_user: User,
+    organization: Organization,
+    data_service: Dataset,
+    agent: Agent,
+    request_history: RequestHistory
+):
+
+    app.set_user(representative_user)
+    url = reverse("request-history", args=[organization.pk, agent.pk, request_history.pk])
+
+    response = app.get(url)
+    assert response.status_code == HTTPStatus.OK
+    assert response.context["request_history"] == request_history
+
+
+def test_agent_detail_view_request_history(
+    app: DjangoTestApp,
+    representative_user: User,
+    organization: Organization,
+    agent: Agent,
+    data_service: Dataset,
+    request_history: RequestHistory
+):
+    app.set_user(representative_user)
+    url = reverse("agent-detail", args=[organization.pk, agent.pk])
+
+    response = app.get(url)
+
+    assert response.status_code == HTTPStatus.OK
+    assert list(response.context["agent"].requesthistory.all()) == [request_history]
+    assert response.context["agent"] == agent
+    assert response.context["dataset"] == data_service
+    assert not response.context["secret"]
+
+def test_wrong_agent_detail_view_request_history_(
+    app: DjangoTestApp,
+    representative_user: User,
+    organization: Organization,
+    agent: Agent,
+    data_service: Dataset,
+    request_history: RequestHistory
+):
+    """Request_history is created for an agent which is not the one making the request."""
+
+    another_agent = AgentFactory()
+    app.set_user(representative_user)
+    url = reverse("agent-detail", args=[another_agent.organization.pk, another_agent.pk])
+
+    response = app.get(url)
+
+    assert response.status_code == HTTPStatus.OK
+    assert response.context["agent"] == another_agent
+    assert not response.context["secret"]
+    assert list(response.context["agent"].requesthistory.all()) == []

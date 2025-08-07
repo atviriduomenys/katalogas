@@ -1,3 +1,4 @@
+import codecs
 import logging
 from typing import Any
 
@@ -26,6 +27,7 @@ from vitrina.orgs.services import (
     has_perm,
     Action,
 )
+from vitrina.uapi.models import RequestHistory
 from vitrina.resources.models import Format
 from vitrina.uapi.forms import AgentForm
 from vitrina.uapi.models import Agent
@@ -100,7 +102,7 @@ class AgentDetailView(BaseAgentView):
     def setup(self, request, *args, **kwargs) -> None:
         super().setup(request, *args, **kwargs)
         self.object = get_object_or_404(
-            Agent.objects.select_related("service"),
+            Agent.objects.select_related("service").prefetch_related(("requesthistory")),
             pk=kwargs.get("pk"),
             organization=self.organization,
             is_archived=False
@@ -111,6 +113,12 @@ class AgentDetailView(BaseAgentView):
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
+
+        request_history = self.object.requesthistory.all()
+        paginator = Paginator(request_history, 10)
+        page_number = self.request.GET.get("page")
+        page = paginator.get_page(page_number)
+
         context.update({
             "parent_links": {
                 reverse("home"): _("Pradžia"),
@@ -124,7 +132,10 @@ class AgentDetailView(BaseAgentView):
             "secret": self.request.session.pop("secret", None),
             "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
             "auth_server_host": settings.OAUTH_SERVER_HOST,
-            "resource_server_host": f"{self.request.scheme }://{ self.request.get_host()}",
+            "resource_server_host": f"{self.request.scheme}://{self.request.get_host()}",
+            "page_obj": page,
+            "paginator": paginator,
+            "request_history": page.object_list,
         })
 
         return context
@@ -175,7 +186,7 @@ class AgentCreateView(CreateView, BaseAgentView):
 
                 self.object = form.save()
 
-                self.request.session["secret"] = self._create_oauth_client(agent=self.object)
+                # self.request.session["secret"] = self._create_oauth_client(agent=self.object)
                 self.request.session["scopes"] = settings.OAUTH_AGENT_DEFAULT_SCOPES
 
                 messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))
@@ -275,3 +286,51 @@ class AgentDeleteView(DeleteView, BaseAgentView):
 
     def get_success_url(self) -> str:
         return reverse("agent-list", kwargs={"organization_id": self.organization.id})
+
+
+class RequestDetailView(BaseAgentView):
+    template_name = "requests/request_detail.html"
+    model = RequestHistory
+
+    def setup(self, request, *args, **kwargs) -> None:
+        self.object = get_object_or_404(
+            RequestHistory.objects.select_related("agent__organization"),
+            pk=kwargs.get("pk"),
+        )
+        kwargs[self.organization_url_kwarg] = self.object.agent.organization_id
+        super().setup(request, *args, **kwargs)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+
+        if isinstance(self.object.error, str):
+            try:
+                context['formatted_error'] = codecs.decode(self.object.error, 'unicode_escape')
+            except (UnicodeDecodeError, ValueError):
+                context['formatted_error'] = self.object.error
+        else:
+            context['formatted_error'] = self.object.error
+
+        context.update(
+            {
+                "request_history": self.object,
+                "formatted_error": context['formatted_error'],
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse(
+                        "organization-detail", args=[self.organization.pk]
+                    ): self.organization.title,
+                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
+                    reverse(
+                        "agent-detail",
+                        args=[self.organization.pk, self.object.agent.pk],
+                    ): self.object.agent.title,
+                    None: _("Užklausa"),
+                },
+            }
+        )
+        return context

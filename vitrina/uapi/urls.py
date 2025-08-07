@@ -1,6 +1,5 @@
 from django.urls import path
-
-from vitrina.uapi.views.template_views import AgentDeleteView, AgentUpdateView, AgentCreateView, AgentDetailView, AgentListView
+from vitrina.uapi.views.template_views import AgentDeleteView, AgentUpdateView, AgentCreateView, AgentDetailView, AgentListView, RequestDetailView
 from vitrina.uapi.views.views import DatasetViewSet, DistributionViewSet
 
 
@@ -8,6 +7,11 @@ STATIC_UAPI_BASE_PATH = "uapi/datasets/org/vssa/isris/dcat/"
 
 
 urlpatterns = [
+    path(
+        "organizations/<int:organization_id>/agents/<uuid:agent_id>/history/<uuid:pk>/",
+         RequestDetailView.as_view(),
+         name="request-history"
+     ),
     path(
         "organizations/<int:organization_id>/agents/",
         AgentListView.as_view(),

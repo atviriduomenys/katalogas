@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}
+    {% translate "Užklausa" %}
+{% endblock %}
+
+{% block content %}
+
+
+<p class="is-flex is-justify-content-flex-start mb-5">
+    <a href="{% url 'agent-detail' organization.pk request_history.agent.pk %}">
+        ← {% translate "Grįžti į agentą" %}
+    </a>
+</p>
+
+
+
+<div class="box is-max-desktop has-background-light">
+    <p class="title is-5 mb-1"> <strong> {% translate "Užklausos informacija" %}</strong> </p>
+    <p class="is-size-7 has-text-grey mb-4">
+        {% translate "Data ir laikas" %}: <strong>{{ request_history.created_at|date:"Y-m-d H:i" }}</strong>
+    </p>
+
+    <div>
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold"> <strong> {% translate "Agentas" %}: </strong> </div>
+            <div class="column is-7">
+                <a href="{% url 'request-history' organization.pk request_history.agent.pk request_history.pk %}">
+                {{ request_history.agent.title }}
+                    <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
+                </a>
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold"> <strong> {% translate "Užklausos API adresas" %}: </strong> </div>
+            <div class="column is-7">{{ request_history.endpoint }}</div>
+        </div>
+
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold"> <strong> {% translate "HTTP metodas" %}: </strong> </div>
+            <div class="column is-7">{{ request_history.method }}</div>
+        </div>
+
+        <div class="columns is-mobile mb-1 is-vcentered">
+            <div class="column is-3 has-text-weight-semibold">
+                <strong> {% translate "Rezultatas" %}: </strong>
+            </div>
+
+            {% if request_history.result not in "UPDATED STATUS_ALIVE UPDATED_WITHOUT_CHANGES UPDATED_WITH_CONFLICT" %}
+            <div class="column is-7 is-flex is-align-items-center has-text-danger">
+                    <span class="icon is-small mr-1">
+                        <i class="fas fa-exclamation-circle"></i>
+                    </span>
+                {% translate "Nesėkminga" %}
+            </div>
+            {% else %}
+            <div class="column is-7 is-flex is-align-items-center has-text-success">
+                    <span class="icon is-small mr-1">
+                        <i class="fas fa-check-circle"></i>
+                    </span>
+                {% translate "Sėkminga" %}
+            </div>
+            {% endif %}
+        </div>
+
+
+        <div class="columns is-mobile mb-1 is-vcentered">
+            <div class="column is-3 has-text-weight-semibold">
+                <strong> {% translate "Statusas (HTTP)" %} </strong>
+            </div>
+
+            {% if request_history.result in "UPDATED STATUS_ALIVE UPDATED_WITHOUT_CHANGES UPDATED_WITH_CONFLICT" %}
+            <div class="column is-7 is-flex is-align-items-center has-text-success">
+                <span class="icon is-small mr-1">
+                    <i class="fas fa-check-circle"></i>
+                </span>
+                {{ request_history.get_result_display }}
+            </div>
+            {% else %}
+            <div class="column is-7 is-flex is-align-items-center has-text-danger">
+                <span class="icon is-small mr-1">
+                    <i class="fas fa-exclamation-circle"></i>
+                </span>
+                {{ request_history.get_result_display }}
+            </div>
+            {% endif %}
+        </div>
+
+    </div>
+</div>
+
+<hr>
+
+<p class="title is-5 mb-4">{% translate "Klaidos" %}</p>
+{% if formatted_error %}
+    <div class="notification is-danger is-light" style="border: 2px solid #ff9999; border-radius: 12px;">
+        <p class="is-size-7 mb-2">
+            <span class="icon is-small mr-2">
+                <i class="fas fa-times-circle"></i>
+            </span>
+            <span class="is-size-6 has-text-dark">{{ formatted_error|linebreaksbr }}</span>
+        </p>
+    </div>
+{% else %}
+    <p class="is-size-7 has-text-grey">
+        {% translate "Klaidų nėra" %}
+    </p>
+{% endif %}
+
+{% endblock %}
+
+

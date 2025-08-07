@@ -3414,7 +3414,6 @@ class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         with create_revision():
             self.object = self.get_object()
-            add_to_revision(self.object)
             set_user(request.user)
             set_comment(Dataset.ATTRIBUTION_DELETED)
             self.object.save()

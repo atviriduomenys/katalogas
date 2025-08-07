@@ -1,3 +1,4 @@
+import codecs
 import logging
 from typing import Any
 
@@ -305,9 +306,18 @@ class RequestDetailView(BaseAgentView):
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
 
+        if isinstance(self.object.error, str):
+            try:
+                context['formatted_error'] = codecs.decode(self.object.error, 'unicode_escape')
+            except (UnicodeDecodeError, ValueError):
+                context['formatted_error'] = self.object.error
+        else:
+            context['formatted_error'] = self.object.error
+
         context.update(
             {
                 "request_history": self.object,
+                "formatted_error": context['formatted_error'],
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("organization-list"): _("Organizacijos"),

@@ -168,7 +168,7 @@ def test_request_history_detail_view(
 ):
 
     app.set_user(representative_user)
-    url = reverse("request-history", args=[request_history.pk])
+    url = reverse("request-history", args=[organization.pk, agent.pk, request_history.pk])
 
     response = app.get(url)
     assert response.status_code == HTTPStatus.OK

@@ -264,7 +264,7 @@ backends:
                 {% for request in request_history %}
                     <tr>
                         <td class="has-text-info has-text-weight-semibold is-size-6">
-                            <a href="{% url 'request-history' request.uuid %}">
+                            <a href="{% url 'request-history' organization.pk agent.pk request.pk %}">
                                 {{ request.created_at|date:"Y-m-d H:i" }}
                             </a>
                         </td>
@@ -285,8 +285,8 @@ backends:
                         </td>
                         <td class="has-text-info has-text-weight-semibold is-size-6">
                             {% if request.error %}
-                                <a href="{% url 'request-history' request.uuid %}">
-                                    {% translate "Klaidos" %}
+                            <a href="{% url 'request-history' organization.pk agent.pk request.pk %}">
+                                {% translate "Klaidos" %}
                                     <span class="icon is-small ml-1">
                                         <i class="fas fa-external-link-alt"></i>
                                     </span>

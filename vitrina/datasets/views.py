@@ -1415,6 +1415,11 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             if v.field_dict['dataset_id'] == self.object.id
         ]
         attribution_history_objects = Version.objects.get_for_model(DatasetAttribution).filter(pk__in=attribution_history_objects_ids)
+        relation_history_objects_ids = [
+            v.pk for v in Version.objects.get_for_model(DatasetRelation)
+            if v.field_dict['dataset_id'] == self.object.id
+        ]
+        relation_history_objects = Version.objects.get_for_model(DatasetRelation).filter(pk__in=relation_history_objects_ids)
 
         history_objects = (
             property_history_objects
@@ -1423,6 +1428,7 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             | plan_history_objects
             | dataset_distribution_history_objects
             | attribution_history_objects
+            | relation_history_objects
         )
         return history_objects.order_by("-revision__date_created")
 
@@ -3474,14 +3480,10 @@ class DatasetRelationCreateView(PermissionRequiredMixin, RevisionMixin, CreateVi
         return redirect(self.dataset.get_absolute_url())
 
 
-class DatasetRelationDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
+class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
     model = DatasetRelation
 
     dataset: Dataset
-
-    # Enable reversion tracking for GET (default is POST only)
-    def revision_request_creates_revision(self, request):
-        return request.method in ("GET", "POST")
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("dataset_id"))
@@ -3494,8 +3496,11 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteVi
         return self.post(*args, **kwargs)
     
     def delete(self, request, *args, **kwargs):
-        add_to_revision(self.dataset)
-        set_comment(Dataset.RELATION_DELETED)
+        with create_revision():
+            self.object = self.get_object()
+            set_user(request.user)
+            set_comment(Dataset.RELATION_DELETED)
+            self.object.save()
         return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):

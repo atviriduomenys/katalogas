@@ -4900,3 +4900,48 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+msgid "Identifikatorius"
+msgstr "Identifier"
+
+msgid "Identifikatoriai"
+msgstr "Identifiers"
+
+msgid "dct:type – identifikatoriaus tipas"
+msgstr "dct:type – type of the identifier"
+
+msgid "Identifikatoriaus tipas"
+msgstr "Type of the identifier"
+
+msgid "adms:schemeAgency – schemos atstovybės URI"
+msgstr "adms:schemeAgency – schema authority URI"
+
+msgid "Schemos atstovybės URI"
+msgstr "Schema authority URI"
+
+msgid "skos:notation – identifikatorius išorinėje sistemoje"
+msgstr "skos:notation – identifier in an external system"
+
+msgid "Žymėjimas"
+msgstr "Notation"
+
+msgid "Resursas"
+msgstr "Resource"
+
+msgid "Nuoroda"
+msgstr "URI"
+
+msgid "Lokalus"
+msgstr "LOCAL"
+
+msgid "Kita"
+msgstr "Other"
+
+msgid "Schemos atstovybės pavadinimas"
+msgstr "Agency name"
+
+msgid "Atstovybė"
+msgstr "Agency"
+
+msgid "Atstovybės"
+msgstr "Agencies"

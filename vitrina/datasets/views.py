@@ -40,7 +40,7 @@ from parler.views import (
     LanguageChoiceMixin,
     ViewUrlMixin,
 )
-from reversion import set_comment, create_revision, set_user
+from reversion import set_comment, create_revision, set_user, add_to_revision
 from reversion.models import Version
 from reversion.views import RevisionMixin
 
@@ -3409,8 +3409,8 @@ class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
         with create_revision():
             self.object = self.get_object()
             set_user(request.user)
+            add_to_revision(self.object)
             set_comment(Dataset.ATTRIBUTION_DELETED)
-            self.object.save()
 
         return super().delete(request, *args, **kwargs)
 
@@ -3493,7 +3493,7 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
             self.object = self.get_object()
             set_user(request.user)
             set_comment(Dataset.RELATION_DELETED)
-            self.object.save()
+            add_to_revision(self.object)
         return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):

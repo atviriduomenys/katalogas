@@ -43,10 +43,10 @@ from vitrina.datasets.models import (
     DatasetStructure,
     DatasetGroup,
     DatasetAttribution,
-    Type,
     DatasetRelation,
     Relation,
     Contact,
+    DCATResourceSubclass,
 )
 from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
@@ -54,12 +54,33 @@ from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 
 
-class DatasetTypeField(forms.ModelMultipleChoiceField):
+class ResourceSubclassTypeField(ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.description:
             return mark_safe(f'{obj.title}<br/><p class="help">{obj.description}</p>')
         else:
             return obj.title
+
+
+class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
+    subclass = ResourceSubclassTypeField(
+        label=_("Duomenų ištekliaus rūšis"),
+        queryset=DCATResourceSubclass.objects.all(),
+        widget=forms.RadioSelect,
+    )
+
+    class Meta:
+        model = Dataset
+        fields = ("subclass",)
+
+    def __init__(self, request=None, organization=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def clean_subclass(self):
+        subclass = self.cleaned_data.get("subclass")
+        if not subclass:
+            raise ValidationError(_("Šis laukas yra privalomas."))
+        return subclass
 
 
 class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
@@ -68,12 +89,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         label=_("Pavadinimas"),
         required=True,
         widget=TextInput(),
-    )
-    type = DatasetTypeField(
-        label=_("Duomenų ištekliaus tipas"),
-        required=False,
-        queryset=Type.objects.all(),
-        widget=forms.CheckboxSelectMultiple,
     )
     description = TranslatedField(
         label=_("Aprašymas"),
@@ -126,7 +141,9 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     )  # TODO: This attribute is meant for DatasetDistribution not Dataset.
 
     managed_by_publisher = forms.BooleanField(
-        label=_("Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio atvėrimą?"),
+        label=_(
+            "Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio atvėrimą?"
+        ),
         required=False,
     )
 
@@ -138,7 +155,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "catalog",
             "frequency",
             "access_rights",
-            "type",
             "endpoint_url",
             "endpoint_type",
             "endpoint_description",
@@ -149,19 +165,19 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "creator",
             "publisher",
             "managed_by_publisher",
-            'landing_page',
+            "landing_page",
         )
         labels = {"tags": _("Žymės"), "catalog": _("Katalogas")}
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
-        button = _("Redaguoti") if instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-form"
         self.request = request
         self.organization = organization
+        self.helper.form_tag = False
 
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši")),
@@ -173,7 +189,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field("landing_page"),
             Field("catalog"),
             Field("frequency"),
-            Field("type"),
             Field("endpoint_url"),
             Field("endpoint_type"),
             Field("endpoint_description"),
@@ -183,10 +198,9 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field("managed_by_publisher"),
             Field("creator"),
             Field("publisher"),
-            Submit("submit", button, css_class="button is-primary"),
         )
 
-        self.fields['access_rights'].required = True
+        self.fields["access_rights"].required = True
 
         if self.language_code == "en":
             self.fields["description"].required = False
@@ -303,20 +317,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             elif isinstance(contact, User):
                 self.fields["contact"].initial = f"user-{contact.id}"
 
-    def clean_type(self):
-        type = self.cleaned_data.get("type")
-        if (
-            type.filter(name=Type.SERVICE).exists()
-            and type.filter(name=Type.SERIES).exists()
-        ):
-            raise ValidationError(
-                _(
-                    'Tipai "service" ir "series" negali būti pažymėti abu kartu, '
-                    "gali būti pažymėtas tik vienas arba kitas."
-                )
-            )
-        return type
-
     def clean_name(self):
         name = self.cleaned_data.get("name")
 
@@ -363,9 +363,13 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
     def clean_endpoint_url(self):
         endpoint_url = self.cleaned_data.get("endpoint_url")
-        types = self.cleaned_data.get("type")
-        if not endpoint_url and types and types.filter(name="service"):
-            raise ValidationError(_("Šis laukas yra privalomas"))
+        subclass_uuid = self.instance.subclass.pk if self.instance else self.initial.get("subclass_uuid")
+        if not endpoint_url and subclass_uuid:
+            service_subclass = DCATResourceSubclass.objects.filter(
+                pk=subclass_uuid, name=DCATResourceSubclass.SERVICE
+            ).first()
+            if service_subclass:
+                raise ValidationError(_("Šis laukas yra privalomas"))
         return endpoint_url
 
 

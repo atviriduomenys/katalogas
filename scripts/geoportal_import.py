@@ -14,7 +14,12 @@ from django.utils import timezone
 from django.contrib.sites.models import Site
 from django.urls import reverse
 from vitrina import settings
-from vitrina.datasets.models import Dataset, Type, Relation, DatasetRelation
+from vitrina.datasets.models import (
+    Dataset,
+    Relation,
+    DatasetRelation,
+    DCATResourceSubclass,
+)
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
 from vitrina.tasks.models import Task
@@ -35,12 +40,8 @@ def _get_elem(tag, element, find_all=False):
     return [] if find_all else None
 
 
-def _create_or_get_service_type():
-    type_obj, created = Type.objects.get_or_create(name='service')
-    if created:
-        type_obj.title = 'Duomenų publikavimo paslauga'
-        type_obj.save()
-    return type_obj
+def _get_services_subclass():
+    return DCATResourceSubclass.objects.get(name="service")
 
 
 def _get_categories(title):
@@ -74,14 +75,18 @@ def _get_condition_descriptions():
     if resp:
         xml = ET.XML(resp.content)
         namespaces = xml.nsmap
-        gml = namespaces.get('gml')
+        gml = namespaces.get("gml")
         gmx = namespaces.get(None)
-        restriction_code_list = _get_elem(".//{%s}CodeListDictionary[@{%s}id='MD_RestrictionCode']" % (gmx, gml), xml)
-        restriction_code_list = _get_elem(".//{%s}CodeDefinition" % gmx, restriction_code_list, find_all=True)
+        restriction_code_list = _get_elem(
+            ".//{%s}CodeListDictionary[@{%s}id='MD_RestrictionCode']" % (gmx, gml), xml
+        )
+        restriction_code_list = _get_elem(
+            ".//{%s}CodeDefinition" % gmx, restriction_code_list, find_all=True
+        )
         for code in restriction_code_list:
             description = _get_elem(".//{%s}description" % gml, code)
             identifier = _get_elem(".//{%s}identifier" % gml, code)
-            code_space = identifier.get('codeSpace') if identifier is not None else ""
+            code_space = identifier.get("codeSpace") if identifier is not None else ""
             if description is not None and identifier is not None:
                 lt_description = requests.post(
                     "https://vertimas.vu.lt/ws/service.svc/json/Translate",
@@ -112,7 +117,7 @@ def main():
     """
 
     start_index = 1
-    body = '''
+    body = """
     <csw:GetRecords xmlns:csw="http://www.opengis.net/cat/csw/2.0.2" xmlns:ogc="http://www.opengis.net/ogc" 
         service="CSW" version="2.0.2" resultType="results" startPosition="{}" maxRecords="15" 
         outputFormat="application/xml" outputSchema="http://www.opengis.net/cat/csw/2.0.2" 
@@ -122,7 +127,7 @@ def main():
             <csw:ElementSetName>full</csw:ElementSetName>
         </csw:Query>
     </csw:GetRecords>
-    '''
+    """
 
     url = "https://www.geoportal.lt/metadata-catalog/csw?Request=GetRecords&Service=CSW&Version=2.0.2"
     try:
@@ -134,14 +139,14 @@ def main():
     xml = ET.XML(response.content)
 
     namespaces = xml.nsmap
-    csw = namespaces.get('csw')
-    dct = namespaces.get('dct')
-    dc = namespaces.get('dc')
+    csw = namespaces.get("csw")
+    dct = namespaces.get("dct")
+    dc = namespaces.get("dc")
 
     total_results = 0
     results = _get_elem("{%s}SearchResults" % csw, xml)
-    if results is not None and results.get('numberOfRecordsMatched'):
-        total_results = int(results.get('numberOfRecordsMatched'))
+    if results is not None and results.get("numberOfRecordsMatched"):
+        total_results = int(results.get("numberOfRecordsMatched"))
 
     records = _get_elem(".//{%s}Record" % csw, results, find_all=True)
 
@@ -159,13 +164,13 @@ def main():
 
             dataset_ids = _get_elem("{%s}identifier" % dc, record, find_all=True)
             for dat_id in dataset_ids:
-                scheme = dat_id.get('scheme')
+                scheme = dat_id.get("scheme")
                 if scheme.endswith("DocID"):
                     dataset_id = dat_id.text
 
             references = _get_elem("{%s}references" % dct, record, find_all=True)
             for ref in references:
-                scheme = ref.get('scheme')
+                scheme = ref.get("scheme")
                 if scheme.endswith("Document"):
                     metadata_url = ref.text
                 elif scheme.endswith("Server"):
@@ -185,8 +190,8 @@ def main():
                 errors = []
 
                 namespaces = xml.nsmap
-                gmd = namespaces.get('gmd')
-                gco = namespaces.get('gco')
+                gmd = namespaces.get("gmd")
+                gco = namespaces.get("gco")
 
                 created = False
                 changed = False
@@ -195,32 +200,45 @@ def main():
                 if not dataset:
                     created = True
                     dataset = Dataset.objects.create(
-                        geoportal_id=dataset_id,
-                        published=timezone.now()
+                        geoportal_id=dataset_id, published=timezone.now()
                     )
                 geoportal_dataset_ids.append(dataset.pk)
 
-                # type
-                dataset_type = _get_elem("{%s}hierarchyLevel" % gmd, xml)
-                dataset_type = _get_elem("{%s}MD_ScopeCode" % gmd, dataset_type)
-                if dataset_type is not None and dataset_type.text == 'service':
+                # resource_subclass
+                dataset_resource_subclass = _get_elem("{%s}hierarchyLevel" % gmd, xml)
+                dataset_resource_subclass = _get_elem(
+                    "{%s}MD_ScopeCode" % gmd, dataset_resource_subclass
+                )
+                if (
+                    dataset_resource_subclass is not None
+                    and dataset_resource_subclass.text == "service"
+                ):
                     dataset.service = True
-                    service_type = _create_or_get_service_type()
-                    if not dataset.type.filter(pk=service_type.pk):
+                    service_resource_subclass = _get_services_subclass()
+                    if dataset.subclass != service_resource_subclass:
                         changed = True
-                        dataset.type.add(service_type)
+                        dataset.subclass = service_resource_subclass
+                        dataset.save()
 
                 # dataset info
                 dataset_info = _get_elem("{%s}identificationInfo" % gmd, xml)
 
                 # title and description
                 dataset_title = _get_elem(".//{%s}title" % gmd, dataset_info)
-                dataset_title_lt = _get_elem(".{%s}CharacterString" % gco, dataset_title)
-                dataset_title_en = _get_elem(".//{%s}LocalisedCharacterString" % gmd, dataset_title)
+                dataset_title_lt = _get_elem(
+                    ".{%s}CharacterString" % gco, dataset_title
+                )
+                dataset_title_en = _get_elem(
+                    ".//{%s}LocalisedCharacterString" % gmd, dataset_title
+                )
 
                 dataset_description = _get_elem(".//{%s}abstract" % gmd, dataset_info)
-                dataset_description_lt = _get_elem(".{%s}CharacterString" % gco, dataset_description)
-                dataset_description_en = _get_elem(".//{%s}LocalisedCharacterString" % gmd, dataset_description)
+                dataset_description_lt = _get_elem(
+                    ".{%s}CharacterString" % gco, dataset_description
+                )
+                dataset_description_en = _get_elem(
+                    ".//{%s}LocalisedCharacterString" % gmd, dataset_description
+                )
 
                 dataset.set_current_language("en")
                 if dataset_title_en is not None:
@@ -244,21 +262,36 @@ def main():
                 dataset.save()
 
                 # keywords
-                keywords = _get_elem(".//{%s}keyword" % gmd, dataset_info, find_all=True)
+                keywords = _get_elem(
+                    ".//{%s}keyword" % gmd, dataset_info, find_all=True
+                )
                 keyword_list = []
                 for keyword in keywords:
                     keyword = _get_elem("{%s}CharacterString" % gco, keyword)
-                    if keyword is not None and keyword.text and keyword.text not in keyword_list:
+                    if (
+                        keyword is not None
+                        and keyword.text
+                        and keyword.text not in keyword_list
+                    ):
                         keyword_list.append(keyword.text)
 
-                dataset_keywords = sorted(set([k.strip().lower() for k in dataset.tags.values_list("name", flat=True)]))
+                dataset_keywords = sorted(
+                    set(
+                        [
+                            k.strip().lower()
+                            for k in dataset.tags.values_list("name", flat=True)
+                        ]
+                    )
+                )
                 keyword_list = sorted(set([k.strip().lower() for k in keyword_list]))
                 if dataset_keywords != keyword_list:
                     changed = True
                     dataset.tags = keyword_list
 
                 # frequency
-                frequency_value = _get_elem(".//{%s}MD_MaintenanceFrequencyCode" % gmd, dataset_info)
+                frequency_value = _get_elem(
+                    ".//{%s}MD_MaintenanceFrequencyCode" % gmd, dataset_info
+                )
                 if frequency_value is not None:
                     frequency = _get_frequency(frequency_value.text)
                     if created or dataset.frequency != frequency:
@@ -267,7 +300,9 @@ def main():
                             dataset.frequency = frequency
                         else:
                             dataset.frequency = None
-                            errors.append(f'Nerastas atnaujinimo periodiškumas: "{frequency_value.text}"')
+                            errors.append(
+                                f'Nerastas atnaujinimo periodiškumas: "{frequency_value.text}"'
+                            )
 
                 # access rights
                 access_rights = dataset.access_rights
@@ -281,7 +316,9 @@ def main():
                 # organization
                 if created:
                     # publisher will always be "Viešoji įstaiga Statybos sektoriaus vystymo agentūra" organization
-                    publisher = Organization.objects.filter(company_code="305997589").first()
+                    publisher = Organization.objects.filter(
+                        company_code="305997589"
+                    ).first()
                     if publisher:
                         dataset.publisher = publisher
 
@@ -295,76 +332,133 @@ def main():
                                 role=coordinator.role,
                                 phone=coordinator.phone,
                                 content_type=ContentType.objects.get_for_model(dataset),
-                                object_id=dataset.pk
+                                object_id=dataset.pk,
                             )
                     else:
-                        errors.append(f'Nerasta tiekėjo organizacija: '
-                                      f'"Viešoji įstaiga Statybos sektoriaus vystymo agentūra"')
+                        errors.append(
+                            f"Nerasta tiekėjo organizacija: "
+                            f'"Viešoji įstaiga Statybos sektoriaus vystymo agentūra"'
+                        )
 
-                    organization_name = _get_elem(".//{%s}organisationName" % gmd, dataset_info)
-                    organization_name = _get_elem("{%s}CharacterString" % gco, organization_name)
+                    organization_name = _get_elem(
+                        ".//{%s}organisationName" % gmd, dataset_info
+                    )
+                    organization_name = _get_elem(
+                        "{%s}CharacterString" % gco, organization_name
+                    )
 
                     if organization_name is not None:
-                        exclude = ["VĮ", ",", "Fizinis asmuo", "-", "VšĮ", "Savivaldybė", "-", "AB", "UAB", "\""]
+                        exclude = [
+                            "VĮ",
+                            ",",
+                            "Fizinis asmuo",
+                            "-",
+                            "VšĮ",
+                            "Savivaldybė",
+                            "-",
+                            "AB",
+                            "UAB",
+                            '"',
+                        ]
                         stripped_organization_name = organization_name.text
                         for e in exclude:
-                            stripped_organization_name = stripped_organization_name.replace(e, "")
+                            stripped_organization_name = (
+                                stripped_organization_name.replace(e, "")
+                            )
                         stripped_organization_name = stripped_organization_name.strip()
 
                         organization = Organization.objects.filter(
-                            Q(title__icontains=stripped_organization_name) |
-                            Q(alternative_titles__icontains=organization_name.text)
+                            Q(title__icontains=stripped_organization_name)
+                            | Q(alternative_titles__icontains=organization_name.text)
                         ).first()
 
                         if organization:
                             dataset.organization = organization
                         else:
                             dataset.creator_text = organization_name.text
-                            errors.append(f'Nerasta organizacija: "{organization_name.text}"')
+                            errors.append(
+                                f'Nerasta organizacija: "{organization_name.text}"'
+                            )
 
                 # distribution conditions
                 conditions = ""
                 if not dataset.service:
-                    access_constraints = _get_elem(".//{%s}accessConstraints" % gmd, dataset_info)
-                    access_constraints = _get_elem(".//{%s}MD_RestrictionCode" % gmd, access_constraints)
+                    access_constraints = _get_elem(
+                        ".//{%s}accessConstraints" % gmd, dataset_info
+                    )
+                    access_constraints = _get_elem(
+                        ".//{%s}MD_RestrictionCode" % gmd, access_constraints
+                    )
 
-                    use_constraints = _get_elem(".//{%s}useConstraints" % gmd, dataset_info)
-                    use_constraints = _get_elem(".//{%s}MD_RestrictionCode" % gmd, use_constraints)
+                    use_constraints = _get_elem(
+                        ".//{%s}useConstraints" % gmd, dataset_info
+                    )
+                    use_constraints = _get_elem(
+                        ".//{%s}MD_RestrictionCode" % gmd, use_constraints
+                    )
 
-                    other_constraints = _get_elem(".//{%s}otherConstraints" % gmd, dataset_info)
-                    other_constraints = _get_elem(".//{%s}MD_RestrictionCode" % gmd, other_constraints)
+                    other_constraints = _get_elem(
+                        ".//{%s}otherConstraints" % gmd, dataset_info
+                    )
+                    other_constraints = _get_elem(
+                        ".//{%s}MD_RestrictionCode" % gmd, other_constraints
+                    )
 
-                    use_limitation = _get_elem(".//{%s}useLimitation" % gmd, dataset_info)
-                    use_limitation = _get_elem(".//{%s}CharacterString" % gco, use_limitation)
+                    use_limitation = _get_elem(
+                        ".//{%s}useLimitation" % gmd, dataset_info
+                    )
+                    use_limitation = _get_elem(
+                        ".//{%s}CharacterString" % gco, use_limitation
+                    )
 
                     if condition_info:
                         condition_list = []
-                        if access_constraints is not None and access_constraints.text != "":
-                            access_constraints_info = condition_info.get(access_constraints.text)
+                        if (
+                            access_constraints is not None
+                            and access_constraints.text != ""
+                        ):
+                            access_constraints_info = condition_info.get(
+                                access_constraints.text
+                            )
                             if access_constraints_info:
-                                condition_list.append(f"Prieigos apribojimai: "
-                                                      f"{access_constraints_info.get('description')} "
-                                                      f"({access_constraints.text}). "
-                                                      f"Code space - {access_constraints_info.get('code_space')}.")
+                                condition_list.append(
+                                    f"Prieigos apribojimai: "
+                                    f"{access_constraints_info.get('description')} "
+                                    f"({access_constraints.text}). "
+                                    f"Code space - {access_constraints_info.get('code_space')}."
+                                )
 
                         if use_constraints is not None and use_constraints.text != "":
-                            use_constraints_info = condition_info.get(use_constraints.text)
+                            use_constraints_info = condition_info.get(
+                                use_constraints.text
+                            )
                             if use_constraints_info:
-                                condition_list.append(f"Naudojimo apribojimai: "
-                                                      f"{use_constraints_info.get('description')} "
-                                                      f"({use_constraints.text}). "
-                                                      f"Code space - {use_constraints_info.get('code_space')}.")
+                                condition_list.append(
+                                    f"Naudojimo apribojimai: "
+                                    f"{use_constraints_info.get('description')} "
+                                    f"({use_constraints.text}). "
+                                    f"Code space - {use_constraints_info.get('code_space')}."
+                                )
 
-                        if other_constraints is not None and other_constraints.text != "":
-                            other_constraints_info = condition_info.get(other_constraints.text)
+                        if (
+                            other_constraints is not None
+                            and other_constraints.text != ""
+                        ):
+                            other_constraints_info = condition_info.get(
+                                other_constraints.text
+                            )
                             if other_constraints_info:
-                                condition_list.append(f"Kiti apribojimai: "
-                                                      f"{other_constraints_info.get('description')} "
-                                                      f"({other_constraints.text}). "
-                                                      f"Code space - {other_constraints_info.get('code_space')}.")
+                                condition_list.append(
+                                    f"Kiti apribojimai: "
+                                    f"{other_constraints_info.get('description')} "
+                                    f"({other_constraints.text}). "
+                                    f"Code space - {other_constraints_info.get('code_space')}."
+                                )
 
                         if use_limitation is not None and use_limitation.text != "":
-                            condition_list.append(f"Naudojimo ribotumas: {use_limitation.text}")
+                            condition_list.append(
+                                f"Naudojimo ribotumas: {use_limitation.text}"
+                            )
 
                         if condition_list:
                             conditions = "\n".join(condition_list)
@@ -372,14 +466,25 @@ def main():
                 # distribution
                 distribution_info = _get_elem(".//{%s}distributionInfo" % gmd, xml)
 
-                distribution_format = _get_elem(".//{%s}distributionFormat" % gmd, distribution_info)
-                distribution_format = _get_elem(".//{%s}MD_Format_GC" % gmd, distribution_format)
+                distribution_format = _get_elem(
+                    ".//{%s}distributionFormat" % gmd, distribution_info
+                )
+                distribution_format = _get_elem(
+                    ".//{%s}MD_Format_GC" % gmd, distribution_format
+                )
 
                 if dataset.service:
-                    if data_url and data_url != "-" and dataset.endpoint_url != data_url:
+                    if (
+                        data_url
+                        and data_url != "-"
+                        and dataset.endpoint_url != data_url
+                    ):
                         changed = True
                         dataset.endpoint_url = data_url
-                    if distribution_format is not None and distribution_format.text != "-":
+                    if (
+                        distribution_format is not None
+                        and distribution_format.text != "-"
+                    ):
                         if endpoint_type := GeoportalFormatValue.objects.filter(
                             value__iexact=distribution_format.text
                         ).first():
@@ -388,7 +493,9 @@ def main():
                                 changed = True
                                 dataset.endpoint_type = endpoint_type
                         else:
-                            errors.append(f'Nerastas API formatas: "{distribution_format.text}"')
+                            errors.append(
+                                f'Nerastas API formatas: "{distribution_format.text}"'
+                            )
 
                     if dataset.endpoint_url:
                         dataset.status = Dataset.HAS_DATA
@@ -402,21 +509,32 @@ def main():
                         comment_status = Comment.OPENED
 
                         if (
-                            distribution_format is not None and
-                            distribution_format.text and
-                            distribution_format.text != "-"
+                            distribution_format is not None
+                            and distribution_format.text
+                            and distribution_format.text != "-"
                         ):
-                            formats = [frm.strip() for frm in distribution_format.text.split(',')]
+                            formats = [
+                                frm.strip()
+                                for frm in distribution_format.text.split(",")
+                            ]
                             for frm in formats:
                                 if frm:
-                                    if dist_format := GeoportalFormatValue.objects.filter(
-                                        value__iexact=frm
-                                    ).first():
-                                        dist_format = dist_format.geoportal_format.format
-                                        if distribution := dataset.datasetdistribution_set.filter(
-                                            download_url=data_url,
-                                            format=dist_format
-                                        ).first():
+                                    if (
+                                        dist_format
+                                        := GeoportalFormatValue.objects.filter(
+                                            value__iexact=frm
+                                        ).first()
+                                    ):
+                                        dist_format = (
+                                            dist_format.geoportal_format.format
+                                        )
+                                        if (
+                                            distribution
+                                            := dataset.datasetdistribution_set.filter(
+                                                download_url=data_url,
+                                                format=dist_format,
+                                            ).first()
+                                        ):
                                             if distribution.conditions != conditions:
                                                 changed = True
                                                 distribution.set_current_language("lt")
@@ -425,19 +543,24 @@ def main():
                                                 distribution.save()
                                         else:
                                             changed = True
-                                            distribution = DatasetDistribution.objects.create(
-                                                dataset=dataset,
-                                                download_url=data_url,
-                                                format=dist_format,
+                                            distribution = (
+                                                DatasetDistribution.objects.create(
+                                                    dataset=dataset,
+                                                    download_url=data_url,
+                                                    format=dist_format,
+                                                )
                                             )
                                             distribution.set_current_language("lt")
                                             distribution.conditions = conditions
                                             distribution.save_translations()
                                             distribution.save()
                                     else:
-                                        if distribution := dataset.datasetdistribution_set.filter(
-                                            download_url=data_url,
-                                        ).first():
+                                        if (
+                                            distribution
+                                            := dataset.datasetdistribution_set.filter(
+                                                download_url=data_url,
+                                            ).first()
+                                        ):
                                             if distribution.conditions != conditions:
                                                 changed = True
                                                 distribution.set_current_language("lt")
@@ -446,16 +569,20 @@ def main():
                                                 distribution.save()
                                         else:
                                             changed = True
-                                            distribution = DatasetDistribution.objects.create(
-                                                dataset=dataset,
-                                                download_url=data_url,
+                                            distribution = (
+                                                DatasetDistribution.objects.create(
+                                                    dataset=dataset,
+                                                    download_url=data_url,
+                                                )
                                             )
                                             distribution.set_current_language("lt")
                                             distribution.conditions = conditions
                                             distribution.save_translations()
                                             distribution.save()
                                         errors.append(f'Nerastas formatas: "{frm}"')
-                        elif not dataset.datasetdistribution_set.filter(download_url=data_url):
+                        elif not dataset.datasetdistribution_set.filter(
+                            download_url=data_url
+                        ):
                             changed = True
                             distribution = DatasetDistribution.objects.create(
                                 dataset=dataset,
@@ -470,14 +597,21 @@ def main():
                         comment_status = Comment.INVENTORED
 
                 # status comment
-                latest_status_comment = Comment.objects.filter(
-                    content_type=ContentType.objects.get_for_model(dataset),
-                    object_id=dataset.pk,
-                    type=Comment.STATUS,
-                    status__isnull=False
-                ).order_by('-created').first()
+                latest_status_comment = (
+                    Comment.objects.filter(
+                        content_type=ContentType.objects.get_for_model(dataset),
+                        object_id=dataset.pk,
+                        type=Comment.STATUS,
+                        status__isnull=False,
+                    )
+                    .order_by("-created")
+                    .first()
+                )
 
-                if not latest_status_comment or latest_status_comment.status != comment_status:
+                if (
+                    not latest_status_comment
+                    or latest_status_comment.status != comment_status
+                ):
                     Comment.objects.create(
                         content_type=ContentType.objects.get_for_model(dataset),
                         object_id=dataset.pk,
@@ -487,7 +621,9 @@ def main():
                     )
 
                 # category
-                categories = _get_elem(".//{%s}MD_TopicCategoryCode" % gmd, dataset_info, find_all=True)
+                categories = _get_elem(
+                    ".//{%s}MD_TopicCategoryCode" % gmd, dataset_info, find_all=True
+                )
                 dataset_categories = dataset.category.all()
                 category_list = []
                 for category in categories:
@@ -510,31 +646,33 @@ def main():
                     translations__title="Lietuvos erdvinės informacijos portalas",
                 ).first()
                 relation = Relation.objects.filter(name=Relation.CATALOG).first()
-                if geoportal_catalog and relation and not DatasetRelation.objects.filter(
-                    relation=relation,
-                    dataset=dataset,
-                    part_of=geoportal_catalog
+                if (
+                    geoportal_catalog
+                    and relation
+                    and not DatasetRelation.objects.filter(
+                        relation=relation, dataset=dataset, part_of=geoportal_catalog
+                    )
                 ):
                     dataset_relation = DatasetRelation.objects.create(
-                        relation=relation,
-                        dataset=dataset,
-                        part_of=geoportal_catalog
+                        relation=relation, dataset=dataset, part_of=geoportal_catalog
                     )
                     dataset.part_of.add(dataset_relation)
 
                 # inform superusers about import errors
                 dataset_url = "https://%s%s" % (
                     Site.objects.get_current().domain,
-                    reverse('dataset-detail', args=[dataset.pk])
+                    reverse("dataset-detail", args=[dataset.pk]),
                 )
                 if errors:
                     emails = []
                     users = User.objects.filter(is_superuser=True)
 
                     errors = "<br/>".join(errors)
-                    title = f'Klaida importuojant Geoportal duomenų išteklių id: {dataset.pk}'
-                    description = f"Importuojant duomenų išteklių iš Geoportal (<a href='{metadata_url}'>" \
-                                  f"metaduomenys</a>) įvyko klaida: <br/>{errors}"
+                    title = f"Klaida importuojant Geoportal duomenų išteklių id: {dataset.pk}"
+                    description = (
+                        f"Importuojant duomenų išteklių iš Geoportal (<a href='{metadata_url}'>"
+                        f"metaduomenys</a>) įvyko klaida: <br/>{errors}"
+                    )
 
                     for user in users:
                         if not Task.objects.filter(
@@ -544,7 +682,7 @@ def main():
                             status=Task.CREATED,
                             type=Task.ERROR_GEOPORTAL,
                             content_type=ContentType.objects.get_for_model(dataset),
-                            object_id=dataset.pk
+                            object_id=dataset.pk,
                         ):
                             emails.append(user.email)
                             Task.objects.create(
@@ -554,17 +692,14 @@ def main():
                                 status=Task.CREATED,
                                 type=Task.ERROR_GEOPORTAL,
                                 content_type=ContentType.objects.get_for_model(dataset),
-                                object_id=dataset.pk
+                                object_id=dataset.pk,
                             )
                     if emails:
                         email(
                             emails,
-                            'geoportal-error',
+                            "geoportal-error",
                             "vitrina/datasets/emails/sub/geoportal_error.md",
-                            {
-                                'title': dataset.title,
-                                'url': dataset_url
-                            }
+                            {"title": dataset.title, "url": dataset_url},
                         )
                         print(title)
                         print(description)
@@ -576,13 +711,13 @@ def main():
                         sub_type=Subscription.ORGANIZATION,
                         content_type=ContentType.objects.get_for_model(Organization),
                         object_id=dataset.organization.pk,
-                        dataset_update_sub=True
+                        dataset_update_sub=True,
                     )
                 dataset_subs = Subscription.objects.filter(
                     sub_type=Subscription.DATASET,
                     content_type=ContentType.objects.get_for_model(Dataset),
                     object_id=dataset.pk,
-                    dataset_update_sub=True
+                    dataset_update_sub=True,
                 )
                 subs = organization_subs | dataset_subs
 
@@ -598,18 +733,19 @@ def main():
                                 organization=dataset.organization,
                                 status=Task.CREATED,
                                 type=Task.DATASET,
-                                user=sub.user
+                                user=sub.user,
                             )
-                            if sub.user.email and sub.email_subscribed and sub.user.email not in sub_email_list:
+                            if (
+                                sub.user.email
+                                and sub.email_subscribed
+                                and sub.user.email not in sub_email_list
+                            ):
                                 sub_email_list.append(sub.user.email)
                             email(
                                 sub_email_list,
-                                'dataset-created-sub',
+                                "dataset-created-sub",
                                 "vitrina/datasets/emails/sub/created.md",
-                                {
-                                    'dataset': dataset,
-                                    'link': dataset_url
-                                }
+                                {"dataset": dataset, "link": dataset_url},
                             )
                 # send email about update, only if something has changed
                 elif changed:
@@ -623,19 +759,20 @@ def main():
                             organization=dataset.organization,
                             status=Task.CREATED,
                             type=Task.DATASET,
-                            user=sub.user
+                            user=sub.user,
                         )
-                        if sub.user.email and sub.email_subscribed and sub.user.email not in sub_email_list:
+                        if (
+                            sub.user.email
+                            and sub.email_subscribed
+                            and sub.user.email not in sub_email_list
+                        ):
                             sub_email_list.append(sub.user.email)
                     if sub_email_list:
                         email(
                             sub_email_list,
-                            'dataset-updated',
+                            "dataset-updated",
                             "vitrina/datasets/emails/sub/updated.md",
-                            {
-                                'title': dataset,
-                                'link': dataset_url
-                            }
+                            {"title": dataset, "link": dataset_url},
                         )
 
                 dataset.save()
@@ -679,5 +816,5 @@ def main():
         dataset.save()
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     run(main)

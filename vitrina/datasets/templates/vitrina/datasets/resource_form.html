@@ -1,0 +1,68 @@
+{% extends "base_form.html" %}
+{% load i18n parler_tags %}
+{% load crispy_forms_tags %}
+
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block head %}
+    <style>
+        #div_id_category .select2-selection__arrow {
+            display: none;
+        }
+        #div_id_category #select2-id_category-container {
+            line-height: 2.25em;
+        }
+        #div_id_category .select2-selection--single {
+            height: 2.25em;
+            border-color: #dbdbdb;
+        }
+        #div_id_category .select2-selection--single:hover{
+            border-color: #b5b5b5;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+
+{% if organization_id %}
+  {% include 'vitrina/orgs/tabs.html' %}
+{% else %}
+  {% include 'vitrina/datasets/tabs.html' %}
+{% endif %}
+
+{% include "vitrina/datasets/form_shared_script.html" %}
+
+{% if organization_id %}
+  {% include 'vitrina/datasets/back_link.html' with organization_id=organization_id %}
+{% endif %}
+
+{% include 'vitrina/datasets/resource_information.html' %}
+<form method="post" id="dataset-form" novalidate>
+  {% csrf_token %}
+
+  <div class="column is-half">
+    {% if language_tabs %}
+      <h>{% translate "Pasirinkite turinio redagavimo kalbą" %}</h>
+      <div class="parler-language-tabs" style="padding-bottom: 2em">
+        {% for tab in language_tabs %}
+          <span class="{{tab.3}}">
+            <a class="button" style="border-color: #767676;" href="{{tab.0}}">{{tab.1}}</a>
+          </span>
+        {% endfor %}
+      </div>
+    {% endif %}
+
+    {% crispy form %}
+  </div>
+      {% include 'vitrina/datasets/resource_form_buttons.html' %}
+</form>
+  </div>
+</div>
+{% endblock %}

@@ -20,6 +20,7 @@ from vitrina.datasets.models import (
     Attribution,
     DatasetAttribution,
     Contact,
+    DCATResourceSubclass,
 )
 from vitrina.uapi.models import Agent
 
@@ -43,6 +44,20 @@ id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,vis
 ,,,,,title,string,,,,2,,,open,dct:title,,,,
 ,,,,,,comment,type,,"update(property: ""title@lt"", type: ""text"")",4,,,open,spinta:204,,2022-10-23 11:00,,
 """
+
+
+class DCATResourceSubclassFactory(factory.django.DjangoModelFactory):
+    class Meta:
+        model = DCATResourceSubclass
+
+    name = "dataset"
+    uri = ""
+
+    @classmethod
+    def _create(cls, model_class, *args, **kwargs):
+        name = kwargs.get("name", "dataset")
+        obj, created = model_class.objects.get_or_create(name=name, defaults=kwargs)
+        return obj
 
 
 class DatasetTranslationFactory(DjangoModelFactory):
@@ -79,6 +94,7 @@ class DatasetFactory(DjangoModelFactory):
         }
     )
     access_rights = Dataset.PUBLIC
+    subclass = factory.SubFactory(DCATResourceSubclassFactory)
 
     @classmethod
     def _create(cls, model_class, *args, **kwargs):

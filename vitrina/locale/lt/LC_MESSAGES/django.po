@@ -1296,9 +1296,6 @@ msgstr ""
 msgid "Naujas duomenų rinkinys"
 msgstr ""
 
-msgid "Duomenų rinkinio redagavimas"
-msgstr ""
-
 msgid "Struktūros importas"
 msgstr ""
 

@@ -58,6 +58,7 @@ from vitrina.datasets.views import (
     UpdateDatasetPublisherFilters,
     FilterGroupsView,
     DatasetRDFDownloadView,
+    ResourceSubclassCreateView,
 )
 
 urlpatterns = [
@@ -162,7 +163,16 @@ urlpatterns = [
         DatasetsPublishersView.as_view(),
         name="dataset-stats-publisher",
     ),
-    path("datasets/<int:pk>/add/", DatasetCreateView.as_view(), name="dataset-add"),
+    path(
+        "datasets/<int:pk>/add/",
+        ResourceSubclassCreateView.as_view(),
+        name="resource-subclass-add",
+    ),
+    path(
+        "datasets/<int:pk>/add/<uuid:subclass_uuid>/",
+        DatasetCreateView.as_view(),
+        name="dataset-add",
+    ),
     path(
         "datasets/<int:pk>/update/", DatasetUpdateView.as_view(), name="dataset-change"
     ),
@@ -172,7 +182,11 @@ urlpatterns = [
         DatasetDistributionPreviewView.as_view(),
         name="dataset-distribution-preview",
     ),
-    path("datasets/<int:pk>/dcat-ap.rdf", DatasetRDFDownloadView.as_view(), name="dataset-rdf-download"),
+    path(
+        "datasets/<int:pk>/dcat-ap.rdf",
+        DatasetRDFDownloadView.as_view(),
+        name="dataset-rdf-download",
+    ),
     path(
         "datasets/<int:pk>/structure/import/",
         DatasetStructureImportView.as_view(),

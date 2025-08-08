@@ -20,3 +20,5 @@
 {{ object.get_parent_organization_title }}
 {{ object.name }}
 {{ object.get_model_name_list }}
+{{ object.lt_subclass_title }}
+{{ object.en_subclass_title }}

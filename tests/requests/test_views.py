@@ -8,7 +8,7 @@ from django_webtest import DjangoTestApp
 from reversion.models import Version
 
 from vitrina import settings
-from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan
 from vitrina.requests.factories import RequestFactory, RequestStructureFactory, RequestObjectFactory, \
@@ -271,10 +271,11 @@ def test_add_new_dataset_to_request_without_permission(app: DjangoTestApp):
         request=request,
         status=request.status
     )
+    subclass = DCATResourceSubclassFactory()
     resp = app.get(reverse('request-datasets', args=[request.pk]))
     assert "add-new-dataset" not in resp.text
     resp = app.get(
-        reverse('dataset-add', args=[organization.pk]) + f"?next={reverse('request-datasets', args=[request.pk])}",
+        reverse('dataset-add', args=[organization.pk, subclass.pk]) + f"?next={reverse('request-datasets', args=[request.pk])}",
         expect_errors=True
     )
     assert resp.status_code == 403
@@ -296,11 +297,12 @@ def test_add_new_dataset_to_request_with_representative_permission(app: DjangoTe
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk
     )
+    subclass = DCATResourceSubclassFactory()
     resp = app.get(reverse('request-datasets', args=[request.pk]))
     assert "add-new-dataset" in resp.text
     resp = resp.click(linkid="add-new-dataset")
     assert resp.request.path_qs == \
-           reverse('dataset-add', args=[organization.pk]) + f"?next={reverse('request-datasets', args=[request.pk])}"
+           reverse('resource-subclass-add', args=[organization.pk]) + f"?next={reverse('request-datasets', args=[request.pk])}"
 
 
 @pytest.mark.django_db
@@ -326,10 +328,11 @@ def test_add_new_dataset_to_request_with_organization_permission(app: DjangoTest
         object_id=organization2.pk
     )
     resp = app.get(reverse('request-datasets', args=[request.pk]))
+    subclass = DCATResourceSubclassFactory()
     assert "add-new-dataset" in resp.text
     resp = resp.click(linkid="add-new-dataset")
     assert resp.request.path_qs == \
-           reverse('dataset-add', args=[organization2.pk]) + f"?next={reverse('request-datasets', args=[request.pk])}"
+           reverse('resource-subclass-add', args=[organization2.pk]) + f"?next={reverse('request-datasets', args=[request.pk])}"
 
 
 @pytest.mark.django_db

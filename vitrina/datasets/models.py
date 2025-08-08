@@ -19,6 +19,7 @@ from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
 from random import randrange
 
+from vitrina.models import UUIDBaseModel
 from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 from vitrina.orgs.models import Organization, Representative
@@ -33,6 +34,10 @@ from vitrina.datasets.managers import (
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
 from django.utils.translation import gettext_lazy as _
+
+
+def get_default_subclass():
+    return DCATResourceSubclass.objects.get(name="dataset").pk
 
 
 class DatasetGroup(TranslatableModel):
@@ -89,6 +94,14 @@ class Dataset(TranslatableModel):
         INVENTORED: _("Tik inventorinti"),
         PLANNED: _("Planuojama atverti"),
         UNASSIGNED: _("Nepriskirta"),
+    }
+
+    FILTER_SUBCLASSES = {
+        "dataset": _("Duomenų rinkinys"),
+        "catalog": _("Metaduomenų katalogas"),
+        "information_system": _("Informacinė sistema"),
+        "service": _("Duomenų publikavimo paslauga"),
+        "series": _("Duomenų rinkinių serija"),
     }
 
     CREATED = "CREATED"
@@ -301,6 +314,12 @@ class Dataset(TranslatableModel):
         verbose_name=_("Tipas"),
         blank=True,
     )
+    subclass = models.ForeignKey(
+        "DCATResourceSubclass",
+        models.PROTECT,
+        verbose_name=_("Duomenų ištekliaus poklasis"),
+        default=get_default_subclass,
+    )
     endpoint_url = models.URLField(
         _("API adresas"),
         null=True,
@@ -456,6 +475,12 @@ class Dataset(TranslatableModel):
 
     def en_description(self):
         return self.safe_translation_getter("description", language_code="en")
+
+    def lt_subclass_title(self) -> str:
+        return self.subclass.safe_translation_getter("title", language_code="lt")
+
+    def en_subclass_title(self) -> str:
+        return self.subclass.safe_translation_getter("title", language_code="en")
 
     def get_absolute_url(self):
         return reverse("dataset-detail", kwargs={"pk": self.pk})
@@ -1500,6 +1525,36 @@ class Type(TranslatableModel):
     def __str__(self):
         return self.safe_translation_getter(
             "title", language_code=self.get_current_language()
+        )
+
+
+class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
+    SERIES = "series"
+    SERVICE = "service"
+
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255, unique=True)
+    uri = models.CharField(
+        _("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
+    )
+
+    translations = TranslatedFields(
+        title=models.CharField(max_length=255, verbose_name=_("Pavadinimas")),
+        description=models.TextField(verbose_name=_("Aprašymas")),
+    )
+
+    class Meta:
+        verbose_name = _("Duomenų ištekliaus poklasis")
+        verbose_name_plural = _("Duomenų išteklių poklasiai")
+
+    def __str__(self):
+        return self.safe_translation_getter(
+            "title", language_code=self.get_current_language()
+        )
+
+    @property
+    def translated_description(self):
+        return self.safe_translation_getter(
+            "description", language_code=self.get_current_language()
         )
 
 

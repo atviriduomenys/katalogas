@@ -1,0 +1,10 @@
+{% load i18n parler_tags %}
+
+<div class="mb-4">
+    <a href="{% url 'organization-datasets' pk=organization_id %}" class="has-text-info is-flex is-align-items-center">
+      <span class="icon is-small mr-2">
+        <i class="fas fa-arrow-left"></i>
+      </span>
+      <span>{% translate "Grįžti į duomenų išteklius" %}</span>
+    </a>
+</div>

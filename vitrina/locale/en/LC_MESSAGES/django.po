@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-06 11:27+0300\n"
+"POT-Creation-Date: 2025-08-08 14:22+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1647,9 +1647,6 @@ msgstr "At least one subscription type must be selected"
 
 msgid "Gavėjas"
 msgstr "Recipient"
-
-msgid "Identifikatorius"
-msgstr "Identifier"
 
 msgid "Organizacijos prenumerata"
 msgstr "Organization subscription"
@@ -3509,9 +3506,6 @@ msgid ""
 "duomenų tikslumas."
 msgstr ""
 "The data is in standard form, but no units or data accuracy are specified."
-
-msgid "Identifikatoriai"
-msgstr "Identifiers"
 
 msgid ""
 "Duomenys susieti su kitais duomenimis, vienetais, klasifikatoriais, "

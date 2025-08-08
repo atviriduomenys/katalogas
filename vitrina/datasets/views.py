@@ -680,54 +680,52 @@ class DatasetCreateView(
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
         return has_perm(self.request.user, Action.CREATE, Dataset, organization)
 
-
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
         subclass_uuid = self.kwargs.get("subclass_uuid")
-        context.update({
-            "can_view_members": has_perm(
-                self.request.user,
-                Action.VIEW,
-                Representative,
-                self.object,
-            ),
-            "can_view_contacts": has_perm(
-            self.request.user,
-            Action.VIEW,
-            Contact,
-            self.object,
-            ),
-            "organization": organization,
-            "organization_id": organization.pk,
-            "current_title": _("Pridėti duomenų išteklį"),
-            "form_title": _("Duomenų ištekliaus informacija"),
-            "information_title": str(
-                                    DCATResourceSubclass.objects.get(pk=subclass_uuid)
-            ),
-            "information_description": str(
-                                    DCATResourceSubclass.objects.get(pk=subclass_uuid).translated_description
-            ),
-            "form_description": _(
-                "Užpildykite Jūsų pasirinkto duomenų ištekliaus informacija"
-            ),
-            "parent_links": {
-                reverse("home"): _("Pradžia"),
-                reverse("organization-list"): _("Organizacijos"),
-                reverse("organization-detail", args=[organization.pk]): organization.title,
-                reverse("dataset-list"): _("Duomenų rinkiniai"),
-                "": _("Pridėti duomenų išteklį"),
-            },
-            "current_step": 2,
-            "current_percentage": 50,
-            "selected_subclass_uuid": str(subclass_uuid),
-            "service_subclass": str(
-            DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE).pk
-        ),
-
-        })
+        subclass = DCATResourceSubclass.objects.get(pk=subclass_uuid)
+        context.update(
+            {
+                "can_view_members": has_perm(
+                    self.request.user,
+                    Action.VIEW,
+                    Representative,
+                    self.object,
+                ),
+                "can_view_contacts": has_perm(
+                    self.request.user,
+                    Action.VIEW,
+                    Contact,
+                    self.object,
+                ),
+                "organization": organization,
+                "organization_id": organization.pk,
+                "current_title": _("Pridėti duomenų išteklių"),
+                "form_title": str(subclass),
+                "information_title": str(subclass),
+                "information_description": str(subclass.translated_description),
+                "button": _("Sukurti"),
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse(
+                        "organization-detail", args=[organization.pk]
+                    ): organization.title,
+                    reverse("dataset-list"): _("Duomenų ištekliai"),
+                    "": _("Pridėti duomenų išteklių"),
+                },
+                "current_step": 2,
+                "current_percentage": 100,
+                "selected_subclass_uuid": str(subclass_uuid),
+                "service_subclass": str(
+                    DCATResourceSubclass.objects.get(
+                        name=DCATResourceSubclass.SERVICE
+                    ).pk
+                ),
+            }
+        )
         return context
-
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
@@ -907,7 +905,7 @@ class ResourceSubclassCreateView(
     CreateView,
 ):
     model = Dataset
-    template_name = "vitrina/datasets/resource_form.html"
+    template_name = "vitrina/datasets/resource_subclass_form.html"
     context_object_name = "dataset"
     form_class = ResourceSubclassForm
 
@@ -927,38 +925,40 @@ class ResourceSubclassCreateView(
 
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
 
-        context.update({
-            "organization": organization,
-            "organization_id": organization.pk,
-            "information_title":_("Pasirinkite duomenų ištekliaus rūšį"),
-            "current_title": _("Pridėti duomenų išteklį"),
-            "form_title": _("Duomenų ištekliaus rūšis"),
-            "form_description": _(
-            "Pasirinkite norimą sukurti duomenų ištekliaus rūšį"
-            ),
-            "use_custom_radio": True,
-            "can_view_members": has_perm(
-                self.request.user,
-                Action.VIEW,
-                Representative,
-                self.object,
-            ),
-            "can_view_contacts": has_perm(
-                self.request.user,
-                Action.VIEW,
-                Contact,
-                self.object,
-            ),
-            "parent_links": {
-                reverse("home"): _("Pradžia"),
-                reverse("organization-list"): _("Organizacijos"),
-                reverse("organization-detail", args=[organization.pk]): organization.title,
-                reverse("dataset-list"): _("Duomenų rinkiniai"),
-                "": _("Pridėti duomenų išteklį"),
-            },
-            "current_step": 1,
-            "current_percentage": 5,
-        })
+        context.update(
+            {
+                "organization": organization,
+                "organization_id": organization.pk,
+                "information_title": _("Pasirinkite duomenų ištekliaus rūšį"),
+                "current_title": _("Pridėti duomenų išteklių"),
+                "form_title": _("Duomenų ištekliaus rūšis"),
+                "form_description": _("Pasirinkite duomenų ištekliaus rūšį"),
+                "use_custom_radio": True,
+                "can_view_members": has_perm(
+                    self.request.user,
+                    Action.VIEW,
+                    Representative,
+                    self.object,
+                ),
+                "can_view_contacts": has_perm(
+                    self.request.user,
+                    Action.VIEW,
+                    Contact,
+                    self.object,
+                ),
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse(
+                        "organization-detail", args=[organization.pk]
+                    ): organization.title,
+                    reverse("dataset-list"): _("Duomenų ištekliai"),
+                    "": _("Pridėti duomenų išteklių"),
+                },
+                "current_step": 1,
+                "current_percentage": 50,
+            }
+        )
 
         return context
 
@@ -977,6 +977,9 @@ class ResourceSubclassCreateView(
 
 
 class DatasetUpdateView(
+    DatasetStructureMixin,
+    PlanMixin,
+    HistoryView,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     RevisionMixin,
@@ -984,10 +987,16 @@ class DatasetUpdateView(
     ViewUrlMixin,
 ):
     model = Dataset
-    template_name = "vitrina/datasets/form.html"
+    template_name = "vitrina/datasets/resource_form.html"
     view_url_name = "dataset:edit"
     context_object_name = "dataset"
     form_class = DatasetForm
+
+    object: Dataset
+    detail_url_name = "dataset-detail"
+    history_url_name = "dataset-history"
+    plan_url_name = "dataset-plans"
+    tabs_template_name = "vitrina/datasets/tabs.html"
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
@@ -995,20 +1004,43 @@ class DatasetUpdateView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["current_title"] = _("Duomenų ištekliaus redagavimas")
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("dataset-list"): _("Duomenų ištekliai"),
-            reverse("dataset-detail", args=[self.object.pk]): self.object.title,
-        }
+        subclass_uuid = self.object.subclass.uuid
         switch_language(self.object, get_language())
-        subclass_uuid = self.kwargs.get("subclass_uuid")
-        context["selected_subclass_uuid"] = str(subclass_uuid)
-        context["service_subclass"] = str(
-            DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE).pk
-        )
-        context["request_user"] = (
-            self.request.user if self.request.user.is_authenticated else None
+        context.update(
+            {
+                "current_title": _("Duomenų ištekliaus redagavimas"),
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("dataset-list"): _("Duomenų ištekliai"),
+                    reverse("dataset-detail", args=[self.object.pk]): self.object.title,
+                },
+                "form_title": str(self.object.subclass),
+                "information_title": str(self.object.subclass),
+                "information_description": str(
+                    self.object.subclass.translated_description
+                ),
+                "selected_subclass_uuid": str(subclass_uuid),
+                "service_subclass": str(
+                    DCATResourceSubclass.objects.get(
+                        name=DCATResourceSubclass.SERVICE
+                    ).pk
+                ),
+                "button": _("Redaguoti"),
+                "request_user": (
+                    self.request.user if self.request.user.is_authenticated else None
+                ),
+                "can_add_projects": has_perm(
+                    self.request.user,
+                    Action.UPDATE,
+                    self.object,
+                ),
+                "can_view_members": has_perm(
+                    self.request.user,
+                    Action.VIEW,
+                    Representative,
+                    self.object,
+                ),
+            }
         )
         return context
 

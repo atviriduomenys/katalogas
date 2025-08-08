@@ -31,107 +31,38 @@
 
 {% block content %}
 
-{% include 'vitrina/orgs/tabs.html' %}
+{% if organization_id %}
+  {% include 'vitrina/orgs/tabs.html' %}
+{% else %}
+  {% include 'vitrina/datasets/tabs.html' %}
+{% endif %}
+
 {% include "vitrina/datasets/form_shared_script.html" %}
 
+{% if organization_id %}
+  {% include 'vitrina/datasets/back_link.html' with organization_id=organization_id %}
+{% endif %}
 
+{% include 'vitrina/datasets/resource_information.html' %}
+<form method="post" id="dataset-form" novalidate>
+  {% csrf_token %}
 
-<div class="mb-4">
-  <a href="{% url 'organization-datasets' pk=organization_id %}" class="has-text-info is-flex is-align-items-center">
-    <span class="icon is-small mr-2">
-      <i class="fas fa-arrow-left"></i>
-    </span>
-    <span>{% translate "Grįžti į duomenų išteklius" %}</span>
-  </a>
-</div>
-
-<div class="columns">
-  <div class="column is-one-quarter">
-    <div class="has-background-info-light p-4">
-      <p class="mb-2 is-size-5" >
-        <span class="has-text-info has-text-weight-bold">
-          <i class="fas fa-info-circle"></i>
-            {{ information_title }}
-        </span>
-      </p>
-      <p class="mt-0">
-        {% if information_description %}
-          {{ information_description }}
-        {% else %}
-          {% translate "Šioje sistemoje duomenų išteklius – tai bet kokio tipo informacija ar duomenų paslauga, kuri gali būti aprašyta ir įtraukta į duomenų katalogą. Tai gali būti tiek viešai prieinami duomenys, tiek ribotos prieigos duomenys, prieinami tik turint sutartį ar specialų leidimą (ACL)." %}
-        {% endif %}
-      </p>
-    </div>
-  </div>
-
-  <div class="column is-three-quarters">
-    <div class="columns is-centered">
-      <div class="column">
-        <p class="title is-3">{{ form_title }}</p>
-        <p class="subtitle is-7">{{ form_description }}</p>
-      </div>
-      <div class="is-flex is-align-items-center" style="width: 20%;">
-      <div class="is-flex-grow-1 mr-2" style="display: flex; align-items: center;">
-        <progress class="progress is-info is-small" value="{{ current_percentage }}" max="100"></progress>
-      </div>
-      <p class="mb-0" style="line-height: 1;">{{ current_step }}/2</p>
-    </div>
-    </div>
-    <hr class="my-4">
-    <form method="post" id="dataset-form" novalidate>
-    {% csrf_token %}
-
-    {% if use_custom_radio %}
-      {% if form.subclass.errors %}
-        <p class="help is-danger">{{ form.subclass.errors.as_text }}</p>
-      {% endif %}
-      <div class="field">
-        <div class="columns is-multiline">
-        {% for radio in form.subclass %}
-          <div class="column is-one-third">
-            <label class="box" style="cursor: pointer;">
-              {{ radio.tag }}
-              {{ radio.choice_label|safe }}
-            </label>
-          </div>
+  <div class="column is-half">
+    {% if language_tabs %}
+      <h>{% translate "Pasirinkite turinio redagavimo kalbą" %}</h>
+      <div class="parler-language-tabs" style="padding-bottom: 2em">
+        {% for tab in language_tabs %}
+          <span class="{{tab.3}}">
+            <a class="button" style="border-color: #767676;" href="{{tab.0}}">{{tab.1}}</a>
+          </span>
         {% endfor %}
-        </div>
-      </div>
-    {% else %}
-      <div class="column is-half">
-        {% if language_tabs %}
-          <h>{% translate "Pasirinkite turinio redagavimo kalbą" %}</h>
-          <div class="parler-language-tabs" style="padding-bottom: 2em">
-            {% for tab in language_tabs %}
-              <span class="{{tab.3}}">
-                <a class="button" style="border-color: #767676;" href="{{tab.0}}">{{tab.1}}</a>
-              </span>
-            {% endfor %}
-           </div>
-        {% endif %}
-
-        {% crispy form %}
       </div>
     {% endif %}
 
-      <div class="buttons is-right">
-        <a href="{% url 'organization-datasets' pk=organization_id %}" class="has-text-info mr-4" style="align-self: center;">
-            {% translate "Atšaukti" %}
-        </a>
-        {% if use_custom_radio %}
-          <button type="submit" class="button is-primary">{% translate "Toliau" %}</button>
-        {% else %}
-          <a href="{% url 'resource-subclass-add' pk=organization_id %}" class="has-text-info mr-4" style="align-self: center;">
-            {% translate "Grįžti" %}
-          </a>
-          <button type="submit" class="button is-primary">{% translate "Sukurti" %}</button>
-        {% endif %}
-      </div>
-    </form>
+    {% crispy form %}
+  </div>
+      {% include 'vitrina/datasets/resource_form_buttons.html' %}
+</form>
   </div>
 </div>
-{% endblock %}
-
-{% block script %}
-
 {% endblock %}

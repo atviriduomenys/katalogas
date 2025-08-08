@@ -5,16 +5,12 @@ from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 
 import vitrina.datasets.models
 
-
-def map_type_to_subclass(type_name):
-    mapping = {
-        "series": "series",
-        "is": "information_system",
-        "catalog": "catalog",
-        "service": "service",
-    }
-    return mapping.get(type_name)
-
+type_to_subclass_mapping = {
+    "series": "series",
+    "is": "information_system",
+    "catalog": "catalog",
+    "service": "service",
+}
 
 def set_subclass_for_datasets(apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
@@ -31,7 +27,7 @@ def set_subclass_for_datasets(apps, schema_editor: BaseDatabaseSchemaEditor) -> 
         subclass = None
         if types.exists():
             first_type = types[0]
-            subclass_name = map_type_to_subclass(first_type.name.lower())
+            subclass_name = type_to_subclass_mapping.get(first_type.name.lower())
             subclass = subclass_by_name.get(subclass_name)
 
         dataset.subclass = subclass if subclass else dataset_subclass
@@ -44,6 +40,9 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        migrations.RunPython(
+            set_subclass_for_datasets, reverse_code=migrations.RunPython.noop
+        ),
         migrations.AlterField(
             model_name='dataset',
             name='subclass',
@@ -54,8 +53,5 @@ class Migration(migrations.Migration):
                 default=vitrina.datasets.models.get_default_subclass,
                 verbose_name='Duomenų ištekliaus poklasis',
             ),
-        ),
-        migrations.RunPython(
-            set_subclass_for_datasets, reverse_code=migrations.RunPython.noop
         ),
     ]

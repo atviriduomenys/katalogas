@@ -40,7 +40,7 @@ def create_initial_dcat_subclasses(
         {
             "name": "service",
             "uri": "dcat:DataService",
-            "title_lt": "Duomenų rinkinio paslauga",
+            "title_lt": "Duomenų publikavimo paslauga",
             "description_lt": "Operacijų rinkinys, suteikiantis prieigą prie vieno ar daugiau duomenų rinkinių arba duomenų apdorojimo funkcijų.",
             "title_en": "Data Service",
             "description_en": "A set of operations providing access to one or more data sets or data processing functions.",

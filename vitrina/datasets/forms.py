@@ -177,6 +177,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         self.helper.form_id = "dataset-form"
         self.request = request
         self.organization = organization
+        self.helper.form_tag = False
 
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši")),
@@ -205,14 +206,10 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             self.fields["description"].required = False
 
         if not instance:
-            self.helper.form_tag = False
             if Frequency.objects.filter(is_default=True).exists():
                 default_frequency = Frequency.objects.filter(is_default=True).first()
                 self.initial["frequency"] = default_frequency
         else:
-            self.helper.layout.fields.append(
-                Submit("submit", _("Redaguoti"), css_class="button is-primary")
-            )
             self.initial["files"] = list(
                 instance.dataset_files.values_list("file", flat=True)
             )

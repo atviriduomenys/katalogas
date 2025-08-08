@@ -785,7 +785,7 @@ msgstr "Added to project"
 msgid "Priskirta poreikiui"
 msgstr "Added to request"
 
-msgid "Pakeista kategrija(-os)"
+msgid "Pakeista kategorija(-os)"
 msgstr "Updated category(-ies)"
 
 msgid "Pridėtas ryšys"
@@ -3173,18 +3173,18 @@ msgstr "New dataset distribution"
 
 #, python-format
 msgid "Pridėtas naujas duomenų šaltinis \"%(title)s\"."
-msgstr "New resource \"%(title)s\" has been added."
+msgstr "New data source \"%(title)s\" has been added."
 
 msgid "Duomenų rinkinio šaltinio redagavimas"
 msgstr "Dataset source edit"
 
 #, python-format
 msgid "Redaguotas duomenų šaltinis \"%(title)s\"."
-msgstr "Resource \"%(title)s\" has been edited."
+msgstr "Data source \"%(title)s\" has been edited."
 
 #, python-format
 msgid "Ištrintas duomenų šaltinis \"%(title)s\"."
-msgstr "Resource \"%(title)s\" has been deleted."
+msgstr "Data source \"%(title)s\" has been deleted."
 
 msgid "Modelio pridėjimas"
 msgstr "Add model"

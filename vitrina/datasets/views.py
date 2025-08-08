@@ -1418,7 +1418,7 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         )
         return history_objects.order_by("-revision__date_created")
     
-    def _get_history_objects_for_model(self, model: TypingType[models.Model]) -> list[int]:
+    def _get_history_objects_for_model(self, model: TypingType[models.Model]) -> QuerySet[Version]:
         version_ids = [
             version.pk for version in Version.objects.get_for_model(model)
             if version.field_dict['dataset_id'] == self.object.id

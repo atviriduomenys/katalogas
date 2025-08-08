@@ -140,7 +140,7 @@ class Dataset(Resource):
         DELETED: _("Ištrinta"),
         PROJECT_SET: _("Priskirta projektui"),
         REQUEST_SET: _("Priskirta poreikiui"),
-        CATEGORY_UPDATED: _("Pakeista kategrija(-os)"),
+        CATEGORY_UPDATED: _("Pakeista kategorija(-os)"),
         RELATION_ADDED: _("Pridėtas ryšys"),
         RELATION_DELETED: _("Ištrintas ryšys"),
         ATTRIBUTION_ADDED: _("Priskirta organizacijai"),

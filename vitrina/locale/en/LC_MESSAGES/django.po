@@ -1405,20 +1405,11 @@ msgstr "New dataset"
 msgid "Duomenų ištekliaus redagavimas"
 msgstr "Resource edit"
 
-msgid "Duomenų ištekliaus informacija"
-msgstr "Resource information"
-
-msgid "Užpildykite Jūsų pasirinkto duomenų ištekliaus informacija"
-msgstr "Fill in the information for the resource of your choice"
-
 msgid "Duomenų išteklius sukurtas sėkmingai"
 msgstr "Resource created successfully"
 
 msgid "Pasirinkite duomenų ištekliaus rūšį"
 msgstr "Select a type of resource"
-
-msgid "Pasirinkite norimą sukurti duomenų ištekliaus rūšį"
-msgstr "Select the type of resource you want to create"
 
 msgid "Struktūros importas"
 msgstr "Structure import"

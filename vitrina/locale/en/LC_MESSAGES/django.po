@@ -706,9 +706,6 @@ msgstr "Data Service"
 msgid "Duomenų rinkinių serija"
 msgstr "Data Series"
 
-msgid "Išteklius sukurtas sėkmingai"
-msgstr "Resource created successfully"
-
 msgid "Sukurta"
 msgstr "Created"
 

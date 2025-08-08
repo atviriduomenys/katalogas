@@ -1419,12 +1419,18 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         return history_objects.order_by("-revision__date_created")
     
     def _get_history_objects_for_model(self, model: TypingType[models.Model]) -> QuerySet[Version]:
-        version_ids = [
-            version.pk for version in Version.objects.get_for_model(model)
-            if version.field_dict['dataset_id'] == self.object.id
+        all_versions = Version.objects.get_for_model(model)
+        filtered_versions_ids = [
+            version.pk for version in all_versions
+            if version.field_dict.get('dataset_id') == self.object.id
         ]
+        if model == DatasetRelation:
+            filtered_versions_ids += [
+                version.pk for version in all_versions
+                if version.field_dict.get('part_of_id') == self.object.id
+            ]
 
-        return Version.objects.get_for_model(model).filter(pk__in=version_ids)
+        return all_versions.filter(pk__in=filtered_versions_ids)
 
 
 class DatasetStructureImportView(

@@ -363,10 +363,7 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
 
     def clean_endpoint_url(self):
         endpoint_url = self.cleaned_data.get("endpoint_url")
-        if self.instance:
-            subclass_uuid =  self.instance.subclass.pk
-        else:
-            subclass_uuid = self.initial.get("subclass_uuid")
+        subclass_uuid = self.instance.subclass.pk if self.instance else self.initial.get("subclass_uuid")
         if not endpoint_url and subclass_uuid:
             service_subclass = DCATResourceSubclass.objects.filter(
                 pk=subclass_uuid, name=DCATResourceSubclass.SERVICE

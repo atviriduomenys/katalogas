@@ -1548,9 +1548,7 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
         verbose_name_plural = _("Duomenų išteklių poklasiai")
 
     def __str__(self):
-        return self.safe_translation_getter(
-            "title", language_code=self.get_current_language()
-        )
+        return self.name
 
     @property
     def translated_description(self):

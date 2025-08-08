@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-11 08:28+0300\n"
+"POT-Creation-Date: 2025-08-11 11:01+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -564,12 +564,6 @@ msgstr "Resource subclass"
 msgid "Šis laukas yra privalomas."
 msgstr "This field is required."
 
-msgid "API adresas"
-msgstr "API address"
-
-msgid "API specifikacija"
-msgstr "API specification"
-
 msgid "Failai"
 msgstr "Files"
 
@@ -589,24 +583,6 @@ msgstr ""
 "Is the institution you are representing responsible for opening the data to "
 "the public?"
 
-msgid "Žymės"
-msgstr "Tags"
-
-msgid "Katalogas"
-msgstr "Directory"
-
-msgid "Ar duomenys vieši"
-msgstr "Is the data public"
-
-msgid "Duomenų rinkinio kodinis pavadinimas"
-msgstr "Dataset code name"
-
-msgid "Detalus duomenų rinkinio aprašas"
-msgstr "Detailed description of the dataset"
-
-msgid "Surašykite aktualius raktinius žodžius"
-msgstr "List relevant keywords"
-
 msgid "Organizacija:"
 msgstr "Organization:"
 
@@ -621,6 +597,24 @@ msgstr "Code name can only include latin characters."
 
 msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
 msgstr "Code name can only include lowercase letters."
+
+msgid "API adresas"
+msgstr "API address"
+
+msgid "API specifikacija"
+msgstr "API specification"
+
+msgid "Ar duomenys vieši"
+msgstr "Is the data public"
+
+msgid "Duomenų rinkinio kodinis pavadinimas"
+msgstr "Dataset code name"
+
+msgid "Detalus duomenų rinkinio aprašas"
+msgstr "Detailed description of the dataset"
+
+msgid "Surašykite aktualius raktinius žodžius"
+msgstr "List relevant keywords"
 
 msgid "Failas"
 msgstr "File"
@@ -745,6 +739,9 @@ msgstr "Private data"
 msgid "Description"
 msgstr "Description"
 
+msgid "Katalogas"
+msgstr "Directory"
+
 msgid "Duomenų tvarkytojas"
 msgstr "Data editor"
 
@@ -756,6 +753,9 @@ msgstr "Update frequency"
 
 msgid "Prieigos teisės"
 msgstr "Access rights"
+
+msgid "Žymės"
+msgstr "Tags"
 
 msgid "Pateikite kableliu atskirtą sąrašą žymių."
 msgstr "Provide a list of tags separated by commas"
@@ -3160,7 +3160,7 @@ msgid "Sutarties šablonas"
 msgstr "Agreement template"
 
 msgid "Failo turinio kontrolinė suma."
-msgstr "File content checksum"
+msgstr "File content checksum."
 
 msgid "Sutarties dokumentai"
 msgstr "Agreement documents"

@@ -36,6 +36,7 @@ from vitrina.datasets.factories import (
     DCATResourceSubclassFactory,
 )
 from vitrina.datasets.factories import MANIFEST
+from vitrina.datasets.forms import ResourceForm, ServiceResourceForm, BaseResourceForm
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
@@ -1891,6 +1892,34 @@ def test_dataset_delete_attribution(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize(
+    "subclass_name, form_class",
+    [
+        ("dataset", ResourceForm),
+        ("catalog", ResourceForm),
+        ("information_system", ResourceForm),
+        ("service", ServiceResourceForm),
+        ("series", ResourceForm),
+        ("foo", ResourceForm),
+    ],
+)
+def test_dataset_create_uses_different_forms_based_on_dcat_subclass(
+    app: DjangoTestApp, subclass_name: str, form_class: BaseResourceForm
+) -> None:
+    organization = OrganizationFactory()
+    subclass = DCATResourceSubclassFactory(name=subclass_name)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    response = app.get(
+        reverse(
+            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
+        )
+    )
+
+    assert type(response.context.get("form")) == form_class
+
+
+@pytest.mark.django_db
 def test_dataset_with_subclass(app: DjangoTestApp):
     FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
@@ -2130,6 +2159,31 @@ def test_dataset_update_without_permission(app: DjangoTestApp):
         reverse("dataset-change", kwargs={"pk": dataset2.id}), expect_errors=True
     )
     assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "subclass_name, form_class",
+    [
+        ("dataset", ResourceForm),
+        ("catalog", ResourceForm),
+        ("information_system", ResourceForm),
+        ("service", ServiceResourceForm),
+        ("series", ResourceForm),
+        ("foo", ResourceForm),
+    ],
+)
+def test_dataset_update_uses_different_forms_based_on_dcat_subclass(
+    app: DjangoTestApp, subclass_name: str, form_class: BaseResourceForm
+) -> None:
+    subclass = DCATResourceSubclassFactory(name=subclass_name)
+    dataset = DatasetFactory(subclass=subclass)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    response = app.get(reverse("dataset-change", kwargs={"pk": dataset.id}))
+
+    assert type(response.context.get("form")) == form_class
 
 
 @pytest.mark.django_db

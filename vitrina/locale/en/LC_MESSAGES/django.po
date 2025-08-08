@@ -4994,12 +4994,6 @@ msgstr "Log in with this e-mail address and try viisp authentication again"
 msgid "Sutaries iniciatorius"
 msgstr "Creator of an agreement"
 
-msgid "Papildomi tiekėjo teisės aktai"
-msgstr "Other assigner legislations"
-
-msgid "Papildomi gavėjo teisės aktai"
-msgstr "Other assignee legislations"
-
 msgid "Mokėjimo sąlygos"
 msgstr "Payment terms"
 
@@ -5017,21 +5011,6 @@ msgstr "Other assigner legislations"
 
 msgid "Papildomi gavėjo teisės aktai"
 msgstr "Other assignee legislations"
-
-msgid "Mokėjimo sąlygos"
-msgstr "Payment terms"
-
-msgid "Failo turinio kontrolinė suma"
-msgstr "File content checksum"
-
-msgid "ODRL kuris buvo naudotas genertuoti sutartį"
-msgstr "ODRL which have been used for agreement file generation"
-
-msgid "Identifikatorius"
-msgstr "Identifier"
-
-msgid "Identifikatoriai"
-msgstr "Identifiers"
 
 msgid "dct:type – identifikatoriaus tipas"
 msgstr "dct:type – type of the identifier"
@@ -5054,14 +5033,11 @@ msgstr "Notation"
 msgid "Resursas"
 msgstr "Resource"
 
-msgid "Nuoroda"
+msgid "Nuoroda (URI)"
 msgstr "URI"
 
 msgid "Lokalus"
 msgstr "LOCAL"
-
-msgid "Kita"
-msgstr "Other"
 
 msgid "Schemos atstovybės pavadinimas"
 msgstr "Agency name"

@@ -21,7 +21,7 @@ class Agency(UUIDBaseModel):
 
 class Identifier(UUIDBaseModel):
     class IdentifierType(models.TextChoices):
-        URI = "URI", _("Nuoroda")
+        URI = "URI", _("Nuoroda (URI)")
         LOCAL = "LOCAL", _("Lokalus")
         OTHER = "OTHER", _("Kita")
 

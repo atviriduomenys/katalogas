@@ -11,24 +11,6 @@
 {% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
 {% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
 
-{% block head %}
-    <style>
-        #div_id_category .select2-selection__arrow {
-            display: none;
-        }
-        #div_id_category #select2-id_category-container {
-            line-height: 2.25em;
-        }
-        #div_id_category .select2-selection--single {
-            height: 2.25em;
-            border-color: #dbdbdb;
-        }
-        #div_id_category .select2-selection--single:hover{
-            border-color: #b5b5b5;
-        }
-    </style>
-{% endblock %}
-
 {% block content %}
 
 {% if organization_id %}
@@ -36,8 +18,6 @@
 {% else %}
   {% include 'vitrina/datasets/tabs.html' %}
 {% endif %}
-
-{% include "vitrina/datasets/form_shared_script.html" %}
 
 {% if organization_id %}
   {% include 'vitrina/datasets/back_link.html' with organization_id=organization_id %}

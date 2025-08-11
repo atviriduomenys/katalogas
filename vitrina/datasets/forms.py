@@ -2,6 +2,7 @@ from datetime import date
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
+from django.core.handlers.wsgi import WSGIRequest
 from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
@@ -83,7 +84,7 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
         return subclass
 
 
-class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
+class BaseResourceForm(TranslatableModelForm):
     title = TranslatedField(
         form_class=CharField,
         label=_("Pavadinimas"),
@@ -93,14 +94,6 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
     description = TranslatedField(
         label=_("Aprašymas"),
         required=True,
-    )
-    endpoint_url = forms.CharField(
-        label=_("API adresas"),
-        required=False,
-    )
-    endpoint_description = forms.CharField(
-        label=_("API specifikacija"),
-        required=False,
     )
     files = MultipleFilerField(
         label=_("Failai"),
@@ -147,9 +140,185 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
         required=False,
     )
 
+    def __init__(
+        self,
+        request: WSGIRequest,
+        organization: Organization | None = None,
+        *args,
+        **kwargs,
+    ) -> None:
+        super().__init__(*args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        self.helper = FormHelper()
+        self.helper.attrs["novalidate"] = ""
+        self.helper.form_id = "dataset-form"
+        self.helper.form_tag = False
+
+        self.fields["access_rights"].required = True
+
+        if self.language_code == "en":
+            self.fields["description"].required = False
+
+        if instance:
+            self.initial["files"] = list(
+                instance.dataset_files.values_list("file", flat=True)
+            )
+            if instance.name:
+                self.initial["name"] = instance.name
+        else:
+            if default_frequency := Frequency.objects.filter(is_default=True).first():
+                self.initial["frequency"] = default_frequency
+
+        if request.user and request.user.organization:
+            """
+            Publishers:
+            - Can assign themselves as the publisher of the dataset via managed_by_publisher field
+                (If they are set as a publisher for the dataset.organization)
+            - Can change the creator of the dataset
+            Creators:
+            - Can assign the publisher of the dataset
+            Superusers:
+            - Can do the same as publishers and creators
+            """
+            creator_ids = Representative.objects.filter(
+                organization=request.user.organization,
+                content_type=ContentType.objects.get_for_model(Organization),
+            ).values_list("object_id", flat=True)
+            self.fields["creator"].queryset = Organization.objects.filter(
+                Q(id__in=creator_ids)
+                | Q(id=request.user.organization.id)
+                | Q(
+                    id=organization.id
+                    if organization
+                    else self.instance.organization.id
+                )
+            ).distinct()
+
+            self.fields["creator"].initial = self.instance.organization or organization
+
+            if request.user.organization.publisher:
+                # Show creator field (Meant for publishers)
+                self.fields[
+                    "managed_by_publisher"
+                ].initial = Representative.objects.filter(
+                    content_type=ContentType.objects.get_for_model(self.instance),
+                    object_id=self.instance.id,
+                    organization=request.user.organization,
+                ).exists()
+
+                if not request.user.is_superuser:
+                    self.fields["publisher"].widget = HiddenInput()
+            else:
+                # Show publisher field (Meant for creators)
+                representative = Representative.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Organization),
+                    object_id=organization.id
+                    if organization
+                    else self.instance.organization.id,
+                    organization__isnull=False,
+                ).first()
+                if representative and (
+                    request.user.is_superuser or representative.organization.publisher
+                ):
+                    self.fields["publisher"].initial = representative.organization_id
+                if not request.user.is_superuser:
+                    self.fields["creator"].widget = HiddenInput()
+                    self.fields["managed_by_publisher"].widget = HiddenInput()
+        else:
+            self.fields["publisher"].widget = HiddenInput()
+            self.fields["creator"].widget = HiddenInput()
+            self.fields["managed_by_publisher"].widget = HiddenInput()
+
+        organization_contacts = Organization.objects.filter(
+            Q(id=self.instance.organization_id)
+            | (Q(id=self.instance.publisher_id) if self.instance.publisher_id else Q())
+        )
+        user_contacts = User.objects.filter(
+            Q(organization=self.instance.organization)
+            | (
+                Q(organization=self.instance.publisher_id)
+                if self.instance.publisher_id
+                else Q()
+            )
+        )
+
+        self.fields["contact"].choices = [("", "---------")]
+
+        for org in organization_contacts:
+            self.fields["contact"].choices.append(
+                (_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
+            )
+            user_choices = [
+                (f"user-{user.id}", f"{user.get_full_name()}")
+                for user in user_contacts
+                if user.organization_id == org.id
+            ]
+            self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
+
+        if contact := self._get_contact(self.instance):
+            if isinstance(contact, Organization):
+                self.fields["contact"].initial = f"org-{contact.id}"
+            elif isinstance(contact, User):
+                self.fields["contact"].initial = f"user-{contact.id}"
+
+    @staticmethod
+    def _get_contact(instance: Dataset):
+        contact = Contact.objects.filter(dataset=instance).first() or None
+        return contact.content_object if contact else None
+
+    def clean_name(self) -> str | None:
+        name = self.cleaned_data.get("name")
+
+        if not name:
+            return name
+
+        metadata = Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset), name=name
+        )
+        if self.instance and self.instance.pk and self.instance.metadata.first():
+            metadata = metadata.exclude(pk=self.instance.metadata.first().pk)
+
+        if metadata:
+            raise ValidationError(
+                _("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja.")
+            )
+
+        if not name.isascii():
+            raise ValidationError(
+                _("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.")
+            )
+        if any([ch.isupper() for ch in name]):
+            raise ValidationError(
+                _("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės.")
+            )
+
+        return name
+
+    def clean_contact(self) -> Organization | User | None:
+        if contact := self.cleaned_data.get("contact"):
+            contact_type, contact_id = contact.split("-")
+            if contact_type == "org":
+                return Organization.objects.get(pk=contact_id)
+            elif contact_type == "user":
+                return User.objects.get(pk=contact_id)
+        return None
+
+
+class ServiceResourceForm(BaseResourceForm):
+    endpoint_url = forms.CharField(
+        label=_("API adresas"),
+        required=True,
+    )
+    endpoint_description = forms.CharField(
+        label=_("API specifikacija"),
+        required=False,
+    )
+
     class Meta:
         model = Dataset
         fields = (
+            "title",
+            "description",
             "is_public",
             "tags",
             "catalog",
@@ -167,17 +336,9 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             "managed_by_publisher",
             "landing_page",
         )
-        labels = {"tags": _("Žymės"), "catalog": _("Katalogas")}
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        instance = self.instance if self.instance and self.instance.pk else None
-        self.helper = FormHelper()
-        self.helper.attrs["novalidate"] = ""
-        self.helper.form_id = "dataset-form"
-        self.request = request
-        self.organization = organization
-        self.helper.form_tag = False
+        super().__init__(request, organization, *args, **kwargs)
 
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši")),
@@ -200,177 +361,46 @@ class DatasetForm(TranslatableModelForm, TranslatableModelFormMixin):
             Field("publisher"),
         )
 
-        self.fields["access_rights"].required = True
 
-        if self.language_code == "en":
-            self.fields["description"].required = False
-
-        if not instance:
-            if Frequency.objects.filter(is_default=True).exists():
-                default_frequency = Frequency.objects.filter(is_default=True).first()
-                self.initial["frequency"] = default_frequency
-        else:
-            self.initial["files"] = list(
-                instance.dataset_files.values_list("file", flat=True)
-            )
-            if instance.name:
-                self.initial["name"] = instance.name
-
-        if self.request.user and self.request.user.organization:
-            """
-            Publishers:
-            - Can assign themselves as the publisher of the dataset via managed_by_publisher field
-                (If they are set as a publisher for the dataset.organization)
-            - Can change the creator of the dataset
-            Creators:
-            - Can assign the publisher of the dataset
-            Superusers:
-            - Can do the same as publishers and creators
-            """
-            creator_ids = Representative.objects.filter(
-                organization=self.request.user.organization,
-                content_type=ContentType.objects.get_for_model(Organization),
-            ).values_list("object_id", flat=True)
-            self.fields["creator"].queryset = Organization.objects.filter(
-                Q(id__in=creator_ids)
-                | Q(id=self.request.user.organization.id)
-                | Q(
-                    id=self.organization.id
-                    if self.organization
-                    else self.instance.organization.id
-                )
-            ).distinct()
-            if self.request.user.organization.publisher:
-                # Show creator field (Meant for publishers)
-                self.fields[
-                    "managed_by_publisher"
-                ].initial = Representative.objects.filter(
-                    content_type=ContentType.objects.get_for_model(self.instance),
-                    object_id=self.instance.id,
-                    organization=self.request.user.organization,
-                ).exists()
-
-                self.fields["creator"].initial = (
-                    self.instance.organization or self.organization
-                )
-                if not self.request.user.is_superuser:
-                    self.fields["publisher"].widget = HiddenInput()
-
-            if not self.request.user.organization.publisher:
-                # Show publisher field (Meant for creators)
-                representative = Representative.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Organization),
-                    object_id=self.organization.id
-                    if self.organization
-                    else self.instance.organization.id,
-                    organization__isnull=False,
-                )
-                if representative.first() and (
-                    self.request.user.is_superuser
-                    or representative.first().organization.publisher
-                ):
-                    self.fields[
-                        "publisher"
-                    ].initial = representative.first().organization.pk
-                if not self.request.user.is_superuser:
-                    self.fields["creator"].widget = HiddenInput()
-                    self.fields["managed_by_publisher"].widget = HiddenInput()
-                self.fields["creator"].initial = (
-                    self.instance.organization or self.organization
-                )
-        else:
-            self.fields["publisher"].widget = HiddenInput()
-            self.fields["creator"].widget = HiddenInput()
-            self.fields["managed_by_publisher"].widget = HiddenInput()
-
-        organization_contacts = Organization.objects.filter(
-            Q(id=self.instance.organization_id)
-            | (Q(id=self.instance.publisher_id) if self.instance.publisher_id else Q())
-        )
-        user_contacts = User.objects.filter(
-            Q(organization=self.instance.organization)
-            | (
-                Q(organization=self.instance.publisher_id)
-                if self.instance.publisher_id
-                else Q()
-            )
+class ResourceForm(BaseResourceForm):
+    class Meta:
+        model = Dataset
+        fields = (
+            "title",
+            "description",
+            "is_public",
+            "tags",
+            "catalog",
+            "frequency",
+            "access_rights",
+            "files",
+            "name",
+            "contact",
+            "creator",
+            "publisher",
+            "managed_by_publisher",
+            "landing_page",
         )
 
-        self.fields["contact"].choices = [
-            ("", "---------"),
-        ]
+    def __init__(self, request=None, organization=None, *args, **kwargs):
+        super().__init__(request, organization, *args, **kwargs)
 
-        for org in organization_contacts:
-            self.fields["contact"].choices.append(
-                (_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
-            )
-            user_choices = [
-                (f"user-{user.id}", f"{user.get_full_name()}")
-                for user in user_contacts
-                if user.organization_id == org.id
-            ]
-            self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
-
-        if contact := self._get_contact(self.instance):
-            if isinstance(contact, Organization):
-                self.fields["contact"].initial = f"org-{contact.id}"
-            elif isinstance(contact, User):
-                self.fields["contact"].initial = f"user-{contact.id}"
-
-    def clean_name(self):
-        name = self.cleaned_data.get("name")
-
-        if name:
-            if self.instance and self.instance.pk and self.instance.metadata.first():
-                metadata = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Dataset), name=name
-                ).exclude(pk=self.instance.metadata.first().pk)
-            else:
-                metadata = Metadata.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Dataset), name=name
-                )
-            if metadata:
-                raise ValidationError(
-                    _("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja.")
-                )
-
-            if not name.isascii():
-                raise ValidationError(
-                    _(
-                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-                    )
-                )
-            if any([ch.isupper() for ch in name]):
-                raise ValidationError(
-                    _("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės.")
-                )
-        return name
-
-    def clean_contact(self):
-        contact = self.cleaned_data.get("contact")
-        if contact:
-            contact_type, contact_id = contact.split("-")
-            if contact_type == "org":
-                return Organization.objects.get(pk=contact_id)
-            elif contact_type == "user":
-                return User.objects.get(pk=contact_id)
-        return None
-
-    @staticmethod
-    def _get_contact(instance):
-        contact = Contact.objects.filter(dataset=instance).first() or None
-        return contact.content_object if contact else None
-
-    def clean_endpoint_url(self):
-        endpoint_url = self.cleaned_data.get("endpoint_url")
-        subclass_uuid = self.instance.subclass.pk if self.instance else self.initial.get("subclass_uuid")
-        if not endpoint_url and subclass_uuid:
-            service_subclass = DCATResourceSubclass.objects.filter(
-                pk=subclass_uuid, name=DCATResourceSubclass.SERVICE
-            ).first()
-            if service_subclass:
-                raise ValidationError(_("Šis laukas yra privalomas"))
-        return endpoint_url
+        self.helper.layout = Layout(
+            Field("is_public", placeholder=_("Ar duomenys vieši")),
+            Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
+            Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
+            Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
+            Field("files"),
+            Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
+            Field("landing_page"),
+            Field("catalog"),
+            Field("frequency"),
+            Field("access_rights"),
+            Field("contact"),
+            Field("managed_by_publisher"),
+            Field("creator"),
+            Field("publisher"),
+        )
 
 
 class DatasetAdminForm(forms.ModelForm):

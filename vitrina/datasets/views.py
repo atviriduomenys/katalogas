@@ -77,7 +77,7 @@ from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.forms import (
     DatasetStructureImportForm,
-    DatasetForm,
+    ResourceForm,
     DatasetSearchForm,
     AddProjectForm,
     DatasetAttributionForm,
@@ -87,6 +87,7 @@ from vitrina.datasets.forms import (
     PlanForm,
     AddRequestForm,
     ResourceSubclassForm,
+    ServiceResourceForm,
 )
 from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import (
@@ -660,7 +661,6 @@ class DatasetCreateView(
     model = Dataset
     template_name = "vitrina/datasets/resource_form.html"
     context_object_name = "dataset"
-    form_class = DatasetForm
     plan_url_name = "organization-plans"
 
     def get_initial(self):
@@ -702,9 +702,9 @@ class DatasetCreateView(
                 "organization": organization,
                 "organization_id": organization.pk,
                 "current_title": _("Pridėti duomenų išteklių"),
-                "form_title": str(subclass),
-                "information_title": str(subclass),
-                "information_description": str(subclass.translated_description),
+                "form_title": subclass.translated_title,
+                "information_title": subclass.translated_title,
+                "information_description": subclass.translated_description,
                 "button": _("Sukurti"),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
@@ -727,14 +727,21 @@ class DatasetCreateView(
         )
         return context
 
+    def get_form_class(self):
+        subclass = get_object_or_404(
+            DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid")
+        )
+
+        if subclass.name == DCATResourceSubclass.SERVICE:
+            return ServiceResourceForm
+
+        return ResourceForm
+
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["request"] = self.request
         kwargs["organization"] = get_object_or_404(Organization, id=self.kwargs["pk"])
         return kwargs
-
-    def get(self, request, *args, **kwargs):
-        return super(DatasetCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
@@ -808,12 +815,6 @@ class DatasetCreateView(
         if self.object.organization:
             org_id = self.object.organization.id
             sub_ct = get_content_type_for_model(Organization)
-            subs = Subscription.objects.filter(
-                Q(object_id=org_id) | Q(object_id=None),
-                sub_type=Subscription.ORGANIZATION,
-                content_type=sub_ct,
-                dataset_update_sub=True,
-            )
 
             subs = Subscription.objects.filter(
                 (Q(object_id=org_id) | Q(object_id=None)),
@@ -990,7 +991,6 @@ class DatasetUpdateView(
     template_name = "vitrina/datasets/resource_form.html"
     view_url_name = "dataset:edit"
     context_object_name = "dataset"
-    form_class = DatasetForm
 
     object: Dataset
     detail_url_name = "dataset-detail"
@@ -1014,11 +1014,9 @@ class DatasetUpdateView(
                     reverse("dataset-list"): _("Duomenų ištekliai"),
                     reverse("dataset-detail", args=[self.object.pk]): self.object.title,
                 },
-                "form_title": str(self.object.subclass),
-                "information_title": str(self.object.subclass),
-                "information_description": str(
-                    self.object.subclass.translated_description
-                ),
+                "form_title": self.object.subclass.translated_title,
+                "information_title": self.object.subclass.translated_title,
+                "information_description": self.object.subclass.translated_description,
                 "selected_subclass_uuid": str(subclass_uuid),
                 "service_subclass": str(
                     DCATResourceSubclass.objects.get(
@@ -1044,8 +1042,13 @@ class DatasetUpdateView(
         )
         return context
 
-    def get(self, request, *args, **kwargs):
-        return super(DatasetUpdateView, self).get(request, *args, **kwargs)
+    def get_form_class(self):
+        subclass = self.get_object().subclass
+
+        if subclass.name == DCATResourceSubclass.SERVICE:
+            return ServiceResourceForm
+
+        return ResourceForm
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

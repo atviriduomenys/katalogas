@@ -1543,6 +1543,7 @@ class Type(TranslatableModel):
 class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     SERIES = "series"
     SERVICE = "service"
+    INFORMATION_SYSTEM = "information_system"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255, unique=True)
     uri = models.CharField(

@@ -36,7 +36,7 @@ from vitrina.datasets.factories import (
     DCATResourceSubclassFactory,
 )
 from vitrina.datasets.factories import MANIFEST
-from vitrina.datasets.forms import ResourceForm, ServiceResourceForm, BaseResourceForm
+from vitrina.datasets.forms import ResourceForm, ServiceResourceForm, BaseResourceForm, InformationSystemResourceForm
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
@@ -1896,7 +1896,7 @@ def test_dataset_delete_attribution(app: DjangoTestApp):
     [
         ("dataset", ResourceForm),
         ("catalog", ResourceForm),
-        ("information_system", ResourceForm),
+        ("information_system", InformationSystemResourceForm),
         ("service", ServiceResourceForm),
         ("series", ResourceForm),
         ("foo", ResourceForm),

@@ -377,6 +377,53 @@ class ServiceResourceForm(BaseResourceForm):
         )
 
 
+class InformationSystemResourceForm(BaseResourceForm):
+
+    class Meta:
+        model = Dataset
+        fields = (
+            "title",
+            "description",
+            "is_public",
+            "tags",
+            "catalog",
+            "frequency",
+            "access_rights",
+            "files",
+            "name",
+            "contact",
+            "creator",
+            "publisher",
+            "managed_by_publisher",
+            "landing_page",
+        )
+
+    def __init__(self, request=None, organization=None, *args, **kwargs):
+        super().__init__(request, organization, *args, **kwargs)
+
+        self.helper.layout = Layout(
+            Field("is_public", placeholder=_("Ar duomenys vieši")),
+            Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
+            Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
+            Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
+            Field("files"),
+            Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
+            Field("landing_page"),
+            Field("catalog"),
+            Field("frequency"),
+            Field("access_rights"),
+            Field("contact"),
+            Field("managed_by_publisher"),
+            Field("creator"),
+            Field("publisher"),
+        )
+
+        if self.instance and self.instance.pk:
+            self.helper.layout.fields.append(
+                Submit("submit", _("Redaguoti"), css_class="button is-primary")
+            )
+
+
 class ResourceForm(BaseResourceForm):
     class Meta:
         model = Dataset

@@ -48,9 +48,22 @@ from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiKey
 from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
 from vitrina.comments.models import Comment
-from vitrina.datasets.forms import DatasetStructureImportForm, ResourceForm, DatasetSearchForm, AddProjectForm, \
-    DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm, \
-    ResourceSubclassForm, ServiceResourceForm, DatasetMemberUpdateForm, DatasetMemberCreateForm
+from vitrina.datasets.forms import (
+    DatasetStructureImportForm,
+    ResourceForm,
+    DatasetSearchForm,
+    AddProjectForm,
+    DatasetAttributionForm,
+    DatasetCategoryForm,
+    DatasetRelationForm,
+    DatasetPlanForm,
+    PlanForm,
+    AddRequestForm,
+    ResourceSubclassForm,
+    ServiceResourceForm,
+    DatasetMemberUpdateForm,
+    DatasetMemberCreateForm,
+)
 from vitrina.datasets.helpers import is_manager_dataset_list
 from vitrina.datasets.models import (
     Dataset,
@@ -63,7 +76,13 @@ from vitrina.datasets.models import (
     Contact,
     DatasetExcludedGroups,
     DCATResourceSubclass,
+    InformationSystemResourceForm,
 )
+
+from vitrina.structure.views import DatasetStructureMixin
+
+from vitrina.tasks.models import Task
+from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.services import (
     update_facet_data,
     get_projects,
@@ -725,9 +744,11 @@ class DatasetCreateView(
         subclass = get_object_or_404(
             DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid")
         )
-
         if subclass.name == DCATResourceSubclass.SERVICE:
             return ServiceResourceForm
+
+        if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
+            return InformationSystemResourceForm
 
         return ResourceForm
 

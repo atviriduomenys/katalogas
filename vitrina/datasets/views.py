@@ -55,14 +55,14 @@ from vitrina.datasets.forms import (
     AddProjectForm,
     DatasetAttributionForm,
     DatasetCategoryForm,
+    DatasetMemberCreateForm,
+    DatasetMemberUpdateForm,
     DatasetRelationForm,
     DatasetPlanForm,
     PlanForm,
     AddRequestForm,
     ResourceSubclassForm,
     ServiceResourceForm,
-    DatasetMemberUpdateForm,
-    DatasetMemberCreateForm,
     InformationSystemResourceForm,
 )
 from vitrina.datasets.helpers import is_manager_dataset_list
@@ -462,6 +462,9 @@ class DatasetDetailView(
         else:
             return has_perm(self.request.user, Action.VIEW, dataset)
 
+    def get_queryset(self) -> QuerySet[Dataset]:
+        return super().get_queryset().select_related("subclass", "information_system_type")
+
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get("dataset")
@@ -750,7 +753,6 @@ class DatasetCreateView(
         )
         if subclass.name == DCATResourceSubclass.SERVICE:
             return ServiceResourceForm
-
         if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
             return InformationSystemResourceForm
 
@@ -1083,7 +1085,6 @@ class DatasetUpdateView(
 
         if subclass.name == DCATResourceSubclass.SERVICE:
             return ServiceResourceForm
-
         if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
             return InformationSystemResourceForm
 

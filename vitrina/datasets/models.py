@@ -152,6 +152,8 @@ class Dataset(Resource):
 
     API_ORIGIN = "api"
 
+    INFORMATION_SYSTEM_TYPE_SCHEMA_URI = "dcataplt:Type"
+
     translations = TranslatedFields(
         title=models.TextField(
             verbose_name=_("Pavadinimas"),
@@ -395,10 +397,15 @@ class Dataset(Resource):
         _("DataSeries rinkinys"),
         default=False,
     )
+
     information_system_type = models.ForeignKey(
         Concept,
         on_delete=models.PROTECT,
         verbose_name=_("Informacinės sistemos tipas"),
+        help_text=_(
+            "Informacinės sistemos tipas pagal Valstybės informacinių "
+            "išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Type."
+        ),
     )
 
     # TODO: To be removed:
@@ -1605,6 +1612,10 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
         return self.safe_translation_getter(
             "description", language_code=self.get_current_language()
         )
+
+    @property
+    def is_information_system(self) -> bool:
+        return self.name == DCATResourceSubclass.INFORMATION_SYSTEM
 
 
 class Relation(TranslatableModel):

@@ -1,3 +1,5 @@
+from typing import Iterable
+
 import factory
 from factory.django import DjangoModelFactory
 
@@ -10,6 +12,7 @@ from vitrina.classifiers.models import (
     GeoportalFrequency,
     Status,
     Concept,
+    ConceptSchema,
 )
 
 
@@ -81,6 +84,11 @@ class StatusFactory(DjangoModelFactory):
     codename = factory.Faker("word")
 
 
+class ConceptSchemaFactory(DjangoModelFactory):
+    class Meta:
+        model = ConceptSchema
+
+
 class ConceptFactory(DjangoModelFactory):
     class Meta:
         model = Concept
@@ -88,3 +96,12 @@ class ConceptFactory(DjangoModelFactory):
 
     code = factory.Faker("word")
     valid_since = factory.Faker("date")
+
+    @factory.post_generation
+    def concept_schemas(
+        self, create: bool, extracted: Iterable[ConceptSchema], **kwargs
+    ) -> None:
+        if not create or not extracted:
+            return None
+
+        self.concept_schemas.add(*extracted)

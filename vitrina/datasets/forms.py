@@ -29,7 +29,7 @@ from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
 from vitrina.datasets.services import get_projects, get_requests
-from vitrina.classifiers.models import Frequency, Category
+from vitrina.classifiers.models import Frequency, Category, Concept
 
 from vitrina.fields import FilerFileField, MultipleFilerField
 from vitrina.helpers import get_current_domain
@@ -154,7 +154,6 @@ class BaseResourceForm(TranslatableModelForm):
         required=False,
         empty_label=None,
     )
-
 
     def __init__(
         self,
@@ -369,7 +368,7 @@ class ServiceResourceForm(BaseResourceForm):
         super().__init__(request, organization, *args, **kwargs)
 
         self.helper.layout = Layout(
-            Field("is_public", placeholder=_("Ar duomenys vieši")),
+            Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
             Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
             Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
@@ -411,20 +410,27 @@ class InformationSystemResourceForm(BaseResourceForm):
             "publisher",
             "managed_by_publisher",
             "landing_page",
+            "information_system_type",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
         super().__init__(request, organization, *args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         if instance:
-            self.fields["identifier"].initial = instance.identifier if instance.identifier else ""
+            self.fields["identifier"].initial = (
+                instance.identifier if instance.identifier else ""
+            )
 
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Informacinės sistemos pavadinimas")),
             Field("name", placeholder=_("Informacinės sistemos kodinis pavadinimas")),
-            Field("description", placeholder=_("Detalus informacinės sistemos aprašas")),
-            Field("identifier", placeholder=_("Informacinės sistemos identifikatorius")),
+            Field(
+                "description", placeholder=_("Detalus informacinės sistemos aprašas")
+            ),
+            Field(
+                "identifier", placeholder=_("Informacinės sistemos identifikatorius")
+            ),
             Field("files"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
@@ -435,6 +441,14 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("managed_by_publisher"),
             Field("creator"),
             Field("publisher"),
+            Field("information_system_type"),
+        )
+
+        self.fields["information_system_type"].queryset = Concept.objects.filter(
+            concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+        )
+        self.fields["information_system_type"].label_from_instance = lambda obj: str(
+            obj.translated_label
         )
 
 
@@ -463,7 +477,7 @@ class ResourceForm(BaseResourceForm):
         super().__init__(request, organization, *args, **kwargs)
 
         self.helper.layout = Layout(
-            Field("is_public", placeholder=_("Ar duomenys vieši")),
+            Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
             Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
             Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),

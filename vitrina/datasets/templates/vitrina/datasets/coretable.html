@@ -223,6 +223,18 @@
             <td>{{ dataset.endpoint_description_type|default:"" }}</td>
         </tr>
     {% endif %}
+    {% if dataset.subclass.is_information_system %}
+        <tr>
+            <th>
+                {% translate "Informacinės sistemos tipas" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Informacinės sistemos tipas pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Type.' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
+            <td>{{ dataset.information_system_type.translated_label }}</td>
+        </tr>
+    {% endif %}
     </tbody>
 </table>
 

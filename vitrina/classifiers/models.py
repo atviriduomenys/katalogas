@@ -220,7 +220,7 @@ class Status(TranslatableModel):
 
 
 class ConceptSchema(TranslatableModel, UUIDBaseModel):
-    uri = models.URLField(max_length=255, unique=True, verbose_name=_("uri"))
+    uri = models.CharField(max_length=255, unique=True, verbose_name=_("uri"))
 
     translations = TranslatedFields(
         label=models.CharField(max_length=255, verbose_name=_("Pavadinimas")),
@@ -241,7 +241,7 @@ class Concept(TranslatableModel, UUIDBaseModel):
         related_name="concepts",
         verbose_name=_("Sąvokų schemos"),
     )
-    uri = models.URLField(max_length=255, blank=True, null=True, verbose_name=_("uri"))
+    uri = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("uri"))
     code = models.CharField(
         unique=True, max_length=255, verbose_name=_("Kodinis pavadinimas")
     )
@@ -259,3 +259,12 @@ class Concept(TranslatableModel, UUIDBaseModel):
 
     def __str__(self) -> str:
         return self.code
+
+    @property
+    def translated_label(self) -> str:
+        return (
+            self.safe_translation_getter(
+                "label", language_code=self.get_current_language()
+            )
+            or self.code
+        )

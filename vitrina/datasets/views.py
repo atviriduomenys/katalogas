@@ -702,9 +702,9 @@ class DatasetCreateView(
                 "organization": organization,
                 "organization_id": organization.pk,
                 "current_title": _("Pridėti duomenų išteklių"),
-                "form_title": str(subclass),
-                "information_title": str(subclass),
-                "information_description": str(subclass.translated_description),
+                "form_title": subclass.translated_title,
+                "information_title": subclass.translated_title,
+                "information_description": subclass.translated_description,
                 "button": _("Sukurti"),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
@@ -1014,11 +1014,9 @@ class DatasetUpdateView(
                     reverse("dataset-list"): _("Duomenų ištekliai"),
                     reverse("dataset-detail", args=[self.object.pk]): self.object.title,
                 },
-                "form_title": str(self.object.subclass),
-                "information_title": str(self.object.subclass),
-                "information_description": str(
-                    self.object.subclass.translated_description
-                ),
+                "form_title": self.object.subclass.translated_title,
+                "information_title": self.object.subclass.translated_title,
+                "information_description": self.object.subclass.translated_description,
                 "selected_subclass_uuid": str(subclass_uuid),
                 "service_subclass": str(
                     DCATResourceSubclass.objects.get(

@@ -954,6 +954,12 @@ msgstr ""
 "Spatial resolution (in meters). Corresponds to "
 "dcat:spatialResolutionInMeters."
 
+msgid "Informacinės sistemos Tvarkytojas"
+msgstr "Information system Publisher"
+
+msgid "Informacinės sistemos Valdytojas"
+msgstr "Information system Creator"
+
 msgid "Dataset"
 msgstr "Dataset"
 

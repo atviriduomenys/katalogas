@@ -1,5 +1,6 @@
 import json
 from io import BytesIO
+from pathlib import Path
 from uuid import uuid4
 
 import pytest
@@ -26,6 +27,7 @@ from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 
 pytestmark = pytest.mark.django_db
+test_contracts_dir = Path(__file__).parent / "files" / "test_contracts"
 
 
 class TestAgreementListView:
@@ -35,7 +37,7 @@ class TestAgreementListView:
         app.set_user(user)
 
         response = app.get(
-            reverse("agreement-create", args=[project.pk]), expect_errors=True
+            reverse("agreement-list", args=[project.pk]), expect_errors=True
         )
         assert response.status_code == 403
 
@@ -143,7 +145,7 @@ class TestAgreementCreateView:
         )
         assert response.status_code == 404
 
-    def test_cannot_create_agreement_for_project_if_one_already_exists(
+    def test_cannot_create_agreements_if_all_organizations_already_has_agreement(
         self, app: DjangoTestApp, organization: Organization
     ) -> None:
         user = UserFactory(organization=organization)
@@ -234,6 +236,28 @@ class TestAgreementCreateView:
             ).values_list("scope", flat=True)
         ) == {"datasets_gov_org_dataset_getall"}
 
+    def test_can_create_agreements_for_organizations_that_currently_do_not_have_one(
+        self, app: DjangoTestApp, dataset: Dataset, organization: Organization
+    ) -> None:
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        organization2 = OrganizationFactory()
+        dataset2 = DatasetFactory(organization=organization2)
+        MetadataFactory(
+            content_type=ContentType.objects.get_for_model(dataset2),
+            object_id=dataset2.pk,
+            dataset=dataset2,
+            name="test/dataset2",
+        )
+        project = ProjectFactory(user=user, datasets=[dataset, dataset2])
+        AgreementFactory(project=project, assigner=organization)
+
+        response = app.get(reverse("agreement-create", args=[project.pk]))
+        form = response.forms["agreement-create"]
+
+        assert form.fields.get("form-0-scopes")
+        assert not form.fields.get("form-1-scopes")
+
     def test_cannot_create_agreement_with_invalid_scopes(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
@@ -304,10 +328,9 @@ class TestAgreementGeneratePdf:
     def test_generate_pdf_changes_agreement_status_to_formed(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-
         template = SmartContractTemplate.objects.create(
             file=ContentFile(
-                open("tests/smart_contracts/files/contract_template.md").read(),
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
                 name="contract_template.md",
             )
         )
@@ -461,9 +484,9 @@ class TestAgreementGeneratePdf:
         for i, value in enumerate(expected_values):
             value = str(value).strip()
             if value:
-                assert (
-                    value in pdf_text
-                ), f"Expected '{value}' (index={i}) not found in PDF"
+                assert value in pdf_text, (
+                    f"Expected '{value}' (index={i}) not found in PDF"
+                )
 
 
 class TestAgreementUploadSignedFile:
@@ -523,7 +546,7 @@ class TestAgreementUploadSignedFile:
             project=project, assigner=organization, status=AgreementStatuses.FORMED
         )
 
-        file_path = "tests/smart_contracts/files/test_contracts/sutartis_signed.adoc"
+        file_path = str(test_contracts_dir / "sutartis_signed.adoc")
         response = app.get(
             reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
         )
@@ -535,6 +558,7 @@ class TestAgreementUploadSignedFile:
         agreement.refresh_from_db()
         assert response.status_code == 200
         assert agreement.status == AgreementStatuses.INITIATED
+        assert not agreement.is_agent_sync_enabled
         assert agreement.files.exists()
 
     def test_upload_adoc_and_change_status_to_signed_if_agreement_status_initiated(
@@ -547,7 +571,7 @@ class TestAgreementUploadSignedFile:
             project=project, assigner=organization, status=AgreementStatuses.INITIATED
         )
 
-        file_path = "tests/smart_contracts/files/test_contracts/sutartis_signed.adoc"
+        file_path = str(test_contracts_dir / "sutartis_signed.adoc")
         response = app.get(
             reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
         )
@@ -559,4 +583,5 @@ class TestAgreementUploadSignedFile:
         agreement.refresh_from_db()
         assert response.status_code == 200
         assert agreement.status == AgreementStatuses.SIGNED
+        assert agreement.is_agent_sync_enabled
         assert agreement.files.exists()

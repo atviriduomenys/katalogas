@@ -4,17 +4,17 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import pytz
+import tagulous
 from django.contrib import admin
 from django.contrib.postgres.aggregates import ArrayAgg
+from django.db.models import QuerySet
 from django.http import StreamingHttpResponse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.safestring import mark_safe
+from django.utils.translation import gettext_lazy as _
 from parler.admin import TranslatableAdmin
 from reversion.admin import VersionAdmin
-
-import tagulous
-from django.utils.translation import gettext_lazy as _
 
 from vitrina import settings
 from vitrina.datasets.forms import DatasetAdminForm
@@ -26,7 +26,8 @@ from vitrina.datasets.models import (
     Relation,
     DatasetReport,
     Contact,
-    GeoportalDataServiceTypeValue, DCATResourceSubclass,
+    GeoportalDataServiceTypeValue,
+    DCATResourceSubclass, DatasetRelation,
 )
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
@@ -43,7 +44,7 @@ class AttributionAdmin(admin.ModelAdmin):
 
 
 class DatasetAdmin(TranslatableAdmin, VersionAdmin):
-    search_fields = ('translations__title',)
+    search_fields = ("translations__title",)
     list_display = ("title", "description", "is_public")
     form = DatasetAdminForm
 
@@ -490,7 +491,18 @@ class GeoportalDataServiceTypeValueInline(admin.TabularInline):
     extra = 0
 
 
+class DatasetRelationAdmin(admin.ModelAdmin):
+    list_display = ("dataset", "relation", "part_of")
+    search_fields = ("dataset", "relation", "part_of")
+    list_filter = ("relation",)
+
+    def get_queryset(self, request) -> QuerySet[DatasetRelation]:
+        return super().get_queryset(request).select_related("dataset", "relation", "part_of")
+
+
+
 admin.site.register(Dataset, DatasetAdmin)
+admin.site.register(DatasetRelation, DatasetRelationAdmin)
 admin.site.register(Attribution, AttributionAdmin)
 admin.site.register(DatasetGroup, GroupAdmin)
 admin.site.register(Type, TypeAdmin)

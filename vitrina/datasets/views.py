@@ -63,6 +63,7 @@ from vitrina.datasets.forms import (
     ServiceResourceForm,
     DatasetMemberUpdateForm,
     DatasetMemberCreateForm,
+    InformationSystemResourceForm,
 )
 from vitrina.datasets.helpers import is_manager_dataset_list
 from vitrina.datasets.models import (
@@ -76,7 +77,6 @@ from vitrina.datasets.models import (
     Contact,
     DatasetExcludedGroups,
     DCATResourceSubclass,
-    InformationSystemResourceForm,
 )
 
 from vitrina.structure.views import DatasetStructureMixin
@@ -98,8 +98,15 @@ from vitrina.datasets.services import (
     manage_subscriptions_for_representative,
     DynamicResourceService,
 )
-from vitrina.helpers import email, get_selected_value, Filter, DateFilter, get_stats_filter_options_based_on_model, \
+from vitrina.identifiers.models import Agency, Identifier
+from vitrina.helpers import (
+    email,
+    get_selected_value,
+    Filter,
+    DateFilter,
+    get_stats_filter_options_based_on_model,
     get_current_domain
+)
 from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
@@ -121,10 +128,7 @@ from vitrina.structure.services import (
     create_structure_objects,
     get_model_name,
 )
-from vitrina.structure.views import DatasetStructureMixin
-from vitrina.tasks.models import Task
 from vitrina.users.models import User
-from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 
 
 class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
@@ -798,6 +802,15 @@ class DatasetCreateView(
                 type=Comment.STATUS,
                 status=comment_status,
             )
+        if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
+            if identifier := form.cleaned_data.get("identifier"):
+                agency = get_object_or_404(Agency, code="risr")
+                Identifier.objects.create(
+                    resource=self.object,
+                    notation=identifier,
+                    scheme_agency=agency,
+                    identifier_type=Identifier.IdentifierType.OTHER
+                )
 
         self.object.save()
         tags = form.cleaned_data.get("tags")
@@ -1072,6 +1085,9 @@ class DatasetUpdateView(
         if subclass.name == DCATResourceSubclass.SERVICE:
             return ServiceResourceForm
 
+        if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
+            return InformationSystemResourceForm
+
         return ResourceForm
 
     def get_form_kwargs(self):
@@ -1128,6 +1144,21 @@ class DatasetUpdateView(
         elif not self.object.is_public and self.object.published:
             self.object.published = None
             self.object.status = Dataset.UNASSIGNED
+
+        if self.object.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
+            identifier = form.cleaned_data.get("identifier")
+            if identifier:
+                identifier_obj, created = Identifier.objects.get_or_create(
+                    resource=self.object,
+                    defaults={
+                        "notation": identifier,
+                        "scheme_agency": get_object_or_404(Agency, code="risr"),
+                        "identifier_type": Identifier.IdentifierType.OTHER,
+                    },
+                )
+                if not created and identifier_obj.notation != identifier:
+                    identifier_obj.notation = identifier
+                    identifier_obj.save()
 
         self.object.save()
         set_comment(Dataset.EDITED)
@@ -3956,6 +3987,7 @@ class DatasetChildResourceListView(LanguageChoiceMixin, HistoryMixin, DatasetStr
             "organization_id": self.object.organization_id,
 
         }
+
 
 class DatasetChildResourceCreateView(DatasetCreateView):
     @property

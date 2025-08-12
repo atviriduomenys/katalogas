@@ -51,6 +51,8 @@ from vitrina.structure.factories import ModelFactory, MetadataFactory
 from vitrina.testing.templates import strip_empty_lines
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
+from vitrina.identifiers.factories import AgencyFactory, IdentifierFactory
+from vitrina.identifiers.models import Identifier
 
 timezone = pytz.timezone(settings.TIME_ZONE)
 
@@ -2121,6 +2123,77 @@ def test_child_dataset_create_public(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_information_system_create_with_identifier(app: DjangoTestApp):
+    FrequencyFactory(is_default=True)
+    AgencyFactory()
+    organization = OrganizationFactory()
+    subclass = DCATResourceSubclassFactory(name="information_system")
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(
+        reverse(
+            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
+        )
+    ).forms["dataset-form"]
+    form["title"] = "Test dataset"
+    form["description"] = "Test dataset description"
+    form["is_public"] = True
+    form["access_rights"] = Dataset.PUBLIC
+    form["identifier"] = "test-identifier"
+    form.submit()
+    added_dataset = Dataset.objects.filter(translations__title="Test dataset")
+    assert added_dataset.first().is_public is True
+    assert added_dataset.first().published is not None
+    assert added_dataset.first().access_rights == Dataset.PUBLIC
+    assert added_dataset.first().identifier == "test-identifier"
+
+    assert Identifier.objects.filter(notation="test-identifier", resource=added_dataset.first()).exists()
+
+
+@pytest.mark.django_db
+def test_dataset_update_existing_identifier(app: DjangoTestApp):
+    subclass = DCATResourceSubclassFactory(name="information_system")
+    dataset = DatasetFactory(subclass=subclass)
+    IdentifierFactory(resource=dataset, notation="test-identifier")
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
+        "dataset-form"
+    ]
+    assert form["identifier"].value == "test-identifier"
+    form["identifier"] = "new-identifier"
+    form.submit()
+    dataset.refresh_from_db()
+    assert dataset.identifier == "new-identifier"
+    
+    identifiers = Identifier.objects.filter(resource=dataset)
+    assert identifiers.count() == 1
+    assert identifiers.first().notation == "new-identifier"
+    
+
+@pytest.mark.django_db
+def test_dataset_update_non_existing_identifier(app: DjangoTestApp):
+    AgencyFactory()
+    subclass = DCATResourceSubclassFactory(name="information_system")
+    dataset = DatasetFactory(subclass=subclass)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
+        "dataset-form"
+    ]
+    form["identifier"] = "new-identifier"
+    form.submit()
+    dataset.refresh_from_db()
+    assert dataset.identifier == "new-identifier"
+
+    identifiers = Identifier.objects.filter(resource=dataset)
+    assert identifiers.count() == 1
+    assert identifiers.first().notation == "new-identifier"
+
+
+@pytest.mark.django_db
 def test_dataset_update_from_public_to_non_public(app: DjangoTestApp):
     LicenceFactory(is_default=True)
     FrequencyFactory(is_default=True)
@@ -2191,7 +2264,7 @@ def test_dataset_update_without_permission(app: DjangoTestApp):
     [
         ("dataset", ResourceForm),
         ("catalog", ResourceForm),
-        ("information_system", ResourceForm),
+        ("information_system", InformationSystemResourceForm),
         ("service", ServiceResourceForm),
         ("series", ResourceForm),
         ("foo", ResourceForm),

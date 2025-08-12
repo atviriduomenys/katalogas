@@ -619,6 +619,18 @@ msgstr "Detailed description of the dataset"
 msgid "Surašykite aktualius raktinius žodžius"
 msgstr "List relevant keywords"
 
+msgid "Identifikatorius"
+msgstr "Identifier"
+
+msgid "Duomenų rinkinio identifikatorius"
+msgstr "Dataset identifier"
+
+msgid "Duomenų rinkinio paieška"
+msgstr "Dataset search"
+
+msgid "Redaguoti"
+msgstr "Edit"
+
 msgid "Failas"
 msgstr "File"
 
@@ -1131,9 +1143,6 @@ msgstr "Download"
 msgid "Atidaryti"
 msgstr "Open"
 
-msgid "Redaguoti"
-msgstr "Edit"
-
 msgid "Trinti"
 msgstr "Delete"
 
@@ -1615,6 +1624,12 @@ msgstr "Identifiers"
 msgid "Schemos atstovybės pavadinimas"
 msgstr "Agency name"
 
+msgid "Schemos atstovybės kodas"
+msgstr "Agency code"
+
+msgid "Schemos atstovybės URI"
+msgstr "Schema authority URI"
+
 msgid "Schemos atstovybės URI"
 msgstr "Schema authority URI"
 
@@ -1650,9 +1665,6 @@ msgstr "Type of the identifier"
 
 msgid "dct:type – identifikatoriaus tipas"
 msgstr "dct:type – type of the identifier"
-
-msgid "Identifikatorius"
-msgstr "Identifier"
 
 msgid "Gavėjai"
 msgstr "Recipients"

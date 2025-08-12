@@ -455,6 +455,9 @@ class InformationSystemResourceForm(BaseResourceForm):
         self.fields["landing_page"].help_text = _(
             "Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. Atitinka foaf:homepage."
         )
+        self.fields['information_system_publisher'].required = True
+        self.fields['information_system_creator'].required = True
+
         self.fields["information_system_type"].queryset = Concept.objects.filter(
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
         )

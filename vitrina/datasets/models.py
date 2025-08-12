@@ -454,7 +454,7 @@ class Dataset(Resource):
         related_name="information_system_publisher",
         on_delete=models.PROTECT,
         null=True,
-        blank=False,
+        blank=True,
         verbose_name=_("Informacinės sistemos tvarkytojas")
     )
     information_system_creator = models.ForeignKey(
@@ -462,7 +462,7 @@ class Dataset(Resource):
         related_name="information_system_creator",
         on_delete=models.PROTECT,
         null=True,
-        blank=False,
+        blank=True,
         verbose_name=_("Informacinės sistemos valdytojas")
     )
 

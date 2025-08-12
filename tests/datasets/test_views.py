@@ -2154,7 +2154,8 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
 def test_dataset_update_existing_identifier(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory(name="information_system")
     dataset = DatasetFactory(subclass=subclass)
-    IdentifierFactory(resource=dataset, notation="test-identifier")
+    agency = AgencyFactory()
+    IdentifierFactory(resource=dataset, notation="test-identifier", scheme_agency=agency)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 

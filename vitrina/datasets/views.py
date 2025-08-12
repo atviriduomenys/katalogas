@@ -802,15 +802,14 @@ class DatasetCreateView(
                 type=Comment.STATUS,
                 status=comment_status,
             )
-        if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
-            if identifier := form.cleaned_data.get("identifier"):
-                agency = get_object_or_404(Agency, code="risr")
-                Identifier.objects.create(
-                    resource=self.object,
-                    notation=identifier,
-                    scheme_agency=agency,
-                    identifier_type=Identifier.IdentifierType.OTHER
-                )
+        if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (identifier := form.cleaned_data.get("identifier")):
+            agency = get_object_or_404(Agency, code="risr")
+            Identifier.objects.create(
+                resource=self.object,
+                notation=identifier,
+                scheme_agency=agency,
+                identifier_type=Identifier.IdentifierType.OTHER
+            )
 
         self.object.save()
         tags = form.cleaned_data.get("tags")
@@ -1145,21 +1144,18 @@ class DatasetUpdateView(
             self.object.published = None
             self.object.status = Dataset.UNASSIGNED
 
-        if self.object.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
-            identifier = form.cleaned_data.get("identifier")
-            if identifier:
-                identifier_obj, created = Identifier.objects.get_or_create(
-                    resource=self.object,
-                    defaults={
+        if self.object.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (identifier := form.cleaned_data.get("identifier")):
+            agency = get_object_or_404(Agency, code="risr")
+            Identifier.objects.update_or_create(
+                resource=self.object,
+                scheme_agency=agency,
+                defaults={
                         "notation": identifier,
-                        "scheme_agency": get_object_or_404(Agency, code="risr"),
                         "identifier_type": Identifier.IdentifierType.OTHER,
-                    },
+                        "resource": self.object,
+                        "scheme_agency": agency,
+                    }
                 )
-                if not created and identifier_obj.notation != identifier:
-                    identifier_obj.notation = identifier
-                    identifier_obj.save()
-
         self.object.save()
         set_comment(Dataset.EDITED)
 

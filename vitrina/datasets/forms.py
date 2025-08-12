@@ -423,11 +423,6 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("publisher"),
         )
 
-        if self.instance and self.instance.pk:
-            self.helper.layout.fields.append(
-                Submit("submit", _("Redaguoti"), css_class="button is-primary")
-            )
-
 
 class ResourceForm(BaseResourceForm):
     class Meta:

@@ -757,10 +757,8 @@ class Dataset(Resource):
         return ""
     
     @property
-    def identifier(self):
-        if identifier := self.identifiers.first():
-            return identifier.notation
-        return None
+    def identifier(self) -> str | None:
+        return identifier.notation if (identifier := self.identifiers.first()) else None
 
     def public_types(self):
         return list(self.type.filter(show_filter=True).values_list("pk", flat=True))

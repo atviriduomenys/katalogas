@@ -88,6 +88,8 @@
 {% block content %}
     {% if request.resolver_match.url_name == 'organization-datasets' %}
         {% include 'vitrina/orgs/tabs.html' %}
+    {% elif request.resolver_match.url_name == 'dataset-child-resources' %}
+        {% include 'vitrina/datasets/tabs.html' %}
     {% endif %}
 
     <div class="card mb-5">

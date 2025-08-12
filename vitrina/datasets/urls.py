@@ -57,7 +57,7 @@ from vitrina.datasets.views import (
     DatasetsPublishersView,
     UpdateDatasetPublisherFilters,
     FilterGroupsView,
-    DatasetRDFDownloadView,
+    DatasetRDFDownloadView, DatasetChildResourceListView,
     ResourceSubclassCreateView,
 )
 
@@ -196,6 +196,11 @@ urlpatterns = [
         "datasets/<int:pk>/history/",
         DatasetHistoryView.as_view(),
         name="dataset-history",
+    ),
+    path(
+        "datasets/<int:pk>/child-resources/",
+        DatasetChildResourceListView.as_view(),
+        name="dataset-child-resources",
     ),
     path(
         "datasets/<int:pk>/members/",

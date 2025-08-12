@@ -382,6 +382,7 @@ class DynamicResourceDetailView(
             "dataset": self.dataset,
             "format": distribution_format,
             "detail_url": self.get_detail_url(),
+            "child_resources_url": self.get_child_resources_url(),
             "structure_url": reverse("dataset-structure", args=[self.dataset.pk]),
             "data_url": reverse(
                 "model-data", args=[self.dataset.pk, self.models[0].name]

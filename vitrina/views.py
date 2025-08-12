@@ -132,6 +132,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                 "detail_url_name": self.get_detail_url_name(),
                 "history_url_name": self.get_history_url_name(),
                 "detail_url": self.get_detail_url(),
+                "child_resources_url": self.get_child_resources_url(),
                 "history_url": self.get_history_url(),
                 "history": [
                     {
@@ -169,6 +170,10 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     def get_history_url_name(self):
         return self.history_url_name
 
+    def get_child_resources_url(self):
+        obj = self.get_detail_object()
+        return reverse("dataset-child-resources", args=[obj.pk])
+
     def get_detail_url(self):
         obj = self.get_detail_object()
         url_name = self.get_detail_url_name()
@@ -202,6 +207,7 @@ class HistoryMixin:
                 "detail_url_name": self.get_detail_url_name(),
                 "history_url_name": self.get_history_url_name(),
                 "detail_url": self.get_detail_url(),
+                "child_resources_url": self.get_child_resources_url(),
                 "history_url": self.get_history_url(),
                 "can_manage_history": has_perm(
                     self.request.user,
@@ -222,6 +228,10 @@ class HistoryMixin:
         obj = self.get_detail_object()
         url_name = self.get_detail_url_name()
         return reverse(url_name, args=[obj.pk])
+
+    def get_child_resources_url(self):
+        obj = self.get_detail_object()
+        return reverse("dataset-child-resources", args=[obj.pk])
 
     def get_history_url(self):
         obj = self.get_history_object()

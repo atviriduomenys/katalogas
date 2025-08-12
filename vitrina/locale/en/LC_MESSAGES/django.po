@@ -622,14 +622,20 @@ msgstr "List relevant keywords"
 msgid "Identifikatorius"
 msgstr "Identifier"
 
-msgid "Duomenų rinkinio identifikatorius"
-msgstr "Dataset identifier"
+msgid "Ar duomenys vieši?"
+msgstr "Is the data public?"
 
-msgid "Duomenų rinkinio paieška"
-msgstr "Dataset search"
+msgid "Informacinės sistemos pavadinimas"
+msgstr "Information system name"
 
-msgid "Redaguoti"
-msgstr "Edit"
+msgid "Informacinės sistemos kodinis pavadinimas"
+msgstr "Information system code"
+
+msgid "Detalus informacinės sistemos aprašas"
+msgstr "Detailed description of the information system"
+
+msgid "Informacinės sistemos identifikatorius"
+msgstr "Information system identifier"
 
 msgid "Failas"
 msgstr "File"
@@ -1143,6 +1149,9 @@ msgstr "Download"
 msgid "Atidaryti"
 msgstr "Open"
 
+msgid "Redaguoti"
+msgstr "Edit"
+
 msgid "Trinti"
 msgstr "Delete"
 
@@ -1217,6 +1226,9 @@ msgstr "Less"
 
 msgid "Duomenų rinkinių valdymo sritys"
 msgstr "Dataset management areas"
+
+msgid "Duomenų rinkinio paieška"
+msgstr "Dataset search"
 
 msgid "Ieškoti duomenų rinkinių"
 msgstr "Search for datasets"

@@ -406,11 +406,11 @@ class InformationSystemResourceForm(BaseResourceForm):
             self.fields["identifier"].initial = instance.identifier if instance.identifier else ""
 
         self.helper.layout = Layout(
-            Field("is_public", placeholder=_("Ar duomenys vieši")),
-            Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
-            Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
-            Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
-            Field("identifier", placeholder=_("Duomenų rinkinio identifikatorius")),
+            Field("is_public", placeholder=_("Ar duomenys vieši?")),
+            Field("title", placeholder=_("Informacinės sistemos pavadinimas")),
+            Field("name", placeholder=_("Informacinės sistemos kodinis pavadinimas")),
+            Field("description", placeholder=_("Detalus informacinės sistemos aprašas")),
+            Field("identifier", placeholder=_("Informacinės sistemos identifikatorius")),
             Field("files"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),

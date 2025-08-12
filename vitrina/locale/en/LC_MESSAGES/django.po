@@ -1218,9 +1218,6 @@ msgstr "Less"
 msgid "Duomenų rinkinių valdymo sritys"
 msgstr "Dataset management areas"
 
-msgid "Duomenų rinkinio paieška"
-msgstr "Dataset search"
-
 msgid "Ieškoti duomenų rinkinių"
 msgstr "Search for datasets"
 
@@ -1626,9 +1623,6 @@ msgstr "Agency name"
 
 msgid "Schemos atstovybės kodas"
 msgstr "Agency code"
-
-msgid "Schemos atstovybės URI"
-msgstr "Schema authority URI"
 
 msgid "Schemos atstovybės URI"
 msgstr "Schema authority URI"

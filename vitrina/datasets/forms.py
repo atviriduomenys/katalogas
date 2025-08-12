@@ -484,6 +484,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             "managed_by_publisher",
             "landing_page",
             "information_system_type",
+            "information_system_importance",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -494,6 +495,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
             Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
             Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
+            Field("information_system_importance"),
             Field("files"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
@@ -512,6 +514,12 @@ class InformationSystemResourceForm(BaseResourceForm):
         )
         self.fields["information_system_type"].label_from_instance = lambda obj: str(
             obj.translated_label
+        )
+        self.fields["information_system_importance"].queryset = Concept.objects.filter(
+            concept_schemas__uri=Dataset.information_system_importance_schema_uri
+        )
+        self.fields["information_system_importance"].label_from_instance = (
+            lambda obj: str(obj.translated_label)
         )
 
 

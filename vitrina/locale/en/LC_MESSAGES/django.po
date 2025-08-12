@@ -946,6 +946,16 @@ msgstr ""
 "Spatial resolution (in meters). Corresponds to "
 "dcat:spatialResolutionInMeters."
 
+msgid "Informacinės sistemos svarba"
+msgstr "Information system importance"
+
+msgid ""
+"Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo "
+"įstatymo reikalavimus. (dcataplt:Importance)"
+msgstr ""
+"Information system importance in accordance with the requirements of the Law on State Information "
+"Resources Management. (dcataplt:Importance)"
+
 msgid "Dataset"
 msgstr "Dataset"
 

@@ -8,7 +8,9 @@ from django.db.backends.base.schema import BaseDatabaseSchemaEditor
 from django.utils.timezone import make_aware
 
 
-def fill_information_system_importance(apps: Apps, schema_editor: BaseDatabaseSchemaEditor) -> None:
+def fill_information_system_importance(
+    apps: Apps, schema_editor: BaseDatabaseSchemaEditor
+) -> None:
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     Concept = apps.get_model("vitrina_classifiers", "Concept")
 
@@ -29,15 +31,12 @@ def fill_information_system_importance(apps: Apps, schema_editor: BaseDatabaseSc
         default_concept.description = "Information is not set"
         default_concept.save()
 
-    Dataset.objects.filter(
-        information_system_importance__isnull=True
-    ).update(
+    Dataset.objects.filter(information_system_importance__isnull=True).update(
         information_system_importance=default_concept
     )
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
         ('vitrina_datasets', '0013_alter_dataset_catalog'),
     ]
@@ -46,15 +45,34 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dataset',
             name='information_system_importance',
-            field=models.ForeignKey(null=True,
-                                    on_delete=django.db.models.deletion.PROTECT, to='vitrina_classifiers.concept',
-                                    verbose_name='Informacinės sistemos svarba'),
+            field=models.ForeignKey(
+                null=True,
+                on_delete=django.db.models.deletion.PROTECT,
+                to='vitrina_classifiers.concept',
+                verbose_name='Informacinės sistemos svarba',
+            ),
         ),
-        migrations.RunPython(fill_information_system_importance, reverse_code=migrations.RunPython.noop),
+        migrations.RunPython(
+            fill_information_system_importance, reverse_code=migrations.RunPython.noop
+        ),
         migrations.AlterField(
             model_name='dataset',
             name='information_system_importance',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, to='vitrina_classifiers.concept',
-                                    verbose_name='Informacinės sistemos svarba'),
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name='information_system_importance_levels',
+                to='vitrina_classifiers.concept',
+                verbose_name='Informacinės sistemos svarba',
+            ),
+        ),
+        migrations.AlterField(
+            model_name='dataset',
+            name='information_system_type',
+            field=models.ForeignKey(
+                on_delete=django.db.models.deletion.PROTECT,
+                related_name='information_system_types',
+                to='vitrina_classifiers.concept',
+                verbose_name='Informacinės sistemos tipas',
+            ),
         ),
     ]

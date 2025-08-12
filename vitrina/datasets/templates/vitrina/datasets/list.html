@@ -81,7 +81,7 @@
 {% if request.resolver_match.url_name == 'organization-datasets' %}
     {{ organization }}
 {% else %}
-    {% translate "Duomenų ištekliai" %}
+    {{ page_title }}
 {% endif %}
 {% endblock %}
 

@@ -139,6 +139,10 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         },
     ]
 
+    @property
+    def page_title(self) -> str:
+        return _("Duomenų ištekliai")
+
     def has_permission(self):
         if is_org_dataset_list(self.request):
             organization = get_object_or_404(Organization, pk=self.kwargs["pk"])
@@ -354,6 +358,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             url = reverse("dataset-list")
 
         context["search_url"] = url
+        context["page_title"] = self.page_title
         context["sort_options"] = [
             {
                 "title": _("Naujausi"),

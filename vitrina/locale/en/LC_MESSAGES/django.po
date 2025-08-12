@@ -957,8 +957,8 @@ msgstr ""
 msgid "Informacinės sistemos Tvarkytojas"
 msgstr "Information system Publisher"
 
-msgid "Informacinės sistemos Valdytojas"
-msgstr "Information system Creator"
+msgid "Informacinės sistemos valdytojas"
+msgstr "Information system creator"
 
 msgid "Dataset"
 msgstr "Dataset"

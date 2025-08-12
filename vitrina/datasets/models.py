@@ -455,7 +455,7 @@ class Dataset(Resource):
         on_delete=models.PROTECT,
         null=True,
         blank=False,
-        verbose_name=_("Informacinės sistemos Tvarkytojas")
+        verbose_name=_("Informacinės sistemos tvarkytojas")
     )
     information_system_creator = models.ForeignKey(
         Organization,
@@ -463,7 +463,7 @@ class Dataset(Resource):
         on_delete=models.PROTECT,
         null=True,
         blank=False,
-        verbose_name=_("Informacinės sistemos Valdytojas")
+        verbose_name=_("Informacinės sistemos valdytojas")
     )
 
     temporal_resolution = models.CharField(

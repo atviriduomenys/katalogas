@@ -1965,6 +1965,8 @@ def test_dataset_create_information_system(app: DjangoTestApp):
         "landing_page": "https://www.test.test",
         "information_system_type": information_system_type_concept.pk,
         "information_system_importance": information_system_importance_concept.pk,
+        "information_system_publisher": organization.pk,
+        "information_system_creator": organization.pk
     }
     response = app.post(url, data)
 
@@ -1985,6 +1987,8 @@ def test_dataset_create_information_system(app: DjangoTestApp):
         dataset.information_system_importance
         == information_system_importance_concept
     )
+    assert dataset.information_system_publisher == organization
+    assert dataset.information_system_creator == organization
 
 
 @pytest.mark.django_db
@@ -2386,6 +2390,7 @@ def test_dataset_update_uses_different_forms_based_on_dcat_subclass(
 
 @pytest.mark.django_db
 def test_dataset_update_information_system(app: DjangoTestApp):
+    organization = OrganizationFactory()
     subclass = DCATResourceSubclassFactory(name="information_system")
     dataset = DatasetFactory(subclass=subclass)
     catalog = CatalogFactory()
@@ -2419,6 +2424,8 @@ def test_dataset_update_information_system(app: DjangoTestApp):
         "landing_page": "https://www.test.test",
         "information_system_type": information_system_type_concept.pk,
         "information_system_importance": information_system_importance_concept.pk,
+        "information_system_publisher": organization.pk,
+        "information_system_creator": organization.pk
     }
     response = app.post(url, data)
 
@@ -2438,6 +2445,8 @@ def test_dataset_update_information_system(app: DjangoTestApp):
     assert (
         dataset.information_system_importance == information_system_importance_concept
     )
+    assert dataset.information_system_publisher == organization
+    assert dataset.information_system_creator == organization
 
 
 @pytest.mark.django_db

@@ -399,6 +399,7 @@ class Dataset(Resource):
         default=False,
     )
 
+    information_system_type_schema_uri = "dcataplt:Type"
     information_system_type = models.ForeignKey(
         Concept,
         on_delete=models.PROTECT,

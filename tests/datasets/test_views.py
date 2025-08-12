@@ -1934,10 +1934,18 @@ def test_dataset_create_information_system(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory(name="information_system")
     catalog = CatalogFactory()
     frequency = FrequencyFactory(is_default=True)
-    concept_schema = ConceptSchemaFactory(
-        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+    information_system_type_concept_schema = ConceptSchemaFactory(
+        uri=Dataset.information_system_type_schema_uri
     )
-    concept = ConceptFactory(concept_schemas=[concept_schema])
+    information_system_importance_concept_schema = ConceptSchemaFactory(
+        uri=Dataset.information_system_importance_schema_uri
+    )
+    information_system_type_concept = ConceptFactory(
+        concept_schemas=[information_system_type_concept_schema]
+    )
+    information_system_importance_concept = ConceptFactory(
+        concept_schemas=[information_system_importance_concept_schema]
+    )
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -1955,7 +1963,8 @@ def test_dataset_create_information_system(app: DjangoTestApp):
         "access_rights": Dataset.PUBLIC,
         "name": "test/information/system",
         "landing_page": "https://www.test.test",
-        "information_system_type": concept.pk,
+        "information_system_type": information_system_type_concept.pk,
+        "information_system_importance": information_system_importance_concept.pk,
     }
     response = app.post(url, data)
 
@@ -1971,7 +1980,11 @@ def test_dataset_create_information_system(app: DjangoTestApp):
     assert dataset.access_rights == Dataset.PUBLIC
     assert dataset.name == "test/information/system"
     assert dataset.landing_page == "https://www.test.test"
-    assert dataset.information_system_type == concept
+    assert dataset.information_system_type == information_system_type_concept
+    assert (
+        dataset.information_system_importance
+        == information_system_importance_concept
+    )
 
 
 @pytest.mark.django_db
@@ -2357,10 +2370,18 @@ def test_dataset_update_information_system(app: DjangoTestApp):
     dataset = DatasetFactory(subclass=subclass)
     catalog = CatalogFactory()
     frequency = FrequencyFactory(is_default=True)
-    concept_schema = ConceptSchemaFactory(
-        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+    information_system_type_concept_schema = ConceptSchemaFactory(
+        uri=Dataset.information_system_type_schema_uri
     )
-    concept = ConceptFactory(concept_schemas=[concept_schema])
+    information_system_type_concept = ConceptFactory(
+        concept_schemas=[information_system_type_concept_schema]
+    )
+    information_system_importance_concept_schema = ConceptSchemaFactory(
+        uri=Dataset.information_system_importance_schema_uri
+    )
+    information_system_importance_concept = ConceptFactory(
+        concept_schemas=[information_system_importance_concept_schema]
+    )
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -2376,7 +2397,8 @@ def test_dataset_update_information_system(app: DjangoTestApp):
         "access_rights": Dataset.PUBLIC,
         "name": "test/information/system",
         "landing_page": "https://www.test.test",
-        "information_system_type": concept.pk,
+        "information_system_type": information_system_type_concept.pk,
+        "information_system_importance": information_system_importance_concept.pk,
     }
     response = app.post(url, data)
 
@@ -2392,7 +2414,10 @@ def test_dataset_update_information_system(app: DjangoTestApp):
     assert dataset.access_rights == Dataset.PUBLIC
     assert dataset.name == "test/information/system"
     assert dataset.landing_page == "https://www.test.test"
-    assert dataset.information_system_type == concept
+    assert dataset.information_system_type == information_system_type_concept
+    assert (
+        dataset.information_system_importance == information_system_importance_concept
+    )
 
 
 @pytest.mark.django_db

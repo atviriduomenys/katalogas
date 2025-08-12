@@ -1,39 +1,35 @@
 import json
 import pathlib
 from datetime import datetime
+from random import randrange
 
 import requests
 import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-
 from django.db import models
 from django.db.models import Sum, ForeignKey
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
-
+from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
-from tagulous.models import TagField
-from parler.managers import TranslatableManager
 from parler.models import TranslatedFields, TranslatableModel
-from random import randrange
+from tagulous.models import TagField
+from treebeard.mp_tree import MP_Node
 
-from vitrina.models import UUIDBaseModel
-from vitrina.structure.models import Model, Base, Property, Metadata
-from vitrina.users.models import User
-from vitrina.orgs.models import Organization, Representative
 from vitrina.catalogs.models import Catalog, HarvestingJob
 from vitrina.classifiers.models import Category, Frequency, Concept
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
     EdpRestrictedDatasetManager,
-    PublicDatasetManager,
+    PublicDatasetManager, TranslatableMPNodeManager,
 )
-
+from vitrina.models import UUIDBaseModel
+from vitrina.orgs.models import Organization, Representative
 from vitrina.settings import TRANSLATION_CLIENT_ID
-
-from django.utils.translation import gettext_lazy as _
+from vitrina.structure.models import Model, Base, Property, Metadata
+from vitrina.users.models import User
 
 
 def get_default_subclass():
@@ -75,7 +71,22 @@ class DatasetFile(models.Model):
         )
 
 
-class Dataset(TranslatableModel):
+class Resource(MP_Node, TranslatableModel):
+    """
+    Conceptual abstract model.
+    Created to have common terminology between code and business language.
+    May become concrete model in the future
+    """
+    steplen = 25  # to set depth max up to 10 with 255 length path varchar (MP_Node default).
+    depth = models.PositiveIntegerField(default=1) # Root by default
+
+    class Meta:
+        abstract = True
+
+
+class Dataset(Resource):
+    node_order_by = ("organization_id", )
+
     UPLOAD_TO = "data/files"
 
     HAS_DATA = "HAS_DATA"
@@ -433,7 +444,7 @@ class Dataset(TranslatableModel):
         "vitrina_requests.RequestObject",
     )
 
-    objects = TranslatableManager()
+    objects = TranslatableMPNodeManager()
     public = PublicDatasetManager()
     edp_public = EdpPublicDatasetManager()
     edp_restricted = EdpRestrictedDatasetManager()

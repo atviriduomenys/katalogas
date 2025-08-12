@@ -97,7 +97,7 @@ class DatasetFactory(DjangoModelFactory):
     subclass = factory.SubFactory(DCATResourceSubclassFactory)
 
     @classmethod
-    def _create(cls, model_class, *args, **kwargs):
+    def _create(cls, model_class: type[Dataset], *args, **kwargs):
         title = kwargs.pop("title")
         description = kwargs.pop("description")
         dataset = model_class(*args, **kwargs)
@@ -105,7 +105,7 @@ class DatasetFactory(DjangoModelFactory):
             dataset.set_current_language(lang)
             dataset.title = _get_language_value(lang, title)
             dataset.description = _get_language_value(lang, description)
-        dataset.save()
+        dataset = model_class.add_root(instance=dataset)
         return dataset
 
     @factory.post_generation

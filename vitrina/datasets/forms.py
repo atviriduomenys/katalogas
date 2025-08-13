@@ -490,7 +490,7 @@ class InformationSystemResourceForm(BaseResourceForm):
         super().__init__(request, organization, *args, **kwargs)
 
         self.helper.layout = Layout(
-            Field("is_public", placeholder=_("Ar duomenys vieši")),
+            Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
             Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
             Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
@@ -508,7 +508,7 @@ class InformationSystemResourceForm(BaseResourceForm):
         )
 
         self.fields["information_system_type"].queryset = Concept.objects.filter(
-            concept_schemas__uri=Dataset.information_system_type_schema_uri
+            concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
         )
         self.fields["information_system_type"].label_from_instance = lambda obj: str(
             obj.translated_label

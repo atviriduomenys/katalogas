@@ -3,7 +3,7 @@ from datetime import date
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, URLValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
@@ -31,7 +31,7 @@ from treebeard.forms import MoveNodeForm
 from vitrina.datasets.services import get_projects, get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 
-from vitrina.fields import FilerFileField, MultipleFilerField
+from vitrina.fields import FilerFileField, MultipleFilerField, StringListField
 from vitrina.helpers import get_current_domain, inline_fields
 from vitrina.orgs.forms import (
     RepresentativeCreateForm,
@@ -146,6 +146,19 @@ class BaseResourceForm(TranslatableModelForm):
         ),
         required=False,
     )
+    applicable_legislation = StringListField(
+        label=_("Teisinis pagrindas"),
+        help_text=_(
+            "Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> "
+            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>"""
+            "Tais atvejais, kai yra keli dokumentai su priedais: "
+            """ "#priedas1/17.2" """
+            """ "17.2/17.2.5", """
+            """kur "priedas1" yra dokumento failo pavadinimas."""
+        ),
+        required=False,
+        unique=True
+    )
 
     parent = forms.ModelChoiceField(
         Dataset.objects.all(),
@@ -185,6 +198,10 @@ class BaseResourceForm(TranslatableModelForm):
             )
             if instance.name:
                 self.initial["name"] = instance.name
+
+            self.initial["applicable_legislation"] = list(
+                instance.applicable_legislation.values_list("url", flat=True)
+            )
         else:
             if default_frequency := Frequency.objects.filter(is_default=True).first():
                 self.initial["frequency"] = default_frequency
@@ -322,6 +339,27 @@ class BaseResourceForm(TranslatableModelForm):
             elif contact_type == "user":
                 return User.objects.get(pk=contact_id)
         return None
+
+    def clean_applicable_legislation(self):
+        urls: list[str] = self.cleaned_data.get("applicable_legislation", [])
+        validator = URLValidator()
+
+        cleaned = []
+        item_errors = [None] * len(urls)
+
+        for i, url in enumerate(urls):
+            try:
+                validator(url)
+                cleaned.append(url)
+            except ValidationError as e:
+                # show the bad value + Django's URL message
+                item_errors[i] = f"{url}: {e.message}"
+
+        if any(item_errors):
+            self.fields['applicable_legislation'].widget.validation_errors = item_errors
+            raise ValidationError("Yra klaidų sąraše.")
+
+        return cleaned
 
 
 class ServiceResourceForm(BaseResourceForm):
@@ -573,6 +611,9 @@ class ResourceForm(BaseResourceForm):
             "managed_by_publisher",
             "landing_page",
             "parent",
+            "temporal_resolution",
+            "spatial_resolution",
+            "applicable_legislation"
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -594,6 +635,7 @@ class ResourceForm(BaseResourceForm):
             Field("creator"),
             Field("publisher"),
             Field("parent"),
+            Field("applicable_legislation")
         )
 
 

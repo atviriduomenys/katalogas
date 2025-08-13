@@ -47,7 +47,12 @@ from reversion.views import RevisionMixin
 
 from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiKey
-from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
+from vitrina.classifiers.models import (
+    Category,
+    Frequency,
+    AreaOfManagement,
+    ApplicableLegislation
+)
 from vitrina.comments.models import Comment
 from vitrina.datasets.forms import (
     DatasetStructureImportForm,
@@ -80,7 +85,6 @@ from vitrina.datasets.models import (
     DatasetExcludedGroups,
     DCATResourceSubclass,
 )
-
 from vitrina.structure.views import DatasetStructureMixin
 
 from vitrina.tasks.models import Task
@@ -934,6 +938,15 @@ class DatasetCreateView(
             )
             rep.save()
             self.object.save()
+        
+        if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
+            applicable_legislations = []
+            for url in applicable_legislation_urls:
+                applicable_legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
+                if created:
+                    applicable_legislation.update_description()
+                applicable_legislations.append(applicable_legislation)
+            self.object.applicable_legislation.set(applicable_legislations)
 
         messages.success(self.request, _("Duomenų išteklius sukurtas sėkmingai"))
 
@@ -1166,6 +1179,18 @@ class DatasetUpdateView(
                         "scheme_agency": agency,
                     }
                 )
+        if "applicable_legislation" in form.changed_data:
+            new_legislations = []
+            applicable_legislation_urls = form.cleaned_data["applicable_legislation"]
+            for url in applicable_legislation_urls:
+                applicable_legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
+                if created:
+                    applicable_legislation.update_description()
+                new_legislations.append(applicable_legislation)
+            self.object.applicable_legislation.set(new_legislations)
+
+        
+
         self.object.save()
         set_comment(Dataset.EDITED)
 

@@ -6,6 +6,7 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 import reversion
 
 from vitrina.models import UUIDBaseModel
+from vitrina.services import fetch_page_title
 
 
 @reversion.register()
@@ -282,3 +283,9 @@ class ApplicableLegislation(models.Model):
 
     def __str__(self) -> str:
         return f"< a href=\"{self.url}\">{self.description}</a>"
+    
+    def update_description(self) -> str | None:
+        title = fetch_page_title(self.url)
+        self.description = title
+        self.save(update_fields=["description"])
+        return title

@@ -2293,16 +2293,7 @@ class EdpDcatApPublicRdfTests(TestCase):
         self.assertNotIn(b"Restricted Dataset", response.content)
 
     def test_edp_dcat_ap_rdf_homepage_for_information_system_subclass(self):
-        organization = OrganizationFactory()
-        Dataset.objects.create(
-            title="Public Dataset",
-            access_rights=Dataset.PUBLIC,
-            deleted=None,
-            deleted_on=None,
-            organization_id=organization.pk,
-            subclass=DCATResourceSubclassFactory(name="information_system"),
-            landing_page="https://example.com",
-        )
+        DatasetFactory(subclass=DCATResourceSubclassFactory(name="information_system"), landing_page="https://example.com")
 
         response = self.client.get(reverse("edp-dcat-ap-rdf"))
 

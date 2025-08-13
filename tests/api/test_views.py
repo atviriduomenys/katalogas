@@ -16,7 +16,8 @@ from vitrina.api.factories import APIKeyFactory
 from vitrina.api.models import ApiKey
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import CategoryFactory
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, \
+    DCATResourceSubclassFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
@@ -2290,6 +2291,25 @@ class EdpDcatApPublicRdfTests(TestCase):
         )
         response = self.client.get(reverse("edp-dcat-ap-rdf"))
         self.assertNotIn(b"Restricted Dataset", response.content)
+
+    def test_edp_dcat_ap_rdf_homepage_for_information_system_subclass(self):
+        organization = OrganizationFactory()
+        Dataset.objects.create(
+            title="Public Dataset",
+            access_rights=Dataset.PUBLIC,
+            deleted=None,
+            deleted_on=None,
+            organization_id=organization.pk,
+            subclass=DCATResourceSubclassFactory(name="information_system"),
+            landing_page="https://example.com",
+        )
+
+        response = self.client.get(reverse("edp-dcat-ap-rdf"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response["Content-Type"], "application/rdf+xml")
+        self.assertNotIn(b"dcat:landingPage", response.content)
+        self.assertIn(b"foaf:homepage", response.content)
 
 
 @pytest.mark.django_db

@@ -186,9 +186,15 @@
         {% for keyword in dataset.keywords %}
             <dcat:keyword>{{ keyword }}</dcat:keyword>
         {% endfor %}
+        {% spaceless %}
         {% if dataset.landing_page %}
+        {% if dataset.subclass.name == "information_system" %}
+        <foaf:homepage rdf:resource="{{ dataset.landing_page }}"/>
+        {% else %}
         <dcat:landingPage rdf:resource="{{ dataset.landing_page }}"/>
         {% endif %}
+        {% endif %}
+        {% endspaceless %}
         {% for dist in dataset.distributions %}
         <dcat:distribution>
             <dcat:Distribution rdf:about="{{ current_domain_full }}{{ dist.uri|cut:' ' }}">

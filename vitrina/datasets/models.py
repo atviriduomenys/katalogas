@@ -151,6 +151,7 @@ class Dataset(Resource):
     }
 
     API_ORIGIN = "api"
+    INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"
 
     INFORMATION_SYSTEM_TYPE_SCHEMA_URI = "dcataplt:Type"
 
@@ -408,7 +409,6 @@ class Dataset(Resource):
         ),
         related_name="information_system_types",
     )
-    information_system_importance_schema_uri = "dcataplt:Importance"
     information_system_importance = models.ForeignKey(
         Concept,
         on_delete=models.PROTECT,

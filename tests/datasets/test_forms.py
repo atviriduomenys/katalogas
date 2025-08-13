@@ -17,7 +17,7 @@ class TestInformationSystemResourceForm:
         "field_name, schema_uri_attr",
         [
             ("information_system_type", "information_system_type_schema_uri"),
-            ("information_system_importance", "information_system_importance_schema_uri"),
+            ("information_system_importance", "INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI"),
         ],
     )
     def test_information_system_fields_only_allow_choices_from_correct_schema(

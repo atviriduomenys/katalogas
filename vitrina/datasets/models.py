@@ -477,6 +477,12 @@ class Dataset(Resource):
         related_name="datasets",
         blank=True,
     )
+    applicable_legislation = models.ManyToManyField(
+        ApplicableLegislation,
+        verbose_name=_("Teisinis pagrindas"),
+        related_name="datasets",
+        blank=True,
+    )
 
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------

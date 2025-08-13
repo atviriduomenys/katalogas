@@ -270,3 +270,15 @@ class Concept(TranslatableModel, UUIDBaseModel):
             )
             or self.code
         )
+
+
+class ApplicableLegislation(TranslatableModel, UUIDBaseModel):
+    description=models.CharField(max_length=255, verbose_name=_("Pavadinimas"), null=True, blank=True)
+    url = models.URLField(max_length=255, verbose_name=_("Nuoroda"))
+
+    class Meta:
+        verbose_name = _("Teisinis pagrindas")
+        verbose_name_plural = _("Teisiniai pagrindai")
+
+    def __str__(self) -> str:
+        return f"< a href=\"{self.url}\">{self.description}</a>"

@@ -1,0 +1,90 @@
+{# templates/widgets/string_list.html #}
+<div id="div_id_{{ widget.name }}" class="field string-list" data-name="{{ widget.name }}">
+  <div class="string-list-items">
+    {% if widget.rows %}
+        {% for value, error in widget.rows %}
+            <div class="field string-list-row">
+                <div class="field has-addons">
+                    <div class="control is-expanded">
+                        <input type="text" name="{{ widget.name }}" value="{{ value|escape }}" class="input">
+                    </div>
+                    {% if widget.rows|length > 1 %}
+                        <div class="control">
+                            <button type="button" class="button is-danger string-list-remove">−</button>
+                        </div>
+                    {% endif %}
+                </div>
+                {% if error %}
+                    <p class="help is-danger">{{ error }}</p>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% else %}
+      <div class="field string-list-row">
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input type="text" name="{{ widget.name }}" class="input" id="id_{{ widget.name }}">
+          </div>
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  <div class="control mt-2">
+    <button type="button" class="button is-primary is-light string-list-add">+</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  function updateRemoveButtons(container){
+    const rows = container.querySelectorAll('.string-list-row');
+    rows.forEach(row=>{
+      const btn = row.querySelector('.string-list-remove');
+      if (btn) btn.style.display = (rows.length > 1) ? '' : 'none';
+    });
+  }
+  document.addEventListener('click', function(e){
+    if (e.target.matches('.string-list-add')) {
+      const root = e.target.closest('.string-list');
+      const items = root.querySelector('.string-list-items');
+      const name = root.dataset.name;
+      const row = document.createElement('div');
+      row.className = 'field string-list-row';
+      row.innerHTML = `
+        <div class="field has-addons">
+          <div class="control is-expanded">
+            <input type="text" name="${name}" class="input" id="id_${name}">
+          </div>
+          <div class="control">
+            <button type="button" class="button is-danger string-list-remove">-</button>
+          </div>
+        </div>
+      `;
+      items.appendChild(row);
+      updateRemoveButtons(items);
+    }
+    if (e.target.matches('.string-list-remove')) {
+      const row = e.target.closest('.string-list-row');
+      const items = row.parentElement;
+      row.remove();
+      if (!items.querySelector('.string-list-row')) {
+        const root = items.closest('.string-list');
+        const name = root.dataset.name;
+        const r = document.createElement('div');
+        r.className = 'field string-list-row';
+        r.innerHTML = `
+          <div class="field has-addons">
+            <div class="control is-expanded">
+              <input type="text" name="${name}" class="input" id="id_${name}">
+            </div>
+          </div>
+        `;
+        items.appendChild(r);
+      }
+      updateRemoveButtons(items);
+    }
+  }, false);
+  document.querySelectorAll('.string-list-items').forEach(updateRemoveButtons);
+})();
+</script>

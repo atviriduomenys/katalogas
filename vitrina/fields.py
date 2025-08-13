@@ -9,6 +9,7 @@ from django.forms import (
     ImageField,
     ClearableFileInput,
     CharField,
+    Widget
 )
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.translation import gettext_lazy as _
@@ -252,3 +253,36 @@ class DisabledTextInput(TextInput):
 
 class DisabledCharField(CharField):
     widget = DisabledTextInput
+
+
+class StringListWidget(Widget):
+    template_name = "component/multi_input.html"
+
+    def value_from_datadict(self, data, files, name):
+        values = data.getlist(name)
+        return [v.strip() for v in values if v.strip()]
+
+    def get_context(self, name: str, value, attrs):
+        context = super().get_context(name, value, attrs)
+        values = value or []
+        validation_errors = getattr(self, "validation_errors", [None for v in values])
+        context["widget"]["rows"] = list(zip(values, validation_errors))
+        return context
+
+
+class StringListField(Field):
+    widget = StringListWidget
+
+    def __init__(self, *args, unique=False, **kwargs):
+        self.unique = unique
+        super().__init__(*args, **kwargs)
+
+    def to_python(self, value):
+        if value is None:
+            return []
+        return [str(v) for v in value]
+
+    def validate(self, value):
+        super().validate(value)
+        if self.unique and len(set(value)) != len(value):
+            raise ValidationError(_("Reikšmės privalo būti unikalios."))

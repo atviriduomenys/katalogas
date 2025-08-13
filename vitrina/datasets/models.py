@@ -20,7 +20,7 @@ from tagulous.models import TagField
 from treebeard.mp_tree import MP_Node
 
 from vitrina.catalogs.models import Catalog, HarvestingJob
-from vitrina.classifiers.models import Category, Frequency, Concept
+from vitrina.classifiers.models import Category, Frequency, Concept, ApplicableLegislation
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
     EdpRestrictedDatasetManager,
@@ -480,6 +480,12 @@ class Dataset(Resource):
         null=True,
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
         help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
+    )
+    applicable_legislation = models.ManyToManyField(
+        ApplicableLegislation,
+        verbose_name=_("Teisinis pagrindas"),
+        related_name="datasets",
+        blank=True,
     )
 
     # TODO: To be removed:

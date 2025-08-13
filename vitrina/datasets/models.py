@@ -151,6 +151,7 @@ class Dataset(Resource):
     }
 
     API_ORIGIN = "api"
+    INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"
 
     INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"
     INFORMATION_SYSTEM_TYPE_SCHEMA_URI = "dcataplt:Type"

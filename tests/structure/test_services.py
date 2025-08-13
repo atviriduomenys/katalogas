@@ -1662,13 +1662,13 @@ def test_structure_export__prefixes(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,,,,,,prefix,spinta,,,,,,,,https://github.com/atviriduomenys/spinta/issues/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\r\n'
-        '4,,,,,,,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,,,,,,prefix,spinta,,,,,,,,,,https://github.com/atviriduomenys/spinta/issues/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '3,,,,,,prefix,dcat,,,,,,,,,,http://www.w3.org/ns/dcat#,,,\r\n'
+        '4,,,,,,,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -1704,18 +1704,18 @@ def test_structure_export__models_and_props(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
-        '4,,,,Licence,,,id,,page(id),,,,,,,,Licence,\r\n'
-        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
-        '6,,,,,title,string,,,,,2,,,open,dct:title,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '7,,,,Catalog,,,id,,,,,,,,,,Catalog,\r\n'
-        '8,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
+        '4,,,,Licence,,,id,,,page(id),,,,,,,,,Licence,\r\n'
+        '5,,,,,id,integer,,,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '6,,,,,title,string,,,,,,,2,,,open,dct:title,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '7,,,,Catalog,,,id,,,,,,,,,,,,Catalog,\r\n'
+        '8,,,,,id,integer,,,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -1751,18 +1751,18 @@ def test_structure_export__base_model(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
-        '4,,,,Base,,,,,,,,,,,,,,\r\n'
-        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '6,,,Base,,,,,,,,,,,,,,,\r\n'
-        '7,,,,Catalog,,,,,,,,,,,,,,\r\n'
-        '8,,,,,title,string,,,,,2,,,open,dct:title,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
+        '4,,,,Base,,,,,,,,,,,,,,,,\r\n'
+        '5,,,,,id,integer,,,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '6,,,Base,,,,,,,,,,,,,,,,,\r\n'
+        '7,,,,Catalog,,,,,,,,,,,,,,,,\r\n'
+        '8,,,,,title,string,,,,,,,2,,,open,dct:title,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -1798,19 +1798,19 @@ def test_structure_export__property_ref(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
-        '4,,,,Country,,,,,,,,,,,,,,\r\n'
-        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
-        '6,,,,,title,string,,,,,5,,,open,dct:title,,,\r\n'
-        '7,,,,,continent,ref,Continent[id],,,,5,,,open,dct:continent,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '8,,,,Continent,,,,,,,,,,,,,,\r\n'
-        '9,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
+        '4,,,,Country,,,,,,,,,,,,,,,,\r\n'
+        '5,,,,,id,integer,,,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '6,,,,,title,string,,,,,,,5,,,open,dct:title,,,\r\n'
+        '7,,,,,continent,ref,Continent[id],,,,,,5,,,open,dct:continent,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '8,,,,Continent,,,,,,,,,,,,,,,,\r\n'
+        '9,,,,,id,integer,,,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -1844,16 +1844,16 @@ def test_structure_export__model_ref(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
-        '4,,,,Country,,,"id, title",,,,,,,,,,,\r\n'
-        '5,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
-        '6,,,,,title,string,,,,,5,,,open,dct:title,,,\r\n'
-        '7,,,,,continent,ref,Continent,,,,5,,,open,dct:continent,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
+        '4,,,,Country,,,"id, title",,,,,,,,,,,,,\r\n'
+        '5,,,,,id,integer,,,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '6,,,,,title,string,,,,,,,5,,,open,dct:title,,,\r\n'
+        '7,,,,,continent,ref,Continent,,,,,,5,,,open,dct:continent,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -1886,16 +1886,16 @@ def test_structure_export__comments(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
-        '4,,,,Country,,,,,,,,,,,,,,\r\n'
-        '5,,,,,,comment,type,,,,,,,open,,,Model comment,\r\n'
-        '6,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
-        '7,,,,,,comment,type,,,,,,,open,,,Property comment,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
+        '4,,,,Country,,,,,,,,,,,,,,,,\r\n'
+        '5,,,,,,comment,type,,,,,,,,,open,,,Model comment,\r\n'
+        '6,,,,,id,integer,,,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '7,,,,,,comment,type,,,,,,,,,open,,,Property comment,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -1933,22 +1933,22 @@ def test_structure_export__enums(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,,,,,enum,Size,,SMALL,,,,,,,,,\r\n'
-        '4,,,,,,,,,MEDIUM,,,,,,,,,\r\n'
-        '5,,,,,,,,,BIG,,,,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
-        '7,,,,City,,,,,,,,,,,,,,\r\n'
-        '8,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
-        '9,,,,,size,Size,,,,,5,,,open,dct:size,,,\r\n'
-        '10,,,,,type,string,,,,,5,,,open,dct:type,,,\r\n'
-        '11,,,,,,enum,Type,,CREATED,,,,,,,,,\r\n'
-        '12,,,,,,,,,MODIFIED,,,,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '3,,,,,,enum,Size,,,SMALL,,,,,,,,,,\r\n'
+        '4,,,,,,,,,,MEDIUM,,,,,,,,,,\r\n'
+        '5,,,,,,,,,,BIG,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
+        '7,,,,City,,,,,,,,,,,,,,,,\r\n'
+        '8,,,,,id,integer,,,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '9,,,,,size,Size,,,,,,,5,,,open,dct:size,,,\r\n'
+        '10,,,,,type,string,,,,,,,5,,,open,dct:type,,,\r\n'
+        '11,,,,,,enum,Type,,,CREATED,,,,,,,,,,\r\n'
+        '12,,,,,,,,,,MODIFIED,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -1985,21 +1985,21 @@ def test_structure_export__params(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '3,,,,,,param,country,,lt,,,,,,,,,\r\n'
-        '4,,,,,,,,,lv,,,,,,,,,\r\n'
-        '5,,,,,,,,,ee,,,,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
-        '7,,,,City,,,,,,,,,,,,,,\r\n'
-        '8,,,,,,param,type,,created,,,,,,,,,\r\n'
-        '9,,,,,,,,,modified,,,,,,,,,\r\n'
-        '10,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
-        '11,,,,,type,string,,,,,5,,,open,dct:type,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '3,,,,,,param,country,,,lt,,,,,,,,,,\r\n'
+        '4,,,,,,,,,,lv,,,,,,,,,,\r\n'
+        '5,,,,,,,,,,ee,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
+        '7,,,,City,,,,,,,,,,,,,,,,\r\n'
+        '8,,,,,,param,type,,,created,,,,,,,,,,\r\n'
+        '9,,,,,,,,,,modified,,,,,,,,,,\r\n'
+        '10,,,,,id,integer,,,,,,,5,,,open,dct:identifier,,Identifikatorius,\r\n'
+        '11,,,,,type,string,,,,,,,5,,,open,dct:type,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -2222,22 +2222,22 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,test_dataset,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,resource1,,,,,,http://www.example.com,,,,,,,,,Title,Description\r\n'
-        '3,,,,Modelis,,,id,,,,,,,,,,,\r\n'
-        '4,,,,,id,integer,,,,,,,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        '5,,,Modelis,,,,,,,,,,,,,,,\r\n'
-        '6,,,,Salis,,,id,,,,,,,,,,,\r\n'
-        '7,,,,,id,int,,,,,,,,,,,,\r\n'
-        '8,,,,,code,string,,,,,,,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
-        ',,,/,,,,,,,,,,,,,,,\r\n'
-        '9,,,,City,,,id,,,,,,,,,,,\r\n'
-        '10,,,,,id,int,,,,,,,,,,,,\r\n'
-        '11,,,,,country,ref,Salis,code,,,,,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,resource1,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
+        '3,,,,Modelis,,,id,,,,,,,,,,,,,\r\n'
+        '4,,,,,id,integer,,,,,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '5,,,Modelis,,,,,,,,,,,,,,,,,\r\n'
+        '6,,,,Salis,,,id,,,,,,,,,,,,,\r\n'
+        '7,,,,,id,int,,,,,,,,,,,,,,\r\n'
+        '8,,,,,code,string,,,,,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        ',,,/,,,,,,,,,,,,,,,,,\r\n'
+        '9,,,,City,,,id,,,,,,,,,,,,,\r\n'
+        '10,,,,,id,int,,,,,,,,,,,,,,\r\n'
+        '11,,,,,country,ref,Salis,code,,,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -2270,8 +2270,8 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,test_dataset,,,,,,,,,,,,,,,,Edited title,Edited description\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,,,Edited title,Edited description\r\n'
     )
 
 
@@ -2313,11 +2313,11 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,test_dataset,,,,,,,,,,,,,,,,Dataset,Dataset description\r\n'
-        '2,,test_resource,,,,,,https://example.com,,,,,,,,,Edited title,Edited description\r\n'
-        '3,,,,Model,,,,,,,,,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset description\r\n'
+        '2,,test_resource,,,,,,https://example.com,,,,,,,,,,,Edited title,Edited description\r\n'
+        '3,,,,Model,,,,,,,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 
@@ -2357,11 +2357,11 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,test_dataset,,,,,,,,,,,,,,,,Dataset,Dataset description\r\n'
-        '2,,test_resource,,,,,,https://example.com,,,2,,,,,,Resource,Resource description\r\n'
-        '3,,,,Model,,,,,,,,,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,test_dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset description\r\n'
+        '2,,test_resource,,,,,,https://example.com,,,,,2,,,,,,Resource,Resource description\r\n'
+        '3,,,,Model,,,,,,,,,,,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 @pytest.mark.django_db
@@ -2395,14 +2395,14 @@ def test_structure_export__visibility_row(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,example,,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
-        '2,,resource,,,,xml,,resource.xml,,,,,,,,,resource,\r\n'
-        '3,,,,Pavadinimas,,,id,,,,4,,package,protected,,,Pavadinimas,\r\n'
-        '4,,,,,id,integer,,,,,4,,package,protected,,,ID,\r\n'
-        '5,,,,,class,integer,,,,,4,,package,protected,,,class,\r\n'
-        '6,,,,,,enum,,1,,,,,package,protected,,,Class One,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,,,resource,\r\n'
+        '3,,,,Pavadinimas,,,id,,,,,,4,,package,protected,,,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,,,,4,,package,protected,,,ID,\r\n'
+        '5,,,,,class,integer,,,,,,,4,,package,protected,,,class,\r\n'
+        '6,,,,,,enum,,1,,,,,,,package,protected,,,Class One,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 @pytest.mark.django_db
@@ -2436,14 +2436,14 @@ def test_structure_export__eli_row(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,example,,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
-        '2,,resource,,,,xml,,resource.xml,,,,,,,,,resource,\r\n'
-        '3,,,,Pavadinimas,,,id,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\r\n'
-        '4,,,,,id,integer,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\r\n'
-        '5,,,,,class,integer,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\r\n'
-        '6,,,,,,enum,,1,,,,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,,,resource,\r\n'
+        '3,,,,Pavadinimas,,,id,,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\r\n'
+        '5,,,,,class,integer,,,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\r\n'
+        '6,,,,,,enum,,1,,,,,,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 @pytest.mark.django_db
@@ -2477,14 +2477,14 @@ def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_d
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,example,,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
-        '2,,resource,,,,xml,,resource.xml,,,,,,,,,resource,\r\n'
-        '3,,,,Pavadinimas,,,id,,,,4,completed,,protected,,,Pavadinimas,\r\n'
-        '4,,,,,id,integer,,,,,4,withdrawn,,protected,,,ID,\r\n'
-        '5,,,,,class,integer,,,,,4,deprecated,,protected,,,class,\r\n'
-        '6,,,,,,enum,,1,,,,discont,,protected,,,Class One,\r\n'
-        ',,,,,,,,,,,,,,,,,,\r\n'
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,example,,,,,,,,,,,,,,,,,,Pavadinimas,Aprašymas\r\n'
+        '2,,resource,,,,xml,,resource.xml,,,,,,,,,,,resource,\r\n'
+        '3,,,,Pavadinimas,,,id,,,,,,4,completed,,protected,,,Pavadinimas,\r\n'
+        '4,,,,,id,integer,,,,,,,4,withdrawn,,protected,,,ID,\r\n'
+        '5,,,,,class,integer,,,,,,,4,deprecated,,protected,,,class,\r\n'
+        '6,,,,,,enum,,1,,,,,,discont,,protected,,,Class One,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
     )
 
 @pytest.mark.django_db
@@ -2641,3 +2641,27 @@ def test_structure_with_enum_level_higher_then_model(app: DjangoTestApp):
                'Duomenų reikšmės "Class One" metaduomenų matomumo lygis "public" '
                'negali būti aukštesnis už duomenų modelio metaduomenų matomumo lygį "package". '
     ]
+
+@pytest.mark.django_db
+def test_structure_with_origin_source_type_headers(app: DjangoTestApp):
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,level,status,visibility,access,uri,eli,title,description,count\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,,\n'
+        ',,,,City,,,,,,,,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    metadata = Metadata.objects.filter(
+        content_type=ContentType.objects.get_for_model(Dataset)
+    )
+    assert metadata.count() == 1
+    assert sorted(list(metadata.values_list('name', flat=True))) == [
+        'datasets/gov/ivpk/adp',
+    ]
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0

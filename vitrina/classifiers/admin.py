@@ -17,6 +17,7 @@ from vitrina.classifiers.models import (
     Status,
     Concept,
     ConceptSchema,
+    ApplicableLegislation
 )
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
@@ -230,6 +231,10 @@ class ConceptAdmin(TranslatableAdmin):
 
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         return super().get_queryset(request).prefetch_related("concept_schemas")
+    
+@admin.register(ApplicableLegislation)
+class ApplicableLegislationADmin(admin.ModelAdmin):
+    list_display = ("description", "url")
 
 
 admin.site.register(AreaOfManagement, AreaOfManagementAdmin)

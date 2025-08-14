@@ -282,7 +282,7 @@ class ApplicableLegislation(models.Model):
         verbose_name_plural = _("Teisiniai pagrindai")
 
     def __str__(self) -> str:
-        return f"< a href=\"{self.url}\">{self.description}</a>"
+        return self.description or self.url
     
     def update_description(self) -> str | None:
         title = fetch_page_title(self.url)

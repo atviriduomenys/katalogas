@@ -171,6 +171,20 @@
             </td>
         </tr>
     {% endif %}
+    {% if dataset.applicable_legislation.exists %}
+        <tr>
+            <th>{% translate "Teisinis pagrindas" %}</th>
+            <td>
+                <ul>
+                    {% for legislation in dataset.applicable_legislation.all %}
+                        {% with label=legislation.description|default:legislation.url %}
+                            <li><a href="{{ legislation.url }}" target="_blank" title="{{ label }}">{{ label|truncatechars:30 }}</a></li>
+                        {% endwith %}
+                    {% endfor %}
+                </ul>
+            </td>
+        </tr>
+    {% endif %}
     <tr>
         <th>
             {% translate "Katalogas" %}

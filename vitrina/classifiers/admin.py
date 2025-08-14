@@ -230,9 +230,13 @@ class ConceptAdmin(TranslatableAdmin):
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         return super().get_queryset(request).prefetch_related("concept_schemas")
 
-
 @admin.register(ApplicableLegislation)
 class ApplicableLegislationADmin(admin.ModelAdmin):
+    list_display = ("description", "url")
+
+
+@admin.register(ApplicableLegislation)
+class ApplicableLegislationAdmin(admin.ModelAdmin):
     list_display = ("description", "url")
 
 

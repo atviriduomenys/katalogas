@@ -266,7 +266,6 @@ class ApplicableLegislation(UUIDBaseModel):
 
     def __str__(self) -> str:
         return self.description or self.url
-
     def update_description(self) -> str | None:
         if title := fetch_page_title(self.url):
             self.description = title

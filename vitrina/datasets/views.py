@@ -940,13 +940,7 @@ class DatasetCreateView(
             self.object.save()
         
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
-            applicable_legislations = []
-            for url in applicable_legislation_urls:
-                applicable_legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
-                if created:
-                    applicable_legislation.update_description()
-                applicable_legislations.append(applicable_legislation)
-            self.object.applicable_legislation.set(applicable_legislations)
+            self.object.update_applicable_legislation(applicable_legislation_urls)
 
         messages.success(self.request, _("Duomenų išteklius sukurtas sėkmingai"))
 
@@ -1180,16 +1174,7 @@ class DatasetUpdateView(
                     }
                 )
         if "applicable_legislation" in form.changed_data:
-            new_legislations = []
-            applicable_legislation_urls = form.cleaned_data["applicable_legislation"]
-            for url in applicable_legislation_urls:
-                applicable_legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
-                if created:
-                    applicable_legislation.update_description()
-                new_legislations.append(applicable_legislation)
-            self.object.applicable_legislation.set(new_legislations)
-
-        
+            self.object.update_applicable_legislation(form.cleaned_data["applicable_legislation"])
 
         self.object.save()
         set_comment(Dataset.EDITED)

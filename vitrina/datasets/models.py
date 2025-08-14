@@ -1268,6 +1268,14 @@ class Dataset(Resource):
             return True
         return False
 
+    def update_applicable_legislation(self, urls: list[str]) -> None:
+        new_legislations = []
+        for url in urls:
+            applicable_legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
+            if created:
+                applicable_legislation.update_description()
+            new_legislations.append(applicable_legislation)
+        self.applicable_legislation.set(new_legislations)
 
 class DatasetReport(Dataset):
     class Meta:

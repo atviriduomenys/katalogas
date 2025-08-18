@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-11 11:01+0300\n"
+"POT-Creation-Date: 2025-08-18 11:48+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1526,6 +1526,9 @@ msgstr "Delete term"
 
 msgid "Pasirinkti failą"
 msgstr "Select a file"
+
+msgid "Reikšmės privalo būti unikalios."
+msgstr "Values must be unique."
 
 msgid "I ketvirtis"
 msgstr "I quarter"

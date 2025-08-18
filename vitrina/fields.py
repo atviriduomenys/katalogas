@@ -1,5 +1,6 @@
 import pathlib
 
+from typing import Any, Mapping, Sequence
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.forms import (
@@ -9,7 +10,10 @@ from django.forms import (
     ImageField,
     ClearableFileInput,
     CharField,
+    Widget,
 )
+from django.http import QueryDict
+from django.utils.datastructures import MultiValueDict
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.translation import gettext_lazy as _
 from filer.models import Image, File, Folder
@@ -252,3 +256,41 @@ class DisabledTextInput(TextInput):
 
 class DisabledCharField(CharField):
     widget = DisabledTextInput
+
+
+class StringListWidget(Widget):
+    template_name: str = "component/multi_input.html"
+    validation_errors: list[str | None]
+
+    def value_from_datadict(
+        self, data: QueryDict, files: MultiValueDict, name: str
+    ) -> list[str]:
+        values = data.getlist(name)
+        return [value.strip() for value in values if value.strip()]
+
+    def get_context(
+        self, name: str, value: Sequence[str] | None, attrs: Mapping[str, Any] | None
+    ) -> dict[str, Any]:
+        context = super().get_context(name, value, attrs)
+        values = value or []
+        validation_errors = getattr(self, "validation_errors", [None for __ in values])
+        context["widget"]["rows"] = list(zip(values, validation_errors))
+        return context
+
+
+class StringListField(Field):
+    widget = StringListWidget
+
+    def __init__(self, unique: bool = False, *args, **kwargs) -> None:
+        self.unique = unique
+        super().__init__(*args, **kwargs)
+
+    def to_python(self, value: Sequence[Any] | None) -> list[str]:
+        if value is None:
+            return []
+        return [str(val) for val in value]
+
+    def validate(self, value: list[str]) -> None:
+        super().validate(value)
+        if self.unique and len(set(value)) != len(value):
+            raise ValidationError(_("Reikšmės privalo būti unikalios."))

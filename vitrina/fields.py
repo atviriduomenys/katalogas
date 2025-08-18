@@ -1,4 +1,5 @@
 import pathlib
+
 from typing import Any, Mapping, Sequence
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
@@ -265,14 +266,14 @@ class StringListWidget(Widget):
         self, data: QueryDict, files: MultiValueDict, name: str
     ) -> list[str]:
         values = data.getlist(name)
-        return [v.strip() for v in values if v.strip()]
+        return [value.strip() for value in values if value.strip()]
 
     def get_context(
         self, name: str, value: Sequence[str] | None, attrs: Mapping[str, Any] | None
     ) -> dict[str, Any]:
         context = super().get_context(name, value, attrs)
         values = value or []
-        validation_errors = getattr(self, "validation_errors", [None for v in values])
+        validation_errors = getattr(self, "validation_errors", [None for __ in values])
         context["widget"]["rows"] = list(zip(values, validation_errors))
         return context
 
@@ -280,14 +281,14 @@ class StringListWidget(Widget):
 class StringListField(Field):
     widget = StringListWidget
 
-    def __init__(self, *args, unique: bool = False, **kwargs) -> None:
+    def __init__(self, unique: bool = False, *args, **kwargs) -> None:
         self.unique = unique
         super().__init__(*args, **kwargs)
 
     def to_python(self, value: Sequence[Any] | None) -> list[str]:
         if value is None:
             return []
-        return [str(v) for v in value]
+        return [str(val) for val in value]
 
     def validate(self, value: list[str]) -> None:
         super().validate(value)

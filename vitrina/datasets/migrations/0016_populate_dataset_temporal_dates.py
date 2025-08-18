@@ -27,7 +27,7 @@ def populate_dataset_temporal_dates(
     )
 
     updates = []
-    datasets_dict = {d.id: d for d in datasets}
+    datasets_dict = {dataset.id: dataset for dataset in datasets}
     for stat in stats:
         dataset = datasets_dict[stat["dataset_id"]]
         dataset.temporal_start = stat["min_start"]

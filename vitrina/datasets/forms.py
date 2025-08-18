@@ -157,7 +157,7 @@ class BaseResourceForm(TranslatableModelForm):
             """kur "priedas1" yra dokumento failo pavadinimas."""
         ),
         required=False,
-        unique=True
+        unique=True,
     )
 
     parent = forms.ModelChoiceField(
@@ -356,7 +356,7 @@ class BaseResourceForm(TranslatableModelForm):
                 item_errors[i] = f"{url}: {e.message}"
 
         if any(item_errors):
-            self.fields['applicable_legislation'].widget.validation_errors = item_errors
+            self.fields["applicable_legislation"].widget.validation_errors = item_errors
             raise ValidationError("Yra klaidų sąraše.")
 
         return cleaned

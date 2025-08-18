@@ -20,7 +20,12 @@ from tagulous.models import TagField
 from treebeard.mp_tree import MP_Node
 
 from vitrina.catalogs.models import Catalog, HarvestingJob
-from vitrina.classifiers.models import Category, Frequency, Concept, ApplicableLegislation
+from vitrina.classifiers.models import (
+    Category,
+    Frequency,
+    Concept,
+    ApplicableLegislation,
+)
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
     EdpRestrictedDatasetManager,
@@ -1271,11 +1276,14 @@ class Dataset(Resource):
     def update_applicable_legislation(self, urls: list[str]) -> None:
         new_legislations = []
         for url in urls:
-            applicable_legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
+            applicable_legislation, created = (
+                ApplicableLegislation.objects.get_or_create(url=url)
+            )
             if created:
                 applicable_legislation.update_description()
             new_legislations.append(applicable_legislation)
         self.applicable_legislation.set(new_legislations)
+
 
 class DatasetReport(Dataset):
     class Meta:

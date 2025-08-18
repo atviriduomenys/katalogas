@@ -32,7 +32,7 @@ from vitrina.datasets.services import get_projects, get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 
 from vitrina.fields import FilerFileField, MultipleFilerField
-from vitrina.helpers import get_current_domain
+from vitrina.helpers import get_current_domain, inline_fields
 from vitrina.orgs.forms import (
     RepresentativeCreateForm,
     RepresentativeUpdateForm,
@@ -521,6 +521,78 @@ class InformationSystemResourceForm(BaseResourceForm):
         self.fields["information_system_importance"].label_from_instance = (
             lambda obj: str(obj.translated_label)
         )
+
+
+class DatasetResourceForm(BaseResourceForm):
+    temporal_start = DateField(
+        widget=forms.TextInput(attrs={"type": "date"}),
+        required=False,
+        label=_("Laikotarpio pradžia"),
+        help_text=_("Duomenų rinkinio laikotarpio pradžia. Atitinka dct:temporal."),
+    )
+    temporal_end = DateField(
+        widget=forms.TextInput(attrs={"type": "date"}),
+        required=False,
+        label=_("Laikotarpio pabaiga"),
+        help_text=_("Duomenų rinkinio laikotarpio pabaiga. Atitinka dct:temporal."),
+    )
+
+    class Meta:
+        model = Dataset
+        fields = (
+            "title",
+            "description",
+            "temporal_start",
+            "temporal_end",
+            "is_public",
+            "tags",
+            "catalog",
+            "frequency",
+            "access_rights",
+            "files",
+            "name",
+            "contact",
+            "creator",
+            "publisher",
+            "managed_by_publisher",
+            "landing_page",
+        )
+
+    def __init__(self, request=None, organization=None, *args, **kwargs):
+        super().__init__(request, organization, *args, **kwargs)
+
+        self.helper.layout = Layout(
+            Field("is_public", placeholder=_("Ar duomenys vieši")),
+            Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
+            Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
+            Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
+            inline_fields(
+                Field("temporal_start", placeholder=_("Pasirinkite pradžios datą")),
+                Field("temporal_end", placeholder=_("Pasirinkite pabaigos datą")),
+            ),
+            Field("files"),
+            Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
+            Field("landing_page"),
+            Field("catalog"),
+            Field("frequency"),
+            Field("access_rights"),
+            Field("contact"),
+            Field("managed_by_publisher"),
+            Field("creator"),
+            Field("publisher"),
+        )
+
+    def clean(self):
+        start = self.cleaned_data.get("temporal_start")
+        end = self.cleaned_data.get("temporal_end")
+        if start and end:
+            if start > end:
+                self.add_error(
+                    "temporal_start",
+                    _(
+                        "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
+                    ),
+                )
 
 
 class ResourceForm(BaseResourceForm):

@@ -43,7 +43,7 @@ from vitrina.datasets.forms import (
     ResourceForm,
     ServiceResourceForm,
     BaseResourceForm,
-    InformationSystemResourceForm,
+    InformationSystemResourceForm, DatasetResourceForm,
 )
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
@@ -1904,7 +1904,7 @@ def test_dataset_delete_attribution(app: DjangoTestApp):
 @pytest.mark.parametrize(
     "subclass_name, form_class",
     [
-        ("dataset", ResourceForm),
+        ("dataset", DatasetResourceForm),
         ("catalog", ResourceForm),
         ("information_system", InformationSystemResourceForm),
         ("service", ServiceResourceForm),
@@ -2363,7 +2363,7 @@ def test_dataset_update_without_permission(app: DjangoTestApp):
 @pytest.mark.parametrize(
     "subclass_name, form_class",
     [
-        ("dataset", ResourceForm),
+        ("dataset", DatasetResourceForm),
         ("catalog", ResourceForm),
         ("information_system", InformationSystemResourceForm),
         ("service", ServiceResourceForm),

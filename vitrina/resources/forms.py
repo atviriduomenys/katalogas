@@ -80,18 +80,6 @@ class DatasetResourceForm(TranslatableModelForm):
     access = forms.ChoiceField(
         label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False
     )
-    period_start = DateField(
-        widget=forms.TextInput(attrs={"type": "date"}),
-        required=False,
-        label=_("Periodo pradžia"),
-        help_text=_("Data nuo kada duomenys yra aktualūs."),
-    )
-    period_end = DateField(
-        widget=forms.TextInput(attrs={"type": "date"}),
-        required=False,
-        label=_("Periodo pabaiga"),
-        help_text=_("Data nuo kada duomenys nebėra aktualūs."),
-    )
     access_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'
         widget=forms.TextInput(),
@@ -142,8 +130,6 @@ class DatasetResourceForm(TranslatableModelForm):
             "title",
             "description",
             "geo_location",
-            "period_start",
-            "period_end",
             "access_url",
             "format",
             "compression_format",
@@ -185,10 +171,6 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("level"),
             Field("is_parameterized"),
             Field("geo_location", placeholder=_("Pateikitę geografinę padėtį")),
-            inline_fields(
-                Field("period_start", placeholder=_("Pasirinkite pradžios datą")),
-                Field("period_end", placeholder=_("Pasirinkite pabaigos datą")),
-            ),
             Field("access_url"),
             Field("format"),
             Field("compression_format"),
@@ -236,7 +218,9 @@ class DatasetResourceForm(TranslatableModelForm):
 
         if not file and not url and not access_url:
             self.add_error("access_url", _("Pateikite duomenų prieigos nuorodą."))
-            self.add_error("download_url", _("Arba pateikite duomenų atsisiuntimo nuorodą."))
+            self.add_error(
+                "download_url", _("Arba pateikite duomenų atsisiuntimo nuorodą.")
+            )
             self.add_error("file", _("Arba įkelkite duomenų failą."))
 
         if url and "get.data.gov.lt" in url and not upload:

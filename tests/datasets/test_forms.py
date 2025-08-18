@@ -45,3 +45,30 @@ class TestInformationSystemResourceForm:
 
         assert isinstance(form, InformationSystemResourceForm)
         assert set(form.fields[field_name].queryset) == {concept}
+
+
+class DatasetResourceForm:
+    def test_temporal_start_date_must_be_lower_then_temporal_end_date(
+        self, app: DjangoTestApp
+    ) -> None:
+        organization = OrganizationFactory()
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        subclass = DCATResourceSubclassFactory(name="dataset")
+
+        form = app.get(
+            reverse(
+                "dataset-add",
+                kwargs={"pk": organization.id, "subclass_uuid": subclass.pk},
+            )
+        ).context["form"]
+
+        form["temporal_start"] = "2025-08-20"
+        form["temporal_end"] = "2025-08-10"
+
+        response = form.submit()
+
+        assert isinstance(form, DatasetResourceForm)
+        assert response.status_code == 200
+        form_in_context = response.context["form"]
+        assert "temporal_start" in form_in_context.errors

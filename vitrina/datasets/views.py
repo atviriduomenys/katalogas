@@ -1091,7 +1091,7 @@ class DatasetUpdateView(
             return ServiceResourceForm
         if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
             return InformationSystemResourceForm
-        elif subclass.name == DCATResourceSubclass.DATASET:
+        if subclass.name == DCATResourceSubclass.DATASET:
             return DatasetResourceForm
 
         return ResourceForm

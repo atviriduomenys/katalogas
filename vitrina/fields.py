@@ -1,5 +1,5 @@
 import pathlib
-
+from typing import Any, Mapping, Sequence
 from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import UploadedFile
 from django.forms import (
@@ -9,8 +9,10 @@ from django.forms import (
     ImageField,
     ClearableFileInput,
     CharField,
-    Widget
+    Widget,
 )
+from django.http import QueryDict
+from django.utils.datastructures import MultiValueDict
 from django.forms.widgets import FILE_INPUT_CONTRADICTION
 from django.utils.translation import gettext_lazy as _
 from filer.models import Image, File, Folder
@@ -256,13 +258,18 @@ class DisabledCharField(CharField):
 
 
 class StringListWidget(Widget):
-    template_name = "component/multi_input.html"
+    template_name: str = "component/multi_input.html"
+    validation_errors: list[str | None]
 
-    def value_from_datadict(self, data, files, name):
+    def value_from_datadict(
+        self, data: QueryDict, files: MultiValueDict, name: str
+    ) -> list[str]:
         values = data.getlist(name)
         return [v.strip() for v in values if v.strip()]
 
-    def get_context(self, name: str, value, attrs):
+    def get_context(
+        self, name: str, value: Sequence[str] | None, attrs: Mapping[str, Any] | None
+    ) -> dict[str, Any]:
         context = super().get_context(name, value, attrs)
         values = value or []
         validation_errors = getattr(self, "validation_errors", [None for v in values])
@@ -273,16 +280,16 @@ class StringListWidget(Widget):
 class StringListField(Field):
     widget = StringListWidget
 
-    def __init__(self, *args, unique=False, **kwargs):
+    def __init__(self, *args, unique: bool = False, **kwargs) -> None:
         self.unique = unique
         super().__init__(*args, **kwargs)
 
-    def to_python(self, value):
+    def to_python(self, value: Sequence[Any] | None) -> list[str]:
         if value is None:
             return []
         return [str(v) for v in value]
 
-    def validate(self, value):
+    def validate(self, value: list[str]) -> None:
         super().validate(value)
         if self.unique and len(set(value)) != len(value):
             raise ValidationError(_("Reikšmės privalo būti unikalios."))

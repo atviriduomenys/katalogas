@@ -23,6 +23,7 @@ RUN apt-get update && \
     libsnappy-dev \
     libgflags-dev \
     libgoogle-glog-dev \
+    libgirepository1.0-dev \
     npm \
     libpango1.0 \
     libpango1.0-dev \

@@ -106,7 +106,7 @@ class ResourceCreateView(
         return super(ResourceCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        resource = form.save(commit=False)
+        resource: DatasetDistribution = form.save(commit=False)
         resource.dataset = self.dataset
         resource.save()
 
@@ -175,6 +175,11 @@ class ResourceCreateView(
             self.dataset.status = Dataset.HAS_DATA
             self.dataset.save()
 
+        if applicable_legislation_urls := form.cleaned_data.get(
+            "applicable_legislation"
+        ):
+            resource.update_applicable_legislation(applicable_legislation_urls)
+
         set_comment((f'Pridėtas naujas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
@@ -216,7 +221,8 @@ class ResourceUpdateView(
         return super(ResourceUpdateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        resource = form.save()
+        applicable_legislation_urls = form.cleaned_data.pop("applicable_legislation")
+        resource: DatasetDistribution = form.save()
         name = form.cleaned_data.get("name")
         if not name:
             name = (
@@ -261,6 +267,10 @@ class ResourceUpdateView(
                 description=form.cleaned_data.get("description"),
                 level_given=form.cleaned_data.get("level"),
             )
+
+        if "applicable_legislation" in form.changed_data:
+            resource.update_applicable_legislation(applicable_legislation_urls)
+
 
         set_comment((f'Redaguotas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()

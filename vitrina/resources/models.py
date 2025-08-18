@@ -11,7 +11,7 @@ from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
-from vitrina.classifiers.models import Licence
+from vitrina.classifiers.models import Licence, ApplicableLegislation
 from vitrina.datasets.models import Dataset
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
@@ -219,6 +219,12 @@ class DatasetDistribution(TranslatableModel):
     licence = models.ForeignKey(
         Licence, models.SET_NULL, blank=True, null=True, verbose_name=_("Licencija"),
     )
+    applicable_legislation = models.ManyToManyField(
+        ApplicableLegislation,
+        verbose_name=_("Teisinis pagrindas"),
+        related_name="dataset_distributions",
+        blank=True,
+    )
 
     temporal_resolution = models.CharField(
         max_length=255,
@@ -410,3 +416,14 @@ class DatasetDistribution(TranslatableModel):
                 )
                 en_conditions = response_conditions.json()
                 self.conditions = en_conditions
+
+    def update_applicable_legislation(self, urls: list[str]) -> None:
+        new_legislations = []
+        for url in urls:
+            applicable_legislation, created = (
+                ApplicableLegislation.objects.get_or_create(url=url)
+            )
+            if created:
+                applicable_legislation.update_description()
+            new_legislations.append(applicable_legislation)
+        self.applicable_legislation.set(new_legislations)

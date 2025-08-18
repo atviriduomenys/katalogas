@@ -1,5 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
+from django.forms import DateField
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -10,6 +12,8 @@ from parler.forms import TranslatedField, TranslatableModelForm
 from vitrina.classifiers.models import Licence
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField
+from vitrina.fields import FilerFileField, StringListField
+from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
 
@@ -121,6 +125,19 @@ class DatasetResourceForm(TranslatableModelForm):
         widget=forms.RadioSelect,
         choices=LEVEL_CHOICES,
     )
+    applicable_legislation = StringListField(
+        label=_("Teisinis pagrindas"),
+        help_text=_(
+            """Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br>
+            Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>
+            Tais atvejais, kai yra keli dokumentai su priedais:
+            "#priedas1/17.2"
+            "17.2/17.2.5",
+            kur "priedas1" yra dokumento failo pavadinimas."""
+        ),
+        required=False,
+        unique=True,
+    )
 
     class Meta:
         model = DatasetDistribution
@@ -145,6 +162,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "conditions",
             "temporal_resolution",
             "spatial_resolution",
+            "applicable_legislation",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -179,6 +197,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("data_service"),
             Field("upload_to_storage"),
             Field("licence"),
+            Field("applicable_legislation"),
             Field("conditions"),
             Submit("submit", button, css_class="button is-primary"),
         )
@@ -186,6 +205,10 @@ class DatasetResourceForm(TranslatableModelForm):
         if not self.resource:
             if default_licence := Licence.objects.filter(is_default=True).first():
                 self.initial["licence"] = default_licence
+        else:
+            self.initial["applicable_legislation"] = list(
+                self.resource.applicable_legislation.values_list("url", flat=True)
+            )
 
         if self.resource and self.resource.metadata.first():
             metadata = self.resource.metadata.first()
@@ -268,6 +291,27 @@ class DatasetResourceForm(TranslatableModelForm):
         if level and level != "None":
             return int(level)
         return None
+
+    def clean_applicable_legislation(self):
+        urls: list[str] = self.cleaned_data.get("applicable_legislation", [])
+        validator = URLValidator()
+
+        cleaned = []
+        item_errors = [None] * len(urls)
+
+        for i, url in enumerate(urls):
+            try:
+                validator(url)
+                cleaned.append(url)
+            except ValidationError as e:
+                item_errors[i] = f"{url}: {e.message}"
+
+        if any(item_errors):
+            self.fields["applicable_legislation"].widget.validation_errors = item_errors
+            raise ValidationError(_("Yra klaidų sąraše."))
+
+        return cleaned
+
 
 class FormatAdminForm(forms.ModelForm):
     extension = forms.CharField(label=_("Failo plėtinys"))

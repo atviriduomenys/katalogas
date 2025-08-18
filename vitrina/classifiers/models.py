@@ -271,7 +271,6 @@ class ApplicableLegislation(UUIDBaseModel):
 
     def update_description(self) -> str | None:
         if title := fetch_page_title(self.url):
-            if title:
             self.description = title
             self.save(update_fields=["description"])
         return title

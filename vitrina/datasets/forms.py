@@ -375,12 +375,11 @@ class BaseResourceForm(TranslatableModelForm):
                 validator(url)
                 cleaned.append(url)
             except ValidationError as e:
-                # show the bad value + Django's URL message
                 item_errors[i] = f"{url}: {e.message}"
 
         if any(item_errors):
             self.fields["applicable_legislation"].widget.validation_errors = item_errors
-            raise ValidationError("Yra klaidų sąraše.")
+            raise ValidationError(_("Yra klaidų sąraše."))
 
         return cleaned
 

@@ -758,7 +758,7 @@ class Dataset(Resource):
     
     @property
     def identifier(self) -> str | None:
-        return identifier.notation if (identifier := self.identifiers.first()) else None
+        return identifier.notation if (identifier := self.identifiers.filter(scheme_agency__code="risr").first()) else None
 
     def public_types(self):
         return list(self.type.filter(show_filter=True).values_list("pk", flat=True))

@@ -11,7 +11,7 @@ def fetch_page_title(url: str, timeout: int = DEFAULT_FETCH_TIMEOUT) -> str | No
             url, timeout=timeout, headers={"User-Agent": "Mozilla/5.0"}
         )
         response.raise_for_status()
-        soup = BeautifulSoup(response.text, "html.parser")
+        soup = BeautifulSoup(response.content, "html.parser")
         title = soup.title.string.strip() if soup.title and soup.title.string else None
         return (title or "")[:255] or None
     except Exception:

@@ -257,7 +257,9 @@ class Concept(TranslatableModel, UUIDBaseModel):
 
 
 class ApplicableLegislation(UUIDBaseModel):
-    description = models.CharField(max_length=255, verbose_name=_("Pavadinimas"), null=True, blank=True)
+    description = models.CharField(
+        max_length=255, verbose_name=_("Pavadinimas"), null=True, blank=True
+    )
     url = models.URLField(max_length=255, verbose_name=_("Nuoroda"))
 
     class Meta:
@@ -266,6 +268,7 @@ class ApplicableLegislation(UUIDBaseModel):
 
     def __str__(self) -> str:
         return self.description or self.url
+
     def update_description(self) -> str | None:
         if title := fetch_page_title(self.url):
             if title:

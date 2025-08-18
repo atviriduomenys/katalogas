@@ -379,7 +379,7 @@ class BaseResourceForm(TranslatableModelForm):
                 item_errors[i] = f"{url}: {e.message}"
 
         if any(item_errors):
-            self.fields['applicable_legislation'].widget.validation_errors = item_errors
+            self.fields["applicable_legislation"].widget.validation_errors = item_errors
             raise ValidationError("Yra klaidų sąraše.")
 
         return cleaned
@@ -477,7 +477,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             "information_system_importance",
             "information_system_publisher",
             "information_system_creator"
-            "applicable_legislation"
+            "applicable_legislation",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -661,7 +661,7 @@ class ResourceForm(BaseResourceForm):
             Field("creator"),
             Field("publisher"),
             Field("parent"),
-            Field("applicable_legislation")
+            Field("applicable_legislation"),
         )
 
 

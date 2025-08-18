@@ -119,7 +119,7 @@ from vitrina.classifiers.models import (
     Category,
     Frequency,
     AreaOfManagement,
-    ApplicableLegislation
+    ApplicableLegislation,
 )
 from vitrina.identifiers.models import Agency, Identifier
 from vitrina.helpers import (
@@ -907,7 +907,9 @@ class DatasetCreateView(
             rep.save()
             self.object.save()
 
-        if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
+        if applicable_legislation_urls := form.cleaned_data.get(
+            "applicable_legislation"
+        ):
             self.object.update_applicable_legislation(applicable_legislation_urls)
 
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
@@ -1130,7 +1132,9 @@ class DatasetUpdateView(
                 },
             )
         if "applicable_legislation" in form.changed_data:
-            self.object.update_applicable_legislation(form.cleaned_data["applicable_legislation"])
+            self.object.update_applicable_legislation(
+                form.cleaned_data["applicable_legislation"]
+            )
 
         self.object.save()
         set_comment(Dataset.EDITED)

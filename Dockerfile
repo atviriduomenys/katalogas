@@ -1,4 +1,4 @@
-FROM python:3.11-slim AS builder
+FROM python:3.11-slim-bookworm AS builder
 
 COPY . /app/
 WORKDIR /app
@@ -24,9 +24,9 @@ RUN apt-get update && \
     libgflags-dev \
     libgoogle-glog-dev \
     npm \
-    libpango1.0-0 \
+    libpango1.0 \
     libpango1.0-dev \
-    libgdk-pixbuf2.0-0 \
+    libgdk-pixbuf-xlib-2.0-0 \
     libffi-dev \
     libxml2 \
     libxslt1.1 \

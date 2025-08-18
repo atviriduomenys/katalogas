@@ -149,12 +149,12 @@ class BaseResourceForm(TranslatableModelForm):
     applicable_legislation = StringListField(
         label=_("Teisinis pagrindas"),
         help_text=_(
-            "Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br> "
-            """Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>"""
-            "Tais atvejais, kai yra keli dokumentai su priedais: "
-            """ "#priedas1/17.2" """
-            """ "17.2/17.2.5", """
-            """kur "priedas1" yra dokumento failo pavadinimas."""
+            """Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br>
+            Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>
+            Tais atvejais, kai yra keli dokumentai su priedais:
+            "#priedas1/17.2"
+            "17.2/17.2.5",
+            kur "priedas1" yra dokumento failo pavadinimas."""
         ),
         required=False,
         unique=True,
@@ -352,12 +352,11 @@ class BaseResourceForm(TranslatableModelForm):
                 validator(url)
                 cleaned.append(url)
             except ValidationError as e:
-                # show the bad value + Django's URL message
                 item_errors[i] = f"{url}: {e.message}"
 
         if any(item_errors):
             self.fields["applicable_legislation"].widget.validation_errors = item_errors
-            raise ValidationError("Yra klaidų sąraše.")
+            raise ValidationError(_("Yra klaidų sąraše."))
 
         return cleaned
 

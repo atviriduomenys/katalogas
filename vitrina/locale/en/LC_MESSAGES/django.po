@@ -188,6 +188,15 @@ msgstr "Concept"
 msgid "Sąvokos"
 msgstr "Concepts"
 
+msgid "Nuoroda"
+msgstr "URL"
+
+msgid "Teisinis pagrindas"
+msgstr "Applicable legislation"
+
+msgid "Teisiniai pagrindai"
+msgstr "Applicable legislation"
+
 msgid "Pranešimas (lietuvių kalba)"
 msgstr "Message (in Lithuanian)"
 
@@ -229,9 +238,6 @@ msgstr "Answer"
 
 msgid "Tipas"
 msgstr "Type"
-
-msgid "Nuoroda"
-msgstr "URL"
 
 msgid "Duomenys"
 msgstr "Data"
@@ -614,6 +620,23 @@ msgstr "Parent resource"
 msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
 msgstr ""
 "This property specifies a related resource. Corresponds to dct:relation."
+
+msgid ""
+"Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį "
+"teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br>"
+"Pateikti konkrečią vietą teisės akto dokumente: po # pateikite "
+"konkrečią vietą: \"#17.2\" <br>"
+"Tais atvejais, kai yra keli dokumentai su priedais:"
+"\"#priedas1/17.2\""
+"\"17.2/17.2.5\","
+"kur \"priedas1\" yra dokumento failo pavadinimas."
+msgstr ""
+"A standard for identifying legal acts, allowing not only the legal document "
+"itself to be identified, but also a specific location within the document. "
+"<br>To provide a specific location in the legislative document: after the # "
+"provide a specific location: \"#17.2\" <br>In cases where there are several "
+"documents with annexes: \"#attachment1/17.2\" \"17.2/17.2.5\" where "
+"\"attachment1\" is the name of the document's file. "
 
 msgid "Organizacija:"
 msgstr "Organization:"

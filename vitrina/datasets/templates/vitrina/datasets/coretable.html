@@ -165,9 +165,7 @@
             <td>
                 <ul>
                     {% for legislation in dataset.applicable_legislation.all %}
-                        {% with label=legislation.description|default:legislation.url %}
-                            <li><a href="{{ legislation.url }}" target="_blank" title="{{ label }}">{{ label|truncatechars:30 }}</a></li>
-                        {% endwith %}
+                        <li><a href="{{ legislation.url }}" target="_blank" title="{{ legislation }}">{{ legislation|truncatechars:30 }}</a></li>
                     {% endfor %}
                 </ul>
             </td>

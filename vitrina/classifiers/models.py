@@ -273,7 +273,7 @@ class Concept(TranslatableModel, UUIDBaseModel):
         )
 
 
-class ApplicableLegislation(models.Model):
+class ApplicableLegislation(UUIDBaseModel):
     description = models.CharField(
         max_length=255, verbose_name=_("Pavadinimas"), null=True, blank=True
     )
@@ -287,8 +287,7 @@ class ApplicableLegislation(models.Model):
         return self.description or self.url
 
     def update_description(self) -> str | None:
-        title = fetch_page_title(self.url)
-        if title:
+        if title:= fetch_page_title(self.url):
             self.description = title
             self.save(update_fields=["description"])
         return title

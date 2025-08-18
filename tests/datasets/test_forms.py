@@ -71,4 +71,4 @@ class DatasetResourceForm:
         assert isinstance(form, DatasetResourceForm)
         assert response.status_code == 200
         form_in_context = response.context["form"]
-        assert "temporal_start" in form_in_context.errors
+        assert "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data." in form_in_context.errors

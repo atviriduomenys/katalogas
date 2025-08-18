@@ -558,7 +558,7 @@ class DatasetResourceForm(BaseResourceForm):
             "landing_page",
         )
 
-    def __init__(self, request=None, organization=None, *args, **kwargs):
+    def __init__(self, request=None, organization=None, *args, **kwargs) -> None:
         super().__init__(request, organization, *args, **kwargs)
 
         self.helper.layout = Layout(
@@ -582,17 +582,14 @@ class DatasetResourceForm(BaseResourceForm):
             Field("publisher"),
         )
 
-    def clean(self):
+    def clean(self) -> None:
         start = self.cleaned_data.get("temporal_start")
         end = self.cleaned_data.get("temporal_end")
-        if start and end:
-            if start > end:
-                self.add_error(
-                    "temporal_start",
-                    _(
-                        "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
-                    ),
-                )
+        if start and end and start > end:
+            self.add_error(
+                "temporal_start",
+                _("Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."),
+            )
 
 
 class ResourceForm(BaseResourceForm):

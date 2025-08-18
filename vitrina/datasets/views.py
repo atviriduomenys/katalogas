@@ -119,7 +119,6 @@ from vitrina.classifiers.models import (
     Category,
     Frequency,
     AreaOfManagement,
-    ApplicableLegislation,
 )
 from vitrina.identifiers.models import Agency, Identifier
 from vitrina.helpers import (

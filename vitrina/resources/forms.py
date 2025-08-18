@@ -14,6 +14,9 @@ from vitrina.fields import FilerFileField
 from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
+import re
+
+XSD_DURATION_REGEX = re.compile(r"^(-?)P(?=.)((\d+)Y)?((\d+)M)?((\d+)D)?(T(?=.)((\d+)H)?((\d+)M)?(\d*(\.\d+)?S)?)?$")
 
 
 def _get_level_title(title, description=None):
@@ -159,6 +162,8 @@ class DatasetResourceForm(TranslatableModelForm):
             "imported",
             "licence",
             "conditions",
+            "temporal_resolution",
+            "spatial_resolution",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -177,6 +182,8 @@ class DatasetResourceForm(TranslatableModelForm):
             ),
             Field("description", placeholder=_("Detalus šaltinio aprašas"), rows="2"),
             Field("name"),
+            Field("temporal_resolution"),
+            Field("spatial_resolution"),
             Field("access"),
             Field("level"),
             Field("is_parameterized"),
@@ -282,6 +289,12 @@ class DatasetResourceForm(TranslatableModelForm):
         if level and level != "None":
             return int(level)
         return None
+
+    def clean_temporal_resolution(self):
+        temporal_resolution = self.cleaned_data.get("temporal_resolution").upper()
+        if temporal_resolution and not XSD_DURATION_REGEX.match(temporal_resolution):
+                raise ValidationError(_("Laiko skiriamoji geba turi atitikti ISO 8601 reikalavimus, pvz 'P1D', 'PT1H'."))
+        return temporal_resolution
 
 
 class FormatAdminForm(forms.ModelForm):

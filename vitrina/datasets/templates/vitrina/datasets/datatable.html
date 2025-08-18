@@ -85,10 +85,15 @@
                    id="change_resource">{% translate "Redaguoti" %}</a>
             </td>
             <td>
-                <a href="{%url 'resource-delete' pk=r.id %}"
-                   onclick="return confirm('Ar jūs tikrai norite trinti šį šaltinį?')"
-                   class="button is-link is-small is-pulled-right"
-                   id="delete_resource">{% translate "Trinti" %}</a>
+                <form method="post" action="{% url 'resource-delete' pk=r.id %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="button is-link is-small is-pulled-right"
+                            onclick="return confirm('Ar jūs tikrai norite trinti šį šaltinį?')"
+                            id="delete_resource">
+                        {% translate "Trinti" %}
+                    </button>
+                </form>
             </td>
             {% endif %}
         </tr>

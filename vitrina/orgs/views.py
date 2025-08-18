@@ -13,6 +13,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q, Count
+from django.forms import BaseForm
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -29,6 +30,7 @@ from django.utils.text import slugify
 from django.views.generic.edit import FormView
 from haystack.generic_views import SearchView
 from itsdangerous import URLSafeSerializer, BadSignature
+from requests import Response
 from reversion import set_comment
 from reversion.models import Version
 
@@ -1188,17 +1190,15 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
     def get_success_url(self):
         return reverse("organization-members", kwargs={"pk": self.kwargs.get("organization_id")})
 
-    def delete(self, request, *args, **kwargs):
-        obj = self.get_object()
-        org_id = self.kwargs.get("organization_id")
-        if obj.organization:
-            datasets = Dataset.objects.filter(organization_id=org_id)
-            for dataset in datasets:
-                if dataset.publisher is not None:
-                    dataset.publisher = None
-                    dataset.save()
-        pre_representative_delete(obj)
-        return super().delete(request, *args, **kwargs)
+    def form_valid(self, form: BaseForm) -> HttpResponse:
+        if self.object.organization:
+            Dataset.objects.filter(
+                organization_id=self.kwargs.get("organization_id"),
+                publisher__isnull=False,
+            ).update(publisher=None)
+
+        pre_representative_delete(self.object)
+        return super().form_valid(form)
 
 
 class RepresentativeRegisterView(RegisterView):
@@ -1974,25 +1974,24 @@ class OrganizationApiKeysDeleteView(LoginRequiredMixin, PermissionRequiredMixin,
             self.organization,
         )
 
-    def delete(self, request, *args, **kwargs):
-        error = False
-        err_message = ""
+    @staticmethod
+    def spinta_delete_apikey(client_id: str) -> Response:
+        response = get_auth_session().delete(
+            SPINTA_SERVER_URL + "/auth/clients/" + client_id
+        )
+
+        return response
+
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         try:
-            response = get_auth_session().delete(SPINTA_SERVER_URL + "/auth/clients/" + self.apikey.client_id)
-        except requests.exceptions.RequestException as e:
-            error = True
-            err_message = f"Error removing apikey with client_id: {self.apikey.client_id}, {e}"
-        else:
+            response = self.spinta_delete_apikey(self.apikey.client_id)
             if response.status_code == 204:
-                self.apikey.delete()
-            else:
-                error = True
-                err_message = f"Error removing apikey with client_id: {self.apikey.client_id}"
-        if error:
-            print(err_message)
-            messages.error(self.request, _("API rakto pašalinti nepavyko."))
-        success_url = self.get_success_url()
-        return HttpResponseRedirect(success_url)
+                return super().form_valid(form)
+        except requests.exceptions.RequestException:
+            pass
+
+        messages.error(self.request, _("API rakto pašalinti nepavyko."))
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

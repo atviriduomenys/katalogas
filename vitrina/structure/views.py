@@ -10,7 +10,8 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db.models import Func, F, Value, TextField, Max
-from django.http import Http404, StreamingHttpResponse, JsonResponse
+from django.forms import BaseForm
+from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
@@ -1571,9 +1572,6 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
             context["parent_links"][url] = self.property.title or self.property.name
         return context
 
-    def get(self, request, *args, **kwargs):
-        return self.post(request, *args, **kwargs)
-
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         success_url = self.get_success_url()
@@ -2251,15 +2249,11 @@ class ParamDeleteView(PermissionRequiredMixin, DeleteView):
     def get_success_url(self):
         return self.object.param.object.get_absolute_url()
 
-    def get(self, request, *args, **kwargs):
-        return self.post(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object = self.get_object()
-        success_url = self.get_success_url()
         value = str(self.object)
         rel_object = self.object.param.object
-        self.object.delete()
+        response = super().form_valid(form)
 
         # Save history
         if isinstance(rel_object, Model):
@@ -2268,7 +2262,7 @@ class ParamDeleteView(PermissionRequiredMixin, DeleteView):
                 set_comment(_(f'Pašalintas "{rel_object.name}" modelio parametras "{value}".'))
                 set_user(self.request.user)
 
-        return redirect(success_url)
+        return response
 
 
 class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):

@@ -13,7 +13,7 @@ from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan
 from vitrina.requests.factories import RequestFactory, RequestStructureFactory, RequestObjectFactory, \
     RequestAssignmentFactory
-from vitrina.requests.models import Request
+from vitrina.requests.models import Request, RequestObject
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.factories import UserFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
@@ -449,10 +449,15 @@ def test_remove_dataset_from_request_with_representative_permission(app: DjangoT
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk
     )
-    resp = app.get(reverse('request-datasets', args=[request.pk]))
-    assert f"remove-dataset-{dataset.pk}-btn" in resp.text
-    resp = app.get(reverse('request-dataset-remove', args=[request.pk, dataset.pk]))
-    assert resp.request.path_qs == reverse('request-dataset-remove', args=[request.pk, dataset.pk])
+
+    app.post(reverse('request-dataset-remove', args=[request.pk, dataset.pk]))
+
+    request.refresh_from_db()
+    assert request.pk
+    assert not RequestObject.objects.filter(
+        object_id=dataset.pk,
+        content_type=ContentType.objects.get_for_model(dataset),
+    ).exists()
 
 
 @pytest.mark.django_db
@@ -483,7 +488,12 @@ def test_remove_dataset_from_request_with_organization_permission(app: DjangoTes
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk
     )
-    resp = app.get(reverse('request-datasets', args=[request.pk]))
-    assert f"remove-dataset-{dataset.pk}-btn" in resp.text
-    resp = app.get(reverse('request-dataset-remove', args=[request.pk, dataset.pk]))
-    assert resp.request.path_qs == reverse('request-dataset-remove', args=[request.pk, dataset.pk])
+
+    app.post(reverse('request-dataset-remove', args=[request.pk, dataset.pk]))
+
+    request.refresh_from_db()
+    assert request.pk
+    assert not RequestObject.objects.filter(
+        object_id=dataset.pk,
+        content_type=ContentType.objects.get_for_model(dataset),
+    ).exists()

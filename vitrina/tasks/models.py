@@ -101,6 +101,8 @@ class Task(models.Model):
 
     def save(self, *args, **kwargs):
         self.due_date = get_due_date()
+        if update_fields := kwargs.get("update_fields"):
+            kwargs["update_fields"] = {"due_date"}.union(update_fields)
         super(Task, self).save(*args, **kwargs)
 
     def get_absolute_url(self):

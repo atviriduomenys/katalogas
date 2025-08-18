@@ -114,10 +114,6 @@ class PlanDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         }
         return context
 
-    def delete(self, request, *args, **kwargs):
-        resp = super().delete(request, *args, **kwargs)
-        return resp
-
 
 class PlanHistoryView(PlanMixin, HistoryView):
     model = Organization

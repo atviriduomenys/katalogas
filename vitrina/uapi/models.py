@@ -93,6 +93,11 @@ class Agent(UUIDBaseModel):
     def save(self, *args, **kwargs) -> None:
         self.codename = self.get_codename(self.title)
 
+        if (
+            update_fields := kwargs.get("update_fields")
+        ) is not None and "title" in update_fields:
+            kwargs["update_fields"] = {"codename"}.union(update_fields)
+
         if not self.service.service:
             raise ValidationError(_('Susietas duomenų išteklius turi būti "paslaugos" tipo.'))
 

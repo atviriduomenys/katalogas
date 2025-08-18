@@ -10,6 +10,7 @@ from datetime import date, datetime
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.forms import BaseForm
 from django.http import HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.generic.base import View
@@ -77,7 +78,7 @@ from vitrina.tasks.models import Task
 from vitrina.users.models import User
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from django.contrib import messages
-from django.http.response import HttpResponsePermanentRedirect
+from django.http.response import HttpResponsePermanentRedirect, HttpResponse
 from vitrina.requests.forms import RequestPlanForm
 from vitrina.plans.models import PlanDataset
 
@@ -1204,7 +1205,7 @@ class RequestDeleteDatasetView(LoginRequiredMixin, PermissionRequiredMixin, Dele
     def has_permission(self):
         return has_perm(self.request.user, Action.ASSIGN, self.request_object)
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         request_obj_items = RequestObject.objects.filter(
             object_id=self.dataset.pk,
             content_type=ContentType.objects.get_for_model(self.dataset),
@@ -1212,8 +1213,8 @@ class RequestDeleteDatasetView(LoginRequiredMixin, PermissionRequiredMixin, Dele
         if len(request_obj_items) > 0:
             for item in request_obj_items:
                 item.delete()
-        success_url = self.get_success_url()
-        return HttpResponseRedirect(success_url)
+
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("request-datasets", kwargs={"pk": self.request_object.pk})

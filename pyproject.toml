@@ -6,7 +6,7 @@ authors = ["IVPK <atviriduomenys@ivpk.lt>"]
 
 [tool.poetry.dependencies]
 python = "^3.11"
-Django = "^3.2.14"
+Django = "^4.2.23"
 django-cms = "^3.10.1"
 django-sekizai = "^3.0.1"
 django-filer = "3.2.3"

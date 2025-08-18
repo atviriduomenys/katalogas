@@ -160,6 +160,23 @@ def test_remove_dataset_no_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
+def test_remove_dataset(app: DjangoTestApp) -> None:
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    project = ProjectFactory(datasets=[dataset])
+
+    app.post(
+        reverse(
+            "project-dataset-remove",
+            kwargs={"pk": project.pk, "dataset_id": dataset.pk}
+        )
+    )
+
+    project.refresh_from_db()
+    assert not project.datasets.exists()
+
+
 def test_remove_dataset_with_permission(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     project = ProjectFactory()

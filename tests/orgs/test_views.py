@@ -1,5 +1,5 @@
 import io
-from unittest.mock import patch
+from unittest.mock import patch, Mock
 from bs4 import BeautifulSoup
 
 import pytest
@@ -18,6 +18,8 @@ from itsdangerous import URLSafeSerializer
 from webtest import Upload
 
 from vitrina import settings
+from vitrina.api.factories import APIKeyFactory
+from vitrina.api.models import ApiKey
 from vitrina.classifiers.factories import AreaOfManagementFactory
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.factories import DatasetFactory
@@ -1064,3 +1066,86 @@ def test_contact_delete_no_permission(app, representative_data):
 
     assert resp.status_code == 403
     assert Contact.objects.count() == 1
+
+
+class TestRepresentativeDeleteView:
+    @pytest.mark.django_db
+    def test_delete_representative(self, app: DjangoTestApp) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        organization = OrganizationFactory()
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=organization.pk,
+        )
+
+        app.post(
+            reverse("representative-delete", args=[organization.pk, representative.pk])
+        )
+
+        assert not Representative.objects.exists()
+
+    @pytest.mark.django_db
+    def test_remove_publisher_from_all_representative_organization_datasets(
+        self, app: DjangoTestApp
+    ) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        organization = OrganizationFactory()
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=organization.pk,
+            organization=organization,
+        )
+        dataset = DatasetFactory(organization=organization, publisher=organization)
+
+        app.post(
+            reverse("representative-delete", args=[organization.pk, representative.pk])
+        )
+
+        dataset.refresh_from_db()
+        assert dataset.publisher is None
+
+
+class TestOrganizationApiKeysDeleteView:
+    @pytest.mark.django_db
+    def test_delete_api_client_if_spinta_request_successful(
+        self, app: DjangoTestApp
+    ) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        organization = OrganizationFactory()
+        api_key = APIKeyFactory()
+
+        with patch(
+            "vitrina.orgs.views.OrganizationApiKeysDeleteView.spinta_delete_apikey",
+            return_value=Mock(status_code=204),
+        ) as api_delete_request_mock:
+            app.post(
+                reverse("organization-apikeys-delete", args=[organization.pk, api_key.pk]),
+            )
+
+            assert not ApiKey.objects.exists()
+            api_delete_request_mock.assert_called_once()
+
+    @pytest.mark.django_db
+    def test_do_not_delete_api_client_if_spinta_request_unsuccessful(
+        self, app: DjangoTestApp
+    ) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        organization = OrganizationFactory()
+        api_key = APIKeyFactory()
+
+        with patch(
+            "vitrina.orgs.views.OrganizationApiKeysDeleteView.spinta_delete_apikey",
+            return_value=Mock(status_code=500),
+        ) as api_delete_request_mock:
+            app.post(
+                reverse("organization-apikeys-delete", args=[organization.pk, api_key.pk]),
+            )
+
+            assert ApiKey.objects.exists()
+            api_delete_request_mock.assert_called_once()

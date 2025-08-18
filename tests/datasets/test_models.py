@@ -4,9 +4,12 @@ import pytest
 import pytz
 from django.conf import settings
 
+from django.contrib.contenttypes.models import ContentType
+
 from vitrina.classifiers.factories import ConceptFactory
-from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.factories import ContactFactory, DatasetFactory, DCATResourceSubclassFactory
 from vitrina.datasets.models import DCATResourceSubclass, Dataset
+from vitrina.datasets.models import Contact
 from vitrina.orgs.factories import OrganizationFactory
 
 pytestmark = pytest.mark.django_db
@@ -83,3 +86,26 @@ class TestDCATResourceSubclass:
     def test_is_information_system(self, name: str, result: bool) -> None:
         subclass = DCATResourceSubclassFactory(name=name)
         assert subclass.is_information_system is result
+
+
+class TestContract:
+    def test_delete_all_existing_dataset_contacts_before_saving(self) -> None:
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        ContactFactory(
+            dataset=dataset,
+            object_id=organization.pk,
+            content_type=ContentType.objects.get_for_model(organization),
+            email=organization.email,
+            phone=organization.phone,
+        )
+        organization2 = OrganizationFactory()
+        ContactFactory(
+            dataset=dataset,
+            object_id=organization2.pk,
+            content_type=ContentType.objects.get_for_model(organization2),
+            email=organization2.email,
+            phone=organization2.phone,
+        )
+
+        assert Contact.objects.count() == 1

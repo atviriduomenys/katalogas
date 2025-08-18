@@ -296,6 +296,13 @@ class DatasetResourceForm(TranslatableModelForm):
                 raise ValidationError(_("Laiko skiriamoji geba turi atitikti ISO 8601 reikalavimus, pvz 'P1D', 'PT1H'."))
         return temporal_resolution
 
+    def clean_spatial_resolution(self):
+        spatial_resolution = self.cleaned_data.get("spatial_resolution").replace(",", ".")
+        try:
+            spatial_resolution = float(spatial_resolution)
+        except ValueError:
+            raise ValidationError(_("Erdvinė skiriamoji geba metrais, turi būti realusis skaičius."))
+        return spatial_resolution
 
 class FormatAdminForm(forms.ModelForm):
     extension = forms.CharField(label=_("Failo plėtinys"))

@@ -231,7 +231,7 @@ class DatasetDistribution(TranslatableModel):
     )
 
     temporal_resolution = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Laiko skiriamoji geba"))
-    spatial_resolution = models.FloatField(blank=True, null=True, verbose_name=_("Erdvinė skiriamoji geba"))
+    spatial_resolution = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Erdvinė skiriamoji geba"))
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)

@@ -687,6 +687,13 @@ msgstr ""
 msgid "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
 msgstr ""
 
+msgid "Duomenų rinkinio identifikatorius"
+msgstr ""
+
+#, python-format
+msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
+msgstr ""
+
 msgid "Failas"
 msgstr ""
 
@@ -1735,6 +1742,9 @@ msgstr ""
 msgid "Identifikatoriai"
 msgstr ""
 
+msgid "Reguliarioji išraiška"
+msgstr ""
+
 msgid "Schemos atstovybės pavadinimas"
 msgstr ""
 
@@ -1747,10 +1757,21 @@ msgstr ""
 msgid "adms:schemeAgency – schemos atstovybės URI"
 msgstr ""
 
+msgid "Identifikatoriaus tikrinimo tipas"
+msgstr ""
+
+msgid "Identifikatoriaus tikrinimo parinktys"
+msgstr ""
+
 msgid "Atstovybė"
 msgstr ""
 
 msgid "Atstovybės"
+msgstr ""
+
+msgid ""
+"Jei nustatytas vienas laukų „Identifikatoriaus tikrinimo tipas“ arba "
+"„parinktys“, abu turi būti užpildyti."
 msgstr ""
 
 msgid "Nuoroda (URI)"
@@ -1775,6 +1796,10 @@ msgid "Identifikatoriaus tipas"
 msgstr ""
 
 msgid "dct:type – identifikatoriaus tipas"
+msgstr ""
+
+#, python-format
+msgid "Žymėjimas neatitinka reikalaujamos išraiškos: %(pattern)s"
 msgstr ""
 
 msgid "Gavėjai"

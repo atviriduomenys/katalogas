@@ -658,6 +658,9 @@ msgid ""
 "pavadinimą."
 msgstr "A code name is required if the dataset already has a code name."
 
+msgid "Yra klaidų sąraše."
+msgstr "There are errors in the list."
+
 msgid "API adresas"
 msgstr "API address"
 

@@ -1274,15 +1274,13 @@ class Dataset(Resource):
         return False
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
-        new_legislations = []
-        for url in urls:
-            applicable_legislation, created = (
-                ApplicableLegislation.objects.get_or_create(url=url)
-            )
-            if created:
-                applicable_legislation.update_description()
-            new_legislations.append(applicable_legislation)
-        self.applicable_legislation.set(new_legislations)
+        existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
+        new_entries = [ApplicableLegislation(url=url) for url in urls if url not in existing_urls]
+        if new_entries:
+            ApplicableLegislation.objects.bulk_create(new_entries)
+        self.applicable_legislation.set(ApplicableLegislation.objects.filter(url__in=urls))
+        for entry in new_entries:
+            entry.update_description()
 
 
 class DatasetReport(Dataset):

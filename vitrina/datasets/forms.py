@@ -347,12 +347,12 @@ class BaseResourceForm(TranslatableModelForm):
         cleaned = []
         item_errors = [None] * len(urls)
 
-        for i, url in enumerate(urls):
+        for index, url in enumerate(urls):
             try:
                 validator(url)
                 cleaned.append(url)
             except ValidationError as e:
-                item_errors[i] = f"{url}: {e.message}"
+                item_errors[index] = f"{url}: {e.message}"
 
         if any(item_errors):
             self.fields["applicable_legislation"].widget.validation_errors = item_errors

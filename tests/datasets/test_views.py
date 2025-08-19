@@ -1935,7 +1935,7 @@ def test_dataset_create_information_system(app: DjangoTestApp):
     catalog = CatalogFactory()
     frequency = FrequencyFactory(is_default=True)
     information_system_type_concept_schema = ConceptSchemaFactory(
-        uri=Dataset.information_system_type_schema_uri
+        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
     )
     information_system_importance_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
@@ -2371,7 +2371,7 @@ def test_dataset_update_information_system(app: DjangoTestApp):
     catalog = CatalogFactory()
     frequency = FrequencyFactory(is_default=True)
     information_system_type_concept_schema = ConceptSchemaFactory(
-        uri=Dataset.information_system_type_schema_uri
+        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
     )
     information_system_type_concept = ConceptFactory(
         concept_schemas=[information_system_type_concept_schema]

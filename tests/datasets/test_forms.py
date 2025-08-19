@@ -16,7 +16,7 @@ class TestInformationSystemResourceForm:
     @pytest.mark.parametrize(
         "field_name, schema_uri_attr",
         [
-            ("information_system_type", "information_system_type_schema_uri"),
+            ("information_system_type", "INFORMATION_SYSTEM_TYPE_SCHEMA_URI"),
             ("information_system_importance", "INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI"),
         ],
     )

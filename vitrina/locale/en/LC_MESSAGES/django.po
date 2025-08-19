@@ -3052,21 +3052,6 @@ msgstr ""
 msgid "Duomenų paslauga"
 msgstr "Data service"
 
-msgid "Laiko skiriamoji geba ISO 8601 formatu"
-msgstr "Temporal resolution in ISO 8601 format"
-
-msgid ""
-"dcat:temporalResolution. Formatas turi atitikti ISO 8601 reikalavimus, pvz "
-"'P1D', 'PT1H'"
-msgstr ""
-"dcat:temporalResolution. Format must match ISO 8601 requirements, for example 'P1D', 'PT1H'"
-
-msgid "Erdvinė skiriamoji geba metrais"
-msgstr "Spatial resolution in meters"
-
-msgid "dcat:spatialResolutionInMeters. Turi būti realusis skaičius."
-msgstr "dcat:spatialResolutionInMeters. Must be a real number"
-
 msgid "Šaltinio pavadinimas"
 msgstr "Source title"
 
@@ -3100,15 +3085,6 @@ msgstr "Or upload a data file."
 
 msgid "Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."
 msgstr "Dataset distribution with this download link already exists."
-
-msgid ""
-"Laiko skiriamoji geba turi atitikti ISO 8601 reikalavimus, pvz 'P1D', 'PT1H'."
-msgstr ""
-"Temporal resolution has to match ISO 8601 standards, for example 'P1D', "
-"'PT1H'"
-
-msgid "Erdvinė skiriamoji geba metrais, turi būti realusis skaičius."
-msgstr "Spatial resolution in meters has to be a real number"
 
 msgid "Failo plėtinys"
 msgstr "File extension"
@@ -3176,11 +3152,11 @@ msgstr "Importing external metadata catalog"
 msgid "Licencija"
 msgstr "License"
 
-msgid "Laiko skiriamoji geba"
-msgstr "Temporal resolution"
+msgid "Laiko skiriamoji geba (sekundėmis)"
+msgstr "Temporal resolution (in seconds)"
 
-msgid "Erdvinė skiriamoji geba"
-msgstr "Spatial resolution"
+msgid "Erdvinė skiriamoji geba (metrais)"
+msgstr "Spatial resolution (in meters)"
 
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"

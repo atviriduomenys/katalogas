@@ -230,8 +230,8 @@ class DatasetDistribution(TranslatableModel):
         Licence, models.SET_NULL, blank=True, null=True, verbose_name=_("Licencija"),
     )
 
-    temporal_resolution = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Laiko skiriamoji geba"))
-    spatial_resolution = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Erdvinė skiriamoji geba"))
+    temporal_resolution = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Laiko skiriamoji geba (sekundėmis)"))
+    spatial_resolution = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Erdvinė skiriamoji geba (metrais)"))
 
     # Deprecated fields bellow
     type = models.CharField(max_length=255, blank=True, null=True)

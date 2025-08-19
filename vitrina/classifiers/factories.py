@@ -13,6 +13,7 @@ from vitrina.classifiers.models import (
     Status,
     Concept,
     ConceptSchema,
+    ApplicableLegislation,
 )
 
 
@@ -105,3 +106,12 @@ class ConceptFactory(DjangoModelFactory):
             return None
 
         self.concept_schemas.add(*extracted)
+
+
+class ApplicableLegislationFactory(DjangoModelFactory):
+    class Meta:
+        model = ApplicableLegislation
+        django_get_or_create = ("url",)
+    
+    url = factory.Faker("url")
+    description = factory.Faker("sentence")

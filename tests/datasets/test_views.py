@@ -23,7 +23,7 @@ from vitrina.classifiers.factories import (
     ConceptSchemaFactory,
     ConceptFactory,
 )
-from vitrina.classifiers.factories import LicenceFactory
+from vitrina.classifiers.factories import LicenceFactory, ApplicableLegislationFactory
 from vitrina.classifiers.models import Category, AreaOfManagement
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import (
@@ -3286,6 +3286,60 @@ def test_create_dataset_publisher_options(app):
     assert publisher_org.title in options
     assert publisher_org2.title in options
     assert publisher_org3.title in options
+
+
+@pytest.mark.django_db
+def test_dataset_create_with_applicable_legislation(app: DjangoTestApp):
+    FrequencyFactory(is_default=True)
+    subclass = DCATResourceSubclassFactory()
+    org = OrganizationFactory(
+        title="Org_title",
+        created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
+        jurisdiction=AreaOfManagement.objects.get(id=1),
+        slug="test-org-slug",
+        kind="test_org_kind",
+    )
+    applicable_legislation_urls = ["http://www.google.", "http://www.example.com"]
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(
+        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+    ).forms["dataset-form"]
+    form["title"] = "Added title"
+    form["description"] = "Added new dataset description"
+    form["access_rights"] = Dataset.PUBLIC
+    form["applicable_legislation"] = applicable_legislation_urls
+    resp = form.submit()
+    dataset = Dataset.objects.filter(translations__title="Added title").first()
+    assert resp.status_code == 302
+    urls_in_db = set(dataset.applicable_legislation.values_list("url", flat=True))
+    assert urls_in_db == set(applicable_legislation_urls)
+
+
+@pytest.mark.django_db
+def test_dataset_change_with_applicable_legislation(app: DjangoTestApp):
+    category = CategoryFactory()
+    applicable_legislation = ApplicableLegislationFactory.create_batch(4)
+    dataset = DatasetFactory()
+    dataset.category.add(category)
+    dataset.applicable_legislation.set(applicable_legislation)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset.manager = user
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
+        "dataset-form"
+    ]
+    applicable_legislation_urls = ["http://www.google.", "http://www.example.com"]
+    for i, field in enumerate(form.fields.get("applicable_legislation")):
+        if i < len(applicable_legislation_urls):
+            field.value = applicable_legislation_urls[i]
+        else:
+            field.value = ""
+    resp = form.submit()
+    dataset.refresh_from_db()
+    assert resp.status_code == 302
+    urls_in_db = set(dataset.applicable_legislation.values_list("url", flat=True))
+    assert urls_in_db == set(applicable_legislation_urls)
 
 
 @pytest.mark.django_db

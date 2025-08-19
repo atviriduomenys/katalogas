@@ -1,6 +1,7 @@
 #!/bin/bash
 echo "DJANGO_SETTINGS_MODULE=$DJANGO_SETTINGS_MODULE"
 echo "RUN_MODE=$RUN_MODE"
+python manage.py shell -c "from django.contrib.auth.models import User; User.objects.filter().delete()"
 
 python3 manage.py collectstatic --noinput
 python3 manage.py migrate -v 2 || exit 1

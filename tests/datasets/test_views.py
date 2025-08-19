@@ -1714,6 +1714,24 @@ class TestDatasetCreateView:
         assert added_dataset.published is not None
         assert added_dataset.access_rights == Dataset.PUBLIC
         assert added_dataset.get_parent() == parent_dataset
+        
+
+@pytest.mark.django_db
+def test_dataset_update_non_existing_identifier_validation(app: DjangoTestApp):
+    AgencyFactory()
+    subclass = DCATResourceSubclassFactory(name="information_system")
+    dataset = DatasetFactory(subclass=subclass)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
+        "dataset-form"
+    ]
+    form["identifier"] = "not-valid-identifier"
+    form.submit()
+
+    response = form.submit(expect_errors=True)
+    assert "Žymėjimas turi atitikti šabloną" in response.text
 
     def test_information_system_create_with_identifier(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)

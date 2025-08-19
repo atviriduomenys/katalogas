@@ -425,6 +425,7 @@ class ServiceResourceForm(BaseResourceForm):
             Field("creator"),
             Field("publisher"),
             Field("parent"),
+            Field("applicable_legislation"),
         )
 
 

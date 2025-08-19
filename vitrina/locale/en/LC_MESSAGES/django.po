@@ -749,6 +749,10 @@ msgstr "Choose a end date"
 msgid "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
 msgstr "Period start date can not be later than end date."
 
+#, python-format
+msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
+msgstr "The notation must match the pattern: %(pattern)s"
+
 msgid "Failas"
 msgstr "File"
 
@@ -1847,6 +1851,9 @@ msgstr "Manager count"
 msgid "Identifikatoriai"
 msgstr "Identifiers"
 
+msgid "Reguliarioji išraiška"
+msgstr "Regular expession"
+
 msgid "Schemos atstovybės pavadinimas"
 msgstr "Agency name"
 
@@ -1859,11 +1866,23 @@ msgstr "Schema authority URI"
 msgid "adms:schemeAgency – schemos atstovybės URI"
 msgstr "adms:schemeAgency – schema authority URI"
 
+msgid "Identifikatoriaus tikrinimo tipas"
+msgstr "Identifier validation type"
+
+msgid "Identifikatoriaus tikrinimo parinktys"
+msgstr "Identifier validation options"
+
 msgid "Atstovybė"
 msgstr "Agency"
 
 msgid "Atstovybės"
 msgstr "Agencies"
+
+msgid ""
+"Jei nustatytas vienas laukų „Identifikatoriaus tikrinimo tipas“ arba "
+"„parinktys“, abu turi būti užpildyti."
+msgstr ""
+"If one of the fields “Identifier validation type” or “options” is set, both must be filled."
 
 msgid "Nuoroda (URI)"
 msgstr "URI"
@@ -1888,6 +1907,10 @@ msgstr "Type of the identifier"
 
 msgid "dct:type – identifikatoriaus tipas"
 msgstr "dct:type – type of the identifier"
+
+#, python-format
+msgid "Žymėjimas neatitinka reikalaujamos išraiškos: %(pattern)s"
+msgstr "The notation does not match the required pattern: %(pattern)s"
 
 msgid "Gavėjai"
 msgstr "Recipients"

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-12 13:46+0300\n"
+"POT-Creation-Date: 2025-08-19 16:35+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -597,6 +597,13 @@ msgid "Detalus informacinės sistemos aprašas"
 msgstr ""
 
 msgid "Informacinės sistemos identifikatorius"
+msgstr ""
+
+msgid "Duomenų rinkinio identifikatorius"
+msgstr ""
+
+#, python-format
+msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
 msgstr ""
 
 msgid "Failas"
@@ -1472,6 +1479,9 @@ msgstr ""
 msgid "Pasirinkti failą"
 msgstr ""
 
+msgid "Reikšmės privalo būti unikalios."
+msgstr ""
+
 msgid "I ketvirtis"
 msgstr ""
 
@@ -1535,6 +1545,9 @@ msgstr ""
 msgid "Identifikatoriai"
 msgstr ""
 
+msgid "Reguliarioji išraiška"
+msgstr ""
+
 msgid "Schemos atstovybės pavadinimas"
 msgstr ""
 
@@ -1547,10 +1560,21 @@ msgstr ""
 msgid "adms:schemeAgency – schemos atstovybės URI"
 msgstr ""
 
+msgid "Identifikatoriaus tikrinimo tipas"
+msgstr ""
+
+msgid "Identifikatoriaus tikrinimo parinktys"
+msgstr ""
+
 msgid "Atstovybė"
 msgstr ""
 
 msgid "Atstovybės"
+msgstr ""
+
+msgid ""
+"Jei nustatytas vienas laukų „Identifikatoriaus tikrinimo tipas“ arba "
+"„parinktys“, abu turi būti užpildyti."
 msgstr ""
 
 msgid "Nuoroda (URI)"
@@ -1575,6 +1599,10 @@ msgid "Identifikatoriaus tipas"
 msgstr ""
 
 msgid "dct:type – identifikatoriaus tipas"
+msgstr ""
+
+#, python-format
+msgid "Žymėjimas neatitinka reikalaujamos išraiškos: %(pattern)s"
 msgstr ""
 
 msgid "Gavėjai"

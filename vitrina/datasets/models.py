@@ -151,8 +151,8 @@ class Dataset(Resource):
     }
 
     API_ORIGIN = "api"
-    INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"
 
+    INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"
     INFORMATION_SYSTEM_TYPE_SCHEMA_URI = "dcataplt:Type"
 
     translations = TranslatedFields(
@@ -415,7 +415,7 @@ class Dataset(Resource):
         verbose_name=_("Informacinės sistemos svarba"),
         related_name="information_system_importance_levels",
         help_text=_(
-            "Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. (dcataplt:Importance)"
+            "Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Importance."
         ),
     )
 

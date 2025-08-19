@@ -59,6 +59,7 @@ class Migration(migrations.Migration):
             model_name='dataset',
             name='information_system_importance',
             field=models.ForeignKey(
+                help_text="Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Importance.",
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name='information_system_importance_levels',
                 to='vitrina_classifiers.concept',
@@ -69,6 +70,7 @@ class Migration(migrations.Migration):
             model_name='dataset',
             name='information_system_type',
             field=models.ForeignKey(
+                help_text='Informacinės sistemos tipas pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Type.',
                 on_delete=django.db.models.deletion.PROTECT,
                 related_name='information_system_types',
                 to='vitrina_classifiers.concept',

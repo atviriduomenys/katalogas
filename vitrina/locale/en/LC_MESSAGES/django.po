@@ -3155,8 +3155,14 @@ msgstr "License"
 msgid "Laiko skiriamoji geba (sekundėmis)"
 msgstr "Temporal resolution (in seconds)"
 
+msgid "dcat:temporalResolution. Laiko skiriamoji geba sekundėmis."
+msgstr "dcat:temporalResolution. Temporal resolution in seconds"
+
 msgid "Erdvinė skiriamoji geba (metrais)"
 msgstr "Spatial resolution (in meters)"
+
+msgid "dcat:spatialResolutionInMeters. Erdvės skiriamoji geba metrais."
+msgstr "dcat:spatialResolutionInMeters. Spatial resolution in meters"
 
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"

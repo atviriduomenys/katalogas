@@ -19,7 +19,7 @@ def create_default_schema_agency(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_identifiers', '0001_initial'),
+        ('vitrina_identifiers', '0002_auto_20250811_1532'),
     ]
 
     operations = [
@@ -27,11 +27,6 @@ class Migration(migrations.Migration):
             model_name='agency',
             name='code',
             field=models.CharField(blank=True, default=None, max_length=100, unique=True, verbose_name='Schemos atstovybės kodas'),
-        ),
-        migrations.AlterField(
-            model_name='identifier',
-            name='scheme_agency',
-            field=models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='identifiers', to='vitrina_identifiers.agency', verbose_name='Atstovybės'),
         ),
         migrations.RunPython(create_default_schema_agency, reverse_code=migrations.RunPython.noop),
         migrations.AlterField(

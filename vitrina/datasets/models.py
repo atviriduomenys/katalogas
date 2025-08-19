@@ -790,7 +790,7 @@ class Dataset(Resource):
         if metadata := self.metadata.first():
             return metadata.name
         return ""
-    
+
     @property
     def identifier(self) -> str | None:
         return identifier.notation if (identifier := self.identifiers.filter(scheme_agency__code="risr").first()) else None
@@ -1582,7 +1582,9 @@ class Type(TranslatableModel):
 class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     SERIES = "series"
     SERVICE = "service"
+    DATASET = "dataset"
     INFORMATION_SYSTEM = "information_system"
+    CATALOG = "catalog"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255, unique=True)
     uri = models.CharField(

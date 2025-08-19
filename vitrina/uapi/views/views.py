@@ -23,7 +23,7 @@ from vitrina.api.oauth import (
     OAuthTokenHasValidOrganizationClaim,
 )
 from vitrina.api.serializers import PostDatasetDistributionSerializer
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
 from vitrina.exceptions import UAPIException
 from vitrina.resources.models import DatasetDistribution
 from vitrina.smart_contracts import AgreementStatuses
@@ -59,6 +59,11 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
     @cached_property
     def dataset_metadata_id(self) -> int:
         return ContentType.objects.get_for_model(Dataset).id
+
+    @cached_property
+    def dcat_resource_subclass(self) -> DCATResourceSubclass:
+        subclass_name = self.request.data.get("subclass", DCATResourceSubclass.DATASET)
+        return get_object_or_404(DCATResourceSubclass, name=subclass_name)
 
     def get_queryset(self) -> QuerySet[Dataset]:
         queryset = Dataset.objects.prefetch_related(
@@ -111,7 +116,10 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
         with create_revision():
-            instance = serializer.save(access_rights=Dataset.NON_PUBLIC)
+            instance = serializer.save(
+                subclass=self.dcat_resource_subclass,
+                access_rights=Dataset.NON_PUBLIC
+            )
 
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),

@@ -15,7 +15,7 @@ from reversion.models import Version
 from tests.uapi.conftest import _generate_test_token
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
@@ -36,6 +36,8 @@ def test_create(
         "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
         "title": "DataSet 1",
         "description": "DataSet 1 description",
+        "service": True,
+        "subclass": DCATResourceSubclass.SERVICE,
     }
     response = app.post(
         url_dataset,
@@ -76,6 +78,8 @@ def test_create(
         "theme": [],
         "organization_id": organization.id,
         "organization_title": organization.title,
+        "service": True,
+        "subclass": DCATResourceSubclass.SERVICE,
     }
 
 
@@ -135,6 +139,8 @@ def test_create_specific_scope(
         "theme": [],
         "organization_id": organization.id,
         "organization_title": organization.title,
+        "service": False,
+        "subclass": DCATResourceSubclass.DATASET,
     }
 
 
@@ -310,6 +316,8 @@ def test_list(
                 "organization_id": organization.id,
                 "organization_title": organization.title,
                 "id": str(dataset.id),
+                "service": False,
+                "subclass": DCATResourceSubclass.DATASET,
             }
         ]
     }
@@ -361,6 +369,8 @@ def test_list_specific_scope(
                 "organization_id": organization.id,
                 "organization_title": organization.title,
                 "id": str(dataset.id),
+                "service": False,
+                "subclass": DCATResourceSubclass.DATASET,
             }
         ]
     }
@@ -470,6 +480,8 @@ def test_list_with_query_parameters(
                 "organization_id": organization.id,
                 "organization_title": organization.title,
                 "id": str(dataset.id),
+                "service": False,
+                "subclass": DCATResourceSubclass.DATASET,
             }
         ]
     }

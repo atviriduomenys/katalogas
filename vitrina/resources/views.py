@@ -375,6 +375,7 @@ class DynamicResourceDetailView(
         )
 
         self.dataset = get_object_or_404(Dataset, id=dataset_pk)
+        self.object = self.dataset
         self.models = dynamic_resource["models"]
 
         context = {

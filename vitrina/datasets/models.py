@@ -430,6 +430,22 @@ class Dataset(Resource):
         ),
     )
 
+    temporal_resolution = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_("Laiko skiriamoji geba"),
+        help_text=_("dcat:temporalResolution. Laiko skiriamoji geba sekundėmis."),
+    )
+
+    spatial_resolution = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_("Erdvės skiriamoji geba"),
+        help_text=_("dcat:spatialResolutionInMeters. Erdvės skiriamoji geba metrais."),
+    )
+
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------
     meta = models.TextField(blank=True, null=True)

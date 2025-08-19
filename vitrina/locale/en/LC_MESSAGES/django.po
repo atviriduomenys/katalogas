@@ -912,6 +912,18 @@ msgstr "DataSeries dataset"
 msgid "Informacinės sistemos tipas"
 msgstr "Information system type"
 
+msgid "Laiko skiriamoji geba"
+msgstr "Temporal resolution"
+
+msgid "dcat:temporalResolution. Laiko skiriamoji geba sekundėmis."
+msgstr "dcat:temporalResolution. Temporal resolution in seconds"
+
+msgid "Erdvės skiriamoji geba"
+msgstr "Spatial resolution"
+
+msgid "dcat:spatialResolutionInMeters. Erdvės skiriamoji geba metrais."
+msgstr "dcat:spatialResolutionInMeters. Spatial resolution in meters"
+
 msgid ""
 "Informacinės sistemos tipas pagal Valstybės informacinių išteklių valdymo "
 "įstatymo reikalavimus. Atitinka dcataplt:Type."

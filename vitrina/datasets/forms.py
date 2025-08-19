@@ -140,6 +140,15 @@ class BaseResourceForm(TranslatableModelForm):
         required=False,
     )
 
+    parent = forms.ModelChoiceField(
+        Dataset.objects.all(),
+        label=_("Tėvynis išteklius"),
+        widget=Select2Widget(),
+        required=False,
+        empty_label=None,
+    )
+
+
     def __init__(
         self,
         request: WSGIRequest,
@@ -153,6 +162,10 @@ class BaseResourceForm(TranslatableModelForm):
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-form"
         self.helper.form_tag = False
+
+        if parent_id := request.resolver_match.kwargs.get("parent_id"):
+            self.fields["parent"].initial = parent_id
+            self.fields["parent"].widget = forms.HiddenInput()
 
         self.fields["access_rights"].required = True
 
@@ -335,6 +348,7 @@ class ServiceResourceForm(BaseResourceForm):
             "publisher",
             "managed_by_publisher",
             "landing_page",
+            "parent",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -359,6 +373,7 @@ class ServiceResourceForm(BaseResourceForm):
             Field("managed_by_publisher"),
             Field("creator"),
             Field("publisher"),
+            Field("parent"),
         )
 
 
@@ -380,6 +395,7 @@ class ResourceForm(BaseResourceForm):
             "publisher",
             "managed_by_publisher",
             "landing_page",
+            "parent",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -400,6 +416,7 @@ class ResourceForm(BaseResourceForm):
             Field("managed_by_publisher"),
             Field("creator"),
             Field("publisher"),
+            Field("parent"),
         )
 
 
@@ -416,7 +433,7 @@ class DatasetAdminForm(forms.ModelForm):
 
     class Meta:
         model = Dataset
-        exclude = ("slug", "current_structure")
+        exclude = ("slug", "current_structure", "depth", "numchild", "path")
 
 
 class DatasetSearchForm(FacetedSearchForm):

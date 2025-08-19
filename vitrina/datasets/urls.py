@@ -58,7 +58,7 @@ from vitrina.datasets.views import (
     UpdateDatasetPublisherFilters,
     FilterGroupsView,
     DatasetRDFDownloadView, DatasetChildResourceListView,
-    ResourceSubclassCreateView,
+    ResourceSubclassCreateView, DatasetChildResourceCreateView,
 )
 
 urlpatterns = [
@@ -164,14 +164,24 @@ urlpatterns = [
         name="dataset-stats-publisher",
     ),
     path(
-        "datasets/<int:pk>/add/",
+        "orgs/<int:pk>/datasets/add/",
         ResourceSubclassCreateView.as_view(),
         name="resource-subclass-add",
     ),
     path(
-        "datasets/<int:pk>/add/<uuid:subclass_uuid>/",
+        "orgs/<int:pk>/datasets/<int:parent_id>/child-resources/add/",
+        ResourceSubclassCreateView.as_view(),
+        name="child-resource-subclass-add",
+    ),
+    path(
+        "orgs/<int:pk>/datasets/add/<uuid:subclass_uuid>/",
         DatasetCreateView.as_view(),
         name="dataset-add",
+    ),
+    path(
+        "orgs/<int:pk>/datasets/<int:parent_id>/add/<uuid:subclass_uuid>/",
+        DatasetCreateView.as_view(),
+        name="child-dataset-add",
     ),
     path(
         "datasets/<int:pk>/update/", DatasetUpdateView.as_view(), name="dataset-change"
@@ -201,6 +211,11 @@ urlpatterns = [
         "datasets/<int:pk>/child-resources/",
         DatasetChildResourceListView.as_view(),
         name="dataset-child-resources",
+    ),
+    path(
+        "datasets/<int:pk>/child-resources/add/",
+        DatasetChildResourceCreateView.as_view(),
+        name="dataset-child-resource-add",
     ),
     path(
         "datasets/<int:pk>/members/",

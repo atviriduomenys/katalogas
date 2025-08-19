@@ -4,7 +4,7 @@ import secrets
 import uuid
 from datetime import datetime, date
 from functools import cached_property
-from typing import List
+from typing import List, Any
 from urllib.parse import urlencode
 
 import numpy as np
@@ -651,6 +651,20 @@ class DatasetCreateView(
             initial["subclass_uuid"] = subclass_uuid
         return initial
 
+    @property
+    def organization_id(self) -> int | str | None:
+        return self.kwargs.get("pk")
+
+
+    @cached_property
+    def organization(self) -> Organization:
+        return get_object_or_404(Organization, id=self.organization_id)
+
+
+    @property
+    def parent_id(self) -> str | None:
+        return self.kwargs.get("parent_id")
+
     def has_permission(self):
         next_url = self.request.GET.get("next")
         if next_url:
@@ -659,12 +673,10 @@ class DatasetCreateView(
                 if request_id := match.kwargs.get("pk"):
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
-        organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
-        return has_perm(self.request.user, Action.CREATE, Dataset, organization)
+        return has_perm(self.request.user, Action.CREATE, Dataset, self.organization)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
         subclass_uuid = self.kwargs.get("subclass_uuid")
         subclass = DCATResourceSubclass.objects.get(pk=subclass_uuid)
         context.update(
@@ -681,9 +693,9 @@ class DatasetCreateView(
                     Contact,
                     self.object,
                 ),
-                "organization": organization,
-                "organization_id": organization.pk,
-                "current_title": _("Pridėti duomenų išteklių"),
+                "organization": self.organization,
+                "organization_id": self.organization.pk,
+                "current_title": _("Pridėti vaikinių duomenų išteklių") if self.parent_id else _("Pridėti duomenų išteklių"),
                 "form_title": subclass.translated_title,
                 "information_title": subclass.translated_title,
                 "information_description": subclass.translated_description,
@@ -692,8 +704,8 @@ class DatasetCreateView(
                     reverse("home"): _("Pradžia"),
                     reverse("organization-list"): _("Organizacijos"),
                     reverse(
-                        "organization-detail", args=[organization.pk]
-                    ): organization.title,
+                        "organization-detail", args=[self.organization.pk]
+                    ): self.organization.title,
                     reverse("dataset-list"): _("Duomenų ištekliai"),
                     "": _("Pridėti duomenų išteklių"),
                 },
@@ -730,7 +742,12 @@ class DatasetCreateView(
         self.object.organization_id = self.kwargs.get("pk")
         subclass = DCATResourceSubclass.objects.get(pk=self.kwargs.get("subclass_uuid"))
         self.object.subclass = subclass
-        self.object.save()
+
+        parent: Dataset | None
+        if parent := form.cleaned_data.pop("parent", None):
+            parent.add_child(instance=self.object)
+        else:
+            Dataset.add_root(instance=self.object)
 
         if subclass.name == DCATResourceSubclass.SERVICE:
             self.object.service = True
@@ -954,6 +971,10 @@ class ResourceSubclassCreateView(
     def form_valid(self, form):
         pk = self.kwargs.get("pk")
         subclass = form.cleaned_data.get("subclass")
+        if parent_id := self.kwargs.get("parent_id"):
+            return redirect(
+                reverse("child-dataset-add", kwargs={"pk": pk, "parent_id":parent_id, "subclass_uuid": subclass.uuid})
+            )
         return redirect(
             reverse("dataset-add", kwargs={"pk": pk, "subclass_uuid": subclass.uuid})
         )
@@ -3878,11 +3899,7 @@ class DatasetRepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
         }
         return context
 
-class DatasetChildResourceListView(
-    LanguageChoiceMixin,
-    HistoryMixin,
-    DatasetStructureMixin,
-    DatasetListView):
+class DatasetChildResourceListView(LanguageChoiceMixin, HistoryMixin, DatasetStructureMixin, DatasetListView):
     model = Dataset
     detail_url_name = DatasetDetailView.detail_url_name
     history_url_name = DatasetDetailView.history_url_name
@@ -3913,5 +3930,25 @@ class DatasetChildResourceListView(
                 Action.CREATE,
                 Dataset,
                 self.object.organization,
-            )
+            ),
+            "parent_dataset_id":self.parent_dataset_id,
+            "organization_id": self.object.organization_id,
+
         }
+
+class DatasetChildResourceCreateView(DatasetCreateView):
+    @property
+    def parent_dataset_id(self) -> int:
+        return self.kwargs["pk"]
+
+    @cached_property
+    def parent_dataset(self) -> Dataset:
+        return get_object_or_404(Dataset, pk=self.parent_dataset_id)
+
+    @cached_property
+    def organization(self) -> Organization:
+        return self.parent_dataset.organization
+
+    @property
+    def organization_id(self) -> int:
+        return self.parent_dataset.organization_id

@@ -499,8 +499,6 @@ class DatasetRelationAdmin(admin.ModelAdmin):
     def get_queryset(self, request) -> QuerySet[DatasetRelation]:
         return super().get_queryset(request).select_related("dataset", "relation", "part_of")
 
-
-
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(DatasetRelation, DatasetRelationAdmin)
 admin.site.register(Attribution, AttributionAdmin)

@@ -125,6 +125,10 @@
           <a href="{%url 'resource-subclass-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
               {% translate "Pridėti duomenų išteklių" %}
           </a>
+          {% elif request.resolver_match.url_name == 'dataset-child-resources' and can_create_dataset %}
+          <a href="{%url 'child-resource-subclass-add' pk=organization_id parent_id=parent_dataset_id %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
+              {% translate "Pridėti vaikinį duomenų išteklių" %}
+          </a>
           {% endif %}
 
           <div class="dropdown is-hoverable is-block is-right">

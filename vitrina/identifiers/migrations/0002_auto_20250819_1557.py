@@ -5,15 +5,14 @@ import django.db.models.deletion
 
 
 def create_default_schema_agency(apps, schema_editor):
-    Agency = apps.get_model('vitrina_identifiers', 'Agency')
+    Agency = apps.get_model("vitrina_identifiers", "Agency")
 
-    Agency.objects.get_or_create(
-        code='risr',
-        defaults={
-            'name': 'Registrų ir valstybės informacinių sistemų registras',
-            'uri': 'http://registrai.lt'
-        }
+    agency, created = Agency.objects.get_or_create(
+        name="Registrų ir valstybės informacinių sistemų registras",
+        defaults={"uri": "http://registrai.lt"},
     )
+    agency.code = "risr"
+    agency.save()
 
 
 class Migration(migrations.Migration):
@@ -26,7 +25,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='agency',
             name='code',
-            field=models.CharField(blank=True, default=None, max_length=100, unique=True, verbose_name='Schemos atstovybės kodas'),
+            field=models.CharField(blank=True, null=True, max_length=100, unique=False, verbose_name='Schemos atstovybės kodas'),
         ),
         migrations.RunPython(create_default_schema_agency, reverse_code=migrations.RunPython.noop),
         migrations.AlterField(

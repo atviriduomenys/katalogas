@@ -20,6 +20,7 @@ services:
       - ALLOWED_HOSTS=*,127.0.0.0
       - SPINTA_SERVER_URL=https://test.data.gov.lt
       - SPINTA_SERVER_NAME='Test Data Gov'
+      - USE_OTP_VALIDATION=False
     networks:
       katalogas:
         aliases:

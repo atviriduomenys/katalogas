@@ -3456,32 +3456,6 @@ def test_dataset_view_organization_contacts(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-<<<<<<< HEAD
-=======
-def test_create_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
-    FrequencyFactory(is_default=True)
-    service_type = TypeFactory(name=Type.SERVICE)
-    organization = OrganizationFactory()
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': organization.id})).forms['dataset-form']
-    form['title'] = 'Added title'
-    form['description'] = 'Added new dataset description'
-    form['type'] = [service_type.pk]
-    form['endpoint_url'] = 'https://example.com'
-    form['access_rights'] = Dataset.PUBLIC
-    form.submit()
-    assert Dataset.objects.count() == 1
-    dataset = Dataset.objects.first()
-    assert dataset.service is True
-    assert dataset.endpoint_url == 'https://example.com'
-    assert dataset.status == Dataset.HAS_DATA
-    assert dataset.comments.count() == 1
-    assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.OPENED
-
-
-@pytest.mark.django_db
 @pytest.mark.parametrize(
     "dataset_name, dataset_title, organization_name, organization_slug, organization_title, expected_dataset_name",
     [
@@ -3491,17 +3465,18 @@ def test_create_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
         (None, "Test Dataset", "", "", "Test Organization Title", "datasets/gov/test-organization-title/test-dataset"),  # generates automatically
     ]
 )
-def test_create_dataset_without_name_generates_automatically(app: DjangoTestApp, dataset_name, 
-                                                             dataset_title, organization_name, organization_slug, 
+def test_create_dataset_without_name_generates_automatically(app: DjangoTestApp, dataset_name,
+                                                             dataset_title, organization_name, organization_slug,
                                                              organization_title, expected_dataset_name):
     FrequencyFactory(is_default=True)
+    subclass = DCATResourceSubclassFactory()
     org = OrganizationFactory(name=organization_name, slug=organization_slug, title=organization_title)
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+    form = app.get(reverse('dataset-add', kwargs={'pk': org.id, "subclass_uuid": subclass.pk})).forms['dataset-form']
     form['title'] = dataset_title
     if dataset_name is not None:
-        form['name'] = dataset_name 
+        form['name'] = dataset_name
     form['description'] = 'Added new dataset description'
     form['access_rights'] = Dataset.PUBLIC
     response = form.submit()
@@ -3509,42 +3484,43 @@ def test_create_dataset_without_name_generates_automatically(app: DjangoTestApp,
     assert Dataset.objects.count() == 1
     dataset = Dataset.objects.first()
     assert dataset.name == expected_dataset_name
-    
+
 
 @pytest.mark.django_db
 def test_create_dataset_without_name_generate_unique_name(app: DjangoTestApp):
+    subclass = DCATResourceSubclassFactory()
     FrequencyFactory(is_default=True)
     org = OrganizationFactory(name='Test Organization')
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
-    
+
     dataset1 = DatasetFactory(organization=org, title="Test Dataset")
     MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name='datasets/gov/test-organization/test-dataset', 
+                    name='datasets/gov/test-organization/test-dataset',
                     dataset=dataset1,
                     object_id=dataset1.pk
 )
     dataset2 = DatasetFactory(organization=org, title="Second Test Dataset")
     MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name='datasets/gov/test-organization/test-dataset_3', 
+                    name='datasets/gov/test-organization/test-dataset_3',
                     dataset=dataset2,
                     object_id=dataset2.pk
     )
-    
-    form = app.get(reverse('dataset-add', kwargs={'pk': org.id})).forms['dataset-form']
+
+    form = app.get(reverse('dataset-add', kwargs={'pk': org.id, "subclass_uuid": subclass.pk})).forms['dataset-form']
     form['title'] = 'Test Dataset'
     form['description'] = 'Added new dataset description'
     form['access_rights'] = Dataset.PUBLIC
     response = form.submit()
     assert response.status_code == 302
     assert Dataset.objects.count() == 3
-    
+
     dataset1.refresh_from_db()
     assert dataset1.name == "datasets/gov/test-organization/test-dataset"
-    
+
     dataset2.refresh_from_db()
     assert dataset2.name == "datasets/gov/test-organization/test-dataset_3"
-    
+
     dataset3 = Dataset.objects.last()
     assert dataset3.name == "datasets/gov/test-organization/test-dataset_4"
 
@@ -3555,45 +3531,45 @@ def test_update_dateset_generates_name(app: DjangoTestApp):
     org = OrganizationFactory(name='Test Organization')
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
-    
+
     dataset = DatasetFactory(organization=org, title="Test Dataset")
     MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name="", 
+                    name="",
                     dataset=dataset,
                     object_id=dataset.pk
     )
-    
+
     form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
     form['title'] = 'Updated Test Dataset'
     form['description'] = 'Updated dataset description'
     form['access_rights'] = Dataset.PUBLIC
     response = form.submit()
-    
+
     assert response.status_code == 302
     dataset.refresh_from_db()
     assert dataset.name == "datasets/gov/test-organization/updated-test-dataset"
-    
-    
+
+
 @pytest.mark.django_db
 def test_update_dateset_existing_name_cannot_be_removed(app: DjangoTestApp):
     FrequencyFactory(is_default=True)
     org = OrganizationFactory(name='Test Organization')
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
-    
+
     dataset = DatasetFactory(organization=org, title="Test Dataset")
     MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name="test-organization/test-dataset", 
+                    name="test-organization/test-dataset",
                     dataset=dataset,
                     object_id=dataset.pk
     )
-    
+
     form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
     form['title'] = 'Updated Test Dataset'
     form['name'] = ''  # Attempt to remove name
     form['description'] = 'Updated dataset description'
     form['access_rights'] = Dataset.PUBLIC
-    
+
     response = form.submit()
     assert response.status_code == 200
     dataset.refresh_from_db()
@@ -3601,47 +3577,6 @@ def test_update_dateset_existing_name_cannot_be_removed(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_update_dataset_with_service_and_endpoint_url(app: DjangoTestApp):
-    service_type = TypeFactory(name=Type.SERVICE)
-    organization = OrganizationFactory()
-    dataset = DatasetFactory(organization=organization)
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['type'] = [service_type.pk]
-    form['endpoint_url'] = 'https://example.com'
-    form.submit()
-    dataset.refresh_from_db()
-    assert dataset.service is True
-    assert dataset.endpoint_url == 'https://example.com'
-    assert dataset.status == Dataset.HAS_DATA
-    assert dataset.comments.count() == 1
-    assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.OPENED
-
-
-@pytest.mark.django_db
-def test_update_dataset_without_service_and_endpoint_url(app: DjangoTestApp):
-    service_type = TypeFactory(name=Type.SERVICE)
-    organization = OrganizationFactory()
-    dataset = DatasetFactory(organization=organization, service=True)
-    dataset.type.add(service_type)
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['type'] = []
-    form.submit()
-    dataset.refresh_from_db()
-    assert dataset.service is False
-    assert dataset.endpoint_url is None
-    assert dataset.status == Dataset.INVENTORED
-    assert dataset.comments.count() == 1
-    assert dataset.comments.first().type == Comment.STATUS
-    assert dataset.comments.first().status == Comment.INVENTORED
-
-
-@pytest.mark.django_db
->>>>>>> e43e5872 ([1580] Add tests to cover changes)
 def test_dataset_landing_page(app: DjangoTestApp):
     frequency = FrequencyFactory(is_default=True)
     org = OrganizationFactory()

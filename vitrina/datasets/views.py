@@ -19,6 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import models
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.http.response import HttpResponsePermanentRedirect

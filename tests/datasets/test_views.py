@@ -973,7 +973,6 @@ def test_public_manager_filtering(app: DjangoTestApp):
     )
     DatasetFactory(deleted=True, deleted_on=None, organization=organization)
     DatasetFactory(deleted=None, deleted_on=None, organization=organization)
-    DatasetFactory(deleted=None, deleted_on=None, organization=None)
     DatasetFactory(organization=organization)
 
     public_datasets = Dataset.public.all()
@@ -2094,6 +2093,31 @@ def test_dataset_create_public(app: DjangoTestApp):
     assert added_dataset.first().is_public is True
     assert added_dataset.first().published is not None
     assert added_dataset.first().access_rights == Dataset.PUBLIC
+
+@pytest.mark.django_db
+def test_child_dataset_create_public(app: DjangoTestApp):
+    FrequencyFactory(is_default=True)
+    organization = OrganizationFactory()
+    subclass = DCATResourceSubclassFactory()
+    parent_dataset = DatasetFactory()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    form = app.get(
+        reverse(
+            "child-dataset-add",
+            kwargs={"pk": organization.id, "parent_id":parent_dataset.pk, "subclass_uuid": subclass.pk}
+        )
+    ).forms["dataset-form"]
+    form["title"] = "Test dataset"
+    form["description"] = "Test dataset description"
+    form["is_public"] = True
+    form["access_rights"] = Dataset.PUBLIC
+    form.submit()
+    added_dataset :Dataset = Dataset.objects.filter(translations__title="Test dataset").first()
+    assert added_dataset.is_public is True
+    assert added_dataset.published is not None
+    assert added_dataset.access_rights == Dataset.PUBLIC
+    assert added_dataset.get_parent() == parent_dataset
 
 
 @pytest.mark.django_db

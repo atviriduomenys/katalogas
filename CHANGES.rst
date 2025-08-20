@@ -1,5 +1,24 @@
 Changes
 #######
+2025-08-20
+=======
+https://github.com/atviriduomenys/katalogas/pull/1801
+Child dataset resources
+
+Introduce Resource abstract model as concept of understanding among tech people and requirements.
+
+Introduce new dataset relation structure based on MP_Node side by already existing DatasetRelations,
+however they are tracking different relations and are NOT THE SAME THING.
+This relation will store from new scratch (not migrating any old relations).
+
+Child resource list tab with list dataset form
+
+Parent resource selection inside of a Dataset form in case creating from root (my organization datasets)
+
+Create child resource under parent child resources list
+
+Fix url design from datasets/<org-id>/* to orgs/<org-id>/datasets/*
+
 
 2025-03-19
 =======

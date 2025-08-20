@@ -81,13 +81,15 @@
 {% if request.resolver_match.url_name == 'organization-datasets' %}
     {{ organization }}
 {% else %}
-    {% translate "Duomenų ištekliai" %}
+    {{ page_title }}
 {% endif %}
 {% endblock %}
 
 {% block content %}
     {% if request.resolver_match.url_name == 'organization-datasets' %}
         {% include 'vitrina/orgs/tabs.html' %}
+    {% elif request.resolver_match.url_name == 'dataset-child-resources' %}
+        {% include 'vitrina/datasets/tabs.html' %}
     {% endif %}
 
     <div class="card mb-5">
@@ -122,6 +124,10 @@
           {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
           <a href="{%url 'resource-subclass-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
               {% translate "Pridėti duomenų išteklių" %}
+          </a>
+          {% elif request.resolver_match.url_name == 'dataset-child-resources' and can_create_dataset %}
+          <a href="{%url 'child-resource-subclass-add' pk=organization_id parent_id=parent_dataset_id %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
+              {% translate "Pridėti vaikinį duomenų išteklių" %}
           </a>
           {% endif %}
 

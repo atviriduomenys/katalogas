@@ -9,6 +9,13 @@
             </a>
         </li>
         {% endif %}
+        {% if child_resources_url %}
+        <li class="{% if request.path == child_resources_url or request.resolver_match.url_name == 'dataset-child-resources'  %} is-active {% endif %}">
+            <a href="{{ child_resources_url }}" id="child_resources_tab">
+                {% translate "Ištekliai" %}
+            </a>
+        </li>
+        {% endif %}
         {% if structure_url %}
         <li class="{% if request.path == structure_url or request.resolver_match.url_name == 'model-structure' or request.resolver_match.url_name == 'property-structure' or request.resolver_match.url_name == 'version-list' or request.resolver_match.url_name == 'version-detail' or request.resolver_match.url_name == 'dataset-structure-import' %} is-active {% endif %}">
             <a href="{{ structure_url }}" id="structure_tab">

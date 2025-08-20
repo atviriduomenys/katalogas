@@ -18,6 +18,7 @@ from vitrina.requests.models import RequestObject, Request
 
 
 class DatasetIndex(SearchIndex, Indexable):
+    django_pk = IntegerField(model_attr='pk')
     text = EdgeNgramField(document=True, use_template=True)
     # used for search
     lt_title = CharField(model_attr="lt_title", boost=1)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-18 11:48+0300\n"
+"POT-Creation-Date: 2025-08-19 21:05+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -582,6 +582,9 @@ msgid ""
 msgstr ""
 "Is the institution you are representing responsible for opening the data to "
 "the public?"
+
+msgid "Tėvynis išteklius"
+msgstr "Parent resource"
 
 msgid "Organizacija:"
 msgstr "Organization:"
@@ -1218,6 +1221,11 @@ msgstr "Search"
 msgid "Pridėti duomenų išteklių"
 msgstr "Add a resource"
 
+#, fuzzy
+#| msgid "Pridėti duomenų išteklių"
+msgid "Pridėti vaikinį duomenų išteklių"
+msgstr "Add a child resource"
+
 msgid "Rasta duomenų išteklių"
 msgstr "Found resources"
 
@@ -1375,6 +1383,9 @@ msgstr "Dataset status statistics"
 msgid "Informacija"
 msgstr "Information"
 
+msgid "Ištekliai"
+msgstr "Resources"
+
 msgid "Panaudojimo atvejai"
 msgstr "Use cases"
 
@@ -1404,6 +1415,11 @@ msgstr "Most relevant"
 
 msgid "Nepavyko nuskaityti failo"
 msgstr "Failed to read the file"
+
+#, fuzzy
+#| msgid "Pridėti duomenų išteklių"
+msgid "Pridėti vaikinių duomenų išteklių"
+msgstr "Add a child resources"
 
 msgid "Organizacijos"
 msgstr "Organizations"
@@ -1523,6 +1539,9 @@ msgstr "Dataset count by years"
 
 msgid "Termino pašalinimas"
 msgstr "Delete term"
+
+msgid "vaikiniai duomenų ištekliai"
+msgstr "child resources"
 
 msgid "Pasirinkti failą"
 msgstr "Select a file"
@@ -5085,3 +5104,4 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+

@@ -2,94 +2,68 @@ import itertools
 import json
 import secrets
 import uuid
-import pytz
 from datetime import datetime, date
-from typing import List
+from functools import cached_property
+from typing import List, Any
 from urllib.parse import urlencode
 
-import pandas as pd
 import numpy as np
-
+import pandas as pd
+import pytz
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
-from django.db.models import QuerySet, Count, Max, Q, Avg, Sum
-from django.db.models import Func, F, Value, TextField
+from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
+from django.http.response import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect, render
+from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy, resolve
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.template.defaultfilters import date as _date
-
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from django.core.exceptions import ObjectDoesNotExist
-
-from vitrina.api.helpers import get_datasets_for_rdf
-from vitrina.datasets.helpers import is_manager_dataset_list
-from django.http.response import HttpResponsePermanentRedirect
-
 from haystack.generic_views import FacetedSearchView
+from itsdangerous import URLSafeSerializer
 from parler.utils.context import switch_language
 from parler.utils.i18n import get_language
-from itsdangerous import URLSafeSerializer
-from reversion import set_comment
-from reversion.models import Version
-from reversion.views import RevisionMixin
-
 from parler.views import (
     TranslatableUpdateView,
     TranslatableCreateView,
     LanguageChoiceMixin,
     ViewUrlMixin,
 )
+from reversion import set_comment
+from reversion.models import Version
+from reversion.views import RevisionMixin
 
+from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiKey
-from vitrina.helpers import email
-from vitrina.messages.models import Subscription, SentMail
-from vitrina.orgs.views import (
-    ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
-    DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
-)
-from vitrina.plans.models import Plan, PlanDataset
-from vitrina.projects.models import Project
+from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
 from vitrina.comments.models import Comment
-from vitrina.requests.models import RequestObject, RequestAssignment, Request
-from vitrina.settings import ELASTIC_FACET_SIZE, SPINTA_SERVER_URL
-from vitrina.statistics.helpers import get_start_date_based_on_frequency
-from vitrina.statistics.models import DatasetStats, ModelDownloadStats
-from vitrina.statistics.views import StatsMixin
-from vitrina.structure.models import Model, Metadata, Property
-from vitrina.structure.services import (
-    create_structure_objects,
-    get_model_name,
+from vitrina.datasets.forms import DatasetStructureImportForm, ResourceForm, DatasetSearchForm, AddProjectForm, \
+    DatasetAttributionForm, DatasetCategoryForm, DatasetRelationForm, DatasetPlanForm, PlanForm, AddRequestForm, \
+    ResourceSubclassForm, ServiceResourceForm, DatasetMemberUpdateForm, DatasetMemberCreateForm
+from vitrina.datasets.helpers import is_manager_dataset_list
+from vitrina.datasets.models import (
+    Dataset,
+    DatasetStructure,
+    DatasetGroup,
+    DatasetAttribution,
+    DatasetRelation,
+    Relation,
+    DatasetFile,
+    Contact,
+    DatasetExcludedGroups,
+    DCATResourceSubclass,
 )
-from vitrina.structure.views import DatasetStructureMixin
-from vitrina.tasks.models import Task
-from vitrina.views import HistoryView, HistoryMixin, PlanMixin
-from vitrina.datasets.forms import (
-    DatasetStructureImportForm,
-    ResourceForm,
-    DatasetSearchForm,
-    AddProjectForm,
-    DatasetAttributionForm,
-    DatasetCategoryForm,
-    DatasetRelationForm,
-    DatasetPlanForm,
-    PlanForm,
-    AddRequestForm,
-    ResourceSubclassForm,
-    ServiceResourceForm,
-)
-from vitrina.datasets.forms import DatasetMemberUpdateForm, DatasetMemberCreateForm
 from vitrina.datasets.services import (
     update_facet_data,
     get_projects,
@@ -105,31 +79,33 @@ from vitrina.datasets.services import (
     manage_subscriptions_for_representative,
     DynamicResourceService,
 )
-from vitrina.datasets.models import (
-    Dataset,
-    DatasetStructure,
-    DatasetGroup,
-    DatasetAttribution,
-    DatasetRelation,
-    Relation,
-    DatasetFile,
-    Contact,
-    DatasetExcludedGroups,
-    DCATResourceSubclass,
-)
-from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
-from vitrina.helpers import (
-    get_selected_value,
-    Filter,
-    DateFilter,
-    get_stats_filter_options_based_on_model,
-)
+from vitrina.helpers import email, get_selected_value, Filter, DateFilter, get_stats_filter_options_based_on_model, \
+    get_current_domain
+from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
+from vitrina.orgs.views import (
+    ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
+    DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
+)
+from vitrina.plans.models import Plan, PlanDataset
+from vitrina.projects.models import Project
+from vitrina.requests.models import RequestObject, RequestAssignment, Request
 from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.settings import ELASTIC_FACET_SIZE, SPINTA_SERVER_URL
+from vitrina.statistics.helpers import get_start_date_based_on_frequency
+from vitrina.statistics.models import DatasetStats, ModelDownloadStats
+from vitrina.statistics.views import StatsMixin
+from vitrina.structure.models import Model, Metadata, Property
+from vitrina.structure.services import (
+    create_structure_objects,
+    get_model_name,
+)
+from vitrina.structure.views import DatasetStructureMixin
+from vitrina.tasks.models import Task
 from vitrina.users.models import User
-from vitrina.helpers import get_current_domain
+from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 
 
 class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
@@ -162,6 +138,10 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             "gap_by": "month",
         },
     ]
+
+    @property
+    def page_title(self) -> str:
+        return _("Duomenų ištekliai")
 
     def has_permission(self):
         if is_org_dataset_list(self.request):
@@ -378,6 +358,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             url = reverse("dataset-list")
 
         context["search_url"] = url
+        context["page_title"] = self.page_title
         context["sort_options"] = [
             {
                 "title": _("Naujausi"),
@@ -440,8 +421,8 @@ class DatasetDetailView(
     LanguageChoiceMixin,
     HistoryMixin,
     DatasetStructureMixin,
-    PlanMixin,
     PermissionRequiredMixin,
+    PlanMixin,
     DetailView,
 ):
     model = Dataset
@@ -490,6 +471,7 @@ class DatasetDetailView(
             "data_maturity": dataset.metadata_set.average_level(),
             "json_ld": self.get_json_ld_from_dataset(dataset),
             "page_obj": page_obj,
+            "child_resources_url": reverse("dataset-child-resources", kwargs={"pk": dataset.pk}),
         }
         part_of = dataset.part_of.order_by("relation")
         part_of = itertools.groupby(part_of, lambda x: x.relation)
@@ -669,6 +651,20 @@ class DatasetCreateView(
             initial["subclass_uuid"] = subclass_uuid
         return initial
 
+    @property
+    def organization_id(self) -> int | str | None:
+        return self.kwargs.get("pk")
+
+
+    @cached_property
+    def organization(self) -> Organization:
+        return get_object_or_404(Organization, id=self.organization_id)
+
+
+    @property
+    def parent_id(self) -> str | None:
+        return self.kwargs.get("parent_id")
+
     def has_permission(self):
         next_url = self.request.GET.get("next")
         if next_url:
@@ -677,12 +673,10 @@ class DatasetCreateView(
                 if request_id := match.kwargs.get("pk"):
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
-        organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
-        return has_perm(self.request.user, Action.CREATE, Dataset, organization)
+        return has_perm(self.request.user, Action.CREATE, Dataset, self.organization)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
         subclass_uuid = self.kwargs.get("subclass_uuid")
         subclass = DCATResourceSubclass.objects.get(pk=subclass_uuid)
         context.update(
@@ -699,9 +693,9 @@ class DatasetCreateView(
                     Contact,
                     self.object,
                 ),
-                "organization": organization,
-                "organization_id": organization.pk,
-                "current_title": _("Pridėti duomenų išteklių"),
+                "organization": self.organization,
+                "organization_id": self.organization.pk,
+                "current_title": _("Pridėti vaikinių duomenų išteklių") if self.parent_id else _("Pridėti duomenų išteklių"),
                 "form_title": subclass.translated_title,
                 "information_title": subclass.translated_title,
                 "information_description": subclass.translated_description,
@@ -710,8 +704,8 @@ class DatasetCreateView(
                     reverse("home"): _("Pradžia"),
                     reverse("organization-list"): _("Organizacijos"),
                     reverse(
-                        "organization-detail", args=[organization.pk]
-                    ): organization.title,
+                        "organization-detail", args=[self.organization.pk]
+                    ): self.organization.title,
                     reverse("dataset-list"): _("Duomenų ištekliai"),
                     "": _("Pridėti duomenų išteklių"),
                 },
@@ -748,7 +742,12 @@ class DatasetCreateView(
         self.object.organization_id = self.kwargs.get("pk")
         subclass = DCATResourceSubclass.objects.get(pk=self.kwargs.get("subclass_uuid"))
         self.object.subclass = subclass
-        self.object.save()
+
+        parent: Dataset | None
+        if parent := form.cleaned_data.pop("parent", None):
+            parent.add_child(instance=self.object)
+        else:
+            Dataset.add_root(instance=self.object)
 
         if subclass.name == DCATResourceSubclass.SERVICE:
             self.object.service = True
@@ -972,6 +971,10 @@ class ResourceSubclassCreateView(
     def form_valid(self, form):
         pk = self.kwargs.get("pk")
         subclass = form.cleaned_data.get("subclass")
+        if parent_id := self.kwargs.get("parent_id"):
+            return redirect(
+                reverse("child-dataset-add", kwargs={"pk": pk, "parent_id":parent_id, "subclass_uuid": subclass.uuid})
+            )
         return redirect(
             reverse("dataset-add", kwargs={"pk": pk, "subclass_uuid": subclass.uuid})
         )
@@ -3895,3 +3898,57 @@ class DatasetRepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
             reverse("dataset-members", args=[self.dataset.pk]): _("Tvarkytojai"),
         }
         return context
+
+class DatasetChildResourceListView(LanguageChoiceMixin, HistoryMixin, DatasetStructureMixin, DatasetListView):
+    model = Dataset
+    detail_url_name = DatasetDetailView.detail_url_name
+    history_url_name = DatasetDetailView.history_url_name
+    plan_url_name = DatasetDetailView.plan_url_name
+    tabs_template_name = "vitrina/datasets/tabs.html"
+
+
+    @property
+    def page_title(self) -> str:
+        return f"{self.object.title} " + _("vaikiniai duomenų ištekliai")
+
+    @property
+    def parent_dataset_id(self) -> int:
+        return self.kwargs["pk"]
+
+    @cached_property
+    def object(self) -> Dataset:
+        return Dataset.objects.get(pk=self.parent_dataset_id)
+
+    def get_queryset(self) -> QuerySet[Dataset]:
+        descendants: list[int] = self.object.get_descendants().values_list("pk", flat=True)
+        return super(DatasetChildResourceListView, self).get_queryset().filter(django_id__in=list(descendants))
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        return super().get_context_data(**kwargs) | {
+            "can_create_dataset": has_perm(
+                self.request.user,
+                Action.CREATE,
+                Dataset,
+                self.object.organization,
+            ),
+            "parent_dataset_id":self.parent_dataset_id,
+            "organization_id": self.object.organization_id,
+
+        }
+
+class DatasetChildResourceCreateView(DatasetCreateView):
+    @property
+    def parent_dataset_id(self) -> int:
+        return self.kwargs["pk"]
+
+    @cached_property
+    def parent_dataset(self) -> Dataset:
+        return get_object_or_404(Dataset, pk=self.parent_dataset_id)
+
+    @cached_property
+    def organization(self) -> Organization:
+        return self.parent_dataset.organization
+
+    @property
+    def organization_id(self) -> int:
+        return self.parent_dataset.organization_id

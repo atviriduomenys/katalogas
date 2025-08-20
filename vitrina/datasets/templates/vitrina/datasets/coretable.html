@@ -149,6 +149,16 @@
             <td>{{ dataset.get_access_rights_display }}</td>
         </tr>
     {% endif %}
+    {% if dataset.subclass.name == "information_system" %}
+        <tr>
+            <th>{% translate "Informacinės sistemos tvarkytojas" %}</th>
+            <td>{{ dataset.information_system_publisher }}</td>
+        </tr>
+        <tr>
+            <th>{% translate "Informacinės sistemos valdytojas" %}</th>
+            <td>{{ dataset.information_system_creator }}</td>
+        </tr>
+    {% endif %}
     <tr>
         <th>
             {% translate "Katalogas" %}

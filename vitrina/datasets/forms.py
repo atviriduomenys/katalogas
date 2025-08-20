@@ -502,6 +502,7 @@ class InformationSystemResourceForm(BaseResourceForm):
         self.fields["information_system_type"].label_from_instance = lambda obj: str(
             obj.translated_label
         )
+        self.fields["information_system_importance"].required = True
         self.fields["information_system_importance"].queryset = Concept.objects.filter(
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
         )

@@ -234,6 +234,16 @@
             </th>
             <td>{{ dataset.information_system_type.translated_label }}</td>
         </tr>
+        <tr>
+            <th>
+                {% translate "Informacinės sistemos svarba" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Importance.' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
+            <td>{{ dataset.information_system_importance.translated_label }}</td>
+        </tr>
     {% endif %}
     </tbody>
 </table>

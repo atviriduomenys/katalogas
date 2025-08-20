@@ -127,14 +127,16 @@ class AgentDetailView(BaseAgentView):
                 reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
                 None: _("Agentas"),
             },
+            "page_obj": page,
+            "paginator": paginator,
+            "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
+            "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
             "agent": self.object,
             "dataset": self.object.service,
             "secret": self.request.session.pop("secret", None),
             "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
             "auth_server_host": settings.OAUTH_SERVER_HOST,
             "resource_server_host": f"{self.request.scheme}://{self.request.get_host()}",
-            "page_obj": page,
-            "paginator": paginator,
             "request_history": page.object_list,
         })
 

@@ -148,6 +148,8 @@
 [default]
 server = {{ auth_server_host }}
 resource_server = {{ resource_server_host }}
+organization = {{ organization.name }}
+organization_type = {{ organization.kind }}
 client_id = {{ agent.oauth_client_id }}
 client = {{ agent.global_codename }}
 secret = {{ secret|default:"******" }}

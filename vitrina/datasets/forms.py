@@ -377,6 +377,53 @@ class ServiceResourceForm(BaseResourceForm):
         )
 
 
+class InformationSystemResourceForm(BaseResourceForm):
+    identifier = forms.CharField(label=_("Identifikatorius"), required=False)
+
+    class Meta:
+        model = Dataset
+        fields = (
+            "title",
+            "description",
+            "is_public",
+            "tags",
+            "catalog",
+            "frequency",
+            "access_rights",
+            "files",
+            "name",
+            "contact",
+            "creator",
+            "publisher",
+            "managed_by_publisher",
+            "landing_page",
+        )
+
+    def __init__(self, request=None, organization=None, *args, **kwargs):
+        super().__init__(request, organization, *args, **kwargs)
+        instance = self.instance if self.instance and self.instance.pk else None
+        if instance:
+            self.fields["identifier"].initial = instance.identifier if instance.identifier else ""
+
+        self.helper.layout = Layout(
+            Field("is_public", placeholder=_("Ar duomenys vieši?")),
+            Field("title", placeholder=_("Informacinės sistemos pavadinimas")),
+            Field("name", placeholder=_("Informacinės sistemos kodinis pavadinimas")),
+            Field("description", placeholder=_("Detalus informacinės sistemos aprašas")),
+            Field("identifier", placeholder=_("Informacinės sistemos identifikatorius")),
+            Field("files"),
+            Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
+            Field("landing_page"),
+            Field("catalog"),
+            Field("frequency"),
+            Field("access_rights"),
+            Field("contact"),
+            Field("managed_by_publisher"),
+            Field("creator"),
+            Field("publisher"),
+        )
+
+
 class ResourceForm(BaseResourceForm):
     class Meta:
         model = Dataset

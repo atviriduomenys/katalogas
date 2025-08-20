@@ -7,6 +7,7 @@ from vitrina.models import UUIDBaseModel
 
 class Agency(UUIDBaseModel):
     name = models.CharField(_("Schemos atstovybės pavadinimas"), unique=True, max_length=255)
+    code = models.CharField(_("Schemos atstovybės kodas"), unique=True, max_length=100)
     uri = models.URLField(
         unique=True, verbose_name=_("Schemos atstovybės URI"), help_text=_("adms:schemeAgency – schemos atstovybės URI")
     )

@@ -619,6 +619,24 @@ msgstr "Detailed description of the dataset"
 msgid "Surašykite aktualius raktinius žodžius"
 msgstr "List relevant keywords"
 
+msgid "Identifikatorius"
+msgstr "Identifier"
+
+msgid "Ar duomenys vieši?"
+msgstr "Is the data public?"
+
+msgid "Informacinės sistemos pavadinimas"
+msgstr "Information system name"
+
+msgid "Informacinės sistemos kodinis pavadinimas"
+msgstr "Information system code"
+
+msgid "Detalus informacinės sistemos aprašas"
+msgstr "Detailed description of the information system"
+
+msgid "Informacinės sistemos identifikatorius"
+msgstr "Information system identifier"
+
 msgid "Failas"
 msgstr "File"
 
@@ -1615,6 +1633,9 @@ msgstr "Identifiers"
 msgid "Schemos atstovybės pavadinimas"
 msgstr "Agency name"
 
+msgid "Schemos atstovybės kodas"
+msgstr "Agency code"
+
 msgid "Schemos atstovybės URI"
 msgstr "Schema authority URI"
 
@@ -1650,9 +1671,6 @@ msgstr "Type of the identifier"
 
 msgid "dct:type – identifikatoriaus tipas"
 msgstr "dct:type – type of the identifier"
-
-msgid "Identifikatorius"
-msgstr "Identifier"
 
 msgid "Gavėjai"
 msgstr "Recipients"

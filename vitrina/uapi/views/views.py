@@ -106,20 +106,27 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        organization = self.request.organization
+
         serializer_context = self.get_serializer_context()
         serializer = self.get_serializer(
             data=request.data,
             context={
                 **serializer_context,
-                "organization": self.request.organization,
+                "organization": organization,
             }
         )
         serializer.is_valid(raise_exception=True)
+
         with create_revision():
-            instance = serializer.save(
-                subclass=self.dcat_resource_subclass,
-                access_rights=Dataset.NON_PUBLIC
-            )
+            dataset_data = serializer.validated_data | {
+                "subclass": self.dcat_resource_subclass,
+                "access_rights": Dataset.NON_PUBLIC,
+                "organization_id": organization.id,
+            }
+            instance = Dataset(**dataset_data)
+            Dataset.add_root(instance=instance)
+
 
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),

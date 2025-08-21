@@ -500,6 +500,8 @@ class DatasetResourceForm(BaseResourceForm):
             "managed_by_publisher",
             "landing_page",
             "parent",
+            "temporal_resolution",
+            "spatial_resolution",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs) -> None:
@@ -514,6 +516,8 @@ class DatasetResourceForm(BaseResourceForm):
                 Field("temporal_start", placeholder=_("Pasirinkite pradžios datą")),
                 Field("temporal_end", placeholder=_("Pasirinkite pabaigos datą")),
             ),
+            Field("temporal_resolution"),
+            Field("spatial_resolution"),
             Field("files"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
@@ -556,8 +560,6 @@ class ResourceForm(BaseResourceForm):
             "managed_by_publisher",
             "landing_page",
             "parent",
-            "temporal_resolution",
-            "spatial_resolution",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -569,8 +571,6 @@ class ResourceForm(BaseResourceForm):
             Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
             Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
             Field("files"),
-            Field("temporal_resolution"),
-            Field("spatial_resolution"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
             Field("catalog"),

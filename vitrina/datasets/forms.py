@@ -498,6 +498,7 @@ class DatasetResourceForm(BaseResourceForm):
             "publisher",
             "managed_by_publisher",
             "landing_page",
+            "parent",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs) -> None:
@@ -522,6 +523,7 @@ class DatasetResourceForm(BaseResourceForm):
             Field("managed_by_publisher"),
             Field("creator"),
             Field("publisher"),
+            Field("parent"),
         )
 
     def clean(self) -> None:

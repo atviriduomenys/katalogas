@@ -1,4 +1,5 @@
 import json
+import logging
 import pathlib
 from datetime import datetime
 from random import randrange
@@ -31,6 +32,7 @@ from vitrina.settings import TRANSLATION_CLIENT_ID
 from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 
+logger = logging.getLogger(__name__)
 
 def get_default_subclass():
     return DCATResourceSubclass.objects.get(name="dataset").pk
@@ -82,6 +84,12 @@ class Resource(MP_Node, TranslatableModel):
 
     class Meta:
         abstract = True
+
+    def save(self, *args, **kwargs):
+        for field in self.node_order_by:
+            if field != "path"  and not getattr(self, field):
+                logger.warning(f"Missing required field {field}")
+        super().save(*args, **kwargs)
 
 
 @reversion.register(follow=["category", "part_of"]) 

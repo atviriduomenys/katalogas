@@ -267,6 +267,20 @@
             <td>{{ dataset.endpoint_description_type|default:"" }}</td>
         </tr>
     {% endif %}
+    {% if dataset.subclass.is_dataset %}
+        {% if dataset.temporal_start or dataset.temporal_end %}
+            <tr>
+                <th>
+                    {% translate "Laikotarpis" %}
+                    <span class="icon info-icon has-tooltip-multiline is-middle"
+                          data-tooltip="{% translate 'Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys. Atitinka dct:temporal.' %}">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                </th>
+                <td>{{ dataset.temporal_start|default_if_none:"-" }} - {{ dataset.temporal_end|default_if_none:"-" }}</td>
+            </tr>
+        {% endif %}
+    {% endif %}
     {% if dataset.subclass.is_information_system %}
         <tr>
             <th>

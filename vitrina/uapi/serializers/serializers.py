@@ -1,17 +1,29 @@
 from rest_framework import serializers
 
 from vitrina.api.serializers import DatasetSerializer, DatasetDistributionSerializer, PostDatasetSerializer
+from vitrina.datasets.models import DCATResourceSubclass
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin
 
 
 class UAPIDatasetSerializer(BaseObjectMixin, DatasetSerializer):
+    subclass = serializers.SlugRelatedField(
+        slug_field="name",
+        queryset=DCATResourceSubclass.objects.all(),
+    )
+
     class Meta(DatasetSerializer.Meta):
-        fields = DatasetSerializer.Meta.fields + BaseObjectMixin.Meta.fields
+        fields = DatasetSerializer.Meta.fields + BaseObjectMixin.Meta.fields + ("service", "subclass")
 
 
 class UAPIDatasetCreateSerializer(PostDatasetSerializer):
+    subclass = serializers.SlugRelatedField(
+        slug_field="name",
+        queryset=DCATResourceSubclass.objects.all(),
+        default=DCATResourceSubclass.DATASET,
+    )
+
     class Meta(PostDatasetSerializer.Meta):
-        fields = PostDatasetSerializer.Meta.fields + ("name",)
+        fields = PostDatasetSerializer.Meta.fields + ("name", "service", "subclass")
 
 
 class UAPIDistributionSerializer(BaseObjectMixin, DatasetDistributionSerializer):

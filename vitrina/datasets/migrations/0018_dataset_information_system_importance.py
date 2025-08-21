@@ -38,7 +38,7 @@ def fill_information_system_importance(
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('vitrina_datasets', '0013_alter_dataset_catalog'),
+        ('vitrina_datasets', '0017_alter_dataset_information_system_type'),
     ]
 
     operations = [

@@ -20,8 +20,14 @@ Create child resource under parent child resources list
 Fix url design from datasets/<org-id>/* to orgs/<org-id>/datasets/*
 
 
+2025-08-20
+==========
+https://github.com/atviriduomenys/katalogas/pull/1796
+Adds `Dataset.information_system_type` to dataset add/change/detail pages
+
+
 2025-03-19
-=======
+==========
 https://github.com/atviriduomenys/katalogas/pull/1501
 Squash migrations, link to commit, sql script, run python
 

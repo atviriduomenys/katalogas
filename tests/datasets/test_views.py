@@ -15,10 +15,13 @@ from filer.models import File
 from reversion.models import Version
 from webtest import Upload
 
+from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import (
     CategoryFactory,
     FrequencyFactory,
     AreaOfManagementFactory,
+    ConceptSchemaFactory,
+    ConceptFactory,
 )
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.models import Category, AreaOfManagement
@@ -36,7 +39,12 @@ from vitrina.datasets.factories import (
     DCATResourceSubclassFactory,
 )
 from vitrina.datasets.factories import MANIFEST
-from vitrina.datasets.forms import ResourceForm, ServiceResourceForm, BaseResourceForm, InformationSystemResourceForm
+from vitrina.datasets.forms import (
+    ResourceForm,
+    ServiceResourceForm,
+    BaseResourceForm,
+    InformationSystemResourceForm,
+)
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
@@ -1921,6 +1929,52 @@ def test_dataset_create_uses_different_forms_based_on_dcat_subclass(
 
 
 @pytest.mark.django_db
+def test_dataset_create_information_system(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    subclass = DCATResourceSubclassFactory(name="information_system")
+    catalog = CatalogFactory()
+    frequency = FrequencyFactory(is_default=True)
+    concept_schema = ConceptSchemaFactory(
+        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+    )
+    concept = ConceptFactory(concept_schemas=[concept_schema])
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    url = reverse(
+        "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
+    )
+
+    data = {
+        "title": "test_information_system",
+        "description": "test_information_system_description",
+        "is_public": False,
+        "tags": "tag1, tag2",
+        "catalog": catalog.pk,
+        "frequency": frequency.pk,
+        "access_rights": Dataset.PUBLIC,
+        "name": "test/information/system",
+        "landing_page": "https://www.test.test",
+        "information_system_type": concept.pk,
+    }
+    response = app.post(url, data)
+
+    dataset = Dataset.objects.first()
+    assert dataset
+    assert response.url == dataset.get_absolute_url()
+    assert dataset.title == "test_information_system"
+    assert dataset.description == "test_information_system_description"
+    assert dataset.is_public is False
+    assert set(dataset.tags.all().values_list("name", flat=True)) == {"tag1", "tag2"}
+    assert dataset.catalog == catalog
+    assert dataset.frequency == frequency
+    assert dataset.access_rights == Dataset.PUBLIC
+    assert dataset.name == "test/information/system"
+    assert dataset.landing_page == "https://www.test.test"
+    assert dataset.information_system_type == concept
+
+
+@pytest.mark.django_db
 def test_dataset_with_subclass(app: DjangoTestApp):
     FrequencyFactory(is_default=True)
     organization = OrganizationFactory()
@@ -2128,6 +2182,10 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
     AgencyFactory()
     organization = OrganizationFactory()
     subclass = DCATResourceSubclassFactory(name="information_system")
+    concept_schema = ConceptSchemaFactory(
+        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+    )
+    concept = ConceptFactory(concept_schemas=[concept_schema])
     user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(
@@ -2140,6 +2198,7 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
     form["is_public"] = True
     form["access_rights"] = Dataset.PUBLIC
     form["identifier"] = "test-identifier"
+    form["information_system_type"] = concept.pk
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
     assert added_dataset.first().is_public is True
@@ -2153,7 +2212,11 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_dataset_update_existing_identifier(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory(name="information_system")
-    dataset = DatasetFactory(subclass=subclass)
+    concept_schema = ConceptSchemaFactory(
+        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+    )
+    concept = ConceptFactory(concept_schemas=[concept_schema])
+    dataset = DatasetFactory(subclass=subclass, information_system_type=concept)
     agency = AgencyFactory()
     IdentifierFactory(resource=dataset, notation="test-identifier", scheme_agency=agency)
     user = UserFactory(is_staff=True)
@@ -2177,7 +2240,11 @@ def test_dataset_update_existing_identifier(app: DjangoTestApp):
 def test_dataset_update_non_existing_identifier(app: DjangoTestApp):
     AgencyFactory()
     subclass = DCATResourceSubclassFactory(name="information_system")
-    dataset = DatasetFactory(subclass=subclass)
+    concept_schema = ConceptSchemaFactory(
+        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+    )
+    concept = ConceptFactory(concept_schemas=[concept_schema])
+    dataset = DatasetFactory(subclass=subclass, information_system_type=concept)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -2282,6 +2349,50 @@ def test_dataset_update_uses_different_forms_based_on_dcat_subclass(
     response = app.get(reverse("dataset-change", kwargs={"pk": dataset.id}))
 
     assert type(response.context.get("form")) == form_class
+
+
+@pytest.mark.django_db
+def test_dataset_update_information_system(app: DjangoTestApp):
+    subclass = DCATResourceSubclassFactory(name="information_system")
+    dataset = DatasetFactory(subclass=subclass)
+    catalog = CatalogFactory()
+    frequency = FrequencyFactory(is_default=True)
+    concept_schema = ConceptSchemaFactory(
+        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+    )
+    concept = ConceptFactory(concept_schemas=[concept_schema])
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    url = reverse("dataset-change", kwargs={"pk": dataset.id})
+
+    data = {
+        "title": "test_information_system",
+        "description": "test_information_system_description",
+        "is_public": False,
+        "tags": "tag1, tag2",
+        "catalog": catalog.pk,
+        "frequency": frequency.pk,
+        "access_rights": Dataset.PUBLIC,
+        "name": "test/information/system",
+        "landing_page": "https://www.test.test",
+        "information_system_type": concept.pk,
+    }
+    response = app.post(url, data)
+
+    dataset = Dataset.objects.first()
+    assert dataset
+    assert response.url == dataset.get_absolute_url()
+    assert dataset.title == "test_information_system"
+    assert dataset.description == "test_information_system_description"
+    assert dataset.is_public is False
+    assert set(dataset.tags.all().values_list("name", flat=True)) == {"tag1", "tag2"}
+    assert dataset.catalog == catalog
+    assert dataset.frequency == frequency
+    assert dataset.access_rights == Dataset.PUBLIC
+    assert dataset.name == "test/information/system"
+    assert dataset.landing_page == "https://www.test.test"
+    assert dataset.information_system_type == concept
 
 
 @pytest.mark.django_db

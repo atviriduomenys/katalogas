@@ -3155,14 +3155,17 @@ msgstr "License"
 msgid "Laiko skiriamoji geba (sekundėmis)"
 msgstr "Temporal resolution (in seconds)"
 
-msgid "dcat:temporalResolution. Laiko skiriamoji geba sekundėmis."
-msgstr "dcat:temporalResolution. Temporal resolution in seconds"
+
+msgid "Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."
+msgstr "Temporal resolution (in seconds). Corresponds to dcat:temporalResolution."
 
 msgid "Erdvinė skiriamoji geba (metrais)"
 msgstr "Spatial resolution (in meters)"
 
-msgid "dcat:spatialResolutionInMeters. Erdvės skiriamoji geba metrais."
-msgstr "dcat:spatialResolutionInMeters. Spatial resolution in meters"
+msgid ""
+"Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."
+msgstr ""
+"Spatial resolution (in meters). Corresponds to dcat:spatialResolutionInMeters."
 
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"
@@ -5239,3 +5242,9 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+#~ msgid "dcat:temporalResolution. Laiko skiriamoji geba sekundėmis."
+#~ msgstr "dcat:temporalResolution. Temporal resolution in seconds"
+
+#~ msgid "dcat:spatialResolutionInMeters. Erdvės skiriamoji geba metrais."
+#~ msgstr "dcat:spatialResolutionInMeters. Spatial resolution in meters"

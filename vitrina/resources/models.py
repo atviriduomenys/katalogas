@@ -235,7 +235,7 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Laiko skiriamoji geba (sekundėmis)"),
-        help_text=_("dcat:temporalResolution. Laiko skiriamoji geba sekundėmis."),
+        help_text=_("Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."),
     )
 
     spatial_resolution = models.CharField(
@@ -243,7 +243,7 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
-        help_text=_("dcat:spatialResolutionInMeters. Erdvės skiriamoji geba metrais."),
+        help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
     )
 
     # Deprecated fields bellow

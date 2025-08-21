@@ -165,7 +165,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     
     def _deduplicate_and_sort_history(self, history: list[dict]) -> list[dict]:
         unique_entries = {tuple(entry.items()) for entry in history}
-        unique_history = [dict(t) for t in unique_entries]
+        unique_history = [dict(entry) for entry in unique_entries]
 
         return sorted(unique_history, key=lambda x: x["date"], reverse=True)
 

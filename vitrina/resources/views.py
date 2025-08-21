@@ -175,7 +175,7 @@ class ResourceCreateView(
             self.dataset.status = Dataset.HAS_DATA
             self.dataset.save()
 
-        set_comment(("Pridėtas naujas duomenų šaltinis \"%(title)s\".") % {"title": resource.lt_title()})
+        set_comment((f'Pridėtas naujas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
 
@@ -262,7 +262,7 @@ class ResourceUpdateView(
                 level_given=form.cleaned_data.get("level"),
             )
 
-        set_comment(("Redaguotas duomenų šaltinis \"%(title)s\".") % {"title": resource.lt_title()})
+        set_comment((f'Redaguotas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
 
@@ -299,7 +299,7 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
         with create_revision():
             add_to_revision(resource)
             set_user(request.user)
-            set_comment(("Ištrintas duomenų šaltinis \"%(title)s\".") % {"title": resource.lt_title()})
+            set_comment((f'Ištrintas duomenų šaltinis "{resource.lt_title()}".'))
             resource.delete()
 
             if (

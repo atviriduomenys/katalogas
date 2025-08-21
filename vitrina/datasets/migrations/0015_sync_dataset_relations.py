@@ -3,28 +3,10 @@
 
 from django.db import migrations
 
-
-def sync_dataset_relations_with_mp_node(apps, schema_editor):
-    try: # Because using models import directly, otherwise MP Node methods not available.
-        from vitrina.datasets.models import DatasetRelation, Dataset, Relation
-
-        for relation in DatasetRelation.objects.filter(
-            relation__name=Relation.CATALOG
-        ).select_related("dataset", "part_of"):
-            relation.sync_with_mp_node(fix_tree=False)
-        Dataset.fix_tree(fix_paths=True)
-    except (ImportError, AttributeError):
-        pass
-
-
 class Migration(migrations.Migration):
 
     dependencies = [
         ("vitrina_datasets", "0014_auto_20250811_1532"),
     ]
 
-    operations = [
-        migrations.RunPython(
-            sync_dataset_relations_with_mp_node, reverse_code=migrations.RunPython.noop
-        ),
-    ]
+    operations = []

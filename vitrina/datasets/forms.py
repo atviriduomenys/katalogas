@@ -411,6 +411,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             "managed_by_publisher",
             "landing_page",
             "information_system_type",
+            "information_system_importance",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -442,58 +443,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("creator"),
             Field("publisher"),
             Field("information_system_type"),
-        )
-
-        self.fields["information_system_type"].queryset = Concept.objects.filter(
-            concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
-        )
-        self.fields["information_system_type"].label_from_instance = lambda obj: str(
-            obj.translated_label
-        )
-
-
-class InformationSystemResourceForm(BaseResourceForm):
-    class Meta:
-        model = Dataset
-        fields = (
-            "title",
-            "description",
-            "is_public",
-            "tags",
-            "catalog",
-            "frequency",
-            "access_rights",
-            "files",
-            "name",
-            "contact",
-            "creator",
-            "publisher",
-            "managed_by_publisher",
-            "landing_page",
-            "information_system_type",
-            "information_system_importance",
-        )
-
-    def __init__(self, request=None, organization=None, *args, **kwargs):
-        super().__init__(request, organization, *args, **kwargs)
-
-        self.helper.layout = Layout(
-            Field("is_public", placeholder=_("Ar duomenys vieši?")),
-            Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
-            Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
-            Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
             Field("information_system_importance"),
-            Field("files"),
-            Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
-            Field("landing_page"),
-            Field("catalog"),
-            Field("frequency"),
-            Field("access_rights"),
-            Field("contact"),
-            Field("managed_by_publisher"),
-            Field("creator"),
-            Field("publisher"),
-            Field("information_system_type"),
         )
 
         self.fields["information_system_type"].queryset = Concept.objects.filter(

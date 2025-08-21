@@ -921,10 +921,6 @@ msgstr ""
 msgid "Informacinės sistemos svarba"
 msgstr "Information system importance"
 
-#, fuzzy
-#| msgid ""
-#| "Informacinės sistemos svarba pagal Valstybės informacinių išteklių "
-#| "valdymo įstatymo reikalavimus. (dcataplt:Importance)"
 msgid ""
 "Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo "
 "įstatymo reikalavimus. Atitinka dcataplt:Importance."

@@ -11,7 +11,6 @@ from parler.forms import TranslatedField, TranslatableModelForm
 from vitrina.classifiers.models import Licence
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField
-from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
 

@@ -155,7 +155,7 @@ class DatasetDistribution(TranslatableModel):
         blank=False,
         null=True,
         verbose_name=_("Duomenų formatas"),
-        related_name="format_distributions"
+        related_name="format_distributions",
     )
     compression_format = models.ForeignKey(
         CompressionFormat,

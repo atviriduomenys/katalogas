@@ -457,11 +457,11 @@ class InformationSystemResourceForm(BaseResourceForm):
         )
         self.fields['information_system_publisher'].required = True
         self.fields['information_system_publisher'].help_text = _(
-            "(dct:publisher) Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą"
+            "Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. Atitinka dct:publisher"
             )
         self.fields['information_system_creator'].required = True
         self.fields['information_system_creator'].help_text = _(
-            "(dct:creator) Subjektas, atsakingas už IS parengimą."
+            "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
             )
 
         self.fields["information_system_type"].queryset = Concept.objects.filter(

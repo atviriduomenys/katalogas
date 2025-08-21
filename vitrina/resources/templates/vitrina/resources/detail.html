@@ -83,6 +83,21 @@
                                     <th>{% translate "Formatas" %}</th>
                                     <td>{{ resource.get_format|default:"" }}</td>
                                 </tr>
+
+                                {% if resource.temporal_resolution %}
+                                <tr>
+                                    <th>{% translate "Laiko skiriamoji geba (sekundėmis)" %}</th>
+                                    <td>{{ resource.temporal_resolution }}</td>
+                                </tr>
+                                {% endif %}
+
+                                {% if resource.spatial_resolution %}
+                                <tr>
+                                    <th>{% translate "Erdvinė skiriamoji geba (metrais)" %}</th>
+                                    <td>{{ resource.spatial_resolution }}</td>
+                                </tr>
+                                {% endif %}
+
                                 {% if resource.compression_format %}
                                 <tr>
                                     <th>{% translate "Suspausto failo formatas" %}</th>

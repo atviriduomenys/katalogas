@@ -159,6 +159,8 @@ class DatasetResourceForm(TranslatableModelForm):
             "imported",
             "licence",
             "conditions",
+            "temporal_resolution",
+            "spatial_resolution",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -177,6 +179,8 @@ class DatasetResourceForm(TranslatableModelForm):
             ),
             Field("description", placeholder=_("Detalus šaltinio aprašas"), rows="2"),
             Field("name"),
+            Field("temporal_resolution"),
+            Field("spatial_resolution"),
             Field("access"),
             Field("level"),
             Field("is_parameterized"),
@@ -282,7 +286,6 @@ class DatasetResourceForm(TranslatableModelForm):
         if level and level != "None":
             return int(level)
         return None
-
 
 class FormatAdminForm(forms.ModelForm):
     extension = forms.CharField(label=_("Failo plėtinys"))

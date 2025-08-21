@@ -42,7 +42,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('vitrina_classifiers', '0012_add_initial_importance_and_type_to_conceptschema'),
-        ('vitrina_datasets', '0014_dataset_information_system_importance'),
+        ('vitrina_datasets', '0018_dataset_information_system_importance'),
     ]
 
     operations = [

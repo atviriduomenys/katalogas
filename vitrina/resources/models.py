@@ -155,7 +155,7 @@ class DatasetDistribution(TranslatableModel):
         blank=False,
         null=True,
         verbose_name=_("Duomenų formatas"),
-        related_name="format_distributions"
+        related_name="format_distributions",
     )
     compression_format = models.ForeignKey(
         CompressionFormat,
@@ -199,16 +199,6 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         verbose_name=_("Geografinė aprėptis"),
     )
-    period_start = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name=_("Periodo pradžia"),
-    )
-    period_end = models.DateField(
-        blank=True,
-        null=True,
-        verbose_name=_("Periodo pabaiga"),
-    )
 
     distribution_version = models.IntegerField(blank=True, null=True)
 
@@ -247,6 +237,16 @@ class DatasetDistribution(TranslatableModel):
     )
 
     # Deprecated fields bellow
+    period_start = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("Periodo pradžia"),
+    )
+    period_end = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("Periodo pabaiga"),
+    )
     type = models.CharField(max_length=255, blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     identifier = models.CharField(max_length=255, blank=True, null=True)

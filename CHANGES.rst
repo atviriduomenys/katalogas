@@ -65,6 +65,16 @@ Adds label and help_text for `landing_page` field if resource subclass is `Infor
 Adds `foaf:homepage` in `dcat-ap.rdf` file if resource subclass is `Information system`
 
 
+2025-08-20
+==========
+https://github.com/atviriduomenys/katalogas/pull/1817
+Removes `period_start`, `period_end` fields from `DatasetDistributionForm`
+
+Adds new datetime values `temporal_start` `temporal_end` into `DatasetResourceForm`
+
+Makes a data migration, to get all dates from `DatasetDistribution`, and add them into `Dataset`
+
+
 2025-03-19
 ==========
 https://github.com/atviriduomenys/katalogas/pull/1501

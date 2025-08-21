@@ -429,6 +429,18 @@ class Dataset(Resource):
             "Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Importance."
         ),
     )
+    temporal_start = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("Laikotarpio pradžios data"),
+        help_text=_("Ši savybė nurodo pradžios datą, kurią apima duomenų rinkinys. Atitinka dct:temporal."),
+    )
+    temporal_end = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("Laikotarpio pabaigos data"),
+        help_text=_("Ši savybė nurodo pabaigos datą, kurią apima duomenų rinkinys. Atitinka dct:temporal."),
+    )
 
     temporal_resolution = models.CharField(
         max_length=255,
@@ -1661,6 +1673,10 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     @property
     def is_information_system(self) -> bool:
         return self.name == DCATResourceSubclass.INFORMATION_SYSTEM
+
+    @property
+    def is_dataset(self) -> bool:
+        return self.name == DCATResourceSubclass.DATASET
 
 
 class Relation(TranslatableModel):

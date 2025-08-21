@@ -2,6 +2,16 @@ Changes
 #######
 2025-08-21
 ==========
+https://github.com/atviriduomenys/katalogas/pull/1827
+Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` model.
+
+Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` form where its subclass is Dataset.
+
+Adds `temporal_resolution` and `spatial_resolution` fields to the `coretable.html` page
+
+
+2025-08-21
+==========
 https://github.com/atviriduomenys/katalogas/pull/1821
 Adds `temporal_resolution` and `spatial_resolution` fields to `DatasetDistribution` model.
 

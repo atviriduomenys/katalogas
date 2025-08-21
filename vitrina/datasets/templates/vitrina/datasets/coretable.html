@@ -167,6 +167,37 @@
             {% endif %}
         </td>
     </tr>
+    {% if dataset.temporal_resolution %}
+    <tr>
+        <th>
+            {% translate "Laiko skiriamoji geba (sekundėmis)" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{% translate 'Mažiausias laiko tarpas tarp objektų duomenų ištekliuje' %}">
+            <i class="fas fa-info-circle"></i>
+        </span>
+        </th>
+        <td>
+            {{ dataset.temporal_resolution }}
+        </td>
+    </tr>
+    {% endif %}
+
+    {% if dataset.spatial_resolution %}
+    <tr>
+        <th>
+            {% translate "Erdvinė skiriamoji geba (metrais)" %}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{% translate 'Mažiausias atstumas tarp objektų duomenų ištekliuje, matuojamas metrais' %}">
+        <i class="fas fa-info-circle"></i>
+    </span>
+        </th>
+        <td>
+            {{ dataset.spatial_resolution }}
+        </td>
+    </tr>
+    {% endif %}
+
+
     {% if dataset.landing_page %}
       {% if dataset.subclass.is_information_system %}
         <tr>

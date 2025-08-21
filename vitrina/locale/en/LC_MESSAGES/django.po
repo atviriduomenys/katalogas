@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-21 13:50+0300\n"
+"POT-Creation-Date: 2025-08-21 14:47+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -920,6 +920,16 @@ msgstr ""
 "9 of the Law on State Information Resources Management of the Republic of "
 "Lithuania. Corresponds to dcataplt:Type."
 
+msgid "Informacinės sistemos svarba"
+msgstr "Information system importance"
+
+msgid ""
+"Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo "
+"įstatymo reikalavimus. Atitinka dcataplt:Importance."
+msgstr ""
+"Information system importance in accordance with the requirements of the Law "
+"on State Information Resources Management. (dcataplt:Importance)"
+
 msgid "Laiko skiriamoji geba (sekundėmis)"
 msgstr "Temporal resolution (in seconds)"
 
@@ -935,16 +945,6 @@ msgid ""
 msgstr ""
 "Spatial resolution (in meters). Corresponds to "
 "dcat:spatialResolutionInMeters."
-
-msgid "Informacinės sistemos svarba"
-msgstr "Information system importance"
-
-msgid ""
-"Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo "
-"įstatymo reikalavimus. Atitinka dcataplt:Importance."
-msgstr ""
-"Information system importance in accordance with the requirements of the Law "
-"on State Information Resources Management. (dcataplt:Importance)"
 
 msgid "Dataset"
 msgstr "Dataset"
@@ -3182,22 +3182,6 @@ msgstr "Importing external metadata catalog"
 
 msgid "Licencija"
 msgstr "License"
-
-msgid "Laiko skiriamoji geba (sekundėmis)"
-msgstr "Temporal resolution (in seconds)"
-
-msgid "Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."
-msgstr ""
-"Temporal resolution (in seconds). Corresponds to dcat:temporalResolution."
-
-msgid "Erdvinė skiriamoji geba (metrais)"
-msgstr "Spatial resolution (in meters)"
-
-msgid ""
-"Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."
-msgstr ""
-"Spatial resolution (in meters). Corresponds to "
-"dcat:spatialResolutionInMeters."
 
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"

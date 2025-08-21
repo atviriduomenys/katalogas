@@ -681,6 +681,8 @@ msgid ""
 "Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. "
 "Atitinka foaf:homepage."
 msgstr ""
+"This property indicates the web page that is the main page of the catalog. "
+"Corresponds to foaf:homepage."
 
 msgid "Failas"
 msgstr "File"

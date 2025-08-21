@@ -486,7 +486,8 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("information_system_type"),
             Field("information_system_importance"),
             Field("information_system_publisher"),
-            Field("information_system_creator")
+            Field("information_system_creator"),
+            Field("applicable_legislation"),
         )
 
         self.fields["landing_page"].label = _("Tinklalapis")
@@ -580,6 +581,7 @@ class DatasetResourceForm(BaseResourceForm):
             Field("creator"),
             Field("publisher"),
             Field("parent"),
+            Field("applicable_legislation"),
         )
 
     def clean(self) -> None:
@@ -613,7 +615,6 @@ class ResourceForm(BaseResourceForm):
             "parent",
             "temporal_resolution",
             "spatial_resolution",
-            "applicable_legislation"
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):

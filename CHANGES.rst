@@ -26,6 +26,18 @@ https://github.com/atviriduomenys/katalogas/pull/1796
 Adds `Dataset.information_system_type` to dataset add/change/detail pages
 
 
+2025-08-20
+==========
+https://github.com/atviriduomenys/katalogas/pull/1799
+Adds `Dataset.information_system_importance` to dataset add/change/detail pages
+
+
+2025-08-20
+==========
+https://github.com/atviriduomenys/katalogas/pull/1806
+Adds origin, source.type values to headers list for importing DSA
+
+
 2025-03-19
 ==========
 https://github.com/atviriduomenys/katalogas/pull/1501

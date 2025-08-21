@@ -8,19 +8,36 @@ pytestmark = pytest.mark.django_db
 
 
 class TestDatasets:
-    def test_automatically_assign_information_system_type_if_not_set(self) -> None:
+    @pytest.mark.parametrize(
+        "field_name",
+        [
+            "information_system_type",
+            "information_system_importance",
+        ],
+    )
+    def test_automatically_assign_information_system_mandatory_fields_if_not_set(self, field_name):
         dataset = DatasetFactory()
         dataset.refresh_from_db()
 
-        assert dataset.information_system_type
-        assert dataset.information_system_type.code == "NOT-SET"
+        value = getattr(dataset, field_name)
+        assert value is not None
+        assert value.code == "NOT-SET"
 
-    def test_do_not_assign_default_information_system_type_if_it_set(self) -> None:
+    @pytest.mark.parametrize(
+        "field_name",
+        [
+            "information_system_type",
+            "information_system_importance",
+        ],
+    )
+    def test_do_not_assign_default_information_system_fields_if_it_set(self, field_name):
         concept = ConceptFactory()
-        dataset = DatasetFactory(information_system_type=concept)
+        dataset = DatasetFactory(**{field_name: concept})
         dataset.refresh_from_db()
 
-        assert dataset.information_system_type
+        value = getattr(dataset, field_name)
+        assert value == concept
+
 
 
 class TestDCATResourceSubclass:

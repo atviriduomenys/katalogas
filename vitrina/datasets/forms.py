@@ -411,6 +411,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             "managed_by_publisher",
             "landing_page",
             "information_system_type",
+            "information_system_importance",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -442,6 +443,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("creator"),
             Field("publisher"),
             Field("information_system_type"),
+            Field("information_system_importance"),
         )
 
         self.fields["information_system_type"].queryset = Concept.objects.filter(
@@ -449,6 +451,13 @@ class InformationSystemResourceForm(BaseResourceForm):
         )
         self.fields["information_system_type"].label_from_instance = lambda obj: str(
             obj.translated_label
+        )
+        self.fields["information_system_importance"].required = True
+        self.fields["information_system_importance"].queryset = Concept.objects.filter(
+            concept_schemas__uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
+        )
+        self.fields["information_system_importance"].label_from_instance = (
+            lambda obj: str(obj.translated_label)
         )
 
 

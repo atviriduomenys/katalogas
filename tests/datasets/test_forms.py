@@ -13,17 +13,24 @@ pytestmark = pytest.mark.django_db
 
 
 class TestInformationSystemResourceForm:
-    def test_information_system_type_only_allows_choices_from_information_system_type_schema_uri(
-        self, app: DjangoTestApp
+    @pytest.mark.parametrize(
+        "field_name, schema_uri_attr",
+        [
+            ("information_system_type", "INFORMATION_SYSTEM_TYPE_SCHEMA_URI"),
+            ("information_system_importance", "INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI"),
+        ],
+    )
+    def test_information_system_fields_only_allow_choices_from_correct_schema(
+        self, app: DjangoTestApp, field_name, schema_uri_attr
     ) -> None:
         organization = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)
         subclass = DCATResourceSubclassFactory(name="information_system")
 
-        concept_schema = ConceptSchemaFactory(
-            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
-        )
+        schema_uri = getattr(Dataset, schema_uri_attr)
+
+        concept_schema = ConceptSchemaFactory(uri=schema_uri)
         concept_schema2 = ConceptSchemaFactory(uri="foo")
         concept = ConceptFactory(concept_schemas=[concept_schema])
         ConceptFactory(concept_schemas=[concept_schema2])
@@ -37,4 +44,4 @@ class TestInformationSystemResourceForm:
         ).context["form"]
 
         assert isinstance(form, InformationSystemResourceForm)
-        assert set(form.fields["information_system_type"].queryset) == {concept}
+        assert set(form.fields[field_name].queryset) == {concept}

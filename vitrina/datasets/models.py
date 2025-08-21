@@ -152,6 +152,7 @@ class Dataset(Resource):
 
     API_ORIGIN = "api"
 
+    INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"
     INFORMATION_SYSTEM_TYPE_SCHEMA_URI = "dcataplt:Type"
 
     translations = TranslatedFields(
@@ -406,6 +407,16 @@ class Dataset(Resource):
             "Informacinės sistemos tipas pagal Valstybės informacinių "
             "išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Type."
         ),
+        related_name="information_system_types",
+    )
+    information_system_importance = models.ForeignKey(
+        Concept,
+        on_delete=models.PROTECT,
+        verbose_name=_("Informacinės sistemos svarba"),
+        related_name="information_system_importance_levels",
+        help_text=_(
+            "Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Importance."
+        ),
     )
 
     # TODO: To be removed:
@@ -498,7 +509,7 @@ class Dataset(Resource):
         )
 
     def save(self, *args, **kwargs) -> None:
-        if not self.information_system_type_id:
+        if not all((self.information_system_type_id, self.information_system_importance_id)):
             default_concept, _ = Concept.objects.get_or_create(
                 code="NOT-SET",
                 defaults={
@@ -508,7 +519,11 @@ class Dataset(Resource):
                     "description": "Informacija nėra nurodyta",
                 },
             )
-            self.information_system_type = default_concept
+
+            if not self.information_system_type_id:
+                self.information_system_type = default_concept
+            if not self.information_system_importance_id:
+                self.information_system_importance = default_concept
         super().save(*args, **kwargs)
 
     def lt_title(self):

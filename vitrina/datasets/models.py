@@ -509,10 +509,7 @@ class Dataset(Resource):
         )
 
     def save(self, *args, **kwargs) -> None:
-        if (
-            not self.information_system_type_id
-            or not self.information_system_importance_id
-        ):
+        if not all((self.information_system_type_id, self.information_system_importance_id)):
             default_concept, _ = Concept.objects.get_or_create(
                 code="NOT-SET",
                 defaults={

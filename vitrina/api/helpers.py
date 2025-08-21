@@ -67,9 +67,12 @@ def get_datasets_for_rdf(qs):
             "endpoint_description_type": dataset.endpoint_description_type,
             "related_datasets": (
                 _get_rel_dataset(relation)
-                for relation in dataset.related_datasets.filter(relation__name=Relation.SERVICE)
+                for relation in dataset.related_datasets.filter(
+                    relation__name=Relation.SERVICE
+                )
             ),
             "access_rights": dataset.access_rights,
+            "subclass": dataset.subclass,
         }
 
 
@@ -100,7 +103,9 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
         ],
         "download_url": dist.get_download_url(),
         "access_url": dist.get_access_url(),
-        "access_service": dist.data_service.get_absolute_url() if dist.data_service else None,
+        "access_service": dist.data_service.get_absolute_url()
+        if dist.data_service
+        else None,
         "licence": _get_licence(dist.licence),
         "conditions": dist.conditions or "",
         "format": _get_format(dist.format),

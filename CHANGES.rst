@@ -38,6 +38,14 @@ https://github.com/atviriduomenys/katalogas/pull/1806
 Adds origin, source.type values to headers list for importing DSA
 
 
+2025-08-20
+==========
+https://github.com/atviriduomenys/katalogas/pull/1804
+Adds label and help_text for `landing_page` field if resource subclass is `Information system`
+
+Adds `foaf:homepage` in `dcat-ap.rdf` file if resource subclass is `Information system`
+
+
 2025-03-19
 ==========
 https://github.com/atviriduomenys/katalogas/pull/1501

@@ -9,6 +9,8 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DeleteView, DetailView
 from parler.views import TranslatableCreateView, TranslatableUpdateView
+from reversion import set_comment, set_user, create_revision, add_to_revision
+from reversion.views import RevisionMixin
 
 from vitrina import settings
 from vitrina.comments.models import Comment
@@ -70,6 +72,7 @@ class ResourceDetailView(
 class ResourceCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    RevisionMixin,
     TranslatableCreateView,
 ):
     model = DatasetDistribution
@@ -172,6 +175,7 @@ class ResourceCreateView(
             self.dataset.status = Dataset.HAS_DATA
             self.dataset.save()
 
+        set_comment((f'Pridėtas naujas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
 
@@ -182,7 +186,10 @@ class ResourceCreateView(
 
 
 class ResourceUpdateView(
-    LoginRequiredMixin, PermissionRequiredMixin, TranslatableUpdateView
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    RevisionMixin,
+    TranslatableUpdateView
 ):
     model = DatasetDistribution
     template_name = "vitrina/resources/form.html"
@@ -254,6 +261,8 @@ class ResourceUpdateView(
                 description=form.cleaned_data.get("description"),
                 level_given=form.cleaned_data.get("level"),
             )
+
+        set_comment((f'Redaguotas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
 
@@ -287,27 +296,31 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
     def delete(self, request, *args, **kwargs):
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
-        resource.delete()
+        with create_revision():
+            add_to_revision(resource)
+            set_user(request.user)
+            set_comment((f'Ištrintas duomenų šaltinis "{resource.lt_title()}".'))
+            resource.delete()
 
-        if (
-            not DatasetDistribution.objects.filter(dataset=dataset)
-            and dataset.is_public
-        ):
-            if dataset.plandataset_set.exists():
-                dataset.status = Dataset.PLANNED
-                comment_status = Comment.PLANNED
-            else:
-                dataset.status = Dataset.INVENTORED
-                comment_status = Comment.INVENTORED
+            if (
+                not DatasetDistribution.objects.filter(dataset=dataset)
+                and dataset.is_public
+            ):
+                if dataset.plandataset_set.exists():
+                    dataset.status = Dataset.PLANNED
+                    comment_status = Comment.PLANNED
+                else:
+                    dataset.status = Dataset.INVENTORED
+                    comment_status = Comment.INVENTORED
 
-            Comment.objects.create(
-                content_type=ContentType.objects.get_for_model(dataset),
-                object_id=dataset.pk,
-                type=Comment.STATUS,
-                status=comment_status,
-                user=self.request.user,
-            )
-            dataset.save()
+                Comment.objects.create(
+                    content_type=ContentType.objects.get_for_model(dataset),
+                    object_id=dataset.pk,
+                    type=Comment.STATUS,
+                    status=comment_status,
+                    user=self.request.user,
+                )
+                dataset.save()
         return redirect(dataset)
 
 

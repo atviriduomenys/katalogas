@@ -4,7 +4,7 @@ import secrets
 import uuid
 from datetime import datetime, date
 from functools import cached_property
-from typing import List, Any
+from typing import List, Any, Type as TypingType
 from urllib.parse import urlencode
 
 import numpy as np
@@ -19,6 +19,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
+from django.db import models
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.http.response import HttpResponsePermanentRedirect
@@ -40,7 +41,7 @@ from parler.views import (
     LanguageChoiceMixin,
     ViewUrlMixin,
 )
-from reversion import set_comment
+from reversion import set_comment, create_revision, set_user, add_to_revision
 from reversion.models import Version
 from reversion.views import RevisionMixin
 
@@ -1403,14 +1404,34 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         plan_history_objects = Version.objects.get_for_model(Plan).filter(
             object_id__in=list(dataset_plan_ids)
         )
+        dataset_distribution_history_objects = self._get_history_objects_for_model(DatasetDistribution)
+        attribution_history_objects = self._get_history_objects_for_model(DatasetAttribution)
+        relation_history_objects = self._get_history_objects_for_model(DatasetRelation)
 
         history_objects = (
             property_history_objects
             | model_history_objects
             | dataset_history_objects
             | plan_history_objects
+            | dataset_distribution_history_objects
+            | attribution_history_objects
+            | relation_history_objects
         )
         return history_objects.order_by("-revision__date_created")
+    
+    def _get_history_objects_for_model(self, model: TypingType[models.Model]) -> QuerySet[Version]:
+        all_versions = Version.objects.get_for_model(model)
+        filtered_versions_ids = [
+            version.pk for version in all_versions
+            if version.field_dict.get('dataset_id') == self.object.id
+        ]
+        if model == DatasetRelation:
+            filtered_versions_ids += [
+                version.pk for version in all_versions
+                if version.field_dict.get('part_of_id') == self.object.id
+            ]
+
+        return all_versions.filter(pk__in=filtered_versions_ids)
 
 
 class DatasetStructureImportView(
@@ -3246,7 +3267,7 @@ class QuarterStatsView(DatasetListView):
         return context
 
 
-class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
+class DatasetCategoryView(PermissionRequiredMixin, RevisionMixin, TemplateView):
     template_name = "vitrina/datasets/dataset_categories.html"
 
     dataset: Dataset
@@ -3271,6 +3292,7 @@ class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
             for category in form.cleaned_data.get("category"):
                 self.dataset.category.add(category)
             self.dataset.save()
+            set_comment(Dataset.CATEGORY_UPDATED)
 
             DatasetExcludedGroups.objects.filter(dataset=self.dataset).delete()
             for group in DatasetGroup.objects.filter(
@@ -3343,7 +3365,7 @@ class FilterCategoryView(LoginRequiredMixin, View):
         return JsonResponse({"categories": category_data})
 
 
-class DatasetAttributionCreateView(PermissionRequiredMixin, CreateView):
+class DatasetAttributionCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
     model = DatasetAttribution
     form_class = DatasetAttributionForm
     template_name = "vitrina/datasets/attribution_form.html"
@@ -3371,6 +3393,7 @@ class DatasetAttributionCreateView(PermissionRequiredMixin, CreateView):
         self.object: DatasetAttribution = form.save(commit=False)
         self.object.dataset = self.dataset
         self.object.save()
+        set_comment(Dataset.ATTRIBUTION_ADDED)
         return redirect(self.dataset.get_absolute_url())
 
 
@@ -3388,12 +3411,21 @@ class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        with create_revision():
+            self.object = self.get_object()
+            set_user(request.user)
+            add_to_revision(self.object)
+            set_comment(Dataset.ATTRIBUTION_DELETED)
+
+        return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
         return self.dataset.get_absolute_url()
 
 
-class DatasetRelationCreateView(PermissionRequiredMixin, CreateView):
+class DatasetRelationCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
     model = DatasetRelation
     form_class = DatasetRelationForm
     template_name = "vitrina/datasets/relation_form.html"
@@ -3443,6 +3475,7 @@ class DatasetRelationCreateView(PermissionRequiredMixin, CreateView):
             # need to save to update search index
             self.object.dataset.save()
             self.object.part_of.save()
+            set_comment(Dataset.RELATION_ADDED)
 
         return redirect(self.dataset.get_absolute_url())
 
@@ -3461,6 +3494,14 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get(self, *args, **kwargs):
         return self.post(*args, **kwargs)
+    
+    def delete(self, request, *args, **kwargs):
+        with create_revision():
+            self.object = self.get_object()
+            set_user(request.user)
+            set_comment(Dataset.RELATION_DELETED)
+            add_to_revision(self.object)
+        return super().delete(request, *args, **kwargs)
 
     def get_success_url(self):
         return self.dataset.get_absolute_url()

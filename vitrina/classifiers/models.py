@@ -3,10 +3,12 @@ from django.utils.translation import gettext_lazy as _, get_language
 
 from parler.models import TranslatableModel, TranslatedFields
 from treebeard.mp_tree import MP_Node, MP_NodeManager
+import reversion
 
 from vitrina.models import UUIDBaseModel
 
 
+@reversion.register()
 class Category(MP_Node):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

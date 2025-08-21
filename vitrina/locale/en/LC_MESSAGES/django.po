@@ -785,6 +785,21 @@ msgstr "Added to project"
 msgid "Priskirta poreikiui"
 msgstr "Added to request"
 
+msgid "Pakeista kategorija(-os)"
+msgstr "Updated category(-ies)"
+
+msgid "Pridėtas ryšys"
+msgstr "Added relation"
+
+msgid "Ištrintas ryšys"
+msgstr "Deleted relation"
+
+msgid "Priskirta organizacijai"
+msgstr "Added to organization"
+
+msgid "Pašalinta iš organizacijos"
+msgstr "Removed from organization"
+
 msgid "Atviri duomenys"
 msgstr "Public data"
 

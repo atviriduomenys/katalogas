@@ -75,7 +75,7 @@ class Resource(MP_Node, TranslatableModel):
     """
     Conceptual abstract model.
     Created to have common terminology between code and business language.
-    May become concrete model in the future
+    It May become a concrete model in the future
     """
     steplen = 25  # to set depth max up to 10 with 255 length path varchar (MP_Node default).
     depth = models.PositiveIntegerField(default=1) # Root by default

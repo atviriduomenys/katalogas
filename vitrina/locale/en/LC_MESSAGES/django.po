@@ -5274,15 +5274,3 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
-
-#~ msgid "Laiko skiriamoji geba"
-#~ msgstr "Temporal resolution"
-
-#~ msgid "dcat:temporalResolution. Laiko skiriamoji geba sekundėmis."
-#~ msgstr "dcat:temporalResolution. Temporal resolution in seconds"
-
-#~ msgid "Erdvės skiriamoji geba"
-#~ msgstr "Spatial resolution"
-
-#~ msgid "dcat:spatialResolutionInMeters. Erdvės skiriamoji geba metrais."
-#~ msgstr "dcat:spatialResolutionInMeters. Spatial resolution in meters"

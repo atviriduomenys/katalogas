@@ -1,6 +1,6 @@
 Changes
 #######
-2025-08-20
+2025-08-21
 ==========
 https://github.com/atviriduomenys/katalogas/pull/1821
 Adds `temporal_resolution` and `spatial_resolution` fields to `DatasetDistribution` model.

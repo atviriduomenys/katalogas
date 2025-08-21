@@ -912,18 +912,6 @@ msgstr "DataSeries dataset"
 msgid "Informacinės sistemos tipas"
 msgstr "Information system type"
 
-msgid "Laiko skiriamoji geba"
-msgstr "Temporal resolution"
-
-msgid "dcat:temporalResolution. Laiko skiriamoji geba sekundėmis."
-msgstr "dcat:temporalResolution. Temporal resolution in seconds"
-
-msgid "Erdvės skiriamoji geba"
-msgstr "Spatial resolution"
-
-msgid "dcat:spatialResolutionInMeters. Erdvės skiriamoji geba metrais."
-msgstr "dcat:spatialResolutionInMeters. Spatial resolution in meters"
-
 msgid ""
 "Informacinės sistemos tipas pagal Valstybės informacinių išteklių valdymo "
 "įstatymo reikalavimus. Atitinka dcataplt:Type."
@@ -931,6 +919,22 @@ msgstr ""
 "Information systems types according to the data processed in them by Article "
 "9 of the Law on State Information Resources Management of the Republic of "
 "Lithuania. Corresponds to dcataplt:Type."
+
+msgid "Laiko skiriamoji geba (sekundėmis)"
+msgstr "Temporal resolution (in seconds)"
+
+msgid "Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."
+msgstr ""
+"Temporal resolution (in seconds). Corresponds to dcat:temporalResolution."
+
+msgid "Erdvinė skiriamoji geba (metrais)"
+msgstr "Spatial resolution (in meters)"
+
+msgid ""
+"Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."
+msgstr ""
+"Spatial resolution (in meters). Corresponds to "
+"dcat:spatialResolutionInMeters."
 
 msgid "Informacinės sistemos svarba"
 msgstr "Information system importance"
@@ -1171,6 +1175,14 @@ msgid ""
 msgstr ""
 "Specifies the specific information system – a state information system or "
 "registry – within which the resources are managed."
+
+msgid "Mažiausias laiko tarpas tarp objektų duomenų ištekliuje"
+msgstr "Minimum time period resolvable in the dataset distribution."
+
+msgid "Mažiausias atstumas tarp objektų duomenų ištekliuje, matuojamas metrais"
+msgstr ""
+"The minimum spatial separation resolvable in a dataset distribution, "
+"measured in meters."
 
 msgid "Pagrindinis API paslaugos adresas, kuriuo galima pasiekti duomenis"
 msgstr "Main API service address for accessing data"
@@ -5262,3 +5274,15 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+#~ msgid "Laiko skiriamoji geba"
+#~ msgstr "Temporal resolution"
+
+#~ msgid "dcat:temporalResolution. Laiko skiriamoji geba sekundėmis."
+#~ msgstr "dcat:temporalResolution. Temporal resolution in seconds"
+
+#~ msgid "Erdvės skiriamoji geba"
+#~ msgstr "Spatial resolution"
+
+#~ msgid "dcat:spatialResolutionInMeters. Erdvės skiriamoji geba metrais."
+#~ msgstr "dcat:spatialResolutionInMeters. Spatial resolution in meters"

@@ -153,8 +153,18 @@ class Dataset(Resource):
     API_ORIGIN = "api"
 
     translations = TranslatedFields(
-        title=models.TextField(_("Title"), blank=True),
-        description=models.TextField(_("Description"), blank=True),
+        title=models.TextField(
+            verbose_name=_("Pavadinimas"),
+            blank=True,
+            help_text=_("Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."),
+        ),
+        description=models.TextField(
+            verbose_name=_("Aprašymas"),
+            blank=True,
+            help_text=_(
+                "Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."
+            ),
+        ),
     )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
@@ -208,6 +218,9 @@ class Dataset(Resource):
         blank=True,
         null=True,
         verbose_name=_("Katalogas"),
+        help_text=_(
+            "Katalogas, kurio turinys domina šio katalogo kontekste. Atitinka dcat:Catalog."
+        ),
     )
     # TODO: Should not be used anymore, instead:
     #  - https://github.com/atviriduomenys/katalogas/blob/1c2e6cf69f271a655700b196ae7fd7e0fb6d2807/vitrina/datasets/models.py#L1399
@@ -262,6 +275,7 @@ class Dataset(Resource):
         blank=False,
         null=True,
         verbose_name=_("Atnaujinimo dažnumas"),
+        help_text=_("Duomenų atnaujinimo dažnumas. Atitinka dcat:keyword."),
     )
     last_update = models.DateTimeField(
         blank=True,
@@ -274,6 +288,9 @@ class Dataset(Resource):
         null=True,
         choices=ACCESS_RIGHTS,
         max_length=255,
+        help_text=_(
+            "Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos apribojimai, ar jis nėra viešas. Atitinka dct:accessRights."
+        ),
     )
 
     tags = TagField(
@@ -283,7 +300,9 @@ class Dataset(Resource):
         autocomplete_view="autocomplete_tags",
         autocomplete_limit=20,
         verbose_name=_("Žymės"),
-        help_text=_("Pateikite kableliu atskirtą sąrašą žymių."),
+        help_text=_(
+            "Duomenų išteklių apibūdinantys raktažodžiai arba žymos. Atitinka dcat:keyword."
+        ),
         autocomplete_settings={"width": "100%"},
         autocomplete_view_fulltext=True,
     )
@@ -311,7 +330,13 @@ class Dataset(Resource):
         verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"),
     )
     landing_page = models.URLField(
-        _("Prieigos nuoroda"), max_length=1024, null=True, blank=True
+        verbose_name=_("Prieigos nuoroda"),
+        max_length=1024,
+        null=True,
+        blank=True,
+        help_text=_(
+            "Tinklalapis, kuriame galima susipažinti su duomenų ištekliu, jo pateiktimi ir (arba) papildoma informacija. Ji skirta nukreipti į pradinio duomenų paslaugos teikėjo, o ne į trečiosios šalies, pavyzdžiui, agregatoriaus, svetainės puslapį. Atitinka dcat:landingPage."
+        ),
     )
 
     # DCAT 3 fields
@@ -333,7 +358,7 @@ class Dataset(Resource):
         default=get_default_subclass,
     )
     endpoint_url = models.URLField(
-        _("API adresas"),
+        verbose_name=_("API adresas"),
         null=True,
         blank=True,
         max_length=512,
@@ -345,9 +370,12 @@ class Dataset(Resource):
         null=True,
         blank=True,
         related_name="format_endpoint_types",
+        help_text=_(
+            "Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."
+        ),
     )
     endpoint_description = models.URLField(
-        _("API specifikacija"),
+        verbose_name=_("API specifikacija"),
         null=True,
         blank=True,
     )

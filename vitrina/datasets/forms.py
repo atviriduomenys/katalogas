@@ -87,22 +87,20 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
 class BaseResourceForm(TranslatableModelForm):
     title = TranslatedField(
         form_class=CharField,
-        label=_("Pavadinimas"),
         required=True,
         widget=TextInput(),
     )
-    description = TranslatedField(
-        label=_("Aprašymas"),
-        required=True,
-    )
+    description = TranslatedField(required=True)
     files = MultipleFilerField(
         label=_("Failai"),
+        help_text=_("Dokumentas apie šį duomenų išteklių. Atitinka foaf:page."),
         required=False,
         upload_to=Dataset.UPLOAD_TO,
         allow_empty_file=True,
     )
     name = forms.CharField(
         label=_("Kodinis pavadinimas"),
+        help_text=_("Duomenų ištekliaus identifikatorius. Atitinka dct:identifier."),
         required=False,
         validators=[
             RegexValidator(
@@ -114,12 +112,18 @@ class BaseResourceForm(TranslatableModelForm):
 
     contact = forms.ChoiceField(
         label=_("Kontaktinis asmuo ar organizacija"),
+        help_text=_(
+            "Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų išteklių. Atitinka dcat:contactPoint."
+        ),
         required=False,
     )
 
     creator = forms.ModelChoiceField(
         queryset=Organization.public.all(),
         label=_("Institucija teikianti duomenis"),
+        help_text=_(
+            "Subjektas, atsakingas už duomenų rinkinio parengimą. Atitinka dct:creator."
+        ),
         widget=Select2Widget(),
         empty_label=None,
         required=False,
@@ -128,6 +132,9 @@ class BaseResourceForm(TranslatableModelForm):
     publisher = forms.ModelChoiceField(
         queryset=Organization.public.filter(publisher=True),
         label=_("Paslaugų teikėjas"),
+        help_text=_(
+            "Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų ištekliaus prieinamumą. Atitinka dct:publisher."
+        ),
         widget=Select2Widget(),
         empty_label=None,
         required=False,
@@ -321,10 +328,17 @@ class ServiceResourceForm(BaseResourceForm):
     endpoint_url = forms.CharField(
         label=_("API adresas"),
         required=True,
+        help_text=_(
+            "Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."
+        ),
     )
     endpoint_description = forms.CharField(
         label=_("API specifikacija"),
         required=False,
+        help_text=_(
+            "Šioje savybėje pateikiamas paslaugų, prieinamų per galinius taškus, aprašymas. "
+            "Įskaitant jų operacijas, parametrus ir t. t. Atitinka dcat:endpointDescription."
+        ),
     )
 
     class Meta:

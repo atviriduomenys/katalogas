@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-19 21:05+0300\n"
+"POT-Creation-Date: 2025-08-21 08:20+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -567,14 +567,39 @@ msgstr "This field is required."
 msgid "Failai"
 msgstr "Files"
 
+msgid "Dokumentas apie šį duomenų išteklių. Atitinka foaf:page."
+msgstr "A document about this resource. Corresponds to foaf:page."
+
+msgid "Duomenų ištekliaus identifikatorius. Atitinka dct:identifier."
+msgstr "The main identifier for the resource. Corresponds to dct:identifier."
+
 msgid "Kontaktinis asmuo ar organizacija"
 msgstr "Contact person or organization"
+
+msgid ""
+"Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų "
+"išteklių. Atitinka dcat:contactPoint."
+msgstr ""
+"Contact information that can be used for sending comments about the "
+"resource. Corresponds to dcat:contactPoint"
 
 msgid "Institucija teikianti duomenis"
 msgstr "The institution providing the data"
 
+msgid ""
+"Subjektas, atsakingas už duomenų rinkinio parengimą. Atitinka dct:creator."
+msgstr ""
+"An entity responsible for producing the resource. Corresponds to dct:creator"
+
 msgid "Paslaugų teikėjas"
 msgstr "Service provider"
+
+msgid ""
+"Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų ištekliaus "
+"prieinamumą. Atitinka dct:publisher."
+msgstr ""
+"An entity (organisation) responsible for making the Dataset available. "
+"Corresponds to dct:publisher."
 
 msgid ""
 "Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio "
@@ -604,8 +629,23 @@ msgstr "Code name can only include lowercase letters."
 msgid "API adresas"
 msgstr "API address"
 
+msgid ""
+"Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka "
+"dcat:endpointURL."
+msgstr ""
+"The root location or primary endpoint of the service (an URL). Corresponds "
+"to dcat:endpointURL."
+
 msgid "API specifikacija"
 msgstr "API specification"
+
+msgid ""
+"Šioje savybėje pateikiamas paslaugų, prieinamų per galinius taškus, "
+"aprašymas. Įskaitant jų operacijas, parametrus ir t. t. Atitinka "
+"dcat:endpointDescription."
+msgstr ""
+"A description of the services available via the end-points. Including their "
+"operations, parameters etc. Corresponds to dcat:endpointDescription."
 
 msgid "Ar duomenys vieši"
 msgstr "Is the data public"
@@ -757,11 +797,21 @@ msgstr "Protected data"
 msgid "Uždari duomenys"
 msgstr "Private data"
 
-msgid "Description"
-msgstr "Description"
+msgid "Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."
+msgstr "A name given to the record. Corresponds to dct:title."
+
+msgid "Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."
+msgstr "A free-text account of the record. Corresponds to dct:description."
 
 msgid "Katalogas"
 msgstr "Directory"
+
+msgid ""
+"Katalogas, kurio turinys domina šio katalogo kontekste. Atitinka "
+"dcat:Catalog."
+msgstr ""
+"A catalogue whose contents are of interest in the context of this catalogue. "
+"Corresponds to dcat:catalog."
 
 msgid "Duomenų tvarkytojas"
 msgstr "Data editor"
@@ -772,14 +822,27 @@ msgstr "The resource is public"
 msgid "Atnaujinimo dažnumas"
 msgstr "Update frequency"
 
+msgid "Duomenų atnaujinimo dažnumas. Atitinka dcat:keyword."
+msgstr ""
+"The frequency at which the resource is updated. Corresponds to dcat:keyword."
+
 msgid "Prieigos teisės"
 msgstr "Access rights"
+
+msgid ""
+"Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos "
+"apribojimai, ar jis nėra viešas. Atitinka dct:accessRights."
+msgstr ""
+"Describe level of access rights according to the list of values (i.e., "
+"Public, non-public, and restricted). Corresponds to dct:accessRights."
 
 msgid "Žymės"
 msgstr "Tags"
 
-msgid "Pateikite kableliu atskirtą sąrašą žymių."
-msgstr "Provide a list of tags separated by commas"
+msgid ""
+"Duomenų išteklių apibūdinantys raktažodžiai arba žymos. Atitinka "
+"dcat:keyword."
+msgstr "Keywords or tags describing the resource. Corresponds to dcat:keyword."
 
 msgid "Geoportalo id"
 msgstr "Geoportal ID"
@@ -790,6 +853,16 @@ msgstr "Data open service provider"
 msgid "Prieigos nuoroda"
 msgstr "Landing page"
 
+msgid ""
+"Tinklalapis, kuriame galima susipažinti su duomenų ištekliu, jo pateiktimi "
+"ir (arba) papildoma informacija. Ji skirta nukreipti į pradinio duomenų "
+"paslaugos teikėjo, o ne į trečiosios šalies, pavyzdžiui, agregatoriaus, "
+"svetainės puslapį. Atitinka dcat:landingPage."
+msgstr ""
+"It is intended to point to a landing page at the original resource provider, "
+"not to a page on a site of a third party, such as an aggregator. Corresponds "
+"to dcat:landingPage."
+
 msgid "Duomenų rinkinio ryšiai"
 msgstr "Dataset relations"
 
@@ -798,6 +871,12 @@ msgstr "Resource subclass"
 
 msgid "API formatas"
 msgstr "API format"
+
+msgid ""
+"Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."
+msgstr ""
+"The structure that can be returned by querying the endpoint URL. Corresponds "
+"to dct:MediaTypeOrExtent."
 
 msgid "API specifikacijos formatas"
 msgstr "API specification format"
@@ -1239,8 +1318,6 @@ msgstr "Search"
 msgid "Pridėti duomenų išteklių"
 msgstr "Add a resource"
 
-#, fuzzy
-#| msgid "Pridėti duomenų išteklių"
 msgid "Pridėti vaikinį duomenų išteklių"
 msgstr "Add a child resource"
 
@@ -1434,8 +1511,6 @@ msgstr "Most relevant"
 msgid "Nepavyko nuskaityti failo"
 msgstr "Failed to read the file"
 
-#, fuzzy
-#| msgid "Pridėti duomenų išteklių"
 msgid "Pridėti vaikinių duomenų išteklių"
 msgstr "Add a child resources"
 
@@ -5122,4 +5197,3 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
-

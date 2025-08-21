@@ -2195,10 +2195,15 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
     AgencyFactory()
     organization = OrganizationFactory()
     subclass = DCATResourceSubclassFactory(name="information_system")
-    concept_schema = ConceptSchemaFactory(
+    information_system_type_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
     )
-    concept = ConceptFactory(concept_schemas=[concept_schema])
+    information_system_importance_concept_schema = ConceptSchemaFactory(
+        uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
+    )
+    information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
+    information_system_importance_concept = ConceptFactory(
+        concept_schemas=[information_system_importance_concept_schema])
     user = UserFactory(is_staff=True)
     app.set_user(user)
     form = app.get(
@@ -2211,7 +2216,8 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
     form["is_public"] = True
     form["access_rights"] = Dataset.PUBLIC
     form["identifier"] = "test-identifier"
-    form["information_system_type"] = concept.pk
+    form["information_system_type"] = information_system_type_concept.pk
+    form["information_system_importance"] = information_system_importance_concept.pk
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
     assert added_dataset.first().is_public is True
@@ -2225,11 +2231,18 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_dataset_update_existing_identifier(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory(name="information_system")
-    concept_schema = ConceptSchemaFactory(
+    information_system_type_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
     )
-    concept = ConceptFactory(concept_schemas=[concept_schema])
-    dataset = DatasetFactory(subclass=subclass, information_system_type=concept)
+    information_system_importance_concept_schema = ConceptSchemaFactory(
+        uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
+    )
+    information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
+    information_system_importance_concept = ConceptFactory(
+        concept_schemas=[information_system_importance_concept_schema])
+    dataset = DatasetFactory(subclass=subclass,
+                             information_system_type=information_system_type_concept,
+                             information_system_importance=information_system_importance_concept)
     agency = AgencyFactory()
     IdentifierFactory(resource=dataset, notation="test-identifier", scheme_agency=agency)
     user = UserFactory(is_staff=True)
@@ -2253,11 +2266,18 @@ def test_dataset_update_existing_identifier(app: DjangoTestApp):
 def test_dataset_update_non_existing_identifier(app: DjangoTestApp):
     AgencyFactory()
     subclass = DCATResourceSubclassFactory(name="information_system")
-    concept_schema = ConceptSchemaFactory(
+    information_system_type_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
     )
-    concept = ConceptFactory(concept_schemas=[concept_schema])
-    dataset = DatasetFactory(subclass=subclass, information_system_type=concept)
+    information_system_importance_concept_schema = ConceptSchemaFactory(
+        uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
+    )
+    information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
+    information_system_importance_concept = ConceptFactory(
+        concept_schemas=[information_system_importance_concept_schema])
+    dataset = DatasetFactory(subclass=subclass,
+                             information_system_type=information_system_type_concept,
+                             information_system_importance=information_system_importance_concept)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 

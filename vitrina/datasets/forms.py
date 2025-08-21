@@ -149,10 +149,11 @@ class BaseResourceForm(TranslatableModelForm):
 
     parent = forms.ModelChoiceField(
         Dataset.objects.all(),
-        label=_("Tėvynis išteklius"),
+        label=_("Tėvinis išteklius"),
         widget=Select2Widget(),
         required=False,
         empty_label=None,
+        help_text=_("Ši savybė nurodo susijusį resursą. Atitinka dct:relation.")
     )
 
     def __init__(

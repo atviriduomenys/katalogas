@@ -12,9 +12,6 @@ Bug fixes
 
 v 1.1 (2025-08-22)
 ==================
-https://github.com/atviriduomenys/katalogas/issues/1602
-Nau
-
 https://github.com/atviriduomenys/katalogas/issues/1679
 Fixed a bug where `source.type` and `origin` columns were not allowed.
 Now a DSA file that has `source.type` and `origin` can be uploaded.
@@ -97,6 +94,10 @@ Adds new datetime values `temporal_start` `temporal_end` into `DatasetResourceFo
 
 Makes a data migration, to get all dates from `DatasetDistribution`, and add them into `Dataset`
 
+
+
+v 1.0 (2025-08-20)
+==================
 
 https://github.com/atviriduomenys/katalogas/issues/1500
 Squash migrations, link to commit, sql script, run python

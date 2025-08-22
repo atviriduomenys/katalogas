@@ -2,13 +2,13 @@ Changes
 #######
 2025-08-21
 ==========
-https://github.com/atviriduomenys/katalogas/pull/1846
+https://github.com/atviriduomenys/katalogas/issues/642
 Moves `temporal_resolution` and `spatial_resolution` fields to `DatasetResourceForm` form.
 
 
 2025-08-21
 ==========
-https://github.com/atviriduomenys/katalogas/pull/1827
+https://github.com/atviriduomenys/katalogas/issues/642
 Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` model.
 
 Adds `temporal_resolution` and `spatial_resolution` fields to `ResourceForm` form.
@@ -18,7 +18,7 @@ Adds `temporal_resolution` and `spatial_resolution` fields to the `coretable.htm
 
 2025-08-21
 ==========
-https://github.com/atviriduomenys/katalogas/pull/1821
+https://github.com/atviriduomenys/katalogas/issues/1778
 Adds `temporal_resolution` and `spatial_resolution` fields to `DatasetDistribution` model.
 
 Adds `temporal_resolution` and `spatial_resolution` fields to `DatasetDistribution` form and

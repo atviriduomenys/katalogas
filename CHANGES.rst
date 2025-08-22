@@ -1,6 +1,6 @@
 Changes
 #######
-2025-08-21
+Release 1.1 (2025-08-22)
 ==========
 https://github.com/atviriduomenys/katalogas/pull/1827
 Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` model.
@@ -10,8 +10,6 @@ Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` form whe
 Adds `temporal_resolution` and `spatial_resolution` fields to the `coretable.html` page
 
 
-2025-08-21
-==========
 https://github.com/atviriduomenys/katalogas/pull/1821
 Adds `temporal_resolution` and `spatial_resolution` fields to `DatasetDistribution` model.
 
@@ -19,8 +17,6 @@ Adds `temporal_resolution` and `spatial_resolution` fields to `DatasetDistributi
 its page.
 
 
-2025-08-20
-=======
 https://github.com/atviriduomenys/katalogas/pull/1801
 Child dataset resources
 
@@ -39,34 +35,24 @@ Create child resource under parent child resources list
 Fix url design from datasets/<org-id>/* to orgs/<org-id>/datasets/*
 
 
-2025-08-20
-==========
 https://github.com/atviriduomenys/katalogas/pull/1796
 Adds `Dataset.information_system_type` to dataset add/change/detail pages
 
 
-2025-08-20
-==========
 https://github.com/atviriduomenys/katalogas/pull/1799
 Adds `Dataset.information_system_importance` to dataset add/change/detail pages
 
 
-2025-08-20
-==========
 https://github.com/atviriduomenys/katalogas/pull/1806
 Adds origin, source.type values to headers list for importing DSA
 
 
-2025-08-20
-==========
 https://github.com/atviriduomenys/katalogas/pull/1804
 Adds label and help_text for `landing_page` field if resource subclass is `Information system`
 
 Adds `foaf:homepage` in `dcat-ap.rdf` file if resource subclass is `Information system`
 
 
-2025-08-20
-==========
 https://github.com/atviriduomenys/katalogas/pull/1817
 Removes `period_start`, `period_end` fields from `DatasetDistributionForm`
 
@@ -75,8 +61,6 @@ Adds new datetime values `temporal_start` `temporal_end` into `DatasetResourceFo
 Makes a data migration, to get all dates from `DatasetDistribution`, and add them into `Dataset`
 
 
-2025-03-19
-==========
 https://github.com/atviriduomenys/katalogas/pull/1501
 Squash migrations, link to commit, sql script, run python
 

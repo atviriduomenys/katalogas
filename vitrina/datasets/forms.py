@@ -557,18 +557,24 @@ class InformationSystemResourceForm(CatalogResourceForm):
         super().clean()
         
     def clean_identifier(self) -> str:
-        agency = get_object_or_404(Agency, code="risr")
-        identifier = self.cleaned_data.get('identifier')
+        identifier = self.cleaned_data.get("identifier")
+        if not identifier:
+            return identifier
 
-        if agency and agency.identifier_validation_type and agency.identifier_validation_options:
-            if agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP:
-                pattern = agency.identifier_validation_options
-                if not re.fullmatch(pattern, identifier):
-                    raise ValidationError(
-                        _("Žymėjimas turi atitikti šabloną: %(pattern)s"),
-                        params={"pattern": pattern},
-                        code="invalid_format"
-                    )
+        agency = get_object_or_404(Agency, code="risr")
+        if (
+            agency.identifier_validation_type
+            == Agency.IdentifierValidationType.REGEXP
+            and agency.identifier_validation_options
+        ):
+            pattern = agency.identifier_validation_options
+            if not re.fullmatch(pattern, identifier):
+                raise ValidationError(
+                    _("Žymėjimas turi atitikti šabloną: %(pattern)s"),
+                    params={"pattern": pattern},
+                    code="invalid_format",
+                )
+
         return identifier
 
 

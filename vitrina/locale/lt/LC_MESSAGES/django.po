@@ -336,6 +336,11 @@ msgid ""
 "būtini naudotojo užsakytai paslaugai suteikti."
 msgstr ""
 
+msgid ""
+"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
+"pavadinimą."
+msgstr ""
+
 msgid "Naujienos"
 msgstr ""
 

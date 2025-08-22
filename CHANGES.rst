@@ -37,12 +37,7 @@ https://github.com/atviriduomenys/katalogas/issues/1719
 Adds new field "Identifier" to the informational system.
 
 https://github.com/atviriduomenys/katalogas/issues/642
-Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` model.
-
-Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` form where its subclass is Dataset.
-
-Adds `temporal_resolution` and `spatial_resolution` fields to the `coretable.html` page
-
+Moves `temporal_resolution` and `spatial_resolution` fields to `DatasetResourceForm` form.
 
 https://github.com/atviriduomenys/katalogas/issues/1778
 Adds `temporal_resolution` and `spatial_resolution` fields to `DatasetDistribution` model.
@@ -96,9 +91,8 @@ Makes a data migration, to get all dates from `DatasetDistribution`, and add the
 
 
 
-v 1.0 (2025-08-20)
+v 1.0 (2025-03-19)
 ==================
-
 https://github.com/atviriduomenys/katalogas/issues/1500
 Squash migrations, link to commit, sql script, run python
 

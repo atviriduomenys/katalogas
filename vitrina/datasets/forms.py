@@ -288,29 +288,29 @@ class BaseResourceForm(TranslatableModelForm):
 
     def clean_name(self) -> str | None:
         name = self.cleaned_data.get("name")
+        dataset_instance = self.instance
+        existing_metadata = dataset_instance.metadata.first() if dataset_instance and dataset_instance.pk else None
 
-        if not name:
-            return name
+        if name:
+            if not name.isascii():
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
 
-        metadata = Metadata.objects.filter(
-            content_type=ContentType.objects.get_for_model(Dataset), name=name
-        )
-        if self.instance and self.instance.pk and self.instance.metadata.first():
-            metadata = metadata.exclude(pk=self.instance.metadata.first().pk)
+            if any(ch.isupper() for ch in name):
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
 
-        if metadata:
-            raise ValidationError(
-                _("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja.")
+            metadata_qs = Metadata.objects.filter(
+                content_type=ContentType.objects.get_for_model(Dataset),
+                name=name,
             )
+            if existing_metadata:
+                metadata_qs = metadata_qs.exclude(pk=existing_metadata.pk)
 
-        if not name.isascii():
-            raise ValidationError(
-                _("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.")
-            )
-        if any([ch.isupper() for ch in name]):
-            raise ValidationError(
-                _("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės.")
-            )
+            if metadata_qs.exists():
+                raise ValidationError(_("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."))
+
+        else:
+            if existing_metadata and existing_metadata.name:
+                raise ValidationError(_("Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį pavadinimą."))
 
         return name
 
@@ -500,6 +500,8 @@ class DatasetResourceForm(BaseResourceForm):
             "managed_by_publisher",
             "landing_page",
             "parent",
+            "temporal_resolution",
+            "spatial_resolution",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs) -> None:
@@ -514,6 +516,8 @@ class DatasetResourceForm(BaseResourceForm):
                 Field("temporal_start", placeholder=_("Pasirinkite pradžios datą")),
                 Field("temporal_end", placeholder=_("Pasirinkite pabaigos datą")),
             ),
+            Field("temporal_resolution"),
+            Field("spatial_resolution"),
             Field("files"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
@@ -556,8 +560,6 @@ class ResourceForm(BaseResourceForm):
             "managed_by_publisher",
             "landing_page",
             "parent",
-            "temporal_resolution",
-            "spatial_resolution",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -569,8 +571,6 @@ class ResourceForm(BaseResourceForm):
             Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
             Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
             Field("files"),
-            Field("temporal_resolution"),
-            Field("spatial_resolution"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
             Field("catalog"),

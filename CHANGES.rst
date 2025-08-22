@@ -37,6 +37,10 @@ https://github.com/atviriduomenys/katalogas/issues/1736
 Add `documentation` field to Dataset
 
 
+https://github.com/atviriduomenys/katalogas/issues/1762
+Adds configurable RISR identifier validation to the Agency model.
+
+
 Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/1869

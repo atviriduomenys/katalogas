@@ -39,7 +39,7 @@ Added explanations for the form fields (based on DCAT).
 https://github.com/atviriduomenys/katalogas/issues/1719
 Adds new field "Identifier" to the informational system.
 
-https://github.com/atviriduomenys/katalogas/pull/1827
+https://github.com/atviriduomenys/katalogas/issues/642
 Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` model.
 
 Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` form where its subclass is Dataset.
@@ -47,14 +47,14 @@ Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` form whe
 Adds `temporal_resolution` and `spatial_resolution` fields to the `coretable.html` page
 
 
-https://github.com/atviriduomenys/katalogas/pull/1821
+https://github.com/atviriduomenys/katalogas/issues/1778
 Adds `temporal_resolution` and `spatial_resolution` fields to `DatasetDistribution` model.
 
 Adds `temporal_resolution` and `spatial_resolution` fields to `DatasetDistribution` form and
 its page.
 
 
-https://github.com/atviriduomenys/katalogas/pull/1801
+https://github.com/atviriduomenys/katalogas/issues/1747
 Child dataset resources
 
 Introduce Resource abstract model as concept of understanding among tech people and requirements.
@@ -72,25 +72,25 @@ Create child resource under parent child resources list
 Fix url design from datasets/<org-id>/* to orgs/<org-id>/datasets/*
 
 
-https://github.com/atviriduomenys/katalogas/pull/1796
+https://github.com/atviriduomenys/katalogas/issues/1756
 Adds `Dataset.information_system_type` to dataset add/change/detail pages
 
 
-https://github.com/atviriduomenys/katalogas/pull/1799
+https://github.com/atviriduomenys/katalogas/issues/1718
 Adds `Dataset.information_system_importance` to dataset add/change/detail pages
 
 
-https://github.com/atviriduomenys/katalogas/pull/1806
+https://github.com/atviriduomenys/katalogas/issues/1679
 Adds origin, source.type values to headers list for importing DSA
 
 
-https://github.com/atviriduomenys/katalogas/pull/1804
+https://github.com/atviriduomenys/katalogas/issues/1722
 Adds label and help_text for `landing_page` field if resource subclass is `Information system`
 
 Adds `foaf:homepage` in `dcat-ap.rdf` file if resource subclass is `Information system`
 
 
-https://github.com/atviriduomenys/katalogas/pull/1817
+https://github.com/atviriduomenys/katalogas/issues/1726
 Removes `period_start`, `period_end` fields from `DatasetDistributionForm`
 
 Adds new datetime values `temporal_start` `temporal_end` into `DatasetResourceForm`
@@ -98,7 +98,7 @@ Adds new datetime values `temporal_start` `temporal_end` into `DatasetResourceFo
 Makes a data migration, to get all dates from `DatasetDistribution`, and add them into `Dataset`
 
 
-https://github.com/atviriduomenys/katalogas/pull/1501
+https://github.com/atviriduomenys/katalogas/issues/1500
 Squash migrations, link to commit, sql script, run python
 
 Squash migrations (delete all and recreate)

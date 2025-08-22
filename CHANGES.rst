@@ -27,7 +27,7 @@ its page.
 
 2025-08-20
 =======
-https://github.com/atviriduomenys/katalogas/pull/1801
+https://github.com/atviriduomenys/katalogas/issues/1747
 Child dataset resources
 
 Introduce Resource abstract model as concept of understanding among tech people and requirements.
@@ -83,7 +83,7 @@ Makes a data migration, to get all dates from `DatasetDistribution`, and add the
 
 2025-03-19
 ==========
-https://github.com/atviriduomenys/katalogas/pull/1501
+https://github.com/atviriduomenys/katalogas/issues/1500
 Squash migrations, link to commit, sql script, run python
 
 Squash migrations (delete all and recreate)

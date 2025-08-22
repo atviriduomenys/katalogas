@@ -1684,6 +1684,29 @@ def test_dataset_update_non_existing_identifier_validation(app: DjangoTestApp):
         assert added_dataset.first().identifier == "test-identifier"
 
         assert Identifier.objects.filter(notation="test-identifier", resource=added_dataset.first()).exists()
+        
+
+    def test_information_system_create_with_identifier_validation(self, app: DjangoTestApp):
+        FrequencyFactory(is_default=True)
+        AgencyFactory()
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="information_system")
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        form = app.get(
+            reverse(
+                "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})).forms[
+                    "dataset-form"
+        ]
+        form["title"] = "Test dataset"
+        form["description"] = "Test dataset description"
+        form["is_public"] = True
+        form["access_rights"] = Dataset.PUBLIC
+        form["identifier"] = "not-valid-identifier"
+        form.submit()
+        response = form.submit(expect_errors=True)
+        assert "Žymėjimas turi atitikti šabloną" in response.text
+
 
     def test_create_dataset_change_creator(self, app: DjangoTestApp):
         frequency = FrequencyFactory(is_default=True)

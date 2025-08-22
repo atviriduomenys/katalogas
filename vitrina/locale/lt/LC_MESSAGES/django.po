@@ -336,6 +336,11 @@ msgid ""
 "būtini naudotojo užsakytai paslaugai suteikti."
 msgstr ""
 
+msgid ""
+"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
+"pavadinimą."
+msgstr ""
+
 msgid "Naujienos"
 msgstr ""
 
@@ -592,14 +597,6 @@ msgid "Detalus informacinės sistemos aprašas"
 msgstr ""
 
 msgid "Informacinės sistemos identifikatorius"
-msgstr ""
-
-msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
-msgstr ""
-
-msgid ""
-"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
-"pavadinimą."
 msgstr ""
 
 msgid "Failas"

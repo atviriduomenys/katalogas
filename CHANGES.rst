@@ -12,6 +12,10 @@ Bug fixes
 
 v 1.1 (2025-08-22)
 ==================
+
+https://github.com/atviriduomenys/katalogas/issues/1742
+Add `information_system_publisher` and `information_system_creator` fields to Dataset.
+
 https://github.com/atviriduomenys/katalogas/issues/1679
 Fixed a bug where `source.type` and `origin` columns were not allowed.
 Now a DSA file that has `source.type` and `origin` can be uploaded.

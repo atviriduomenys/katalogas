@@ -413,6 +413,8 @@ class InformationSystemResourceForm(BaseResourceForm):
             "landing_page",
             "information_system_type",
             "information_system_importance",
+            "information_system_publisher",
+            "information_system_creator"
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -445,12 +447,23 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("publisher"),
             Field("information_system_type"),
             Field("information_system_importance"),
+            Field("information_system_publisher"),
+            Field("information_system_creator")
         )
 
         self.fields["landing_page"].label = _("Tinklalapis")
         self.fields["landing_page"].help_text = _(
             "Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. Atitinka foaf:homepage."
         )
+        self.fields['information_system_publisher'].required = True
+        self.fields['information_system_publisher'].help_text = _(
+            "Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. Atitinka dct:publisher"
+            )
+        self.fields['information_system_creator'].required = True
+        self.fields['information_system_creator'].help_text = _(
+            "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
+            )
+
         self.fields["information_system_type"].queryset = Concept.objects.filter(
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
         )

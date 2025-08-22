@@ -1965,6 +1965,8 @@ def test_dataset_create_information_system(app: DjangoTestApp):
         "landing_page": "https://www.test.test",
         "information_system_type": information_system_type_concept.pk,
         "information_system_importance": information_system_importance_concept.pk,
+        "information_system_publisher": organization.pk,
+        "information_system_creator": organization.pk
     }
     response = app.post(url, data)
 
@@ -1985,6 +1987,8 @@ def test_dataset_create_information_system(app: DjangoTestApp):
         dataset.information_system_importance
         == information_system_importance_concept
     )
+    assert dataset.information_system_publisher == organization
+    assert dataset.information_system_creator == organization
 
 
 @pytest.mark.django_db
@@ -2218,6 +2222,8 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
     form["identifier"] = "test-identifier"
     form["information_system_type"] = information_system_type_concept.pk
     form["information_system_importance"] = information_system_importance_concept.pk
+    form["information_system_creator"] = organization.pk
+    form["information_system_publisher"] = organization.pk
     form.submit()
     added_dataset = Dataset.objects.filter(translations__title="Test dataset")
     assert added_dataset.first().is_public is True
@@ -2231,6 +2237,7 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_dataset_update_existing_identifier(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory(name="information_system")
+    organization = OrganizationFactory()
     information_system_type_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
     )
@@ -2242,7 +2249,9 @@ def test_dataset_update_existing_identifier(app: DjangoTestApp):
         concept_schemas=[information_system_importance_concept_schema])
     dataset = DatasetFactory(subclass=subclass,
                              information_system_type=information_system_type_concept,
-                             information_system_importance=information_system_importance_concept)
+                             information_system_importance=information_system_importance_concept,
+                             information_system_creator=organization,
+                             information_system_publisher=organization)
     agency = AgencyFactory()
     IdentifierFactory(resource=dataset, notation="test-identifier", scheme_agency=agency)
     user = UserFactory(is_staff=True)
@@ -2266,6 +2275,7 @@ def test_dataset_update_existing_identifier(app: DjangoTestApp):
 def test_dataset_update_non_existing_identifier(app: DjangoTestApp):
     AgencyFactory()
     subclass = DCATResourceSubclassFactory(name="information_system")
+    organization = OrganizationFactory()
     information_system_type_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
     )
@@ -2277,7 +2287,9 @@ def test_dataset_update_non_existing_identifier(app: DjangoTestApp):
         concept_schemas=[information_system_importance_concept_schema])
     dataset = DatasetFactory(subclass=subclass,
                              information_system_type=information_system_type_concept,
-                             information_system_importance=information_system_importance_concept)
+                             information_system_importance=information_system_importance_concept,
+                             information_system_creator=organization,
+                             information_system_publisher=organization)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -2386,6 +2398,7 @@ def test_dataset_update_uses_different_forms_based_on_dcat_subclass(
 
 @pytest.mark.django_db
 def test_dataset_update_information_system(app: DjangoTestApp):
+    organization = OrganizationFactory()
     subclass = DCATResourceSubclassFactory(name="information_system")
     dataset = DatasetFactory(subclass=subclass)
     catalog = CatalogFactory()
@@ -2419,6 +2432,8 @@ def test_dataset_update_information_system(app: DjangoTestApp):
         "landing_page": "https://www.test.test",
         "information_system_type": information_system_type_concept.pk,
         "information_system_importance": information_system_importance_concept.pk,
+        "information_system_publisher": organization.pk,
+        "information_system_creator": organization.pk
     }
     response = app.post(url, data)
 
@@ -2438,6 +2453,8 @@ def test_dataset_update_information_system(app: DjangoTestApp):
     assert (
         dataset.information_system_importance == information_system_importance_concept
     )
+    assert dataset.information_system_publisher == organization
+    assert dataset.information_system_creator == organization
 
 
 @pytest.mark.django_db

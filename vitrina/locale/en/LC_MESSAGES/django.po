@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-21 15:17+0300\n"
+"POT-Creation-Date: 2025-08-22 12:44+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -612,7 +612,8 @@ msgid "Tėvinis išteklius"
 msgstr "Parent resource"
 
 msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
-msgstr "This property specifies a related resource. Corresponds to dct:relation."
+msgstr ""
+"This property specifies a related resource. Corresponds to dct:relation."
 
 msgid "Organizacija:"
 msgstr "Organization:"
@@ -620,14 +621,19 @@ msgstr "Organization:"
 msgid "Naudotojai:"
 msgstr "Users:"
 
-msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
-msgstr "Dataset with this code name already exists."
-
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr "Code name can only include latin characters."
 
 msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
 msgstr "Code name can only include lowercase letters."
+
+msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
+msgstr "Dataset with this code name already exists."
+
+msgid ""
+"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
+"pavadinimą."
+msgstr "A code name is required if the dataset already has a code name."
 
 msgid "API adresas"
 msgstr "API address"
@@ -688,9 +694,40 @@ msgstr ""
 "Corresponds to foaf:homepage."
 
 msgid ""
-"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
-"pavadinimą."
-msgstr "A code name is required if the dataset already has a code name."
+"Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. "
+"Atitinka dct:publisher"
+msgstr ""
+"This property indicates the entity (organization) responsible for providing "
+"access to the information system (IS). Corresponds to dct:publisher"
+
+msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
+msgstr ""
+"The entity responsible for the creation of the information system (IS). "
+"Corresponds to dct:creator"
+
+msgid "Laikotarpio pradžia"
+msgstr "Period start"
+
+msgid "Duomenų rinkinio laikotarpio pradžia. Atitinka dct:temporal."
+msgstr "Dataset period start date. Corresponds to dct:temporal."
+
+msgid "Laikotarpio pabaiga"
+msgstr "Period end"
+
+msgid "Duomenų rinkinio laikotarpio pabaiga. Atitinka dct:temporal."
+msgstr "A name given to the record. Corresponds to dct:title."
+
+msgid "Ar duomenys vieši"
+msgstr "Is the data public?"
+
+msgid "Pasirinkite pradžios datą"
+msgstr "Choose a start date"
+
+msgid "Pasirinkite pabaigos datą"
+msgstr "Choose a end date"
+
+msgid "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
+msgstr "Period start date can not be later than end date."
 
 msgid "Failas"
 msgstr "File"
@@ -937,6 +974,32 @@ msgid ""
 msgstr ""
 "Information system importance in accordance with the requirements of the Law "
 "on State Information Resources Management. (dcataplt:Importance)"
+
+msgid "Laikotarpio pradžios data"
+msgstr "Period start date"
+
+msgid ""
+"Ši savybė nurodo pradžios datą, kurią apima duomenų rinkinys. Atitinka "
+"dct:temporal."
+msgstr ""
+"This property indicates the start date covered by the dataset. "
+"Corresponds to dct:temporal."
+
+msgid "Laikotarpio pabaigos data"
+msgstr "Period end date"
+
+msgid ""
+"Ši savybė nurodo pabaigos datą, kurią apima duomenų rinkinys. Atitinka "
+"dct:temporal."
+msgstr ""
+"This property indicates the end date covered by the dataset. "
+"Corresponds to dct:temporal."
+
+msgid "Informacinės sistemos tvarkytojas"
+msgstr "Information system publisher"
+
+msgid "Informacinės sistemos valdytojas"
+msgstr "Information system creator"
 
 msgid "Laiko skiriamoji geba (sekundėmis)"
 msgstr "Temporal resolution (in seconds)"
@@ -1203,6 +1266,13 @@ msgstr "Link to API documentation (e.g., OpenAPI, Swagger)"
 
 msgid "API dokumentacijos formatas (pvz., JSON, YAML)"
 msgstr "API documentation format (e.g., JSON, YAML)"
+
+msgid ""
+"Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys. Atitinka "
+"dct:temporal."
+msgstr ""
+"This property indicates the period covered by the dataset. "
+"Corresponds to dct:temporal."
 
 msgid "Peržiūrėti papildomą informaciją"
 msgstr "View additional information"
@@ -3053,12 +3123,6 @@ msgstr "Objects are assigned a global static identifier."
 msgid "Prieigos lygmuo"
 msgstr "Access"
 
-msgid "Data nuo kada duomenys yra aktualūs."
-msgstr "Date from when this data is relevant"
-
-msgid "Data nuo kada duomenys nebėra aktualūs."
-msgstr "Date from when this data is irrelevant"
-
 msgid ""
 "Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo "
 "nuorodas."
@@ -3099,12 +3163,6 @@ msgstr "Detailed source description"
 
 msgid "Pateikitę geografinę padėtį"
 msgstr "Provide a geographical location"
-
-msgid "Pasirinkite pradžios datą"
-msgstr "Choose a start date"
-
-msgid "Pasirinkite pabaigos datą"
-msgstr "Choose a end date"
 
 msgid "Šaltinio failas"
 msgstr "Source file"

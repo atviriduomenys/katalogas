@@ -1,11 +1,11 @@
 Changes
 #######
 v 1.2 (unreleased)
-
+==================
 
 
 v 1.1 (2025-08-22)
-==========
+==================
 https://github.com/atviriduomenys/katalogas/pull/1827
 Adds `temporal_resolution` and `spatial_resolution` fields to `Dataset` model.
 

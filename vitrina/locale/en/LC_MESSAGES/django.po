@@ -687,6 +687,11 @@ msgstr ""
 "This property indicates the web page that is the main page of the catalog. "
 "Corresponds to foaf:homepage."
 
+msgid ""
+"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
+"pavadinimą."
+msgstr "A code name is required if the dataset already has a code name."
+
 msgid "Failas"
 msgstr "File"
 

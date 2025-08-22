@@ -67,7 +67,7 @@ from vitrina.datasets.forms import (
     InformationSystemResourceForm,
     DatasetResourceForm,
 )
-from vitrina.datasets.helpers import is_manager_dataset_list
+from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name
 from vitrina.datasets.models import (
     Dataset,
     DatasetStructure,
@@ -838,13 +838,16 @@ class DatasetCreateView(
                 dataset=self.object,
                 file=file,
             )
-
+        dataset_name = (
+            form.cleaned_data.get("name", "") 
+            or generate_unique_dataset_name(self.object.organization, self.object)
+        )
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
             dataset=self.object,
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
-            name=form.cleaned_data.get("name", ""),
+            name=dataset_name,
             title=self.object.title,
             description=self.object.description,
             prepare_ast={},
@@ -1172,7 +1175,7 @@ class DatasetUpdateView(
                     dataset=self.object,
                     file=file,
                 )
-
+               
         if metadata := self.object.metadata.first():
             metadata.title = self.object.title
             metadata.description = self.object.description
@@ -1183,15 +1186,17 @@ class DatasetUpdateView(
                 dataset=self.object,
                 content_type=ContentType.objects.get_for_model(self.object),
                 object_id=self.object.pk,
-                name=form.cleaned_data.get("name"),
                 title=self.object.title,
                 description=self.object.description,
                 prepare_ast={},
                 version=1,
             )
-
-        if "name" in form.changed_data:
-            metadata.name = form.cleaned_data.get("name")
+        dataset_name = (
+            form.cleaned_data.get("name", "")
+            or generate_unique_dataset_name(self.object.organization, self.object)
+        )
+        if not metadata.name or metadata.name != dataset_name:
+            metadata.name = dataset_name
             metadata.draft = True
             metadata.save()
 

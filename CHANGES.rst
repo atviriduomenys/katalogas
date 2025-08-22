@@ -20,6 +20,9 @@ https://github.com/atviriduomenys/katalogas/issues/1725
 Add `applicable_legislation` field to Dataset,
 Add `applicable_legislation` field to Dataset Distribution.
 
+https://github.com/atviriduomenys/katalogas/issues/1762
+Adds configurable RISR identifier validation to the Agency model.
+
 
 Bug fixes:
 

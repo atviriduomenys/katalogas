@@ -19,11 +19,24 @@ class Agency(UUIDBaseModel):
     identifier_validation_type = models.CharField(
         _("Identifikatoriaus tikrinimo tipas"),
         choices=IdentifierValidationType.choices,
-        max_length=100, null=True, blank=True
+        default=IdentifierValidationType.REGEXP,
+        max_length=100,
+        null=True,
+        blank=True,
+        help_text=_(
+            "Pasirinkite metodą, kaip tikrinti identifikatorių formatą. "
+            "Reguliarioji išraiška leidžia nustatyti tikslų šabloną."
+        )
     )
     identifier_validation_options = models.CharField(
         _("Identifikatoriaus tikrinimo parinktys"),
-        max_length=255, null=True, blank=True
+        max_length=255,
+        null=True,
+        blank=True,
+        help_text=_(
+            "Tikrinimo parametrai pagal pasirinktą tipą. "
+            "Reguliariajai išraiškai - įveskite regex šabloną "
+        )
     )
 
     class Meta:
@@ -82,15 +95,15 @@ class Identifier(UUIDBaseModel):
 
     def clean(self):
         super().clean()
-
         agency = self.scheme_agency
-        if agency.identifier_validation_type and agency.identifier_validation_options:
-            if agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP:
-                pattern = agency.identifier_validation_options
-                if not re.fullmatch(pattern, self.notation):
-                    raise ValidationError({
+        if not agency.identifier_validation_type or not agency.identifier_validation_options:
+            return
+        is_regexp = agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP
+        if is_regexp and (pattern := agency.identifier_validation_options):
+            if not re.fullmatch(pattern, self.notation):
+                raise ValidationError({
                         "notation": _(
-                            "Žymėjimas neatitinka reikalaujamos išraiškos: %(pattern)s"
+                            "Žymėjimas turi atitikti šabloną: %(pattern)s"
                         ) % {"pattern": pattern}
                     })
 

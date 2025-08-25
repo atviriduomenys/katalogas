@@ -1084,7 +1084,7 @@ class TestRepresentativeDeleteView:
             reverse("representative-delete", args=[organization.pk, representative.pk])
         )
 
-        assert not Representative.objects.exists()
+        assert not Representative.objects.filter(pk=representative.pk).exists()
 
     @pytest.mark.django_db
     def test_remove_publisher_from_all_representative_organization_datasets(

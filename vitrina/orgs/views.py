@@ -1191,9 +1191,9 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
         return reverse("organization-members", kwargs={"pk": self.kwargs.get("organization_id")})
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
-        if self.object.organization:
+        if self.object.organization and (organization_id := self.kwargs.get("organization_id")):
             Dataset.objects.filter(
-                organization_id=self.kwargs.get("organization_id"),
+                organization_id=organization_id,
                 publisher__isnull=False,
             ).update(publisher=None)
 

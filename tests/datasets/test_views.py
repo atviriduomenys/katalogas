@@ -3837,7 +3837,7 @@ class TestDatasetDeleteView:
         dataset = DatasetFactory()
 
         app.post(reverse("dataset-delete", args=[dataset.pk]))
-        assert not Dataset.objects.exists()
+        assert not Dataset.objects.filter(pk=dataset.pk).exists()
 
 
 class TestDeleteMemberView:
@@ -3859,7 +3859,7 @@ class TestDeleteMemberView:
 
         app.post(reverse("dataset-representative-delete", args=[dataset.pk, representative.pk]))
 
-        assert not Representative.objects.exists()
+        assert not Representative.objects.filter(pk=representative.pk).exists()
         dataset.refresh_from_db()
         assert dataset.publisher is None
 
@@ -3873,7 +3873,7 @@ class TestRemoveRequestView:
 
         dataset = DatasetFactory()
         request = RequestFactory(dataset=dataset)
-        CommentFactory(
+        comment = CommentFactory(
             rel_content_type=ContentType.objects.get_for_model(request),
             rel_object_id=request.pk,
         )
@@ -3885,6 +3885,6 @@ class TestRemoveRequestView:
 
         app.post(reverse("dataset-request-remove", args=[dataset.pk, request_object.pk]))
 
-        assert Dataset.objects.exists()
-        assert not Comment.objects.exists()
-        assert not RequestObject.objects.exists()
+        assert Dataset.objects.filter(pk=dataset.pk).exists()
+        assert not Comment.objects.filter(pk=comment.pk).exists()
+        assert not RequestObject.objects.filter(pk=request_object.pk).exists()

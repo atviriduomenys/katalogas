@@ -92,7 +92,7 @@ class TestContract:
     def test_delete_all_existing_dataset_contacts_before_saving(self) -> None:
         organization = OrganizationFactory()
         dataset = DatasetFactory(organization=organization)
-        ContactFactory(
+        contact1 = ContactFactory(
             dataset=dataset,
             object_id=organization.pk,
             content_type=ContentType.objects.get_for_model(organization),
@@ -100,7 +100,7 @@ class TestContract:
             phone=organization.phone,
         )
         organization2 = OrganizationFactory()
-        ContactFactory(
+        contact2 = ContactFactory(
             dataset=dataset,
             object_id=organization2.pk,
             content_type=ContentType.objects.get_for_model(organization2),
@@ -108,4 +108,5 @@ class TestContract:
             phone=organization2.phone,
         )
 
-        assert Contact.objects.count() == 1
+        assert not Contact.objects.filter(pk=contact1.pk).exists()
+        assert Contact.objects.filter(pk=contact2.pk).exists()

@@ -1,7 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
-from django.forms import DateField
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -11,9 +10,7 @@ from parler.forms import TranslatedField, TranslatableModelForm
 
 from vitrina.classifiers.models import Licence
 from vitrina.datasets.models import Dataset
-from vitrina.fields import FilerFileField
 from vitrina.fields import FilerFileField, StringListField
-from vitrina.helpers import inline_fields
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
 

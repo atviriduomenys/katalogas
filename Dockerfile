@@ -1,4 +1,4 @@
-FROM python:3.11-slim-bookworm AS builder
+FROM python:3.11-slim AS builder
 
 COPY . /app/
 WORKDIR /app
@@ -23,19 +23,21 @@ RUN apt-get update && \
     libsnappy-dev \
     libgflags-dev \
     libgoogle-glog-dev \
-    libgirepository1.0-dev \
+    libglib2.0-dev \
+    libglib2.0-0 \
+    libgirepository-1.0-1 \
     npm \
-    libpango1.0 \
-    libpango1.0-dev \
-    libgdk-pixbuf-xlib-2.0-0 \
+    libpango-1.0-0 \
+    libpangoft2-1.0-0 \
+    libharfbuzz-subset0 \
     libffi-dev \
     libxml2 \
     libxslt1.1 \
     fonts-liberation \
     fonts-liberation2 \
     fonts-dejavu-core \
-    fonts-dejavu-extra \
-    fonts-liberation
+    fonts-dejavu-extra && \
+    rm -rf /var/lib/apt/lists/*
 
 RUN pip install --upgrade pip wheel --no-cache-dir
 RUN pip install gunicorn==20.1.0 poetry --no-cache-dir

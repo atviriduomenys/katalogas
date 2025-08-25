@@ -20,12 +20,8 @@ class FinancingPlan(models.Model):
     received_financing = models.IntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
     year = models.IntegerField(blank=True, null=True)
-    created_by = models.ForeignKey(
-        User, models.CASCADE, db_column="created_by", blank=True, null=True
-    )
-    organization = models.ForeignKey(
-        Organization, models.CASCADE, blank=True, null=True
-    )
+    created_by = models.ForeignKey(User, models.CASCADE, db_column="created_by", blank=True, null=True)
+    organization = models.ForeignKey(Organization, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True
@@ -105,9 +101,7 @@ class Plan(models.Model):
         null=True,
         blank=True,
     )
-    provider_title = models.CharField(
-        _("Paslaugų teikėjo pavadinimas"), max_length=255, null=True, blank=True
-    )
+    provider_title = models.CharField(_("Paslaugų teikėjo pavadinimas"), max_length=255, null=True, blank=True)
     procurement = models.URLField(_("Nuoroda į viešąjį pirkimą"), null=True, blank=True)
     price = models.FloatField(_("Pirkimo kaina EUR"), null=True, blank=True)
     project = models.ForeignKey(
@@ -138,9 +132,7 @@ class PlanDataset(models.Model):
         verbose_name=_("Duomenų išteklius"),
         on_delete=models.CASCADE,
     )
-    created = models.DateTimeField(
-        _("Įtraukimo data"), auto_now_add=True, editable=False
-    )
+    created = models.DateTimeField(_("Įtraukimo data"), auto_now_add=True, editable=False)
 
     class Meta:
         db_table = "plan_dataset"
@@ -152,12 +144,8 @@ class PlanDataset(models.Model):
 
 class PlanRequest(models.Model):
     plan = models.ForeignKey(Plan, verbose_name=_("Planas"), on_delete=models.CASCADE)
-    request = models.ForeignKey(
-        "vitrina_requests.Request", verbose_name=_("Poreikis"), on_delete=models.CASCADE
-    )
-    created = models.DateTimeField(
-        _("Įtraukimo data"), auto_now_add=True, editable=False
-    )
+    request = models.ForeignKey("vitrina_requests.Request", verbose_name=_("Poreikis"), on_delete=models.CASCADE)
+    created = models.DateTimeField(_("Įtraukimo data"), auto_now_add=True, editable=False)
 
     class Meta:
         db_table = "plan_request"

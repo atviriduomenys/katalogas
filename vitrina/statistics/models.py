@@ -57,6 +57,4 @@ class StatRoute(TranslatableModel):
         verbose_name_plural = _("Statistikos nuorodos")
 
     def __str__(self):
-        return self.safe_translation_getter(
-            "title", language_code=self.get_current_language()
-        )
+        return self.safe_translation_getter("title", language_code=self.get_current_language())

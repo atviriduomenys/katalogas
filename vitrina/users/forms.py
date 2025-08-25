@@ -45,9 +45,7 @@ from vitrina.users.models import User, UserEmailDevice
 
 
 class LoginForm(OTPAuthenticationForm):
-    username = UsernameField(
-        widget=TextInput(attrs={"autofocus": True}), label=_("El. paštas")
-    )
+    username = UsernameField(widget=TextInput(attrs={"autofocus": True}), label=_("El. paštas"))
     otp_token = CharField(
         required=False,
         widget=TextInput(attrs={"autocomplete": "off"}),
@@ -57,19 +55,14 @@ class LoginForm(OTPAuthenticationForm):
     otp_error_messages = {
         "token_required": _("Įveskite prisijungimo kodą."),
         "challenge_exception": _("Klaida generuojant vienkartinį kodą."),
-        "not_interactive": _(
-            "Pasirinktas prisijungimo patvirtinimo metodas neinteraktyvus."
-        ),
+        "not_interactive": _("Pasirinktas prisijungimo patvirtinimo metodas neinteraktyvus."),
         "challenge_message": _(
             "Dėmesio. Kadangi jūsų įrenginys nebuvo atpažintas, reikalingas papildomas "
             "patvirtinimas. Prašome įrašyti vienkartinį kodą, išsiųstą el. paštu."
         ),
-        "invalid_token": _(
-            "Neteisingas kodas. Įsitikinkite, kad įvedėtę teisingą kodą."
-        ),
+        "invalid_token": _("Neteisingas kodas. Įsitikinkite, kad įvedėtę teisingą kodą."),
         "n_failed_attempts": _(
-            "Prisijungimo patvirtinimas laikimai negalimas dėl %(failure_count)d "
-            "nesėkmingų bandymų prisijungti."
+            "Prisijungimo patvirtinimas laikimai negalimas dėl %(failure_count)d nesėkmingų bandymų prisijungti."
         ),
         "verification_not_allowed": _("Prisijungimo patvirtinimas laikimai negalimas."),
     }
@@ -99,9 +92,7 @@ class LoginForm(OTPAuthenticationForm):
         client_ip, _ = get_client_ip(self.request)
         user_agent = self.request.headers.get("User-Agent", "")
 
-        device = UserEmailDevice.objects.filter(
-            user=user.pk, ip_address=client_ip, user_agent=user_agent
-        ).first()
+        device = UserEmailDevice.objects.filter(user=user.pk, ip_address=client_ip, user_agent=user_agent).first()
 
         if not device:
             device = UserEmailDevice.objects.create(
@@ -114,21 +105,14 @@ class LoginForm(OTPAuthenticationForm):
         password = self.cleaned_data.get("password")
 
         if username is not None and password:
-            self.user_cache = authenticate(
-                self.request, username=username, password=password
-            )
+            self.user_cache = authenticate(self.request, username=username, password=password)
 
             if self.user_cache and username:
                 user_email = EmailAddress.objects.filter(email=username).first()
-                if (
-                    user_email and not user_email.verified
-                ) or self.user_cache.status == User.AWAITING_CONFIRMATION:
+                if (user_email and not user_email.verified) or self.user_cache.status == User.AWAITING_CONFIRMATION:
                     self.user_cache = None
                     raise ValidationError(
-                        _(
-                            "El. pašto adresas nepatvirtintas. "
-                            "Patvirtinti galite sekdami nuoroda išsiųstame laiške."
-                        )
+                        _("El. pašto adresas nepatvirtintas. Patvirtinti galite sekdami nuoroda išsiųstame laiške.")
                     )
 
             user = User.objects.filter(email=username).first()
@@ -136,19 +120,13 @@ class LoginForm(OTPAuthenticationForm):
                 if user.status == User.SUSPENDED or user.status == User.DELETED:
                     self.user_cache = None
                     raise ValidationError(
-                        _(
-                            "Jūsų paskyra yra neaktyvi. "
-                            "Norėdami sužinoti daugiau, susisiekite su administracija."
-                        )
+                        _("Jūsų paskyra yra neaktyvi. Norėdami sužinoti daugiau, susisiekite su administracija.")
                     )
 
                 if (
                     user.status == User.LOCKED
                     and user.failed_login_attempts < 5
-                    and (
-                        user.password_last_updated is None
-                        or user.password_last_updated > now() - timedelta(days=90)
-                    )
+                    and (user.password_last_updated is None or user.password_last_updated > now() - timedelta(days=90))
                 ):
                     self.user_cache = None
                     raise ValidationError(
@@ -171,10 +149,7 @@ class LoginForm(OTPAuthenticationForm):
                         )
                     )
 
-                if (
-                    user.password_last_updated is None
-                    or user.password_last_updated < now() - timedelta(days=90)
-                ):
+                if user.password_last_updated is None or user.password_last_updated < now() - timedelta(days=90):
                     self.user_cache = None
                     if user.status == User.ACTIVE:
                         user.lock_user()
@@ -277,16 +252,12 @@ class RegisterForm(UserCreationForm):
         if len(first_name) < 3 or not first_name.isalpha():
             self.add_error(
                 "first_name",
-                _(
-                    "Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"
-                ),
+                _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"),
             )
         if len(last_name) < 3 or not last_name.isalpha():
             self.add_error(
                 "last_name",
-                _(
-                    "Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"
-                ),
+                _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"),
             )
         if "agree_to_terms" in cleaned_data and not cleaned_data["agree_to_terms"]:
             self.add_error("agree_to_terms", _("Turite sutikti su naudojimo sąlygomis"))
@@ -297,13 +268,8 @@ class RegisterForm(UserCreationForm):
         not_allowed_symbols = "!#$%&'*+-/=?^_`{|"
         if email_address:
             if User.objects.filter(email=email_address).exists():
-                raise ValidationError(
-                    _("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja")
-                )
-            if (
-                email_address[0] in not_allowed_symbols
-                or email_address[-1] in not_allowed_symbols
-            ):
+                raise ValidationError(_("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja"))
+            if email_address[0] in not_allowed_symbols or email_address[-1] in not_allowed_symbols:
                 raise ValidationError(_("Įveskite tinkamą el. pašto adresą."))
         return email_address
 
@@ -342,9 +308,7 @@ class UserCreationAdminForm(UserCreationForm):
         required=True,
     )
     last_name = CharField(label=_("Pavardė"), required=True)
-    email = EmailField(
-        label=_("Elektroninis pašto adresas"), required=True, error_messages={}
-    )
+    email = EmailField(label=_("Elektroninis pašto adresas"), required=True, error_messages={})
     password1 = CharField(
         label=_("Slaptažodis"),
         strip=False,
@@ -379,16 +343,12 @@ class UserCreationAdminForm(UserCreationForm):
         if len(first_name) < 3 or not first_name.isalpha():
             self.add_error(
                 "first_name",
-                _(
-                    "Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"
-                ),
+                _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"),
             )
         if len(last_name) < 3 or not last_name.isalpha():
             self.add_error(
                 "last_name",
-                _(
-                    "Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"
-                ),
+                _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"),
             )
         return cleaned_data
 
@@ -397,13 +357,8 @@ class UserCreationAdminForm(UserCreationForm):
         not_allowed_symbols = "!#$%&'*+-/=?^_`{|"
         if email_address:
             if User.objects.filter(email=email_address).exists():
-                raise ValidationError(
-                    _("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja")
-                )
-            if (
-                email_address[0] in not_allowed_symbols
-                or email_address[-1] in not_allowed_symbols
-            ):
+                raise ValidationError(_("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja"))
+            if email_address[0] in not_allowed_symbols or email_address[-1] in not_allowed_symbols:
                 raise ValidationError(_("Įveskite tinkamą el. pašto adresą."))
         return email_address
 
@@ -414,9 +369,7 @@ class UserChangeAdminForm(UserChangeForm):
     last_name = CharField(label=_("Pavardė"))
     email = CharField(label=_("Elektroninis paštas"))
     email_confirmed = BooleanField(label=_("Patvirtintas"), required=False)
-    organizations_and_roles = DisabledCharField(
-        label=_("Organizacijos ir rolės"), required=False
-    )
+    organizations_and_roles = DisabledCharField(label=_("Organizacijos ir rolės"), required=False)
     created_date = CharField(label=_("Sukūrimo data"), required=False)
     last_login_date = CharField(label=_("Paskutinį kartą prisijungė"), required=False)
     password1 = CharField(
@@ -447,24 +400,16 @@ class UserChangeAdminForm(UserChangeForm):
         self.fields["created_date"].disabled = True
         self.fields["created_date"].widget.attrs["style"] = "background-color: #f2f2f2;"
         self.fields["last_login_date"].disabled = True
-        self.fields["last_login_date"].widget.attrs["style"] = (
-            "background-color: #f2f2f2;"
-        )
+        self.fields["last_login_date"].widget.attrs["style"] = "background-color: #f2f2f2;"
 
         # Readonly blocks browser autocomplete
         # On user interation, readonly attribute is removed
         self.fields["first_name"].widget.attrs["readonly"] = True
-        self.fields["first_name"].widget.attrs["onfocus"] = (
-            "this.removeAttribute('readonly');"
-        )
+        self.fields["first_name"].widget.attrs["onfocus"] = "this.removeAttribute('readonly');"
         self.fields["password1"].widget.attrs["readonly"] = True
-        self.fields["password1"].widget.attrs["onfocus"] = (
-            "this.removeAttribute('readonly');"
-        )
+        self.fields["password1"].widget.attrs["onfocus"] = "this.removeAttribute('readonly');"
         self.fields["password2"].widget.attrs["readonly"] = True
-        self.fields["password2"].widget.attrs["onfocus"] = (
-            "this.removeAttribute('readonly');"
-        )
+        self.fields["password2"].widget.attrs["onfocus"] = "this.removeAttribute('readonly');"
 
         if instance:
             if instance.status != User.ACTIVE and instance.status != User.LOCKED:
@@ -474,77 +419,46 @@ class UserChangeAdminForm(UserChangeForm):
                     self.fields["password2"].widget = HiddenInput()
 
             tz = pytz.timezone(settings.TIME_ZONE)
-            self.initial["created_date"] = instance.created.astimezone(tz).strftime(
-                "%Y-%m-%d %H:%M:%S"
-            )
+            self.initial["created_date"] = instance.created.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
             if instance.last_login:
-                self.initial["last_login_date"] = instance.last_login.astimezone(
-                    tz
-                ).strftime("%Y-%m-%d %H:%M:%S")
+                self.initial["last_login_date"] = instance.last_login.astimezone(tz).strftime("%Y-%m-%d %H:%M:%S")
             else:
                 self.initial["last_login_date"] = "-"
 
             self.initial["user_status"] = instance.get_status_display()
             if self.instance.status == User.ACTIVE:
-                self.fields["user_status"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2; color: limegreen;"
-                )
+                self.fields["user_status"].widget.attrs["style"] = "background-color: #f2f2f2; color: limegreen;"
             elif self.instance.status == User.AWAITING_CONFIRMATION:
-                self.fields["user_status"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2; color: orange;"
-                )
+                self.fields["user_status"].widget.attrs["style"] = "background-color: #f2f2f2; color: orange;"
             elif self.instance.status == User.SUSPENDED:
-                self.fields["user_status"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2; color: red;"
-                )
+                self.fields["user_status"].widget.attrs["style"] = "background-color: #f2f2f2; color: red;"
                 self.fields["first_name"].disabled = True
-                self.fields["first_name"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2;"
-                )
+                self.fields["first_name"].widget.attrs["style"] = "background-color: #f2f2f2;"
                 self.fields["last_name"].disabled = True
-                self.fields["last_name"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2;"
-                )
+                self.fields["last_name"].widget.attrs["style"] = "background-color: #f2f2f2;"
                 self.fields["email"].disabled = True
-                self.fields["email"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2;"
-                )
+                self.fields["email"].widget.attrs["style"] = "background-color: #f2f2f2;"
                 self.fields["email_confirmed"].disabled = True
             elif self.instance.status == User.DELETED:
-                self.fields["user_status"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2; color: red;"
-                )
+                self.fields["user_status"].widget.attrs["style"] = "background-color: #f2f2f2; color: red;"
                 self.fields["first_name"].disabled = True
-                self.fields["first_name"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2;"
-                )
+                self.fields["first_name"].widget.attrs["style"] = "background-color: #f2f2f2;"
                 self.fields["last_name"].disabled = True
-                self.fields["last_name"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2;"
-                )
+                self.fields["last_name"].widget.attrs["style"] = "background-color: #f2f2f2;"
                 self.fields["email"].disabled = True
-                self.fields["email"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2;"
-                )
+                self.fields["email"].widget.attrs["style"] = "background-color: #f2f2f2;"
                 self.fields["email_confirmed"].disabled = True
                 self.fields["is_active"].disabled = True
                 self.fields["is_staff"].disabled = True
                 self.fields["is_superuser"].disabled = True
             elif self.instance.status == User.LOCKED:
-                self.fields["user_status"].widget.attrs["style"] = (
-                    "background-color: #f2f2f2; color: grey;"
-                )
-            if (
-                instance.emailaddress_set.first()
-                and not instance.emailaddress_set.first().verified
-            ):
+                self.fields["user_status"].widget.attrs["style"] = "background-color: #f2f2f2; color: grey;"
+            if instance.emailaddress_set.first() and not instance.emailaddress_set.first().verified:
                 self.initial["email_confirmed"] = False
             else:
                 self.initial["email_confirmed"] = True
 
-            if reps := instance.representative_set.filter(
-                content_type=ContentType.objects.get_for_model(Organization)
-            ):
+            if reps := instance.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization)):
                 organizations_and_roles = []
                 for rep in reps:
                     organizations_and_roles.append(
@@ -553,9 +467,7 @@ class UserChangeAdminForm(UserChangeForm):
                         f"</a>"
                     )
                 organizations_and_roles = "<br/>".join(organizations_and_roles)
-                self.initial["organizations_and_roles"] = mark_safe(
-                    organizations_and_roles
-                )
+                self.initial["organizations_and_roles"] = mark_safe(organizations_and_roles)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -565,16 +477,12 @@ class UserChangeAdminForm(UserChangeForm):
         if len(first_name) < 3 or not first_name.isalpha():
             self.add_error(
                 "first_name",
-                _(
-                    "Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"
-                ),
+                _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"),
             )
         if len(last_name) < 3 or not last_name.isalpha():
             self.add_error(
                 "last_name",
-                _(
-                    "Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"
-                ),
+                _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"),
             )
         return cleaned_data
 
@@ -582,18 +490,9 @@ class UserChangeAdminForm(UserChangeForm):
         email_address = self.cleaned_data.get("email", "")
         not_allowed_symbols = "!#$%&'*+-/=?^_`{|"
         if email_address:
-            if (
-                User.objects.filter(email=email_address)
-                .exclude(pk=self.instance.pk)
-                .exists()
-            ):
-                raise ValidationError(
-                    _("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja")
-                )
-            if (
-                email_address[0] in not_allowed_symbols
-                or email_address[-1] in not_allowed_symbols
-            ):
+            if User.objects.filter(email=email_address).exclude(pk=self.instance.pk).exists():
+                raise ValidationError(_("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja"))
+            if email_address[0] in not_allowed_symbols or email_address[-1] in not_allowed_symbols:
                 raise ValidationError(_("Įveskite tinkamą el. pašto adresą."))
         return email_address
 
@@ -675,15 +574,9 @@ class PasswordResetForm(BasePasswordResetForm):
         email = cleaned_data.get("email", "")
         if (
             email
-            and not User.objects.filter(
-                Q(email=email) & Q(Q(status=User.LOCKED) | Q(status=User.ACTIVE))
-            ).exists()
+            and not User.objects.filter(Q(email=email) & Q(Q(status=User.LOCKED) | Q(status=User.ACTIVE))).exists()
         ):
-            raise ValidationError(
-                _(
-                    "Naudotojas su tokiu el. pašto adresu neegzistuoja arba yra neaktyvus"
-                )
-            )
+            raise ValidationError(_("Naudotojas su tokiu el. pašto adresu neegzistuoja arba yra neaktyvus"))
         return cleaned_data
 
     def send_mail(
@@ -695,9 +588,7 @@ class PasswordResetForm(BasePasswordResetForm):
         to_email,
         html_email_template_name=None,
     ):
-        url = "{0}://{1}/reset/{2}/{3}".format(
-            context["protocol"], context["domain"], context["uid"], context["token"]
-        )
+        url = "{0}://{1}/reset/{2}/{3}".format(context["protocol"], context["domain"], context["uid"], context["token"])
         email(
             [to_email],
             "auth-password-reset-token",
@@ -708,9 +599,7 @@ class PasswordResetForm(BasePasswordResetForm):
 
 class PasswordResetConfirmForm(SetPasswordForm):
     error_messages = {
-        "password_mismatch": _(
-            "Slaptažodžiai nesutampa. Pabandykite įvesti dar kartą."
-        ),
+        "password_mismatch": _("Slaptažodžiai nesutampa. Pabandykite įvesti dar kartą."),
     }
     new_password1 = CharField(
         label=_("Naujas slaptažodis"),
@@ -758,9 +647,7 @@ class UserProfileEditForm(ModelForm):
     last_name = CharField(label=_("Pavardė"), required=True)
     phone = CharField(label=_("Telefonas"), required=False)
     email = EmailField(label=_("El. paštas"), required=True)
-    organization = ModelChoiceField(
-        label=_("Organizacija"), required=False, queryset=Organization.public.all()
-    )
+    organization = ModelChoiceField(label=_("Organizacija"), required=False, queryset=Organization.public.all())
 
     class Meta:
         model = User
@@ -823,16 +710,12 @@ class UserProfileEditForm(ModelForm):
             dataset_rep_ids = user.representative_set.filter(
                 content_type=ContentType.objects.get_for_model(Dataset)
             ).values_list("object_id", flat=True)
-            dataset_rep_ids = Dataset.objects.filter(
-                pk__in=dataset_rep_ids
-            ).values_list("organization__pk", flat=True)
+            dataset_rep_ids = Dataset.objects.filter(pk__in=dataset_rep_ids).values_list("organization__pk", flat=True)
 
             organization_ids.extend(organization_rep_ids)
             organization_ids.extend(dataset_rep_ids)
 
-            self.fields["organization"].queryset = self.fields[
-                "organization"
-            ].queryset.filter(pk__in=organization_ids)
+            self.fields["organization"].queryset = self.fields["organization"].queryset.filter(pk__in=organization_ids)
 
     def clean(self):
         cleaned_data = super().clean()
@@ -842,16 +725,12 @@ class UserProfileEditForm(ModelForm):
         if first_name and len(first_name) < 3 or not first_name.isalpha():
             self.add_error(
                 "first_name",
-                _(
-                    "Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"
-                ),
+                _("Vardas negali būti trumpesnis nei 3 simboliai, negali turėti skaičių"),
             )
         if last_name and len(last_name) < 3 or not last_name.isalpha():
             self.add_error(
                 "last_name",
-                _(
-                    "Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"
-                ),
+                _("Pavardė negali būti trumpesnė nei 3 simboliai, negali turėti skaičių"),
             )
         return cleaned_data
 
@@ -860,18 +739,8 @@ class UserProfileEditForm(ModelForm):
         not_allowed_symbols = "!#$%&'*+-/=?^_`{|"
         instance = self.instance if self.instance and self.instance.pk else None
         if email_address:
-            if (
-                instance
-                and User.objects.filter(email=email_address)
-                .exclude(pk=instance.pk)
-                .exists()
-            ):
-                raise ValidationError(
-                    _("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja")
-                )
-            if (
-                email_address[0] in not_allowed_symbols
-                or email_address[-1] in not_allowed_symbols
-            ):
+            if instance and User.objects.filter(email=email_address).exclude(pk=instance.pk).exists():
+                raise ValidationError(_("Naudotojas su šiuo elektroniniu pašto adresu jau egzistuoja"))
+            if email_address[0] in not_allowed_symbols or email_address[-1] in not_allowed_symbols:
                 raise ValidationError(_("Įveskite tinkamą el. pašto adresą."))
         return email_address

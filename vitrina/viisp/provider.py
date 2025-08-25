@@ -65,14 +65,10 @@ class VIISPProvider(OAuth2Provider):
             if existing_social_account:
                 socialaccount = existing_social_account
 
-        sociallogin = SocialLogin(
-            account=socialaccount, email_addresses=email_addresses
-        )
+        sociallogin = SocialLogin(account=socialaccount, email_addresses=email_addresses)
         if user and not existing_social_account:
             sociallogin.connect(request, user)
-            social_account_added.send(
-                sender=SocialLogin, request=request, sociallogin=sociallogin
-            )
+            social_account_added.send(sender=SocialLogin, request=request, sociallogin=sociallogin)
         else:
             user = sociallogin.user = adapter.new_user(request, sociallogin)
             user.status = User.ACTIVE
@@ -80,12 +76,8 @@ class VIISPProvider(OAuth2Provider):
             adapter.populate_user(request, sociallogin, common_fields)
 
         # update related representatives
-        if user := User.objects.filter(
-            email=extra_data.get("coordinator_email")
-        ).first():
-            if reps := Representative.objects.filter(
-                email=user.email, user__isnull=True
-            ):
+        if user := User.objects.filter(email=extra_data.get("coordinator_email")).first():
+            if reps := Representative.objects.filter(email=user.email, user__isnull=True):
                 reps.update(user=user)
 
         return sociallogin

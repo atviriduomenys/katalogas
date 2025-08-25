@@ -80,9 +80,7 @@ VISIBILITY_LEVEL_CHOICES = (
         2,
         _get_level_title(
             _("Naudojamas LT lygmeniu (package)"),
-            _(
-                "Įteisintas Informacinės sistemos nuostatuose ir kituose LT teisės aktuose"
-            ),
+            _("Įteisintas Informacinės sistemos nuostatuose ir kituose LT teisės aktuose"),
         ),
     ),
     (
@@ -95,9 +93,7 @@ VISIBILITY_LEVEL_CHOICES = (
 
 
 class EnumForm(forms.ModelForm):
-    value = forms.CharField(
-        label=_("Reikšmė"), help_text=_("Fiksuotos reikšmės vertė.")
-    )
+    value = forms.CharField(label=_("Reikšmė"), help_text=_("Fiksuotos reikšmės vertė."))
     source = forms.CharField(
         label=_("Reikšmė šaltinyje"),
         required=False,
@@ -107,9 +103,7 @@ class EnumForm(forms.ModelForm):
         label=_("Prieigos lygmuo"),
         choices=Metadata.ACCESS_TYPES,
         required=False,
-        help_text=_(
-            "Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės elementams."
-        ),
+        help_text=_("Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės elementams."),
     )
     status = ModelChoiceTypeField(
         label=_("Būsena"),
@@ -188,10 +182,7 @@ class EnumForm(forms.ModelForm):
         default_status = Status.objects.filter(is_default=True).first()
         if instance and instance.metadata.first():
             metadata = instance.metadata.first()
-            if (
-                self.prop.metadata.first()
-                and self.prop.metadata.first().type == "string"
-            ):
+            if self.prop.metadata.first() and self.prop.metadata.first().type == "string":
                 value = metadata.prepare.replace('"', "")
             else:
                 value = metadata.prepare
@@ -200,13 +191,9 @@ class EnumForm(forms.ModelForm):
             self.initial["access"] = metadata.access
             self.initial["title"] = metadata.title
             self.initial["description"] = metadata.description
-            self.initial["visibility"] = (
-                metadata.visibility if metadata.visibility is not None else "None"
-            )
+            self.initial["visibility"] = metadata.visibility if metadata.visibility is not None else "None"
             self.initial["eli"] = metadata.eli
-            self.initial["status"] = (
-                metadata.status if metadata.status is not None else default_status
-            )
+            self.initial["status"] = metadata.status if metadata.status is not None else default_status
         else:
             self.initial["visibility"] = "None"
             self.initial["status"] = default_status
@@ -258,9 +245,9 @@ class EnumForm(forms.ModelForm):
                 if visibility > metadata.visibility:
                     property_visibility_str = _get_visibility(metadata.visibility)
                     raise ValidationError(
-                        _(
-                            "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų lauko matomumas '{1}'."
-                        ).format(visibility_str, property_visibility_str)
+                        _("Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų lauko matomumas '{1}'.").format(
+                            visibility_str, property_visibility_str
+                        )
                     )
 
         return visibility
@@ -272,9 +259,7 @@ MODEL_LEVEL_CHOICES = (
         0,
         _get_level_title(
             _("Nėra identifikatoriaus"),
-            _(
-                "Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."
-            ),
+            _("Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."),
         ),
     ),
     (
@@ -291,9 +276,7 @@ MODEL_LEVEL_CHOICES = (
         2,
         _get_level_title(
             _("Nepatikimas identifikatorius"),
-            _(
-                "Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali keistis."
-            ),
+            _("Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali keistis."),
         ),
     ),
     (
@@ -387,9 +370,7 @@ class OrderMixin:
             default[1].append(self.create_option(name, "", "", False, 0))
         if not isinstance(self.choices, ModelChoiceIterator):
             return super().optgroups(name, value, attrs=attrs)
-        selected_choices = {
-            c for c in selected_choices if c not in self.choices.field.empty_values
-        }
+        selected_choices = {c for c in selected_choices if c not in self.choices.field.empty_values}
         field_name = self.choices.field.to_field_name or "pk"
 
         preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(value)])
@@ -398,18 +379,12 @@ class OrderMixin:
             option_value = self.choices.choice(obj)[0]
             option_label = self.label_from_instance(obj)
 
-            selected = str(option_value) in value and (
-                has_selected is False or self.allow_multiple_selected
-            )
+            selected = str(option_value) in value and (has_selected is False or self.allow_multiple_selected)
             if selected is True and has_selected is False:
                 has_selected = True
             index = len(default[1])
             subgroup = default[1]
-            subgroup.append(
-                self.create_option(
-                    name, option_value, option_label, selected_choices, index
-                )
-            )
+            subgroup.append(self.create_option(name, option_value, option_label, selected_choices, index))
         return groups
 
 
@@ -444,11 +419,7 @@ def _check_prepare_ast(ast, model_props, bind=False):
             _check_prepare_ast(arg, model_props, bind)
     elif bind:
         if ast not in model_props:
-            raise ValidationError(
-                _(
-                    f'Duomenų filtre nurodytas modelyje neegzistuojantis laukas: "{ast}".'
-                )
-            )
+            raise ValidationError(_(f'Duomenų filtre nurodytas modelyje neegzistuojantis laukas: "{ast}".'))
 
 
 class ModelCreateForm(forms.ModelForm):
@@ -459,16 +430,12 @@ class ModelCreateForm(forms.ModelForm):
     source = forms.CharField(
         label=_("Duomenų šaltinis"),
         required=False,
-        help_text=_(
-            "Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."
-        ),
+        help_text=_("Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."),
     )
     prepare = forms.CharField(
         label=_("Duomenų filtras"),
         required=False,
-        help_text=_(
-            "Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."
-        ),
+        help_text=_("Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."),
     )
     uri = forms.CharField(
         label=_("Klasė"),
@@ -540,9 +507,7 @@ class ModelCreateForm(forms.ModelForm):
     base_ref = OrderedModelMultipleChoiceField(
         label=_("Pirminis raktas"),
         required=False,
-        widget=BaseRefWidget(
-            attrs={"data-width": "100%", "data-minimum-input-length": 0}
-        ),
+        widget=BaseRefWidget(attrs={"data-width": "100%", "data-minimum-input-length": 0}),
         queryset=Property.objects.all(),
         help_text=_(
             "model.property reikšmė, kurios pagalba model objektai siejami su base objektais. "
@@ -576,9 +541,7 @@ class ModelCreateForm(forms.ModelForm):
     is_parameterized = forms.BooleanField(
         label=_("Parametrizuotas"),
         required=False,
-        help_text=_(
-            "Žymė, nurodanti ar modelis yra parametrizuotas - t.y. turi dinamiškai kintančių dalių ar filtrų."
-        ),
+        help_text=_("Žymė, nurodanti ar modelis yra parametrizuotas - t.y. turi dinamiškai kintančių dalių ar filtrų."),
     )
 
     class Meta:
@@ -649,9 +612,7 @@ class ModelCreateForm(forms.ModelForm):
         prepare = self.cleaned_data.get("prepare")
         instance = self.instance if self.instance and self.instance.pk else None
         if instance:
-            props = instance.object.model_properties.values_list(
-                "metadata__name", flat=True
-            )
+            props = instance.object.model_properties.values_list("metadata__name", flat=True)
         else:
             props = []
         if prepare:
@@ -682,26 +643,15 @@ class ModelCreateForm(forms.ModelForm):
 
         if name:
             if not name[0].isupper():
-                raise ValidationError(
-                    _("Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė.")
-                )
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."))
             elif any(not c.isalnum() for c in name):
                 raise ValidationError(
-                    _(
-                        "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
-                        "jokie kiti simboliai negalimi."
-                    )
+                    _("Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, jokie kiti simboliai negalimi.")
                 )
             elif not name.isascii():
-                raise ValidationError(
-                    _(
-                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-                    )
-                )
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
             elif metadata:
-                raise ValidationError(
-                    _("Modelis su tokiu kodiniu pavadinimu jau egzistuoja.")
-                )
+                raise ValidationError(_("Modelis su tokiu kodiniu pavadinimu jau egzistuoja."))
         return name
 
     def clean_uri(self):
@@ -742,11 +692,7 @@ class ModelCreateForm(forms.ModelForm):
         visibility = int(visibility)
 
         if visibility == Metadata.VISIBILITY_PUBLIC and not uri:
-            raise ValidationError(
-                _(
-                    "Stulpelis 'Klasė' turi būti užpildytas pasirenkant šį metaduomenų matomumo lygį."
-                )
-            )
+            raise ValidationError(_("Stulpelis 'Klasė' turi būti užpildytas pasirenkant šį metaduomenų matomumo lygį."))
 
         return visibility
 
@@ -814,39 +760,25 @@ class ModelUpdateForm(ModelCreateForm):
             model = instance.object
             self.initial["model_id"] = model.pk
             self.initial["name"] = instance.name.split("/")[-1]
-            self.initial["level"] = (
-                instance.level_given if instance.level_given is not None else "None"
-            )
-            self.initial["ref"] = model.property_list.order_by("order").values_list(
-                "property", flat=True
-            )
+            self.initial["level"] = instance.level_given if instance.level_given is not None else "None"
+            self.initial["ref"] = model.property_list.order_by("order").values_list("property", flat=True)
             self.initial["is_parameterized"] = model.is_parameterized
             self.initial["base_level"] = "None"
-            self.initial["visibility"] = (
-                instance.visibility if instance.visibility is not None else "None"
-            )
-            self.initial["status"] = (
-                instance.status if instance.status is not None else default_status
-            )
+            self.initial["visibility"] = instance.visibility if instance.visibility is not None else "None"
+            self.initial["status"] = instance.status if instance.status is not None else default_status
             self.initial["eli"] = instance.eli
             if model.base:
                 self.initial["base"] = model.base.model
-                self.initial["base_ref"] = model.base.property_list.order_by(
-                    "order"
-                ).values_list("property", flat=True)
+                self.initial["base_ref"] = model.base.property_list.order_by("order").values_list("property", flat=True)
                 if model.base.metadata.first():
-                    self.initial["base_level"] = (
-                        model.base.metadata.first().level_given or "None"
-                    )
+                    self.initial["base_level"] = model.base.metadata.first().level_given or "None"
 
 
 PROPERTY_LEVEL_CHOICES = (
     (None, _get_level_title(_("Nenurodyta"))),
     (
         0,
-        _get_level_title(
-            _("Duomenų nėra"), _("Tokių duomenų nėra, tačiau jie yra reikalingi.")
-        ),
+        _get_level_title(_("Duomenų nėra"), _("Tokių duomenų nėra, tačiau jie yra reikalingi.")),
     ),
     (
         1,
@@ -862,28 +794,21 @@ PROPERTY_LEVEL_CHOICES = (
         2,
         _get_level_title(
             _("Nestandartiniai duomenys"),
-            _(
-                "Duomenyse išlaikytas vientisumas ir aiški struktūra, tačiau duomenys "
-                "pateikti nestandartine forma."
-            ),
+            _("Duomenyse išlaikytas vientisumas ir aiški struktūra, tačiau duomenys pateikti nestandartine forma."),
         ),
     ),
     (
         3,
         _get_level_title(
             _("Standartinė forma"),
-            _(
-                "Duomenys pateikti standartine forma, tačiau nėra nurodyti vienetai ar duomenų tikslumas."
-            ),
+            _("Duomenys pateikti standartine forma, tačiau nėra nurodyti vienetai ar duomenų tikslumas."),
         ),
     ),
     (
         4,
         _get_level_title(
             _("Identifikatoriai"),
-            _(
-                "Duomenys susieti su kitais duomenimis, vienetais, klasifikatoriais, nurodytas duomenų tikslumas."
-            ),
+            _("Duomenys susieti su kitais duomenimis, vienetais, klasifikatoriais, nurodytas duomenų tikslumas."),
         ),
     ),
     (
@@ -914,16 +839,12 @@ class PropertyRefWidget(ModelSelect2Widget):
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
 
         top_models = (
-            queryset.annotate(count=Count("ref_model_properties"))
-            .order_by("-count")[:5]
-            .values_list("pk", flat=True)
+            queryset.annotate(count=Count("ref_model_properties")).order_by("-count")[:5].values_list("pk", flat=True)
         )
         dataset_models = []
         if dataset_id:
             dataset_models = (
-                queryset.filter(dataset__pk=dataset_id)
-                .exclude(pk__in=top_models)
-                .values_list("pk", flat=True)
+                queryset.filter(dataset__pk=dataset_id).exclude(pk__in=top_models).values_list("pk", flat=True)
             )
         if top_models or dataset_models:
             ids = []
@@ -987,9 +908,7 @@ class PropertyForm(forms.ModelForm):
     ref = forms.ModelChoiceField(
         label=_("Ryšys"),
         required=False,
-        widget=PropertyRefWidget(
-            attrs={"data-width": "100%", "data-minimum-input-length": 0}
-        ),
+        widget=PropertyRefWidget(attrs={"data-width": "100%", "data-minimum-input-length": 0}),
         queryset=Model.objects.all(),
         help_text=_(
             "Priklauso nuo property.type, nurodo matavimo vienetus, laiko ar vietos tikslumą, "
@@ -1004,20 +923,14 @@ class PropertyForm(forms.ModelForm):
     source = forms.CharField(
         label=_("Duomenų šaltinis"),
         required=False,
-        help_text=_(
-            "Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."
-        ),
+        help_text=_("Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."),
     )
     prepare = forms.CharField(
         label=_("Duomenų transformacija"),
         required=False,
-        help_text=_(
-            "Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."
-        ),
+        help_text=_("Formulė skirta duomenų tikrinimui ir transformavimui arba statinės reikšmės pateikimui."),
     )
-    uri = forms.CharField(
-        label=_("Klasė"), required=False, help_text=_("Sąsaja su išoriniu žodynu.")
-    )
+    uri = forms.CharField(label=_("Klasė"), required=False, help_text=_("Sąsaja su išoriniu žodynu."))
     level = forms.ChoiceField(
         label=_("Brandos lygis"),
         required=False,
@@ -1136,17 +1049,11 @@ class PropertyForm(forms.ModelForm):
         self.initial["level"] = "None"
         self.initial["visibility"] = "None"
         if instance:
-            self.initial["level"] = (
-                instance.level_given if instance.level_given is not None else "None"
-            )
+            self.initial["level"] = instance.level_given if instance.level_given is not None else "None"
             self.initial["access"] = instance.access
             self.initial["eli"] = instance.eli
-            self.initial["visibility"] = (
-                instance.visibility if instance.visibility is not None else "None"
-            )
-            self.initial["status"] = (
-                instance.status if instance.status is not None else default_status
-            )
+            self.initial["visibility"] = instance.visibility if instance.visibility is not None else "None"
+            self.initial["status"] = instance.status if instance.status is not None else default_status
             if instance.object.ref_model:
                 self.initial["ref"] = instance.object.ref_model
                 self.initial["ref_others"] = None
@@ -1161,13 +1068,9 @@ class PropertyForm(forms.ModelForm):
         name = self.cleaned_data.get("name")
         if name:
             if not name[0].islower():
-                raise ValidationError(
-                    _("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė.")
-                )
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
             elif any([ch.isupper() for ch in name]):
-                raise ValidationError(
-                    _("Kodiniame pavadinime negali būti naudojamos didžiosios raidės.")
-                )
+                raise ValidationError(_("Kodiniame pavadinime negali būti naudojamos didžiosios raidės."))
             elif any((not c.isalnum() and c != "_") for c in name):
                 raise ValidationError(
                     _(
@@ -1177,11 +1080,7 @@ class PropertyForm(forms.ModelForm):
                     )
                 )
             elif not name.isascii():
-                raise ValidationError(
-                    _(
-                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-                    )
-                )
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
     def clean_level(self):
@@ -1267,9 +1166,9 @@ class PropertyForm(forms.ModelForm):
             if int(visibility) > metadata.visibility:
                 model_visibility_str = _get_visibility(metadata.visibility)
                 raise ValidationError(
-                    _(
-                        "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų modelio matomumas '{1}'."
-                    ).format(visibility_str, model_visibility_str)
+                    _("Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų modelio matomumas '{1}'.").format(
+                        visibility_str, model_visibility_str
+                    )
                 )
         return int(visibility)
 
@@ -1305,9 +1204,7 @@ class ParamForm(forms.ModelForm):
         name = self.cleaned_data.get("name")
         if name:
             if not name[0].islower():
-                raise ValidationError(
-                    _("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė.")
-                )
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
             elif any((not c.isalnum() and c != "_") for c in name):
                 raise ValidationError(
                     _(
@@ -1317,11 +1214,7 @@ class ParamForm(forms.ModelForm):
                     )
                 )
             elif not name.isascii():
-                raise ValidationError(
-                    _(
-                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-                    )
-                )
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
     def clean_prepare(self):
@@ -1345,12 +1238,8 @@ class ParamForm(forms.ModelForm):
 
 
 class VersionForm(forms.ModelForm):
-    released = forms.DateField(
-        label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"})
-    )
-    metadata = forms.MultipleChoiceField(
-        label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple
-    )
+    released = forms.DateField(label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"}))
+    metadata = forms.MultipleChoiceField(label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple)
 
     class Meta:
         model = Version
@@ -1373,19 +1262,13 @@ class VersionForm(forms.ModelForm):
             Field("metadata"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
-        self.fields[
-            "metadata"
-        ].choices = self.dataset.get_metadata_objects_for_version()
+        self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version()
 
     def clean_released(self):
         released = self.cleaned_data.get("released")
         if released < (datetime.datetime.today().date() + datetime.timedelta(days=14)):
-            raise ValidationError(
-                _("Versija gali įsigalioti ne anksčiau kaip po 2 savaičių.")
-            )
+            raise ValidationError(_("Versija gali įsigalioti ne anksčiau kaip po 2 savaičių."))
         latest_version = self.dataset.dataset_version.order_by("-created").first()
         if latest_version and released < latest_version.released:
-            raise ValidationError(
-                _("Versija negali įsigalioti anksčiau už praėjusią versiją.")
-            )
+            raise ValidationError(_("Versija negali įsigalioti anksčiau už praėjusią versiją."))
         return released

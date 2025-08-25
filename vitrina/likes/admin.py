@@ -12,9 +12,7 @@ class LikeAdmin(admin.ModelAdmin):
     def content_object(self, obj):
         return format_html(
             '<a href="{}" target="_blank">{}</a>',
-            obj.content_object.get_absolute_url()
-            if hasattr(obj.content_object, "get_absolute_url")
-            else "",
+            obj.content_object.get_absolute_url() if hasattr(obj.content_object, "get_absolute_url") else "",
             Truncator(obj.content_object).chars(42),
         )
 

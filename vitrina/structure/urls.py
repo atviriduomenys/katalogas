@@ -47,9 +47,7 @@ urlpatterns = [
         DatasetStructureHistoryView.as_view(),
         name="dataset-structure-history",
     ),
-    path(
-        "datasets/<int:pk>/models/add/", ModelCreateView.as_view(), name="model-create"
-    ),
+    path("datasets/<int:pk>/models/add/", ModelCreateView.as_view(), name="model-create"),
     path(
         "datasets/<int:pk>/models/<str:model>/change/",
         ModelUpdateView.as_view(),
@@ -202,5 +200,5 @@ urlpatterns = [
         VersionDetailView.as_view(),
         name="version-detail",
     ),
-    path('datasets/<int:pk>/examples/upload/', YamlFileImportView.as_view(), name='file_upload'),
+    path("datasets/<int:pk>/examples/upload/", YamlFileImportView.as_view(), name="file_upload"),
 ]

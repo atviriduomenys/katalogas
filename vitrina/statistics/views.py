@@ -67,9 +67,7 @@ class StatsMixin:
         frequency, ff = get_frequency_and_format(duration)
         end_date = datetime.now()
         start_date = get_start_date_based_on_frequency(frequency, end_date)
-        labels = pd.period_range(
-            start=start_date, end=end_date, freq=frequency
-        ).tolist()
+        labels = pd.period_range(start=start_date, end=end_date, freq=frequency).tolist()
 
         date_field = self.get_date_field()
         values = get_values_for_frequency(frequency, date_field)
@@ -83,9 +81,7 @@ class StatsMixin:
 
             query = {self.filter: item["filter_value"]}
             filter_queryset_ids = queryset.filter(**query).values_list("pk", flat=True)
-            filter_queryset = self.get_index_queryset().filter(
-                pk__in=filter_queryset_ids
-            )
+            filter_queryset = self.get_index_queryset().filter(pk__in=filter_queryset_ids)
 
             count_data = self.get_data_for_indicator(indicator, values, filter_queryset)
 
@@ -94,15 +90,11 @@ class StatsMixin:
                 time_count = 0
                 label_query = get_query_for_frequency(frequency, date_field, label)
                 label_count_data = count_data.filter(**label_query)
-                time_count = self.get_count(
-                    label, indicator, frequency, label_count_data, time_count
-                )
+                time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
                 bar_count += time_count
 
                 if frequency == "W":
-                    time_data.append(
-                        {"x": _date(label.start_time, ff), "y": time_count}
-                    )
+                    time_data.append({"x": _date(label.start_time, ff), "y": time_count})
                     bar_data.append({"x": _date(label.start_time, ff), "y": bar_count})
                 else:
                     time_data.append({"x": _date(label, ff), "y": time_count})
@@ -123,12 +115,8 @@ class StatsMixin:
             bar_chart_data.append(item)
 
         if sorting == "sort-desc":
-            time_chart_data = sorted(
-                time_chart_data, key=lambda x: x["data"][-1]["y"], reverse=True
-            )
-            bar_chart_data = sorted(
-                bar_chart_data, key=lambda x: x["count"], reverse=True
-            )
+            time_chart_data = sorted(time_chart_data, key=lambda x: x["data"][-1]["y"], reverse=True)
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x["count"], reverse=True)
         else:
             time_chart_data = sorted(time_chart_data, key=lambda x: x["data"][-1]["y"])
             bar_chart_data = sorted(bar_chart_data, key=lambda x: x["count"])
@@ -151,9 +139,7 @@ class StatsMixin:
         context["graph_title"] = self.get_graph_title(indicator)
         context["xAxis_title"] = self.get_time_axis_title(indicator)
         context["yAxis_title"] = self.get_title_for_indicator(indicator)
-        context["time_chart_data"] = json.dumps(
-            time_chart_data[: self.max_values_in_time_chart]
-        )
+        context["time_chart_data"] = json.dumps(time_chart_data[: self.max_values_in_time_chart])
 
         context["bar_chart_data"] = bar_chart_data
         context["max_count"] = max_count
@@ -178,9 +164,7 @@ class StatsMixin:
     def get_time_labels(self, start_date, frequency):
         labels = []
         if start_date:
-            labels = pd.period_range(
-                start=start_date, end=datetime.now(), freq=frequency
-            ).tolist()
+            labels = pd.period_range(start=start_date, end=datetime.now(), freq=frequency).tolist()
         return labels
 
     def get_index_queryset(self):

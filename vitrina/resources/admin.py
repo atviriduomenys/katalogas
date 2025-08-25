@@ -23,27 +23,17 @@ class GeoportalFormatAdmin(admin.ModelAdmin):
     )
 
     def values_display(self, obj):
-        return mark_safe(
-            "<br/>".join([item.value for item in obj.geoportalformatvalue_set.all()])
-        )
+        return mark_safe("<br/>".join([item.value for item in obj.geoportalformatvalue_set.all()]))
 
     values_display.short_description = _("Geoportalo reikšmės")
 
 
 class CompressionFormatAdmin(admin.ModelAdmin):
-    fields = (
-        "title",
-        "extension",
-        "uri"
-    )
+    fields = ("title", "extension", "uri")
 
 
 class PackagingFormatAdmin(admin.ModelAdmin):
-    fields = (
-        "title",
-        "extension",
-        "uri"
-    )
+    fields = ("title", "extension", "uri")
 
 
 admin.site.register(Format, FormatAdmin)

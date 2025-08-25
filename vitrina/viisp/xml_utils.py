@@ -50,9 +50,7 @@ headers = {"Content-Type": "text/xml; charset=utf-8"}
 def _create_base(base_element_name):
     doc = minidom.Document()
     xml = doc.createElement(base_element_name)
-    xml.setAttribute(
-        "xmlns:authentication", "http://www.epaslaugos.lt/services/authentication"
-    )
+    xml.setAttribute("xmlns:authentication", "http://www.epaslaugos.lt/services/authentication")
     xml.setAttribute("xmlns:dsig", "http://www.w3.org/2000/09/xmldsig#")
     xml.setAttribute("xmlns:ns3", "http://www.w3.org/2001/10/xml-exc-c14n#")
     xml.setAttribute("id", "uniqueNodeId")
@@ -118,15 +116,9 @@ def get_response_with_user_data(ticket_id, key):
 
 def create_signed_authentication_request_xml(key, domain, token=None):
     base, xml = _generate_xml("authentication:authenticationRequest")
-    _add_elements(
-        base, xml, providers, element_name="authentication:authenticationProvider"
-    )
-    _add_elements(
-        base, xml, attributes, element_name="authentication:authenticationAttribute"
-    )
-    _add_elements(
-        base, xml, user_information, element_name="authentication:userInformation"
-    )
+    _add_elements(base, xml, providers, element_name="authentication:authenticationProvider")
+    _add_elements(base, xml, attributes, element_name="authentication:authenticationAttribute")
+    _add_elements(base, xml, user_information, element_name="authentication:userInformation")
     if token:
         _add_elements(
             base,
@@ -141,9 +133,7 @@ def create_signed_authentication_request_xml(key, domain, token=None):
             (urljoin(domain, callback_url),),
             element_name="authentication:postbackUrl",
         )
-    _add_elements(
-        base, xml, ("correlationData",), element_name="authentication:customData"
-    )
+    _add_elements(base, xml, ("correlationData",), element_name="authentication:customData")
     signed_xml = _sign_xml(xml, key).decode("utf-8")
     return signed_xml
 
@@ -201,9 +191,7 @@ def read_adoc_file(adoc_file):
     opened_zip = zipfile.ZipFile(io.BytesIO(file), "r")
     xml_strings = []
     signable_metadata_files = [
-        file_name
-        for file_name in opened_zip.namelist()
-        if "metadata/signableMetadata0.xml" in file_name
+        file_name for file_name in opened_zip.namelist() if "metadata/signableMetadata0.xml" in file_name
     ]
 
     for file in signable_metadata_files:
@@ -217,7 +205,5 @@ def parse_adoc_xml_signature_data(xml_strings):
     for xml_string in xml_strings:
         soup = BeautifulSoup(xml_string, features="xml")
         signature_authors = soup.find("sig:authors")
-        sa_company_codes += [
-            result.text for result in signature_authors.find_all("sig:code")
-        ]
+        sa_company_codes += [result.text for result in signature_authors.find_all("sig:code")]
     return sa_company_codes

@@ -59,22 +59,16 @@ def update_facet_data(
     return updated_facet_data
 
 
-def get_projects(
-    user, dataset, check_existence=False, order_value=None, form_query=False
-):
+def get_projects(user, dataset, check_existence=False, order_value=None, form_query=False):
     if form_query:
         if user.is_staff:
             projects = Project.public.all()
         else:
             projects = Project.public.filter(user=user)
 
-        projects = projects.exclude(
-            Q(status=Project.REJECTED) | Q(datasets__pk__in=[dataset.pk])
-        )
+        projects = projects.exclude(Q(status=Project.REJECTED) | Q(datasets__pk__in=[dataset.pk]))
     else:
-        projects = Project.public.filter(datasets=dataset).exclude(
-            status=Project.REJECTED
-        )
+        projects = Project.public.filter(datasets=dataset).exclude(status=Project.REJECTED)
 
     if order_value:
         projects.order_by(order_value)
@@ -99,9 +93,7 @@ def get_requests(user, dataset):
                 elif isinstance(rep.content_object, Dataset):
                     if rep.content_object.organization:
                         user_orgs.append(rep.content_object.organization.pk)
-            requests = Request.public.filter(
-                Q(user=user) | Q(organizations__pk__in=user_orgs)
-            )
+            requests = Request.public.filter(Q(user=user) | Q(organizations__pk__in=user_orgs))
         else:
             requests = Request.public.filter(user=user)
 
@@ -257,15 +249,11 @@ def get_public_dataset_id_list():
 def filter_datasets_for_user(user, datasets):
     coordinator_orgs = [
         rep.object_id
-        for rep in user.representative_set.filter(
-            content_type=ContentType.objects.get_for_model(Organization)
-        )
+        for rep in user.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))
     ]
     public_dataset_id_list = get_public_dataset_id_list()
     coordinated_datasets = Dataset.objects.filter(organization_id__in=coordinator_orgs)
-    dataset_id_list = public_dataset_id_list + [
-        dataset.id for dataset in coordinated_datasets
-    ]
+    dataset_id_list = public_dataset_id_list + [dataset.id for dataset in coordinated_datasets]
     datasets = datasets.filter(django_id__in=dataset_id_list)
     return datasets
 
@@ -275,9 +263,7 @@ def get_datasets_for_user(request, datasets):
     if is_org_dataset_list(request) and request.user.is_authenticated:
         if request.user.organization_id == request.resolver_match.kwargs["pk"]:
             is_org_dataset = True
-    datasets = filter_out_non_public_datasets_for_user(
-        request.user, datasets, is_org_dataset
-    )
+    datasets = filter_out_non_public_datasets_for_user(request.user, datasets, is_org_dataset)
     datasets = datasets.models(Dataset)
     return datasets
 
@@ -288,14 +274,10 @@ def filter_out_non_public_datasets_for_user(user, datasets, is_org_dataset):
             if user.representative_set.all():
                 if is_org_dataset:
                     return datasets.filter(
-                        SQ(is_public="true")
-                        | SQ(is_public="false")
-                        | SQ(managers__contains=user.id)
+                        SQ(is_public="true") | SQ(is_public="false") | SQ(managers__contains=user.id)
                     )
                 else:
-                    return datasets.filter(
-                        SQ(is_public="true") | SQ(managers__contains=user.id)
-                    )
+                    return datasets.filter(SQ(is_public="true") | SQ(managers__contains=user.id))
             else:
                 return datasets.filter(is_public="true")
         else:
@@ -356,12 +338,8 @@ class DynamicResourceService:
 
     def __init__(self, dataset):
         self.dataset: Dataset = dataset
-        self.dataset_service = Dataset.objects.filter(
-            service=True, endpoint_url=SPINTA_SERVER_URL
-        ).first()
-        self.uapi_distribution = self.dataset.datasetdistribution_set.filter(
-            format__extension="UAPI"
-        ).first()
+        self.dataset_service = Dataset.objects.filter(service=True, endpoint_url=SPINTA_SERVER_URL).first()
+        self.uapi_distribution = self.dataset.datasetdistribution_set.filter(format__extension="UAPI").first()
 
     def generate_resources(self, is_for_rdf_export=False):
         if not self.dataset.is_part_of_dataservice():
@@ -379,19 +357,11 @@ class DynamicResourceService:
         ]
 
     def _create_distribution(self, models, distribution_format, is_for_rdf_export):
-        download_url, distribution_name = self._generate_download_url(
-            models, distribution_format
-        )
+        download_url, distribution_name = self._generate_download_url(models, distribution_format)
         if is_for_rdf_export:
-            format_uri = (
-                Format.objects.filter(title=distribution_format)
-                .values_list("uri", flat=True)
-                .first()
-            )
+            format_uri = Format.objects.filter(title=distribution_format).values_list("uri", flat=True).first()
             format_media_type = (
-                Format.objects.filter(title=distribution_format)
-                .values_list("media_type_uri", flat=True)
-                .first()
+                Format.objects.filter(title=distribution_format).values_list("media_type_uri", flat=True).first()
             )
             return {
                 "uri": reverse(
@@ -435,9 +405,7 @@ class DynamicResourceService:
             "period_start": self.uapi_distribution.period_start,
             "period_end": self.uapi_distribution.period_end,
             "geo_location": self.uapi_distribution.geo_location,
-            "data_service_id": self.dataset_service.id
-            if self.dataset_service
-            else None,
+            "data_service_id": self.dataset_service.id if self.dataset_service else None,
             "resource_url": reverse(
                 "dynamic-resource-detail",
                 args=[
@@ -452,10 +420,7 @@ class DynamicResourceService:
     def _create_csv_distributions(self, models, is_for_rdf_export, no_models=False):
         if no_models:
             return [self._create_distribution([], self.CSV_FORMAT, is_for_rdf_export)]
-        return [
-            self._create_distribution([model], self.CSV_FORMAT, is_for_rdf_export)
-            for model in models
-        ]
+        return [self._create_distribution([model], self.CSV_FORMAT, is_for_rdf_export) for model in models]
 
     def _generate_access_url(self, models):
         if self.uapi_distribution.access_url:
@@ -470,14 +435,10 @@ class DynamicResourceService:
             or distribution_format == self.JSONL_FORMAT
             or distribution_format == self.RDF_FORMAT
         ):
-            base_url = (
-                f"{SPINTA_SERVER_URL}/{'/'.join(models[0].full_name.split('/')[:-1])}"
-            )
+            base_url = f"{SPINTA_SERVER_URL}/{'/'.join(models[0].full_name.split('/')[:-1])}"
             download_url = f"{base_url}/:all/:format/{distribution_format.lower()}"
             distribution_name = (
-                models[0].full_name.split("/")[-2]
-                if len(models[0].full_name.split("/")) > 1
-                else models[0].name
+                models[0].full_name.split("/")[-2] if len(models[0].full_name.split("/")) > 1 else models[0].name
             )
         else:
             download_url = f"{SPINTA_SERVER_URL}/{models[0].full_name}/:format/csv"
@@ -491,9 +452,7 @@ class DynamicResourceService:
 
         if distribution_format in [self.JSON_FORMAT, self.JSONL_FORMAT, self.RDF_FORMAT]:
             full_name_parts = (
-                models[0].full_name
-                if "/" not in models[0].full_name
-                else "/".join(models[0].full_name.split("/")[:-1])
+                models[0].full_name if "/" not in models[0].full_name else "/".join(models[0].full_name.split("/")[:-1])
             )
             base_url = f"{SPINTA_SERVER_URL}/{full_name_parts}"
             download_url = f"{base_url}/:all/:format/{distribution_format.lower()}"
@@ -502,21 +461,11 @@ class DynamicResourceService:
                 "dataset": dataset,
                 "models": models,
                 "get_download_url": download_url,
-                "created": self.uapi_distribution.created
-                if self.uapi_distribution
-                else None,
-                "modified": self.uapi_distribution.modified
-                if self.uapi_distribution
-                else None,
-                "period_start": self.uapi_distribution.period_start
-                if self.uapi_distribution
-                else None,
-                "period_end": self.uapi_distribution.period_end
-                if self.uapi_distribution
-                else None,
-                "geo_location": self.uapi_distribution.geo_location
-                if self.uapi_distribution
-                else None,
+                "created": self.uapi_distribution.created if self.uapi_distribution else None,
+                "modified": self.uapi_distribution.modified if self.uapi_distribution else None,
+                "period_start": self.uapi_distribution.period_start if self.uapi_distribution else None,
+                "period_end": self.uapi_distribution.period_end if self.uapi_distribution else None,
+                "geo_location": self.uapi_distribution.geo_location if self.uapi_distribution else None,
             }
 
         model = next(model for model in models if model.name == resource_name)
@@ -526,19 +475,9 @@ class DynamicResourceService:
             "dataset": dataset,
             "models": [model],
             "get_download_url": download_url,
-            "created": self.uapi_distribution.created
-            if self.uapi_distribution
-            else None,
-            "modified": self.uapi_distribution.modified
-            if self.uapi_distribution
-            else None,
-            "period_start": self.uapi_distribution.period_start
-            if self.uapi_distribution
-            else None,
-            "period_end": self.uapi_distribution.period_end
-            if self.uapi_distribution
-            else None,
-            "geo_location": self.uapi_distribution.geo_location
-            if self.uapi_distribution
-            else None,
+            "created": self.uapi_distribution.created if self.uapi_distribution else None,
+            "modified": self.uapi_distribution.modified if self.uapi_distribution else None,
+            "period_start": self.uapi_distribution.period_start if self.uapi_distribution else None,
+            "period_end": self.uapi_distribution.period_end if self.uapi_distribution else None,
+            "geo_location": self.uapi_distribution.geo_location if self.uapi_distribution else None,
         }

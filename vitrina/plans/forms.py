@@ -16,14 +16,10 @@ class PlanAdminForm(forms.ModelForm):
         if provider and provider_title:
             self.add_error(
                 "provider",
-                _(
-                    "Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu."
-                ),
+                _("Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu."),
             )
         elif not provider and not provider_title:
             self.add_error(
                 "provider",
-                _(
-                    "Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas."
-                ),
+                _("Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas."),
             )

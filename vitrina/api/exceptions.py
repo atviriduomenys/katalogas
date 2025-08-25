@@ -6,8 +6,7 @@ from rest_framework.exceptions import APIException
 class DuplicateAPIKeyException(APIException):
     status_code = status.HTTP_403_FORBIDDEN
     default_detail = _(
-        "Baigėsi Jūsų API rakto galiojimas. "
-        "Raktą galite atsinaujinti savo organizacijos tvarkytojų sąraše: {url}"
+        "Baigėsi Jūsų API rakto galiojimas. Raktą galite atsinaujinti savo organizacijos tvarkytojų sąraše: {url}"
     )
     default_code = "duplicate_api_key"
 

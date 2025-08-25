@@ -448,16 +448,10 @@ def _detect_header_errors(name: str) -> str | None:
         return
 
     elif name.lower() in HEADER:
-        return (
-            "Header names bus be given in lower case. Expected "
-            f"{name.lower()!r}, received {name!r}."
-        )
+        return f"Header names bus be given in lower case. Expected {name.lower()!r}, received {name!r}."
 
     elif name.strip() in HEADER:
-        return (
-            "Header names must not have spaces. Expected "
-            f"{name.strip()!r}, received {name!r}."
-        )
+        return f"Header names must not have spaces. Expected {name.strip()!r}, received {name!r}."
 
     elif name.strip().lower() in HEADER:
         return (
@@ -492,9 +486,7 @@ def read(reader: Iterable[Row]) -> State:
 
             if row["ref"]:
                 name = row["ref"]
-            elif (dim == "enum" and isinstance(state.last, Enum)) or (
-                dim == "param" and isinstance(state.last, Param)
-            ):
+            elif (dim == "enum" and isinstance(state.last, Enum)) or (dim == "param" and isinstance(state.last, Param)):
                 name = state.last.name
             else:
                 name = ""
@@ -727,11 +719,11 @@ def _read_property(
     model_visibility = _parse_visibility(prop.model.visibility)
     prop_visibility = _parse_visibility(prop.visibility)
     if model_visibility is not None and prop_visibility is not None and model_visibility < prop_visibility:
-            prop.errors.append(
-                _(
-                    'Duomenų lauko "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už modelio metaduomenų matomumo lygį "{2}". '
-                ).format(name, prop.visibility, prop.model.visibility)
-            )
+        prop.errors.append(
+            _(
+                'Duomenų lauko "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už modelio metaduomenų matomumo lygį "{2}". '
+            ).format(name, prop.visibility, prop.model.visibility)
+        )
     prop.model.properties[name] = prop
 
     return prop
@@ -824,7 +816,7 @@ def _read_enum(
 
     model_visibility = None
     property_visibility = None
-    
+
     if state.model:
         model_visibility = _parse_visibility(state.model.visibility)
     if enum.meta:
@@ -832,17 +824,17 @@ def _read_enum(
     enum_visibility = _parse_visibility(enum.visibility)
 
     if property_visibility is not None and enum_visibility is not None and property_visibility < enum_visibility:
-            enum.errors.append(
-                _(
-                    'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{2}". '
-                ).format(enum.title, enum.visibility, enum.meta.visibility)
-            )
+        enum.errors.append(
+            _(
+                'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{2}". '
+            ).format(enum.title, enum.visibility, enum.meta.visibility)
+        )
     elif model_visibility is not None and enum_visibility is not None and model_visibility < enum_visibility:
-            enum.errors.append(
-                _(
-                    'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų modelio metaduomenų matomumo lygį "{2}". '
-                ).format(enum.title, enum.visibility, state.model.visibility)
-            )
+        enum.errors.append(
+            _(
+                'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų modelio metaduomenų matomumo lygį "{2}". '
+            ).format(enum.title, enum.visibility, state.model.visibility)
+        )
     if enum.meta.enums.get(name):
         if enum.prepare in [e.prepare for e in enum.meta.enums[name]]:
             enum.errors.append(_(f'Galima reikšmė "{enum.prepare}" jau egzistuoja.'))
@@ -993,11 +985,7 @@ def _parse_dtype_string(dtype: str) -> dict:
 def _validate_name(name: str, meta: Metadata):
     if name:
         if not name.isascii() and hasattr(meta, "errors"):
-            meta.errors.append(
-                _(
-                    f'"{name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'
-                )
-            )
+            meta.errors.append(_(f'"{name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
 
 
 def _validate_model_name(name: str, meta: Model):
@@ -1005,11 +993,7 @@ def _validate_model_name(name: str, meta: Model):
         name = name.split("/")[-1]
         _validate_name(name, meta)
         if not name[0].isupper():
-            meta.errors.append(
-                _(
-                    f'Pirmas modelio kodinio pavadinimo simbolis turi būti didžioji raidė: "{name}".'
-                )
-            )
+            meta.errors.append(_(f'Pirmas modelio kodinio pavadinimo simbolis turi būti didžioji raidė: "{name}".'))
         elif any(not c.isalnum() for c in name):
             meta.errors.append(
                 _(
@@ -1023,17 +1007,9 @@ def _validate_property_name(name: str, meta: Property):
     if name:
         _validate_name(name, meta)
         if not name[0].islower():
-            meta.errors.append(
-                _(
-                    f'Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė: "{name}".'
-                )
-            )
+            meta.errors.append(_(f'Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė: "{name}".'))
         elif any([ch.isupper() for ch in name]):
-            meta.errors.append(
-                _(
-                    f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'
-                )
-            )
+            meta.errors.append(_(f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'))
         elif any((not ch.isalnum() and ch != "_" and ch != ".") for ch in name):
             meta.errors.append(
                 _(
@@ -1049,8 +1025,4 @@ def _validate_resource_name(name: str, meta: Model):
         name = name.split("/")[-1]
         _validate_name(name, meta)
         if any([ch.isupper() for ch in name]):
-            meta.errors.append(
-                _(
-                    f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'
-                )
-            )
+            meta.errors.append(_(f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'))

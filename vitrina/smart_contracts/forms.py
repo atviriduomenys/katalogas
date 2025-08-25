@@ -32,9 +32,7 @@ class SmartContractForm(forms.ModelForm):
         fields = ("scopes",)
 
     def __init__(self, *args, **kwargs) -> None:
-        dataset_metadata_by_organization = kwargs.pop(
-            "dataset_metadata_by_organization", {}
-        )
+        dataset_metadata_by_organization = kwargs.pop("dataset_metadata_by_organization", {})
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
         self.helper.form_tag = False
@@ -83,9 +81,7 @@ class AgreementUploadForm(forms.ModelForm):
         ]
         self.helper = FormHelper()
         self.helper.form_id = "agreement-upload-form"
-        self.helper.add_input(
-            Submit("submit", _("Įkelti dokumentą"), css_class="button is-primary")
-        )
+        self.helper.add_input(Submit("submit", _("Įkelti dokumentą"), css_class="button is-primary"))
 
     def clean_file(self) -> FieldFile:
         file = self.cleaned_data["file"]
@@ -119,9 +115,7 @@ class AgreementGeneratePdfForm(forms.Form):
         required=False,
         widget=forms.Textarea(),
     )
-    payment_terms = forms.CharField(
-        label=_("Mokėjimo sąlygos"), required=False, widget=forms.Textarea()
-    )
+    payment_terms = forms.CharField(label=_("Mokėjimo sąlygos"), required=False, widget=forms.Textarea())
 
     def __init__(self, *args, **kwargs):
         agreement: Agreement = kwargs.pop("agreement")

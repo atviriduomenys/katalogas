@@ -57,8 +57,10 @@ from vitrina.datasets.views import (
     DatasetsPublishersView,
     UpdateDatasetPublisherFilters,
     FilterGroupsView,
-    DatasetRDFDownloadView, DatasetChildResourceListView,
-    ResourceSubclassCreateView, DatasetChildResourceCreateView,
+    DatasetRDFDownloadView,
+    DatasetChildResourceListView,
+    ResourceSubclassCreateView,
+    DatasetChildResourceCreateView,
 )
 
 urlpatterns = [
@@ -94,9 +96,7 @@ urlpatterns = [
         DatasetStatsView.as_view(),
         name="dataset-stats-status",
     ),
-    path(
-        "datasets/stats/level/", DatasetsLevelView.as_view(), name="dataset-stats-level"
-    ),
+    path("datasets/stats/level/", DatasetsLevelView.as_view(), name="dataset-stats-level"),
     path(
         "datasets/stats/jurisdiction/",
         DatasetManagementsView.as_view(),
@@ -183,9 +183,7 @@ urlpatterns = [
         DatasetCreateView.as_view(),
         name="child-dataset-add",
     ),
-    path(
-        "datasets/<int:pk>/update/", DatasetUpdateView.as_view(), name="dataset-change"
-    ),
+    path("datasets/<int:pk>/update/", DatasetUpdateView.as_view(), name="dataset-change"),
     path("datasets/<int:pk>/", DatasetDetailView.as_view(), name="dataset-detail"),
     path(
         "datasets/<int:dataset_id>/preview/<int:distribution_id>/",
@@ -349,7 +347,5 @@ urlpatterns = [
         DatasetRedirectView.as_view(),
         name="dataset-redirect-detail",
     ),
-    path(
-        "datasets/<int:pk>/delete/", DatasetDeleteView.as_view(), name="dataset-delete"
-    ),
+    path("datasets/<int:pk>/delete/", DatasetDeleteView.as_view(), name="dataset-delete"),
 ]

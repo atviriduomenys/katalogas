@@ -20,13 +20,13 @@ class ProjectForm(ModelForm):
     url = CharField(
         label=_("Nuoroda į panaudojimo atvejį"),
         required=False,
-        help_text=_("Nuoroda susijusi su siūlomu panaudojimo atveju (github, pagrindinė svetainė, kt.).")
+        help_text=_("Nuoroda susijusi su siūlomu panaudojimo atveju (github, pagrindinė svetainė, kt.)."),
     )
     image = FilerImageField(
         label=_("Paveiksliukas"),
         required=False,
         upload_to=Project.UPLOAD_TO,
-        help_text=_("Paveiksliukas susijęs su pasiūlytu panaudojimo atveju.")
+        help_text=_("Paveiksliukas susijęs su pasiūlytu panaudojimo atveju."),
     )
 
     class Meta:
@@ -47,6 +47,7 @@ class ProjectForm(ModelForm):
             Field("image"),
             Submit("submit", button, css_class="button is-primary"),
         )
+
 
 class ClientCreateForm(ModelForm):
     name = CharField(label=_("Pavadinimas"), help_text=_("Kliento pavadinimas"))

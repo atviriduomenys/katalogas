@@ -31,10 +31,7 @@ class UnsubscribeView(LoginRequiredMixin, PermissionRequiredMixin, View):
             else:
                 return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
-            if (
-                self.obj.status == Project.APPROVED
-                or self.obj.user == self.request.user
-            ):
+            if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
                 return True
             else:
                 return has_perm(
@@ -52,9 +49,7 @@ class UnsubscribeView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
         # FIXME: take userFrom request user
         if request.user.is_authenticated and request.user.pk != self.user.pk:
-            messages.error(
-                request, _("Jūs neturit teisės sukurti prenumeratos kitam naudotojui.")
-            )
+            messages.error(request, _("Jūs neturit teisės sukurti prenumeratos kitam naudotojui."))
             return redirect(self.obj)
         return super().dispatch(request, *args, **kwargs)
 
@@ -96,9 +91,7 @@ class UnsubscribeView(LoginRequiredMixin, PermissionRequiredMixin, View):
             },
         )
 
-        return HttpResponseRedirect(
-            reverse("user-profile", args=[self.user.pk]) + "#sub"
-        )
+        return HttpResponseRedirect(reverse("user-profile", args=[self.user.pk]) + "#sub")
 
 
 class SubscribeFormView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
@@ -117,10 +110,7 @@ class SubscribeFormView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
             else:
                 return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
-            if (
-                self.obj.status == Project.APPROVED
-                or self.obj.user == self.request.user
-            ):
+            if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
                 return True
             else:
                 return has_perm(
@@ -138,9 +128,7 @@ class SubscribeFormView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
 
         # FIXME: take userFrom request user
         if request.user.is_authenticated and request.user.pk != self.user.pk:
-            messages.error(
-                request, _("Jūs neturit teisės sukurti prenumeratos kitam naudotojui.")
-            )
+            messages.error(request, _("Jūs neturit teisės sukurti prenumeratos kitam naudotojui."))
             return redirect(self.obj)
         return super().dispatch(request, *args, **kwargs)
 
@@ -199,8 +187,6 @@ class SubscribeFormView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
                 self.object.save()
                 messages.success(
                     self.request,
-                    _(
-                        "Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."
-                    ),
+                    _("Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."),
                 )
         return HttpResponseRedirect(self.obj.get_absolute_url())

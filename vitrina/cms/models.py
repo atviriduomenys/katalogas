@@ -96,9 +96,7 @@ class ExternalSite(models.Model):
         choices=TYPE_CHOICES,
         verbose_name=_("Tipas"),
     )
-    url = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Nuoroda")
-    )
+    url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Nuoroda"))
     image = FilerImageField(
         null=True,
         blank=True,
@@ -144,9 +142,7 @@ class FileResource(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField()
 
-    file = FilerFileField(
-        null=True, blank=True, related_name="file_object", on_delete=models.CASCADE
-    )
+    file = FilerFileField(null=True, blank=True, related_name="file_object", on_delete=models.CASCADE)
     content_type = models.ForeignKey(
         to=ContentType,
         null=True,
@@ -179,18 +175,12 @@ class LearningMaterial(models.Model):
     description = models.TextField(blank=True, null=True, verbose_name=_("Aprašymas"))
     learning_material_id = models.BigIntegerField(blank=True, null=True)
     status = models.CharField(max_length=255, blank=True, null=True)
-    topic = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Pavadinimas")
-    )
+    topic = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Pavadinimas"))
     user = models.ForeignKey(User, models.PROTECT, blank=True, null=True)
-    video_url = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Vaizdo įrašo nuoroda")
-    )
+    video_url = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Vaizdo įrašo nuoroda"))
     summary = models.TextField(blank=True, null=True, verbose_name=_("Santrauka"))
     author_name = models.TextField(blank=True, null=True, verbose_name=_("Autorius"))
-    published = models.DateField(
-        blank=True, null=True, verbose_name=_("Publikavimo data")
-    )
+    published = models.DateField(blank=True, null=True, verbose_name=_("Publikavimo data"))
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     requested = models.IntegerField(blank=True, null=True)
     image = FilerImageField(
@@ -230,9 +220,7 @@ class NewsItem(models.Model):
     author_name = models.TextField(blank=True, null=True)
     is_public = models.BooleanField(blank=True, null=True)
     published = models.DateField(blank=True, null=True)
-    image = FilerImageField(
-        null=True, blank=True, related_name="image_news_item", on_delete=models.SET_NULL
-    )
+    image = FilerImageField(null=True, blank=True, related_name="image_news_item", on_delete=models.SET_NULL)
 
     # Deprecated fields bellow
     imageuuid = models.CharField(max_length=36, blank=True, null=True)

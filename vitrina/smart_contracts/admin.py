@@ -44,11 +44,7 @@ class AgreementScopeAdmin(admin.ModelAdmin):
     ]
 
     def get_queryset(self, request) -> QuerySet:
-        return (
-            super()
-            .get_queryset(request)
-            .select_related("agreement__project", "agreement__assigner")
-        )
+        return super().get_queryset(request).select_related("agreement__project", "agreement__assigner")
 
 
 @admin.register(AgreementFile)
@@ -61,8 +57,4 @@ class AgreementFileAdmin(admin.ModelAdmin):
     ]
 
     def get_queryset(self, request) -> QuerySet:
-        return (
-            super()
-            .get_queryset(request)
-            .select_related("agreement__project", "agreement__assigner")
-        )
+        return super().get_queryset(request).select_related("agreement__project", "agreement__assigner")

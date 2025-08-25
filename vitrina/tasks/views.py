@@ -44,9 +44,7 @@ class TaskListView(LoginRequiredMixin, ListView):
                 )
             ).filter(task_type=type_selected_value)
         if keyword:
-            queryset = queryset.annotate(
-                user_name=Concat("user__first_name", Value(" "), "user__last_name")
-            ).filter(
+            queryset = queryset.annotate(user_name=Concat("user__first_name", Value(" "), "user__last_name")).filter(
                 Q(title__icontains=keyword)
                 | Q(description__icontains=keyword)
                 | Q(organization__title__icontains=keyword)
@@ -132,9 +130,7 @@ class TaskListView(LoginRequiredMixin, ListView):
                         "count": queryset.annotate(
                             task_type=Case(
                                 When(type=Task.ERROR_FREQUENCY, then=Value(Task.ERROR)),
-                                When(
-                                    type=Task.ERROR_DISTRIBUTION, then=Value(Task.ERROR)
-                                ),
+                                When(type=Task.ERROR_DISTRIBUTION, then=Value(Task.ERROR)),
                                 When(type=Task.ERROR_GEOPORTAL, then=Value(Task.ERROR)),
                                 default=F("type"),
                                 output_field=CharField(),
@@ -178,11 +174,7 @@ class TaskView(PermissionRequiredMixin, DetailView):
         org = ""
         object_url = None
         if task.organization_id is not None:
-            org = (
-                Organization.objects.filter(pk=task.organization_id)
-                .values_list("title", flat=True)
-                .first()
-            )
+            org = Organization.objects.filter(pk=task.organization_id).values_list("title", flat=True).first()
         if task.content_object:
             object_url = task.content_object.get_absolute_url
         context["org"] = org
@@ -207,10 +199,7 @@ class CloseTaskView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     def has_permission(self):
         if self.request.user and self.request.user.is_authenticated:
             user_tasks = get_active_tasks(self.request.user, all_tasks=True)
-            if (
-                user_tasks.filter(pk=self.object.pk)
-                and self.object.status != Task.COMPLETED
-            ):
+            if user_tasks.filter(pk=self.object.pk) and self.object.status != Task.COMPLETED:
                 return True
         return False
 
@@ -241,10 +230,7 @@ class AssignTaskView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     def has_permission(self):
         if self.request.user and self.request.user.is_authenticated:
             user_tasks = get_active_tasks(self.request.user, all_tasks=True)
-            if (
-                user_tasks.filter(pk=self.task.pk)
-                and self.task.status != Task.COMPLETED
-            ):
+            if user_tasks.filter(pk=self.task.pk) and self.task.status != Task.COMPLETED:
                 return True
         return False
 

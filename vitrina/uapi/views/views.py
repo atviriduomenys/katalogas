@@ -66,28 +66,26 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         return get_object_or_404(DCATResourceSubclass, name=subclass_name)
 
     def get_queryset(self) -> QuerySet[Dataset]:
-        queryset = Dataset.objects.prefetch_related(
-            "category",
-            "part_of",
-            "type"
-        ).select_related(
-            "catalog",
-            "organization",
-            "frequency",
-            "publisher",
-            "endpoint_type",
-            "endpoint_description_type",
-            "current_structure"
-        ).filter(
-            ~Q(deleted=True),
-            metadata__content_type_id=self.dataset_metadata_id,
-            organization=self.request.organization,
+        queryset = (
+            Dataset.objects.prefetch_related("category", "part_of", "type")
+            .select_related(
+                "catalog",
+                "organization",
+                "frequency",
+                "publisher",
+                "endpoint_type",
+                "endpoint_description_type",
+                "current_structure",
+            )
+            .filter(
+                ~Q(deleted=True),
+                metadata__content_type_id=self.dataset_metadata_id,
+                organization=self.request.organization,
+            )
         )
 
         if request_params := self.request.query_params:
-            query_parameter_serializer = DatasetQueryParameterSerializer(
-                data=request_params
-            )
+            query_parameter_serializer = DatasetQueryParameterSerializer(data=request_params)
             query_parameter_serializer.is_valid(raise_exception=True)
 
             if name := query_parameter_serializer.validated_data.get("name"):
@@ -100,9 +98,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             "create": UAPIDatasetCreateSerializer,
             "list": BaseObjectListSerializer,
         }
-        return action_to_serializer_mapper.get(
-            getattr(self, "action", None), UAPIDatasetSerializer
-        )
+        return action_to_serializer_mapper.get(getattr(self, "action", None), UAPIDatasetSerializer)
 
     @transaction.atomic
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:
@@ -114,7 +110,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             context={
                 **serializer_context,
                 "organization": organization,
-            }
+            },
         )
         serializer.is_valid(raise_exception=True)
 
@@ -126,7 +122,6 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             }
             instance = Dataset(**dataset_data)
             Dataset.add_root(instance=instance)
-
 
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
@@ -169,9 +164,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     @action(detail=False, methods=["post"], url_path="dsa")
-    def upload_dataset_structure(
-        self, request: Request, *args: Any, **kwargs: Any
-    ) -> Response:
+    def upload_dataset_structure(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         dataset = get_object_or_404(
             Dataset,
             ~Q(deleted=True),
@@ -211,9 +204,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
     @transaction.atomic
     @action(detail=False, methods=["put"], url_path="dsa")
-    def update_dataset_structure(
-        self, request: Request, *args: Any, **kwargs: Any
-    ) -> Response:
+    def update_dataset_structure(self, request: Request, *args: Any, **kwargs: Any) -> Response:
         # TODO: This will be implemented with the upcoming functionalities. Not in the scope of the MVP.
         # - https://github.com/atviriduomenys/katalogas/issues/1598
         return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
@@ -250,9 +241,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         )
 
         if request_params := self.request.query_params:
-            query_parameter_serializer = DistributionQueryParameterSerializer(
-                data=request_params
-            )
+            query_parameter_serializer = DistributionQueryParameterSerializer(data=request_params)
             query_parameter_serializer.is_valid(raise_exception=True)
             validated_data = query_parameter_serializer.validated_data
             if name := validated_data.get("name"):
@@ -267,9 +256,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             "create": PostDatasetDistributionSerializer,
             "list": BaseObjectListSerializer,
         }
-        return action_to_serializer_mapper.get(
-            getattr(self, "action", None), UAPIDistributionSerializer
-        )
+        return action_to_serializer_mapper.get(getattr(self, "action", None), UAPIDistributionSerializer)
 
     @transaction.atomic
     def create(self, request: Request, *args: Any, **kwargs: Any) -> Response:

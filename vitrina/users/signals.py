@@ -5,12 +5,7 @@ from vitrina.users.models import User, OldPassword
 
 @receiver(post_save, sender=User)
 def update_old_passwords(sender, instance, **kwargs):
-    if (
-        instance.pk
-        and not OldPassword.objects.filter(
-            user=instance, password=instance.password
-        ).exists()
-    ):
+    if instance.pk and not OldPassword.objects.filter(user=instance, password=instance.password).exists():
         OldPassword.objects.create(user=instance, password=instance.password, version=1)
 
         old_passwords = OldPassword.objects.filter(user=instance).order_by("-created")

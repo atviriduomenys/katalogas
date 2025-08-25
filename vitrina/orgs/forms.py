@@ -69,9 +69,7 @@ class ChoiceFieldRequiredValidationOnly(ModelChoiceField):
         except self.queryset.model.DoesNotExist:
             pass
         except (ValueError, TypeError):
-            raise ValidationError(
-                self.error_messages["invalid_choice"], code="invalid_choice"
-            )
+            raise ValidationError(self.error_messages["invalid_choice"], code="invalid_choice")
         return value
 
 
@@ -98,9 +96,7 @@ class PublisherWidget(ModelSelect2Widget):
 def get_organization_queryset(jar_model_uri, jar_query_uri, value, queryset=None):
     if queryset is None:
         queryset = Organization.objects.none()
-    data = get_data_from_spinta(
-        model=jar_model_uri, query=jar_query_uri.format(value)
-    ).get("_data", [])
+    data = get_data_from_spinta(model=jar_model_uri, query=jar_query_uri.format(value)).get("_data", [])
     org_list = [
         Organization(
             id=item.get("ja_kodas"),
@@ -129,9 +125,7 @@ class OrganizationWidget(ModelSelect2Widget):
         queryset = super().filter_queryset(request, term, queryset, **dependent_fields)
         if term:
             if len(queryset) == 0:
-                queryset = get_organization_queryset(
-                    self.jar_model_uri, self.jar_query_uri_title, term, queryset
-                )
+                queryset = get_organization_queryset(self.jar_model_uri, self.jar_query_uri_title, term, queryset)
                 self.queryset = queryset
         return queryset
 
@@ -145,32 +139,22 @@ class OrganizationWidget(ModelSelect2Widget):
             default[1].append(self.create_option(name, "", "", False, 0))
         if not isinstance(self.choices, ModelChoiceIterator):
             return super().optgroups(name, value, attrs=attrs)
-        selected_choices = {
-            c for c in selected_choices if c not in self.choices.field.empty_values
-        }
+        selected_choices = {c for c in selected_choices if c not in self.choices.field.empty_values}
         field_name = self.choices.field.to_field_name or "pk"
         query = Q(**{"%s__in" % field_name: selected_choices})
         queryset = self.choices.queryset.filter(query)
         if selected_choices and not queryset:
-            queryset = get_organization_queryset(
-                self.jar_model_uri, self.jar_query_uri_code, list(selected_choices)[0]
-            )
+            queryset = get_organization_queryset(self.jar_model_uri, self.jar_query_uri_code, list(selected_choices)[0])
         for obj in queryset:
             option_value = self.choices.choice(obj)[0]
             option_label = self.label_from_instance(obj)
 
-            selected = str(option_value) in value and (
-                has_selected is False or self.allow_multiple_selected
-            )
+            selected = str(option_value) in value and (has_selected is False or self.allow_multiple_selected)
             if selected is True and has_selected is False:
                 has_selected = True
             index = len(default[1])
             subgroup = default[1]
-            subgroup.append(
-                self.create_option(
-                    name, option_value, option_label, selected_choices, index
-                )
-            )
+            subgroup.append(self.create_option(name, option_value, option_label, selected_choices, index))
         return groups
 
 
@@ -183,9 +167,7 @@ class OrganizationUpdateForm(ModelForm):
         label=_("Valdymo sritis"),
         required=True,
     )
-    image = FilerImageField(
-        label=_("Paveiksliukas"), required=True, upload_to=Organization.UPLOAD_TO
-    )
+    image = FilerImageField(label=_("Paveiksliukas"), required=True, upload_to=Organization.UPLOAD_TO)
     email = CharField(label=_("Elektroninis paštas"), required=True)
     phone = CharField(label=_("Telefono numeris"), required=True)
     address = CharField(label=_("Adresas"), required=True)
@@ -238,9 +220,7 @@ class OrganizationUpdateForm(ModelForm):
         name = self.cleaned_data.get("name")
         if name:
             if not name.islower():
-                raise ValidationError(
-                    _("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė.")
-                )
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
             elif any((not c.isalnum() and c != "_") for c in name):
                 raise ValidationError(
                     _(
@@ -250,20 +230,14 @@ class OrganizationUpdateForm(ModelForm):
                     )
                 )
             elif not name.isascii():
-                raise ValidationError(
-                    _(
-                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-                    )
-                )
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
     def clean_image(self):
         image = self.cleaned_data.get("image")
         if image:
             if image.width < 256 or image.height < 256:
-                raise ValidationError(
-                    _("Nuotraukos dydis turi būti ne mažesnis už 256x256.")
-                )
+                raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
         return image
 
 
@@ -276,9 +250,7 @@ class OrganizationCreateForm(ModelForm):
         label=_("Valdymo sritis"),
         required=True,
     )
-    image = FilerImageField(
-        label=_("Paveiksliukas"), required=False, upload_to=Organization.UPLOAD_TO
-    )
+    image = FilerImageField(label=_("Paveiksliukas"), required=False, upload_to=Organization.UPLOAD_TO)
     email = CharField(label=_("Elektroninis paštas"), required=True)
     phone = CharField(label=_("Telefono numeris"), required=True)
     address = CharField(label=_("Adresas"), required=True)
@@ -335,9 +307,7 @@ class OrganizationCreateForm(ModelForm):
         name = self.cleaned_data.get("name")
         if name:
             if not name.islower():
-                raise ValidationError(
-                    _("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė.")
-                )
+                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
             elif any((not c.isalnum() and c != "_") for c in name):
                 raise ValidationError(
                     _(
@@ -347,20 +317,14 @@ class OrganizationCreateForm(ModelForm):
                     )
                 )
             elif not name.isascii():
-                raise ValidationError(
-                    _(
-                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-                    )
-                )
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
     def clean_image(self):
         image = self.cleaned_data.get("image")
         if image:
             if image.width < 256 or image.height < 256:
-                raise ValidationError(
-                    _("Nuotraukos dydis turi būti ne mažesnis už 256x256.")
-                )
+                raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
         return image
 
 
@@ -399,9 +363,7 @@ class RepresentativeUpdateForm(ModelForm):
         label=_("Telefono numeris"),
         regex=r"^\+3706\d{7}$|^0\d{8}$",
         error_messages={
-            "invalid": _(
-                "Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)"
-            )
+            "invalid": _("Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
         },
         required=False,
     )
@@ -468,9 +430,7 @@ class RepresentativeUpdateForm(ModelForm):
             )
 
         if self.instance.organization and role == Representative.COORDINATOR:
-            raise ValidationError(
-                _("Organizacijai gali būti suteikta tik tvarkytojo rolė")
-            )
+            raise ValidationError(_("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
 
         return self.cleaned_data
 
@@ -482,16 +442,12 @@ class RepresentativeCreateForm(ModelForm):
         label=_("Telefono numeris"),
         regex=r"^\+3706\d{7}$|^0\d{8}$",
         error_messages={
-            "invalid": _(
-                "Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)"
-            )
+            "invalid": _("Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
         },
         required=False,
     )
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
-    subscribe = BooleanField(
-        label=_("Prenumeruoti pranešimus"), required=False, disabled=True, initial=True
-    )
+    subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False, disabled=True, initial=True)
 
     object_model = Organization
     object_id: int
@@ -518,17 +474,13 @@ class RepresentativeCreateForm(ModelForm):
     def clean(self):
         email = self.cleaned_data.get("email")
         content_type = ContentType.objects.get_for_model(self.object_model)
-        if Representative.objects.filter(
-            content_type=content_type, object_id=self.object_id, email=email
-        ).exists():
+        if Representative.objects.filter(content_type=content_type, object_id=self.object_id, email=email).exists():
             self.add_error("email", _("Narys su šiuo el. pašto adresu jau egzistuoja."))
         return super().clean()
 
 
 def get_document_field_title():
-    template = Template.objects.filter(
-        identifier=Template.REPRESENTATIVE_REQUEST_ID
-    ).first()
+    template = Template.objects.filter(identifier=Template.REPRESENTATIVE_REQUEST_ID).first()
     if template:
         return mark_safe(
             f"<span>{_('Prašymas')} *</span>&nbsp;&nbsp;&nbsp;"
@@ -572,9 +524,7 @@ class PartnerRegisterForm(ModelForm):
         self.helper.form_id = "partner-register-form"
         self.helper.layout = Layout(
             Field("organization"),
-            Field(
-                "coordinator_phone_number", placeholder=_("Formatas 0... arba +370...")
-            ),
+            Field("coordinator_phone_number", placeholder=_("Formatas 0... arba +370...")),
             Field("request_form"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
@@ -591,10 +541,7 @@ class PartnerRegisterForm(ModelForm):
                     phone_end = phone.replace("+370", "", 1)
 
                 if len(phone_end) != 8 or not all(
-                    [
-                        c in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
-                        for c in phone_end
-                    ]
+                    [c in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"] for c in phone_end]
                 ):
                     raise ValidationError(_("Neteisingas telefono numerio formatas."))
         return phone
@@ -607,17 +554,13 @@ class PartnerRegisterForm(ModelForm):
 
 
 class OrganizationPlanForm(ModelForm):
-    organizations = ModelMultipleChoiceField(
-        queryset=Organization.objects.all(), required=False
-    )
+    organizations = ModelMultipleChoiceField(queryset=Organization.objects.all(), required=False)
     user_id = IntegerField(widget=HiddenInput(), required=False)
     publisher = ModelChoiceField(
         label=_("Paslaugų teikėjas"),
         required=False,
         queryset=Organization.objects.all(),
-        widget=PublisherWidget(
-            attrs={"data-width": "100%", "data-minimum-input-length": 0}
-        ),
+        widget=PublisherWidget(attrs={"data-width": "100%", "data-minimum-input-length": 0}),
     )
     deadline = DateField(
         label=_("Įgyvendinimo terminas"),
@@ -686,25 +629,19 @@ class OrganizationPlanForm(ModelForm):
         if publisher and provider_title:
             self.add_error(
                 "publisher",
-                _(
-                    "Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu."
-                ),
+                _("Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu."),
             )
         elif not publisher and not provider_title:
             self.add_error(
                 "publisher",
-                _(
-                    "Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas."
-                ),
+                _("Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas."),
             )
 
 
 class OrganizationMergeForm(Form):
     organization = URLField(
         label=_("Organizacija"),
-        help_text=_(
-            "Nurodykite pilną nuorodą į organizaciją, su kuria norite sujungti"
-        ),
+        help_text=_("Nurodykite pilną nuorodą į organizaciją, su kuria norite sujungti"),
     )
 
     def __init__(self, *args, **kwargs):
@@ -725,9 +662,7 @@ class OrganizationMergeForm(Form):
                 url = resolve(url.path)
             except Resolver404:
                 raise ValidationError(_("Organizacija su šia nuoroda nerasta."))
-            if url.url_name != "organization-detail" or not Organization.objects.filter(
-                pk=url.kwargs.get("pk")
-            ):
+            if url.url_name != "organization-detail" or not Organization.objects.filter(pk=url.kwargs.get("pk")):
                 raise ValidationError(_("Organizacija su šia nuoroda nerasta."))
             else:
                 return url.kwargs.get("pk")
@@ -930,13 +865,9 @@ class ApiScopeForm(Form):
         self.initial["scope"] = self.scope
         if self.scope:
             if scope == "(viskas)":
-                scopes = ApiScope.objects.filter(key=api_key).exclude(
-                    scope__icontains="datasets_gov"
-                )
+                scopes = ApiScope.objects.filter(key=api_key).exclude(scope__icontains="datasets_gov")
             else:
-                scopes = ApiScope.objects.filter(
-                    key=api_key, scope__icontains=self.scope
-                )
+                scopes = ApiScope.objects.filter(key=api_key, scope__icontains=self.scope)
 
             for sc in scopes:
                 if any(s in sc.scope for s in read):
@@ -956,9 +887,7 @@ class ApiScopeForm(Form):
                 if read or write or remove:
                     self.add_error(
                         "scope",
-                        _(
-                            "Šiai sričiai negalima pridėti skaitymo/rašymo/šalinimo veiksmų."
-                        ),
+                        _("Šiai sričiai negalima pridėti skaitymo/rašymo/šalinimo veiksmų."),
                     )
             else:
                 if scope != "(viskas)":
@@ -968,9 +897,7 @@ class ApiScopeForm(Form):
                         name=scope,
                     )
                     if not target_org.exists() and not target_dataset.exists():
-                        self.add_error(
-                            "scope", _("Objektas su tokia name reikšme neegzistuoja.")
-                        )
+                        self.add_error("scope", _("Objektas su tokia name reikšme neegzistuoja."))
         return self.cleaned_data
 
 
@@ -1000,9 +927,7 @@ class RepresentativeRequestForm(ModelForm):
         self.fields["phone_number"].disabled = True
         self.fields["phone_number"].widget.attrs["style"] = "background-color: #f2f2f2;"
         self.fields["organization_name"].disabled = True
-        self.fields["organization_name"].widget.attrs["style"] = (
-            "background-color: #f2f2f2;"
-        )
+        self.fields["organization_name"].widget.attrs["style"] = "background-color: #f2f2f2;"
 
         if instance:
             self.initial["user_name"] = str(instance.user)
@@ -1115,9 +1040,9 @@ class AdminPublisherAssignedOrganizationForm(ModelForm):
             org_content_type = ContentType.objects.get_for_model(Organization)
             dataset_content_type = ContentType.objects.get_for_model(Dataset)
 
-            representative_qs = Representative.objects.filter(
-                organization=self.instance.pk
-            ).select_related("content_type")
+            representative_qs = Representative.objects.filter(organization=self.instance.pk).select_related(
+                "content_type"
+            )
 
             dataset_ids = set()
             org_ids = set()
@@ -1133,9 +1058,7 @@ class AdminPublisherAssignedOrganizationForm(ModelForm):
             if org_ids:
                 self.fields["creator_assignment"].initial = org_ids
 
-        self.fields["coordinator"].queryset = User.objects.filter(
-            organization=self.instance
-        ).distinct()
+        self.fields["coordinator"].queryset = User.objects.filter(organization=self.instance).distinct()
 
 
 class ContactCreateForm(ModelForm):
@@ -1145,15 +1068,11 @@ class ContactCreateForm(ModelForm):
         label=_("Telefono numeris"),
         regex=r"^\+3706\d{7}$|^0\d{8}$",
         error_messages={
-            "invalid": _(
-                "Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)"
-            )
+            "invalid": _("Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
         },
         required=False,
     )
-    dataset = ModelChoiceField(
-        label=_("Duomenų išteklius"), queryset=Dataset.objects.all()
-    )
+    dataset = ModelChoiceField(label=_("Duomenų išteklius"), queryset=Dataset.objects.all())
 
     object_model = Organization
     object_id: int
@@ -1188,8 +1107,7 @@ class ContactCreateForm(ModelForm):
             Q(id=self.object_id) | (Q(id=publisher_org.id) if publisher_org else Q())
         )
         user_contacts = User.objects.filter(
-            Q(organization=self.object_id)
-            | (Q(organization=publisher_org) if publisher_org else Q())
+            Q(organization=self.object_id) | (Q(organization=publisher_org) if publisher_org else Q())
         )
 
         self.fields["contact"].choices = [
@@ -1197,9 +1115,7 @@ class ContactCreateForm(ModelForm):
         ]
 
         for org in organization_contacts:
-            self.fields["contact"].choices.append(
-                (_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
-            )
+            self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
             user_choices = [
                 (f"user-{user.id}", f"{user.get_full_name()}")
                 for user in user_contacts
@@ -1207,9 +1123,7 @@ class ContactCreateForm(ModelForm):
             ]
             self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
 
-        self.fields["dataset"].queryset = Dataset.objects.filter(
-            organization_id=self.object_id
-        )
+        self.fields["dataset"].queryset = Dataset.objects.filter(organization_id=self.object_id)
 
     def clean_contact(self):
         contact = self.cleaned_data.get("contact")
@@ -1229,15 +1143,11 @@ class ContactUpdateForm(ModelForm):
         label=_("Telefono numeris"),
         regex=r"^\+3706\d{7}$|^0\d{8}$",
         error_messages={
-            "invalid": _(
-                "Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)"
-            )
+            "invalid": _("Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
         },
         required=False,
     )
-    dataset = ModelChoiceField(
-        label=_("Duomenų išteklius"), queryset=Dataset.objects.all()
-    )
+    dataset = ModelChoiceField(label=_("Duomenų išteklius"), queryset=Dataset.objects.all())
 
     object_model = Organization
 
@@ -1271,8 +1181,7 @@ class ContactUpdateForm(ModelForm):
             Q(id=self.object.id) | (Q(id=publisher_org.id) if publisher_org else Q())
         )
         user_contacts = User.objects.filter(
-            Q(organization=self.object.id)
-            | (Q(organization=publisher_org) if publisher_org else Q())
+            Q(organization=self.object.id) | (Q(organization=publisher_org) if publisher_org else Q())
         )
 
         self.fields["contact"].choices = [
@@ -1280,9 +1189,7 @@ class ContactUpdateForm(ModelForm):
         ]
 
         for org in organization_contacts:
-            self.fields["contact"].choices.append(
-                (_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")])
-            )
+            self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
             user_choices = [
                 (f"user-{user.id}", f"{user.get_full_name()}")
                 for user in user_contacts
@@ -1290,9 +1197,7 @@ class ContactUpdateForm(ModelForm):
             ]
             self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
 
-        self.fields["dataset"].queryset = Dataset.objects.filter(
-            organization_id=self.object.id
-        )
+        self.fields["dataset"].queryset = Dataset.objects.filter(organization_id=self.object.id)
 
         if self.instance.object_id:
             contact_id = self.instance.object_id

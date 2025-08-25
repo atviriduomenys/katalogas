@@ -30,9 +30,7 @@ def get_datasets_for_rdf(qs):
 
             if dataset.is_part_of_dataservice():
                 dataset_resources = DynamicResourceService(dataset)
-                dynamic_distributions = dataset_resources.generate_resources(
-                    is_for_rdf_export=True
-                )
+                dynamic_distributions = dataset_resources.generate_resources(is_for_rdf_export=True)
                 distributions.extend(dynamic_distributions)
 
         yield {
@@ -48,9 +46,7 @@ def get_datasets_for_rdf(qs):
             "categories": _get_categories(dataset),
             "hvd_categories": [
                 _get_category(c)
-                for c in dataset.category.filter(
-                    groups__translations__title="Didelės vertės rinkiniai"
-                )
+                for c in dataset.category.filter(groups__translations__title="Didelės vertės rinkiniai")
             ],
             "keywords": [k.name for k in dataset.tags.all()],
             "published": dataset.published,
@@ -67,9 +63,7 @@ def get_datasets_for_rdf(qs):
             "endpoint_description_type": dataset.endpoint_description_type,
             "related_datasets": (
                 _get_rel_dataset(relation)
-                for relation in dataset.related_datasets.filter(
-                    relation__name=Relation.SERVICE
-                )
+                for relation in dataset.related_datasets.filter(relation__name=Relation.SERVICE)
             ),
             "access_rights": dataset.access_rights,
             "subclass": dataset.subclass,
@@ -85,11 +79,7 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
             dist_type = "WEB_SERVICE"
         else:
             dist_type = "DOWNLOADABLE_FILE"
-        dist_type = (
-            "http://publications.europa.eu/"
-            + "resource/authority/distribution-type/"
-            + dist_type
-        )
+        dist_type = "http://publications.europa.eu/" + "resource/authority/distribution-type/" + dist_type
 
     return {
         "uri": dist.get_absolute_url(),
@@ -103,9 +93,7 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
         ],
         "download_url": dist.get_download_url(),
         "access_url": dist.get_access_url(),
-        "access_service": dist.data_service.get_absolute_url()
-        if dist.data_service
-        else None,
+        "access_service": dist.data_service.get_absolute_url() if dist.data_service else None,
         "licence": _get_licence(dist.licence),
         "conditions": dist.conditions or "",
         "format": _get_format(dist.format),

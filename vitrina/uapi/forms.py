@@ -35,17 +35,23 @@ class AgentForm(ModelForm):
         if cleaned_data.get("is_open_data_published") and not cleaned_data.get("open_data_publish_url"):
             self.add_error(
                 "open_data_publish_url",
-                _('Šis laukas yra privalomas, jei nustatytas požymis "Atviri duomenys publikuojami Saugykloje".')
+                _('Šis laukas yra privalomas, jei nustatytas požymis "Atviri duomenys publikuojami Saugykloje".'),
             )
 
         if (title := cleaned_data.get("title")) and self.organization:
-            existing_agent = Agent.objects.filter(
-                organization=self.organization, codename=Agent.get_codename(title), is_archived=False,
-            ).exclude(
-                pk=self.instance.pk,
-            ).exists()
+            existing_agent = (
+                Agent.objects.filter(
+                    organization=self.organization,
+                    codename=Agent.get_codename(title),
+                    is_archived=False,
+                )
+                .exclude(
+                    pk=self.instance.pk,
+                )
+                .exists()
+            )
             if existing_agent:
                 self.add_error(
                     "title",
-                    _("Agentas su tokiu pavadinimu jau registruotas organizacijoje, pasirinkite kitą pavadinimą.")
+                    _("Agentas su tokiu pavadinimu jau registruotas organizacijoje, pasirinkite kitą pavadinimą."),
                 )

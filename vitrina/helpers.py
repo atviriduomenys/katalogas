@@ -131,11 +131,7 @@ class Filter:
         show_count = 1
         for value, count in facet:
             title = value
-            if (
-                self.model
-                and self.display_method
-                and getattr(self.model, self.display_method)
-            ):
+            if self.model and self.display_method and getattr(self.model, self.display_method):
                 method = getattr(self.model, self.display_method)
                 title = method(self.model, value)
             elif self.model:
@@ -190,10 +186,7 @@ class Period:
         return self.get_value(value)
 
     def facet(self, facet: List[DateFacetItem]):
-        facet = [
-            (k, sum(c for v, c in g))
-            for k, g in groupby(facet, key=self.facet_sort_key)
-        ]
+        facet = [(k, sum(c for v, c in g)) for k, g in groupby(facet, key=self.facet_sort_key)]
         facet = [(v, self.get_title(v), c) for v, c in facet]
         facet = sorted(facet, key=itemgetter(0))
         return facet
@@ -375,11 +368,7 @@ def get_selected_value(
                 break
     if selected_value and is_int:
         try:
-            selected_value = (
-                [int(val) for val in selected_value]
-                if multiple
-                else int(selected_value)
-            )
+            selected_value = [int(val) for val in selected_value] if multiple else int(selected_value)
         except ValueError:
             return [] if multiple else None
     return selected_value
@@ -468,9 +457,7 @@ def get_current_domain(request: WSGIRequest, ensure_secure=False) -> str:
     return request.build_absolute_uri(domain)
 
 
-def prepare_email_by_identifier(
-    email_identifier, base_template_content, email_title_subject, email_template_keys
-):
+def prepare_email_by_identifier(email_identifier, base_template_content, email_title_subject, email_template_keys):
     email_template = EmailTemplate.objects.filter(identifier=email_identifier)
     if not email_template:
         email_subject = email_title = email_title_subject
@@ -594,9 +581,7 @@ def send_email_with_logging(email_data, email_list):
         )
 
 
-def get_stats_filter_options_based_on_model(
-    model, duration, sorting, indicator, filter=None
-):
+def get_stats_filter_options_based_on_model(model, duration, sorting, indicator, filter=None):
     duration = {
         "selected": duration,
         "label": _("Laikotarpis"),
@@ -667,11 +652,7 @@ def get_stats_filter_options_based_on_model(
                     {"value": "request-count", "label": _("Poreikių skaičius")},
                     {"value": "project-count", "label": _("Projektų skaičius")},
                 ]
-                + (
-                    [{"value": "level-average", "label": _("Brandos lygis (vidurkis)")}]
-                    if filter != "level"
-                    else []
-                )
+                + ([{"value": "level-average", "label": _("Brandos lygis (vidurkis)")}] if filter != "level" else [])
             }
         )
     if model is Organization:

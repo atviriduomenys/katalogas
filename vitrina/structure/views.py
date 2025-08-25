@@ -109,13 +109,9 @@ class DatasetStructureMixin(StructureMixin):
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.dataset
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.dataset).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.dataset).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -147,9 +143,7 @@ class DatasetStructureMixin(StructureMixin):
         return self.models[0].get_api_url() if self.models else None
 
 
-class DatasetStructureView(
-    PermissionRequiredMixin, HistoryMixin, StructureMixin, PlanMixin, TemplateView
-):
+class DatasetStructureView(PermissionRequiredMixin, HistoryMixin, StructureMixin, PlanMixin, TemplateView):
     template_name = "vitrina/structure/dataset_structure.html"
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-structure-history"
@@ -161,17 +155,12 @@ class DatasetStructureView(
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
         else:
             self.models = (
-                Model.objects
-                .annotate(access=Max("model_properties__metadata__access"))
+                Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(
                     dataset=self.object,
                     access__gte=Metadata.PUBLIC,
@@ -204,11 +193,7 @@ class DatasetStructureView(
         )
         context["can_manage_structure"] = self.can_manage_structure
         context["models"] = self.models
-        context["version"] = (
-            dataset.dataset_version.filter(deployed__isnull=False)
-            .order_by("-deployed")
-            .first()
-        )
+        context["version"] = dataset.dataset_version.filter(deployed__isnull=False).order_by("-deployed").first()
         return context
 
     def get_structure_url(self):
@@ -229,9 +214,7 @@ class DatasetStructureView(
         return self.models[0].get_api_url() if self.models else None
 
 
-class ModelStructureView(
-    HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
-):
+class ModelStructureView(HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/structure/model_structure.html"
     detail_url_name = "dataset-detail"
     history_url_name = "model-history"
@@ -247,10 +230,7 @@ class ModelStructureView(
         if self.object.is_public:
             return self.model in self.models
         else:
-            return (
-                has_perm(self.request.user, Action.VIEW, self.object)
-                and self.model in self.models
-            )
+            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -271,13 +251,9 @@ class ModelStructureView(
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -291,7 +267,6 @@ class ModelStructureView(
                 .filter(metadata__access__gte=Metadata.PUBLIC)
                 .exclude(metadata__visibility=Metadata.PRIVATE)
             )
-
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -307,9 +282,9 @@ class ModelStructureView(
             context["props_without_base"] = self.model.get_props_excluding_base()
         else:
             context["props_without_base"] = (
-                self.model.get_props_excluding_base().filter(
-                    metadata__access__gte=Metadata.PUBLIC
-                ).exclude(metadata__visibility=Metadata.PRIVATE)
+                self.model.get_props_excluding_base()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .exclude(metadata__visibility=Metadata.PRIVATE)
             )
         context["can_view_members"] = has_perm(
             self.request.user,
@@ -399,17 +374,11 @@ class PropertyGraphView(PermissionRequiredMixin, View):
         if not self.model:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(
-            Property, model=self.model, metadata__name=prop_name
-        )
+        self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name)
 
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -417,9 +386,7 @@ class PropertyGraphView(PermissionRequiredMixin, View):
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(
-                metadata__access__gte=Metadata.PUBLIC
-            )
+            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -446,9 +413,7 @@ class PropertyGraphView(PermissionRequiredMixin, View):
                             x = centroid.x
                             y = centroid.y
                             if srid != WGS84:
-                                x, y = transform_coordinates(
-                                    centroid.x, centroid.y, srid, WGS84
-                                )
+                                x, y = transform_coordinates(centroid.x, centroid.y, srid, WGS84)
                             item["centroid"] = [x, y]
                             transformed_data.append(item)
                     context["data"] = transformed_data
@@ -477,9 +442,7 @@ class PropertyGraphView(PermissionRequiredMixin, View):
         return JsonResponse({"rendered_template": rendered_template})
 
 
-class PropertyStructureView(
-    HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
-):
+class PropertyStructureView(HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/structure/property_structure.html"
     detail_url_name = "dataset-detail"
     history_url_name = "property-history"
@@ -494,14 +457,11 @@ class PropertyStructureView(
 
     def has_permission(self):
         if (metadata := self.property.metadata.first()) and metadata.visibility == Metadata.PRIVATE:
-                return has_perm(self.request.user, Action.STRUCTURE, self.object) and self.property in self.props
+            return has_perm(self.request.user, Action.STRUCTURE, self.object) and self.property in self.props
         if self.object.is_public:
             return self.property in self.props
         else:
-            return (
-                has_perm(self.request.user, Action.VIEW, self.object)
-                and self.property in self.props
-            )
+            return has_perm(self.request.user, Action.VIEW, self.object) and self.property in self.props
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -522,16 +482,10 @@ class PropertyStructureView(
         if not self.model:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(
-            Property, model=self.model, metadata__name=prop_name
-        )
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name)
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -540,9 +494,11 @@ class PropertyStructureView(
                 .exclude(metadata__visibility=Metadata.PRIVATE)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(
-                metadata__access__gte=Metadata.PUBLIC
-            ).exclude(metadata__visibility=Metadata.PRIVATE)
+            self.props = (
+                self.model.get_given_props()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .exclude(metadata__visibility=Metadata.PRIVATE)
+            )
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -589,9 +545,7 @@ class PropertyStructureView(
 
     def get_data_url(self):
         if self.model.name:
-            return reverse(
-                "model-data", kwargs={"pk": self.object.pk, "model": self.model.name}
-            )
+            return reverse("model-data", kwargs={"pk": self.object.pk, "model": self.model.name})
         return None
 
     def get_api_url(self):
@@ -642,10 +596,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
         if self.object.is_public:
             return self.model in self.models
         else:
-            return (
-                has_perm(self.request.user, Action.VIEW, self.object)
-                and self.model in self.models
-            )
+            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -666,13 +617,9 @@ class ModelDataTableView(PermissionRequiredMixin, View):
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -680,9 +627,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(
-                metadata__access__gte=Metadata.PUBLIC
-            )
+            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -719,27 +664,21 @@ class ModelDataTableView(PermissionRequiredMixin, View):
             context["errors"] = data.get("errors")
         else:
             context["properties"] = {prop.name: prop for prop in self.props}
-            all_props = self.model.get_given_props().values_list(
-                "metadata__name", flat=True
-            )
+            all_props = self.model.get_given_props().values_list("metadata__name", flat=True)
             exclude = all_props - context["properties"].keys()
             exclude.update(EXCLUDED_COLS)
 
             context["data"] = data.get("_data") or []
             data_count = len(context["data"])
             if context["data"]:
-                context["headers"] = [
-                    col for col in context["data"][0].keys() if col not in exclude
-                ]
+                context["headers"] = [col for col in context["data"][0].keys() if col not in exclude]
             elif selected_cols:
                 context["headers"] = selected_cols
             else:
                 _data = get_data_from_spinta(self.model, query="limit(1)")
                 _data = _data.get("_data")
                 if _data:
-                    context["headers"] = [
-                        col for col in _data[0].keys() if col not in exclude
-                    ]
+                    context["headers"] = [col for col in _data[0].keys() if col not in exclude]
                 else:
                     headers = ["_id"]
                     headers.extend(context["properties"].keys())
@@ -757,9 +696,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
 
         rendered_template = render_to_string(self.template_name, context)
 
-        return JsonResponse(
-            {"rendered_template": rendered_template, "data_count": data_count}
-        )
+        return JsonResponse({"rendered_template": rendered_template, "data_count": data_count})
 
 
 async def get_model_data_count(request, *args, **kwargs):
@@ -790,14 +727,10 @@ async def get_model_data_count(request, *args, **kwargs):
         total_count = cache.get(path)
         total_count_saved = cache.get(path + "_saved")
 
-    return JsonResponse(
-        {"total_count": total_count, "total_count_saved": total_count_saved}
-    )
+    return JsonResponse({"total_count": total_count, "total_count_saved": total_count_saved})
 
 
-class ModelDataView(
-    HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
-):
+class ModelDataView(HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/structure/model_data.html"
     detail_url_name = "dataset-detail"
     history_url_name = "model-history"
@@ -813,10 +746,7 @@ class ModelDataView(
         if self.object.is_public:
             return self.model in self.models
         else:
-            return (
-                has_perm(self.request.user, Action.VIEW, self.object)
-                and self.model in self.models
-            )
+            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -837,13 +767,9 @@ class ModelDataView(
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -851,9 +777,7 @@ class ModelDataView(
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(
-                metadata__access__gte=Metadata.PUBLIC
-            )
+            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -897,9 +821,7 @@ class ModelDataView(
 
     def get_data_url(self):
         if self.model.name:
-            return reverse(
-                "model-data", kwargs={"pk": self.object.pk, "model": self.model.name}
-            )
+            return reverse("model-data", kwargs={"pk": self.object.pk, "model": self.model.name})
         return None
 
     def get_api_url(self):
@@ -945,10 +867,7 @@ class ObjectDataTableView(PermissionRequiredMixin, View):
         if self.object.is_public:
             return self.model in self.models
         else:
-            return (
-                has_perm(self.request.user, Action.VIEW, self.object)
-                and self.model in self.models
-            )
+            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -969,13 +888,9 @@ class ObjectDataTableView(PermissionRequiredMixin, View):
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -983,9 +898,7 @@ class ObjectDataTableView(PermissionRequiredMixin, View):
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(
-                metadata__access__gte=Metadata.PUBLIC
-            )
+            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -1000,9 +913,7 @@ class ObjectDataTableView(PermissionRequiredMixin, View):
             context["errors"] = data.get("errors")
         else:
             context["properties"] = {prop.name: prop for prop in self.props}
-            all_props = self.model.get_given_props().values_list(
-                "metadata__name", flat=True
-            )
+            all_props = self.model.get_given_props().values_list("metadata__name", flat=True)
             exclude = all_props - context["properties"].keys()
             exclude.update(EXCLUDED_COLS)
 
@@ -1015,9 +926,7 @@ class ObjectDataTableView(PermissionRequiredMixin, View):
         return JsonResponse({"rendered_template": rendered_template})
 
 
-class ObjectDataView(
-    HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
-):
+class ObjectDataView(HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/structure/object_data.html"
     detail_url_name = "dataset-detail"
     history_url_name = "model-history"
@@ -1033,10 +942,7 @@ class ObjectDataView(
         if self.object.is_public:
             return self.model in self.models
         else:
-            return (
-                has_perm(self.request.user, Action.VIEW, self.object)
-                and self.model in self.models
-            )
+            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -1057,13 +963,9 @@ class ObjectDataView(
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -1071,9 +973,7 @@ class ObjectDataView(
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(
-                metadata__access__gte=Metadata.PUBLIC
-            )
+            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -1135,9 +1035,7 @@ class ObjectDataView(
         return None
 
 
-class ApiView(
-    HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
-):
+class ApiView(HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/structure/api.html"
     detail_url_name = "dataset-detail"
     history_url_name = "model-history"
@@ -1152,10 +1050,7 @@ class ApiView(
         if self.object.is_public:
             return self.model in self.models
         else:
-            return (
-                has_perm(self.request.user, Action.VIEW, self.object)
-                and self.model in self.models
-            )
+            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -1176,13 +1071,9 @@ class ApiView(
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -1232,8 +1123,7 @@ class ApiView(
             "curl": {
                 "name": "curl",
                 "query": highlight(
-                    'curl "%s"'
-                    % url.replace("\\", r"\\").replace('"', r"\"").replace(" ", "%20"),
+                    'curl "%s"' % url.replace("\\", r"\\").replace('"', r"\"").replace(" ", "%20"),
                     TextLexer(),
                     HtmlFormatter(),
                 ),
@@ -1321,12 +1211,8 @@ class GetAllApiView(ApiView):
                     reverse("getall-api", args=[self.object.pk, self.model.name]),
                     f"?{context['query_params']}" if context["query_params"] else "",
                 ),
-                "getone": reverse(
-                    "getone-api", args=[self.object.pk, self.model.name, uuid]
-                ),
-                "changes": reverse(
-                    "changes-api", args=[self.object.pk, self.model.name]
-                ),
+                "getone": reverse("getone-api", args=[self.object.pk, self.model.name, uuid]),
+                "changes": reverse("changes-api", args=[self.object.pk, self.model.name]),
             }
 
         return context
@@ -1340,9 +1226,7 @@ class GetOneApiView(ApiView):
         context = super().get_context_data(**kwargs)
         query = context["query_params"]
         if self.kwargs.get("uuid") != "None":
-            data = get_data_from_spinta(
-                self.model, self.kwargs.get("uuid"), query=query
-            )
+            data = get_data_from_spinta(self.model, self.kwargs.get("uuid"), query=query)
         else:
             data = {}
         context["response"] = highlight(
@@ -1358,9 +1242,7 @@ class GetOneApiView(ApiView):
                     "getone-api",
                     args=[self.object.pk, self.model.name, self.kwargs.get("uuid")],
                 ),
-                "changes": reverse(
-                    "changes-api", args=[self.object.pk, self.model.name]
-                ),
+                "changes": reverse("changes-api", args=[self.object.pk, self.model.name]),
             }
 
         return context
@@ -1408,12 +1290,8 @@ class ChangesApiView(ApiView):
 
             context["actions"] = {
                 "getall": reverse("getall-api", args=[self.object.pk, self.model.name]),
-                "getone": reverse(
-                    "getone-api", args=[self.object.pk, self.model.name, uuid]
-                ),
-                "changes": reverse(
-                    "changes-api", args=[self.object.pk, self.model.name]
-                ),
+                "getone": reverse("getone-api", args=[self.object.pk, self.model.name, uuid]),
+                "changes": reverse("changes-api", args=[self.object.pk, self.model.name]),
             }
 
         return context
@@ -1465,9 +1343,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(
-            Property, model=self.model_obj, metadata__name=prop_name
-        )
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
         self.enum = self.property.enums.first()
         return super().dispatch(request, *args, **kwargs)
 
@@ -1489,9 +1365,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
         }
         if self.model_obj.name:
-            url = reverse(
-                "model-structure", args=[self.dataset.pk, self.model_obj.name]
-            )
+            url = reverse("model-structure", args=[self.dataset.pk, self.model_obj.name])
             context["parent_links"][url] = self.model_obj.title or self.model_obj.name
         if self.model_obj.name and self.property.name:
             url = reverse(
@@ -1540,11 +1414,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
 
         # Save history
         self.property.save()
-        set_comment(
-            _(
-                f'Pridėta duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'
-            )
-        )
+        set_comment(_(f'Pridėta duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'))
 
         return redirect(self.property.get_absolute_url())
 
@@ -1578,9 +1448,7 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(
-            Property, model=self.model_obj, metadata__name=prop_name
-        )
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -1601,9 +1469,7 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
         }
         if self.model_obj.name:
-            url = reverse(
-                "model-structure", args=[self.dataset.pk, self.model_obj.name]
-            )
+            url = reverse("model-structure", args=[self.dataset.pk, self.model_obj.name])
             context["parent_links"][url] = self.model_obj.title or self.model_obj.name
         if self.model_obj.name and self.property.name:
             url = reverse(
@@ -1631,14 +1497,10 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.status = form.cleaned_data.get("status")
             metadata.version += 1
 
-            if latest_version := metadata.metadataversion_set.order_by(
-                "-version__created"
-            ).first():
-                if none_to_string(latest_version.prepare) != none_to_string(
-                    metadata.prepare
-                ) or none_to_string(latest_version.source) != none_to_string(
-                    metadata.source
-                ):
+            if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
+                if none_to_string(latest_version.prepare) != none_to_string(metadata.prepare) or none_to_string(
+                    latest_version.source
+                ) != none_to_string(metadata.source):
                     metadata.draft = True
                 else:
                     metadata.draft = False
@@ -1647,11 +1509,7 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
 
         # Save history
         self.property.save()
-        set_comment(
-            _(
-                f'Redaguota duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'
-            )
-        )
+        set_comment(_(f'Redaguota duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'))
 
         return redirect(self.property.get_absolute_url())
 
@@ -1684,9 +1542,7 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
         if not self.model:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(
-            Property, model=self.model_obj, metadata__name=prop_name
-        )
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -1705,9 +1561,7 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
         }
         if self.model_obj.name:
-            url = reverse(
-                "model-structure", args=[self.dataset.pk, self.model_obj.name]
-            )
+            url = reverse("model-structure", args=[self.dataset.pk, self.model_obj.name])
             context["parent_links"][url] = self.model_obj.title or self.model_obj.name
         if self.model_obj.name and self.property.name:
             url = reverse(
@@ -1730,9 +1584,7 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
         with create_revision():
             self.property.save()
             set_user(request.user)
-            set_comment(
-                _(f'Pašalinta duomenų lauko "{self.property.name}" reikšmė "{value}".')
-            )
+            set_comment(_(f'Pašalinta duomenų lauko "{self.property.name}" reikšmė "{value}".'))
 
         return redirect(success_url)
 
@@ -1748,9 +1600,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         if has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset):
-            self.models = Model.objects.filter(dataset=self.dataset).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.dataset).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -1807,9 +1657,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
                 level=base_level,
                 level_given=form.cleaned_data.get("base_level"),
                 prepare_ast="",
-                ref=", ".join(base_ref.values_list("metadata__name", flat=True))
-                if base_ref
-                else "",
+                ref=", ".join(base_ref.values_list("metadata__name", flat=True)) if base_ref else "",
             )
 
             if base_ref:
@@ -1825,9 +1673,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         self.dataset.update_level()
 
         if form.cleaned_data.get("comment"):
-            comment = _(
-                f'Sukurtas "{model.name}" modelis. {form.cleaned_data.get("comment")}'
-            )
+            comment = _(f'Sukurtas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
         else:
             comment = _(f'Sukurtas "{model.name}" modelis.')
         set_comment(comment)
@@ -1907,11 +1753,7 @@ class ModelUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
             self.object.prepare_ast = spyna.parse(self.object.prepare)
         else:
             self.object.prepare_ast = ""
-        self.object.ref = (
-            ", ".join(model_ref.values_list("metadata__name", flat=True))
-            if model_ref
-            else ""
-        )
+        self.object.ref = ", ".join(model_ref.values_list("metadata__name", flat=True)) if model_ref else ""
         self.object.save()
 
         model.property_list.all().delete()
@@ -1957,11 +1799,7 @@ class ModelUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
                 base_meta.level = base_level
                 base_meta.level_given = form.cleaned_data.get("base_level")
                 base_meta.version += 1
-                base_meta.ref = (
-                    ", ".join(base_ref.values_list("metadata__name", flat=True))
-                    if base_ref
-                    else ""
-                )
+                base_meta.ref = ", ".join(base_ref.values_list("metadata__name", flat=True)) if base_ref else ""
                 base_meta.save()
 
             base.property_list.all().delete()
@@ -1993,9 +1831,7 @@ class ModelUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
         model.update_level()
         self.dataset.update_level()
 
-        if latest_version := self.object.metadataversion_set.order_by(
-            "-version__created"
-        ).first():
+        if latest_version := self.object.metadataversion_set.order_by("-version__created").first():
             if (
                 latest_version.name != self.object.name
                 or latest_version.base != object_to_none(model.base)
@@ -2008,9 +1844,7 @@ class ModelUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
             self.object.save()
 
         if form.cleaned_data.get("comment"):
-            comment = _(
-                f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}'
-            )
+            comment = _(f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
         else:
             comment = _(f'Redaguotas "{model.name}" modelis.')
         set_comment(comment)
@@ -2026,9 +1860,8 @@ class ModelUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
-            reverse(
-                "model-structure", args=[self.dataset.pk, self.model_obj.name]
-            ): self.model_obj.title or self.model_obj.name,
+            reverse("model-structure", args=[self.dataset.pk, self.model_obj.name]): self.model_obj.title
+            or self.model_obj.name,
         }
         return context
 
@@ -2096,11 +1929,7 @@ class PropertyCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         self.dataset.update_level()
 
         # Save history
-        set_comment(
-            _(
-                f'Pridėtas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'
-            )
-        )
+        set_comment(_(f'Pridėtas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
 
@@ -2149,9 +1978,7 @@ class PropertyUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(
-            Property, model=self.model_obj, metadata__name=prop_name
-        )
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
@@ -2183,9 +2010,7 @@ class PropertyUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
             if prop.ref_model:
                 prop.ref_model = None
 
-        if latest_version := self.object.metadataversion_set.order_by(
-            "-version__created"
-        ).first():
+        if latest_version := self.object.metadataversion_set.order_by("-version__created").first():
             if (
                 latest_version.name != self.object.name
                 or latest_version.type_repr != self.object.type_repr
@@ -2204,11 +2029,7 @@ class PropertyUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
 
         # Save history
         prop.save()
-        set_comment(
-            _(
-                f'Redaguotas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'
-            )
-        )
+        set_comment(_(f'Redaguotas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
 
@@ -2220,9 +2041,8 @@ class PropertyUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
             reverse("dataset-structure", args=[self.dataset.pk]): _("Struktūra"),
-            reverse(
-                "model-structure", args=[self.dataset.pk, self.model_obj.name]
-            ): self.model_obj.title or self.model_obj.name,
+            reverse("model-structure", args=[self.dataset.pk, self.model_obj.name]): self.model_obj.title
+            or self.model_obj.name,
         }
         return context
 
@@ -2263,11 +2083,7 @@ class CreateBasePropertyView(PermissionRequiredMixin, View):
         # Save history
         with create_revision():
             prop.save()
-            set_comment(
-                _(
-                    f'Pridėtas "{model.name}" modelio bazinis duomenų laukas "{prop.name}".'
-                )
-            )
+            set_comment(_(f'Pridėtas "{model.name}" modelio bazinis duomenų laukas "{prop.name}".'))
             set_user(request.user)
 
         return redirect(model.get_absolute_url())
@@ -2292,11 +2108,7 @@ class DeleteBasePropertyView(PermissionRequiredMixin, View):
 
         # Save history
         with create_revision():
-            set_comment(
-                _(
-                    f'Pašalintas "{model.name}" modelio bazinis duomenų laukas "{prop_name}".'
-                )
-            )
+            set_comment(_(f'Pašalintas "{model.name}" modelio bazinis duomenų laukas "{prop_name}".'))
             set_user(request.user)
 
         return redirect(model.get_absolute_url())
@@ -2313,9 +2125,7 @@ class ParamCreateView(PermissionRequiredMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         content_type = get_object_or_404(ContentType, pk=kwargs.get("content_type_id"))
-        self.rel_object = get_object_or_404(
-            content_type.model_class(), pk=kwargs.get("object_id")
-        )
+        self.rel_object = get_object_or_404(content_type.model_class(), pk=kwargs.get("object_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -2353,11 +2163,7 @@ class ParamCreateView(PermissionRequiredMixin, CreateView):
         if isinstance(self.rel_object, Model):
             with create_revision():
                 self.rel_object.save()
-                set_comment(
-                    _(
-                        f'Pridėtas "{self.rel_object.name}" modelio parametras "{self.object.name}".'
-                    )
-                )
+                set_comment(_(f'Pridėtas "{self.rel_object.name}" modelio parametras "{self.object.name}".'))
                 set_user(self.request.user)
 
         return redirect(self.rel_object.get_absolute_url())
@@ -2423,11 +2229,7 @@ class ParamUpdateView(PermissionRequiredMixin, UpdateView):
         if isinstance(rel_object, Model):
             with create_revision():
                 rel_object.save()
-                set_comment(
-                    _(
-                        f'Redaguotas "{rel_object.name}" modelio parametras "{self.object.name}".'
-                    )
-                )
+                set_comment(_(f'Redaguotas "{rel_object.name}" modelio parametras "{self.object.name}".'))
                 set_user(self.request.user)
 
         return redirect(rel_object.get_absolute_url())
@@ -2463,9 +2265,7 @@ class ParamDeleteView(PermissionRequiredMixin, DeleteView):
         if isinstance(rel_object, Model):
             with create_revision():
                 rel_object.save()
-                set_comment(
-                    _(f'Pašalintas "{rel_object.name}" modelio parametras "{value}".')
-                )
+                set_comment(_(f'Pašalintas "{rel_object.name}" modelio parametras "{value}".'))
                 set_user(self.request.user)
 
         return redirect(success_url)
@@ -2484,13 +2284,9 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -2535,9 +2331,7 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
     def get_history_objects(self):
         model_ids = self.models.values_list("pk", flat=True)
         if self.can_manage_structure:
-            property_ids = Property.objects.filter(
-                model__pk__in=model_ids, given=True
-            ).values_list("pk", flat=True)
+            property_ids = Property.objects.filter(model__pk__in=model_ids, given=True).values_list("pk", flat=True)
         else:
             property_ids = Property.objects.filter(
                 model__pk__in=model_ids,
@@ -2545,12 +2339,8 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
                 metadata__access__gte=Metadata.PUBLIC,
             ).values_list("pk", flat=True)
 
-        property_history_objects = Version.objects.get_for_model(Property).filter(
-            object_id__in=list(property_ids)
-        )
-        model_history_objects = Version.objects.get_for_model(Model).filter(
-            object_id__in=list(model_ids)
-        )
+        property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
+        model_history_objects = Version.objects.get_for_model(Model).filter(object_id__in=list(model_ids))
         history_objects = property_history_objects | model_history_objects
         return history_objects.order_by("-revision__date_created")
 
@@ -2591,13 +2381,9 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             self.props = self.model_obj.get_given_props()
         else:
             self.models = (
@@ -2605,9 +2391,7 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
                 .order_by("metadata__name")
             )
-            self.props = self.model_obj.get_given_props().filter(
-                metadata__access__gte=Metadata.PUBLIC
-            )
+            self.props = self.model_obj.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -2660,9 +2444,7 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def get_history_objects(self):
         property_ids = self.props.values_list("pk", flat=True)
-        property_history_objects = Version.objects.get_for_model(Property).filter(
-            object_id__in=list(property_ids)
-        )
+        property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
         model_history_objects = Version.objects.get_for_object(self.model_obj)
         history_objects = property_history_objects | model_history_objects
         return history_objects.order_by("-revision__date_created")
@@ -2705,17 +2487,11 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(
-            Property, model=self.model_obj, metadata__name=prop_name
-        )
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
 
-        self.can_manage_structure = has_perm(
-            self.request.user, Action.STRUCTURE, Dataset, self.object
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             self.props = self.model_obj.get_given_props()
         else:
             self.models = (
@@ -2723,9 +2499,7 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
                 .order_by("metadata__name")
             )
-            self.props = self.model_obj.get_given_props().filter(
-                metadata__access__gte=Metadata.PUBLIC
-            )
+            self.props = self.model_obj.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -2786,9 +2560,7 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         return self.model_obj.get_api_url()
 
     def get_history_objects(self):
-        return Version.objects.get_for_object(self.property).order_by(
-            "-revision__date_created"
-        )
+        return Version.objects.get_for_object(self.property).order_by("-revision__date_created")
 
 
 async def get_updated_summary(request, *args, **kwargs):
@@ -2802,12 +2574,8 @@ async def get_updated_summary(request, *args, **kwargs):
     max_lat = request.GET.get("max_lat")
 
     if source_srid != target_srid:
-        min_lat, min_lng = transform_coordinates(
-            min_lat, min_lng, target_srid, source_srid
-        )
-        max_lat, max_lng = transform_coordinates(
-            max_lat, max_lng, target_srid, source_srid
-        )
+        min_lat, min_lng = transform_coordinates(min_lat, min_lng, target_srid, source_srid)
+        max_lat, max_lng = transform_coordinates(max_lat, max_lng, target_srid, source_srid)
 
     query = f"bbox({min_lat}, {min_lng}, {max_lat}, {max_lng})"
     data = await get_data_from_spinta_async(model, f":summary/{prop}", query)
@@ -2819,9 +2587,7 @@ async def get_updated_summary(request, *args, **kwargs):
         x = centroid.x
         y = centroid.y
         if source_srid != target_srid:
-            x, y = transform_coordinates(
-                centroid.x, centroid.y, source_srid, target_srid
-            )
+            x, y = transform_coordinates(centroid.x, centroid.y, source_srid, target_srid)
         item["centroid"] = [x, y]
         transformed_data.append(item)
     return JsonResponse({"data": transformed_data})
@@ -2872,11 +2638,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             Task.objects.create(
                 # FIXME: Maybe task title and describtion should be generated
                 #        on display.
-                title=(
-                    "Sukurta nauja duomenų rinkinio struktūros versija: "
-                    f"{version_content_type}, "
-                    f"id: {version.pk}"
-                ),
+                title=(f"Sukurta nauja duomenų rinkinio struktūros versija: {version_content_type}, id: {version.pk}"),
                 description=("Sukurta nauja duomenų rinkinio struktūros versija."),
                 content_type=version_content_type,
                 object_id=version.pk,
@@ -2884,10 +2646,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                 status=Task.CREATED,
             )
 
-        url = (
-            f"{get_current_domain(self.request)}/datasets/"
-            f"{version.dataset.pk}/version/{version.pk}"
-        )
+        url = f"{get_current_domain(self.request)}/datasets/{version.dataset.pk}/version/{version.pk}"
         email(
             emails,
             "new-dataset-structure-version",
@@ -2950,16 +2709,10 @@ class VersionListView(
         status = self.request.GET.get("status", "not_deployed")
         context["dataset"] = self.dataset
         if status == "deployed":
-            context["versions"] = self.dataset.dataset_version.filter(
-                deployed__isnull=False
-            ).order_by("version")
+            context["versions"] = self.dataset.dataset_version.filter(deployed__isnull=False).order_by("version")
         else:
-            context["versions"] = self.dataset.dataset_version.filter(
-                deployed__isnull=True
-            ).order_by("version")
-        context["can_view_members"] = has_perm(
-            self.request.user, Action.VIEW, Representative, self.dataset
-        )
+            context["versions"] = self.dataset.dataset_version.filter(deployed__isnull=True).order_by("version")
+        context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
         context["selected_tab"] = status
         return context
 
@@ -3002,23 +2755,16 @@ class VersionDetailView(
         context = super().get_context_data(**kwargs)
         context["dataset"] = self.dataset
         context["version"] = self.version
-        context["can_view_members"] = has_perm(
-            self.request.user, Action.VIEW, Representative, self.dataset
-        )
+        context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
 
         changes = []
         models = []
         props = []
-        version_items = {
-            item.metadata.object: item
-            for item in self.version.metadataversion_set.all()
-        }
+        version_items = {item.metadata.object: item for item in self.version.metadataversion_set.all()}
 
         if dataset_meta := version_items.get(self.dataset):
             prev_version = (
-                dataset_meta.metadata.metadataversion_set.filter(
-                    version__created__lt=self.version.created
-                )
+                dataset_meta.metadata.metadataversion_set.filter(version__created__lt=self.version.created)
                 .order_by("-version__created")
                 .first()
             )
@@ -3044,9 +2790,7 @@ class VersionDetailView(
                         "title": self.dataset.title,
                         "url": self.dataset.get_absolute_url(),
                         "new": True,
-                        "changed_attrs": [
-                            {"attr": "name", "value_after": dataset_meta.name}
-                        ],
+                        "changed_attrs": [{"attr": "name", "value_after": dataset_meta.name}],
                         "class": "dataset_metadata",
                     }
                 )
@@ -3055,9 +2799,7 @@ class VersionDetailView(
             if model_meta := version_items.get(model):
                 models.append(model)
                 prev_version = (
-                    model_meta.metadata.metadataversion_set.filter(
-                        version__created__lt=self.version.created
-                    )
+                    model_meta.metadata.metadataversion_set.filter(version__created__lt=self.version.created)
                     .order_by("-version__created")
                     .first()
                 )
@@ -3093,12 +2835,8 @@ class VersionDetailView(
                         changed_attrs.append(
                             {
                                 "attr": "base",
-                                "value_before": prev_version.base.model.name
-                                if prev_version.base
-                                else None,
-                                "value_after": model_meta.base.model.name
-                                if model_meta.base
-                                else None,
+                                "value_before": prev_version.base.model.name if prev_version.base else None,
+                                "value_after": model_meta.base.model.name if model_meta.base else None,
                             }
                         )
                 else:
@@ -3146,9 +2884,7 @@ class VersionDetailView(
                 if prop_meta := version_items.get(prop):
                     props.append(prop)
                     prev_version = (
-                        prop_meta.metadata.metadataversion_set.filter(
-                            version__created__lt=self.version.created
-                        )
+                        prop_meta.metadata.metadataversion_set.filter(version__created__lt=self.version.created)
                         .order_by("-version__created")
                         .first()
                     )
@@ -3258,9 +2994,7 @@ class VersionDetailView(
 
                         if enum_meta := version_items.get(enum_item):
                             prev_version = (
-                                enum_meta.metadata.metadataversion_set.filter(
-                                    version__created__lt=self.version.created
-                                )
+                                enum_meta.metadata.metadataversion_set.filter(version__created__lt=self.version.created)
                                 .order_by("-version__created")
                                 .first()
                             )

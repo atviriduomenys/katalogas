@@ -12,14 +12,10 @@ class AgreementStatuses(TextChoices):
 
 
 AGREEMENT_STATUS_DESCRIPTIONS = {
-    AgreementStatuses.CREATED: _(
-        "Sutartis sukurta. Sutarties dokumentas dar nesukurtas."
-    ),
+    AgreementStatuses.CREATED: _("Sutartis sukurta. Sutarties dokumentas dar nesukurtas."),
     AgreementStatuses.FORMED: _("Sutarties dokumentas sukurtas, bet nepasirašytas."),
     AgreementStatuses.INITIATED: _("Sutarties dokumentas pasirašytas duomenų gavėjo."),
-    AgreementStatuses.SIGNED: _(
-        "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų tiekėjo."
-    ),
+    AgreementStatuses.SIGNED: _("Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų tiekėjo."),
     AgreementStatuses.ACTIVE: _("Sutartis sėkmingai sinchronizuota su agentu."),
     AgreementStatuses.TERMINATED: _("Sutartis nutraukta."),
 }

@@ -5,9 +5,7 @@ from vitrina.datasets.models import Dataset
 
 
 class ApiExample(models.Model):
-    dataset = models.OneToOneField(
-        Dataset, on_delete=models.CASCADE, related_name="examples"
-    )
+    dataset = models.OneToOneField(Dataset, on_delete=models.CASCADE, related_name="examples")
     yaml_file = models.FileField(
         upload_to="data/files/yaml_examples",
         verbose_name=_("Sukelti pavyzdinius duomenis YAML formatu."),

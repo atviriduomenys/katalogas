@@ -35,9 +35,7 @@ class ModelSitemap(Sitemap):
 
     # Only public models
     def items(self):
-        return [
-            model for model in Model.objects.all().order_by("id") if model.is_opened()
-        ]
+        return [model for model in Model.objects.all().order_by("id") if model.is_opened()]
 
 
 class OrganizationSitemap(Sitemap):

@@ -39,45 +39,33 @@ urlpatterns = [
     ),
     path(
         "partner/api/1/datasets/<int:datasetId>",
-        DatasetViewSet.as_view(
-            {"get": "retrieve", "patch": "partial_update", "delete": "destroy"}
-        ),
+        DatasetViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
         name="api-single-dataset",
     ),
     path(
         "partner/api/1/datasets/id/<str:internalId>",
-        InternalDatasetViewSet.as_view(
-            {"get": "retrieve", "patch": "partial_update", "delete": "destroy"}
-        ),
+        InternalDatasetViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
         name="api-single-dataset-internal",
     ),
     # dataset distribution api urls
     path(
         "partner/api/1/datasets/<int:datasetId>/distributions",
-        DatasetDistributionViewSet.as_view(
-            {"get": "list", "post": "create", "put": "create_with_put"}
-        ),
+        DatasetDistributionViewSet.as_view({"get": "list", "post": "create", "put": "create_with_put"}),
         name="api-distribution",
     ),
     path(
         "partner/api/1/datasets/id/<str:internalId>/distributions",
-        InternalDatasetDistributionViewSet.as_view(
-            {"get": "list", "post": "create", "put": "create_with_put"}
-        ),
+        InternalDatasetDistributionViewSet.as_view({"get": "list", "post": "create", "put": "create_with_put"}),
         name="api-distribution-internal",
     ),
     path(
         "partner/api/1/datasets/<int:datasetId>/distributions/<int:distributionId>",
-        DatasetDistributionViewSet.as_view(
-            {"get": "retrieve", "patch": "partial_update", "delete": "destroy"}
-        ),
+        DatasetDistributionViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
         name="api-single-distribution",
     ),
     path(
         "partner/api/1/datasets/id/<str:internalId>/distributions/<int:distributionId>",
-        InternalDatasetDistributionViewSet.as_view(
-            {"get": "retrieve", "patch": "partial_update", "delete": "destroy"}
-        ),
+        InternalDatasetDistributionViewSet.as_view({"get": "retrieve", "patch": "partial_update", "delete": "destroy"}),
         name="api-single-distribution-internal",
     ),
     # Task api urls

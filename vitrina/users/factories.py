@@ -11,9 +11,7 @@ class UserFactory(DjangoModelFactory):
 
     first_name = factory.Faker("first_name")
     last_name = factory.Faker("last_name")
-    email = factory.LazyAttributeSequence(
-        lambda o, n: "%s.%s%d@example.com" % (o.first_name, o.last_name, n)
-    )
+    email = factory.LazyAttributeSequence(lambda o, n: "%s.%s%d@example.com" % (o.first_name, o.last_name, n))
     phone = factory.Sequence(lambda n: "+3706%07d" % n)
     version = 1
     status = User.ACTIVE
@@ -31,8 +29,6 @@ class ManagerFactory(DjangoModelFactory):
 
     first_name = factory.Faker("last_name")
     last_name = factory.Faker("last_name")
-    email = factory.LazyAttributeSequence(
-        lambda o, n: "%s.%s%d@example.com" % (o.first_name, o.last_name, n)
-    )
+    email = factory.LazyAttributeSequence(lambda o, n: "%s.%s%d@example.com" % (o.first_name, o.last_name, n))
     phone = factory.Sequence(lambda n: "+3706%07d" % n)
     organization = factory.SubFactory("vitrina.orgs.factories.OrganizationFactory")

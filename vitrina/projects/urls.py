@@ -12,8 +12,13 @@ from vitrina.projects.views import (
     ProjectPermissionsCreateView,
     ProjectApiKeysRegenerateView,
     ProjectApiKeysDetailView,
-    ProjectPermissionsToggleView, ClientCreateView, ClientListView, ClientUpdateView, ClientDetailView,
-    ClientScopeCreateView, ClientScopeToggleView,
+    ProjectPermissionsToggleView,
+    ClientCreateView,
+    ClientListView,
+    ClientUpdateView,
+    ClientDetailView,
+    ClientScopeCreateView,
+    ClientScopeToggleView,
 )
 
 urlpatterns = [
@@ -21,9 +26,7 @@ urlpatterns = [
     path("projects/", ProjectListView.as_view(), name="project-list"),
     path("projects/<int:pk>", ProjectDetailView.as_view(), name="project-detail"),
     path("projects/add/", ProjectCreateView.as_view(), name="project-create"),
-    path(
-        "projects/<int:pk>/change/", ProjectUpdateView.as_view(), name="project-update"
-    ),
+    path("projects/<int:pk>/change/", ProjectUpdateView.as_view(), name="project-update"),
     path(
         "projects/<int:pk>/history/",
         ProjectHistoryView.as_view(),
@@ -44,15 +47,9 @@ urlpatterns = [
         ClientListView.as_view(),
         name="project-clients",
     ),
+    path("projects/<int:pk>/client/add/", ClientCreateView.as_view(), name="project-clients-create"),
     path(
-        "projects/<int:pk>/client/add/",
-        ClientCreateView.as_view(),
-        name="project-clients-create"
-    ),
-    path(
-        "projects/<int:pk>/client/<uuid:client_id>/change/",
-        ClientUpdateView.as_view(),
-        name="project-clients-update"
+        "projects/<int:pk>/client/<uuid:client_id>/change/", ClientUpdateView.as_view(), name="project-clients-update"
     ),
     path(
         "projects/<int:pk>/client/<uuid:client_id>/",
@@ -62,7 +59,7 @@ urlpatterns = [
     path(
         "projects/<int:pk>/client/<uuid:client_id>/scopes/add/",
         ClientScopeCreateView.as_view(),
-        name="project-clients-scopes-create"
+        name="project-clients-scopes-create",
     ),
     path(
         "projects/<int:pk>/client/<uuid:client_id>/scopes/<uuid:scope_id>/toggle/",

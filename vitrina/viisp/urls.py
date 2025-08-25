@@ -38,9 +38,7 @@ urlpatterns = [
     ),
     path("viisp/confirm-email/", ConfirmEmailView.as_view(), name="confirm-email"),
     path("viisp/signup", SignupViewViisp.as_view(), name="socialaccount_signup"),
-    path(
-        "viisp/connections", ConnectionsView.as_view(), name="socialaccount_connections"
-    ),
+    path("viisp/connections", ConnectionsView.as_view(), name="socialaccount_connections"),
     path("viisp/change-email-view/", ChangeEmailView.as_view(), name="change-email"),
     path("viisp/login-first/", LoginFirstView.as_view(), name="login-first"),
     path(

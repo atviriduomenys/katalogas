@@ -184,10 +184,7 @@ def has_perm(
             return True
 
         user_org = getattr(user, "organization", None)
-        if (
-            user_org
-            and Representative.objects.filter(where, organization=user_org).exists()
-        ):
+        if user_org and Representative.objects.filter(where, organization=user_org).exists():
             return True
     return False
 
@@ -256,16 +253,14 @@ def manage_subscriptions_for_representative(subscribe, user, organization, link)
 
 def pre_representative_delete(rep: Representative):
     if isinstance(rep.content_object, Organization) and rep.user:
-        org_repr = rep.user.representative_set.filter(
-            content_type=ContentType.objects.get_for_model(Organization)
-        )
+        org_repr = rep.user.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))
         dataset_repr_object_ids = rep.user.representative_set.filter(
             content_type=ContentType.objects.get_for_model(Dataset)
         ).values_list("object_id", flat=True)
 
-        if org_repr.count() == 1 and not Dataset.objects.filter(
-            id__in=dataset_repr_object_ids
-        ).exclude(organization_id=rep.object_id):
+        if org_repr.count() == 1 and not Dataset.objects.filter(id__in=dataset_repr_object_ids).exclude(
+            organization_id=rep.object_id
+        ):
             rep.user.is_active = False
             rep.user.status = User.SUSPENDED
             rep.user.save()

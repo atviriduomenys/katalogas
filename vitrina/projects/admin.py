@@ -8,6 +8,7 @@ class ProjectAdmin(VersionAdmin):
     list_filter = ("status",)
     search_fields = ("title",)
 
+
 @admin.register(UseCaseClient)
 class UseCaseClientAdmin(VersionAdmin):
     list_display = ["use_case", "name", "client_id"]
@@ -17,6 +18,7 @@ class UseCaseClientAdmin(VersionAdmin):
 
     def get_queryset(self, request) -> QuerySet:
         return super().get_queryset(request).select_related("use_case")
+
 
 @admin.register(UseCaseClientScope)
 class UseCaseClientScopeAdmin(VersionAdmin):

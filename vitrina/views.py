@@ -39,9 +39,7 @@ def home(request):
         .count()
     )
     user_count = (
-        User.objects.exclude(representative__role="manager")
-        .exclude(representative__role="coordinator")
-        .count()
+        User.objects.exclude(representative__role="manager").exclude(representative__role="coordinator").count()
     )
     return render(
         request,
@@ -56,19 +54,9 @@ def home(request):
                 "users": user_count,
             },
             "categories": (Category.objects.filter(featured=True).order_by("title")),
-            "datasets": (
-                Dataset.public.select_related("organization").order_by("-published")[:3]
-            ),
-            "requests": (
-                Request.public.prefetch_related("organizations").order_by("-created")[
-                    :3
-                ]
-            ),
-            "projects": (
-                Project.public.filter(image__isnull=False, status="APPROVED").order_by(
-                    "-created"
-                )[:3]
-            ),
+            "datasets": (Dataset.public.select_related("organization").order_by("-published")[:3]),
+            "requests": (Request.public.prefetch_related("organizations").order_by("-created")[:3]),
+            "projects": (Project.public.filter(image__isnull=False, status="APPROVED").order_by("-created")[:3]),
             "orgs": (
                 Organization.public.filter(
                     numchild=0,
@@ -143,9 +131,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                         )
                         if (
                             hasattr(self.model, "HISTORY_MESSAGES")
-                            and self.model.HISTORY_MESSAGES.get(
-                                version.revision.comment
-                            )
+                            and self.model.HISTORY_MESSAGES.get(version.revision.comment)
                         )
                         else version.revision.comment,
                     }
@@ -162,7 +148,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
         context["history"] = self._deduplicate_and_sort_history(context["history"])
 
         return context
-    
+
     def _deduplicate_and_sort_history(self, history: list[dict]) -> list[dict]:
         unique_entries = {tuple(entry.items()) for entry in history}
         unique_history = [dict(entry) for entry in unique_entries]
@@ -196,9 +182,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
         return self.object
 
     def get_history_objects(self):
-        return Version.objects.get_for_object(self.get_history_object()).order_by(
-            "-revision__date_created"
-        )
+        return Version.objects.get_for_object(self.get_history_object()).order_by("-revision__date_created")
 
 
 class HistoryMixin:

@@ -28,16 +28,12 @@ class User(AbstractUser):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
-    email = models.CharField(
-        _("Elektroninis paštas"), max_length=255, blank=True, null=True
-    ) # TODO should be unique.
+    email = models.CharField(_("Elektroninis paštas"), max_length=255, blank=True, null=True)  # TODO should be unique.
     first_name = models.CharField(max_length=255, blank=True, null=True)
     last_login = models.DateTimeField(blank=True, null=True)
     last_name = models.CharField(max_length=255, blank=True, null=True)
     password = models.CharField(max_length=128, blank=True, null=True)
-    organization = models.ForeignKey(
-        Organization, models.SET_NULL, blank=True, null=True
-    )
+    organization = models.ForeignKey(Organization, models.SET_NULL, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     phone = models.CharField(max_length=255, blank=True, null=True)
@@ -92,10 +88,7 @@ class User(AbstractUser):
         from vitrina.datasets.models import Dataset
 
         if self.is_manager:
-            org_ids = [
-                rep.object_id
-                for rep in self.representative_set.filter(role=Representative.MANAGER)
-            ]
+            org_ids = [rep.object_id for rep in self.representative_set.filter(role=Representative.MANAGER)]
             for org_id in org_ids:
                 if Dataset.objects.filter(organization=org_id):
                     return True
@@ -108,10 +101,7 @@ class User(AbstractUser):
                 self.status = User.DELETED
             elif not self.is_active:
                 self.status = User.SUSPENDED
-            elif (
-                self.emailaddress_set.first()
-                and not self.emailaddress_set.first().verified
-            ):
+            elif self.emailaddress_set.first() and not self.emailaddress_set.first().verified:
                 self.status = User.AWAITING_CONFIRMATION
             else:
                 self.status = User.ACTIVE

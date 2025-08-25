@@ -97,9 +97,7 @@ class RegisterView(CreateView):
         if form.is_valid():
             self.cleaned_data = form.cleaned_data
             user = form.save()
-            email_address = EmailAddress.objects.create(
-                user=user, email=user.email, primary=True, verified=False
-            )
+            email_address = EmailAddress.objects.create(user=user, email=user.email, primary=True, verified=False)
             EmailConfirmation.objects.create(
                 created=datetime.now(),
                 sent=datetime.now(),
@@ -128,15 +126,11 @@ class RegisterView(CreateView):
             )
 
             # update related representatives
-            if reps := Representative.objects.filter(
-                email=user.email, user__isnull=True
-            ):
+            if reps := Representative.objects.filter(email=user.email, user__isnull=True):
                 reps.update(user=user)
 
             return redirect("home")
-        return render(
-            request=request, template_name=self.template_name, context={"form": form}
-        )
+        return render(request=request, template_name=self.template_name, context={"form": form})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -193,9 +187,7 @@ class PasswordResetView(BasePasswordResetView):
     success_url = reverse_lazy("home")
 
     def form_valid(self, form):
-        messages.info(
-            self.request, _("Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą")
-        )
+        messages.info(self.request, _("Slaptažodžio pakeitimo nuoroda išsiųsta į Jūsų el. paštą"))
         return super().form_valid(form)
 
     def get_context_data(self, **kwargs):
@@ -313,9 +305,7 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
         if "email" in form.changed_data:
             if existing_email_address := EmailAddress.objects.filter(user=obj):
                 existing_email_address.delete()
-            email_address = EmailAddress.objects.create(
-                user=obj, email=obj.email, primary=True, verified=False
-            )
+            email_address = EmailAddress.objects.create(user=obj, email=obj.email, primary=True, verified=False)
             EmailConfirmation.objects.create(
                 created=datetime.now(),
                 sent=datetime.now(),
@@ -338,15 +328,11 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
             obj.status = User.AWAITING_CONFIRMATION
             obj.save()
             obj.representative_set.update(email=obj.email)
-            messages.success(
-                self.request, _("Išsiuntėme jums laišką el. pašto patvirtinimui.")
-            )
+            messages.success(self.request, _("Išsiuntėme jums laišką el. pašto patvirtinimui."))
         return redirect("user-profile", pk=self.request.user.id)
 
 
-class CustomPasswordChangeView(
-    LoginRequiredMixin, PermissionRequiredMixin, PasswordChangeView
-):
+class CustomPasswordChangeView(LoginRequiredMixin, PermissionRequiredMixin, PasswordChangeView):
     form_class = CustomPasswordChangeForm
     template_name = "base_form.html"
 
@@ -431,9 +417,7 @@ class UserStatsView(TemplateView):
                 if user_type == "Koordinatoriai":
                     dataset["data"].append(
                         User.objects.select_related("representative")
-                        .filter(
-                            representative__role="coordinator", created__lt=created_date
-                        )
+                        .filter(representative__role="coordinator", created__lt=created_date)
                         .distinct("representative__user")
                         .count()
                     )

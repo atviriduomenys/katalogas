@@ -80,9 +80,7 @@ class VIISPCompleteLoginView(View):
         if user:
             user.is_viisp_login = True
             user.save()
-            user_social_account = SocialAccount.objects.filter(
-                user__email=user.email
-            ).first()
+            user_social_account = SocialAccount.objects.filter(user__email=user.email).first()
             if token:
                 login = provider.sociallogin_from_response(request, user_data)
                 return perform_login(
@@ -127,9 +125,7 @@ class VIISPCompleteLoginView(View):
 
         # update related representatives
         if login.user:
-            if reps := Representative.objects.filter(
-                email=login.user.email, user__isnull=True
-            ):
+            if reps := Representative.objects.filter(email=login.user.email, user__isnull=True):
                 reps.update(user=login.user)
             login.user.is_viisp_login = True
             login.user.save()
@@ -150,8 +146,7 @@ def _confirm_viisp_email(
         "viisp-confirmation",
         "vitrina/viisp/emails/email_confirmation.md",
         {
-            "confirmation_url": "%s%s"
-            % (base_url, reverse("viisp-account-merge", kwargs={"token": token})),
+            "confirmation_url": "%s%s" % (base_url, reverse("viisp-account-merge", kwargs={"token": token})),
         },
     )
 

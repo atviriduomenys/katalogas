@@ -72,9 +72,7 @@ class SubscriptionForm(ModelForm):
                 ]
             )
 
-        dynamic_fields.extend(
-            [Submit("submit", _("Prenumeruoti"), css_class="button is-primary")]
-        )
+        dynamic_fields.extend([Submit("submit", _("Prenumeruoti"), css_class="button is-primary")])
         self.helper.layout = Layout(*permanent_fields, *dynamic_fields)
 
     def clean(self):
@@ -88,31 +86,16 @@ class SubscriptionForm(ModelForm):
 
         if dataset_comments_sub and not dataset_update_sub:
             raise ValidationError(
-                _(
-                    "Jei norima prenumeruoti duomenų rinkinių komentarus,"
-                    " būtina prenumeruoti ir duomenų rinkinius"
-                )
+                _("Jei norima prenumeruoti duomenų rinkinių komentarus, būtina prenumeruoti ir duomenų rinkinius")
             )
 
         if request_comments_sub and not request_update_sub:
-            raise ValidationError(
-                _(
-                    "Jei norima prenumeruoti poreikių komentarus,"
-                    " būtina prenumeruoti ir poreikius"
-                )
-            )
+            raise ValidationError(_("Jei norima prenumeruoti poreikių komentarus, būtina prenumeruoti ir poreikius"))
 
         if project_comments_sub and not project_update_sub:
-            raise ValidationError(
-                _(
-                    "Jei norima prenumeruoti projektų komentarus,"
-                    " būtina prenumeruoti ir projektus"
-                )
-            )
+            raise ValidationError(_("Jei norima prenumeruoti projektų komentarus, būtina prenumeruoti ir projektus"))
 
-        if self.ct.model.upper() == Subscription.DATASET and (
-            request_update_sub or project_update_sub
-        ):
+        if self.ct.model.upper() == Subscription.DATASET and (request_update_sub or project_update_sub):
             raise ValidationError(
                 _(
                     "Ši forma skirta tik duomenų rinkinių prenumeratai, kitas prenumeratas galite gauti"
@@ -122,15 +105,10 @@ class SubscriptionForm(ModelForm):
 
         if self.ct.model.upper() == Subscription.REQUEST and project_update_sub:
             raise ValidationError(
-                _(
-                    "Jei norite prenumeruoti projektus,"
-                    " tą galite padaryti iš atitinkamo projekto puslapio"
-                )
+                _("Jei norite prenumeruoti projektus, tą galite padaryti iš atitinkamo projekto puslapio")
             )
 
-        if self.ct.model.upper() == Subscription.PROJECT and (
-            dataset_update_sub or request_update_sub
-        ):
+        if self.ct.model.upper() == Subscription.PROJECT and (dataset_update_sub or request_update_sub):
             raise ValidationError(
                 _(
                     "Ši forma skirta tik projektų prenumeratai, kitas prenumeratas galite gauti "

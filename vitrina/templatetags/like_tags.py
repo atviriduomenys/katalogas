@@ -11,15 +11,8 @@ def like(obj, user):
     content_type = ContentType.objects.get_for_model(obj)
     button_text = _("Patinka")
     liked = False
-    like_count = Like.objects.filter(
-        content_type=content_type, object_id=obj.pk
-    ).count()
-    if (
-        user.is_authenticated
-        and Like.objects.filter(
-            content_type=content_type, object_id=obj.pk, user=user
-        ).exists()
-    ):
+    like_count = Like.objects.filter(content_type=content_type, object_id=obj.pk).count()
+    if user.is_authenticated and Like.objects.filter(content_type=content_type, object_id=obj.pk, user=user).exists():
         button_text = _("Nepatinka")
         liked = True
     return {

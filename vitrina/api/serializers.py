@@ -190,9 +190,7 @@ class DatasetSerializer(serializers.ModelSerializer):
 
 
 class PostDatasetSerializer(DatasetSerializer):
-    title = serializers.CharField(
-        allow_blank=True, label="", help_text="dct:title - Title (required)"
-    )
+    title = serializers.CharField(allow_blank=True, label="", help_text="dct:title - Title (required)")
     description = serializers.CharField(
         allow_blank=True, label="", help_text="dct:description - Description (required)"
     )
@@ -237,13 +235,8 @@ class PostDatasetSerializer(DatasetSerializer):
         instance.organization = self.context.get("organization")
         if languages:
             instance.language = " ".join(languages)
-        if (
-            periodicity
-            and Frequency.objects.filter(title=periodicity["title"]).exists()
-        ):
-            instance.frequency = Frequency.objects.filter(
-                title=periodicity["title"]
-            ).first()
+        if periodicity and Frequency.objects.filter(title=periodicity["title"]).exists():
+            instance.frequency = Frequency.objects.filter(title=periodicity["title"]).first()
         if theme and Category.objects.filter(title__in=theme).exists():
             for category in Category.objects.filter(title__in=theme):
                 instance.category.add(category)
@@ -256,9 +249,7 @@ class PostDatasetSerializer(DatasetSerializer):
 
 
 class PatchDatasetSerializer(PostDatasetSerializer):
-    title = serializers.CharField(
-        required=False, allow_blank=True, label="", help_text="dct:title - Title"
-    )
+    title = serializers.CharField(required=False, allow_blank=True, label="", help_text="dct:title - Title")
     description = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -280,13 +271,8 @@ class PatchDatasetSerializer(PostDatasetSerializer):
         instance = super().update(instance, validated_data)
         if languages:
             instance.language = " ".join(languages)
-        if (
-            periodicity
-            and Frequency.objects.filter(title=periodicity["title"]).exists()
-        ):
-            instance.frequency = Frequency.objects.filter(
-                title=periodicity["title"]
-            ).first()
+        if periodicity and Frequency.objects.filter(title=periodicity["title"]).exists():
+            instance.frequency = Frequency.objects.filter(title=periodicity["title"]).first()
         if theme and Category.objects.filter(title__in=theme).exists():
             instance.category.clear()
             for category in Category.objects.filter(title__in=theme):
@@ -303,9 +289,7 @@ class PatchDatasetSerializer(PostDatasetSerializer):
 
 class DatasetDistributionSerializer(serializers.ModelSerializer):
     description = serializers.CharField(required=False, allow_blank=True, label="")
-    file = serializers.CharField(
-        required=False, label="", allow_blank=True, source="filename_without_path"
-    )
+    file = serializers.CharField(required=False, label="", allow_blank=True, source="filename_without_path")
     id = serializers.IntegerField(required=False, label="")
     issued = serializers.CharField(required=False, allow_blank=True, label="")
     municipality = serializers.CharField(required=False, allow_blank=True, label="")
@@ -315,9 +299,7 @@ class DatasetDistributionSerializer(serializers.ModelSerializer):
     title = serializers.CharField(required=False, allow_blank=True, label="")
     type = serializers.CharField(required=False, allow_blank=True, label="")
     url = serializers.SerializerMethodField(required=False, label="")
-    version = serializers.IntegerField(
-        required=False, label="", source="distribution_version"
-    )
+    version = serializers.IntegerField(required=False, label="", source="distribution_version")
     geo_location = serializers.CharField(required=False, allow_blank=True, label="")
 
     class Meta:
@@ -449,12 +431,8 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
         if file and url:
             raise serializers.ValidationError(
                 {
-                    "file": _(
-                        "Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"
-                    ),
-                    "url": _(
-                        "Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"
-                    ),
+                    "file": _("Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"),
+                    "url": _("Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"),
                 }
             )
         return data
@@ -478,9 +456,7 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
         upload_folder = None
         folders = upload_to.split("/")
         for folder_name in folders:
-            upload_folder, created = Folder.objects.get_or_create(
-                name=folder_name, parent=upload_folder
-            )
+            upload_folder, created = Folder.objects.get_or_create(name=folder_name, parent=upload_folder)
 
         if (
             overwrite
@@ -506,9 +482,7 @@ class PostDatasetDistributionSerializer(DatasetDistributionSerializer):
         elif region and municipality:
             instance.geo_location = f"{region} {municipality}"
         if file:
-            instance.file = File.objects.create(
-                file=file, original_filename=file.name, folder=upload_folder
-            )
+            instance.file = File.objects.create(file=file, original_filename=file.name, folder=upload_folder)
             instance.type = "FILE"
         elif url:
             instance.type = "URL"
@@ -567,12 +541,8 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
         if file and url:
             raise serializers.ValidationError(
                 {
-                    "file": _(
-                        "Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"
-                    ),
-                    "url": _(
-                        "Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"
-                    ),
+                    "file": _("Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"),
+                    "url": _("Reikšmė turi būti priskirta 'file' arba 'url' laukui, bet ne abiems"),
                 }
             )
         return data
@@ -595,12 +565,8 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
             upload_folder = None
             folders = upload_to.split("/")
             for folder_name in folders:
-                upload_folder, created = Folder.objects.get_or_create(
-                    name=folder_name, parent=upload_folder
-                )
-            instance.file = File.objects.create(
-                file=file, original_filename=file.name, folder=upload_folder
-            )
+                upload_folder, created = Folder.objects.get_or_create(name=folder_name, parent=upload_folder)
+            instance.file = File.objects.create(file=file, original_filename=file.name, folder=upload_folder)
             instance.type = "FILE"
             instance.download_url = None
         elif url:
@@ -616,9 +582,7 @@ class DatasetStructureSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(required=False, label="")
     size = serializers.IntegerField(required=False, label="file_size")
     title = serializers.CharField(required=False, allow_blank=True, label="")
-    filename = serializers.CharField(
-        required=False, allow_blank=True, label="", source="filename_without_path"
-    )
+    filename = serializers.CharField(required=False, allow_blank=True, label="", source="filename_without_path")
 
     class Meta:
         model = DatasetStructure
@@ -658,12 +622,8 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
             upload_folder = None
             folders = upload_to.split("/")
             for folder_name in folders:
-                upload_folder, created = Folder.objects.get_or_create(
-                    name=folder_name, parent=upload_folder
-                )
-            instance.file = File.objects.create(
-                file=file, original_filename=file.name, folder=upload_folder
-            )
+                upload_folder, created = Folder.objects.get_or_create(name=folder_name, parent=upload_folder)
+            instance.file = File.objects.create(file=file, original_filename=file.name, folder=upload_folder)
             instance.save()
             dataset.current_structure = instance
             dataset.save()
@@ -673,18 +633,10 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
 class ModelDownloadStatsSerializer(serializers.Serializer):
     source = serializers.CharField(required=True, allow_blank=False, label="")
     model = serializers.CharField(required=True, allow_blank=False, label="")
-    format = serializers.CharField(
-        required=True, allow_blank=False, label="", source="model_format"
-    )
-    time = serializers.DateTimeField(
-        required=True, allow_null=False, label="", source="created"
-    )
-    requests = serializers.IntegerField(
-        required=True, allow_null=False, label="", source="model_requests"
-    )
-    objects = serializers.IntegerField(
-        required=True, allow_null=False, label="", source="model_objects"
-    )
+    format = serializers.CharField(required=True, allow_blank=False, label="", source="model_format")
+    time = serializers.DateTimeField(required=True, allow_null=False, label="", source="created")
+    requests = serializers.IntegerField(required=True, allow_null=False, label="", source="model_requests")
+    objects = serializers.IntegerField(required=True, allow_null=False, label="", source="model_objects")
 
     def create(self, validated_data):
         return ModelDownloadStats(id=None, **validated_data)

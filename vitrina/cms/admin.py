@@ -73,10 +73,10 @@ class PublishedReportAdmin(admin.ModelAdmin):
 
 class DeploymentAdmin(admin.ModelAdmin):
     list_display = (
-        'message_lt_display',
-        'message_en_display',
-        'start_date',
-        'end_date',
+        "message_lt_display",
+        "message_en_display",
+        "start_date",
+        "end_date",
     )
 
     def message_lt_display(self, obj):
@@ -84,6 +84,7 @@ class DeploymentAdmin(admin.ModelAdmin):
             return obj.message_lt[:50] + "..."
         else:
             return obj.message_lt or ""
+
     message_lt_display.short_description = _("Pranešimas (lietuvių kalba)")
 
     def message_en_display(self, obj):
@@ -91,6 +92,7 @@ class DeploymentAdmin(admin.ModelAdmin):
             return obj.message_en[:50] + "..."
         else:
             return obj.message_en or ""
+
     message_en_display.short_description = _("Pranešimas (anglų kalba)")
 
 

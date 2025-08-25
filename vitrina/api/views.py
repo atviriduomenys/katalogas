@@ -110,21 +110,15 @@ class PartnerApiView(SchemaView):
 
         title = description = default_version = ""
         if ApiDescription.objects.filter(identifier="partner"):
-            api_description = ApiDescription.objects.filter(
-                identifier="partner"
-            ).first()
+            api_description = ApiDescription.objects.filter(identifier="partner").first()
             title = api_description.title
             description = api_description.desription_html
             default_version = api_description.api_version
 
-        info = openapi.Info(
-            title=title, default_version=default_version, description=description
-        )
+        info = openapi.Info(title=title, default_version=default_version, description=description)
 
         if isinstance(request.accepted_renderer, _SpecRenderer):
-            generator = self.generator_class(
-                info, version, self.url, self.patterns, self.urlconf
-            )
+            generator = self.generator_class(info, version, self.url, self.patterns, self.urlconf)
         else:
             generator = self.generator_class(info, version, self.url, patterns=[])
 
@@ -141,18 +135,10 @@ HEADER_PARAM = openapi.Parameter(
     default="ApiKey MY_KEY",
     type=openapi.TYPE_STRING,
 )
-INTERNAL_ID = openapi.Parameter(
-    "internalId", in_=openapi.IN_PATH, type=openapi.TYPE_STRING
-)
-DATASET_ID = openapi.Parameter(
-    "datasetId", in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER
-)
-DISTRIBUTION_ID = openapi.Parameter(
-    "distributionId", in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER
-)
-STRUCTURE_ID = openapi.Parameter(
-    "structureId", in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER
-)
+INTERNAL_ID = openapi.Parameter("internalId", in_=openapi.IN_PATH, type=openapi.TYPE_STRING)
+DATASET_ID = openapi.Parameter("datasetId", in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER)
+DISTRIBUTION_ID = openapi.Parameter("distributionId", in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER)
+STRUCTURE_ID = openapi.Parameter("structureId", in_=openapi.IN_PATH, type=openapi.TYPE_INTEGER)
 
 
 class CatalogViewSet(ListModelMixin, GenericViewSet):
@@ -209,9 +195,7 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
 
     def get_queryset(self):
         if self.organization:
-            return Dataset.objects.filter(
-                organization=self.organization, deleted__isnull=True
-            )
+            return Dataset.objects.filter(organization=self.organization, deleted__isnull=True)
         return Dataset.objects.none()
 
     @swagger_auto_schema(
@@ -257,9 +241,7 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
     )
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = PatchDatasetSerializer(
-            instance, data=request.data, context={"user": self.user}, partial=True
-        )
+        serializer = PatchDatasetSerializer(instance, data=request.data, context={"user": self.user}, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
         serializer = DatasetSerializer(updated_instance, context={"request": request})
@@ -288,9 +270,7 @@ class DatasetViewSet(RevisionMixin, ModelViewSet):
 class InternalDatasetViewSet(DatasetViewSet):
     def get_object(self):
         internal_id = self.kwargs.get("internalId")
-        obj = get_object_or_404(
-            Dataset, organization=self.organization, internal_id=internal_id
-        )
+        obj = get_object_or_404(Dataset, organization=self.organization, internal_id=internal_id)
         return obj
 
     @swagger_auto_schema(
@@ -362,14 +342,10 @@ class DatasetDistributionViewSet(ModelViewSet):
     )
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        serializer = PatchDatasetDistributionSerializer(
-            instance, data=request.data, partial=True
-        )
+        serializer = PatchDatasetDistributionSerializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
-        serializer = DatasetDistributionSerializer(
-            updated_instance, context={"request": request}
-        )
+        serializer = DatasetDistributionSerializer(updated_instance, context={"request": request})
         return Response(serializer.data)
 
     @swagger_auto_schema(
@@ -380,14 +356,10 @@ class DatasetDistributionViewSet(ModelViewSet):
         responses={status.HTTP_200_OK: DatasetDistributionSerializer()},
     )
     def create(self, request, *args, **kwargs):
-        serializer = PostDatasetDistributionSerializer(
-            data=request.data, context={"dataset": self.get_dataset()}
-        )
+        serializer = PostDatasetDistributionSerializer(data=request.data, context={"dataset": self.get_dataset()})
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        serializer = DatasetDistributionSerializer(
-            instance, context={"request": request}
-        )
+        serializer = DatasetDistributionSerializer(instance, context={"request": request})
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
@@ -399,14 +371,10 @@ class DatasetDistributionViewSet(ModelViewSet):
         responses={status.HTTP_200_OK: DatasetDistributionSerializer()},
     )
     def create_with_put(self, request, *args, **kwargs):
-        serializer = PutDatasetDistributionSerializer(
-            data=request.data, context={"dataset": self.get_dataset()}
-        )
+        serializer = PutDatasetDistributionSerializer(data=request.data, context={"dataset": self.get_dataset()})
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
-        serializer = DatasetDistributionSerializer(
-            instance, context={"request": request}
-        )
+        serializer = DatasetDistributionSerializer(instance, context={"request": request})
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
@@ -424,9 +392,7 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
 
     def get_dataset(self):
         internal_id = self.kwargs.get("internalId")
-        dataset = get_object_or_404(
-            Dataset, organization=self.organization, internal_id=internal_id
-        )
+        dataset = get_object_or_404(Dataset, organization=self.organization, internal_id=internal_id)
         return dataset
 
     @swagger_auto_schema(
@@ -546,9 +512,7 @@ class DistributionTabularDataViewSet(ModelViewSet):
     )
     def retrieve(self, request, *args, **kwargs):
         distribution_id = kwargs.get("distributionId")
-        dataset_distribution_instance = DatasetDistribution.objects.get(
-            id=distribution_id
-        )
+        dataset_distribution_instance = DatasetDistribution.objects.get(id=distribution_id)
         tabular_data = _resource_models_to_tabular(dataset_distribution_instance)
         tabular_data_list = list(tabular_data)
         return Response(tabular_data_list)
@@ -569,11 +533,7 @@ class DistributionCreateAfterUploadToStorage(ModelViewSet):
         format_obj = create_or_get_uapi_format()
         dataset = Dataset.objects.get(id=dataset_id)
 
-        if (
-            not metadata.source
-            and metadata.name.startswith("datasets/gov")
-            or "datasets/gov" in metadata.name
-        ):
+        if not metadata.source and metadata.name.startswith("datasets/gov") or "datasets/gov" in metadata.name:
             url = f"https://get.data.gov.lt/{metadata.name}/:ns"
         elif metadata.source:
             url = metadata.source
@@ -647,9 +607,7 @@ class TaskViewSet(ModelViewSet):
 
         task.save()
         headers = self.get_success_headers(serializer.data)
-        return Response(
-            serializer.data, status=status.HTTP_201_CREATED, headers=headers
-        )
+        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
 
     @swagger_auto_schema(
         operation_summary="Update task by ID",
@@ -668,9 +626,7 @@ class TaskViewSet(ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class DatasetStructureViewSet(
-    CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet
-):
+class DatasetStructureViewSet(CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet):
     serializer_class = DatasetStructureSerializer
     permission_classes = (APIKeyPermission,)
     parser_classes = [MultiPartParser]
@@ -700,9 +656,7 @@ class DatasetStructureViewSet(
         responses={status.HTTP_200_OK: DatasetStructureSerializer()},
     )
     def create(self, request, *args, **kwargs):
-        serializer = PostDatasetStructureSerializer(
-            data=request.data, context={"dataset": self.get_dataset()}
-        )
+        serializer = PostDatasetStructureSerializer(data=request.data, context={"dataset": self.get_dataset()})
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
         serializer = DatasetStructureSerializer(instance)
@@ -723,9 +677,7 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
 
     def get_dataset(self):
         internal_id = self.kwargs.get("internalId")
-        dataset = get_object_or_404(
-            Dataset, organization=self.organization, internal_id=internal_id
-        )
+        dataset = get_object_or_404(Dataset, organization=self.organization, internal_id=internal_id)
         return dataset
 
     @swagger_auto_schema(

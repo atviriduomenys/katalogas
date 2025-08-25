@@ -2998,7 +2998,7 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
             resource.modified.strftime("%Y-%m-%d"),
             "PeržiūrėtiAtsisiųsti",
             "Redaguoti",
-            "Trinti",
+            "Ištrinti",
         ],
         [
             "",
@@ -3086,7 +3086,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             resource.modified.strftime("%Y-%m-%d"),
             "PeržiūrėtiAtsisiųsti",
             "Redaguoti",
-            "Trinti",
+            "Ištrinti",
         ],
         [
             "",

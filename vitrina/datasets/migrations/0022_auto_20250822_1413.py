@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_datasets', '0020_auto_20250821_1345'),
+        ('vitrina_datasets', '0021_auto_20250821_1654'),
     ]
 
     operations = [

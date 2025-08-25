@@ -86,7 +86,7 @@ libsass = "^0.21.0"
 flake8 = "^4.0.1"
 xlsxwriter = "^3.0.3"
 django-browser-reload = "^1.10.0"
-ruff = "^0.9.3"
+ruff = "^0.12.10"
 djlint = "^1.36.4"
 
 [build-system]
@@ -100,7 +100,7 @@ include = [
 exclude = [
     "**/migrations/*.py",
 ]
-line-length = 88
+line-length = 120
 indent-width = 4
 
 [tool.ruff.format]

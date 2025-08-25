@@ -1295,6 +1295,9 @@ msgstr ""
 "Groups to which this resource belongs (e.g., administrative units, "
 "statistical units)."
 
+msgid "Duomenų paslaugos tipas"
+msgstr "Data service type"
+
 msgid ""
 "Duomenų ištekliaus atvėrimo būsena: inventorintas, atvertas, planuojamas "
 "atverti"

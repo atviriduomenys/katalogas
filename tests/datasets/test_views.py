@@ -3299,9 +3299,10 @@ def test_dataset_create_with_applicable_legislation(app: DjangoTestApp):
         slug="test-org-slug",
         kind="test_org_kind",
     )
-    applicable_legislation_urls = ["http://www.google.", "http://www.example.com"]
+    applicable_legislation_urls = ["http://www.google.com", "http://www.example.com"]
     user = UserFactory(is_staff=True)
     app.set_user(user)
+
     form = app.get(
         reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
     ).forms["dataset-form"]
@@ -3309,37 +3310,34 @@ def test_dataset_create_with_applicable_legislation(app: DjangoTestApp):
     form["description"] = "Added new dataset description"
     form["access_rights"] = Dataset.PUBLIC
     form["applicable_legislation"] = applicable_legislation_urls
-    resp = form.submit()
+    response = form.submit()
+
     dataset = Dataset.objects.filter(translations__title="Added title").first()
-    assert resp.status_code == 302
-    urls_in_db = set(dataset.applicable_legislation.values_list("url", flat=True))
-    assert urls_in_db == set(applicable_legislation_urls)
+    assert response.status_code == 302
+    assert set(dataset.applicable_legislation.values_list("url", flat=True)) == set(applicable_legislation_urls)
 
 
 @pytest.mark.django_db
 def test_dataset_change_with_applicable_legislation(app: DjangoTestApp):
     category = CategoryFactory()
-    applicable_legislation = ApplicableLegislationFactory.create_batch(4)
     dataset = DatasetFactory()
     dataset.category.add(category)
-    dataset.applicable_legislation.set(applicable_legislation)
+    dataset.applicable_legislation.set(ApplicableLegislationFactory.create_batch(4))
+
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset.manager = user
-    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
-        "dataset-form"
-    ]
-    applicable_legislation_urls = ["http://www.google.", "http://www.example.com"]
-    for i, field in enumerate(form.fields.get("applicable_legislation")):
-        if i < len(applicable_legislation_urls):
-            field.value = applicable_legislation_urls[i]
-        else:
-            field.value = ""
-    resp = form.submit()
+
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
+
+    new_urls = ("http://www.google.", "http://www.example.com")
+    for i, field in enumerate(form.fields["applicable_legislation"]):
+        field.value = new_urls[i] if i < len(new_urls) else ""
+    response = form.submit()
     dataset.refresh_from_db()
-    assert resp.status_code == 302
-    urls_in_db = set(dataset.applicable_legislation.values_list("url", flat=True))
-    assert urls_in_db == set(applicable_legislation_urls)
+
+    assert response.status_code == 302
+    assert set(dataset.applicable_legislation.values_list("url", flat=True)) == set(new_urls)
 
 
 @pytest.mark.django_db

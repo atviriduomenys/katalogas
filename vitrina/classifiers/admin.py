@@ -58,9 +58,7 @@ class CategoryAdmin(TreeAdmin):
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)
 
-        if change and (
-            "_position" in form.changed_data or "_ref_node_id" in form.changed_data
-        ):
+        if change and ("_position" in form.changed_data or "_ref_node_id" in form.changed_data):
             # save related datasets to update search index
             for dataset in obj.dataset_set.all():
                 dataset.save()

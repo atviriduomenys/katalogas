@@ -43,7 +43,8 @@ from vitrina.datasets.forms import (
     ResourceForm,
     ServiceResourceForm,
     BaseResourceForm,
-    InformationSystemResourceForm, DatasetResourceForm,
+    InformationSystemResourceForm,
+    DatasetResourceForm,
 )
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
@@ -102,9 +103,7 @@ def test_dataset_detail_status(app: DjangoTestApp, dataset_detail_data):
 @pytest.mark.django_db
 def test_dataset_detail_resources(app: DjangoTestApp, dataset_detail_data):
     resp = app.get(dataset_detail_data["dataset"].get_absolute_url())
-    assert list(resp.context["resources"]) == [
-        dataset_detail_data["dataset_distribution"]
-    ]
+    assert list(resp.context["resources"]) == [dataset_detail_data["dataset_distribution"]]
 
 
 @pytest.mark.django_db
@@ -264,9 +263,7 @@ def test_manager_dataset_url_is_hidden_for_manager_if_no_datasets(app: DjangoTes
 def test_org_dataset_url_is_shown_for_coordinator(app: DjangoTestApp):
     org = OrganizationFactory()
     DatasetFactory(organization=org)
-    user = User.objects.create_user(
-        email="test@test.com", password="test123", organization=org
-    )
+    user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
     app.set_user(user)
     resp = app.get(reverse("dataset-list"))
     assert resp.html.find(id="org-dataset-url")
@@ -291,9 +288,7 @@ def test_manager_dataset_url_is_shown_for_manager(app: DjangoTestApp):
 def test_org_datasets_are_shown_for_coordinator(app: DjangoTestApp):
     org = OrganizationFactory()
     dataset = DatasetFactory(title="testt", organization=org)
-    user = User.objects.create_user(
-        email="test@test.com", password="test123", organization=org
-    )
+    user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
     app.set_user(user)
     resp = app.get(reverse("dataset-list"))
     resp = resp.click(linkid="org-dataset-url")
@@ -324,18 +319,12 @@ def test_datasets_from_multiple_orgs_are_shown_for_manager(app: DjangoTestApp):
     dataset2 = DatasetFactory(organization=org2)
     ct = ContentType.objects.get_for_model(Dataset)
     user = User.objects.create_user(email="test@test.com", password="test123")
-    rep = RepresentativeFactory(
-        content_type=ct, object_id=org.pk, role=Representative.MANAGER, user=user
-    )
-    rep2 = RepresentativeFactory(
-        content_type=ct, object_id=org2.pk, role=Representative.MANAGER, user=user
-    )
+    rep = RepresentativeFactory(content_type=ct, object_id=org.pk, role=Representative.MANAGER, user=user)
+    rep2 = RepresentativeFactory(content_type=ct, object_id=org2.pk, role=Representative.MANAGER, user=user)
     app.set_user(user)
     resp = app.get(reverse("dataset-list"))
     resp = resp.click(linkid="manager-dataset-url")
-    assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
-        [dataset.pk, dataset2.pk]
-    )
+    assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted([dataset.pk, dataset2.pk])
 
 
 @pytest.mark.haystack
@@ -355,9 +344,7 @@ def test_search_with_query_that_doesnt_match(app: DjangoTestApp, search_datasets
 @pytest.mark.haystack
 def test_search_with_query_that_matches_one(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse("dataset-list"), "vienas"))
-    assert [int(obj.pk) for obj in resp.context["object_list"]] == [
-        search_datasets[0].pk
-    ]
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [search_datasets[0].pk]
 
 
 @pytest.mark.haystack
@@ -369,9 +356,7 @@ def test_search_with_query_that_matches_all(app: DjangoTestApp, search_datasets)
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_all_with_english_title(
-    app: DjangoTestApp, search_datasets
-):
+def test_search_with_query_that_matches_all_with_english_title(app: DjangoTestApp, search_datasets):
     for dataset in search_datasets:
         dataset.set_current_language("en")
     resp = app.get("%s?q=%s" % (reverse("dataset-list"), "Dataset"))
@@ -381,9 +366,7 @@ def test_search_with_query_that_matches_all_with_english_title(
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_all_description(
-    app: DjangoTestApp, search_datasets
-):
+def test_search_with_query_that_matches_all_description(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse("dataset-list"), "test_lt_desc"))
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
         [
@@ -395,9 +378,7 @@ def test_search_with_query_that_matches_all_description(
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_all_with_english_description(
-    app: DjangoTestApp, search_datasets
-):
+def test_search_with_query_that_matches_all_with_english_description(app: DjangoTestApp, search_datasets):
     for dataset in search_datasets:
         dataset.set_current_language("en")
     resp = app.get("%s?q=%s" % (reverse("dataset-list"), "Description"))
@@ -411,9 +392,7 @@ def test_search_with_query_that_matches_all_with_english_description(
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_child_category(
-    app: DjangoTestApp, search_datasets
-):
+def test_search_with_query_that_matches_child_category(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse("dataset-list"), "child1"))
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
         [
@@ -423,9 +402,7 @@ def test_search_with_query_that_matches_child_category(
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_category_and_parent_category(
-    app: DjangoTestApp, search_datasets
-):
+def test_search_with_query_that_matches_category_and_parent_category(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse("dataset-list"), "parent1"))
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
         [
@@ -436,9 +413,7 @@ def test_search_with_query_that_matches_category_and_parent_category(
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_tag_of_one_dataset(
-    app: DjangoTestApp, search_datasets
-):
+def test_search_with_query_that_matches_tag_of_one_dataset(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse("dataset-list"), "test_tag_1"))
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
         [
@@ -448,9 +423,7 @@ def test_search_with_query_that_matches_tag_of_one_dataset(
 
 
 @pytest.mark.haystack
-def test_search_with_query_that_matches_tag_of_two_datasets(
-    app: DjangoTestApp, search_datasets
-):
+def test_search_with_query_that_matches_tag_of_two_datasets(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse("dataset-list"), "test_tag_2"))
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
         [
@@ -480,10 +453,7 @@ def test_status_filter_without_query(app: DjangoTestApp, status_filter_data):
 
 @pytest.mark.haystack
 def test_status_filter_inventored(app: DjangoTestApp, status_filter_data):
-    resp = app.get(
-        "%s?selected_facets=status_exact:%s"
-        % (reverse("dataset-list"), Dataset.INVENTORED)
-    )
+    resp = app.get("%s?selected_facets=status_exact:%s" % (reverse("dataset-list"), Dataset.INVENTORED))
 
     objects = [int(obj.pk) for obj in resp.context["object_list"]]
     assert objects == [status_filter_data[1].pk]
@@ -504,9 +474,7 @@ def organization_filter_data():
 
 
 @pytest.mark.haystack
-def test_organization_filter_without_query(
-    app: DjangoTestApp, organization_filter_data
-):
+def test_organization_filter_without_query(app: DjangoTestApp, organization_filter_data):
     resp = app.get(reverse("dataset-list"))
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
         [
@@ -521,9 +489,7 @@ def test_organization_filter_without_query(
 
 
 @pytest.mark.haystack
-def test_organization_filter_with_organization(
-    app: DjangoTestApp, organization_filter_data
-):
+def test_organization_filter_with_organization(app: DjangoTestApp, organization_filter_data):
     resp = app.get(
         "%s?selected_facets=organization_exact:%s"
         % (reverse("dataset-list"), organization_filter_data["organization"].pk)
@@ -591,8 +557,7 @@ def test_category_filter_without_query(app: DjangoTestApp, category_filter_data)
 @pytest.mark.haystack
 def test_category_filter_with_parent_category(app: DjangoTestApp, category_filter_data):
     resp = app.get(
-        "%s?selected_facets=category_exact:%s"
-        % (reverse("dataset-list"), category_filter_data["categories"][0].pk)
+        "%s?selected_facets=category_exact:%s" % (reverse("dataset-list"), category_filter_data["categories"][0].pk)
     )
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
         [
@@ -614,8 +579,7 @@ def test_category_filter_with_middle_category(
     category_filter_data: dict[str, list[Category]],
 ):
     resp = app.get(
-        "%s?selected_facets=category_exact:%s"
-        % (reverse("dataset-list"), category_filter_data["categories"][1].pk)
+        "%s?selected_facets=category_exact:%s" % (reverse("dataset-list"), category_filter_data["categories"][1].pk)
     )
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
         [
@@ -635,8 +599,7 @@ def test_category_filter_with_child_category(
     category_filter_data: dict[str, list[Category]],
 ):
     resp = app.get(
-        "%s?selected_facets=category_exact:%s"
-        % (reverse("dataset-list"), category_filter_data["categories"][3].pk)
+        "%s?selected_facets=category_exact:%s" % (reverse("dataset-list"), category_filter_data["categories"][3].pk)
     )
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [
         category_filter_data["datasets"][3].pk,
@@ -716,9 +679,7 @@ def test_tag_filter_without_query(app: DjangoTestApp, datasets):
             datasets[1].pk,
         ]
     )
-    assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
-        [datasets[0].pk, datasets[1].pk]
-    )
+    assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted([datasets[0].pk, datasets[1].pk])
 
     filters = {f.name: f for f in resp.context["filters"]}
     selected = [i.value for i in filters["tags"].items() if i.selected]
@@ -728,9 +689,7 @@ def test_tag_filter_without_query(app: DjangoTestApp, datasets):
 @pytest.mark.haystack
 def test_tag_filter_with_one_tag(app: DjangoTestApp, datasets):
     tag_id = datasets[0].tags.get(name="tag2").pk
-    resp = app.get(
-        "%s?selected_facets=tags_exact:%s" % (reverse("dataset-list"), tag_id)
-    )
+    resp = app.get("%s?selected_facets=tags_exact:%s" % (reverse("dataset-list"), tag_id))
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [datasets[0].pk]
 
     filters = {f.name: f for f in resp.context["filters"]}
@@ -741,12 +700,8 @@ def test_tag_filter_with_one_tag(app: DjangoTestApp, datasets):
 @pytest.mark.haystack
 def test_tag_filter_with_shared_tag(app: DjangoTestApp, datasets):
     tag_id = datasets[0].tags.get(name="tag3").pk
-    resp = app.get(
-        "%s?selected_facets=tags_exact:%s" % (reverse("dataset-list"), tag_id)
-    )
-    assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
-        [datasets[0].pk, datasets[1].pk]
-    )
+    resp = app.get("%s?selected_facets=tags_exact:%s" % (reverse("dataset-list"), tag_id))
+    assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted([datasets[0].pk, datasets[1].pk])
 
     filters = {f.name: f for f in resp.context["filters"]}
     selected = [i.value for i in filters["tags"].items() if i.selected]
@@ -758,8 +713,7 @@ def test_tag_filter_with_multiple_tags(app: DjangoTestApp, datasets):
     tag_id_1 = datasets[1].tags.get(name="tag3").pk
     tag_id_2 = datasets[1].tags.get(name="tag4").pk
     resp = app.get(
-        "%s?selected_facets=tags_exact:%s&selected_facets=tags_exact:%s"
-        % (reverse("dataset-list"), tag_id_1, tag_id_2)
+        "%s?selected_facets=tags_exact:%s&selected_facets=tags_exact:%s" % (reverse("dataset-list"), tag_id_1, tag_id_2)
     )
     assert [int(obj.pk) for obj in resp.context["object_list"]] == [datasets[1].pk]
 
@@ -797,8 +751,7 @@ def test_frequency_filter_without_query(app: DjangoTestApp, frequency_filter_dat
 @pytest.mark.haystack
 def test_frequency_filter_with_frequency(app: DjangoTestApp, frequency_filter_data):
     resp = app.get(
-        "%s?selected_facets=frequency_exact:%s"
-        % (reverse("dataset-list"), frequency_filter_data["frequency"].pk)
+        "%s?selected_facets=frequency_exact:%s" % (reverse("dataset-list"), frequency_filter_data["frequency"].pk)
     )
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
         [
@@ -815,15 +768,9 @@ def test_frequency_filter_with_frequency(app: DjangoTestApp, frequency_filter_da
 @pytest.fixture
 def date_filter_data():
     org = OrganizationFactory()
-    dataset1 = DatasetFactory(
-        organization=org, slug="ds1", published=timezone.localize(datetime(2022, 3, 1))
-    )
-    dataset2 = DatasetFactory(
-        organization=org, slug="ds2", published=timezone.localize(datetime(2022, 2, 1))
-    )
-    dataset3 = DatasetFactory(
-        organization=org, slug="ds3", published=timezone.localize(datetime(2021, 12, 1))
-    )
+    dataset1 = DatasetFactory(organization=org, slug="ds1", published=timezone.localize(datetime(2022, 3, 1)))
+    dataset2 = DatasetFactory(organization=org, slug="ds2", published=timezone.localize(datetime(2022, 2, 1)))
+    dataset3 = DatasetFactory(organization=org, slug="ds3", published=timezone.localize(datetime(2021, 12, 1)))
     return [dataset1, dataset2, dataset3]
 
 
@@ -842,9 +789,7 @@ def test_date_filter_without_query(app: DjangoTestApp, date_filter_data):
 @pytest.mark.haystack
 def test_date_filter_wit_date_from(app: DjangoTestApp, date_filter_data):
     resp = app.get("%s?date_from=2022-02-10" % reverse("dataset-list"))
-    assert [int(obj.pk) for obj in resp.context["object_list"]] == [
-        date_filter_data[0].pk
-    ]
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [date_filter_data[0].pk]
     assert resp.context["form"].cleaned_data["date_from"] == date(2022, 2, 10)
     assert resp.context["form"].cleaned_data["date_to"] is None
 
@@ -861,12 +806,8 @@ def test_date_filter_with_date_to(app: DjangoTestApp, date_filter_data):
 
 @pytest.mark.haystack
 def test_date_filter_with_dates_from_and_to(app: DjangoTestApp, date_filter_data):
-    resp = app.get(
-        "%s?date_from=2022-01-01&date_to=2022-02-10" % reverse("dataset-list")
-    )
-    assert [int(obj.pk) for obj in resp.context["object_list"]] == [
-        date_filter_data[1].pk
-    ]
+    resp = app.get("%s?date_from=2022-01-01&date_to=2022-02-10" % reverse("dataset-list"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [date_filter_data[1].pk]
     assert resp.context["form"].cleaned_data["date_from"] == date(2022, 1, 1)
     assert resp.context["form"].cleaned_data["date_to"] == date(2022, 2, 10)
 
@@ -965,9 +906,7 @@ def dataset_structure_data():
     dataset2.save()
 
     structure1 = DatasetStructureFactory(dataset=dataset1)
-    structure2 = DatasetStructureFactory(
-        dataset=dataset2, file=FileField(filename="file.csv", data=b"ab\0c")
-    )
+    structure2 = DatasetStructureFactory(dataset=dataset2, file=FileField(filename="file.csv", data=b"ab\0c"))
     return {"structure1": structure1, "structure2": structure2}
 
 
@@ -1004,9 +943,7 @@ def test_change_form_wrong_login(app: DjangoTestApp):
     dataset = DatasetFactory(organization=org)
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    response = app.get(
-        reverse("dataset-change", kwargs={"pk": dataset.id}), expect_errors=True
-    )
+    response = app.get(reverse("dataset-change", kwargs={"pk": dataset.id}), expect_errors=True)
     assert response.status_code == 403
 
 
@@ -1026,9 +963,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset.manager = user
-    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
-        "dataset-form"
-    ]
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
     form["title"] = "Edited title"
     form["description"] = "edited dataset description"
     resp = form.submit()
@@ -1038,10 +973,7 @@ def test_change_form_correct_login(app: DjangoTestApp):
     assert dataset.title == "Edited title"
     assert dataset.description == "edited dataset description"
     assert Version.objects.get_for_object(dataset).count() == 1
-    assert (
-        Version.objects.get_for_object(dataset).first().revision.comment
-        == Dataset.EDITED
-    )
+    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
     assert dataset.metadata.count() == 1
     assert dataset.metadata.first().title == "Edited title"
     assert dataset.metadata.first().description == "edited dataset description"
@@ -1067,9 +999,7 @@ def test_click_edit_button(app: DjangoTestApp):
 def test_add_form_no_login(app: DjangoTestApp):
     org = OrganizationFactory()
     subclass = DCATResourceSubclassFactory()
-    response = app.get(
-        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
-    )
+    response = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk}))
     assert response.status_code == 302
     assert settings.LOGIN_URL in response.location
 
@@ -1100,9 +1030,7 @@ def test_add_subclass_form_wrong_login(app: DjangoTestApp):
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
     org = OrganizationFactory()
-    response = app.get(
-        reverse("resource-subclass-add", kwargs={"pk": org.id}), expect_errors=True
-    )
+    response = app.get(reverse("resource-subclass-add", kwargs={"pk": org.id}), expect_errors=True)
     assert response.status_code == 403
 
 
@@ -1119,9 +1047,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     )
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(
-        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms["dataset-form"]
     form["title"] = "Added title"
     form["description"] = "Added new dataset description"
     form["tags"] = ["test tag"]
@@ -1134,16 +1060,10 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert resp.status_code == 302
     assert str(added_dataset[0].id) in resp.url
     assert Version.objects.get_for_object(added_dataset.first()).count() == 1
-    assert (
-        Version.objects.get_for_object(added_dataset.first()).first().revision.comment
-        == Dataset.CREATED
-    )
+    assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
     assert added_dataset.first().metadata.count() == 1
     assert added_dataset.first().metadata.first().title == "Added title"
-    assert (
-        added_dataset.first().metadata.first().description
-        == "Added new dataset description"
-    )
+    assert added_dataset.first().metadata.first().description == "Added new dataset description"
 
 
 @pytest.mark.haystack
@@ -1197,11 +1117,9 @@ def test_dataset_add_form_initial_values(app: DjangoTestApp):
     organization = OrganizationFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(
-        reverse(
-            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
-        )
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})).forms[
+        "dataset-form"
+    ]
     assert form["frequency"].value == str(default_frequency.pk)
 
 
@@ -1284,9 +1202,7 @@ def test_dataset_structure_import_standardized(app: DjangoTestApp):
 def test_dataset_members_view_bad_login(app: DjangoTestApp):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset)
-    representative = RepresentativeFactory(
-        content_type=ct, object_id=dataset.pk, role=Representative.MANAGER
-    )
+    representative = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.MANAGER)
     user = UserFactory()
     app.set_user(user)
     url = reverse(
@@ -1303,9 +1219,7 @@ def test_dataset_members_view_bad_login(app: DjangoTestApp):
 def test_dataset_members_view_no_login(app: DjangoTestApp):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset)
-    RepresentativeFactory(
-        content_type=ct, object_id=dataset.pk, role=Representative.MANAGER
-    )
+    RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.MANAGER)
     user = UserFactory(is_staff=True)
     app.set_user(user)
     response = app.get(reverse("dataset-members", kwargs={"pk": dataset.pk}))
@@ -1590,9 +1504,7 @@ def test_add_project_with_no_permission(app: DjangoTestApp):
     user = UserFactory()
     dataset = DatasetFactory()
     app.set_user(user)
-    resp = app.get(
-        reverse("dataset-project-add", kwargs={"pk": dataset.pk}), expect_errors=True
-    )
+    resp = app.get(reverse("dataset-project-add", kwargs={"pk": dataset.pk}), expect_errors=True)
     assert resp.status_code == 403
 
 
@@ -1640,12 +1552,9 @@ def test_remove_project_with_permission(app: DjangoTestApp):
 
 
 @pytest.mark.haystack
-def test_dataset_stats_view_no_login_with_query(
-    app: DjangoTestApp, category_filter_data: dict[str, list[Category]]
-):
+def test_dataset_stats_view_no_login_with_query(app: DjangoTestApp, category_filter_data: dict[str, list[Category]]):
     resp = app.get(
-        "%s?selected_facets=category_exact:%s"
-        % (reverse("dataset-list"), category_filter_data["categories"][1].pk)
+        "%s?selected_facets=category_exact:%s" % (reverse("dataset-list"), category_filter_data["categories"][1].pk)
     )
     # old_object_list = resp.context['object_list']
     # resp = resp.click(linkid="Dataset-stats-status")
@@ -1657,12 +1566,8 @@ def test_dataset_stats_view_no_login_with_query(
 @pytest.mark.haystack
 def test_dataset_jurisdictions(app: DjangoTestApp):
     parent_org = OrganizationFactory()
-    child_org1 = parent_org.add_child(
-        instance=OrganizationFactory.build(title="org-test-1")
-    )
-    child_org2 = parent_org.add_child(
-        instance=OrganizationFactory.build(title="org-test-2")
-    )
+    child_org1 = parent_org.add_child(instance=OrganizationFactory.build(title="org-test-1"))
+    child_org2 = parent_org.add_child(instance=OrganizationFactory.build(title="org-test-2"))
     DatasetFactory(organization=parent_org)
     DatasetFactory(organization=child_org1)
     DatasetFactory(organization=child_org1)
@@ -1750,9 +1655,7 @@ def test_dataset_change_category(app: DjangoTestApp):
     dataset.category.add(category1)
     dataset.category.add(category2)
 
-    resp = app.post(
-        reverse("assign-category", args=[dataset.pk]), {"category": [category3.pk]}
-    )
+    resp = app.post(reverse("assign-category", args=[dataset.pk]), {"category": [category3.pk]})
     assert resp.status_code == 302
     assert resp.url == dataset.get_absolute_url()
     assert list(dataset.category.all()) == [category3]
@@ -1766,9 +1669,7 @@ def test_dataset_create_attribution_with_organization_and_agent(app: DjangoTestA
     organization = OrganizationFactory()
     attribution = AttributionFactory()
 
-    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms[
-        "attribution-form"
-    ]
+    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms["attribution-form"]
     form["attribution"] = attribution.pk
     form["organization"].force_value(organization.pk)
     form["agent"] = "Test organization"
@@ -1786,15 +1687,11 @@ def test_dataset_create_attribution_without_organization_and_agent(app: DjangoTe
     dataset = DatasetFactory()
     attribution = AttributionFactory()
 
-    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms[
-        "attribution-form"
-    ]
+    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms["attribution-form"]
     form["attribution"] = attribution.pk
     resp = form.submit()
 
-    assert list(resp.context["form"].errors.values()) == [
-        ['Privaloma užpildyti "Organizacija" arba "Agentas" lauką.']
-    ]
+    assert list(resp.context["form"].errors.values()) == [['Privaloma užpildyti "Organizacija" arba "Agentas" lauką.']]
 
 
 @pytest.mark.django_db
@@ -1804,13 +1701,9 @@ def test_dataset_create_attribution_with_existing_organization(app: DjangoTestAp
     dataset = DatasetFactory()
     attribution = AttributionFactory()
     organization = OrganizationFactory()
-    DatasetAttributionFactory(
-        dataset=dataset, attribution=attribution, organization=organization
-    )
+    DatasetAttributionFactory(dataset=dataset, attribution=attribution, organization=organization)
 
-    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms[
-        "attribution-form"
-    ]
+    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms["attribution-form"]
     form["attribution"] = attribution.pk
     form["organization"].force_value(organization.pk)
     resp = form.submit()
@@ -1826,13 +1719,9 @@ def test_dataset_create_attribution_with_existing_agent(app: DjangoTestApp):
     app.set_user(user)
     dataset = DatasetFactory()
     attribution = AttributionFactory()
-    DatasetAttributionFactory(
-        dataset=dataset, attribution=attribution, agent="Test organization"
-    )
+    DatasetAttributionFactory(dataset=dataset, attribution=attribution, agent="Test organization")
 
-    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms[
-        "attribution-form"
-    ]
+    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms["attribution-form"]
     form["attribution"] = attribution.pk
     form["agent"] = "Test organization"
     resp = form.submit()
@@ -1850,9 +1739,7 @@ def test_dataset_create_attribution_with_organization(app: DjangoTestApp):
     organization = OrganizationFactory()
     attribution = AttributionFactory()
 
-    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms[
-        "attribution-form"
-    ]
+    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms["attribution-form"]
     form["attribution"] = attribution.pk
     form["organization"].force_value(organization.pk)
     resp = form.submit()
@@ -1871,9 +1758,7 @@ def test_dataset_create_attribution_with_agent(app: DjangoTestApp):
     dataset = DatasetFactory()
     attribution = AttributionFactory()
 
-    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms[
-        "attribution-form"
-    ]
+    form = app.get(reverse("attribution-add", args=[dataset.pk])).forms["attribution-form"]
     form["attribution"] = attribution.pk
     form["agent"] = "Test organization"
     resp = form.submit()
@@ -1892,9 +1777,7 @@ def test_dataset_delete_attribution(app: DjangoTestApp):
     dataset_attribution = DatasetAttributionFactory()
     dataset = dataset_attribution.dataset
 
-    resp = app.get(
-        reverse("attribution-delete", args=[dataset.pk, dataset_attribution.pk])
-    )
+    resp = app.get(reverse("attribution-delete", args=[dataset.pk, dataset_attribution.pk]))
 
     assert resp.url == dataset.get_absolute_url()
     assert dataset.datasetattribution_set.count() == 0
@@ -1919,11 +1802,7 @@ def test_dataset_create_uses_different_forms_based_on_dcat_subclass(
     subclass = DCATResourceSubclassFactory(name=subclass_name)
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    response = app.get(
-        reverse(
-            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
-        )
-    )
+    response = app.get(reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}))
 
     assert type(response.context.get("form")) == form_class
 
@@ -1934,24 +1813,18 @@ def test_dataset_create_information_system(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory(name="information_system")
     catalog = CatalogFactory()
     frequency = FrequencyFactory(is_default=True)
-    information_system_type_concept_schema = ConceptSchemaFactory(
-        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
-    )
+    information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
     information_system_importance_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
     )
-    information_system_type_concept = ConceptFactory(
-        concept_schemas=[information_system_type_concept_schema]
-    )
+    information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
     information_system_importance_concept = ConceptFactory(
         concept_schemas=[information_system_importance_concept_schema]
     )
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    url = reverse(
-        "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
-    )
+    url = reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})
 
     data = {
         "title": "test_information_system",
@@ -1966,7 +1839,7 @@ def test_dataset_create_information_system(app: DjangoTestApp):
         "information_system_type": information_system_type_concept.pk,
         "information_system_importance": information_system_importance_concept.pk,
         "information_system_publisher": organization.pk,
-        "information_system_creator": organization.pk
+        "information_system_creator": organization.pk,
     }
     response = app.post(url, data)
 
@@ -1983,10 +1856,7 @@ def test_dataset_create_information_system(app: DjangoTestApp):
     assert dataset.name == "test/information/system"
     assert dataset.landing_page == "https://www.test.test"
     assert dataset.information_system_type == information_system_type_concept
-    assert (
-        dataset.information_system_importance
-        == information_system_importance_concept
-    )
+    assert dataset.information_system_importance == information_system_importance_concept
     assert dataset.information_system_publisher == organization
     assert dataset.information_system_creator == organization
 
@@ -1998,11 +1868,9 @@ def test_dataset_with_subclass(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(
-        reverse(
-            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
-        )
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})).forms[
+        "dataset-form"
+    ]
     form["title"] = "Test dataset"
     form["description"] = "Test dataset description"
     form["is_public"] = True
@@ -2020,16 +1888,12 @@ def test_dataset_add_relation_with_existing_relation(app: DjangoTestApp):
     app.set_user(user)
     dataset_relation = DatasetRelationFactory()
 
-    form = app.get(
-        reverse("dataset-relation-add", args=[dataset_relation.dataset.pk])
-    ).forms["dataset-relation-form"]
+    form = app.get(reverse("dataset-relation-add", args=[dataset_relation.dataset.pk])).forms["dataset-relation-form"]
     form["relation_type"] = f"{dataset_relation.relation.pk}"
     form["part_of"].force_value(dataset_relation.part_of.pk)
     resp = form.submit()
     assert list(resp.context["form"].errors.values()) == [
-        [
-            f'"{dataset_relation.relation.title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'
-        ]
+        [f'"{dataset_relation.relation.title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.']
     ]
 
 
@@ -2039,16 +1903,12 @@ def test_dataset_add_relation_with_existing_inverse_relation(app: DjangoTestApp)
     app.set_user(user)
     dataset_relation = DatasetRelationFactory()
 
-    form = app.get(
-        reverse("dataset-relation-add", args=[dataset_relation.part_of.pk])
-    ).forms["dataset-relation-form"]
+    form = app.get(reverse("dataset-relation-add", args=[dataset_relation.part_of.pk])).forms["dataset-relation-form"]
     form["relation_type"] = f"{dataset_relation.relation.pk}_inv"
     form["part_of"].force_value(dataset_relation.dataset.pk)
     resp = form.submit()
     assert list(resp.context["form"].errors.values()) == [
-        [
-            f'"{dataset_relation.relation.inversive_title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.'
-        ]
+        [f'"{dataset_relation.relation.inversive_title}" ryšys su šiuo duomenų rinkiniu jau egzistuoja.']
     ]
 
 
@@ -2060,9 +1920,7 @@ def test_dataset_add_relation(app: DjangoTestApp):
     dataset_part_of = DatasetFactory()
     relation = RelationFactory()
 
-    form = app.get(reverse("dataset-relation-add", args=[dataset.pk])).forms[
-        "dataset-relation-form"
-    ]
+    form = app.get(reverse("dataset-relation-add", args=[dataset.pk])).forms["dataset-relation-form"]
     form["relation_type"] = f"{relation.pk}"
     form["part_of"].force_value(dataset_part_of.pk)
     resp = form.submit()
@@ -2081,9 +1939,7 @@ def test_dataset_add_inverse_relation(app: DjangoTestApp):
     dataset_part_of = DatasetFactory()
     relation = RelationFactory()
 
-    form = app.get(reverse("dataset-relation-add", args=[dataset.pk])).forms[
-        "dataset-relation-form"
-    ]
+    form = app.get(reverse("dataset-relation-add", args=[dataset.pk])).forms["dataset-relation-form"]
     form["relation_type"] = f"{relation.pk}_inv"
     form["part_of"].force_value(dataset_part_of.pk)
     resp = form.submit()
@@ -2095,9 +1951,7 @@ def test_dataset_add_inverse_relation(app: DjangoTestApp):
 
 
 def _get_selected(context):
-    selected = {
-        f.name: [i.value for i in f.items() if i.selected] for f in context["filters"]
-    }
+    selected = {f.name: [i.value for i in f.items() if i.selected] for f in context["filters"]}
     selected = {k: (v[0] if len(v) == 1 else v) for k, v in selected.items() if v}
     return selected
 
@@ -2109,9 +1963,7 @@ def test_add_dataset_to_plan(app: DjangoTestApp):
     dataset = DatasetFactory()
     plan = PlanFactory(deadline=(date.today() + timedelta(days=1)))
 
-    form = app.get(reverse("dataset-plans-create", args=[dataset.pk])).forms[
-        "dataset-plan-form"
-    ]
+    form = app.get(reverse("dataset-plans-create", args=[dataset.pk])).forms["dataset-plan-form"]
     form["plan"] = plan.pk
     resp = form.submit()
 
@@ -2127,11 +1979,9 @@ def test_dataset_create_non_public(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(
-        reverse(
-            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
-        )
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})).forms[
+        "dataset-form"
+    ]
     form["title"] = "Test dataset"
     form["description"] = "Test dataset description"
     form["is_public"] = False
@@ -2151,11 +2001,9 @@ def test_dataset_create_public(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory()
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(
-        reverse(
-            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
-        )
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})).forms[
+        "dataset-form"
+    ]
     form["title"] = "Test dataset"
     form["description"] = "Test dataset description"
     form["is_public"] = True
@@ -2166,6 +2014,7 @@ def test_dataset_create_public(app: DjangoTestApp):
     assert added_dataset.first().is_public is True
     assert added_dataset.first().published is not None
     assert added_dataset.first().access_rights == Dataset.PUBLIC
+
 
 @pytest.mark.django_db
 def test_child_dataset_create_public(app: DjangoTestApp):
@@ -2178,7 +2027,7 @@ def test_child_dataset_create_public(app: DjangoTestApp):
     form = app.get(
         reverse(
             "child-dataset-add",
-            kwargs={"pk": organization.id, "parent_id":parent_dataset.pk, "subclass_uuid": subclass.pk}
+            kwargs={"pk": organization.id, "parent_id": parent_dataset.pk, "subclass_uuid": subclass.pk},
         )
     ).forms["dataset-form"]
     form["title"] = "Test dataset"
@@ -2186,7 +2035,7 @@ def test_child_dataset_create_public(app: DjangoTestApp):
     form["is_public"] = True
     form["access_rights"] = Dataset.PUBLIC
     form.submit()
-    added_dataset :Dataset = Dataset.objects.filter(translations__title="Test dataset").first()
+    added_dataset: Dataset = Dataset.objects.filter(translations__title="Test dataset").first()
     assert added_dataset.is_public is True
     assert added_dataset.published is not None
     assert added_dataset.access_rights == Dataset.PUBLIC
@@ -2199,22 +2048,19 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
     AgencyFactory()
     organization = OrganizationFactory()
     subclass = DCATResourceSubclassFactory(name="information_system")
-    information_system_type_concept_schema = ConceptSchemaFactory(
-        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
-    )
+    information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
     information_system_importance_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
     )
     information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
     information_system_importance_concept = ConceptFactory(
-        concept_schemas=[information_system_importance_concept_schema])
+        concept_schemas=[information_system_importance_concept_schema]
+    )
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(
-        reverse(
-            "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}
-        )
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})).forms[
+        "dataset-form"
+    ]
     form["title"] = "Test dataset"
     form["description"] = "Test dataset description"
     form["is_public"] = True
@@ -2238,64 +2084,62 @@ def test_information_system_create_with_identifier(app: DjangoTestApp):
 def test_dataset_update_existing_identifier(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory(name="information_system")
     organization = OrganizationFactory()
-    information_system_type_concept_schema = ConceptSchemaFactory(
-        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
-    )
+    information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
     information_system_importance_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
     )
     information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
     information_system_importance_concept = ConceptFactory(
-        concept_schemas=[information_system_importance_concept_schema])
-    dataset = DatasetFactory(subclass=subclass,
-                             information_system_type=information_system_type_concept,
-                             information_system_importance=information_system_importance_concept,
-                             information_system_creator=organization,
-                             information_system_publisher=organization)
+        concept_schemas=[information_system_importance_concept_schema]
+    )
+    dataset = DatasetFactory(
+        subclass=subclass,
+        information_system_type=information_system_type_concept,
+        information_system_importance=information_system_importance_concept,
+        information_system_creator=organization,
+        information_system_publisher=organization,
+    )
     agency = AgencyFactory()
     IdentifierFactory(resource=dataset, notation="test-identifier", scheme_agency=agency)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
-        "dataset-form"
-    ]
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
     assert form["identifier"].value == "test-identifier"
     form["identifier"] = "new-identifier"
     form.submit()
     dataset.refresh_from_db()
     assert dataset.identifier == "new-identifier"
-    
+
     identifiers = Identifier.objects.filter(resource=dataset)
     assert identifiers.count() == 1
     assert identifiers.first().notation == "new-identifier"
-    
+
 
 @pytest.mark.django_db
 def test_dataset_update_non_existing_identifier(app: DjangoTestApp):
     AgencyFactory()
     subclass = DCATResourceSubclassFactory(name="information_system")
     organization = OrganizationFactory()
-    information_system_type_concept_schema = ConceptSchemaFactory(
-        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
-    )
+    information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
     information_system_importance_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
     )
     information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
     information_system_importance_concept = ConceptFactory(
-        concept_schemas=[information_system_importance_concept_schema])
-    dataset = DatasetFactory(subclass=subclass,
-                             information_system_type=information_system_type_concept,
-                             information_system_importance=information_system_importance_concept,
-                             information_system_creator=organization,
-                             information_system_publisher=organization)
+        concept_schemas=[information_system_importance_concept_schema]
+    )
+    dataset = DatasetFactory(
+        subclass=subclass,
+        information_system_type=information_system_type_concept,
+        information_system_importance=information_system_importance_concept,
+        information_system_creator=organization,
+        information_system_publisher=organization,
+    )
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
-        "dataset-form"
-    ]
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
     form["identifier"] = "new-identifier"
     form.submit()
     dataset.refresh_from_db()
@@ -2317,9 +2161,7 @@ def test_dataset_update_from_public_to_non_public(app: DjangoTestApp):
     assert dataset.is_public is True
     assert dataset.published is not None
 
-    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
-        "dataset-form"
-    ]
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
     form["is_public"] = False
     form.submit()
     dataset.refresh_from_db()
@@ -2342,9 +2184,7 @@ def test_dataset_update_from_non_public_to_public(app: DjangoTestApp):
     assert dataset.is_public is False
     assert dataset.published is None
 
-    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
-        "dataset-form"
-    ]
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
     form["is_public"] = True
     form.submit()
     dataset.refresh_from_db()
@@ -2365,9 +2205,7 @@ def test_dataset_update_without_permission(app: DjangoTestApp):
     )
     app.set_user(user)
 
-    resp = app.get(
-        reverse("dataset-change", kwargs={"pk": dataset2.id}), expect_errors=True
-    )
+    resp = app.get(reverse("dataset-change", kwargs={"pk": dataset2.id}), expect_errors=True)
     assert resp.status_code == 403
 
 
@@ -2403,12 +2241,8 @@ def test_dataset_update_information_system(app: DjangoTestApp):
     dataset = DatasetFactory(subclass=subclass)
     catalog = CatalogFactory()
     frequency = FrequencyFactory(is_default=True)
-    information_system_type_concept_schema = ConceptSchemaFactory(
-        uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
-    )
-    information_system_type_concept = ConceptFactory(
-        concept_schemas=[information_system_type_concept_schema]
-    )
+    information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+    information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
     information_system_importance_concept_schema = ConceptSchemaFactory(
         uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
     )
@@ -2433,7 +2267,7 @@ def test_dataset_update_information_system(app: DjangoTestApp):
         "information_system_type": information_system_type_concept.pk,
         "information_system_importance": information_system_importance_concept.pk,
         "information_system_publisher": organization.pk,
-        "information_system_creator": organization.pk
+        "information_system_creator": organization.pk,
     }
     response = app.post(url, data)
 
@@ -2450,9 +2284,7 @@ def test_dataset_update_information_system(app: DjangoTestApp):
     assert dataset.name == "test/information/system"
     assert dataset.landing_page == "https://www.test.test"
     assert dataset.information_system_type == information_system_type_concept
-    assert (
-        dataset.information_system_importance == information_system_importance_concept
-    )
+    assert dataset.information_system_importance == information_system_importance_concept
     assert dataset.information_system_publisher == organization
     assert dataset.information_system_creator == organization
 
@@ -2464,9 +2296,7 @@ def test_add_dataset_to_plan_title(app: DjangoTestApp):
     app.set_user(user)
     dataset = DatasetFactory(organization=organization)
 
-    form = app.get(reverse("dataset-plans-create", args=[dataset.pk])).forms[
-        "plan-form"
-    ]
+    form = app.get(reverse("dataset-plans-create", args=[dataset.pk])).forms["plan-form"]
     form.submit()
 
     plan = Plan.objects.filter(plandataset__dataset=dataset)
@@ -2482,9 +2312,7 @@ def test_add_dataset_to_plan_title_with_distribution(app: DjangoTestApp):
     dataset = DatasetFactory(organization=organization)
     DatasetDistributionFactory(dataset=dataset)
 
-    form = app.get(reverse("dataset-plans-create", args=[dataset.pk])).forms[
-        "plan-form"
-    ]
+    form = app.get(reverse("dataset-plans-create", args=[dataset.pk])).forms["plan-form"]
     form.submit()
 
     plan = Plan.objects.filter(plandataset__dataset=dataset)
@@ -2524,9 +2352,7 @@ def test_delete_dataset_from_non_last_plan(app: DjangoTestApp):
     plan2 = PlanFactory()
     PlanDataset.objects.create(dataset=dataset, plan=plan2)
 
-    form = app.get(reverse("dataset-plans-delete", args=[plan2.pk])).forms[
-        "delete-form"
-    ]
+    form = app.get(reverse("dataset-plans-delete", args=[plan2.pk])).forms["delete-form"]
     form.submit()
 
     dataset.refresh_from_db()
@@ -2541,9 +2367,7 @@ def test_delete_not_public_dataset_from_last_plan(app: DjangoTestApp):
     organization = OrganizationFactory()
     user = UserFactory(is_staff=True, organization=organization)
     app.set_user(user)
-    dataset = DatasetFactory(
-        organization=organization, is_public=False, status=Dataset.UNASSIGNED
-    )
+    dataset = DatasetFactory(organization=organization, is_public=False, status=Dataset.UNASSIGNED)
     plan = PlanFactory()
     PlanDataset.objects.create(dataset=dataset, plan=plan)
 
@@ -2617,9 +2441,7 @@ def test_delete_last_distribution_from_non_public_dataset(app: DjangoTestApp):
     organization = OrganizationFactory()
     user = UserFactory(is_staff=True, organization=organization)
     app.set_user(user)
-    dataset = DatasetFactory(
-        organization=organization, status=Dataset.UNASSIGNED, is_public=False
-    )
+    dataset = DatasetFactory(organization=organization, status=Dataset.UNASSIGNED, is_public=False)
     resource = DatasetDistributionFactory(dataset=dataset)
 
     app.get(reverse("resource-delete", args=[resource.pk]))
@@ -2667,9 +2489,7 @@ def test_dataset_with_name_error(app: DjangoTestApp):
 @pytest.mark.haystack
 def test_search_with_partial_word_query(app: DjangoTestApp, search_datasets):
     resp = app.get("%s?q=%s" % (reverse("dataset-list"), "vien"))
-    assert [int(obj.pk) for obj in resp.context["object_list"]] == [
-        search_datasets[0].pk
-    ]
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [search_datasets[0].pk]
 
 
 @pytest.mark.django_db
@@ -2677,9 +2497,7 @@ def test_project_tab_with_non_public_dataset_without_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     user = UserFactory()
     app.set_user(user)
-    response = app.get(
-        reverse("dataset-projects", args=[dataset.pk]), expect_errors=True
-    )
+    response = app.get(reverse("dataset-projects", args=[dataset.pk]), expect_errors=True)
     assert response.status_code == 403
 
 
@@ -2725,9 +2543,7 @@ def test_request_tab_with_non_public_dataset_without_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     user = UserFactory()
     app.set_user(user)
-    response = app.get(
-        reverse("dataset-requests", args=[dataset.pk]), expect_errors=True
-    )
+    response = app.get(reverse("dataset-requests", args=[dataset.pk]), expect_errors=True)
     assert response.status_code == 403
 
 
@@ -2750,10 +2566,7 @@ def test_access_rights_filter(app: DjangoTestApp):
     dataset1 = DatasetFactory(access_rights=Dataset.RESTRICTED)
     dataset2 = DatasetFactory(access_rights=Dataset.RESTRICTED)
     DatasetFactory(access_rights=Dataset.PUBLIC)
-    resp = app.get(
-        "%s?selected_facets=access_rights_exact:%s"
-        % (reverse("dataset-list"), Dataset.RESTRICTED)
-    )
+    resp = app.get("%s?selected_facets=access_rights_exact:%s" % (reverse("dataset-list"), Dataset.RESTRICTED))
 
     objects = sorted([int(obj.pk) for obj in resp.context["object_list"]])
     assert objects == sorted([dataset1.pk, dataset2.pk])
@@ -2782,9 +2595,7 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     resource = DatasetDistributionFactory(uapi_format=True)
-    form = app.get(
-        reverse("resource-model-create", args=[resource.dataset.pk, resource.pk])
-    ).forms["model-form"]
+    form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.pk])).forms["model-form"]
     form["name"] = "TestModel"
     form.submit()
     assert resource.model_set.first().name == "TestModel"
@@ -2873,9 +2684,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
     app.set_user(user)
     resource = DatasetDistributionFactory(uapi_format=True)
     for model_name in ["TestModel", "TestModel2", "TestModel3"]:
-        form = app.get(
-            reverse("resource-model-create", args=[resource.dataset.pk, resource.pk])
-        ).forms["model-form"]
+        form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.pk])).forms["model-form"]
         form["name"] = model_name
         form.submit()
     assert resource.model_set.count() == 3
@@ -3054,9 +2863,7 @@ def test_add_member_to_dataset_with_org_representative(app: DjangoTestApp):
     )
 
     app.set_user(user)
-    response = app.get(
-        reverse("dataset-members", args=[dataset.pk]), expect_errors=True
-    )
+    response = app.get(reverse("dataset-members", args=[dataset.pk]), expect_errors=True)
     assert response.status_code == 403
 
 
@@ -3152,9 +2959,7 @@ def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp
         "%s?selected_facets=organization_exact:%s"
         % (reverse("organization-datasets", args=[organization.pk]), organization.pk)
     )
-    assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted(
-        [dataset1.pk, dataset2.pk]
-    )
+    assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted([dataset1.pk, dataset2.pk])
 
 
 @pytest.mark.django_db
@@ -3176,11 +2981,9 @@ def test_create_dataset_change_creator(app):
     user = UserFactory(is_staff=True, organization=publisher_org)
     app.set_user(user)
 
-    form = app.get(
-        reverse(
-            "dataset-add", kwargs={"pk": publisher_org.id, "subclass_uuid": subclass.pk}
-        )
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": publisher_org.id, "subclass_uuid": subclass.pk})).forms[
+        "dataset-form"
+    ]
 
     assert isinstance(form.fields["publisher"][0], webtest.forms.Hidden)
     assert not isinstance(form.fields["creator"][0], webtest.forms.Hidden)
@@ -3218,9 +3021,7 @@ def test_create_dataset_change_publisher(app):
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
 
-    form = app.get(
-        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms["dataset-form"]
 
     assert not isinstance(form.fields["publisher"][0], webtest.forms.Hidden)
     assert isinstance(form.fields["creator"][0], webtest.forms.Hidden)
@@ -3258,9 +3059,7 @@ def test_create_dataset_creator_options(app):
 
     user = UserFactory(is_staff=False, organization=publisher_org)
     app.set_user(user)
-    form = app.get(
-        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms["dataset-form"]
     options = [option[2] for option in form.fields["creator"][0].options]
     assert len(options) == 5  # includes default option
     assert org.title in options
@@ -3278,9 +3077,7 @@ def test_create_dataset_publisher_options(app):
     subclass = DCATResourceSubclassFactory()
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
-    form = app.get(
-        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms["dataset-form"]
     options = [option[2] for option in form.fields["publisher"][0].options]
     assert len(options) == 4  # includes default option
     assert publisher_org.title in options
@@ -3303,9 +3100,7 @@ def test_dataset_create_with_applicable_legislation(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(
-        reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
-    ).forms["dataset-form"]
+    form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms["dataset-form"]
     form["title"] = "Added title"
     form["description"] = "Added new dataset description"
     form["access_rights"] = Dataset.PUBLIC
@@ -3347,9 +3142,7 @@ def test_dataset_detail_with_publisher(app: DjangoTestApp):
     publisher_org = OrganizationFactory(publisher=True)
     user = UserFactory(is_staff=True)
 
-    ds = DatasetFactory(
-        organization=organization, publisher=publisher_org, frequency=frequency
-    )
+    ds = DatasetFactory(organization=organization, publisher=publisher_org, frequency=frequency)
 
     app.set_user(user)
     response = app.get(reverse("dataset-detail", kwargs={"pk": ds.pk}))
@@ -3370,17 +3163,13 @@ def test_dataset_filter_by_publisher(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    response = app.get(
-        reverse("dataset-list") + f"?selected_facets=publisher_exact:{publisher1.pk}"
-    )
+    response = app.get(reverse("dataset-list") + f"?selected_facets=publisher_exact:{publisher1.pk}")
     assert response.status_code == 200
     assert len(response.context["object_list"]) == 2
     for ds in response.context["object_list"]:
         assert ds.publisher == [publisher1.pk]
 
-    response = app.get(
-        reverse("dataset-list") + f"?selected_facets=publisher_exact:{publisher2.pk}"
-    )
+    response = app.get(reverse("dataset-list") + f"?selected_facets=publisher_exact:{publisher2.pk}")
     assert response.status_code == 200
     assert len(response.context["object_list"]) == 1
     for ds in response.context["object_list"]:
@@ -3440,9 +3229,7 @@ def test_dataset_update_contact_options(app: DjangoTestApp):
             f"{publisher_user.first_name} {publisher_user.last_name}",
         ]
     )
-    incorrect_options = sorted(
-        ["---------", org2.title, f"{user3.first_name} {user3.last_name}"]
-    )
+    incorrect_options = sorted(["---------", org2.title, f"{user3.first_name} {user3.last_name}"])
     assert form_options == correct_options
     assert form_options != incorrect_options
 
@@ -3528,26 +3315,60 @@ def test_dataset_view_organization_contacts(app: DjangoTestApp):
 @pytest.mark.parametrize(
     "dataset_name, dataset_title, organization_name, organization_slug, organization_title, expected_dataset_name",
     [
-        (None, "Test Dataset", "Test Organization", "", "", "datasets/gov/test-organization/test-dataset"),  # generates automatically
-        ("test-organization/my-test-dataset", "Test Dataset", "Test Organization", "", "", "test-organization/my-test-dataset"),  # uses provided name
-        (None, "Test Dataset", "", "test-organization-slug", "", "datasets/gov/test-organization-slug/test-dataset"),  # generates automatically
-        (None, "Test Dataset", "", "", "Test Organization Title", "datasets/gov/test-organization-title/test-dataset"),  # generates automatically
-    ]
+        (
+            None,
+            "Test Dataset",
+            "Test Organization",
+            "",
+            "",
+            "datasets/gov/test-organization/test-dataset",
+        ),  # generates automatically
+        (
+            "test-organization/my-test-dataset",
+            "Test Dataset",
+            "Test Organization",
+            "",
+            "",
+            "test-organization/my-test-dataset",
+        ),  # uses provided name
+        (
+            None,
+            "Test Dataset",
+            "",
+            "test-organization-slug",
+            "",
+            "datasets/gov/test-organization-slug/test-dataset",
+        ),  # generates automatically
+        (
+            None,
+            "Test Dataset",
+            "",
+            "",
+            "Test Organization Title",
+            "datasets/gov/test-organization-title/test-dataset",
+        ),  # generates automatically
+    ],
 )
-def test_create_dataset_without_name_generates_automatically(app: DjangoTestApp, dataset_name,
-                                                             dataset_title, organization_name, organization_slug,
-                                                             organization_title, expected_dataset_name):
+def test_create_dataset_without_name_generates_automatically(
+    app: DjangoTestApp,
+    dataset_name,
+    dataset_title,
+    organization_name,
+    organization_slug,
+    organization_title,
+    expected_dataset_name,
+):
     FrequencyFactory(is_default=True)
     subclass = DCATResourceSubclassFactory()
     org = OrganizationFactory(name=organization_name, slug=organization_slug, title=organization_title)
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
-    form = app.get(reverse('dataset-add', kwargs={'pk': org.id, "subclass_uuid": subclass.pk})).forms['dataset-form']
-    form['title'] = dataset_title
+    form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms["dataset-form"]
+    form["title"] = dataset_title
     if dataset_name is not None:
-        form['name'] = dataset_name
-    form['description'] = 'Added new dataset description'
-    form['access_rights'] = Dataset.PUBLIC
+        form["name"] = dataset_name
+    form["description"] = "Added new dataset description"
+    form["access_rights"] = Dataset.PUBLIC
     response = form.submit()
     assert response.status_code == 302
     assert Dataset.objects.count() == 1
@@ -3559,27 +3380,29 @@ def test_create_dataset_without_name_generates_automatically(app: DjangoTestApp,
 def test_create_dataset_without_name_generate_unique_name(app: DjangoTestApp):
     subclass = DCATResourceSubclassFactory()
     FrequencyFactory(is_default=True)
-    org = OrganizationFactory(name='Test Organization')
+    org = OrganizationFactory(name="Test Organization")
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
 
     dataset1 = DatasetFactory(organization=org, title="Test Dataset")
-    MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name='datasets/gov/test-organization/test-dataset',
-                    dataset=dataset1,
-                    object_id=dataset1.pk
-)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(Dataset),
+        name="datasets/gov/test-organization/test-dataset",
+        dataset=dataset1,
+        object_id=dataset1.pk,
+    )
     dataset2 = DatasetFactory(organization=org, title="Second Test Dataset")
-    MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name='datasets/gov/test-organization/test-dataset_3',
-                    dataset=dataset2,
-                    object_id=dataset2.pk
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(Dataset),
+        name="datasets/gov/test-organization/test-dataset_3",
+        dataset=dataset2,
+        object_id=dataset2.pk,
     )
 
-    form = app.get(reverse('dataset-add', kwargs={'pk': org.id, "subclass_uuid": subclass.pk})).forms['dataset-form']
-    form['title'] = 'Test Dataset'
-    form['description'] = 'Added new dataset description'
-    form['access_rights'] = Dataset.PUBLIC
+    form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms["dataset-form"]
+    form["title"] = "Test Dataset"
+    form["description"] = "Added new dataset description"
+    form["access_rights"] = Dataset.PUBLIC
     response = form.submit()
     assert response.status_code == 302
     assert Dataset.objects.count() == 3
@@ -3597,21 +3420,19 @@ def test_create_dataset_without_name_generate_unique_name(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_update_dateset_generates_name(app: DjangoTestApp):
     FrequencyFactory(is_default=True)
-    org = OrganizationFactory(name='Test Organization')
+    org = OrganizationFactory(name="Test Organization")
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
 
     dataset = DatasetFactory(organization=org, title="Test Dataset")
-    MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name="",
-                    dataset=dataset,
-                    object_id=dataset.pk
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(Dataset), name="", dataset=dataset, object_id=dataset.pk
     )
 
-    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['title'] = 'Updated Test Dataset'
-    form['description'] = 'Updated dataset description'
-    form['access_rights'] = Dataset.PUBLIC
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
+    form["title"] = "Updated Test Dataset"
+    form["description"] = "Updated dataset description"
+    form["access_rights"] = Dataset.PUBLIC
     response = form.submit()
 
     assert response.status_code == 302
@@ -3622,22 +3443,23 @@ def test_update_dateset_generates_name(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_update_dateset_existing_name_cannot_be_removed(app: DjangoTestApp):
     FrequencyFactory(is_default=True)
-    org = OrganizationFactory(name='Test Organization')
+    org = OrganizationFactory(name="Test Organization")
     user = UserFactory(is_staff=True, organization=org)
     app.set_user(user)
 
     dataset = DatasetFactory(organization=org, title="Test Dataset")
-    MetadataFactory(content_type=ContentType.objects.get_for_model(Dataset),
-                    name="test-organization/test-dataset",
-                    dataset=dataset,
-                    object_id=dataset.pk
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(Dataset),
+        name="test-organization/test-dataset",
+        dataset=dataset,
+        object_id=dataset.pk,
     )
 
-    form = app.get(reverse('dataset-change', kwargs={'pk': dataset.id})).forms['dataset-form']
-    form['title'] = 'Updated Test Dataset'
-    form['name'] = ''  # Attempt to remove name
-    form['description'] = 'Updated dataset description'
-    form['access_rights'] = Dataset.PUBLIC
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
+    form["title"] = "Updated Test Dataset"
+    form["name"] = ""  # Attempt to remove name
+    form["description"] = "Updated dataset description"
+    form["access_rights"] = Dataset.PUBLIC
 
     response = form.submit()
     assert response.status_code == 200
@@ -3652,9 +3474,7 @@ def test_dataset_landing_page(app: DjangoTestApp):
     dataset = DatasetFactory(frequency=frequency, organization=org)
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
-        "dataset-form"
-    ]
+    form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
     form["landing_page"] = "https://example.com"
     resp = form.submit()
     dataset.refresh_from_db()
@@ -4250,9 +4070,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     )
     service_type = TypeFactory(name=Type.SERVICE)
     dataset.type.add(service_type)
-    relation = DatasetRelationFactory(
-        part_of=dataset, relation=RelationFactory(name=Relation.SERVICE)
-    )
+    relation = DatasetRelationFactory(part_of=dataset, relation=RelationFactory(name=Relation.SERVICE))
     relation.dataset.part_of.add(relation)
 
     res = app.get(reverse("dataset-rdf-download", args=[dataset.pk]))

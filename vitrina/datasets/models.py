@@ -29,7 +29,8 @@ from vitrina.classifiers.models import (
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
     EdpRestrictedDatasetManager,
-    PublicDatasetManager, TranslatableMPNodeManager,
+    PublicDatasetManager,
+    TranslatableMPNodeManager,
 )
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
@@ -38,6 +39,7 @@ from vitrina.structure.models import Model, Base, Property, Metadata
 from vitrina.users.models import User
 
 logger = logging.getLogger(__name__)
+
 
 def get_default_subclass():
     return DCATResourceSubclass.objects.get(name="dataset").pk
@@ -53,9 +55,7 @@ class DatasetGroup(TranslatableModel):
         ordering = ["created"]
 
     def __str__(self):
-        return self.safe_translation_getter(
-            "title", language_code=self.get_current_language()
-        )
+        return self.safe_translation_getter("title", language_code=self.get_current_language())
 
 
 class DatasetFile(models.Model):
@@ -71,11 +71,7 @@ class DatasetFile(models.Model):
         db_table = "dataset_file"
 
     def filename_without_path(self):
-        return (
-            pathlib.Path(self.file.file.name).name
-            if self.file and self.file.file
-            else ""
-        )
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
 
 class Resource(MP_Node, TranslatableModel):
@@ -84,22 +80,23 @@ class Resource(MP_Node, TranslatableModel):
     Created to have common terminology between code and business language.
     It May become a concrete model in the future
     """
+
     steplen = 25  # to set depth max up to 10 with 255 length path varchar (MP_Node default).
-    depth = models.PositiveIntegerField(default=1) # Root by default
+    depth = models.PositiveIntegerField(default=1)  # Root by default
 
     class Meta:
         abstract = True
 
     def save(self, *args, **kwargs):
         for field in self.node_order_by:
-            if field != "path"  and not getattr(self, field):
+            if field != "path" and not getattr(self, field):
                 logger.warning(f"Missing required field {field}")
         super().save(*args, **kwargs)
 
 
-@reversion.register(follow=["category", "part_of"]) 
+@reversion.register(follow=["category", "part_of"])
 class Dataset(Resource):
-    node_order_by = ("organization_id", )
+    node_order_by = ("organization_id",)
 
     UPLOAD_TO = "data/files"
 
@@ -157,7 +154,7 @@ class Dataset(Resource):
         RELATION_ADDED: _("Pridėtas ryšys"),
         RELATION_DELETED: _("Ištrintas ryšys"),
         ATTRIBUTION_ADDED: _("Priskirta organizacijai"),
-        ATTRIBUTION_DELETED: _("Pašalinta iš organizacijos")
+        ATTRIBUTION_DELETED: _("Pašalinta iš organizacijos"),
     }
 
     PUBLIC = "PUBLIC"
@@ -188,9 +185,7 @@ class Dataset(Resource):
         description=models.TextField(
             verbose_name=_("Aprašymas"),
             blank=True,
-            help_text=_(
-                "Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."
-            ),
+            help_text=_("Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."),
         ),
     )
 
@@ -208,18 +203,14 @@ class Dataset(Resource):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     soft_deleted = models.DateTimeField(blank=True, null=True)
-    version = models.IntegerField(
-        default=1
-    )  # TODO: Deprecated, versioning is done w/ django-reversion
+    version = models.IntegerField(default=1)  # TODO: Deprecated, versioning is done w/ django-reversion
     slug = models.CharField(
         unique=True,
         max_length=255,
         blank=False,
         null=True,
     )  # TODO: Deprecated, slugs are formed from id's
-    uuid = models.CharField(
-        unique=True, max_length=36, blank=True, null=True
-    )  # TODO: Remove blank and null
+    uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)  # TODO: Remove blank and null
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     theme = models.CharField(
@@ -245,9 +236,7 @@ class Dataset(Resource):
         blank=True,
         null=True,
         verbose_name=_("Katalogas"),
-        help_text=_(
-            "Katalogas, kurio turinys domina šio katalogo kontekste. Atitinka dcat:Catalog."
-        ),
+        help_text=_("Katalogas, kurio turinys domina šio katalogo kontekste. Atitinka dcat:Catalog."),
     )
     # TODO: Should not be used anymore, instead:
     #  - https://github.com/atviriduomenys/katalogas/blob/1c2e6cf69f271a655700b196ae7fd7e0fb6d2807/vitrina/datasets/models.py#L1399
@@ -327,9 +316,7 @@ class Dataset(Resource):
         autocomplete_view="autocomplete_tags",
         autocomplete_limit=20,
         verbose_name=_("Žymės"),
-        help_text=_(
-            "Duomenų išteklių apibūdinantys raktažodžiai arba žymos. Atitinka dcat:keyword."
-        ),
+        help_text=_("Duomenų išteklių apibūdinantys raktažodžiai arba žymos. Atitinka dcat:keyword."),
         autocomplete_settings={"width": "100%"},
         autocomplete_view_fulltext=True,
     )
@@ -397,9 +384,7 @@ class Dataset(Resource):
         null=True,
         blank=True,
         related_name="format_endpoint_types",
-        help_text=_(
-            "Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."
-        ),
+        help_text=_("Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."),
     )
     endpoint_description = models.URLField(
         verbose_name=_("API specifikacija"),
@@ -460,7 +445,7 @@ class Dataset(Resource):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        verbose_name=_("Informacinės sistemos tvarkytojas")
+        verbose_name=_("Informacinės sistemos tvarkytojas"),
     )
     information_system_creator = models.ForeignKey(
         Organization,
@@ -468,7 +453,7 @@ class Dataset(Resource):
         on_delete=models.PROTECT,
         null=True,
         blank=True,
-        verbose_name=_("Informacinės sistemos valdytojas")
+        verbose_name=_("Informacinės sistemos valdytojas"),
     )
 
     temporal_resolution = models.CharField(
@@ -575,12 +560,7 @@ class Dataset(Resource):
         unique_together = (("internal_id", "organization_id"),)
 
     def __str__(self):
-        return (
-            self.safe_translation_getter(
-                "title", language_code=self.get_current_language()
-            )
-            or " "
-        )
+        return self.safe_translation_getter("title", language_code=self.get_current_language()) or " "
 
     def save(self, *args, **kwargs) -> None:
         if not all((self.information_system_type_id, self.information_system_importance_id)):
@@ -633,11 +613,7 @@ class Dataset(Resource):
         return ""
 
     def get_resource_titles(self):
-        return list(
-            self.datasetdistribution_set.all().values_list(
-                "translations__title", flat=True
-            )
-        )
+        return list(self.datasetdistribution_set.all().values_list("translations__title", flat=True))
 
     def get_model_title_list(self):
         return list(model.title for model in self.model_set.all())
@@ -646,10 +622,7 @@ class Dataset(Resource):
         return list(model.full_name for model in self.model_set.all() if model.name)
 
     def get_property_title_list(self):
-        return list(
-            item.title
-            for item in Property.objects.filter(model__in=self.model_set.all())
-        )
+        return list(item.title for item in Property.objects.filter(model__in=self.model_set.all()))
 
     def get_request_title_list(self):
         return list(self.dataset_request.all().values_list("title", flat=True))
@@ -658,20 +631,13 @@ class Dataset(Resource):
         return list(self.project_set.all().values_list("title", flat=True))
 
     def get_resource_description(self):
-        return list(
-            self.datasetdistribution_set.all().values_list(
-                "translations__description", flat=True
-            )
-        )
+        return list(self.datasetdistribution_set.all().values_list("translations__description", flat=True))
 
     def get_model_title_description(self):
         return list(model.description for model in self.model_set.all())
 
     def get_property_title_description(self):
-        return list(
-            item.description
-            for item in Property.objects.filter(model__in=self.model_set.all())
-        )
+        return list(item.description for item in Property.objects.filter(model__in=self.model_set.all()))
 
     def get_request_title_description(self):
         return list(self.dataset_request.all().values_list("description", flat=True))
@@ -680,14 +646,8 @@ class Dataset(Resource):
         return list(self.project_set.all().values_list("description", flat=True))
 
     def get_all_groups(self):
-        ids = (
-            self.category.filter(groups__isnull=False)
-            .values_list("groups__pk", flat=True)
-            .distinct()
-        )
-        return DatasetGroup.objects.filter(pk__in=ids).exclude(
-            pk__in=self.get_excluded_groups()
-        )
+        ids = self.category.filter(groups__isnull=False).values_list("groups__pk", flat=True).distinct()
+        return DatasetGroup.objects.filter(pk__in=ids).exclude(pk__in=self.get_excluded_groups())
 
     def get_group_list(self):
         return list(
@@ -698,11 +658,7 @@ class Dataset(Resource):
         )
 
     def get_excluded_groups(self):
-        return set(
-            DatasetExcludedGroups.objects.filter(dataset=self).values_list(
-                "group__pk", flat=True
-            )
-        )
+        return set(DatasetExcludedGroups.objects.filter(dataset=self).values_list("group__pk", flat=True))
 
     def get_parent_organization_title(self):
         if self.organization:
@@ -734,9 +690,7 @@ class Dataset(Resource):
         categories = []
         for category in self.category.all():
             categories = [
-                {"title": cat.title, "pk": cat.pk}
-                for cat in category.get_ancestors()
-                if cat.dataset_set.exists()
+                {"title": cat.title, "pk": cat.pk} for cat in category.get_ancestors() if cat.dataset_set.exists()
             ]
             categories.append({"title": category.title, "pk": category.pk})
         return categories
@@ -745,9 +699,7 @@ class Dataset(Resource):
         categories = []
         for category in self.category.all():
             categories = [
-                {"title_en": cat.title_en, "pk": cat.pk}
-                for cat in category.get_ancestors()
-                if cat.dataset_set.exists()
+                {"title_en": cat.title_en, "pk": cat.pk} for cat in category.get_ancestors() if cat.dataset_set.exists()
             ]
             categories.append({"title_en": category.title_en, "pk": category.pk})
         return categories
@@ -757,29 +709,17 @@ class Dataset(Resource):
 
     @property
     def formats(self):
-        return [
-            obj.get_format()
-            for obj in self.datasetdistribution_set.all()
-            if obj.get_format()
-        ]
+        return [obj.get_format() for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
     def filter_formats(self):
-        formats = [
-            obj.get_format().pk
-            for obj in self.datasetdistribution_set.all()
-            if obj.get_format()
-        ]
+        formats = [obj.get_format().pk for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
         if self.model_set.exists() and any(
-            dist.format.extension == "UAPI"
-            for dist in self.datasetdistribution_set.all()
-            if dist.format
+            dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format
         ):
             from vitrina.resources.models import Format
 
-            additional_formats = Format.objects.filter(
-                title__in=["CSV", "JSON", "JSONL"]
-            ).values_list("pk", flat=True)
+            additional_formats = Format.objects.filter(title__in=["CSV", "JSON", "JSONL"]).values_list("pk", flat=True)
             formats.extend(additional_formats)
         return formats
 
@@ -807,11 +747,7 @@ class Dataset(Resource):
 
     def get_managers(self):
         ct = ContentType.objects.get_for_model(Dataset)
-        return list(
-            Representative.objects.filter(
-                content_type=ct, object_id=self.id
-            ).values_list("user_id", flat=True)
-        )
+        return list(Representative.objects.filter(content_type=ct, object_id=self.id).values_list("user_id", flat=True))
 
     @property
     def language_array(self):
@@ -882,7 +818,9 @@ class Dataset(Resource):
 
     @property
     def identifier(self) -> str | None:
-        return identifier.notation if (identifier := self.identifiers.filter(scheme_agency__code="risr").first()) else None
+        return (
+            identifier.notation if (identifier := self.identifiers.filter(scheme_agency__code="risr").first()) else None
+        )
 
     def public_types(self):
         return list(self.type.filter(show_filter=True).values_list("pk", flat=True))
@@ -919,11 +857,9 @@ class Dataset(Resource):
         model_names = Metadata.objects.filter(
             content_type=ContentType.objects.get_for_model(Model), dataset__pk=self.pk
         ).values_list("name", flat=True)
-        return (
-            ModelDownloadStats.objects.filter(model__in=model_names).aggregate(
-                Sum("model_requests")
-            )
-        )["model_requests__sum"] or 0
+        return (ModelDownloadStats.objects.filter(model__in=model_names).aggregate(Sum("model_requests")))[
+            "model_requests__sum"
+        ] or 0
 
     def get_metadata_objects_for_version(self):
         meta_objects = []
@@ -932,9 +868,7 @@ class Dataset(Resource):
 
         metadata = self.metadata.first()
         if metadata and metadata.draft is True:
-            if latest_version := metadata.metadataversion_set.order_by(
-                "-version__created"
-            ).first():
+            if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
                 if latest_version.name != metadata.name:
                     label = mark_safe(
                         f"<a href={self.get_absolute_url()}>{self.title}</a> name: "
@@ -953,18 +887,14 @@ class Dataset(Resource):
             metadata = model.metadata.first()
             if metadata and metadata.draft is True:
                 models.append(model)
-                if latest_version := metadata.metadataversion_set.order_by(
-                    "-version__created"
-                ).first():
+                if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
                     label_str = f"<a href='{model.get_absolute_url()}' class='model_metadata'>{model.name}</a>"
                     if latest_version.name != metadata.name:
                         label_str += (
                             f" name: <span class='tag is-danger is-light is-medium'>{latest_version.name}</span> ->"
                             f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
                         )
-                    latest_version.ref = (
-                        None if latest_version.ref == "" else latest_version.ref
-                    )
+                    latest_version.ref = None if latest_version.ref == "" else latest_version.ref
                     metadata.ref = None if metadata.ref == "" else metadata.ref
                     if latest_version.ref != metadata.ref:
                         label_str += (
@@ -993,13 +923,11 @@ class Dataset(Resource):
                         label_str += f" ref: <span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
                     if metadata.level_given:
                         label_str += (
-                            f" level: "
-                            f"<span class='tag is-success is-light is-medium'>{metadata.level_given}</span>"
+                            f" level: <span class='tag is-success is-light is-medium'>{metadata.level_given}</span>"
                         )
                     if model.base:
                         label_str += (
-                            f" base: "
-                            f"<span class='tag is-success is-light is-medium'>{model.base.model.name}</span>"
+                            f" base: <span class='tag is-success is-light is-medium'>{model.base.model.name}</span>"
                         )
                     label = mark_safe(label_str)
                     meta_objects.append((metadata.pk, label))
@@ -1018,9 +946,7 @@ class Dataset(Resource):
                         meta_objects.append((prop.model.metadata.first().pk, label))
                         models.append(prop.model)
 
-                    if latest_version := metadata.metadataversion_set.order_by(
-                        "-version__created"
-                    ).first():
+                    if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
                         label_str = f"<a href='{prop.get_absolute_url()}' class='prop_metadata'>{prop.name}</a>"
                         if latest_version.name != metadata.name:
                             label_str += (
@@ -1034,9 +960,7 @@ class Dataset(Resource):
                                 f"{latest_version.type_repr}</span> -> "
                                 f"<span class='tag is-success is-light is-medium'>{metadata.type_repr}</span>"
                             )
-                        latest_version.ref = (
-                            None if latest_version.ref == "" else latest_version.ref
-                        )
+                        latest_version.ref = None if latest_version.ref == "" else latest_version.ref
                         metadata.ref = None if metadata.ref == "" else metadata.ref
                         if latest_version.ref != metadata.ref:
                             label_str += (
@@ -1067,15 +991,13 @@ class Dataset(Resource):
                         )
                         if metadata.type:
                             label_str += (
-                                f" type: <span class='tag is-success is-light is-medium'>"
-                                f"{metadata.type_repr}</span>"
+                                f" type: <span class='tag is-success is-light is-medium'>{metadata.type_repr}</span>"
                             )
                         if metadata.ref:
                             label_str += f" ref: <span class='tag is-success is-light is-medium'>{metadata.ref}</span>"
                         if metadata.level_given:
                             label_str += (
-                                f" level: "
-                                f"<span class='tag is-success is-light is-medium'>{metadata.level_given}</span>"
+                                f" level: <span class='tag is-success is-light is-medium'>{metadata.level_given}</span>"
                             )
                         if metadata.access:
                             label_str += (
@@ -1094,9 +1016,7 @@ class Dataset(Resource):
                                     f"{enum.object.model.name}</a> <small>({_('Jau įtraukta į versiją')})</small>"
                                 )
                                 label = mark_safe(label_str)
-                                meta_objects.append(
-                                    (enum.object.model.metadata.first().pk, label)
-                                )
+                                meta_objects.append((enum.object.model.metadata.first().pk, label))
                                 models.append(enum.object.model)
                             if enum.object not in props:
                                 label_str = (
@@ -1104,38 +1024,24 @@ class Dataset(Resource):
                                     f"{enum.object.name}</a> <small>({_('Jau įtraukta į versiją')})</small>"
                                 )
                                 label = mark_safe(label_str)
-                                meta_objects.append(
-                                    (enum.object.metadata.first().pk, label)
-                                )
+                                meta_objects.append((enum.object.metadata.first().pk, label))
                                 props.append(enum.object)
 
-                            if latest_version := metadata.metadataversion_set.order_by(
-                                "-version__created"
-                            ).first():
+                            if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
                                 label_str = f"<a href='{prop.get_absolute_url()}' class='enum_metadata'>{enum_item}</a>"
 
                                 latest_version.prepare = (
-                                    None
-                                    if latest_version.prepare == ""
-                                    else latest_version.prepare
+                                    None if latest_version.prepare == "" else latest_version.prepare
                                 )
-                                metadata.prepare = (
-                                    None if metadata.prepare == "" else metadata.prepare
-                                )
+                                metadata.prepare = None if metadata.prepare == "" else metadata.prepare
                                 if latest_version.prepare != metadata.prepare:
                                     label_str += (
                                         f" prepare: <span class='tag is-danger is-light is-medium'>"
                                         f"{latest_version.prepare}</span> ->"
                                         f" <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
                                     )
-                                latest_version.source = (
-                                    None
-                                    if latest_version.source == ""
-                                    else latest_version.source
-                                )
-                                metadata.source = (
-                                    None if metadata.source == "" else metadata.source
-                                )
+                                latest_version.source = None if latest_version.source == "" else latest_version.source
+                                metadata.source = None if metadata.source == "" else metadata.source
                                 if latest_version.source != metadata.source:
                                     label_str += (
                                         f" source: <span class='tag is-danger is-light is-medium'>"
@@ -1163,11 +1069,7 @@ class Dataset(Resource):
     def save_translations(self, *args, **kwargs):
         super(Dataset, self).save_translations(*args, **kwargs)
 
-        if (
-            not self.has_translation(language_code="en")
-            or not self.en_title()
-            or not self.en_description()
-        ):
+        if not self.has_translation(language_code="en") or not self.en_title() or not self.en_description():
             lt_title = self.lt_title()
             lt_description = self.lt_description()
 
@@ -1251,8 +1153,7 @@ class Dataset(Resource):
                 "@type": "Organization",
                 "name": str(self.organization) if self.organization else None,
             },
-            "keywords": [tag["name"].strip() for tag in self.get_tag_object_list()]
-            or None,
+            "keywords": [tag["name"].strip() for tag in self.get_tag_object_list()] or None,
             "distribution": [
                 {
                     "@type": "DataDownload",
@@ -1274,15 +1175,11 @@ class Dataset(Resource):
         return False
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
-        existing_urls = set(
-            ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True)
-        )
+        existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
         new_urls = [url for url in urls if url not in existing_urls]
 
         if new_urls:
-            ApplicableLegislation.objects.bulk_create(
-                [ApplicableLegislation(url=url) for url in new_urls]
-            )
+            ApplicableLegislation.objects.bulk_create([ApplicableLegislation(url=url) for url in new_urls])
 
         all_entries = ApplicableLegislation.objects.filter(url__in=urls)
         self.applicable_legislation.set(all_entries)
@@ -1521,9 +1418,7 @@ class DatasetStructure(models.Model):
         blank=True,
         null=True,
     )
-    file = FilerFileField(
-        blank=True, null=True, related_name="file_structure", on_delete=models.SET_NULL
-    )
+    file = FilerFileField(blank=True, null=True, related_name="file_structure", on_delete=models.SET_NULL)
 
     # Deprecatd feilds
     standardized = models.BooleanField(blank=True, null=True)
@@ -1554,11 +1449,7 @@ class DatasetStructure(models.Model):
         return 0
 
     def filename_without_path(self):
-        return (
-            pathlib.Path(self.file.file.name).name
-            if self.file and self.file.file
-            else ""
-        )
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
     def get_acl_parents(self):
         return [self.dataset]
@@ -1608,9 +1499,7 @@ class HarvestedVisit(models.Model):
     version = models.IntegerField()
     last_visited = models.DateTimeField(blank=True, null=True)
     visit_count = models.IntegerField()
-    harvesting_result = models.ForeignKey(
-        HarvestingResult, models.CASCADE, blank=True, null=True
-    )
+    harvesting_result = models.ForeignKey(HarvestingResult, models.CASCADE, blank=True, null=True)
 
     class Meta:
         db_table = "harvested_visit"
@@ -1637,12 +1526,8 @@ class Attribution(models.Model):
 
 @reversion.register()
 class DatasetAttribution(models.Model):
-    dataset = models.ForeignKey(
-        Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys")
-    )
-    attribution = models.ForeignKey(
-        Attribution, on_delete=models.PROTECT, verbose_name=_("Priskyrimo rūšis")
-    )
+    dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
+    attribution = models.ForeignKey(Attribution, on_delete=models.PROTECT, verbose_name=_("Priskyrimo rūšis"))
     organization = models.ForeignKey(
         Organization,
         on_delete=models.SET_NULL,
@@ -1666,9 +1551,7 @@ class Type(TranslatableModel):
     SERVICE = "service"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
-    uri = models.CharField(
-        _("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
-    )
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
     translations = TranslatedFields(
         title=models.CharField(_("Pavadinimas"), max_length=255),
     )
@@ -1681,9 +1564,7 @@ class Type(TranslatableModel):
         verbose_name_plural = _("Tipai")
 
     def __str__(self):
-        return self.safe_translation_getter(
-            "title", language_code=self.get_current_language()
-        )
+        return self.safe_translation_getter("title", language_code=self.get_current_language())
 
 
 class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
@@ -1694,9 +1575,7 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     CATALOG = "catalog"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255, unique=True)
-    uri = models.CharField(
-        _("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
-    )
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
 
     translations = TranslatedFields(
         title=models.CharField(max_length=255, verbose_name=_("Pavadinimas")),
@@ -1712,15 +1591,11 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
 
     @property
     def translated_title(self) -> str:
-        return self.safe_translation_getter(
-            "title", language_code=self.get_current_language()
-        )
+        return self.safe_translation_getter("title", language_code=self.get_current_language())
 
     @property
     def translated_description(self) -> str:
-        return self.safe_translation_getter(
-            "description", language_code=self.get_current_language()
-        )
+        return self.safe_translation_getter("description", language_code=self.get_current_language())
 
     @property
     def is_information_system(self) -> bool:
@@ -1738,14 +1613,10 @@ class Relation(TranslatableModel):
     CATALOG = "hasPart"
 
     name = models.CharField(_("Kodinis pavadinimas"), max_length=255)
-    uri = models.CharField(
-        _("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
-    )
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
     translations = TranslatedFields(
         title=models.CharField(_("Pavadinimas"), max_length=255),
-        inversive_title=models.CharField(
-            _("Atvirkštinio ryšio pavadinimas"), max_length=255
-        ),
+        inversive_title=models.CharField(_("Atvirkštinio ryšio pavadinimas"), max_length=255),
     )
 
     class Meta:
@@ -1754,16 +1625,12 @@ class Relation(TranslatableModel):
         verbose_name_plural = _("Ryšiai")
 
     def __str__(self):
-        return self.safe_translation_getter(
-            "title", language_code=self.get_current_language()
-        )
+        return self.safe_translation_getter("title", language_code=self.get_current_language())
 
 
 @reversion.register()
 class DatasetRelation(models.Model):
-    relation = models.ForeignKey(
-        Relation, verbose_name=_("Ryšio tipas"), on_delete=models.PROTECT
-    )
+    relation = models.ForeignKey(Relation, verbose_name=_("Ryšio tipas"), on_delete=models.PROTECT)
     dataset = models.ForeignKey(
         Dataset,
         verbose_name=_("Duomenų rinkinys"),
@@ -1828,9 +1695,7 @@ class Contact(models.Model):
     )
     object_id = models.PositiveIntegerField(verbose_name=_("Object ID"))
     content_object = GenericForeignKey("content_type", "object_id")
-    dataset = ForeignKey(
-        Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys")
-    )
+    dataset = ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     email = models.EmailField(_("Email"), blank=True)
     phone = models.CharField(_("Phone"), max_length=50, blank=True)
 
@@ -1871,9 +1736,7 @@ class Contact(models.Model):
 
 
 class GeoportalDataServiceType(models.Model):
-    data_service_type = models.ForeignKey(
-        DataServiceType, verbose_name=_("API formatas"), on_delete=models.CASCADE
-    )
+    data_service_type = models.ForeignKey(DataServiceType, verbose_name=_("API formatas"), on_delete=models.CASCADE)
 
     class Meta:
         db_table = "geoportal_data_service_type"
@@ -1902,9 +1765,7 @@ class GeoportalDataServiceTypeValue(models.Model):
 
 
 class DatasetExcludedGroups(models.Model):
-    dataset = models.ForeignKey(
-        "Dataset", on_delete=models.CASCADE, related_name="excluded_groups"
-    )
+    dataset = models.ForeignKey("Dataset", on_delete=models.CASCADE, related_name="excluded_groups")
     group = models.ForeignKey("DatasetGroup", on_delete=models.CASCADE)
 
     class Meta:

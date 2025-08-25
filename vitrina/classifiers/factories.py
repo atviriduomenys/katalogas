@@ -99,9 +99,7 @@ class ConceptFactory(DjangoModelFactory):
     valid_since = factory.Faker("date")
 
     @factory.post_generation
-    def concept_schemas(
-        self, create: bool, extracted: Iterable[ConceptSchema], **kwargs
-    ) -> None:
+    def concept_schemas(self, create: bool, extracted: Iterable[ConceptSchema], **kwargs) -> None:
         if not create or not extracted:
             return None
 
@@ -112,6 +110,6 @@ class ApplicableLegislationFactory(DjangoModelFactory):
     class Meta:
         model = ApplicableLegislation
         django_get_or_create = ("url",)
-    
+
     url = factory.Faker("url")
     description = factory.Faker("sentence")

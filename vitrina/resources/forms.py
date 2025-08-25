@@ -31,9 +31,7 @@ LEVEL_CHOICES = (
         0,
         _get_level_title(
             _("Nėra identifikatoriaus"),
-            _(
-                "Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."
-            ),
+            _("Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."),
         ),
     ),
     (
@@ -50,9 +48,7 @@ LEVEL_CHOICES = (
         2,
         _get_level_title(
             _("Nepatikimas identifikatorius"),
-            _(
-                "Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali keistis."
-            ),
+            _("Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali keistis."),
         ),
     ),
     (
@@ -79,17 +75,12 @@ class DatasetResourceForm(TranslatableModelForm):
     title = TranslatedField(label=_("Pavadinimas"), required=False)
     description = TranslatedField(label=_("Aprašymas"), required=False)
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
-    access = forms.ChoiceField(
-        label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False
-    )
+    access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
     access_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'
         widget=forms.TextInput(),
         label=_("Prieigos nuoroda"),
-        help_text=_(
-            "Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų "
-            "atsisiuntimo nuorodas."
-        ),
+        help_text=_("Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo nuorodas."),
         required=False,
     )
     download_url = forms.URLField(
@@ -214,9 +205,7 @@ class DatasetResourceForm(TranslatableModelForm):
             metadata = self.resource.metadata.first()
             self.initial["access"] = metadata.access
             self.initial["name"] = metadata.name
-            self.initial["level"] = (
-                metadata.level_given if metadata.level_given is not None else "None"
-            )
+            self.initial["level"] = metadata.level_given if metadata.level_given is not None else "None"
         else:
             self.initial["level"] = "None"
 
@@ -230,18 +219,11 @@ class DatasetResourceForm(TranslatableModelForm):
         upload = self.cleaned_data.get("upload_to_storage")
 
         if file and url:
-            raise ValidationError(
-                _(
-                    "Užpildykit vieną iš pasirinktų laukų: URL lauką arba "
-                    "įkelkit failą, ne abu."
-                )
-            )
+            raise ValidationError(_("Užpildykit vieną iš pasirinktų laukų: URL lauką arba įkelkit failą, ne abu."))
 
         if not file and not url and not access_url:
             self.add_error("access_url", _("Pateikite duomenų prieigos nuorodą."))
-            self.add_error(
-                "download_url", _("Arba pateikite duomenų atsisiuntimo nuorodą.")
-            )
+            self.add_error("download_url", _("Arba pateikite duomenų atsisiuntimo nuorodą."))
             self.add_error("file", _("Arba įkelkite duomenų failą."))
 
         if url and "get.data.gov.lt" in url and not upload:
@@ -249,15 +231,11 @@ class DatasetResourceForm(TranslatableModelForm):
 
         if url:
             if self.resource:
-                distributions_with_same_url = (
-                    self.dataset.datasetdistribution_set.filter(
-                        download_url=url
-                    ).exclude(pk=self.resource.pk)
+                distributions_with_same_url = self.dataset.datasetdistribution_set.filter(download_url=url).exclude(
+                    pk=self.resource.pk
                 )
             else:
-                distributions_with_same_url = (
-                    self.dataset.datasetdistribution_set.filter(download_url=url)
-                )
+                distributions_with_same_url = self.dataset.datasetdistribution_set.filter(download_url=url)
             if distributions_with_same_url.exists():
                 self.add_error(
                     "download_url",
@@ -275,15 +253,9 @@ class DatasetResourceForm(TranslatableModelForm):
         name = self.cleaned_data.get("name")
         if name:
             if not name.isascii():
-                raise ValidationError(
-                    _(
-                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-                    )
-                )
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
             if any(c.isupper() for c in name):
-                raise ValidationError(
-                    _("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės.")
-                )
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
         return name
 
     def clean_level(self):

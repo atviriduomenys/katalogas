@@ -818,6 +818,7 @@ class DatasetCreateView(
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
         self.object.save()
+        form.save_m2m()
         set_comment(Dataset.CREATED)
         if not form.cleaned_data.get("creator"):
             Representative.objects.create(
@@ -1102,6 +1103,7 @@ class DatasetUpdateView(
         self.object: Dataset = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
+        form.save_m2m()
 
         if ("endpoint_url" in form.changed_data) or (self.object.is_public and not self.object.published):
             if self.object.is_public and not self.object.published:

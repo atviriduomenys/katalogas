@@ -1079,6 +1079,9 @@ msgstr ""
 "Reference to the declaration of rights. Corresponds to dct:rights / "
 "dct:relation."
 
+msgid "Paslaugos tipas. Atitinka dct:type"
+msgstr "Service type. Corresponds to dct:type"
+
 msgid "Dataset"
 msgstr "Dataset"
 
@@ -1287,6 +1290,9 @@ msgid ""
 msgstr ""
 "Groups to which this resource belongs (e.g., administrative units, "
 "statistical units)."
+
+msgid "Duomenų paslaugos tipas"
+msgstr "Data service type"
 
 msgid ""
 "Duomenų ištekliaus atvėrimo būsena: inventorintas, atvertas, planuojamas "

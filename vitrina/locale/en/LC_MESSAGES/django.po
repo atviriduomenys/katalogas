@@ -239,6 +239,9 @@ msgstr "Answer"
 msgid "Tipas"
 msgstr "Type"
 
+msgid "Nuoroda"
+msgstr "URL"
+
 msgid "Duomenys"
 msgstr "Data"
 
@@ -691,6 +694,15 @@ msgstr "Detailed description of the dataset"
 msgid "Surašykite aktualius raktinius žodžius"
 msgstr "List relevant keywords"
 
+msgid "Metaduomenų katalogo pavadinimas"
+msgstr "Catalog title"
+
+msgid "Metaduomenų katalogo kodinis pavadinimas"
+msgstr "Catalog code name"
+
+msgid "Detalus metaduomenų katalogo aprašas"
+msgstr "Detailed description of the catalog"
+
 msgid "Identifikatorius"
 msgstr "Identifier"
 
@@ -893,6 +905,11 @@ msgstr "A name given to the record. Corresponds to dct:title."
 msgid "Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."
 msgstr "A free-text account of the record. Corresponds to dct:description."
 
+msgid ""
+"Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:description."
+msgstr ""
+"The description of the declaration of rights. Corresponds to dct:description."
+
 msgid "Katalogas"
 msgstr "Directory"
 
@@ -1039,6 +1056,13 @@ msgid ""
 msgstr ""
 "Spatial resolution (in meters). Corresponds to "
 "dcat:spatialResolutionInMeters."
+
+msgid "Platinimo sąlygų nuoroda"
+msgstr "Conditions link"
+
+msgid "Teisių deklaracijos nuoroda. Atitinka dct:relation."
+msgstr "Reference to the declaration of rights. Corresponds to dct:relation."
+
 
 msgid "Dataset"
 msgstr "Dataset"
@@ -1323,7 +1347,7 @@ msgid "Kada paskutinį kartą buvo atnaujinti duomenys"
 msgstr "When the data was last updated"
 
 msgid "Platinimo sąlygos"
-msgstr "Distribution terms"
+msgstr "Condition terms"
 
 msgid ""
 "Ribojimai ar sąlygos, taikomos duomenų naudojimui (pvz., naudojimo "

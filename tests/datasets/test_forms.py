@@ -75,9 +75,7 @@ class DatasetResourceForm:
 
 
 class CatalogResourceForm:
-    def test_create_catalog_with_conditions(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_create_catalog_with_conditions(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)

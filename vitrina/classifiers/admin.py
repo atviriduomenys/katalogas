@@ -232,7 +232,7 @@ class ConceptAdmin(TranslatableAdmin):
 
 
 @admin.register(ApplicableLegislation)
-class ApplicableLegislationADmin(admin.ModelAdmin):
+class ApplicableLegislationAdmin(admin.ModelAdmin):
     list_display = ("description", "url")
 
 

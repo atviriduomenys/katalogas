@@ -11,7 +11,7 @@ from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
-from vitrina.classifiers.models import Licence
+from vitrina.classifiers.models import Licence, ApplicableLegislation
 from vitrina.datasets.models import Dataset
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
@@ -32,12 +32,8 @@ class Format(models.Model):
     mimetype = models.TextField(_("MIME tipas"), blank=True, null=True)
     rating = models.IntegerField(_("Vertinimas"), blank=True, null=True)
     title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
-    uri = models.CharField(
-        _("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
-    )
-    media_type_uri = models.CharField(
-        _("Laikmenos tipo nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
-    )
+    uri = models.CharField(_("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
+    media_type_uri = models.CharField(_("Laikmenos tipo nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
 
     class Meta:
         db_table = "format"
@@ -49,9 +45,7 @@ class Format(models.Model):
 
 
 class GeoportalFormat(models.Model):
-    format = models.ForeignKey(
-        Format, verbose_name=_("Formatas"), on_delete=models.CASCADE
-    )
+    format = models.ForeignKey(Format, verbose_name=_("Formatas"), on_delete=models.CASCADE)
 
     class Meta:
         db_table = "geoportal_format"
@@ -95,9 +89,7 @@ class CompressionFormat(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     extension = models.CharField(_("Failo plėtinys"), max_length=255, blank=True, null=True)
     title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
-    uri = models.CharField(
-        _("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
-    )
+    uri = models.CharField(_("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
 
     class Meta:
         db_table = "compression_format"
@@ -113,9 +105,7 @@ class PackagingFormat(models.Model):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     extension = models.CharField(_("Failo plėtinys"), max_length=255, blank=True, null=True)
     title = models.CharField(_("Pavadinimas"), max_length=255, blank=True)
-    uri = models.CharField(
-        _("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
-    )
+    uri = models.CharField(_("Formato nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
 
     class Meta:
         db_table = "packaging_format"
@@ -204,20 +194,22 @@ class DatasetDistribution(TranslatableModel):
 
     issued = models.CharField(max_length=255, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
-    data_service = models.ForeignKey(
-        Dataset, models.SET_NULL, null=True, related_name="data_service_distributions"
-    )
-    is_parameterized = models.BooleanField(
-        default=False, verbose_name=_("Parametrizuotas")
-    )
-    upload_to_storage = models.BooleanField(
-        default=False, verbose_name=_("Įkėlimas į saugyklą")
-    )
-    imported = models.BooleanField(
-        default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas")
-    )
+    data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
+    is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
+    upload_to_storage = models.BooleanField(default=False, verbose_name=_("Įkėlimas į saugyklą"))
+    imported = models.BooleanField(default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas"))
     licence = models.ForeignKey(
-        Licence, models.SET_NULL, blank=True, null=True, verbose_name=_("Licencija"),
+        Licence,
+        models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_("Licencija"),
+    )
+    applicable_legislation = models.ManyToManyField(
+        ApplicableLegislation,
+        verbose_name=_("Teisinis pagrindas"),
+        related_name="dataset_distributions",
+        blank=True,
     )
 
     temporal_resolution = models.CharField(
@@ -262,12 +254,7 @@ class DatasetDistribution(TranslatableModel):
         db_table = "dataset_distribution"
 
     def __str__(self):
-        return (
-            self.safe_translation_getter(
-                "title", language_code=self.get_current_language()
-            )
-            or ""
-        )
+        return self.safe_translation_getter("title", language_code=self.get_current_language()) or ""
 
     def extension(self) -> str:
         if self.file and self.file.file:
@@ -277,11 +264,7 @@ class DatasetDistribution(TranslatableModel):
             return ""
 
     def filename_without_path(self):
-        return (
-            pathlib.Path(self.file.file.name).name
-            if self.file and self.file.file
-            else ""
-        )
+        return pathlib.Path(self.file.file.name).name if self.file and self.file.file else ""
 
     def is_external_url(self):
         return True if self.download_url else False
@@ -321,9 +304,7 @@ class DatasetDistribution(TranslatableModel):
         return parents
 
     def get_absolute_url(self):
-        return reverse(
-            "resource-detail", kwargs={"pk": self.dataset.pk, "resource_id": self.pk}
-        )
+        return reverse("resource-detail", kwargs={"pk": self.dataset.pk, "resource_id": self.pk})
 
     def lt_title(self):
         return self.safe_translation_getter("title", language_code="lt")
@@ -410,3 +391,16 @@ class DatasetDistribution(TranslatableModel):
                 )
                 en_conditions = response_conditions.json()
                 self.conditions = en_conditions
+
+    def update_applicable_legislation(self, urls: list[str]) -> None:
+        existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
+        new_urls = [url for url in urls if url not in existing_urls]
+
+        if new_urls:
+            ApplicableLegislation.objects.bulk_create([ApplicableLegislation(url=url) for url in new_urls])
+
+        all_entries = ApplicableLegislation.objects.filter(url__in=urls)
+        self.applicable_legislation.set(all_entries)
+
+        for entry in all_entries.filter(url__in=new_urls):
+            entry.update_description()

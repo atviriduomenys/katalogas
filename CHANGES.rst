@@ -3,18 +3,21 @@ Changes
 v 1.2 (unreleased)
 ==================
 
-New features
+New features:
 
 
-Bug fixes
+
+https://github.com/atviriduomenys/katalogas/issues/1725
+Add `applicable_legislation` field to Dataset,
+Add `applicable_legislation` field to Dataset Distribution.
+
+
+Bug fixes:
 
 
 
 v 1.1 (2025-08-22)
 ==================
-
-https://github.com/atviriduomenys/katalogas/issues/1725
-Add `applicable_legislation` field to Dataset.
 
 https://github.com/atviriduomenys/katalogas/issues/1742
 Add `information_system_publisher` and `information_system_creator` fields to Dataset.

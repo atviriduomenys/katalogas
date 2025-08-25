@@ -471,6 +471,7 @@ class Dataset(Resource):
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
         help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
     )
+
     applicable_legislation = models.ManyToManyField(
         ApplicableLegislation,
         verbose_name=_("Teisinis pagrindas"),

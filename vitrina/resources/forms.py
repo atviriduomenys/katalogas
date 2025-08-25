@@ -1,5 +1,6 @@
 from django import forms
 from django.core.exceptions import ValidationError
+from django.core.validators import URLValidator
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -9,7 +10,7 @@ from parler.forms import TranslatedField, TranslatableModelForm
 
 from vitrina.classifiers.models import Licence
 from vitrina.datasets.models import Dataset
-from vitrina.fields import FilerFileField
+from vitrina.fields import FilerFileField, StringListField
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
 
@@ -27,9 +28,7 @@ LEVEL_CHOICES = (
         0,
         _get_level_title(
             _("Nėra identifikatoriaus"),
-            _(
-                "Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."
-            ),
+            _("Duomenyse nėra tokio duomenų lauko, kuris unikaliai identifikuoja objektą."),
         ),
     ),
     (
@@ -46,9 +45,7 @@ LEVEL_CHOICES = (
         2,
         _get_level_title(
             _("Nepatikimas identifikatorius"),
-            _(
-                "Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali keistis."
-            ),
+            _("Duomenų lauko, kuris yra parinktas kaip identifikatorius, reikšmės gali keistis."),
         ),
     ),
     (
@@ -75,17 +72,12 @@ class DatasetResourceForm(TranslatableModelForm):
     title = TranslatedField(label=_("Pavadinimas"), required=False)
     description = TranslatedField(label=_("Aprašymas"), required=False)
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
-    access = forms.ChoiceField(
-        label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False
-    )
+    access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
     access_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'
         widget=forms.TextInput(),
         label=_("Prieigos nuoroda"),
-        help_text=_(
-            "Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų "
-            "atsisiuntimo nuorodas."
-        ),
+        help_text=_("Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo nuorodas."),
         required=False,
     )
     download_url = forms.URLField(
@@ -121,6 +113,19 @@ class DatasetResourceForm(TranslatableModelForm):
         widget=forms.RadioSelect,
         choices=LEVEL_CHOICES,
     )
+    applicable_legislation = StringListField(
+        label=_("Teisinis pagrindas"),
+        help_text=_(
+            "Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys.<br>"
+            "Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite konkrečią nuorodą, "
+            "pvz., „#17.2“.<br>"
+            "Tais atvejais, kai yra keli dokumentai su priedais: „#priedas1/17.2“, „17.2/17.2.5“, "
+            "kur „priedas1“ yra dokumento failo pavadinimas.<br>"
+            "Atitinka eli:LegalResource."
+        ),
+        required=False,
+        unique=True,
+    )
 
     class Meta:
         model = DatasetDistribution
@@ -145,6 +150,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "conditions",
             "temporal_resolution",
             "spatial_resolution",
+            "applicable_legislation",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -179,6 +185,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("data_service"),
             Field("upload_to_storage"),
             Field("licence"),
+            Field("applicable_legislation"),
             Field("conditions"),
             Submit("submit", button, css_class="button is-primary"),
         )
@@ -186,14 +193,16 @@ class DatasetResourceForm(TranslatableModelForm):
         if not self.resource:
             if default_licence := Licence.objects.filter(is_default=True).first():
                 self.initial["licence"] = default_licence
+        else:
+            self.initial["applicable_legislation"] = list(
+                self.resource.applicable_legislation.values_list("url", flat=True)
+            )
 
         if self.resource and self.resource.metadata.first():
             metadata = self.resource.metadata.first()
             self.initial["access"] = metadata.access
             self.initial["name"] = metadata.name
-            self.initial["level"] = (
-                metadata.level_given if metadata.level_given is not None else "None"
-            )
+            self.initial["level"] = metadata.level_given if metadata.level_given is not None else "None"
         else:
             self.initial["level"] = "None"
 
@@ -207,18 +216,11 @@ class DatasetResourceForm(TranslatableModelForm):
         upload = self.cleaned_data.get("upload_to_storage")
 
         if file and url:
-            raise ValidationError(
-                _(
-                    "Užpildykit vieną iš pasirinktų laukų: URL lauką arba "
-                    "įkelkit failą, ne abu."
-                )
-            )
+            raise ValidationError(_("Užpildykit vieną iš pasirinktų laukų: URL lauką arba įkelkit failą, ne abu."))
 
         if not file and not url and not access_url:
             self.add_error("access_url", _("Pateikite duomenų prieigos nuorodą."))
-            self.add_error(
-                "download_url", _("Arba pateikite duomenų atsisiuntimo nuorodą.")
-            )
+            self.add_error("download_url", _("Arba pateikite duomenų atsisiuntimo nuorodą."))
             self.add_error("file", _("Arba įkelkite duomenų failą."))
 
         if url and "get.data.gov.lt" in url and not upload:
@@ -226,15 +228,11 @@ class DatasetResourceForm(TranslatableModelForm):
 
         if url:
             if self.resource:
-                distributions_with_same_url = (
-                    self.dataset.datasetdistribution_set.filter(
-                        download_url=url
-                    ).exclude(pk=self.resource.pk)
+                distributions_with_same_url = self.dataset.datasetdistribution_set.filter(download_url=url).exclude(
+                    pk=self.resource.pk
                 )
             else:
-                distributions_with_same_url = (
-                    self.dataset.datasetdistribution_set.filter(download_url=url)
-                )
+                distributions_with_same_url = self.dataset.datasetdistribution_set.filter(download_url=url)
             if distributions_with_same_url.exists():
                 self.add_error(
                     "download_url",
@@ -252,15 +250,9 @@ class DatasetResourceForm(TranslatableModelForm):
         name = self.cleaned_data.get("name")
         if name:
             if not name.isascii():
-                raise ValidationError(
-                    _(
-                        "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-                    )
-                )
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
             if any(c.isupper() for c in name):
-                raise ValidationError(
-                    _("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės.")
-                )
+                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
         return name
 
     def clean_level(self):
@@ -268,6 +260,32 @@ class DatasetResourceForm(TranslatableModelForm):
         if level and level != "None":
             return int(level)
         return None
+
+    def clean_applicable_legislation(self) -> list[str]:
+        urls = self.cleaned_data.get("applicable_legislation", []) or []
+        validator = URLValidator()
+
+        cleaned = []
+        item_errors = []
+
+        for url in urls:
+            if not url:
+                item_errors.append(None)
+                continue
+
+            try:
+                validator(url)
+                cleaned.append(url)
+                item_errors.append(None)
+            except ValidationError as e:
+                item_errors.append(f"{url}: {e.message}")
+
+        if any(item_errors):
+            self.fields["applicable_legislation"].widget.validation_errors = item_errors
+            raise ValidationError(_("Yra klaidų sąraše."))
+
+        return cleaned
+
 
 class FormatAdminForm(forms.ModelForm):
     extension = forms.CharField(label=_("Failo plėtinys"))

@@ -47,11 +47,6 @@ from reversion.views import RevisionMixin
 
 from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiKey
-from vitrina.classifiers.models import (
-    Category,
-    Frequency,
-    AreaOfManagement,
-)
 from vitrina.comments.models import Comment
 from vitrina.datasets.forms import (
     DatasetStructureImportForm,
@@ -72,18 +67,6 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
 )
 from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name
-from vitrina.datasets.models import (
-    Dataset,
-    DatasetStructure,
-    DatasetGroup,
-    DatasetAttribution,
-    DatasetRelation,
-    Relation,
-    DatasetFile,
-    Contact,
-    DatasetExcludedGroups,
-    DCATResourceSubclass,
-)
 from vitrina.structure.views import DatasetStructureMixin
 
 from vitrina.tasks.models import Task
@@ -102,6 +85,23 @@ from vitrina.datasets.services import (
     get_query_for_frequency,
     manage_subscriptions_for_representative,
     DynamicResourceService,
+)
+from vitrina.datasets.models import (
+    Dataset,
+    DatasetStructure,
+    DatasetGroup,
+    DatasetAttribution,
+    DatasetRelation,
+    Relation,
+    DatasetFile,
+    Contact,
+    DatasetExcludedGroups,
+    DCATResourceSubclass,
+)
+from vitrina.classifiers.models import (
+    Category,
+    Frequency,
+    AreaOfManagement,
 )
 from vitrina.identifiers.models import Agency, Identifier
 from vitrina.helpers import (
@@ -888,6 +888,9 @@ class DatasetCreateView(
             )
             rep.save()
             self.object.save()
+
+        if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
+            self.object.update_applicable_legislation(applicable_legislation_urls)
 
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
             self.object.update_applicable_legislation(applicable_legislation_urls)

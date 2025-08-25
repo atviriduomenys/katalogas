@@ -27,9 +27,7 @@ from vitrina.structure.views import DatasetStructureMixin, ModelCreateView
 from vitrina.views import HistoryMixin
 
 
-class ResourceDetailView(
-    PermissionRequiredMixin, HistoryMixin, DatasetStructureMixin, DetailView
-):
+class ResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetStructureMixin, DetailView):
     template_name = "vitrina/resources/detail.html"
     model = DatasetDistribution
     pk_url_kwarg = "resource_id"
@@ -87,9 +85,7 @@ class ResourceCreateView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(
-            self.request.user, Action.CREATE, DatasetDistribution, self.dataset
-        )
+        return has_perm(self.request.user, Action.CREATE, DatasetDistribution, self.dataset)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
@@ -106,7 +102,7 @@ class ResourceCreateView(
         return super(ResourceCreateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        resource = form.save(commit=False)
+        resource: DatasetDistribution = form.save(commit=False)
         resource.dataset = self.dataset
         resource.save()
 
@@ -150,8 +146,7 @@ class ResourceCreateView(
             dataset_plans = Plan.objects.filter(plandataset__dataset=self.dataset)
             for plan in dataset_plans:
                 if (
-                    plan.planrequest_set.filter(request__status=Request.OPENED).count()
-                    == plan.planrequest_set.count()
+                    plan.planrequest_set.filter(request__status=Request.OPENED).count() == plan.planrequest_set.count()
                     and plan.plandataset_set.annotate(
                         has_distributions=Exists(
                             DatasetDistribution.objects.filter(
@@ -175,6 +170,9 @@ class ResourceCreateView(
             self.dataset.status = Dataset.HAS_DATA
             self.dataset.save()
 
+        if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
+            resource.update_applicable_legislation(applicable_legislation_urls)
+
         set_comment((f'Pridėtas naujas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
@@ -185,12 +183,7 @@ class ResourceCreateView(
         return kwargs
 
 
-class ResourceUpdateView(
-    LoginRequiredMixin,
-    PermissionRequiredMixin,
-    RevisionMixin,
-    TranslatableUpdateView
-):
+class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, TranslatableUpdateView):
     model = DatasetDistribution
     template_name = "vitrina/resources/form.html"
     context_object_name = "datasetdistribution"
@@ -216,7 +209,8 @@ class ResourceUpdateView(
         return super(ResourceUpdateView, self).get(request, *args, **kwargs)
 
     def form_valid(self, form):
-        resource = form.save()
+        applicable_legislation_urls = form.cleaned_data.pop("applicable_legislation")
+        resource: DatasetDistribution = form.save()
         name = form.cleaned_data.get("name")
         if not name:
             name = (
@@ -262,6 +256,9 @@ class ResourceUpdateView(
                 level_given=form.cleaned_data.get("level"),
             )
 
+        if "applicable_legislation" in form.changed_data:
+            resource.update_applicable_legislation(applicable_legislation_urls)
+
         set_comment((f'Redaguotas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
@@ -302,10 +299,7 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
             set_comment((f'Ištrintas duomenų šaltinis "{resource.lt_title()}".'))
             resource.delete()
 
-            if (
-                not DatasetDistribution.objects.filter(dataset=dataset)
-                and dataset.is_public
-            ):
+            if not DatasetDistribution.objects.filter(dataset=dataset) and dataset.is_public:
                 if dataset.plandataset_set.exists():
                     dataset.status = Dataset.PLANNED
                     comment_status = Comment.PLANNED
@@ -328,9 +322,7 @@ class ResourceModelCreateView(ModelCreateView):
     resource: DatasetDistribution
 
     def dispatch(self, request, *args, **kwargs):
-        self.resource = get_object_or_404(
-            DatasetDistribution, pk=kwargs.get("resource_id")
-        )
+        self.resource = get_object_or_404(DatasetDistribution, pk=kwargs.get("resource_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -340,9 +332,7 @@ class ResourceModelCreateView(ModelCreateView):
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
-            reverse(
-                "resource-detail", args=[self.dataset.pk, self.resource.pk]
-            ): self.resource.title,
+            reverse("resource-detail", args=[self.dataset.pk, self.resource.pk]): self.resource.title,
         }
         return context
 
@@ -354,9 +344,7 @@ class ResourceModelCreateView(ModelCreateView):
         return redirect(self.resource.get_absolute_url())
 
 
-class DynamicResourceDetailView(
-    PermissionRequiredMixin, HistoryMixin, DatasetStructureMixin, DetailView
-):
+class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetStructureMixin, DetailView):
     template_name = "vitrina/resources/dynamic_detail.html"
 
     def has_permission(self):
@@ -369,9 +357,7 @@ class DynamicResourceDetailView(
     def get_data(self, dataset_pk, model_name, distribution_format):
         dataset = get_object_or_404(Dataset, id=dataset_pk)
         dynamic_resource = DynamicResourceService(dataset)
-        data = dynamic_resource.retrieve_data(
-            dataset_pk, model_name, distribution_format
-        )
+        data = dynamic_resource.retrieve_data(dataset_pk, model_name, distribution_format)
         if not data:
             raise Http404("Data not found")
         return data
@@ -383,9 +369,7 @@ class DynamicResourceDetailView(
         dataset_pk = self.kwargs.get("pk")
         distribution_name = self.kwargs.get("distribution_name")
         distribution_format = self.kwargs.get("format").upper()
-        dynamic_resource = self.get_data(
-            dataset_pk, distribution_name, distribution_format
-        )
+        dynamic_resource = self.get_data(dataset_pk, distribution_name, distribution_format)
 
         self.dataset = get_object_or_404(Dataset, id=dataset_pk)
         self.object = self.dataset
@@ -398,16 +382,8 @@ class DynamicResourceDetailView(
             "detail_url": self.get_detail_url(),
             "child_resources_url": self.get_child_resources_url(),
             "structure_url": reverse("dataset-structure", args=[self.dataset.pk]),
-            "data_url": reverse(
-                "model-data", args=[self.dataset.pk, self.models[0].name]
-            )
-            if self.models
-            else None,
-            "api_url": reverse(
-                "getall-api", args=[self.dataset.pk, self.models[0].name]
-            )
-            if self.models
-            else None,
+            "data_url": reverse("model-data", args=[self.dataset.pk, self.models[0].name]) if self.models else None,
+            "api_url": reverse("getall-api", args=[self.dataset.pk, self.models[0].name]) if self.models else None,
             "can_view_members": has_perm(
                 self.request.user,
                 Action.VIEW,

@@ -6,6 +6,7 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 import reversion
 
 from vitrina.models import UUIDBaseModel
+from vitrina.services import fetch_page_title
 
 
 @reversion.register()
@@ -15,9 +16,7 @@ class Category(MP_Node):
     version = models.IntegerField(default=1, blank=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    uri = models.CharField(
-        _("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True
-    )
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, blank=True)
     title = models.CharField(max_length=255, blank=True, null=True)
     title_en = models.CharField(max_length=255, blank=True, null=True)
     edp_title = models.CharField(max_length=255, blank=True, null=True)
@@ -90,9 +89,7 @@ class Frequency(models.Model):
     uri = models.CharField(max_length=255, blank=True, null=True)
     is_default = models.BooleanField(default=False)
     hours = models.IntegerField(verbose_name=_("Valandos"), blank=True, null=True)
-    code = models.CharField(
-        unique=True, max_length=255, verbose_name="Kodas", null=True, blank=True
-    )
+    code = models.CharField(unique=True, max_length=255, verbose_name="Kodas", null=True, blank=True)
 
     class Meta:
         db_table = "frequency"
@@ -106,12 +103,8 @@ class Frequency(models.Model):
 
 
 class AreaOfManagement(models.Model):
-    name_lt = models.CharField(
-        max_length=255, verbose_name=_("Pavadinimas lietuviškai"), default="Nepriskirta"
-    )
-    name_en = models.CharField(
-        max_length=255, verbose_name=_("Pavadinimas angliškai"), default="Unassigned"
-    )
+    name_lt = models.CharField(max_length=255, verbose_name=_("Pavadinimas lietuviškai"), default="Nepriskirta")
+    name_en = models.CharField(max_length=255, verbose_name=_("Pavadinimas angliškai"), default="Unassigned")
 
     class Meta:
         db_table = "area_of_management"
@@ -127,9 +120,7 @@ class AreaOfManagement(models.Model):
 
 class GeoportalCategory(models.Model):
     title = models.CharField(_("Pavadinimas"), max_length=255)
-    categories = models.ManyToManyField(
-        Category, verbose_name=_("Atitinkančios kategorijos"), blank=True
-    )
+    categories = models.ManyToManyField(Category, verbose_name=_("Atitinkančios kategorijos"), blank=True)
 
     objects = models.Manager()
 
@@ -244,9 +235,7 @@ class Concept(TranslatableModel, UUIDBaseModel):
         verbose_name=_("Sąvokų schemos"),
     )
     uri = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("uri"))
-    code = models.CharField(
-        unique=True, max_length=255, verbose_name=_("Kodinis pavadinimas")
-    )
+    code = models.CharField(unique=True, max_length=255, verbose_name=_("Kodinis pavadinimas"))
     valid_since = models.DateField(verbose_name=_("Galioja nuo"))
     valid_until = models.DateField(null=True, blank=True, verbose_name=_("Galioja iki"))
 
@@ -264,9 +253,22 @@ class Concept(TranslatableModel, UUIDBaseModel):
 
     @property
     def translated_label(self) -> str:
-        return (
-            self.safe_translation_getter(
-                "label", language_code=self.get_current_language()
-            )
-            or self.code
-        )
+        return self.safe_translation_getter("label", language_code=self.get_current_language()) or self.code
+
+
+class ApplicableLegislation(UUIDBaseModel):
+    description = models.CharField(max_length=255, verbose_name=_("Pavadinimas"), null=True, blank=True)
+    url = models.URLField(max_length=255, verbose_name=_("Nuoroda"))
+
+    class Meta:
+        verbose_name = _("Teisinis pagrindas")
+        verbose_name_plural = _("Teisiniai pagrindai")
+
+    def __str__(self) -> str:
+        return self.description or self.url
+
+    def update_description(self) -> str | None:
+        if title := fetch_page_title(self.url):
+            self.description = title
+            self.save(update_fields=["description"])
+        return title

@@ -3,7 +3,7 @@ from datetime import date
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
-from django.core.validators import RegexValidator
+from django.core.validators import RegexValidator, URLValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
 from django.utils.safestring import mark_safe
@@ -31,7 +31,7 @@ from treebeard.forms import MoveNodeForm
 from vitrina.datasets.services import get_projects, get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 
-from vitrina.fields import FilerFileField, MultipleFilerField
+from vitrina.fields import FilerFileField, MultipleFilerField, StringListField
 from vitrina.helpers import get_current_domain, inline_fields
 from vitrina.orgs.forms import (
     RepresentativeCreateForm,
@@ -146,6 +146,19 @@ class BaseResourceForm(TranslatableModelForm):
         ),
         required=False,
     )
+    applicable_legislation = StringListField(
+        label=_("Teisinis pagrindas"),
+        help_text=_(
+            "Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys.<br>"
+            "Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite konkrečią nuorodą, "
+            "pvz., „#17.2“.<br>"
+            "Tais atvejais, kai yra keli dokumentai su priedais: „#priedas1/17.2“, „17.2/17.2.5“, "
+            "kur „priedas1“ yra dokumento failo pavadinimas.<br>"
+            "Atitinka eli:LegalResource."
+        ),
+        required=False,
+        unique=True,
+    )
 
     parent = forms.ModelChoiceField(
         Dataset.objects.all(),
@@ -185,6 +198,10 @@ class BaseResourceForm(TranslatableModelForm):
             )
             if instance.name:
                 self.initial["name"] = instance.name
+
+            self.initial["applicable_legislation"] = list(
+                instance.applicable_legislation.values_list("url", flat=True)
+            )
         else:
             if default_frequency := Frequency.objects.filter(is_default=True).first():
                 self.initial["frequency"] = default_frequency
@@ -323,6 +340,31 @@ class BaseResourceForm(TranslatableModelForm):
                 return User.objects.get(pk=contact_id)
         return None
 
+    def clean_applicable_legislation(self) -> list[str]:
+        urls = self.cleaned_data.get("applicable_legislation", []) or []
+        validator = URLValidator()
+
+        cleaned = []
+        item_errors = []
+
+        for url in urls:
+            if not url:
+                item_errors.append(None)
+                continue
+
+            try:
+                validator(url)
+                cleaned.append(url)
+                item_errors.append(None)
+            except ValidationError as e:
+                item_errors.append(f"{url}: {e.message}")
+
+        if any(item_errors):
+            self.fields["applicable_legislation"].widget.validation_errors = item_errors
+            raise ValidationError(_("Yra klaidų sąraše."))
+
+        return cleaned
+
 
 class ServiceResourceForm(BaseResourceForm):
     endpoint_url = forms.CharField(
@@ -388,6 +430,7 @@ class ServiceResourceForm(BaseResourceForm):
             Field("creator"),
             Field("publisher"),
             Field("parent"),
+            Field("applicable_legislation"),
         )
 
 
@@ -448,7 +491,8 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("information_system_type"),
             Field("information_system_importance"),
             Field("information_system_publisher"),
-            Field("information_system_creator")
+            Field("information_system_creator"),
+            Field("applicable_legislation"),
         )
 
         self.fields["landing_page"].label = _("Tinklalapis")
@@ -542,6 +586,7 @@ class DatasetResourceForm(BaseResourceForm):
             Field("creator"),
             Field("publisher"),
             Field("parent"),
+            Field("applicable_legislation"),
         )
 
     def clean(self) -> None:
@@ -573,6 +618,8 @@ class ResourceForm(BaseResourceForm):
             "managed_by_publisher",
             "landing_page",
             "parent",
+            "temporal_resolution",
+            "spatial_resolution",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -594,6 +641,7 @@ class ResourceForm(BaseResourceForm):
             Field("creator"),
             Field("publisher"),
             Field("parent"),
+            Field("applicable_legislation")
         )
 
 

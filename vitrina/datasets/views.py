@@ -47,7 +47,11 @@ from reversion.views import RevisionMixin
 
 from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiKey
-from vitrina.classifiers.models import Category, Frequency, AreaOfManagement
+from vitrina.classifiers.models import (
+    Category,
+    Frequency,
+    AreaOfManagement,
+)
 from vitrina.comments.models import Comment
 from vitrina.datasets.forms import (
     DatasetStructureImportForm,
@@ -80,7 +84,6 @@ from vitrina.datasets.models import (
     DatasetExcludedGroups,
     DCATResourceSubclass,
 )
-
 from vitrina.structure.views import DatasetStructureMixin
 
 from vitrina.tasks.models import Task
@@ -107,7 +110,7 @@ from vitrina.helpers import (
     Filter,
     DateFilter,
     get_stats_filter_options_based_on_model,
-    get_current_domain
+    get_current_domain,
 )
 from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.helpers import is_org_dataset_list
@@ -180,9 +183,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
     def get(self, request, **kwargs):
         legacy_org_redirect = self.request.GET.get("organization_id")
         if legacy_org_redirect:
-            new_query_dict = {
-                "selected_facets": "organization_exact:{}".format(legacy_org_redirect)
-            }
+            new_query_dict = {"selected_facets": "organization_exact:{}".format(legacy_org_redirect)}
             return HttpResponsePermanentRedirect("?" + urlencode(new_query_dict, True))
         return super().get(request)
 
@@ -200,10 +201,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
 
         if is_manager_dataset_list(self.request):
             org_ids = [
-                rep.object_id
-                for rep in self.request.user.representative_set.filter(
-                    role=Representative.MANAGER
-                )
+                rep.object_id for rep in self.request.user.representative_set.filter(role=Representative.MANAGER)
             ]
             datasets = datasets.filter(organization__in=org_ids)
 
@@ -346,9 +344,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                     is_int=False,
                 ),
             ],
-            "group_facet": update_facet_data(
-                self.request, facet_fields, "groups", DatasetGroup
-            ),
+            "group_facet": update_facet_data(self.request, facet_fields, "groups", DatasetGroup),
             "selected_groups": get_selected_value(form, "groups", True, False),
             "q": form.cleaned_data.get("q", ""),
         }
@@ -376,9 +372,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             )
             context["organization_id"] = self.organization.pk
             if not form.selected_facets:
-                form.selected_facets.append(
-                    "organization_exact:{0}".format(self.organization.id)
-                )
+                form.selected_facets.append("organization_exact:{0}".format(self.organization.id))
         else:
             url = reverse("dataset-list")
 
@@ -403,17 +397,13 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             },
             {
                 "title": _("Pagal pavadinimą"),
-                "url": f"{url}?{sort_query}&sort=sort-by-title"
-                if sort_query
-                else f"{url}?sort=sort-by-title",
+                "url": f"{url}?{sort_query}&sort=sort-by-title" if sort_query else f"{url}?sort=sort-by-title",
                 "icon": "fas fa-sort-amount-down-alt",
                 "key": "sort-by-title",
             },
             {
                 "title": _("Tinkamiausi"),
-                "url": f"{url}?{sort_query}&sort=sort-by-relevance"
-                if sort_query
-                else f"{url}?sort=sort-by-relevance",
+                "url": f"{url}?{sort_query}&sort=sort-by-relevance" if sort_query else f"{url}?sort=sort-by-relevance",
                 "icon": "fas fa-sort-amount-down-alt",
                 "key": "sort-by-relevance",
             },
@@ -437,9 +427,7 @@ class DatasetRedirectView(View):
     def get(self, request, **kwargs):
         slug = kwargs.get("slug")
         dataset = get_object_or_404(Dataset, slug=slug)
-        return HttpResponsePermanentRedirect(
-            reverse("dataset-detail", kwargs={"pk": dataset.pk})
-        )
+        return HttpResponsePermanentRedirect(reverse("dataset-detail", kwargs={"pk": dataset.pk}))
 
 
 class DatasetDetailView(
@@ -484,16 +472,10 @@ class DatasetDetailView(
             "public_status": dataset.is_public,
             # TODO: harvested functionality needs to be implemented
             "harvested": "",
-            "can_add_resource": has_perm(
-                self.request.user, Action.CREATE, DatasetDistribution, dataset
-            ),
+            "can_add_resource": has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),
             "can_update_dataset": has_perm(self.request.user, Action.UPDATE, dataset),
-            "can_view_members": has_perm(
-                self.request.user, Action.VIEW, Representative, dataset
-            ),
-            "resources": dataset.datasetdistribution_set.all().order_by(
-                "-period_start"
-            ),
+            "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
+            "resources": dataset.datasetdistribution_set.all().order_by("-period_start"),
             "org_logo": organization.image if organization else None,
             "attributions": dataset.datasetattribution_set.order_by("attribution"),
             "data_maturity": dataset.metadata_set.average_level(),
@@ -503,18 +485,14 @@ class DatasetDetailView(
         }
         part_of = dataset.part_of.order_by("relation")
         part_of = itertools.groupby(part_of, lambda x: x.relation)
-        extra_context_data["part_of"] = [
-            (relation, list(values)) for relation, values in part_of
-        ]
+        extra_context_data["part_of"] = [(relation, list(values)) for relation, values in part_of]
 
         dynamic_resource = DynamicResourceService(dataset)
         generated_resources = dynamic_resource.generate_resources()
         extra_context_data["dynamic_resources"] = generated_resources
 
         related_datasets = itertools.groupby(related_datasets, lambda x: x.relation)
-        extra_context_data["related_datasets"] = [
-            (relation, list(values)) for relation, values in related_datasets
-        ]
+        extra_context_data["related_datasets"] = [(relation, list(values)) for relation, values in related_datasets]
 
         context_data.update(extra_context_data)
         return context_data
@@ -601,9 +579,7 @@ class DatasetRDFDownloadView(PermissionRequiredMixin, View):
 
 class OpenDataPortalDatasetDetailView(View):
     def get(self, request):
-        dataset = Dataset.objects.filter(
-            translations__title__icontains="Open data catalog"
-        ).first()
+        dataset = Dataset.objects.filter(translations__title__icontains="Open data catalog").first()
         return HttpResponseRedirect(
             reverse(
                 "dataset-detail",
@@ -616,17 +592,12 @@ class OpenDataPortalDatasetDetailView(View):
 
 class DatasetDistributionPreviewView(ListView):
     def get(self, request, dataset_id, distribution_id):
-        distribution = get_object_or_404(
-            DatasetDistribution, dataset__pk=dataset_id, pk=distribution_id
-        )
+        distribution = get_object_or_404(DatasetDistribution, dataset__pk=dataset_id, pk=distribution_id)
         data = []
         if distribution.is_previewable():
             if "xlsx" in distribution.file.path:
                 read_data = pd.ExcelFile(distribution.file.path)
-                read_data = {
-                    sheet_name: read_data.parse(sheet_name)
-                    for sheet_name in read_data.sheet_names
-                }
+                read_data = {sheet_name: read_data.parse(sheet_name) for sheet_name in read_data.sheet_names}
                 if len(read_data.keys()) > 1:
                     data = [["Only one sheet is allowed in file"]]
                 else:
@@ -643,9 +614,7 @@ class DatasetDistributionPreviewView(ListView):
                     read_data = pd.read_csv(distribution.file.path, delimiter=";")
                 except ValueError:
                     try:
-                        read_data = pd.read_csv(
-                            distribution.file.path, encoding="cp1257", delimiter=";"
-                        )
+                        read_data = pd.read_csv(distribution.file.path, encoding="cp1257", delimiter=";")
                     except ValueError:
                         pass
                 if read_data is not None:
@@ -683,11 +652,9 @@ class DatasetCreateView(
     def organization_id(self) -> int | str | None:
         return self.kwargs.get("pk")
 
-
     @cached_property
     def organization(self) -> Organization:
         return get_object_or_404(Organization, id=self.organization_id)
-
 
     @property
     def parent_id(self) -> str | None:
@@ -723,7 +690,9 @@ class DatasetCreateView(
                 ),
                 "organization": self.organization,
                 "organization_id": self.organization.pk,
-                "current_title": _("Pridėti vaikinių duomenų išteklių") if self.parent_id else _("Pridėti duomenų išteklių"),
+                "current_title": _("Pridėti vaikinių duomenų išteklių")
+                if self.parent_id
+                else _("Pridėti duomenų išteklių"),
                 "form_title": subclass.translated_title,
                 "information_title": subclass.translated_title,
                 "information_description": subclass.translated_description,
@@ -731,28 +700,20 @@ class DatasetCreateView(
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("organization-list"): _("Organizacijos"),
-                    reverse(
-                        "organization-detail", args=[self.organization.pk]
-                    ): self.organization.title,
+                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
                     reverse("dataset-list"): _("Duomenų ištekliai"),
                     "": _("Pridėti duomenų išteklių"),
                 },
                 "current_step": 2,
                 "current_percentage": 100,
                 "selected_subclass_uuid": str(subclass_uuid),
-                "service_subclass": str(
-                    DCATResourceSubclass.objects.get(
-                        name=DCATResourceSubclass.SERVICE
-                    ).pk
-                ),
+                "service_subclass": str(DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE).pk),
             }
         )
         return context
 
     def get_form_class(self):
-        subclass = get_object_or_404(
-            DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid")
-        )
+        subclass = get_object_or_404(DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid"))
         if subclass.name == DCATResourceSubclass.SERVICE:
             return ServiceResourceForm
         if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
@@ -808,13 +769,15 @@ class DatasetCreateView(
                 type=Comment.STATUS,
                 status=comment_status,
             )
-        if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (identifier := form.cleaned_data.get("identifier")):
+        if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (
+            identifier := form.cleaned_data.get("identifier")
+        ):
             agency = get_object_or_404(Agency, code="risr")
             Identifier.objects.create(
                 resource=self.object,
                 notation=identifier,
                 scheme_agency=agency,
-                identifier_type=Identifier.IdentifierType.OTHER
+                identifier_type=Identifier.IdentifierType.OTHER,
             )
 
         self.object.save()
@@ -828,9 +791,7 @@ class DatasetCreateView(
                 object_id=self.object.pk,
                 user=self.request.user,
                 email=self.request.user.email,
-                role=Representative.COORDINATOR
-                if self.request.user.is_coordinator
-                else Representative.MANAGER,
+                role=Representative.COORDINATOR if self.request.user.is_coordinator else Representative.MANAGER,
             )
 
         for file in form.cleaned_data.get("files", []):
@@ -838,9 +799,8 @@ class DatasetCreateView(
                 dataset=self.object,
                 file=file,
             )
-        dataset_name = (
-            form.cleaned_data.get("name", "") 
-            or generate_unique_dataset_name(self.object.organization, self.object)
+        dataset_name = form.cleaned_data.get("name", "") or generate_unique_dataset_name(
+            self.object.organization, self.object
         )
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
@@ -878,9 +838,7 @@ class DatasetCreateView(
                 )
                 if sub.user.email and sub.email_subscribed:
                     if sub.user.organization:
-                        orgs = [sub.user.organization] + list(
-                            sub.user.organization.get_descendants()
-                        )
+                        orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                         sub_email_list = [org.email for org in orgs]
                     sub_email_list.append(sub.user.email)
                 dataset_url = "%s%s" % (
@@ -915,11 +873,7 @@ class DatasetCreateView(
                     role=Representative.MANAGER,
                 )
 
-                self.object.publisher = (
-                    self.object.organization
-                    if self.object.organization != creator
-                    else None
-                )
+                self.object.publisher = self.object.organization if self.object.organization != creator else None
             self.object.organization = creator
             self.object.save()
 
@@ -934,6 +888,9 @@ class DatasetCreateView(
             )
             rep.save()
             self.object.save()
+
+        if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
+            self.object.update_applicable_legislation(applicable_legislation_urls)
 
         messages.success(self.request, _("Duomenų išteklius sukurtas sėkmingai"))
 
@@ -991,9 +948,7 @@ class ResourceSubclassCreateView(
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("organization-list"): _("Organizacijos"),
-                    reverse(
-                        "organization-detail", args=[organization.pk]
-                    ): organization.title,
+                    reverse("organization-detail", args=[organization.pk]): organization.title,
                     reverse("dataset-list"): _("Duomenų ištekliai"),
                     "": _("Pridėti duomenų išteklių"),
                 },
@@ -1015,11 +970,9 @@ class ResourceSubclassCreateView(
         subclass = form.cleaned_data.get("subclass")
         if parent_id := self.kwargs.get("parent_id"):
             return redirect(
-                reverse("child-dataset-add", kwargs={"pk": pk, "parent_id":parent_id, "subclass_uuid": subclass.uuid})
+                reverse("child-dataset-add", kwargs={"pk": pk, "parent_id": parent_id, "subclass_uuid": subclass.uuid})
             )
-        return redirect(
-            reverse("dataset-add", kwargs={"pk": pk, "subclass_uuid": subclass.uuid})
-        )
+        return redirect(reverse("dataset-add", kwargs={"pk": pk, "subclass_uuid": subclass.uuid}))
 
 
 class DatasetUpdateView(
@@ -1063,15 +1016,9 @@ class DatasetUpdateView(
                 "information_title": self.object.subclass.translated_title,
                 "information_description": self.object.subclass.translated_description,
                 "selected_subclass_uuid": str(subclass_uuid),
-                "service_subclass": str(
-                    DCATResourceSubclass.objects.get(
-                        name=DCATResourceSubclass.SERVICE
-                    ).pk
-                ),
+                "service_subclass": str(DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE).pk),
                 "button": _("Redaguoti"),
-                "request_user": (
-                    self.request.user if self.request.user.is_authenticated else None
-                ),
+                "request_user": (self.request.user if self.request.user.is_authenticated else None),
                 "can_add_projects": has_perm(
                     self.request.user,
                     Action.UPDATE,
@@ -1109,9 +1056,7 @@ class DatasetUpdateView(
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
 
-        if ("endpoint_url" in form.changed_data) or (
-            self.object.is_public and not self.object.published
-        ):
+        if ("endpoint_url" in form.changed_data) or (self.object.is_public and not self.object.published):
             if self.object.is_public and not self.object.published:
                 self.object.published = timezone.now()
 
@@ -1126,9 +1071,7 @@ class DatasetUpdateView(
                 .first()
             )
 
-            if self.object.datasetdistribution_set.exists() or (
-                self.object.service and self.object.endpoint_url
-            ):
+            if self.object.datasetdistribution_set.exists() or (self.object.service and self.object.endpoint_url):
                 self.object.status = Dataset.HAS_DATA
                 comment_status = Comment.OPENED
             elif self.object.plandataset_set.exists():
@@ -1138,10 +1081,7 @@ class DatasetUpdateView(
                 self.object.status = Dataset.INVENTORED
                 comment_status = Comment.INVENTORED
 
-            if (
-                not latest_status_comment
-                or latest_status_comment.status != comment_status
-            ):
+            if not latest_status_comment or latest_status_comment.status != comment_status:
                 Comment.objects.create(
                     content_type=ContentType.objects.get_for_model(self.object),
                     object_id=self.object.pk,
@@ -1154,18 +1094,23 @@ class DatasetUpdateView(
             self.object.published = None
             self.object.status = Dataset.UNASSIGNED
 
-        if self.object.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (identifier := form.cleaned_data.get("identifier")):
+        if self.object.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (
+            identifier := form.cleaned_data.get("identifier")
+        ):
             agency = get_object_or_404(Agency, code="risr")
             Identifier.objects.update_or_create(
                 resource=self.object,
                 scheme_agency=agency,
                 defaults={
-                        "notation": identifier,
-                        "identifier_type": Identifier.IdentifierType.OTHER,
-                        "resource": self.object,
-                        "scheme_agency": agency,
-                    }
-                )
+                    "notation": identifier,
+                    "identifier_type": Identifier.IdentifierType.OTHER,
+                    "resource": self.object,
+                    "scheme_agency": agency,
+                },
+            )
+        if "applicable_legislation" in form.changed_data:
+            self.object.update_applicable_legislation(form.cleaned_data["applicable_legislation"])
+
         self.object.save()
         set_comment(Dataset.EDITED)
 
@@ -1175,7 +1120,7 @@ class DatasetUpdateView(
                     dataset=self.object,
                     file=file,
                 )
-               
+
         if metadata := self.object.metadata.first():
             metadata.title = self.object.title
             metadata.description = self.object.description
@@ -1191,9 +1136,8 @@ class DatasetUpdateView(
                 prepare_ast={},
                 version=1,
             )
-        dataset_name = (
-            form.cleaned_data.get("name", "")
-            or generate_unique_dataset_name(self.object.organization, self.object)
+        dataset_name = form.cleaned_data.get("name", "") or generate_unique_dataset_name(
+            self.object.organization, self.object
         )
         if not metadata.name or metadata.name != dataset_name:
             metadata.name = dataset_name
@@ -1245,9 +1189,7 @@ class DatasetUpdateView(
             )
         )
         sub_list = [item for query in queries for item in query]
-        sorted_list = sorted(
-            sub_list, key=lambda x: x.sub_type != Subscription.ORGANIZATION
-        )
+        sorted_list = sorted(sub_list, key=lambda x: x.sub_type != Subscription.ORGANIZATION)
 
         sub_email_list = []
         for sub in sorted_list:
@@ -1302,10 +1244,7 @@ class DatasetUpdateView(
                     self.object.publisher = self.request.user.organization
                 self.object.organization = creator
 
-                if (
-                    creator == self.request.user.organization
-                    and self.request.user.organization.publisher
-                ):
+                if creator == self.request.user.organization and self.request.user.organization.publisher:
                     self.object.publisher = None
                     Representative.objects.filter(
                         object_id=self.object.pk,
@@ -1316,10 +1255,7 @@ class DatasetUpdateView(
 
             self.object.save()
 
-        if (
-            "managed_by_publisher" in form.changed_data
-            and self.request.user.organization
-        ):
+        if "managed_by_publisher" in form.changed_data and self.request.user.organization:
             managed_by_publisher = form.cleaned_data.get("managed_by_publisher")
             if managed_by_publisher and self.request.user.organization.publisher:
                 self.object.publisher = self.request.user.organization
@@ -1390,9 +1326,7 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
     def get_history_objects(self):
         model_ids = self.models.values_list("pk", flat=True)
         if self.can_manage_structure:
-            property_ids = Property.objects.filter(
-                model__pk__in=model_ids, given=True
-            ).values_list("pk", flat=True)
+            property_ids = Property.objects.filter(model__pk__in=model_ids, given=True).values_list("pk", flat=True)
         else:
             property_ids = Property.objects.filter(
                 model__pk__in=model_ids,
@@ -1400,20 +1334,12 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
                 metadata__access__gte=Metadata.PUBLIC,
             ).values_list("pk", flat=True)
 
-        property_history_objects = Version.objects.get_for_model(Property).filter(
-            object_id__in=list(property_ids)
-        )
-        model_history_objects = Version.objects.get_for_model(Model).filter(
-            object_id__in=list(model_ids)
-        )
+        property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
+        model_history_objects = Version.objects.get_for_model(Model).filter(object_id__in=list(model_ids))
         dataset_history_objects = Version.objects.get_for_object(self.object)
 
-        dataset_plan_ids = PlanDataset.objects.filter(dataset=self.object).values_list(
-            "plan_id", flat=True
-        )
-        plan_history_objects = Version.objects.get_for_model(Plan).filter(
-            object_id__in=list(dataset_plan_ids)
-        )
+        dataset_plan_ids = PlanDataset.objects.filter(dataset=self.object).values_list("plan_id", flat=True)
+        plan_history_objects = Version.objects.get_for_model(Plan).filter(object_id__in=list(dataset_plan_ids))
         dataset_distribution_history_objects = self._get_history_objects_for_model(DatasetDistribution)
         attribution_history_objects = self._get_history_objects_for_model(DatasetAttribution)
         relation_history_objects = self._get_history_objects_for_model(DatasetRelation)
@@ -1428,17 +1354,15 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
             | relation_history_objects
         )
         return history_objects.order_by("-revision__date_created")
-    
+
     def _get_history_objects_for_model(self, model: TypingType[models.Model]) -> QuerySet[Version]:
         all_versions = Version.objects.get_for_model(model)
         filtered_versions_ids = [
-            version.pk for version in all_versions
-            if version.field_dict.get('dataset_id') == self.object.id
+            version.pk for version in all_versions if version.field_dict.get("dataset_id") == self.object.id
         ]
         if model == DatasetRelation:
             filtered_versions_ids += [
-                version.pk for version in all_versions
-                if version.field_dict.get('part_of_id') == self.object.id
+                version.pk for version in all_versions if version.field_dict.get("part_of_id") == self.object.id
             ]
 
         return all_versions.filter(pk__in=filtered_versions_ids)
@@ -1605,9 +1529,7 @@ class CreateMemberView(
         context = super().get_context_data(**kwargs)
         context["tabs"] = "vitrina/datasets/tabs.html"
         context["can_view_members"] = self.has_permission()
-        context["representative_url"] = reverse(
-            "dataset-members", args=[self.dataset.pk]
-        )
+        context["representative_url"] = reverse("dataset-members", args=[self.dataset.pk])
         context["current_title"] = _("Tvarkytojo pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
@@ -1652,9 +1574,7 @@ class CreateMemberView(
             )
         elif organization and self.request.user.is_superuser and organization.publisher:
             if self.object.role == Representative.COORDINATOR:
-                form.add_error(
-                    "role", _("Organizacijai gali būti suteikta tik tvarkytojo rolė")
-                )
+                form.add_error("role", _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
                 return self.form_invalid(form)
             self.object.organization = organization
             self.object.save()
@@ -1686,16 +1606,12 @@ class CreateMemberView(
                     "vitrina/email/offer_to_join_portal.md",
                     {"dataset": self.dataset, "link": url},
                 )
-                messages.info(
-                    self.request, _("Naudotojui išsiųstas laiškas dėl registracijos")
-                )
+                messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.dataset.save()
 
         if self.object.has_api_access:
             api_key = secrets.token_urlsafe()
-            ApiKey.objects.create(
-                api_key=hash_api_key(api_key), enabled=True, representative=self.object
-            )
+            ApiKey.objects.create(api_key=hash_api_key(api_key), enabled=True, representative=self.object)
             serializer = URLSafeSerializer(settings.SECRET_KEY)
             api_key = serializer.dumps({"api_key": api_key})
             return HttpResponseRedirect(
@@ -1748,9 +1664,7 @@ def autocomplete_tags(request, tag_model):
         results = results.order_by("-count")[start:end]
 
     response = {"results": [tag.name for tag in results], "more": more}
-    return HttpResponse(
-        json.dumps(response, cls=DjangoJSONEncoder), content_type="application/json"
-    )
+    return HttpResponse(json.dumps(response, cls=DjangoJSONEncoder), content_type="application/json")
 
 
 class UpdateMemberView(
@@ -1792,9 +1706,7 @@ class UpdateMemberView(
         context = super().get_context_data(**kwargs)
         context["tabs"] = "vitrina/datasets/tabs.html"
         context["can_view_members"] = self.has_permission()
-        context["representative_url"] = reverse(
-            "dataset-members", args=[self.dataset.pk]
-        )
+        context["representative_url"] = reverse("dataset-members", args=[self.dataset.pk])
         context["current_title"] = _("Tvarkytojo redagavimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
@@ -1917,9 +1829,7 @@ class DeleteMemberView(
         return HttpResponseRedirect(self.get_success_url())
 
 
-class DatasetProjectsView(
-    DatasetStructureMixin, PermissionRequiredMixin, HistoryMixin, PlanMixin, ListView
-):
+class DatasetProjectsView(DatasetStructureMixin, PermissionRequiredMixin, HistoryMixin, PlanMixin, ListView):
     model = Project
     template_name = "vitrina/datasets/project_list.html"
     context_object_name = "projects"
@@ -1967,9 +1877,7 @@ class DatasetProjectsView(
         return context
 
 
-class DatasetRequestsView(
-    DatasetStructureMixin, PermissionRequiredMixin, HistoryMixin, PlanMixin, ListView
-):
+class DatasetRequestsView(DatasetStructureMixin, PermissionRequiredMixin, HistoryMixin, PlanMixin, ListView):
     model = RequestObject
     template_name = "vitrina/datasets/request_list.html"
     context_object_name = "requests"
@@ -1992,12 +1900,8 @@ class DatasetRequestsView(
             return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
-        model_ids = Model.objects.filter(dataset=self.object).values_list(
-            "pk", flat=True
-        )
-        property_ids = Property.objects.filter(model__pk__in=model_ids).values_list(
-            "pk", flat=True
-        )
+        model_ids = Model.objects.filter(dataset=self.object).values_list("pk", flat=True)
+        property_ids = Property.objects.filter(model__pk__in=model_ids).values_list("pk", flat=True)
         return RequestObject.objects.filter(
             Q(
                 content_type=ContentType.objects.get_for_model(self.object),
@@ -2047,9 +1951,9 @@ class AddRequestView(
         if self.dataset.is_public:
             return get_requests(self.request.user, self.dataset)
         else:
-            return has_perm(
-                self.request.user, Action.VIEW, self.dataset
-            ) and get_requests(self.request.user, self.dataset)
+            return has_perm(self.request.user, Action.VIEW, self.dataset) and get_requests(
+                self.request.user, self.dataset
+            )
 
     def get_form_kwargs(self):
         kwargs = super(AddRequestView, self).get_form_kwargs()
@@ -2086,9 +1990,7 @@ class AddRequestView(
         )
         set_comment(Dataset.REQUEST_SET)
         self.object.save()
-        return HttpResponseRedirect(
-            reverse("dataset-requests", kwargs={"pk": self.object.pk})
-        )
+        return HttpResponseRedirect(reverse("dataset-requests", kwargs={"pk": self.object.pk}))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2109,27 +2011,19 @@ class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get("pk"))
-        self.request_object = get_object_or_404(
-            RequestObject, pk=self.kwargs.get("request_id")
-        )
+        self.request_object = get_object_or_404(RequestObject, pk=self.kwargs.get("request_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_remove_from_request_perm(
-            self.dataset, self.request_object.request, self.request.user
-        )
+        return has_remove_from_request_perm(self.dataset, self.request_object.request, self.request.user)
 
     def handle_no_permission(self):
-        return HttpResponseRedirect(
-            reverse("dataset-requests", kwargs={"pk": self.dataset.pk})
-        )
+        return HttpResponseRedirect(reverse("dataset-requests", kwargs={"pk": self.dataset.pk}))
 
     def delete(self, request, *args, **kwargs):
         Comment.objects.filter(
             rel_object_id=self.request_object.request.pk,
-            rel_content_type=ContentType.objects.get_for_model(
-                self.request_object.request
-            ),
+            rel_content_type=ContentType.objects.get_for_model(self.request_object.request),
         ).delete()
         self.request_object.delete()
         success_url = self.get_success_url()
@@ -2159,9 +2053,7 @@ class AddProjectView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return get_projects(
-            self.request.user, self.dataset, check_existence=True, form_query=True
-        )
+        return get_projects(self.request.user, self.dataset, check_existence=True, form_query=True)
 
     def get_form_kwargs(self):
         kwargs = super(AddProjectView, self).get_form_kwargs()
@@ -2177,9 +2069,7 @@ class AddProjectView(
             temp_proj.datasets.add(self.object)
         set_comment(Dataset.PROJECT_SET)
         self.object.save()
-        return HttpResponseRedirect(
-            reverse("dataset-projects", kwargs={"pk": self.object.pk})
-        )
+        return HttpResponseRedirect(reverse("dataset-projects", kwargs={"pk": self.object.pk}))
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2204,15 +2094,10 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return (
-            has_perm(self.request.user, Action.UPDATE, self.project)
-            or self.request.user == self.project.user
-        )
+        return has_perm(self.request.user, Action.UPDATE, self.project) or self.request.user == self.project.user
 
     def handle_no_permission(self):
-        return HttpResponseRedirect(
-            reverse("dataset-projects", kwargs={"pk": self.dataset.pk})
-        )
+        return HttpResponseRedirect(reverse("dataset-projects", kwargs={"pk": self.dataset.pk}))
 
     def delete(self, request, *args, **kwargs):
         self.project.datasets.remove(self.dataset.pk)
@@ -2261,9 +2146,9 @@ class DatasetStatsMixin(StatsMixin):
 
     def get_data_for_indicator(self, indicator, values, filter_queryset):
         if field := DATASET_INDICATOR_FIELDS.get(indicator):
-            data = DatasetStats.objects.filter(
-                dataset_id__in=filter_queryset.values_list("pk", flat=True)
-            ).values(*values)
+            data = DatasetStats.objects.filter(dataset_id__in=filter_queryset.values_list("pk", flat=True)).values(
+                *values
+            )
             if indicator == "level-average":
                 data = data.annotate(count=Avg(field))
             else:
@@ -2273,11 +2158,7 @@ class DatasetStatsMixin(StatsMixin):
                 content_type=ContentType.objects.get_for_model(Model),
                 dataset__pk__in=filter_queryset.values_list("pk", flat=True),
             ).values_list("name", flat=True)
-            data = (
-                ModelDownloadStats.objects.filter(model__in=model_names)
-                .values(*values)
-                .annotate(count=Sum(field))
-            )
+            data = ModelDownloadStats.objects.filter(model__in=model_names).values(*values).annotate(count=Sum(field))
         else:
             data = filter_queryset.values(*values).annotate(count=Count("pk"))
         return data
@@ -2326,13 +2207,9 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio būseną rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio būseną rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio būseną laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio būseną laike")
 
     def update_context_data(self, context):
         facet_fields = context.get("facets").get("fields")
@@ -2349,9 +2226,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         most_recent_comments = (
             Comment.objects.filter(
                 content_type=ContentType.objects.get_for_model(Dataset),
-                object_id__in=datasets.exclude(status=Dataset.UNASSIGNED).values_list(
-                    "pk", flat=True
-                ),
+                object_id__in=datasets.exclude(status=Dataset.UNASSIGNED).values_list("pk", flat=True),
                 status__isnull=False,
             )
             .values("object_id")
@@ -2378,9 +2253,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
         frequency, ff = get_frequency_and_format(duration)
         end_date = datetime.now()
         start_date = get_start_date_based_on_frequency(frequency, end_date)
-        labels = pd.period_range(
-            start=start_date, end=end_date, freq=frequency
-        ).tolist()
+        labels = pd.period_range(start=start_date, end=end_date, freq=frequency).tolist()
 
         date_field = self.get_date_field()
         values = get_values_for_frequency(frequency, date_field)
@@ -2389,9 +2262,7 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
             bar_count = 0
             time_data = []
             bar_data = []
-            status_dataset_ids = datasets.filter(
-                status=status["filter_value"]
-            ).values_list("pk", flat=True)
+            status_dataset_ids = datasets.filter(status=status["filter_value"]).values_list("pk", flat=True)
             status_datasets = Dataset.objects.filter(pk__in=status_dataset_ids)
 
             count_data = self.get_data_for_indicator(indicator, values, status_datasets)
@@ -2399,14 +2270,9 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
             for label in labels:
                 time_count = 0
                 label_query = get_query_for_frequency(frequency, date_field, label)
-                if (
-                    status["filter_value"] == Dataset.UNASSIGNED
-                    or indicator != "dataset-count"
-                ):
+                if status["filter_value"] == Dataset.UNASSIGNED or indicator != "dataset-count":
                     label_count_data = count_data.filter(**label_query)
-                    time_count = self.get_count(
-                        label, indicator, frequency, label_count_data, time_count
-                    )
+                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
                     bar_count += time_count
                 else:
                     if status["filter_value"] == "HAS_DATA":
@@ -2416,15 +2282,11 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
                     else:
                         comm_val = status["filter_value"]
 
-                    time_count += dataset_status.filter(
-                        status=comm_val, **label_query
-                    ).count()
+                    time_count += dataset_status.filter(status=comm_val, **label_query).count()
                     bar_count += time_count
 
                 if frequency == "W":
-                    time_data.append(
-                        {"x": _date(label.start_time, ff), "y": time_count}
-                    )
+                    time_data.append({"x": _date(label.start_time, ff), "y": time_count})
                     bar_data.append({"x": _date(label.start_time, ff), "y": bar_count})
                 else:
                     time_data.append({"x": _date(label, ff), "y": time_count})
@@ -2442,12 +2304,8 @@ class DatasetStatsView(DatasetStatsMixin, DatasetListView):
             bar_chart_data.append(status)
 
         if sorting == "sort-desc":
-            time_chart_data = sorted(
-                time_chart_data, key=lambda x: x["data"][-1]["y"], reverse=True
-            )
-            bar_chart_data = sorted(
-                bar_chart_data, key=lambda x: x["count"], reverse=True
-            )
+            time_chart_data = sorted(time_chart_data, key=lambda x: x["data"][-1]["y"], reverse=True)
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x["count"], reverse=True)
         else:
             time_chart_data = sorted(time_chart_data, key=lambda x: x["data"][-1]["y"])
             bar_chart_data = sorted(bar_chart_data, key=lambda x: x["count"])
@@ -2489,14 +2347,9 @@ class DatasetManagementsView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} "
-                f"pagal rinkinio valdymo sritį rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike")
 
 
 class DatasetsLevelView(DatasetStatsMixin, DatasetListView):
@@ -2509,10 +2362,7 @@ class DatasetsLevelView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} "
-                f"pagal rinkinio brandos lygį rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio brandos lygį rinkinio įkėlimo datai")
         else:
             return _(f"{Y_TITLES.get(indicator, '')} pagal rinkinio brandos lygį laike")
 
@@ -2525,14 +2375,9 @@ class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} "
-                f"pagal rinkinio organizaciją rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike")
 
 
 class DatasetsPublishersView(DatasetStatsMixin, DatasetListView):
@@ -2543,14 +2388,9 @@ class DatasetsPublishersView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} "
-                f"pagal rinkinio organizaciją rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike")
 
 
 class DatasetsTagsView(DatasetStatsMixin, DatasetListView):
@@ -2559,21 +2399,15 @@ class DatasetsTagsView(DatasetStatsMixin, DatasetListView):
     filter = "tags"
 
     def get_display_value(self, item):
-        if tag := Dataset.tags.tag_model.objects.filter(
-            pk=item["filter_value"]
-        ).first():
+        if tag := Dataset.tags.tag_model.objects.filter(pk=item["filter_value"]).first():
             return tag.name
         return item["display_value"]
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio žymes rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio žymes rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio žymes laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio žymes laike")
 
 
 class DatasetsFormatView(DatasetStatsMixin, DatasetListView):
@@ -2584,13 +2418,9 @@ class DatasetsFormatView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio formatą rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio formatą rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio formatą laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio formatą laike")
 
 
 class DatasetsFrequencyView(DatasetStatsMixin, DatasetListView):
@@ -2602,14 +2432,9 @@ class DatasetsFrequencyView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} "
-                f"pagal rinkinio atnaujinimą rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio atnaujinimą rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio atnaujinimą laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio atnaujinimą laike")
 
 
 class DatasetsGroupView(DatasetStatsMixin, DatasetListView):
@@ -2620,14 +2445,9 @@ class DatasetsGroupView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} "
-                f"pagal rinkinio grupes rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio grupes rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio grupes laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio grupes laike")
 
 
 class DatasetsAccessRightsView(DatasetStatsMixin, DatasetListView):
@@ -2638,14 +2458,9 @@ class DatasetsAccessRightsView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} "
-                f"pagal rinkinio prieigos teises rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio prieigos teises rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio prieigos teises laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio prieigos teises laike")
 
     def get_display_value(self, item):
         value = super().get_display_value(item)
@@ -2661,21 +2476,15 @@ class DatasetsCategoriesView(DatasetStatsMixin, DatasetListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike")
 
     def update_item_data(self, item):
         obj = get_object_or_404(Category, pk=item["filter_value"])
         children = obj.get_children()
         if len(children) > 0:
-            item.update(
-                {"full_url": reverse("dataset-stats-category-children", args=[obj.pk])}
-            )
+            item.update({"full_url": reverse("dataset-stats-category-children", args=[obj.pk])})
         return item
 
 
@@ -2721,9 +2530,7 @@ class JurisdictionStatsView(DatasetListView):
         for org in child_orgs:
             modified = {}
             id_list = []
-            datasets = Dataset.objects.filter(organization=org).values_list(
-                "id", flat=True
-            )
+            datasets = Dataset.objects.filter(organization=org).values_list("id", flat=True)
             if len(datasets) > 0:
                 for d in datasets:
                     id_list.append(d)
@@ -2745,17 +2552,10 @@ class JurisdictionStatsView(DatasetListView):
                     if max_count < len(v):
                         max_count = len(v)
                 if sorting == "sort-asc":
-                    single_dict = sorted(
-                        single_dict, key=lambda dd: dd["count"], reverse=False
-                    )
+                    single_dict = sorted(single_dict, key=lambda dd: dd["count"], reverse=False)
                 elif indicator != "dataset-count":
-                    if (
-                        indicator == "download-request-count"
-                        or indicator == "download-object-count"
-                    ):
-                        models = Model.objects.filter(dataset_id__in=v).values_list(
-                            "metadata__name", flat=True
-                        )
+                    if indicator == "download-request-count" or indicator == "download-object-count":
+                        models = Model.objects.filter(dataset_id__in=v).values_list("metadata__name", flat=True)
                         total = 0
                         if len(models) > 0:
                             for m in models:
@@ -2774,9 +2574,7 @@ class JurisdictionStatsView(DatasetListView):
                         if len(stats) > 0:
                             total = 0
                             for st in stats:
-                                total = get_total_by_indicator_from_stats(
-                                    st, indicator, total
-                                )
+                                total = get_total_by_indicator_from_stats(st, indicator, total)
                             single_dict["count"] = total
                             if max_count < single_dict.get("count"):
                                 max_count = single_dict.get("count")
@@ -2836,9 +2634,7 @@ class CategoryStatsView(DatasetListView):
                     max_count = single_cat.get("count")
                 filtered_cats.append(single_cat)
         if sorting == "sort-asc":
-            filtered_cats = sorted(
-                filtered_cats, key=lambda dd: dd["count"], reverse=False
-            )
+            filtered_cats = sorted(filtered_cats, key=lambda dd: dd["count"], reverse=False)
         if indicator != "dataset-count":
             for k in filtered_cats:
                 id_list = []
@@ -2847,13 +2643,8 @@ class CategoryStatsView(DatasetListView):
                 if len(cat_datasets) > 0:
                     for dd in cat_datasets:
                         id_list.append(dd.pk)
-                    if (
-                        indicator == "download-request-count"
-                        or indicator == "download-object-count"
-                    ):
-                        models = Model.objects.filter(
-                            dataset_id__in=id_list
-                        ).values_list("metadata__name", flat=True)
+                    if indicator == "download-request-count" or indicator == "download-object-count":
+                        models = Model.objects.filter(dataset_id__in=id_list).values_list("metadata__name", flat=True)
                         total = 0
                         if len(models) > 0:
                             for m in models:
@@ -2907,13 +2698,9 @@ class CategoryStatsView(DatasetListView):
                         else:
                             k["stats"] = 0
             if sorting is None or sorting == "sort-desc":
-                filtered_cats = sorted(
-                    filtered_cats, key=lambda d: d["stats"], reverse=True
-                )
+                filtered_cats = sorted(filtered_cats, key=lambda d: d["stats"], reverse=True)
             else:
-                filtered_cats = sorted(
-                    filtered_cats, key=lambda d: d["stats"], reverse=False
-                )
+                filtered_cats = sorted(filtered_cats, key=lambda d: d["stats"], reverse=False)
             # filtered_cats = sorted(filtered_cats, key=lambda d: d['stats'], reverse=True)
         context["max_count"] = max_count
         context["category_data"] = filtered_cats
@@ -2935,9 +2722,7 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
     paginate_by = 0
 
     def get_graph_title(self, indicator):
-        return _(
-            f"{self.get_title_for_indicator(indicator)} pagal rinkinio įkėlimo datą laike"
-        )
+        return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio įkėlimo datą laike")
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2955,17 +2740,13 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
 
         labels = []
         if start_date:
-            labels = pd.period_range(
-                start=start_date, end=datetime.now(), freq=frequency
-            ).tolist()
+            labels = pd.period_range(start=start_date, end=datetime.now(), freq=frequency).tolist()
 
         for dataset in datasets:
             published = dataset.published
             if published is not None:
                 year_published = published.year
-                year_stats[str(year_published)] = (
-                    year_stats.get(str(year_published), 0) + 1
-                )
+                year_stats[str(year_published)] = year_stats.get(str(year_published), 0) + 1
                 period = str(pd.to_datetime(published).to_period(frequency))
                 stats_for_period[period] = stats_for_period.get(period, 0) + 1
 
@@ -2974,19 +2755,12 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
                 start_date = datetime.strptime(str(yr) + "-1-1", "%Y-%m-%d")
                 end_date = datetime.strptime(str(yr) + "-12-31", "%Y-%m-%d")
                 tz = pytz.timezone("Europe/Vilnius")
-                filtered_datasets = datasets.filter(
-                    published__range=[tz.localize(start_date), tz.localize(end_date)]
-                )
+                filtered_datasets = datasets.filter(published__range=[tz.localize(start_date), tz.localize(end_date)])
                 dataset_ids = []
                 for fd in filtered_datasets:
                     dataset_ids.append(fd.pk)
-                if (
-                    indicator == "download-request-count"
-                    or indicator == "download-object-count"
-                ):
-                    models = Model.objects.filter(
-                        dataset_id__in=dataset_ids
-                    ).values_list("metadata__name", flat=True)
+                if indicator == "download-request-count" or indicator == "download-object-count":
+                    models = Model.objects.filter(dataset_id__in=dataset_ids).values_list("metadata__name", flat=True)
                     total = 0
                     if len(models) > 0:
                         for m in models:
@@ -3005,9 +2779,7 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
                     if len(stats) > 0:
                         total = 0
                         for st in stats:
-                            total = get_total_by_indicator_from_stats(
-                                st, indicator, total
-                            )
+                            total = get_total_by_indicator_from_stats(st, indicator, total)
                         year_stats[yr] = total
                     else:
                         year_stats[yr] = 0
@@ -3015,12 +2787,8 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
             keys = list(year_stats.keys())
             values = list(year_stats.values())
             sorted_value_index = np.argsort(values)
-            year_stats = sort_publication_stats(
-                sorting, values, keys, year_stats, sorted_value_index
-            )
-            max_count = year_stats[
-                max(year_stats, key=lambda key: year_stats[key], default=0)
-            ]
+            year_stats = sort_publication_stats(sorting, values, keys, year_stats, sorted_value_index)
+            max_count = year_stats[max(year_stats, key=lambda key: year_stats[key], default=0)]
 
         data = []
         total = 0
@@ -3029,16 +2797,12 @@ class PublicationStatsView(DatasetStatsMixin, DatasetListView):
             if indicator == "dataset-count":
                 total += dataset_count
             else:
-                dataset_ids = Dataset.objects.filter(
-                    created__year=label.year
-                ).values_list("pk", flat=True)
+                dataset_ids = Dataset.objects.filter(created__year=label.year).values_list("pk", flat=True)
                 stat = DatasetStats.objects.filter(dataset_id__in=dataset_ids)
                 per_datasets = 0
                 if len(stat) > 0:
                     for st in stat:
-                        per_datasets = get_total_by_indicator_from_stats(
-                            st, indicator, per_datasets
-                        )
+                        per_datasets = get_total_by_indicator_from_stats(st, indicator, per_datasets)
                 total += per_datasets
 
             if frequency == "W":
@@ -3093,55 +2857,32 @@ class YearStatsView(DatasetListView):
             if published is not None:
                 year_published = published.year
                 year_stats[year_published] = year_stats.get(year_published, 0) + 1
-                quarter = (
-                    str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
-                )
+                quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
                 quarter_stats[quarter] = quarter_stats.get(quarter, 0) + 1
         if indicator != "dataset-count":
             for k in quarter_stats.keys():
                 tz = pytz.timezone("Europe/Vilnius")
                 if selected_year in k:
                     if "-Q1" in k:
-                        start = datetime.strptime(
-                            str(selected_year) + "-1-1", "%Y-%m-%d"
-                        )
-                        end = datetime.strptime(
-                            str(selected_year) + "-3-31", "%Y-%m-%d"
-                        )
+                        start = datetime.strptime(str(selected_year) + "-1-1", "%Y-%m-%d")
+                        end = datetime.strptime(str(selected_year) + "-3-31", "%Y-%m-%d")
                     elif "-Q2" in k:
-                        start = datetime.strptime(
-                            str(selected_year) + "-4-1", "%Y-%m-%d"
-                        )
-                        end = datetime.strptime(
-                            str(selected_year) + "-6-30", "%Y-%m-%d"
-                        )
+                        start = datetime.strptime(str(selected_year) + "-4-1", "%Y-%m-%d")
+                        end = datetime.strptime(str(selected_year) + "-6-30", "%Y-%m-%d")
                     elif "-Q3" in k:
-                        start = datetime.strptime(
-                            str(selected_year) + "-7-1", "%Y-%m-%d"
-                        )
-                        end = datetime.strptime(
-                            str(selected_year) + "-9-30", "%Y-%m-%d"
-                        )
+                        start = datetime.strptime(str(selected_year) + "-7-1", "%Y-%m-%d")
+                        end = datetime.strptime(str(selected_year) + "-9-30", "%Y-%m-%d")
                     else:
-                        start = datetime.strptime(
-                            str(selected_year) + "-10-1", "%Y-%m-%d"
-                        )
-                        end = datetime.strptime(
-                            str(selected_year) + "-12-31", "%Y-%m-%d"
-                        )
-                    filtered_datasets = datasets.filter(
-                        published__range=[tz.localize(start), tz.localize(end)]
-                    )
+                        start = datetime.strptime(str(selected_year) + "-10-1", "%Y-%m-%d")
+                        end = datetime.strptime(str(selected_year) + "-12-31", "%Y-%m-%d")
+                    filtered_datasets = datasets.filter(published__range=[tz.localize(start), tz.localize(end)])
                     dataset_ids = []
                     for fd in filtered_datasets:
                         dataset_ids.append(fd.pk)
-                    if (
-                        indicator == "download-request-count"
-                        or indicator == "download-object-count"
-                    ):
-                        models = Model.objects.filter(
-                            dataset_id__in=dataset_ids
-                        ).values_list("metadata__name", flat=True)
+                    if indicator == "download-request-count" or indicator == "download-object-count":
+                        models = Model.objects.filter(dataset_id__in=dataset_ids).values_list(
+                            "metadata__name", flat=True
+                        )
                         total = 0
                         if len(models) > 0:
                             for m in models:
@@ -3160,9 +2901,7 @@ class YearStatsView(DatasetListView):
                         if len(stats) > 0:
                             total = 0
                             for st in stats:
-                                total += get_total_by_indicator_from_stats(
-                                    st, indicator, total
-                                )
+                                total += get_total_by_indicator_from_stats(st, indicator, total)
                             quarter_stats[k] = total
                         else:
                             quarter_stats[k] = 0
@@ -3172,9 +2911,7 @@ class YearStatsView(DatasetListView):
         keys = list(quarter_stats.keys())
         values = list(quarter_stats.values())
         sorted_value_index = np.argsort(values)
-        quarter_stats = sort_publication_stats_reversed(
-            sorting, values, keys, quarter_stats, sorted_value_index
-        )
+        quarter_stats = sort_publication_stats_reversed(sorting, values, keys, quarter_stats, sorted_value_index)
         context["selected_year"] = selected_year
         context["year_stats"] = quarter_stats
         context["max_count"] = max_count
@@ -3205,34 +2942,21 @@ class QuarterStatsView(DatasetListView):
             if published is not None:
                 year_published = published.year
                 if str(year_published) in selected_quarter:
-                    quarter = (
-                        str(year_published)
-                        + "-Q"
-                        + str(pd.Timestamp(published).quarter)
-                    )
+                    quarter = str(year_published) + "-Q" + str(pd.Timestamp(published).quarter)
                     if quarter == selected_quarter:
-                        month = (
-                            str(year_published) + "-" + str("%02d" % published.month)
-                        )
+                        month = str(year_published) + "-" + str("%02d" % published.month)
                         monthly_stats[month] = monthly_stats.get(month, 0) + 1
         if indicator != "dataset-count":
             for k in monthly_stats.keys():
                 tz = pytz.timezone("Europe/Vilnius")
                 start = datetime.strptime(str(k) + "-1", "%Y-%m-%d")
                 end = datetime.strptime(str(k) + "-28", "%Y-%m-%d")
-                filtered_datasets = datasets.filter(
-                    published__range=[tz.localize(start), tz.localize(end)]
-                )
+                filtered_datasets = datasets.filter(published__range=[tz.localize(start), tz.localize(end)])
                 dataset_ids = []
                 for fd in filtered_datasets:
                     dataset_ids.append(fd.pk)
-                if (
-                    indicator == "download-request-count"
-                    or indicator == "download-object-count"
-                ):
-                    models = Model.objects.filter(
-                        dataset_id__in=dataset_ids
-                    ).values_list("metadata__name", flat=True)
+                if indicator == "download-request-count" or indicator == "download-object-count":
+                    models = Model.objects.filter(dataset_id__in=dataset_ids).values_list("metadata__name", flat=True)
                     total = 0
                     if len(models) > 0:
                         for m in models:
@@ -3251,9 +2975,7 @@ class QuarterStatsView(DatasetListView):
                     if len(stats) > 0:
                         total = 0
                         for st in stats:
-                            total += get_total_by_indicator_from_stats(
-                                st, indicator, total
-                            )
+                            total += get_total_by_indicator_from_stats(st, indicator, total)
                         monthly_stats[k] = total
                     else:
                         monthly_stats[k] = 0
@@ -3263,9 +2985,7 @@ class QuarterStatsView(DatasetListView):
         keys = list(monthly_stats.keys())
         values = list(monthly_stats.values())
         sorted_value_index = np.argsort(values)
-        monthly_stats = sort_publication_stats_reversed(
-            sorting, values, keys, monthly_stats, sorted_value_index
-        )
+        monthly_stats = sort_publication_stats_reversed(sorting, values, keys, monthly_stats, sorted_value_index)
         context["selected_quarter"] = self.kwargs["quarter"]
         context["year_stats"] = monthly_stats
         context["max_count"] = max_count
@@ -3305,17 +3025,11 @@ class DatasetCategoryView(PermissionRequiredMixin, RevisionMixin, TemplateView):
             set_comment(Dataset.CATEGORY_UPDATED)
 
             DatasetExcludedGroups.objects.filter(dataset=self.dataset).delete()
-            for group in DatasetGroup.objects.filter(
-                category__in=form.cleaned_data.get("category")
-            ).distinct():
+            for group in DatasetGroup.objects.filter(category__in=form.cleaned_data.get("category")).distinct():
                 if group not in form.cleaned_data.get("group"):
-                    DatasetExcludedGroups.objects.create(
-                        dataset=self.dataset, group=group
-                    )
+                    DatasetExcludedGroups.objects.create(dataset=self.dataset, group=group)
         else:
-            messages.error(
-                request, "\n".join([error[0] for error in form.errors.values()])
-            )
+            messages.error(request, "\n".join([error[0] for error in form.errors.values()]))
         return redirect(self.dataset.get_absolute_url())
 
 
@@ -3324,18 +3038,11 @@ class FilterGroupsView(LoginRequiredMixin, View):
     def get(request, *args, **kwargs):
         dataset_id = kwargs.get("dataset_id")
         dataset = get_object_or_404(Dataset, pk=dataset_id)
-        category_ids = (
-            request.GET.get("category_ids", "").split(",")
-            if request.GET.get("category_ids")
-            else []
-        )
+        category_ids = request.GET.get("category_ids", "").split(",") if request.GET.get("category_ids") else []
 
         groups = DatasetGroup.objects.filter(category__in=category_ids).distinct()
         excluded_groups = dataset.get_excluded_groups()
-        group_data = {
-            group.pk: {"title": group.title, "checked": group.pk not in excluded_groups}
-            for group in groups
-        }
+        group_data = {group.pk: {"title": group.title, "checked": group.pk not in excluded_groups} for group in groups}
         return JsonResponse({"groups": group_data})
 
 
@@ -3368,9 +3075,7 @@ class FilterCategoryView(LoginRequiredMixin, View):
             for ancestor in cat.get_ancestors():
                 if ancestor not in categories:
                     category_data[ancestor.pk] = {
-                        "show_checkbox": True
-                        if ancestor in group_categories or not group_id
-                        else False,
+                        "show_checkbox": True if ancestor in group_categories or not group_id else False,
                     }
         return JsonResponse({"categories": category_data})
 
@@ -3421,7 +3126,7 @@ class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get(self, request, *args, **kwargs):
         return self.post(request, *args, **kwargs)
-    
+
     def delete(self, request, *args, **kwargs):
         with create_revision():
             self.object = self.get_object()
@@ -3504,7 +3209,7 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get(self, *args, **kwargs):
         return self.post(*args, **kwargs)
-    
+
     def delete(self, request, *args, **kwargs):
         with create_revision():
             self.object = self.get_object()
@@ -3543,15 +3248,9 @@ class DatasetPlanView(
         if status == "closed":
             context["plans"] = self.dataset.plandataset_set.filter(plan__is_closed=True)
         else:
-            context["plans"] = self.dataset.plandataset_set.filter(
-                plan__is_closed=False
-            )
-        context["can_manage_plans"] = has_perm(
-            self.request.user, Action.PLAN, self.dataset
-        )
-        context["can_view_members"] = has_perm(
-            self.request.user, Action.VIEW, Representative, self.dataset
-        )
+            context["plans"] = self.dataset.plandataset_set.filter(plan__is_closed=False)
+        context["can_manage_plans"] = has_perm(self.request.user, Action.PLAN, self.dataset)
+        context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
         context["selected_tab"] = status
         return context
 
@@ -3582,9 +3281,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["obj"] = self.dataset
-        context["create_form"] = PlanForm(
-            self.dataset, self.organizations, self.request.user
-        )
+        context["create_form"] = PlanForm(self.dataset, self.organizations, self.request.user)
         context["include_form"] = DatasetPlanForm(self.dataset)
         context["current_title"] = _("Įtraukti į planą")
         context["parent_links"] = {
@@ -3598,9 +3295,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
     def post(self, request, *args, **kwargs):
         form_type = request.POST.get("form_type")
         if form_type == "create_form":
-            form = PlanForm(
-                self.dataset, self.organizations, request.user, request.POST
-            )
+            form = PlanForm(self.dataset, self.organizations, request.user, request.POST)
         else:
             form = DatasetPlanForm(self.dataset, request.POST)
 
@@ -3608,11 +3303,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
             if form_type == "create_form":
                 plan = form.save()
                 PlanDataset.objects.create(plan=plan, dataset=self.dataset)
-                set_comment(
-                    _(
-                        f'Pridėtas terminas "{plan}". Į terminą įtrauktas duomenų rinkinys "{self.dataset}".'
-                    )
-                )
+                set_comment(_(f'Pridėtas terminas "{plan}". Į terminą įtrauktas duomenų rinkinys "{self.dataset}".'))
 
             else:
                 plan_dataset = form.save(commit=False)
@@ -3620,11 +3311,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 plan_dataset.save()
                 plan = plan_dataset.plan
                 plan.save()
-                set_comment(
-                    _(
-                        f'Į terminą "{plan}" įtrauktas duomenų rinkinys "{self.dataset}".'
-                    )
-                )
+                set_comment(_(f'Į terminą "{plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
 
             Comment.objects.create(
                 content_type=ContentType.objects.get_for_model(self.dataset),
@@ -3654,9 +3341,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
         else:
             context = self.get_context_data(**kwargs)
             context[form_type] = form
-            return render(
-                request=request, template_name=self.template_name, context=context
-            )
+            return render(request=request, template_name=self.template_name, context=context)
 
 
 class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
@@ -3676,11 +3361,7 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         plan.save()
         set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
 
-        if (
-            dataset.is_public
-            and dataset.status == Dataset.PLANNED
-            and not dataset.plandataset_set.exists()
-        ):
+        if dataset.is_public and dataset.status == Dataset.PLANNED and not dataset.plandataset_set.exists():
             dataset.status = Dataset.INVENTORED
             Comment.objects.create(
                 content_type=ContentType.objects.get_for_model(dataset),
@@ -3725,11 +3406,7 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
         plan.save()
         set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
 
-        if (
-            dataset.is_public
-            and dataset.status == Dataset.PLANNED
-            and not dataset.plandataset_set.exists()
-        ):
+        if dataset.is_public and dataset.status == Dataset.PLANNED and not dataset.plandataset_set.exists():
             dataset.status = Dataset.INVENTORED
             Comment.objects.create(
                 content_type=ContentType.objects.get_for_model(dataset),
@@ -3767,9 +3444,7 @@ class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         return context
 
     def get_history_objects(self):
-        dataset_plan_ids = PlanDataset.objects.filter(dataset=self.object).values_list(
-            "plan_id", flat=True
-        )
+        dataset_plan_ids = PlanDataset.objects.filter(dataset=self.object).values_list("plan_id", flat=True)
         return (
             Version.objects.get_for_model(Plan)
             .filter(object_id__in=list(dataset_plan_ids))
@@ -3999,13 +3674,13 @@ class DatasetRepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
         }
         return context
 
+
 class DatasetChildResourceListView(LanguageChoiceMixin, HistoryMixin, DatasetStructureMixin, DatasetListView):
     model = Dataset
     detail_url_name = DatasetDetailView.detail_url_name
     history_url_name = DatasetDetailView.history_url_name
     plan_url_name = DatasetDetailView.plan_url_name
     tabs_template_name = "vitrina/datasets/tabs.html"
-
 
     @property
     def page_title(self) -> str:
@@ -4031,9 +3706,8 @@ class DatasetChildResourceListView(LanguageChoiceMixin, HistoryMixin, DatasetStr
                 Dataset,
                 self.object.organization,
             ),
-            "parent_dataset_id":self.parent_dataset_id,
+            "parent_dataset_id": self.parent_dataset_id,
             "organization_id": self.object.organization_id,
-
         }
 
 

@@ -694,6 +694,30 @@ msgstr ""
 msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
 msgstr ""
 
+msgid "Laikotarpio pradžia"
+msgstr ""
+
+msgid "Duomenų rinkinio laikotarpio pradžia. Atitinka dct:temporal."
+msgstr ""
+
+msgid "Laikotarpio pabaiga"
+msgstr ""
+
+msgid "Duomenų rinkinio laikotarpio pabaiga. Atitinka dct:temporal."
+msgstr ""
+
+msgid "Ar duomenys vieši"
+msgstr ""
+
+msgid "Pasirinkite pradžios datą"
+msgstr ""
+
+msgid "Pasirinkite pabaigos datą"
+msgstr ""
+
+msgid "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
+msgstr ""
+
 msgid "Failas"
 msgstr ""
 
@@ -1760,7 +1784,17 @@ msgstr ""
 msgid "Identifikatoriaus tikrinimo tipas"
 msgstr ""
 
+msgid ""
+"Pasirinkite metodą, kaip tikrinti identifikatorių formatą. Reguliarioji "
+"išraiška leidžia nustatyti tikslų šabloną."
+msgstr ""
+
 msgid "Identifikatoriaus tikrinimo parinktys"
+msgstr ""
+
+msgid ""
+"Tikrinimo parametrai pagal pasirinktą tipą. Reguliariajai išraiškai - "
+"įveskite regex šabloną "
 msgstr ""
 
 msgid "Atstovybė"
@@ -1796,10 +1830,6 @@ msgid "Identifikatoriaus tipas"
 msgstr ""
 
 msgid "dct:type – identifikatoriaus tipas"
-msgstr ""
-
-#, python-format
-msgid "Žymėjimas neatitinka reikalaujamos išraiškos: %(pattern)s"
 msgstr ""
 
 msgid "Gavėjai"

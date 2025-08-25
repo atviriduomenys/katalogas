@@ -498,12 +498,8 @@ class InformationSystemResourceForm(BaseResourceForm):
             return identifier
 
         agency = get_object_or_404(Agency, code="risr")
-        if (
-            agency.identifier_validation_type
-            == Agency.IdentifierValidationType.REGEXP
-            and agency.identifier_validation_options
-        ):
-            pattern = agency.identifier_validation_options
+        is_regexp = agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP
+        if is_regexp and (pattern := agency.identifier_validation_options):
             if not re.fullmatch(pattern, identifier):
                 raise ValidationError(
                     _("Žymėjimas turi atitikti šabloną: %(pattern)s"),

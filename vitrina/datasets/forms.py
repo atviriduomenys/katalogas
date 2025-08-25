@@ -149,7 +149,7 @@ class BaseResourceForm(TranslatableModelForm):
     applicable_legislation = StringListField(
         label=_("Teisinis pagrindas"),
         help_text=_(
-            "Įstatymas ar kitas teisės aktas kurio įgyvendinimui yra skirtas šis duomenų išteklius.<br>"
+            "Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys.<br>"
             "Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite konkrečią nuorodą, "
             "pvz., „#17.2“.<br>"
             "Tais atvejais, kai yra keli dokumentai su priedais: „#priedas1/17.2“, „17.2/17.2.5“, "

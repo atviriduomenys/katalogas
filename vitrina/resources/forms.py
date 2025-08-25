@@ -128,12 +128,12 @@ class DatasetResourceForm(TranslatableModelForm):
     applicable_legislation = StringListField(
         label=_("Teisinis pagrindas"),
         help_text=_(
-            """Teisės akto identifikavimo standartas, leidžiantis nurodyti ne tik patį teisės akto dokumentą, bet ir konkrečią vietą dokumente. <br>
-            Pateikti konkrečią vietą teisės akto dokumente: po # pateikite konkrečią vietą: "#17.2" <br>
-            Tais atvejais, kai yra keli dokumentai su priedais:
-            "#priedas1/17.2"
-            "17.2/17.2.5",
-            kur "priedas1" yra dokumento failo pavadinimas."""
+            "Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys.<br>"
+            "Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite konkrečią nuorodą, "
+            "pvz., „#17.2“.<br>"
+            "Tais atvejais, kai yra keli dokumentai su priedais: „#priedas1/17.2“, „17.2/17.2.5“, "
+            "kur „priedas1“ yra dokumento failo pavadinimas.<br>"
+            "Atitinka eli:LegalResource."
         ),
         required=False,
         unique=True,

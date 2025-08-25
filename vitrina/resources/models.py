@@ -418,12 +418,14 @@ class DatasetDistribution(TranslatableModel):
                 self.conditions = en_conditions
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
-        new_legislations = []
-        for url in urls:
-            applicable_legislation, created = (
-                ApplicableLegislation.objects.get_or_create(url=url)
-            )
-            if created:
-                applicable_legislation.update_description()
-            new_legislations.append(applicable_legislation)
-        self.applicable_legislation.set(new_legislations)
+        existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
+        new_urls = [url for url in urls if url not in existing_urls]
+
+        if new_urls:
+            ApplicableLegislation.objects.bulk_create([ApplicableLegislation(url=url) for url in new_urls])
+
+        all_entries = ApplicableLegislation.objects.filter(url__in=urls)
+        self.applicable_legislation.set(all_entries)
+
+        for entry in all_entries.filter(url__in=new_urls):
+            entry.update_description()

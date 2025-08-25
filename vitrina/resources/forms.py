@@ -292,19 +292,24 @@ class DatasetResourceForm(TranslatableModelForm):
             return int(level)
         return None
 
-    def clean_applicable_legislation(self):
-        urls: list[str] = self.cleaned_data.get("applicable_legislation", [])
+    def clean_applicable_legislation(self) -> list[str]:
+        urls = self.cleaned_data.get("applicable_legislation", []) or []
         validator = URLValidator()
 
         cleaned = []
-        item_errors = [None] * len(urls)
+        item_errors = []
 
-        for i, url in enumerate(urls):
+        for url in urls:
+            if not url:
+                item_errors.append(None)
+                continue
+
             try:
                 validator(url)
                 cleaned.append(url)
+                item_errors.append(None)
             except ValidationError as e:
-                item_errors[i] = f"{url}: {e.message}"
+                item_errors.append(f"{url}: {e.message}")
 
         if any(item_errors):
             self.fields["applicable_legislation"].widget.validation_errors = item_errors

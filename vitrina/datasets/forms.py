@@ -340,9 +340,6 @@ class BaseResourceForm(TranslatableModelForm):
                 return User.objects.get(pk=contact_id)
         return None
 
-    def clean_applicable_legislation(self):
-        urls: list[str] = self.cleaned_data.get("applicable_legislation", [])
-        validator = URLValidator()
 
     def clean_applicable_legislation(self) -> list[str]:
         urls = self.cleaned_data.get("applicable_legislation", []) or []
@@ -362,20 +359,6 @@ class BaseResourceForm(TranslatableModelForm):
                 item_errors.append(None)
             except ValidationError as e:
                 item_errors.append(f"{url}: {e.message}")
-
-        if any(item_errors):
-            self.fields["applicable_legislation"].widget.validation_errors = item_errors
-            raise ValidationError(_("Yra klaidų sąraše."))
-
-        return cleaned
-
-
-        for i, url in enumerate(urls):
-            try:
-                validator(url)
-                cleaned.append(url)
-            except ValidationError as e:
-                item_errors[i] = f"{url}: {e.message}"
 
         if any(item_errors):
             self.fields["applicable_legislation"].widget.validation_errors = item_errors
@@ -475,7 +458,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             "information_system_type",
             "information_system_importance",
             "information_system_publisher",
-            "information_system_creator"
+            "information_system_creator",
             "applicable_legislation",
         )
 

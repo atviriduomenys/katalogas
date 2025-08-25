@@ -65,7 +65,7 @@ from vitrina.datasets.forms import (
     ResourceSubclassForm,
     ServiceResourceForm,
     InformationSystemResourceForm,
-    DatasetResourceForm,
+    DatasetResourceForm, CatalogResourceForm,
 )
 from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name
 from vitrina.structure.views import DatasetStructureMixin
@@ -746,6 +746,8 @@ class DatasetCreateView(
             return InformationSystemResourceForm
         if subclass.name == DCATResourceSubclass.DATASET:
             return DatasetResourceForm
+        if subclass.name == DCATResourceSubclass.CATALOG:
+            return CatalogResourceForm
 
         return ResourceForm
 
@@ -1076,6 +1078,8 @@ class DatasetUpdateView(
             return InformationSystemResourceForm
         if subclass.name == DCATResourceSubclass.DATASET:
             return DatasetResourceForm
+        if subclass.name == DCATResourceSubclass.CATALOG:
+            return CatalogResourceForm
 
         return ResourceForm
 

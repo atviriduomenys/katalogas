@@ -363,6 +363,36 @@
             <td>{{ dataset.information_system_importance.translated_label }}</td>
         </tr>
     {% endif %}
+    {% if dataset.subclass.is_information_system or dataset.subclass.is_catalog %}
+        {% if dataset.conditions %}
+            <tr>
+                <th>
+                    {% translate "Platinimo sąlygos" %}
+                    <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:description.' %}">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                </th>
+                <td>{{ dataset.conditions|linebreaks }}</td>
+            </tr>
+        {% endif %}
+        {% if dataset.rights_relation %}
+            <tr>
+                <th>
+                    {% translate "Platinimo sąlygų nuoroda" %}
+                    <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Teisių deklaracijos nuoroda. Atitinka dct:relation.' %}">
+                        <i class="fas fa-info-circle"></i>
+                    </span>
+                </th>
+                <td>
+                    <a href="{{ dataset.rights_relation }}" target="_blank">
+                        {{ dataset.rights_relation }}
+                    </a>
+                </td>
+            </tr>
+        {% endif %}
+    {% endif %}
     </tbody>
 </table>
 

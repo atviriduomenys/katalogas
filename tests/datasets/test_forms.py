@@ -72,3 +72,30 @@ class DatasetResourceForm:
         assert response.status_code == 200
         form_in_context = response.context["form"]
         assert "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data." in form_in_context.errors
+
+
+class CatalogResourceForm:
+    def test_create_catalog_with_conditions(
+        self, app: DjangoTestApp
+    ) -> None:
+        organization = OrganizationFactory()
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        subclass = DCATResourceSubclassFactory(name="catalog")
+
+        form = app.get(
+            reverse(
+                "dataset-add",
+                kwargs={"pk": organization.id, "subclass_uuid": subclass.pk},
+            )
+        ).context["form"]
+
+        form["conditions"] = "Conditions"
+        form["rights_relation"] = "https://example.com"
+
+        response = form.submit()
+
+        assert isinstance(form, CatalogResourceForm)
+        assert response.status_code == 200
+        assert form.cleaned_data["conditions"] == "Conditions"
+        assert form.cleaned_data["rights_relation"] == "https://example.com"

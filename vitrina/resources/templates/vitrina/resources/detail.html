@@ -154,8 +154,30 @@
                                 {% endif %}
                                 {% if resource.conditions %}
                                     <tr>
-                                        <th>{% translate "Platinimo sąlygos" %}</th>
+                                        <th>
+                                            {% translate "Platinimo sąlygos" %}
+                                            <span class="icon info-icon has-tooltip-multiline is-middle"
+                                              data-tooltip="{% translate 'Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:description.' %}">
+                                                <i class="fas fa-info-circle"></i>
+                                            </span>
+                                        </th>
                                         <td>{{ resource.conditions|linebreaks }}</td>
+                                    </tr>
+                                {% endif %}
+                                {% if resource.rights_relation %}
+                                    <tr>
+                                        <th>
+                                            {% translate "Platinimo sąlygų nuoroda" %}
+                                            <span class="icon info-icon has-tooltip-multiline is-middle"
+                                              data-tooltip="{% translate 'Teisių deklaracijos nuoroda. Atitinka dct:relation.' %}">
+                                                <i class="fas fa-info-circle"></i>
+                                            </span>
+                                        </th>
+                                        <td>
+                                            <a href="{{ resource.rights_relation }}" target="_blank">
+                                                {{ resource.rights_relation }}
+                                            </a>
+                                        </td>
                                     </tr>
                                 {% endif %}
                                 {% if resource.applicable_legislation.exists %}

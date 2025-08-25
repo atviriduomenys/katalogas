@@ -148,6 +148,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "imported",
             "licence",
             "conditions",
+            "rights_relation",
             "temporal_resolution",
             "spatial_resolution",
             "applicable_legislation",
@@ -188,6 +189,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("parent"),
             Field("applicable_legislation"),
             Field("conditions"),
+            Field("rights_relation"),
             Submit("submit", button, css_class="button is-primary"),
         )
 

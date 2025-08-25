@@ -87,6 +87,30 @@ class TestDCATResourceSubclass:
         subclass = DCATResourceSubclassFactory(name=name)
         assert subclass.is_information_system is result
 
+    @pytest.mark.parametrize(
+        "name, result",
+        [
+            (DCATResourceSubclass.SERIES, False),
+            (DCATResourceSubclass.SERVICE, False),
+            (DCATResourceSubclass.DATASET, True),
+        ],
+    )
+    def test_is_dataset(self, name: str, result: bool) -> None:
+        subclass = DCATResourceSubclassFactory(name=name)
+        assert subclass.is_dataset is result
+
+    @pytest.mark.parametrize(
+        "name, result",
+        [
+            (DCATResourceSubclass.SERIES, False),
+            (DCATResourceSubclass.SERVICE, False),
+            (DCATResourceSubclass.CATALOG, True),
+        ],
+    )
+    def test_is_catalog(self, name: str, result: bool) -> None:
+        subclass = DCATResourceSubclassFactory(name=name)
+        assert subclass.is_catalog is result
+
 
 class TestContract:
     def test_delete_all_existing_dataset_contacts_before_saving(self) -> None:

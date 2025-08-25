@@ -288,9 +288,9 @@
                                                 {% csrf_token %}
                                                 <button type="submit"
                                                         class="button is-link is-small is-pulled-right"
-                                                        onclick="return confirm('Ar jūs tikrai norite ištrinti šį ryšį?')"
+                                                        onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %})"
                                                         id="delete_resource">
-                                                    {% translate "Trinti" %}
+                                                    {% translate "Ištrinti" %}
                                                 </button>
                                             </form>
                                         {% endif %}
@@ -328,9 +328,9 @@
                                             {% csrf_token %}
                                             <button type="submit"
                                                     class="button is-link is-small is-pulled-right"
-                                                    onclick="return confirm('Ar jūs tikrai norite ištrinti šį ryšį?')"
+                                                    onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %})"
                                                     id="delete_resource">
-                                                {% translate "Trinti" %}
+                                                {% translate "Ištrinti" %}
                                             </button>
                                         </form>
                                     {% endif %}
@@ -377,9 +377,9 @@
                                         {% csrf_token %}
                                         <button type="submit"
                                                 class="button is-link is-small is-pulled-right"
-                                                onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
+                                                onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti?' %})"
                                                 id="delete_attribution">
-                                            {% translate "Trinti" %}
+                                            {% translate "Ištrinti" %}
                                         </button>
                                     </form>
                                 {% endif %}

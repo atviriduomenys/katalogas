@@ -604,8 +604,8 @@ msgid ""
 "Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų ištekliaus "
 "prieinamumą. Atitinka dct:publisher."
 msgstr ""
-"An entity (organisation) responsible for making the Dataset available. "
-"Corresponds to dct:publisher."
+"This property indicates the entity (organization) responsible for providing "
+"access to the resource. Corresponds to dct:publisher"
 
 msgid ""
 "Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio "
@@ -1396,7 +1396,10 @@ msgstr "Open"
 msgid "Redaguoti"
 msgstr "Edit"
 
-msgid "Trinti"
+msgid "Ar jūs tikrai norite ištrinti šį šaltinį?"
+msgstr "Are you sure you want to delete this resource?"
+
+msgid "Ištrinti"
 msgstr "Delete"
 
 msgid "Duomenų ištekliaus peržiūros"
@@ -1438,8 +1441,14 @@ msgstr "Data sources"
 msgid "Susieti su duomenų ištekliumi"
 msgstr "Link to resource"
 
+msgid "Ar jūs tikrai norite ištrinti šį ryšį?"
+msgstr "Are you sure you want to delete this relation?"
+
 msgid "Priskirtos organizacijos"
 msgstr "Assigned organizations"
+
+msgid "Ar jūs tikrai norite ištrinti?"
+msgstr "Are you sure you want to delete?"
 
 msgid "Priskirti organizaciją"
 msgstr "Assign organization"
@@ -4184,6 +4193,9 @@ msgstr "New property"
 msgid "Baziniai modeliai"
 msgstr "Base model"
 
+msgid "Ar tikrai norite ištrinti?"
+msgstr "Are you sure you want to delete?"
+
 msgid "Parametrai"
 msgstr "Parameters"
 
@@ -4558,9 +4570,6 @@ msgstr "Admin"
 
 msgid "Atnaujinti"
 msgstr "Update"
-
-msgid "Ištrinti"
-msgstr "Delete"
 
 msgid ""
 "Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "

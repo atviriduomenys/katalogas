@@ -57,24 +57,7 @@
 {% endblock %}
 
 {% block parent_links %}
-<ul class="p-t-sm">
-    <li>
-        <a href="{% url 'home' %}">
-            <span class="icon">
-              <i class="fas fa-home"></i>
-            </span>
-            <span>{% translate "Pradžia" %}</span>
-        </a>
-    </li>
-
-    {% if request.resolver_match.url_name == 'organization-datasets' %}
-    <li>
-        <a href="#">
-            <span>{% translate "Organizacija" %}</span>
-        </a>
-    </li>
-    {% endif %}
-</ul>
+    {% include "component/breadcrumbs.html" %}
 {% endblock %}
 
 {% block current_title %}

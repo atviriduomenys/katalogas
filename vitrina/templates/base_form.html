@@ -4,31 +4,11 @@
 {% block current_title %}{{ current_title }}{% endblock %}
 {% block object_title %}{{ object_title }}{% endblock %}
 
-{% if parent_links %}
+
     {% block parent_links %}
-        <ul class="p-t-sm">
-            {% for link, title in parent_links.items %}
-                <li>
-                    {% if link %}
-                        <a href="{{ link }}">
-                        {% if title == "Pradžia" %}
-                            <span class="icon">
-                                <i class="fas fa-home"></i>
-                            </span>
-                        {% endif %}
-                            <span>{{ title }}</span>
-                        </a>
-                    {% else %}
-                        <span class="pl-3">{{ title }}</span>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
+        {% include "component/breadcrumbs.html" %}
     {% endblock %}
-{% else %}
-    {% block parent_title %}{{ parent_title }}{% endblock %}
-    {% block parent_url %}{{ parent_url }}{% endblock %}
-{% endif %}
+
 
 {% block content %}
     {% if tabs %}

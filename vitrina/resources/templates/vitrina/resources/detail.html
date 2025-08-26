@@ -97,6 +97,20 @@
                                     <td>{{ resource.spatial_resolution }}</td>
                                 </tr>
                                 {% endif %}
+                                {% if resource.status %}
+                                <tr>
+                                    <th>{% translate "Statusas" %}</th>
+                                    <td>
+                                        {% if resource.status.code == "DEVELOP" %}
+                                            {% translate "Kuriamas" %}
+                                        {% elif resource.status.code == "PLANNED" %}
+                                            {% translate "Kūrimas suplanuotas" %}
+                                        {% elif resource.status.code == "COMPLETED" %}
+                                            {% translate "Įgyvendintas - veikiantis" %}
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
 
                                 {% if resource.compression_format %}
                                 <tr>

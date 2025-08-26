@@ -8,7 +8,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from parler.forms import TranslatedField, TranslatableModelForm
 
-from vitrina.classifiers.models import Licence
+from vitrina.classifiers.models import Licence, Concept
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField, StringListField
 from vitrina.resources.models import DatasetDistribution, Format
@@ -152,6 +152,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "temporal_resolution",
             "spatial_resolution",
             "applicable_legislation",
+            "status",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -162,6 +163,10 @@ class DatasetResourceForm(TranslatableModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
+        self.fields["status"].queryset = Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI).distinct()
+        if default_status := Concept.objects.get(code="DEVELOP"):
+            self.fields["status"].initial = default_status
+
         self.helper.layout = Layout(
             Field(
                 "title",
@@ -180,6 +185,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("format"),
             Field("compression_format"),
             Field("packaging_format"),
+            Field("status"),
             Field("file", placeholder=_("Šaltinio failas")),
             Field("download_url"),
             Field("imported"),

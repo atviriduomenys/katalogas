@@ -123,3 +123,8 @@ class AgreementGeneratePdfForm(forms.Form):
         self.fields["template"].queryset = SmartContractTemplate.objects.filter(
             Q(organization__isnull=True) | Q(organization=agreement.assigner)
         ).order_by("organization", "file")
+
+        self.helper = FormHelper()
+        self.helper.add_input(
+            Submit("submit", _("Generuoti sutarties dokumentą"), css_class="button is-primary")
+        )

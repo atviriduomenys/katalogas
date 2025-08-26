@@ -15,6 +15,7 @@ from vitrina.classifiers.models import (
     ConceptSchema,
     ApplicableLegislation,
 )
+from vitrina.datasets.models import Documentation
 
 
 class CategoryFactory(DjangoModelFactory):
@@ -113,3 +114,11 @@ class ApplicableLegislationFactory(DjangoModelFactory):
 
     url = factory.Faker("url")
     description = factory.Faker("sentence")
+
+
+class DocumentationFactory(DjangoModelFactory):
+    class Meta:
+        model = Documentation
+        django_get_or_create = ("documentation_link",)
+
+    documentation_link = factory.Faker("url")

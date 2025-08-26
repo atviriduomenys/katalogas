@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-12 13:46+0300\n"
+"POT-Creation-Date: 2025-08-26 19:02+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -180,6 +180,15 @@ msgstr ""
 msgid "Sąvokos"
 msgstr ""
 
+msgid "Nuoroda"
+msgstr ""
+
+msgid "Teisinis pagrindas"
+msgstr ""
+
+msgid "Teisiniai pagrindai"
+msgstr ""
+
 msgid "Pranešimas (lietuvių kalba)"
 msgstr ""
 
@@ -220,9 +229,6 @@ msgid "Atsakymas"
 msgstr ""
 
 msgid "Tipas"
-msgstr ""
-
-msgid "Nuoroda"
 msgstr ""
 
 msgid "Duomenys"
@@ -336,11 +342,6 @@ msgid ""
 "būtini naudotojo užsakytai paslaugai suteikti."
 msgstr ""
 
-msgid ""
-"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
-"pavadinimą."
-msgstr ""
-
 msgid "Naujienos"
 msgstr ""
 
@@ -441,9 +442,6 @@ msgstr ""
 msgid "Viešas komentaras"
 msgstr ""
 
-msgid "Šis duomenų rinkinys įtrauktas į "
-msgstr ""
-
 msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
 msgstr ""
 
@@ -534,18 +532,52 @@ msgstr ""
 msgid "Failai"
 msgstr ""
 
+msgid "Dokumentas apie šį duomenų išteklių. Atitinka foaf:page."
+msgstr ""
+
+msgid "Duomenų ištekliaus identifikatorius. Atitinka dct:identifier."
+msgstr ""
+
 msgid "Kontaktinis asmuo ar organizacija"
 msgstr ""
 
+msgid ""
+"Kontaktinė informacija, kurią galima naudoti siunčiant pastabas apie duomenų "
+"išteklių. Atitinka dcat:contactPoint."
+msgstr ""
+
 msgid "Institucija teikianti duomenis"
+msgstr ""
+
+msgid ""
+"Subjektas, atsakingas už duomenų rinkinio parengimą. Atitinka dct:creator."
 msgstr ""
 
 msgid "Paslaugų teikėjas"
 msgstr ""
 
 msgid ""
+"Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų ištekliaus "
+"prieinamumą. Atitinka dct:publisher."
+msgstr ""
+
+msgid ""
 "Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio "
 "atvėrimą?"
+msgstr ""
+
+msgid ""
+"Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys."
+"<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
+"konkrečią nuorodą, pvz., „#17.2“.<br>Tais atvejais, kai yra keli dokumentai "
+"su priedais: „#priedas1/17.2“, „17.2/17.2.5“, kur „priedas1“ yra dokumento "
+"failo pavadinimas.<br>Atitinka eli:LegalResource."
+msgstr ""
+
+msgid "Tėvinis išteklius"
+msgstr ""
+
+msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
 msgstr ""
 
 msgid "Organizacija:"
@@ -554,22 +586,41 @@ msgstr ""
 msgid "Naudotojai:"
 msgstr ""
 
-msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
-msgstr ""
-
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr ""
 
 msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
 msgstr ""
 
+msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
+msgstr ""
+
+msgid ""
+"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
+"pavadinimą."
+msgstr ""
+
+msgid "Yra klaidų sąraše."
+msgstr ""
+
 msgid "API adresas"
+msgstr ""
+
+msgid ""
+"Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka "
+"dcat:endpointURL."
 msgstr ""
 
 msgid "API specifikacija"
 msgstr ""
 
-msgid "Ar duomenys vieši"
+msgid ""
+"Šioje savybėje pateikiamas paslaugų, prieinamų per galinius taškus, "
+"aprašymas. Įskaitant jų operacijas, parametrus ir t. t. Atitinka "
+"dcat:endpointDescription."
+msgstr ""
+
+msgid "Ar duomenys vieši?"
 msgstr ""
 
 msgid "Duomenų rinkinio kodinis pavadinimas"
@@ -584,9 +635,6 @@ msgstr ""
 msgid "Identifikatorius"
 msgstr ""
 
-msgid "Ar duomenys vieši?"
-msgstr ""
-
 msgid "Informacinės sistemos pavadinimas"
 msgstr ""
 
@@ -597,6 +645,46 @@ msgid "Detalus informacinės sistemos aprašas"
 msgstr ""
 
 msgid "Informacinės sistemos identifikatorius"
+msgstr ""
+
+msgid "Tinklalapis"
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. "
+"Atitinka foaf:homepage."
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. "
+"Atitinka dct:publisher"
+msgstr ""
+
+msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
+msgstr ""
+
+msgid "Laikotarpio pradžia"
+msgstr ""
+
+msgid "Duomenų rinkinio laikotarpio pradžia. Atitinka dct:temporal."
+msgstr ""
+
+msgid "Laikotarpio pabaiga"
+msgstr ""
+
+msgid "Duomenų rinkinio laikotarpio pabaiga. Atitinka dct:temporal."
+msgstr ""
+
+msgid "Ar duomenys vieši"
+msgstr ""
+
+msgid "Pasirinkite pradžios datą"
+msgstr ""
+
+msgid "Pasirinkite pabaigos datą"
+msgstr ""
+
+msgid "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
 msgstr ""
 
 msgid "Failas"
@@ -710,6 +798,21 @@ msgstr ""
 msgid "Priskirta poreikiui"
 msgstr ""
 
+msgid "Pakeista kategorija(-os)"
+msgstr ""
+
+msgid "Pridėtas ryšys"
+msgstr ""
+
+msgid "Ištrintas ryšys"
+msgstr ""
+
+msgid "Priskirta organizacijai"
+msgstr ""
+
+msgid "Pašalinta iš organizacijos"
+msgstr ""
+
 msgid "Atviri duomenys"
 msgstr ""
 
@@ -719,10 +822,18 @@ msgstr ""
 msgid "Uždari duomenys"
 msgstr ""
 
-msgid "Description"
+msgid "Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."
+msgstr ""
+
+msgid "Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."
 msgstr ""
 
 msgid "Katalogas"
+msgstr ""
+
+msgid ""
+"Katalogas, kurio turinys domina šio katalogo kontekste. Atitinka "
+"dcat:Catalog."
 msgstr ""
 
 msgid "Duomenų tvarkytojas"
@@ -734,13 +845,23 @@ msgstr ""
 msgid "Atnaujinimo dažnumas"
 msgstr ""
 
+msgid "Duomenų atnaujinimo dažnumas. Atitinka dcat:keyword."
+msgstr ""
+
 msgid "Prieigos teisės"
+msgstr ""
+
+msgid ""
+"Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos "
+"apribojimai, ar jis nėra viešas. Atitinka dct:accessRights."
 msgstr ""
 
 msgid "Žymės"
 msgstr ""
 
-msgid "Pateikite kableliu atskirtą sąrašą žymių."
+msgid ""
+"Duomenų išteklių apibūdinantys raktažodžiai arba žymos. Atitinka "
+"dcat:keyword."
 msgstr ""
 
 msgid "Geoportalo id"
@@ -752,6 +873,13 @@ msgstr ""
 msgid "Prieigos nuoroda"
 msgstr ""
 
+msgid ""
+"Tinklalapis, kuriame galima susipažinti su duomenų ištekliu, jo pateiktimi "
+"ir (arba) papildoma informacija. Ji skirta nukreipti į pradinio duomenų "
+"paslaugos teikėjo, o ne į trečiosios šalies, pavyzdžiui, agregatoriaus, "
+"svetainės puslapį. Atitinka dcat:landingPage."
+msgstr ""
+
 msgid "Duomenų rinkinio ryšiai"
 msgstr ""
 
@@ -759,6 +887,10 @@ msgid "Duomenų ištekliaus poklasis"
 msgstr ""
 
 msgid "API formatas"
+msgstr ""
+
+msgid ""
+"Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."
 msgstr ""
 
 msgid "API specifikacijos formatas"
@@ -771,6 +903,54 @@ msgid "DataSeries rinkinys"
 msgstr ""
 
 msgid "Informacinės sistemos tipas"
+msgstr ""
+
+msgid ""
+"Informacinės sistemos tipas pagal Valstybės informacinių išteklių valdymo "
+"įstatymo reikalavimus. Atitinka dcataplt:Type."
+msgstr ""
+
+msgid "Informacinės sistemos svarba"
+msgstr ""
+
+msgid ""
+"Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo "
+"įstatymo reikalavimus. Atitinka dcataplt:Importance."
+msgstr ""
+
+msgid "Laikotarpio pradžios data"
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo pradžios datą, kurią apima duomenų rinkinys. Atitinka "
+"dct:temporal."
+msgstr ""
+
+msgid "Laikotarpio pabaigos data"
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo pabaigos datą, kurią apima duomenų rinkinys. Atitinka "
+"dct:temporal."
+msgstr ""
+
+msgid "Informacinės sistemos tvarkytojas"
+msgstr ""
+
+msgid "Informacinės sistemos valdytojas"
+msgstr ""
+
+msgid "Laiko skiriamoji geba (sekundėmis)"
+msgstr ""
+
+msgid "Laiko skiriamoji geba sekundėmis. Atitinka dcat:temporalResolution."
+msgstr ""
+
+msgid "Erdvinė skiriamoji geba (metrais)"
+msgstr ""
+
+msgid ""
+"Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."
 msgstr ""
 
 msgid "Dataset"
@@ -983,6 +1163,12 @@ msgid ""
 "registras, kurio apimtyje yra tvarkomi duomenų ištekliai"
 msgstr ""
 
+msgid "Mažiausias laiko tarpas tarp objektų duomenų ištekliuje"
+msgstr ""
+
+msgid "Mažiausias atstumas tarp objektų duomenų ištekliuje, matuojamas metrais"
+msgstr ""
+
 msgid "Pagrindinis API paslaugos adresas, kuriuo galima pasiekti duomenis"
 msgstr ""
 
@@ -993,6 +1179,11 @@ msgid "Nuoroda į API dokumentaciją (pvz., OpenAPI, Swagger)"
 msgstr ""
 
 msgid "API dokumentacijos formatas (pvz., JSON, YAML)"
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys. Atitinka "
+"dct:temporal."
 msgstr ""
 
 msgid "Peržiūrėti papildomą informaciją"
@@ -1106,9 +1297,6 @@ msgstr ""
 msgid "Institucija, teikianti duomenis"
 msgstr ""
 
-msgid "Tinklalapis"
-msgstr ""
-
 msgid "El. paštas"
 msgstr ""
 
@@ -1173,6 +1361,9 @@ msgid "Ieškoti"
 msgstr ""
 
 msgid "Pridėti duomenų išteklių"
+msgstr ""
+
+msgid "Pridėti vaikinį duomenų išteklių"
 msgstr ""
 
 msgid "Rasta duomenų išteklių"
@@ -1328,6 +1519,9 @@ msgstr ""
 msgid "Informacija"
 msgstr ""
 
+msgid "Ištekliai"
+msgstr ""
+
 msgid "Panaudojimo atvejai"
 msgstr ""
 
@@ -1358,7 +1552,22 @@ msgstr ""
 msgid "Nepavyko nuskaityti failo"
 msgstr ""
 
-msgid "Organizacijos"
+msgid "Pridėti duomenų rinkinį"
+msgstr ""
+
+msgid "Pridėti duomenų publikavimo paslaugą"
+msgstr ""
+
+msgid "Pridėti duomenų rinkinio seriją"
+msgstr ""
+
+msgid "Pridėti informacinę sistemą"
+msgstr ""
+
+msgid "Pridėti metaduomenų katalogą"
+msgstr ""
+
+msgid "Pridėti vaikinių duomenų išteklių"
 msgstr ""
 
 msgid "Duomenų išteklius sukurtas sėkmingai"
@@ -1427,16 +1636,7 @@ msgstr ""
 msgid "Duomenų rinkinių būsenos"
 msgstr ""
 
-msgid "pagal rinkinio valdymo sritį rinkinio įkėlimo datai"
-msgstr ""
-
 msgid "Duomenų rinkinių brandos lygiai"
-msgstr ""
-
-msgid "pagal rinkinio brandos lygį rinkinio įkėlimo datai"
-msgstr ""
-
-msgid "pagal rinkinio organizaciją rinkinio įkėlimo datai"
 msgstr ""
 
 msgid "Duomenų rinkinių žymės"
@@ -1448,19 +1648,10 @@ msgstr ""
 msgid "Duomenų rinkinių atnaujinimo dažnumas"
 msgstr ""
 
-msgid "pagal rinkinio atnaujinimą rinkinio įkėlimo datai"
-msgstr ""
-
 msgid "Duomenų rinkinių grupės"
 msgstr ""
 
-msgid "pagal rinkinio grupes rinkinio įkėlimo datai"
-msgstr ""
-
 msgid "Duomenų rinkinių prieigos teisės"
-msgstr ""
-
-msgid "pagal rinkinio prieigos teises rinkinio įkėlimo datai"
 msgstr ""
 
 msgid "Duomenų rinkinių kiekis metuose"
@@ -1469,7 +1660,16 @@ msgstr ""
 msgid "Termino pašalinimas"
 msgstr ""
 
+msgid "Organizacijos"
+msgstr ""
+
+msgid "vaikiniai duomenų ištekliai"
+msgstr ""
+
 msgid "Pasirinkti failą"
+msgstr ""
+
+msgid "Reikšmės privalo būti unikalios."
 msgstr ""
 
 msgid "I ketvirtis"
@@ -2740,12 +2940,6 @@ msgstr ""
 msgid "Prieigos lygmuo"
 msgstr ""
 
-msgid "Data nuo kada duomenys yra aktualūs."
-msgstr ""
-
-msgid "Data nuo kada duomenys nebėra aktualūs."
-msgstr ""
-
 msgid ""
 "Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo "
 "nuorodas."
@@ -2779,12 +2973,6 @@ msgid "Detalus šaltinio aprašas"
 msgstr ""
 
 msgid "Pateikitę geografinę padėtį"
-msgstr ""
-
-msgid "Pasirinkite pradžios datą"
-msgstr ""
-
-msgid "Pasirinkite pabaigos datą"
 msgstr ""
 
 msgid "Šaltinio failas"
@@ -3758,6 +3946,9 @@ msgid "Galiojantys keitimai"
 msgstr ""
 
 msgid "Kiekis"
+msgstr ""
+
+msgid "API: visi įrašai"
 msgstr ""
 
 msgid "Galimos reikšmės pridėjimas"

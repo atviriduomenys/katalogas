@@ -92,11 +92,18 @@ class BaseResourceForm(TranslatableModelForm):
     )
     description = TranslatedField(required=True)
     files = MultipleFilerField(
-        label=_("Failai"),
-        help_text=_("Dokumentas apie šį duomenų išteklių. Atitinka foaf:page."),
+        label=_("Dokumentacija"),
+        help_text=_("Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page."),
         required=False,
         upload_to=Dataset.UPLOAD_TO,
         allow_empty_file=True,
+    )
+    documentation = StringListField(
+        label=_("Dokumentacija"),
+        help_text=_(
+            "Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."),
+        required=False,
+        unique=True,
     )
     name = forms.CharField(
         label=_("Kodinis pavadinimas"),
@@ -193,7 +200,12 @@ class BaseResourceForm(TranslatableModelForm):
             if instance.name:
                 self.initial["name"] = instance.name
 
-            self.initial["applicable_legislation"] = list(instance.applicable_legislation.values_list("url", flat=True))
+            self.initial["applicable_legislation"] = list(
+                instance.applicable_legislation.values_list("url", flat=True)
+            )
+            self.initial["documentation"] = list(
+                instance.documentation.values_list("documentation_link", flat=True)
+            )
         else:
             if default_frequency := Frequency.objects.filter(is_default=True).first():
                 self.initial["frequency"] = default_frequency
@@ -373,7 +385,6 @@ class ServiceResourceForm(BaseResourceForm):
             "endpoint_type",
             "endpoint_description",
             "endpoint_description_type",
-            "files",
             "name",
             "contact",
             "creator",
@@ -391,7 +402,6 @@ class ServiceResourceForm(BaseResourceForm):
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
             Field("name", placeholder=_("Duomenų rinkinio kodinis pavadinimas")),
             Field("description", placeholder=_("Detalus duomenų rinkinio aprašas")),
-            Field("files"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
             Field("catalog"),
@@ -423,7 +433,6 @@ class InformationSystemResourceForm(BaseResourceForm):
             "catalog",
             "frequency",
             "access_rights",
-            "files",
             "name",
             "contact",
             "creator",
@@ -449,7 +458,6 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("name", placeholder=_("Informacinės sistemos kodinis pavadinimas")),
             Field("description", placeholder=_("Detalus informacinės sistemos aprašas")),
             Field("identifier", placeholder=_("Informacinės sistemos identifikatorius")),
-            Field("files"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
             Field("catalog"),
@@ -517,6 +525,7 @@ class DatasetResourceForm(BaseResourceForm):
             "frequency",
             "access_rights",
             "files",
+            "documentation",
             "name",
             "contact",
             "creator",
@@ -543,6 +552,7 @@ class DatasetResourceForm(BaseResourceForm):
             Field("temporal_resolution"),
             Field("spatial_resolution"),
             Field("files"),
+            Field("documentation"),
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
             Field("catalog"),

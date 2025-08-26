@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-25 16:23+0300\n"
+"POT-Creation-Date: 2025-08-26 11:11+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -479,9 +479,6 @@ msgstr "Evaluated"
 
 msgid "Viešas komentaras"
 msgstr "Public comment"
-
-msgid "Šis duomenų rinkinys įtrauktas į "
-msgstr "This dataset was added to "
 
 msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
 msgstr "Your organization was added to request organization list"
@@ -3063,11 +3060,6 @@ msgstr "Request organizations"
 msgid "Poreikių valdymo sritys"
 msgstr "Request management areas"
 
-msgid "pagal rinkinio valdymo sritį rinkinio įkėlimo datai"
-msgstr ""
-"{self.get_title_for_indicator(indicator)} for dataset categories and "
-"publication date"
-
 msgid "Poreikių kiekis metuose"
 msgstr "Request count by years"
 
@@ -3370,6 +3362,9 @@ msgstr "Other assignee legislations"
 msgid "Mokėjimo sąlygos"
 msgstr "Payment terms"
 
+msgid "Generuoti sutarties dokumentą"
+msgstr "Generate agreement document"
+
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr "File must be in Markdown format (.md)."
 
@@ -3396,6 +3391,10 @@ msgstr "Other assigner legislations"
 
 msgid "Sutartis"
 msgstr "Agreement"
+
+#, python-brace-format
+msgid "Sutartis: {organization}"
+msgstr "Agreement: {organization}"
 
 msgid "Sutarties leidimas"
 msgstr "Agreement scope"
@@ -3424,9 +3423,6 @@ msgstr "Generate agreements"
 msgid "Grįžti į sutartis"
 msgstr "Go back to agreements"
 
-msgid "Generuoti sutarties dokumentą"
-msgstr "Generate agreement document"
-
 msgid "Įkelti gavėjo pasirašytą dokumentą"
 msgstr "Upload document signed by data receiver"
 
@@ -3442,15 +3438,8 @@ msgstr "Creation date"
 msgid "Nėra sutarčių dokumentų."
 msgstr "No agreement documents."
 
-msgid "Generuoti"
-msgstr "Generate"
-
 msgid "Nėra sutarčių."
 msgstr "No agreements."
-
-#, python-brace-format
-msgid "Sutartis: {organization}"
-msgstr "Agreement: {organization}"
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
 msgstr "This use case already has existing agreements."
@@ -3460,10 +3449,6 @@ msgstr "Agreements generated successfully"
 
 msgid "Sutarčių generavime kilo klaidų"
 msgstr "Errors occurred while generating agreements"
-
-#, python-brace-format
-msgid "Sutarties generavimas: {organization}"
-msgstr "Agreement generation: {organization}"
 
 #, python-brace-format
 msgid ""

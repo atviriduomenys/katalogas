@@ -1820,9 +1820,7 @@ class DeleteMemberView(
         if self.object.content_type != ContentType.objects.get_for_model(Dataset):
             return super().form_valid(form)
 
-        dataset = Dataset.objects.filter(
-            id=self.object.object_id, publisher=self.object.organization
-        ).first()
+        dataset = Dataset.objects.filter(id=self.object.object_id, publisher=self.object.organization).first()
         if dataset:
             dataset.publisher = None
             dataset.save(update_fields=["publisher"])

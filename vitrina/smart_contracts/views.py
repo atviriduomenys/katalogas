@@ -348,12 +348,8 @@ class AgreementGeneratePdf(
         context.update(
             {
                 "tabs": "vitrina/projects/tabs.html",
-                "has_perm": has_perm(
-                    self.request.user, Action.UPDATE, self.object
-                ),
-                "can_view_agreements": has_perm(
-                    self.request.user, Action.VIEW, Agreement, self.object
-                ),
+                "has_perm": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "current_title": _("Generuoti sutarties dokumentą"),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),

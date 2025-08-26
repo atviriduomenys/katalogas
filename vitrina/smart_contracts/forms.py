@@ -125,6 +125,4 @@ class AgreementGeneratePdfForm(forms.Form):
         ).order_by("organization", "file")
 
         self.helper = FormHelper()
-        self.helper.add_input(
-            Submit("submit", _("Generuoti sutarties dokumentą"), css_class="button is-primary")
-        )
+        self.helper.add_input(Submit("submit", _("Generuoti sutarties dokumentą"), css_class="button is-primary"))

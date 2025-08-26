@@ -1976,9 +1976,7 @@ class OrganizationApiKeysDeleteView(LoginRequiredMixin, PermissionRequiredMixin,
 
     @staticmethod
     def spinta_delete_apikey(client_id: str) -> Response:
-        response = get_auth_session().delete(
-            SPINTA_SERVER_URL + "/auth/clients/" + client_id
-        )
+        response = get_auth_session().delete(SPINTA_SERVER_URL + "/auth/clients/" + client_id)
 
         return response
 

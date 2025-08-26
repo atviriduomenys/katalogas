@@ -100,8 +100,7 @@ class BaseResourceForm(TranslatableModelForm):
     )
     documentation = StringListField(
         label=_("Dokumentacija"),
-        help_text=_(
-            "Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."),
+        help_text=_("Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."),
         required=False,
         unique=True,
     )
@@ -200,12 +199,8 @@ class BaseResourceForm(TranslatableModelForm):
             if instance.name:
                 self.initial["name"] = instance.name
 
-            self.initial["applicable_legislation"] = list(
-                instance.applicable_legislation.values_list("url", flat=True)
-            )
-            self.initial["documentation"] = list(
-                instance.documentation.values_list("documentation_link", flat=True)
-            )
+            self.initial["applicable_legislation"] = list(instance.applicable_legislation.values_list("url", flat=True))
+            self.initial["documentation"] = list(instance.documentation.values_list("documentation_link", flat=True))
         else:
             if default_frequency := Frequency.objects.filter(is_default=True).first():
                 self.initial["frequency"] = default_frequency

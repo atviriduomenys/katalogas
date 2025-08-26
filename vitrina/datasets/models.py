@@ -1194,7 +1194,9 @@ class Dataset(Resource):
             entry.update_description()
 
     def update_documentation(self, urls: list[str]) -> None:
-        existing_urls = set(Documentation.objects.filter(documentation_link__in=urls).values_list("documentation_link", flat=True))
+        existing_urls = set(
+            Documentation.objects.filter(documentation_link__in=urls).values_list("documentation_link", flat=True)
+        )
         new_urls = [url for url in urls if url not in existing_urls]
 
         if new_urls:
@@ -1202,7 +1204,6 @@ class Dataset(Resource):
 
         all_entries = Documentation.objects.filter(documentation_link__in=urls)
         self.documentation.set(all_entries)
-
 
 
 class DatasetReport(Dataset):
@@ -1622,8 +1623,10 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     def is_dataset(self) -> bool:
         return self.name == DCATResourceSubclass.DATASET
 
+
 class Documentation(UUIDBaseModel):
     documentation_link = models.CharField(max_length=500, blank=True)
+
 
 class Relation(TranslatableModel):
     PART_OF = "part-of"

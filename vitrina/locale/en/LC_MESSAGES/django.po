@@ -906,9 +906,6 @@ msgstr "Non Public"
 msgid "Konfidencialūs"
 msgstr "Confidential"
 
-msgid "Jautrūs"
-msgstr "Sensitive"
-
 msgid "Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."
 msgstr "A name given to the record. Corresponds to dct:title."
 

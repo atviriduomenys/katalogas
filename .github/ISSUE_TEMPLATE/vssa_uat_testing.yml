@@ -1,5 +1,5 @@
 name: "VSSA testavimas"
-description: "VSSA naudotojų priėmimo testavias"
+description: "VSSA naudotojų priėmimo testavimas"
 title: "<scenarijaus žingsnio nr.> - <Scenarijaus pavadinimas>"
 labels: [bug, ui:web]
 projects: ["atviriduomenys/DVMS (CCT)/15"]

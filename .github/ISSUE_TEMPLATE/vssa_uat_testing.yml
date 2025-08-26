@@ -1,12 +1,14 @@
-name: "VSSA testavimas"
+name: "VSSA DVMS testavimas"
 description: "VSSA naudotojų priėmimo testavimas"
 title: "<scenarijaus žingsnio nr.> - <Scenarijaus pavadinimas>"
-labels: [bug, ui:web]
-projects: ["atviriduomenys/DVMS (CCT)/15"]
-type: Bug
+labels: ["bug", "ui:web"]
+projects: ["atviriduomenys/15"]
 body:
-  - type: markdown
+  - type: textarea
+    id: uat_details
     attributes:
+      label: UAT aptiktas trūkumas
+      description: Užpildykite šį šabloną
       value: |
         # UAT aptiktas trūkumas
 
@@ -16,3 +18,5 @@ body:
 
         ## Testavimo metu pastebėti trūkumai:
         <trūkumo aprašymas (ten kur galite, prašome pridėti ekrano "screenshot")>
+    validations:
+      required: true

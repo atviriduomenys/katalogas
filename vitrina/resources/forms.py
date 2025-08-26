@@ -163,7 +163,7 @@ class DatasetResourceForm(TranslatableModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
-        self.fields["status"].queryset = Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI).distinct()
+        self.fields["status"].queryset = Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI).distinct().order_by("code")
         if default_status := Concept.objects.get(code="DEVELOP"):
             self.fields["status"].initial = default_status
 

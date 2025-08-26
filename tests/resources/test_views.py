@@ -533,3 +533,18 @@ def test_distribution_detail_dynamic_resource_rdf(app: DjangoTestApp):
     assert list(response.context['resource']['models']) == list(resource.model_set.all())
     assert response.context['format'] == 'RDF'
     assert response.context['resource']['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_distribution_form_status_options(app: DjangoTestApp):
+    resource = DatasetDistributionFactory(uapi_format=True)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    response = app.get(reverse("resource-add", args=[resource.pk]))
+    choices = list(response.context["form"].fields["status"].choices)
+
+    assert response.status_code == 200
+    assert [label for _, label in choices] == [
+        "---------", "COMPLETED", "DEVELOP", "PLANNED"
+    ]

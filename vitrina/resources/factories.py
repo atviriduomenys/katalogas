@@ -4,6 +4,7 @@ from typing import Union
 import factory
 from factory.django import DjangoModelFactory
 
+from vitrina.classifiers.models import Concept
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.resources.models import (
@@ -62,6 +63,9 @@ class DatasetDistributionFactory(DjangoModelFactory):
     period_start = date(2022, 1, 1)
     period_end = date(2022, 12, 31)
     file = factory.SubFactory(FilerFileFactory)
+    status = factory.LazyFunction(
+        lambda: Concept.objects.get(code="DEVELOP")
+    )
     type = "FILE"
     version = 1
 

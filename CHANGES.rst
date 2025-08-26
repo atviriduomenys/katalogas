@@ -20,6 +20,9 @@ https://github.com/atviriduomenys/katalogas/issues/1725
 Add `applicable_legislation` field to Dataset,
 Add `applicable_legislation` field to Dataset Distribution.
 
+https://github.com/atviriduomenys/katalogas/issues/1752
+Add hierarchical breadcrumbs for datasets
+
 
 Bug fixes:
 

@@ -167,15 +167,22 @@ class Dataset(Resource):
     PUBLIC = "PUBLIC"
     RESTRICTED = "RESTRICTED"
     NON_PUBLIC = "NON_PUBLIC"
+    CONFIDENTIAL = "CONFIDENTIAL"
+    SENSITIVE = "SENSITIVE"
+
     ACCESS_RIGHTS = (
-        (PUBLIC, _("Atviri duomenys")),
-        (RESTRICTED, _("Apsaugoti duomenys")),
-        (NON_PUBLIC, _("Uždari duomenys")),
+        (PUBLIC, _("Vieši")),
+        (RESTRICTED, _("Apriboti")),
+        (NON_PUBLIC, _("Nevieši")),
+        (CONFIDENTIAL, _("Konfidencialūs")),
+        (SENSITIVE, _("Jautrūs")),
     )
     FILTER_ACCESS_RIGHTS = {
-        PUBLIC: _("Atviri duomenys"),
-        RESTRICTED: _("Apsaugoti duomenys"),
-        NON_PUBLIC: _("Uždari duomenys"),
+        PUBLIC: _("Vieši"),
+        RESTRICTED: _("Apriboti"),
+        NON_PUBLIC: _("Nevieši"),
+        CONFIDENTIAL: _("Konfidencialūs"),
+        SENSITIVE: _("Jautrūs"),
     }
 
     API_ORIGIN = "api"

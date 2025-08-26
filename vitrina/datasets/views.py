@@ -678,10 +678,27 @@ class DatasetCreateView(
             "catalog": _("Pridėti metaduomenų katalogą")
         }
         subclass = get_object_or_404(DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid"))
+        if parent_id := self.kwargs.get("parent_id"):
+            parent_dataset = get_object_or_404(Dataset, pk=parent_id)
+            crumbs = self.dataset_hierarchy(parent_dataset, include_home=True)
+            crumbs.append(
+                Crumb(
+                    title=_("Pridėti vaikinį duomenų išteklių"), 
+                    url=reverse("child-resource-subclass-add", args=[self.organization.pk, parent_id])
+                )
+            )
+            crumbs.append(
+                Crumb(
+                    title=ACCUSATIVE_FORMS.get(subclass.name, subclass.name), url=None, is_current=True)
+                )
+            return crumbs
+        
         return self.breadcrumbs_organization(self.organization) + [
             Crumb(title=_("Duomenų ištekliai"), url=reverse("dataset-list")),
-            Crumb(title=_("Pridėti duomenų išteklių"),
-                  url=reverse("resource-subclass-add", kwargs={"pk": self.organization.pk})),
+            Crumb(
+                title=_("Pridėti duomenų išteklių"),
+                url=reverse("resource-subclass-add", args=[self.organization.pk])
+            ),
             Crumb(title=ACCUSATIVE_FORMS.get(subclass.name, subclass.name), url=None, is_current=True)
         ]
                     
@@ -932,8 +949,12 @@ class ResourceSubclassCreateView(
         return has_perm(self.request.user, Action.CREATE, Dataset, organization)
     
     def get_breadcrumbs(self) -> list[Crumb]:
-        """Generate hierarchical breadcrumbs for the dataset"""
-        
+        if parent_id := self.kwargs.get("parent_id"):
+            parent_dataset = get_object_or_404(Dataset, pk=parent_id)
+            crumbs = self.dataset_hierarchy(parent_dataset, include_home=True, make_current=False)
+            crumbs.append(Crumb(title=_("Pridėti vaikinį duomenų išteklių"), url=None, is_current=True))
+            return crumbs
+
         org = get_object_or_404(Organization, id=self.kwargs["pk"])
         return self.breadcrumbs_organization(org) + [
             Crumb(title=_("Duomenų ištekliai"), url=reverse("dataset-list")),

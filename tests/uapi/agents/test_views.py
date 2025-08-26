@@ -74,6 +74,7 @@ def test_detail_view_archived_agent(app: DjangoTestApp, representative_user: Use
 def test_create_view(app: DjangoTestApp, representative_user: User, organization: Organization):
     app.set_user(representative_user)
 
+    mocked_id = "some-id"
     url = reverse("agent-create", args=[organization.pk])
     data = {
         "title": "Agent",
@@ -85,17 +86,19 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
 
 
     with patch(
-            "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
-            return_value=("some-id", "some-secret")
-    ):
+        "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
+        return_value=(mocked_id, "some-secret")
+    ) as mock_create_oauth_client:
         response = app.post(url, data)
 
 
     assert response.status_code == HTTPStatus.FOUND
     assert Agent.objects.count() == 1
     agent = Agent.objects.filter(title=data["title"], organization=organization).first()
+    assert agent.oauth_client_id == mocked_id
     assert agent is not None
     assert ApiKey.objects.count() == 0 # No longer relying on API keys, using oauth client file instead.
+    assert mock_create_oauth_client.called
 
 
 def test_create_agent_transaction_rollback_on_error(app, representative_user, organization):

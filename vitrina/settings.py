@@ -9,6 +9,7 @@ https://docs.djangoproject.com/en/4.0/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
+
 import base64
 import json
 import os
@@ -55,11 +56,11 @@ VIISP_PID = env("VIISP_PID")
 
 OAUTH_SERVER_PUBLIC_JWK_JSON = json.loads(env("OAUTH_SERVER_PUBLIC_JWK_JSON", default="{}"))
 OAUTH_SERVER_HOST = env("OAUTH_SERVER_HOST")
-OAUTH_SERVER_CLIENTS_PATH =  env("OAUTH_SERVER_CLIENTS_PATH", default="/auth/clients")
-OAUTH_SERVER_TOKEN_PATH =  env("OAUTH_SERVER_TOKEN_PATH", default="/auth/token")
-OAUTH_SERVER_CLIENTS_URL =  OAUTH_SERVER_HOST + OAUTH_SERVER_CLIENTS_PATH
-OAUTH_SERVER_TOKEN_URL =  OAUTH_SERVER_HOST + OAUTH_SERVER_TOKEN_PATH
-OAUTH_CLIENT_SECRET =  env("OAUTH_CLIENT_SECRET")
+OAUTH_SERVER_CLIENTS_PATH = env("OAUTH_SERVER_CLIENTS_PATH", default="/auth/clients")
+OAUTH_SERVER_TOKEN_PATH = env("OAUTH_SERVER_TOKEN_PATH", default="/auth/token")
+OAUTH_SERVER_CLIENTS_URL = OAUTH_SERVER_HOST + OAUTH_SERVER_CLIENTS_PATH
+OAUTH_SERVER_TOKEN_URL = OAUTH_SERVER_HOST + OAUTH_SERVER_TOKEN_PATH
+OAUTH_CLIENT_SECRET = env("OAUTH_CLIENT_SECRET")
 OAUTH_CLIENT_NAME = env("OAUTH_CLIENT_NAME")
 OAUTH_CLIENT_SECRET_BASE64 = base64.b64encode(f"{OAUTH_CLIENT_NAME}:{OAUTH_CLIENT_SECRET}".encode()).decode()
 OAUTH_CLIENTS_MANAGEMENT_SCOPE = env("OAUTH_CLIENTS_MANAGEMENT_SCOPE", default="spinta_auth_clients")
@@ -388,9 +389,7 @@ LOGIN_URL = "/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
-DEFAULT_FROM_EMAIL = env(
-    "DEFAULT_FROM_EMAIL", default="Test Domain <noreply@example.com>"
-)
+DEFAULT_FROM_EMAIL = env("DEFAULT_FROM_EMAIL", default="Test Domain <noreply@example.com>")
 email = env.email("EMAIL_URL", default="consolemail://")
 EMAIL_BACKEND = email["EMAIL_BACKEND"]
 EMAIL_HOST = email["EMAIL_HOST"]

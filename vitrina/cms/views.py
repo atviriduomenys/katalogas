@@ -44,13 +44,7 @@ class ReportDetailView(DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context.update(
-            {
-                "lines": [
-                    {"cols": item.split("&&&")} for item in self.object.data.split("\n")
-                ]
-            }
-        )
+        context.update({"lines": [{"cols": item.split("&&&")} for item in self.object.data.split("\n")]})
         return context
 
 

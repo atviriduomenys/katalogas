@@ -12,14 +12,10 @@ def subscription(obj, user, description=None):
     content_type = ContentType.objects.get_for_model(obj)
     button_text = _("Prenumeruoti")
     subscribed = False
-    subscription_count = Subscription.objects.filter(
-        content_type=content_type, object_id=obj.pk
-    ).count()
+    subscription_count = Subscription.objects.filter(content_type=content_type, object_id=obj.pk).count()
     if (
         user.is_authenticated
-        and Subscription.objects.filter(
-            content_type=content_type, object_id=obj.pk, user=user
-        ).exists()
+        and Subscription.objects.filter(content_type=content_type, object_id=obj.pk, user=user).exists()
     ):
         button_text = _("Atsisakyti prenumeratos")
         subscribed = True

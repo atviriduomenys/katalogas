@@ -68,32 +68,18 @@ class Organization(MP_Node):
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     description = models.TextField(blank=True, null=True, verbose_name=_("Aprašymas"))
-    municipality = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Savivaldybė")
-    )
-    region = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Regionas")
-    )
+    municipality = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Savivaldybė"))
+    region = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Regionas"))
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
     title = models.TextField(blank=True, null=True, verbose_name=_("Pavadinimas"))
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    address = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Adresas")
-    )
-    company_code = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Registracijos numeris")
-    )
-    email = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Elektroninis paštas")
-    )
-    is_public = models.BooleanField(
-        blank=True, null=True, verbose_name=_("Organizacija viešinama")
-    )
-    phone = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Telefono numeris")
-    )
+    address = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Adresas"))
+    company_code = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Registracijos numeris"))
+    email = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Elektroninis paštas"))
+    is_public = models.BooleanField(blank=True, null=True, verbose_name=_("Organizacija viešinama"))
+    phone = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Telefono numeris"))
     jurisdiction = models.ForeignKey(
         AreaOfManagement,
         related_name="organization_set",
@@ -101,15 +87,9 @@ class Organization(MP_Node):
         default=1,
         verbose_name=_("Valdymo sritis"),
     )
-    website = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Tinklalapis")
-    )
-    kind = models.CharField(
-        max_length=36, choices=ORGANIZATION_KINDS, default=ORG, verbose_name=_("Tipas")
-    )
-    role = models.CharField(
-        max_length=255, choices=ROLES, null=True, blank=True, verbose_name=_("Vaidmuo")
-    )
+    website = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Tinklalapis"))
+    kind = models.CharField(max_length=36, choices=ORGANIZATION_KINDS, default=ORG, verbose_name=_("Tipas"))
+    role = models.CharField(max_length=255, choices=ROLES, null=True, blank=True, verbose_name=_("Vaidmuo"))
     image = FilerImageField(
         null=True,
         blank=True,
@@ -117,13 +97,9 @@ class Organization(MP_Node):
         on_delete=models.SET_NULL,
         verbose_name=_("Logotipas"),
     )
-    publisher = models.BooleanField(
-        default=False, verbose_name=_("Duomenų atvėrimo paslaugų teikėjas")
-    )
+    publisher = models.BooleanField(default=False, verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"))
     name = models.TextField(max_length=255, unique=True, blank=True, null=True)
-    alternative_titles = models.TextField(
-        _("Alternatyvūs pavadinimai"), null=True, blank=True
-    )
+    alternative_titles = models.TextField(_("Alternatyvūs pavadinimai"), null=True, blank=True)
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
@@ -183,9 +159,7 @@ class Representative(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     role = models.CharField(choices=ROLES, max_length=255)
     user = models.ForeignKey("vitrina_users.User", models.PROTECT, null=True)
-    organization = models.ForeignKey(
-        Organization, models.SET_NULL, blank=True, null=True, default=None
-    )
+    organization = models.ForeignKey(Organization, models.SET_NULL, blank=True, null=True, default=None)
     has_api_access = models.BooleanField(default=False)
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
@@ -269,9 +243,7 @@ class RepresentativeRequest(models.Model):
         (REJECTED, _("Atmestas")),
     )
 
-    created = models.DateTimeField(
-        blank=True, null=True, auto_now_add=True, verbose_name=_("Sukurta")
-    )
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True, verbose_name=_("Sukurta"))
     user = models.ForeignKey(
         "vitrina_users.User",
         blank=True,
@@ -290,12 +262,8 @@ class RepresentativeRequest(models.Model):
         on_delete=models.CASCADE,
         verbose_name=_("Organizacija"),
     )
-    phone = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Telefono numeris")
-    )
-    email = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("El. paštas")
-    )
+    phone = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Telefono numeris"))
+    email = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("El. paštas"))
     status = models.CharField(
         max_length=255,
         blank=True,
@@ -316,19 +284,11 @@ class RepresentativeRequest(models.Model):
 class Template(models.Model):
     REPRESENTATIVE_REQUEST_ID = "representative_request"
 
-    created = models.DateTimeField(
-        blank=True, null=True, auto_now_add=True, verbose_name=_("Sukurta")
-    )
-    modified = models.DateTimeField(
-        blank=True, null=True, auto_now=True, verbose_name=_("Modifikuota")
-    )
-    identifier = models.CharField(
-        max_length=255, unique=True, verbose_name=_("Identifikatorius")
-    )
+    created = models.DateTimeField(blank=True, null=True, auto_now_add=True, verbose_name=_("Sukurta"))
+    modified = models.DateTimeField(blank=True, null=True, auto_now=True, verbose_name=_("Modifikuota"))
+    identifier = models.CharField(max_length=255, unique=True, verbose_name=_("Identifikatorius"))
     text = models.CharField(max_length=100, verbose_name=_("Tekstas"))
-    document = models.FileField(
-        upload_to="data/files/templates", verbose_name=_("Pridėtas dokumentas")
-    )
+    document = models.FileField(upload_to="data/files/templates", verbose_name=_("Pridėtas dokumentas"))
 
     class Meta:
         db_table = "template"

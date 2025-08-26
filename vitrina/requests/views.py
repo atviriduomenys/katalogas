@@ -110,9 +110,7 @@ class RequestListView(FacetedSearchView):
     def get(self, request, **kwargs):
         legacy_org_redirect = self.request.GET.get("organization_id")
         if legacy_org_redirect:
-            new_query_dict = {
-                "selected_facets": "organization_exact:{}".format(legacy_org_redirect)
-            }
+            new_query_dict = {"selected_facets": "organization_exact:{}".format(legacy_org_redirect)}
             return HttpResponsePermanentRedirect("?" + urlencode(new_query_dict, True))
         return super().get(request)
 
@@ -186,9 +184,7 @@ class RequestListView(FacetedSearchView):
                     is_int=False,
                 ),
             ],
-            "group_facet": update_facet_data(
-                self.request, facet_fields, "groups", DatasetGroup
-            ),
+            "group_facet": update_facet_data(self.request, facet_fields, "groups", DatasetGroup),
             "selected_groups": get_selected_value(form, "groups", True, False),
             "q": form.cleaned_data.get("q", ""),
         }
@@ -226,16 +222,10 @@ class RequestStatsMixin(StatsMixin):
         if indicator == "request-count":
             data = filter_queryset.values(*values).annotate(count=Count("pk"))
         elif indicator == "request-count-open":
-            data = (
-                filter_queryset.filter(status=Request.CREATED)
-                .values(*values)
-                .annotate(count=Count("pk"))
-            )
+            data = filter_queryset.filter(status=Request.CREATED).values(*values).annotate(count=Count("pk"))
         else:
             data = (
-                PlanRequest.objects.filter(
-                    request_id__in=filter_queryset, plan__deadline__lt=datetime.now()
-                )
+                PlanRequest.objects.filter(request_id__in=filter_queryset, plan__deadline__lt=datetime.now())
                 .values(*values)
                 .annotate(count=Count("request"))
             )
@@ -278,9 +268,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
     filter_choices = Request.FILTER_STATUSES
 
     def get_graph_title(self, indicator):
-        return _(
-            f"{self.get_title_for_indicator(indicator)} pagal poreikio būseną laike"
-        )
+        return _(f"{self.get_title_for_indicator(indicator)} pagal poreikio būseną laike")
 
     def update_context_data(self, context):
         facet_fields = context.get("facets").get("fields")
@@ -305,9 +293,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
             bar_count = 0
             bar_data = []
 
-            status_request_ids = requests.filter(
-                status=status["filter_value"]
-            ).values_list("pk", flat=True)
+            status_request_ids = requests.filter(status=status["filter_value"]).values_list("pk", flat=True)
             status_requests = Request.objects.filter(pk__in=status_request_ids)
 
             count_data = self.get_data_for_indicator(indicator, values, status_requests)
@@ -317,26 +303,18 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
                 label_query = get_query_for_frequency(frequency, date_field, label)
                 if indicator == "request-count":
                     label_count_data = count_data.filter(**label_query)
-                    time_count = self.get_count(
-                        label, indicator, frequency, label_count_data, time_count
-                    )
+                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
                 elif indicator == "request-count-open":
                     label_count_data = count_data.filter(**label_query)
-                    time_count = self.get_count(
-                        label, indicator, frequency, label_count_data, time_count
-                    )
+                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
                 else:
                     label_count_data = count_data.filter(**label_query)
-                    time_count = self.get_count(
-                        label, indicator, frequency, label_count_data, time_count
-                    )
+                    time_count = self.get_count(label, indicator, frequency, label_count_data, time_count)
 
                 bar_count += time_count
 
                 if frequency == "W":
-                    time_data.append(
-                        {"x": _date(label.start_time, ff), "y": time_count}
-                    )
+                    time_data.append({"x": _date(label.start_time, ff), "y": time_count})
                     bar_data.append({"x": _date(label.start_time, ff), "y": bar_count})
                 else:
                     time_data.append({"x": _date(label, ff), "y": time_count})
@@ -354,12 +332,8 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
             bar_chart_data.append(status)
 
         if sorting == "sort-desc":
-            time_chart_data = sorted(
-                time_chart_data, key=lambda x: x["data"][-1]["y"], reverse=True
-            )
-            bar_chart_data = sorted(
-                bar_chart_data, key=lambda x: x["count"], reverse=True
-            )
+            time_chart_data = sorted(time_chart_data, key=lambda x: x["data"][-1]["y"], reverse=True)
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x["count"], reverse=True)
         else:
             time_chart_data = sorted(time_chart_data, key=lambda x: x["data"][-1]["y"])
             bar_chart_data = sorted(bar_chart_data, key=lambda x: x["count"])
@@ -384,9 +358,7 @@ class RequestStatusStatsView(RequestStatsMixin, RequestListView):
         context["bar_chart_data"] = bar_chart_data
         context["max_count"] = max_count
 
-        context["options"] = get_stats_filter_options_based_on_model(
-            Request, duration, sorting, indicator
-        )
+        context["options"] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
 
         return context
 
@@ -403,9 +375,7 @@ class RequestDatasetStatusStatsView(RequestStatsMixin, RequestListView):
         return str(st)
 
     def get_graph_title(self, indicator):
-        return _(
-            f"{self.get_title_for_indicator(indicator)} pagal duomenų rinkinio būseną laike"
-        )
+        return _(f"{self.get_title_for_indicator(indicator)} pagal duomenų rinkinio būseną laike")
 
 
 class RequestOrganizationStatsView(RequestStatsMixin, RequestListView):
@@ -426,14 +396,9 @@ class RequestJurisdictionStatsView(RequestStatsMixin, RequestListView):
 
     def get_graph_title(self, indicator):
         if indicator == "level-average" or indicator == "object-count":
-            return _(
-                f"{self.get_title_for_indicator(indicator)} "
-                f"pagal rinkinio valdymo sritį rinkinio įkėlimo datai"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį rinkinio įkėlimo datai")
         else:
-            return _(
-                f"{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike"
-            )
+            return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike")
 
 
 class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
@@ -461,17 +426,13 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
 
         labels = []
         if start_date:
-            labels = pd.period_range(
-                start=start_date, end=datetime.now(), freq=frequency
-            ).tolist()
+            labels = pd.period_range(start=start_date, end=datetime.now(), freq=frequency).tolist()
 
         for request in requests:
             created = request.created
             if created is not None:
                 year_published = created.year
-                year_stats[str(year_published)] = (
-                    year_stats.get(str(year_published), 0) + 1
-                )
+                year_stats[str(year_published)] = year_stats.get(str(year_published), 0) + 1
                 period = str(pd.to_datetime(created).to_period(frequency))
                 stats_for_period[period] = stats_for_period.get(period, 0) + 1
         if indicator != "request-count":
@@ -479,16 +440,12 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
                 start_date = datetime.strptime(str(yr) + "-1-1", "%Y-%m-%d")
                 end_date = datetime.strptime(str(yr) + "-12-31", "%Y-%m-%d")
                 tz = pytz.timezone("Europe/Vilnius")
-                filtered_requests = requests.filter(
-                    created__range=[tz.localize(start_date), tz.localize(end_date)]
-                )
+                filtered_requests = requests.filter(created__range=[tz.localize(start_date), tz.localize(end_date)])
                 request_ids = []
                 for fd in filtered_requests:
                     request_ids.append(fd.pk)
                 if indicator == "request-count-open":
-                    total = Request.objects.filter(
-                        pk__in=request_ids, status=Request.CREATED
-                    ).count()
+                    total = Request.objects.filter(pk__in=request_ids, status=Request.CREATED).count()
                     year_stats[yr] = total
                 else:
                     total = (
@@ -502,12 +459,8 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
             keys = list(year_stats.keys())
             values = list(year_stats.values())
             sorted_value_index = np.argsort(values)
-            year_stats = sort_publication_stats(
-                sorting, values, keys, year_stats, sorted_value_index
-            )
-            max_count = year_stats[
-                max(year_stats, key=lambda key: year_stats[key], default=0)
-            ]
+            year_stats = sort_publication_stats(sorting, values, keys, year_stats, sorted_value_index)
+            max_count = year_stats[max(year_stats, key=lambda key: year_stats[key], default=0)]
 
         data = []
         total = 0
@@ -537,9 +490,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
         chart_data.append(dt)
 
         if sorting == "sort-desc":
-            bar_chart_data = sorted(
-                bar_chart_data, key=lambda x: x["count"], reverse=True
-            )
+            bar_chart_data = sorted(bar_chart_data, key=lambda x: x["count"], reverse=True)
         else:
             bar_chart_data = sorted(bar_chart_data, key=lambda x: x["count"])
 
@@ -560,9 +511,7 @@ class RequestPublicationStatsView(RequestStatsMixin, RequestListView):
         context["duration"] = duration
 
         context["has_time_graph"] = True
-        context["options"] = get_stats_filter_options_based_on_model(
-            Request, duration, sorting, indicator
-        )
+        context["options"] = get_stats_filter_options_based_on_model(Request, duration, sorting, indicator)
         return context
 
 
@@ -624,9 +573,7 @@ class RequestQuarterStatsView(RequestListView):
             if created is not None:
                 year_created = created.year
                 if str(year_created) in selected_quarter:
-                    quarter = (
-                        str(year_created) + "-Q" + str(pd.Timestamp(created).quarter)
-                    )
+                    quarter = str(year_created) + "-Q" + str(pd.Timestamp(created).quarter)
                     if quarter == selected_quarter:
                         month = str(year_created) + "-" + str("%02d" % created.month)
                         monthly_stats[month] = monthly_stats.get(month, 0) + 1
@@ -657,9 +604,7 @@ class RequestRedirectView(View):
     def get(self, request, **kwargs):
         uuid = kwargs.get("uuid")
         request = get_object_or_404(Request, uuid=uuid)
-        return HttpResponsePermanentRedirect(
-            reverse("request-detail", kwargs={"pk": request.pk})
-        )
+        return HttpResponsePermanentRedirect(reverse("request-detail", kwargs={"pk": request.pk}))
 
 
 class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
@@ -675,15 +620,9 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
         request: Request = self.object
 
         extra_context_data = {
-            "formats": request.format.replace(" ", "").split(",")
-            if request.format
-            else [],
-            "changes": request.changes.replace(" ", "").split(",")
-            if request.changes
-            else [],
-            "purposes": request.purpose.replace(" ", "").split(",")
-            if request.purpose
-            else [],
+            "formats": request.format.replace(" ", "").split(",") if request.format else [],
+            "changes": request.changes.replace(" ", "").split(",") if request.changes else [],
+            "purposes": request.purpose.replace(" ", "").split(",") if request.purpose else [],
             "structure": RequestStructure.objects.filter(request_id=request.pk),
             # "related_object": request.object,
             "status": request.get_status_display(),
@@ -696,9 +635,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
         return context_data
 
 
-class RequestCreateView(
-    LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, CreateView
-):
+class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
     model = Request
     form_class = RequestForm
     template_name = "vitrina/requests/request_create_form.html"
@@ -740,9 +677,7 @@ class RequestCreateView(
         )
         sub_email_list = []
         if not orgs:
-            sub_email_list = User.objects.filter(is_superuser=True).values_list(
-                "email", flat=True
-            )
+            sub_email_list = User.objects.filter(is_superuser=True).values_list("email", flat=True)
         else:
             for organization in orgs:
                 if organization.email:
@@ -770,9 +705,7 @@ class RequestCreateView(
                         and sub.email_subscribed
                         and sub.user.email not in sub_email_list
                         and Representative.objects.filter(
-                            content_type=ContentType.objects.get_for_model(
-                                organization
-                            ),
+                            content_type=ContentType.objects.get_for_model(organization),
                             object_id=organization.pk,
                             role=Representative.COORDINATOR,
                             email=sub.user.email,
@@ -786,8 +719,7 @@ class RequestCreateView(
                 "vitrina/emails/request_created_organization_sub.md",
                 {
                     "request": self.object.title,
-                    "link": get_current_domain(self.request)
-                    + self.object.get_absolute_url(),
+                    "link": get_current_domain(self.request) + self.object.get_absolute_url(),
                 },
             )
         return HttpResponseRedirect(self.get_success_url())
@@ -826,14 +758,8 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
             if self.request.user.organization:
                 org_ids.append(self.request.user.organization.id)
             if org_ids:
-                user_org_priority = Case(
-                    *[When(pk=pk, then=pos) for pos, pk in enumerate(org_ids)]
-                )
-                return (
-                    RequestAssignment.objects.filter(request=self.request_obj)
-                    .order_by(user_org_priority)
-                    .all()
-                )
+                user_org_priority = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(org_ids)])
+                return RequestAssignment.objects.filter(request=self.request_obj).order_by(user_org_priority).all()
         return RequestAssignment.objects.filter(request=self.request_obj).all()
 
     def get_context_data(self, **kwargs):
@@ -841,9 +767,7 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
         context["request_obj"] = self.request_obj
         context["organizations"] = self.get_queryset()
         context["can_update_orgs"] = False
-        if self.request.user.is_authenticated and (
-            self.request.user.is_staff or self.request.user.is_superuser
-        ):
+        if self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser):
             context["can_update_orgs"] = True
         else:
             for req_assignment in self.request_obj.requestassignment_set.all():
@@ -867,9 +791,7 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
         return self.request_obj
 
 
-class RequestOrgEditView(
-    LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView
-):
+class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
     model = Request
     form_class = RequestEditOrgForm
     template_name = "base_form.html"
@@ -909,17 +831,13 @@ class RequestOrgEditView(
                     sub_email_list.append(sub.user.email)
 
             self.object.organizations.add(org)
-            RequestAssignment.objects.create(
-                organization=org, request=self.object, status=Request.CREATED
-            )
+            RequestAssignment.objects.create(organization=org, request=self.object, status=Request.CREATED)
             if plural:
                 org = Organization.objects.filter(id=org.id).first()
                 org_root = org.get_root()
                 c_orgs = org_root.get_children()
                 for c_org in c_orgs:
-                    ra_objects = RequestAssignment.objects.filter(
-                        request=self.object, organization=c_org
-                    ).all()
+                    ra_objects = RequestAssignment.objects.filter(request=self.object, organization=c_org).all()
                     for ra in ra_objects:
                         ra.delete()
 
@@ -947,9 +865,7 @@ class RequestOrgEditView(
                             sub_email_list.append(sub.user.email)
 
                     self.object.organizations.add(c_org)
-                    RequestAssignment.objects.create(
-                        organization=c_org, request=self.object, status=Request.CREATED
-                    )
+                    RequestAssignment.objects.create(organization=c_org, request=self.object, status=Request.CREATED)
 
         if sub_email_list:
             email(
@@ -958,21 +874,16 @@ class RequestOrgEditView(
                 "vitrina/emails/request_created_organization_sub.md",
                 {
                     "request": self.object.title,
-                    "link": get_current_domain(self.request)
-                    + self.object.get_absolute_url(),
+                    "link": get_current_domain(self.request) + self.object.get_absolute_url(),
                 },
             )
 
         self.object.save()
         set_comment(Request.EDITED)
-        return HttpResponseRedirect(
-            reverse("request-organizations", kwargs={"pk": self.object.id})
-        )
+        return HttpResponseRedirect(reverse("request-organizations", kwargs={"pk": self.object.id}))
 
     def has_permission(self):
-        if self.request.user.is_authenticated and (
-            self.request.user.is_staff or self.request.user.is_superuser
-        ):
+        if self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser):
             return True
         request = get_object_or_404(Request, pk=self.kwargs.get("pk"))
         for req_assignment in request.requestassignment_set.all():
@@ -987,9 +898,7 @@ class RequestOrgEditView(
 
     def handle_no_permission(self):
         messages.error(self.request, "Šio poreikio organizacijų keisti negalite.")
-        return HttpResponseRedirect(
-            reverse("request-organizations", kwargs={"pk": self.kwargs.get("pk")})
-        )
+        return HttpResponseRedirect(reverse("request-organizations", kwargs={"pk": self.kwargs.get("pk")}))
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -997,18 +906,14 @@ class RequestOrgEditView(
         return context_data
 
 
-class RequestOrgDeleteView(
-    LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, DeleteView
-):
+class RequestOrgDeleteView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, DeleteView):
     model = RequestAssignment
     template_name = "confirm_delete.html"
 
     request_assignment: RequestAssignment
 
     def dispatch(self, request, *args, **kwargs):
-        self.request_assignment = get_object_or_404(
-            RequestAssignment, pk=self.kwargs.get("pk")
-        )
+        self.request_assignment = get_object_or_404(RequestAssignment, pk=self.kwargs.get("pk"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -1022,9 +927,7 @@ class RequestOrgDeleteView(
     def handle_no_permission(self):
         request_id = self.request_assignment.request.pk
         messages.error(self.request, "Šio poreikio organizacijų keisti negalite.")
-        return HttpResponseRedirect(
-            reverse("request-organizations", kwargs={"pk": request_id})
-        )
+        return HttpResponseRedirect(reverse("request-organizations", kwargs={"pk": request_id}))
 
     def post(self, request, *args, **kwargs):
         request = self.request_assignment.request
@@ -1044,9 +947,7 @@ class RequestOrgDeleteView(
         return context
 
 
-class RequestUpdateView(
-    LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView
-):
+class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
     model = Request
     form_class = RequestForm
     template_name = "base_form.html"
@@ -1085,18 +986,14 @@ class RequestUpdateView(
                 description=f"Poreikis {self.object} buvo redaguotas.",
                 content_type=ContentType.objects.get_for_model(self.object),
                 object_id=self.object.pk,
-                organization=sub.content_object
-                if isinstance(sub.content_object, Organization)
-                else None,
+                organization=sub.content_object if isinstance(sub.content_object, Organization) else None,
                 status=Task.CREATED,
                 type=Task.REQUEST,
                 user=sub.user,
             )
             if sub.user.email and sub.email_subscribed:
                 if sub.user.organization:
-                    orgs = [sub.user.organization] + list(
-                        sub.user.organization.get_descendants()
-                    )
+                    orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                     sub_email_list = [org.email for org in orgs]
                 sub_email_list.append(sub.user.email)
         return HttpResponseRedirect(self.get_success_url())
@@ -1150,16 +1047,11 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
         status = self.request.GET.get("status", "opened")
         context["request_obj"] = self.request_obj
         if status == "closed":
-            context["plans"] = self.request_obj.planrequest_set.filter(
-                plan__is_closed=True
-            )
+            context["plans"] = self.request_obj.planrequest_set.filter(plan__is_closed=True)
         else:
-            context["plans"] = self.request_obj.planrequest_set.filter(
-                plan__is_closed=False
-            )
+            context["plans"] = self.request_obj.planrequest_set.filter(plan__is_closed=False)
         context["can_manage_plans"] = (
-            has_perm(self.request.user, Action.PLAN, self.request_obj)
-            and self.request_obj.status == Request.APPROVED
+            has_perm(self.request.user, Action.PLAN, self.request_obj) and self.request_obj.status == Request.APPROVED
         )
         context["selected_tab"] = status
         return context
@@ -1186,9 +1078,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
             if self.request.user.is_staff or self.request.user.is_superuser:
                 self.organizations = self.request_obj.organizations.all()
             else:
-                self.organizations = self.request_obj.organizations.filter(
-                    representatives__user=self.request.user
-                )
+                self.organizations = self.request_obj.organizations.filter(representatives__user=self.request.user)
         else:
             self.organizations = []
         return super().dispatch(request, *args, **kwargs)
@@ -1203,17 +1093,13 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["obj"] = self.request_obj
-        context["create_form"] = RequestPlanForm(
-            self.request_obj, self.organizations, self.request.user
-        )
+        context["create_form"] = RequestPlanForm(self.request_obj, self.organizations, self.request.user)
         context["include_form"] = RequestIncludePlanForm(self.request_obj)
         context["current_title"] = _("Įtraukti į planą")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("request-list"): _("Poreikiai ir pasiūlymai"),
-            reverse(
-                "request-detail", args=[self.request_obj.pk]
-            ): self.request_obj.title,
+            reverse("request-detail", args=[self.request_obj.pk]): self.request_obj.title,
             reverse("request-plans", args=[self.request_obj.pk]): _("Planas"),
         }
         return context
@@ -1221,9 +1107,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
     def post(self, request, *args, **kwargs):
         form_type = request.POST.get("form_type")
         if form_type == "create_form":
-            form = RequestPlanForm(
-                self.request_obj, self.organizations, request.user, request.POST
-            )
+            form = RequestPlanForm(self.request_obj, self.organizations, request.user, request.POST)
         else:
             form = RequestIncludePlanForm(self.request_obj, request.POST)
 
@@ -1241,16 +1125,10 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                         content_type=ContentType.objects.get_for_model(Dataset),
                         request_id=self.request_obj.pk,
                     ).values_list("object_id", flat=True)
-                    datasets = Dataset.objects.filter(
-                        pk__in=request_object_ids
-                    ).order_by("-created")
+                    datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by("-created")
                     for dataset in datasets:
                         PlanDataset.objects.create(plan=plan, dataset=dataset)
-                set_comment(
-                    _(
-                        f'Pridėtas terminas "{plan}". Į terminą įtrauktas poreikis "{self.request_obj}".'
-                    )
-                )
+                set_comment(_(f'Pridėtas terminas "{plan}". Į terminą įtrauktas poreikis "{self.request_obj}".'))
 
             else:
                 plan_request = form.save(commit=False)
@@ -1258,9 +1136,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 plan_request.save()
                 plan = plan_request.plan
                 plan.save()
-                set_comment(
-                    _(f'Į terminą "{plan}" įtrauktas poreikis "{self.request_obj}".')
-                )
+                set_comment(_(f'Į terminą "{plan}" įtrauktas poreikis "{self.request_obj}".'))
 
             Comment.objects.create(
                 content_type=ContentType.objects.get_for_model(self.request_obj),
@@ -1283,9 +1159,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
         else:
             context = self.get_context_data(**kwargs)
             context[form_type] = form
-            return render(
-                request=request, template_name=self.template_name, context=context
-            )
+            return render(request=request, template_name=self.template_name, context=context)
 
 
 class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
@@ -1375,9 +1249,7 @@ class RequestPlansHistoryView(PlanMixin, HistoryView):
     tabs_template_name = "vitrina/requests/tabs.html"
 
     def get_history_objects(self):
-        request_plan_ids = PlanRequest.objects.filter(request=self.object).values_list(
-            "plan_id", flat=True
-        )
+        request_plan_ids = PlanRequest.objects.filter(request=self.object).values_list("plan_id", flat=True)
         return (
             Version.objects.get_for_model(Plan)
             .filter(object_id__in=list(request_plan_ids))
@@ -1441,9 +1313,7 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
         context = super().get_context_data(**kwargs)
         user_can_manage_datasets = False
         if not self.request.user.is_anonymous:
-            user_can_manage_datasets = has_perm(
-                self.request.user, Action.ASSIGN, self.request_obj
-            )
+            user_can_manage_datasets = has_perm(self.request.user, Action.ASSIGN, self.request_obj)
         context["request_obj"] = self.request_obj
         context["show_edit_buttons"] = user_can_manage_datasets
         return context
@@ -1458,9 +1328,7 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
         return self.request_obj
 
 
-class RequestDatasetsEditView(
-    LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView
-):
+class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
     model = Request
     form_class = RequestDatasetsEditForm
     template_name = "vitrina/requests/request_dataset_add.html"
@@ -1485,9 +1353,7 @@ class RequestDatasetsEditView(
                     request=self.object,
                     status=self.object.CREATED,
                 )
-        return HttpResponseRedirect(
-            reverse("request-datasets", kwargs={"pk": self.object.id})
-        )
+        return HttpResponseRedirect(reverse("request-datasets", kwargs={"pk": self.object.id}))
 
     def has_permission(self):
         request_obj = get_object_or_404(Request, pk=self.kwargs.get("pk"))
@@ -1496,9 +1362,7 @@ class RequestDatasetsEditView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         form = context_data.get("form")
-        form.fields.get("datasets").queryset = Dataset.objects.filter(
-            organization=self.request.user.organization
-        )[:20]
+        form.fields.get("datasets").queryset = Dataset.objects.filter(organization=self.request.user.organization)[:20]
         context_data["current_title"] = _("Poreikio duomenų rinkinių redagavimas")
         return context_data
 

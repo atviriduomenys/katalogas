@@ -39,12 +39,8 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
     obj: Model
 
     def dispatch(self, request, *args, **kwargs):
-        self.content_type = get_object_or_404(
-            ContentType, pk=kwargs.get("content_type_id")
-        )
-        self.obj = get_object_or_404(
-            self.content_type.model_class(), pk=kwargs.get("object_id")
-        )
+        self.content_type = get_object_or_404(ContentType, pk=kwargs.get("content_type_id"))
+        self.obj = get_object_or_404(self.content_type.model_class(), pk=kwargs.get("object_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -86,9 +82,7 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
                 set_comment(Request.CREATED)
 
                 comment.type = Comment.REQUEST
-                comment.rel_content_type = ContentType.objects.get_for_model(
-                    new_request
-                )
+                comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
 
                 if isinstance(obj, Model) and obj.dataset.organization:
@@ -139,8 +133,7 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
                             "vitrina/emails/request_created_organization_sub.md",
                             {
                                 "request": new_request.title,
-                                "link": get_current_domain(self.request)
-                                + new_request.get_absolute_url(),
+                                "link": get_current_domain(self.request) + new_request.get_absolute_url(),
                             },
                         )
 
@@ -149,9 +142,7 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
                 comment.type = Comment.STATUS
                 if isinstance(obj, Request):
                     user_org = request.user.organization
-                    request_assignment = RequestAssignment.objects.filter(
-                        organization=user_org, request=obj
-                    ).first()
+                    request_assignment = RequestAssignment.objects.filter(organization=user_org, request=obj).first()
                     save_request_comment(obj, status, comment.body, request.user)
                     obj.status = status
                     obj.save()
@@ -166,16 +157,12 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
                             request_assignment.save()
                             messages.info(
                                 request,
-                                _(
-                                    "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
-                                ),
+                                _("Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"),
                             )
                         else:
                             messages.error(
                                 request,
-                                _(
-                                    "Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą"
-                                ),
+                                _("Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą"),
                             )
                             return redirect(obj.get_absolute_url())
                     if status == Request.OPENED:
@@ -186,9 +173,7 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
                         request_plans = Plan.objects.filter(planrequest__request=obj)
                         for plan in request_plans:
                             if (
-                                plan.planrequest_set.filter(
-                                    request__status=Request.OPENED
-                                ).count()
+                                plan.planrequest_set.filter(request__status=Request.OPENED).count()
                                 == plan.planrequest_set.count()
                                 and plan.plandataset_set.annotate(
                                     has_distributions=Exists(
@@ -210,25 +195,16 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
                         approved_assignments_exists = RequestAssignment.objects.filter(
                             status=Request.APPROVED, request=obj
                         )
-                        opened_assignments_exists = RequestAssignment.objects.filter(
-                            status=Request.OPENED, request=obj
-                        )
-                        if (
-                            not approved_assignments_exists
-                            and not opened_assignments_exists
-                        ):
-                            save_request_comment(
-                                obj, status, comment.body, request.user
-                            )
+                        opened_assignments_exists = RequestAssignment.objects.filter(status=Request.OPENED, request=obj)
+                        if not approved_assignments_exists and not opened_assignments_exists:
+                            save_request_comment(obj, status, comment.body, request.user)
                             obj.status = status
                             obj.save()
                             set_comment(type(obj).STATUS_CHANGED)
                     ra_comment = form.save(commit=False)
                     request_assignment.status = status
                     request_assignment.comment = ra_comment.body
-                    ra_comment.content_type = ContentType.objects.get_for_model(
-                        RequestAssignment
-                    )
+                    ra_comment.content_type = ContentType.objects.get_for_model(RequestAssignment)
                     ra_comment.object_id = request_assignment.pk
                     request_assignment.save()
                     ra_comment.save()
@@ -253,9 +229,7 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
                 text=comment.body,
             )
         else:
-            messages.error(
-                request, "\n".join([error[0] for error in form.errors.values()])
-            )
+            messages.error(request, "\n".join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
 
 
@@ -264,12 +238,8 @@ class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
     obj: Model
 
     def dispatch(self, request, *args, **kwargs):
-        self.content_type = get_object_or_404(
-            ContentType, pk=kwargs.get("content_type_id")
-        )
-        self.obj = get_object_or_404(
-            self.content_type.model_class(), pk=kwargs.get("object_id")
-        )
+        self.content_type = get_object_or_404(ContentType, pk=kwargs.get("content_type_id"))
+        self.obj = get_object_or_404(self.content_type.model_class(), pk=kwargs.get("object_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -320,15 +290,11 @@ class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 comment_task.completed = datetime.now(timezone.utc)
                 comment_task.save()
         else:
-            messages.error(
-                request, "\n".join([error[0] for error in form.errors.values()])
-            )
+            messages.error(request, "\n".join([error[0] for error in form.errors.values()]))
         return redirect(obj.get_absolute_url())
 
 
-class ExternalCommentView(
-    LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, View
-):
+class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, View):
     dataset: Dataset
 
     def dispatch(self, request, *args, **kwargs):
@@ -370,9 +336,7 @@ class ExternalCommentView(
                         status=Request.CREATED,
                     )
                 set_comment(Request.CREATED)
-                comment.rel_content_type = ContentType.objects.get_for_model(
-                    new_request
-                )
+                comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST
 
@@ -391,9 +355,7 @@ class ExternalCommentView(
                         and sub.email_subscribed
                         and sub.user.email not in sub_email_list
                         and Representative.objects.filter(
-                            content_type=ContentType.objects.get_for_model(
-                                self.dataset
-                            ),
+                            content_type=ContentType.objects.get_for_model(self.dataset),
                             object_id=self.dataset.pk,
                             email=sub.user.email,
                         ).exists()
@@ -407,8 +369,7 @@ class ExternalCommentView(
                         "vitrina/emails/request_created_organization_sub.md",
                         {
                             "request": new_request.title,
-                            "link": get_current_domain(self.request)
-                            + new_request.get_absolute_url(),
+                            "link": get_current_domain(self.request) + new_request.get_absolute_url(),
                         },
                     )
             else:
@@ -440,14 +401,10 @@ class ExternalCommentView(
                     "vitrina/comments/emails/sub/comment_about_error_in_data.md",
                     {"title": dataset.title, "url": url},
                 )
-            create_task(
-                NEW_COMMENT, external_content_type, external_object_id, request.user
-            )
+            create_task(NEW_COMMENT, external_content_type, external_object_id, request.user)
             comment.save()
         else:
-            messages.error(
-                request, "\n".join([error[0] for error in form.errors.values()])
-            )
+            messages.error(request, "\n".join([error[0] for error in form.errors.values()]))
         return redirect(
             reverse(
                 "object-data",
@@ -482,13 +439,9 @@ class ExternalReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
                         body=form.cleaned_data.get("body"),
                         is_public=form.cleaned_data.get("is_public"),
                     )
-                    create_task(
-                        REPLY_COMMENT, external_content_type, parent_id, request.user
-                    )
+                    create_task(REPLY_COMMENT, external_content_type, parent_id, request.user)
                 else:
-                    messages.error(
-                        request, "\n".join([error[0] for error in form.errors.values()])
-                    )
+                    messages.error(request, "\n".join([error[0] for error in form.errors.values()]))
                 return redirect(
                     reverse(
                         "object-data",

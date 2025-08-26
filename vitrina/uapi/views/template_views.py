@@ -50,14 +50,18 @@ class BaseAgentView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context.update({
-            "organization": self.organization,
-            "organization_id": self.organization.pk,
-            "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, self.organization),
-            "can_view_contacts": has_perm(self.request.user, Action.VIEW, Contact, self.organization),
-            "can_update_organization": has_perm(self.request.user, Action.UPDATE, Representative, self.organization),
-            "can_manage_keys": has_perm(self.request.user, Action.MANAGE_KEYS, self.organization),
-        })
+        context.update(
+            {
+                "organization": self.organization,
+                "organization_id": self.organization.pk,
+                "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, self.organization),
+                "can_view_contacts": has_perm(self.request.user, Action.VIEW, Contact, self.organization),
+                "can_update_organization": has_perm(
+                    self.request.user, Action.UPDATE, Representative, self.organization
+                ),
+                "can_manage_keys": has_perm(self.request.user, Action.MANAGE_KEYS, self.organization),
+            }
+        )
 
         return context
 
@@ -71,26 +75,27 @@ class AgentListView(BaseAgentView):
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
 
-        organization_agents = Agent.objects.filter(
-            organization=self.organization,
-            is_archived=False
-        ).order_by("-created_at").all()
+        organization_agents = (
+            Agent.objects.filter(organization=self.organization, is_archived=False).order_by("-created_at").all()
+        )
 
         paginator = Paginator(organization_agents, 10)
         page_number = self.request.GET.get("page")
         page = paginator.get_page(page_number)
 
-        context.update({
-            "agents": page.object_list,
-            "page_obj": page,
-            "paginator": paginator,
-            "parent_links": {
-                reverse("home"): _("Pradžia"),
-                reverse("organization-list"): _("Organizacijos"),
-                reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                None: _("Agentai"),
-            },
-        })
+        context.update(
+            {
+                "agents": page.object_list,
+                "page_obj": page,
+                "paginator": paginator,
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
+                    None: _("Agentai"),
+                },
+            }
+        )
 
         return context
 
@@ -105,7 +110,7 @@ class AgentDetailView(BaseAgentView):
             Agent.objects.select_related("service").prefetch_related(("requesthistory")),
             pk=kwargs.get("pk"),
             organization=self.organization,
-            is_archived=False
+            is_archived=False,
         )
 
     def has_permission(self) -> bool:
@@ -119,26 +124,28 @@ class AgentDetailView(BaseAgentView):
         page_number = self.request.GET.get("page")
         page = paginator.get_page(page_number)
 
-        context.update({
-            "parent_links": {
-                reverse("home"): _("Pradžia"),
-                reverse("organization-list"): _("Organizacijos"),
-                reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
-                None: _("Agentas"),
-            },
-            "page_obj": page,
-            "paginator": paginator,
-            "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
-            "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
-            "agent": self.object,
-            "dataset": self.object.service,
-            "secret": self.request.session.pop("secret", None),
-            "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
-            "auth_server_host": settings.OAUTH_SERVER_HOST,
-            "resource_server_host": f"{self.request.scheme}://{self.request.get_host()}",
-            "request_history": page.object_list,
-        })
+        context.update(
+            {
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
+                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
+                    None: _("Agentas"),
+                },
+                "page_obj": page,
+                "paginator": paginator,
+                "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
+                "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
+                "agent": self.object,
+                "dataset": self.object.service,
+                "secret": self.request.session.pop("secret", None),
+                "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
+                "auth_server_host": settings.OAUTH_SERVER_HOST,
+                "resource_server_host": f"{self.request.scheme}://{self.request.get_host()}",
+                "request_history": page.object_list,
+            }
+        )
 
         return context
 
@@ -155,12 +162,10 @@ class AgentCreateView(CreateView, BaseAgentView):
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE, Agent, self.organization)
 
-
     @staticmethod
     def _create_oauth_client(agent: Agent) -> Secret:
         client_id, secret = OAuthClientManagement.create_oauth_client(
-            client_name=agent.global_codename,
-            scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES
+            client_name=agent.global_codename, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES
         )
         agent.oauth_client_id = client_id
         agent.save()
@@ -196,9 +201,9 @@ class AgentCreateView(CreateView, BaseAgentView):
                     self.request,
                     _(
                         "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį kartą!\n "
-                        "Jei pasirinkote rūšį \"Spinta\", raktas vaizduojamas šalia stulpelio \"secret\" credentials.cfg "
+                        'Jei pasirinkote rūšį "Spinta", raktas vaizduojamas šalia stulpelio "secret" credentials.cfg '
                         "failo pavyzdyje"
-                    )
+                    ),
                 )
                 return redirect(reverse("agent-detail", args=[self.organization.pk, self.object.pk]))
         except Exception:
@@ -207,17 +212,19 @@ class AgentCreateView(CreateView, BaseAgentView):
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context.update({
-            "current_title": self.title,
-            "tabs": "vitrina/orgs/tabs.html",
-            "parent_links": {
-                reverse("home"): _("Pradžia"),
-                reverse("organization-list"): _("Organizacijos"),
-                reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
-                None: self.title,
-            },
-        })
+        context.update(
+            {
+                "current_title": self.title,
+                "tabs": "vitrina/orgs/tabs.html",
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
+                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
+                    None: self.title,
+                },
+            }
+        )
         return context
 
 
@@ -235,17 +242,19 @@ class AgentUpdateView(UpdateView, BaseAgentView):
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context.update({
-            "current_title": self.title,
-            "tabs": "vitrina/orgs/tabs.html",
-            "parent_links": {
-                reverse("home"): _("Pradžia"),
-                reverse("organization-list"): _("Organizacijos"),
-                reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
-                None: self.title,
-            },
-        })
+        context.update(
+            {
+                "current_title": self.title,
+                "tabs": "vitrina/orgs/tabs.html",
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
+                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
+                    None: self.title,
+                },
+            }
+        )
         return context
 
     def form_valid(self, form: ModelForm) -> HttpResponse:
@@ -267,16 +276,18 @@ class AgentDeleteView(DeleteView, BaseAgentView):
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context.update({
-            "parent_links": {
-                reverse("home"): _("Pradžia"),
-                reverse("organization-list"): _("Organizacijos"),
-                reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
-                None: _("Pašalinti Agentą")
-            },
-            "delete_text": _(f"Ar tikrai norite ištrinti Agentą: {self.object}?"),
-        })
+        context.update(
+            {
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
+                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
+                    None: _("Pašalinti Agentą"),
+                },
+                "delete_text": _(f"Ar tikrai norite ištrinti Agentą: {self.object}?"),
+            }
+        )
         return context
 
     def delete(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponse:
@@ -310,22 +321,20 @@ class RequestDetailView(BaseAgentView):
 
         if isinstance(self.object.error, str):
             try:
-                context['formatted_error'] = codecs.decode(self.object.error, 'unicode_escape')
+                context["formatted_error"] = codecs.decode(self.object.error, "unicode_escape")
             except (UnicodeDecodeError, ValueError):
-                context['formatted_error'] = self.object.error
+                context["formatted_error"] = self.object.error
         else:
-            context['formatted_error'] = self.object.error
+            context["formatted_error"] = self.object.error
 
         context.update(
             {
                 "request_history": self.object,
-                "formatted_error": context['formatted_error'],
+                "formatted_error": context["formatted_error"],
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("organization-list"): _("Organizacijos"),
-                    reverse(
-                        "organization-detail", args=[self.organization.pk]
-                    ): self.organization.title,
+                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
                     reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
                     reverse(
                         "agent-detail",

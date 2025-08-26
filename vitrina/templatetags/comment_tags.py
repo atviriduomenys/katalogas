@@ -20,15 +20,13 @@ assignment_tag = getattr(register, "assignment_tag", register.simple_tag)
 @register.inclusion_tag("component/comments.html")
 def comments(obj, user, is_structure=False):
     content_type = ContentType.objects.get_for_model(obj)
-    obj_comments = Comment.objects.filter(
-        content_type=content_type, object_id=obj.pk, parent_id__isnull=True
-    ).order_by("created")
+    obj_comments = Comment.objects.filter(content_type=content_type, object_id=obj.pk, parent_id__isnull=True).order_by(
+        "created"
+    )
     if is_structure:
         can_manage_structure = has_perm(user, Action.STRUCTURE, Dataset, obj)
         if not can_manage_structure:
-            obj_comments = obj_comments.exclude(
-                type=Comment.STRUCTURE, metadata__access__lt=Metadata.PUBLIC
-            )
+            obj_comments = obj_comments.exclude(type=Comment.STRUCTURE, metadata__access__lt=Metadata.PUBLIC)
     comment_form_class = get_comment_form_class(obj, user)
     is_opened = obj.is_opened() if hasattr(obj, "is_opened") else None
 
@@ -48,9 +46,7 @@ def comments(obj, user, is_structure=False):
         "content_type": content_type,
         "object": obj,
         "comment_form": comment_form_class(obj, is_opened=is_opened),
-        "submit_button_id": "id_submit_button_request"
-        if isinstance(obj, Request)
-        else "id_submit_button",
+        "submit_button_id": "id_submit_button_request" if isinstance(obj, Request) else "id_submit_button",
     }
 
 
@@ -67,9 +63,7 @@ def external_comments(content_type, object_id, user, dataset):
             descendants = comment.descendants(include_self=True, permission=True)
             for reply in descendants:
                 if has_comment_view_perm(reply, dataset, user):
-                    reply_form = CommentForm(
-                        comment, auto_id="id_%s_" + str(comment.id)
-                    )
+                    reply_form = CommentForm(comment, auto_id="id_%s_" + str(comment.id))
                     is_child = reply.parent is not None
                     comments_array.append((reply, reply_form, is_child))
     comment_form_class = get_comment_form_class()
@@ -122,12 +116,8 @@ def get_author_name(comment, user):
 
     # vitrina_datasets
     if comment.content_type.model == "datasetstructure":
-        dataset_id = DatasetStructure.objects.values_list("dataset_id", flat=True).get(
-            pk=comment.object_id
-        )
-        organization_id = Dataset.objects.values_list("organization_id", flat=True).get(
-            pk=dataset_id
-        )
+        dataset_id = DatasetStructure.objects.values_list("dataset_id", flat=True).get(pk=comment.object_id)
+        organization_id = Dataset.objects.values_list("organization_id", flat=True).get(pk=dataset_id)
         if Representative.objects.filter(
             user=user,
             role__in=[Representative.COORDINATOR, Representative.MANAGER],
@@ -138,12 +128,8 @@ def get_author_name(comment, user):
 
     # vitrina_resources
     if comment.content_type.model == "datasetdistribution":
-        dataset_id = DatasetDistribution.objects.values_list(
-            "dataset_id", flat=True
-        ).get(pk=comment.object_id)
-        organization_id = Dataset.objects.values_list("organization_id", flat=True).get(
-            pk=dataset_id
-        )
+        dataset_id = DatasetDistribution.objects.values_list("dataset_id", flat=True).get(pk=comment.object_id)
+        organization_id = Dataset.objects.values_list("organization_id", flat=True).get(pk=dataset_id)
         if Representative.objects.filter(
             user=user,
             role__in=[Representative.COORDINATOR, Representative.MANAGER],
@@ -154,16 +140,8 @@ def get_author_name(comment, user):
 
     # vitrina_structure
     if comment.content_type.model == "model":
-        dataset_id = (
-            Model.objects.filter(pk=comment.object_id)
-            .values_list("dataset_id", flat=True)
-            .first()
-        )
-        organization_id = (
-            Dataset.objects.filter(pk=dataset_id)
-            .values_list("organization_id", flat=True)
-            .first()
-        )
+        dataset_id = Model.objects.filter(pk=comment.object_id).values_list("dataset_id", flat=True).first()
+        organization_id = Dataset.objects.filter(pk=dataset_id).values_list("organization_id", flat=True).first()
         if Representative.objects.filter(
             user=user,
             role__in=[Representative.COORDINATOR, Representative.MANAGER],
@@ -174,13 +152,9 @@ def get_author_name(comment, user):
 
     # vitrina_structure
     if comment.content_type.model == "property":
-        model_id = Property.objects.values_list("model_id", flat=True).get(
-            pk=comment.object_id
-        )
+        model_id = Property.objects.values_list("model_id", flat=True).get(pk=comment.object_id)
         dataset_id = Model.objects.values_list("dataset_id", flat=True).get(pk=model_id)
-        organization_id = Dataset.objects.values_list("organization_id", flat=True).get(
-            pk=dataset_id
-        )
+        organization_id = Dataset.objects.values_list("organization_id", flat=True).get(pk=dataset_id)
         if Representative.objects.filter(
             user=user,
             role__in=[Representative.COORDINATOR, Representative.MANAGER],
@@ -191,9 +165,9 @@ def get_author_name(comment, user):
 
     # vitrina_requests
     if comment.content_type.model == "request":
-        organization_ids = RequestAssignment.objects.filter(
-            request=comment.object_id
-        ).values_list("organization_id", flat=True)
+        organization_ids = RequestAssignment.objects.filter(request=comment.object_id).values_list(
+            "organization_id", flat=True
+        )
         if user.representative_set.filter(
             object_id__in=organization_ids,
             content_type=ContentType.objects.get_for_model(Organization),
@@ -202,9 +176,7 @@ def get_author_name(comment, user):
 
     # vitrina_projects
     if comment.content_type.model == "project":
-        organization_id = (
-            Project.objects.filter(pk=comment.object_id).first().user.organization
-        )
+        organization_id = Project.objects.filter(pk=comment.object_id).first().user.organization
         if user.representative_set.filter(
             object_id=organization_id.pk,
             content_type=ContentType.objects.get_for_model(Organization),

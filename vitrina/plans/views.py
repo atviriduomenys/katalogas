@@ -33,12 +33,8 @@ class PlanDetailView(PlanMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["can_manage"] = has_perm(
-            self.request.user, Action.PLAN, self.organization
-        )
-        context["can_view_members"] = has_perm(
-            self.request.user, Action.VIEW, Representative, self.organization
-        )
+        context["can_manage"] = has_perm(self.request.user, Action.PLAN, self.organization)
+        context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.organization)
         context["can_manage_history"] = has_perm(
             self.request.user,
             Action.HISTORY_VIEW,
@@ -49,9 +45,7 @@ class PlanDetailView(PlanMixin, DetailView):
         context["organization_id"] = self.organization.pk
         context["plan_requests"] = self.object.planrequest_set.all()
         context["plan_datasets"] = self.object.plandataset_set.all()
-        context["history_url"] = reverse(
-            "plan-history", args=[self.organization.pk, self.object.pk]
-        )
+        context["history_url"] = reverse("plan-history", args=[self.organization.pk, self.object.pk])
         context["history_url_name"] = "plan-hisotry"
         return context
 
@@ -83,9 +77,7 @@ class PlanUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
         }
         return context
 
@@ -118,9 +110,7 @@ class PlanDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
         }
         return context
 
@@ -154,9 +144,7 @@ class PlanHistoryView(PlanMixin, HistoryView):
         return context
 
     def get_history_objects(self):
-        return Version.objects.get_for_object(self.plan).order_by(
-            "-revision__date_created"
-        )
+        return Version.objects.get_for_object(self.plan).order_by("-revision__date_created")
 
     def get_history_url(self):
         return reverse("plan-history", args=[self.object.pk, self.plan.pk])

@@ -68,7 +68,6 @@ class OAuthClientManagement:
 
 
 class OAuthClientAuthenticator:
-
     @staticmethod
     def retrieve_access_token_from_request(request: Request) -> str | None:
         auth_header = request.META.get("HTTP_AUTHORIZATION")
@@ -109,7 +108,6 @@ class OAuthClientAuthenticator:
 
 
 class OAuth2AuthenticationWithLocalJWK(BaseAuthentication):
-
     def authenticate(self, request: Request) -> tuple[AnonymousUser, JWTClaims]:
         try:
             verified_token = OAuthClientAuthenticator.retrieve_and_verify_token(request)
@@ -122,14 +120,12 @@ class OAuth2AuthenticationWithLocalJWK(BaseAuthentication):
 
 
 class IsOAuthTokenValid(BasePermission):
-
     def has_permission(self, request: Request, view: View) -> bool:
         request.auth.validate()
         return isinstance(request.auth, JWTClaims)
 
 
 class OAuthTokenHasScopes(BasePermission):
-
     def has_permission(self, request: Request, view: View) -> bool:
         if not (token := request.auth):
             return False
@@ -157,7 +153,6 @@ class OAuthTokenHasScopes(BasePermission):
 
 
 class OAuthTokenHasValidOrganizationClaim(BasePermission):
-
     def has_permission(self, request: Request, view: View) -> bool:
         if not (organization := OAuthClientAuthenticator.resolve_organization_from_token(request.auth)):
             return False

@@ -72,9 +72,7 @@ class Request(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
 
     comment = models.TextField(blank=True, null=True)
-    dataset = models.ForeignKey(
-        Dataset, models.SET_NULL, blank=True, null=True, related_name="dataset_request"
-    )
+    dataset = models.ForeignKey(Dataset, models.SET_NULL, blank=True, null=True, related_name="dataset_request")
     description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
@@ -234,9 +232,7 @@ class Request(models.Model):
         return tags
 
     def get_organization_titles(self):
-        return list(
-            self.requestassignment_set.values_list("organization__title", flat=True)
-        )
+        return list(self.requestassignment_set.values_list("organization__title", flat=True))
 
     @staticmethod
     def statuses_ordered(facet):
@@ -299,15 +295,9 @@ class RequestObject(models.Model):
 
 
 class RequestAssignment(models.Model):
-    organization = models.ForeignKey(
-        Organization, models.PROTECT, db_column="organization", blank=True, null=True
-    )
-    request = models.ForeignKey(
-        Request, models.CASCADE, db_column="request", blank=True, null=True
-    )
-    status = models.CharField(
-        max_length=255, choices=Request.STATUSES, blank=True, null=True
-    )
+    organization = models.ForeignKey(Organization, models.PROTECT, db_column="organization", blank=True, null=True)
+    request = models.ForeignKey(Request, models.CASCADE, db_column="request", blank=True, null=True)
+    status = models.CharField(max_length=255, choices=Request.STATUSES, blank=True, null=True)
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
 
     class Meta:

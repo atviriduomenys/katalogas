@@ -11,4 +11,3 @@ class AgentFactory(DjangoModelFactory):
         django_get_or_create = ("organization", "service")
 
     service = SubFactory(DatasetFactory, service=True)
-    

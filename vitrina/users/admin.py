@@ -155,9 +155,7 @@ class UserAdmin(BaseUserAdmin):
     def get_fieldsets(self, request, obj=None):
         if not obj:
             return self.add_fieldsets
-        elif obj.representative_set.filter(
-            content_type=ContentType.objects.get_for_model(Organization)
-        ):
+        elif obj.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization)):
             return self.fieldsets
         else:
             return self.fieldsets_without_orgs
@@ -168,9 +166,7 @@ class UserAdmin(BaseUserAdmin):
         if ordering:
             queryset = queryset.order_by(*ordering)
 
-        queryset = queryset.annotate(
-            full_name=Concat("first_name", Value(" "), "last_name")
-        )
+        queryset = queryset.annotate(full_name=Concat("first_name", Value(" "), "last_name"))
         queryset = queryset.annotate(created_with_tz=AtTimeZone(F("created")))
         queryset = queryset.annotate(
             created_formatted=Func(
@@ -205,22 +201,14 @@ class UserAdmin(BaseUserAdmin):
         queryset = queryset.annotate(
             organization_rep_count=Count(
                 "representative__pk",
-                filter=Q(
-                    representative__content_type=ContentType.objects.get_for_model(
-                        Organization
-                    )
-                ),
+                filter=Q(representative__content_type=ContentType.objects.get_for_model(Organization)),
             )
         )
         queryset = queryset.annotate(
             main_organization=Case(
                 When(
                     organization_rep_count=1,
-                    then=Subquery(
-                        Organization.objects.filter(
-                            representatives__user_id=OuterRef("pk")
-                        ).values("title")
-                    ),
+                    then=Subquery(Organization.objects.filter(representatives__user_id=OuterRef("pk")).values("title")),
                 ),
                 default=F("organization__title"),
             )
@@ -234,9 +222,7 @@ class UserAdmin(BaseUserAdmin):
     name_display.admin_order_field = "full_name"
 
     def organization_display(self, obj):
-        reps = obj.representative_set.filter(
-            content_type=ContentType.objects.get_for_model(Organization)
-        )
+        reps = obj.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))
         if len(reps) == 1:
             return format_html(
                 '<a href="{}" target="_blank">{}</a>',
@@ -318,9 +304,7 @@ class UserAdmin(BaseUserAdmin):
         return super().add_view(request, form_url, extra_context)
 
     def response_add(self, request, obj, post_url_continue=None):
-        email_address = EmailAddress.objects.create(
-            user=obj, email=obj.email, primary=True, verified=False
-        )
+        email_address = EmailAddress.objects.create(user=obj, email=obj.email, primary=True, verified=False)
         EmailConfirmation.objects.create(
             created=datetime.now(),
             sent=datetime.now(),
@@ -385,9 +369,7 @@ class UserAdmin(BaseUserAdmin):
 
     def _get_user(self, cols, queryset):
         for item in queryset:
-            reps = item.representative_set.filter(
-                content_type=ContentType.objects.get_for_model(Organization)
-            )
+            reps = item.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))
             if len(reps) == 1:
                 organization = reps[0].content_object
             else:
@@ -425,9 +407,7 @@ class UserAdmin(BaseUserAdmin):
             if "email" in form.changed_data:
                 if existing_email_address := EmailAddress.objects.filter(user=obj):
                     existing_email_address.delete()
-                email_address = EmailAddress.objects.create(
-                    user=obj, email=obj.email, primary=True, verified=False
-                )
+                email_address = EmailAddress.objects.create(user=obj, email=obj.email, primary=True, verified=False)
                 EmailConfirmation.objects.create(
                     created=datetime.now(),
                     sent=datetime.now(),
@@ -452,20 +432,14 @@ class UserAdmin(BaseUserAdmin):
 
             elif "email_confirmed" in form.changed_data:
                 email_confirmed = form.cleaned_data.get("email_confirmed", False)
-                obj.status = (
-                    User.ACTIVE if email_confirmed else User.AWAITING_CONFIRMATION
-                )
+                obj.status = User.ACTIVE if email_confirmed else User.AWAITING_CONFIRMATION
 
-                email_address = EmailAddress.objects.filter(
-                    user=obj, email=obj.email
-                ).first()
+                email_address = EmailAddress.objects.filter(user=obj, email=obj.email).first()
                 if email_address:
                     email_address.verified = email_confirmed
                     email_address.save()
                 else:
-                    EmailAddress.objects.create(
-                        user=obj, email=obj.email, primary=True, verified=False
-                    )
+                    EmailAddress.objects.create(user=obj, email=obj.email, primary=True, verified=False)
 
             if "is_active" in form.changed_data:
                 is_active = form.cleaned_data.get("is_active", False)
@@ -503,9 +477,9 @@ class UserAdmin(BaseUserAdmin):
     def delete_model(self, request, obj):
         EmailAddress.objects.filter(user=obj).delete()
         obj.subscription_set.all().delete()
-        obj.representativerequest_set.filter(
-            status=RepresentativeRequest.CREATED
-        ).update(status=RepresentativeRequest.REJECTED)
+        obj.representativerequest_set.filter(status=RepresentativeRequest.CREATED).update(
+            status=RepresentativeRequest.REJECTED
+        )
 
         obj.deleted = True
         obj.deleted_on = timezone.now()

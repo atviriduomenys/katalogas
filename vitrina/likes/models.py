@@ -32,9 +32,7 @@ class UserVote(models.Model):
     rating = models.IntegerField()
     dataset = models.ForeignKey(Dataset, models.CASCADE, blank=True, null=True)
     user = models.ForeignKey(User, models.CASCADE, blank=True, null=True)
-    harvested = models.ForeignKey(
-        HarvestingResult, models.CASCADE, blank=True, null=True
-    )
+    harvested = models.ForeignKey(HarvestingResult, models.CASCADE, blank=True, null=True)
 
     class Meta:
         managed = True

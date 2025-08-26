@@ -27,7 +27,8 @@ from vitrina.datasets.models import (
     DatasetReport,
     Contact,
     GeoportalDataServiceTypeValue,
-    DCATResourceSubclass, DatasetRelation,
+    DCATResourceSubclass,
+    DatasetRelation,
 )
 from vitrina.filters import FormatFilter
 from vitrina.helpers import get_current_domain
@@ -80,17 +81,9 @@ class DatasetLateFilter(admin.SimpleListFilter):
         late_ids = []
         not_late_ids = []
         for obj in queryset:
-            if (
-                distribution := obj.datasetdistribution_set.filter(
-                    modified__isnull=False
-                )
-                .order_by("-modified")
-                .first()
-            ):
+            if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by("-modified").first():
                 if obj.frequency and obj.frequency.hours:
-                    need_to_modify = distribution.modified + timedelta(
-                        hours=obj.frequency.hours
-                    )
+                    need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
                     now = timezone.now()
                     if need_to_modify < now:
                         late_ids.append(obj.id)
@@ -148,9 +141,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
             translations__title__isnull=False,
             status=Dataset.HAS_DATA,
         ).distinct()
-        queryset = queryset.annotate(
-            representative_emails=ArrayAgg("representatives__email")
-        )
+        queryset = queryset.annotate(representative_emails=ArrayAgg("representatives__email"))
         return queryset
 
     def organization_display(self, obj):
@@ -197,17 +188,13 @@ class DatasetReportAdmin(admin.ModelAdmin):
             title = obj.title[:40] + "..."
         else:
             title = obj.title
-        return format_html(
-            '<a href="{}" target="_blank">{}</a>', obj.get_absolute_url(), title
-        )
+        return format_html('<a href="{}" target="_blank">{}</a>', obj.get_absolute_url(), title)
 
     title_display.short_description = _("Duomenų rinkinys")
     title_display.allow_tags = True
 
     def coordinators_display(self, obj):
-        coordinators = obj.representatives.filter(
-            role=Representative.COORDINATOR
-        ).values_list("email", flat=True)
+        coordinators = obj.representatives.filter(role=Representative.COORDINATOR).values_list("email", flat=True)
         if coordinators:
             return mark_safe("<br/>".join(coordinators))
         return "-"
@@ -216,9 +203,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
     coordinators_display.allow_tags = True
 
     def managers_display(self, obj):
-        managers = obj.representatives.filter(role=Representative.MANAGER).values_list(
-            "email", flat=True
-        )
+        managers = obj.representatives.filter(role=Representative.MANAGER).values_list("email", flat=True)
         if managers:
             return mark_safe("<br/>".join(managers))
         return "-"
@@ -241,16 +226,10 @@ class DatasetReportAdmin(admin.ModelAdmin):
             return obj.frequency.title
         return "-"
 
-    frequency_display.short_description = mark_safe(
-        _("Duomenų atnaujinimo</br>periodiškumas")
-    )
+    frequency_display.short_description = mark_safe(_("Duomenų atnaujinimo</br>periodiškumas"))
 
     def spinta_modified_display(self, obj):
-        if (
-            distribution := obj.datasetdistribution_set.filter(modified__isnull=False)
-            .order_by("-modified")
-            .first()
-        ):
+        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by("-modified").first():
             if (
                 distribution.format
                 and distribution.format.extension in (FormatName.API, FormatName.UAPI)
@@ -261,36 +240,22 @@ class DatasetReportAdmin(admin.ModelAdmin):
                 download_url = urlparse(distribution.download_url)
                 path_parts = [p for p in download_url.path.split("/") if p]
 
-                if (
-                    path_parts
-                    and path_parts[-1] != ":ns"
-                    and path_parts[-1][0].isupper()
-                ):
+                if path_parts and path_parts[-1] != ":ns" and path_parts[-1][0].isupper():
                     is_model_url = True
 
                 if is_model_url:
-                    latest_change = get_data_from_spinta(
-                        download_url.path, ":changes/-1/", timeout=10
-                    )
+                    latest_change = get_data_from_spinta(download_url.path, ":changes/-1/", timeout=10)
                     latest_change = latest_change.get("_data")
-                    modified = (
-                        latest_change[0].get("_created") if latest_change else None
-                    )
+                    modified = latest_change[0].get("_created") if latest_change else None
                 else:
                     models = get_data_from_spinta(download_url.path)
                     models = models.get("_data", [])
 
                     for model in models:
                         if model_name := model.get("name"):
-                            latest_change = get_data_from_spinta(
-                                model_name, ":changes/-1/", timeout=10
-                            )
+                            latest_change = get_data_from_spinta(model_name, ":changes/-1/", timeout=10)
                             latest_change = latest_change.get("_data")
-                            latest_change_date = (
-                                latest_change[0].get("_created")
-                                if latest_change
-                                else None
-                            )
+                            latest_change_date = latest_change[0].get("_created") if latest_change else None
 
                             if latest_change_date:
                                 if not modified:
@@ -303,35 +268,21 @@ class DatasetReportAdmin(admin.ModelAdmin):
                     return modified.strftime("%Y-%m-%d %H:%M")
         return "-"
 
-    spinta_modified_display.short_description = mark_safe(
-        _("Duomenys atnaujinti</br>saugykloje")
-    )
+    spinta_modified_display.short_description = mark_safe(_("Duomenys atnaujinti</br>saugykloje"))
 
     def distribution_modified_display(self, obj):
-        if (
-            distribution := obj.datasetdistribution_set.filter(modified__isnull=False)
-            .order_by("-modified")
-            .first()
-        ):
+        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by("-modified").first():
             tz = pytz.timezone(settings.TIME_ZONE)
             return distribution.modified.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         return "-"
 
-    distribution_modified_display.short_description = mark_safe(
-        _("Metaduomenys atnaujinti</br>kataloge")
-    )
+    distribution_modified_display.short_description = mark_safe(_("Metaduomenys atnaujinti</br>kataloge"))
 
     def _is_late_for(self, obj):
         text = ""
-        if (
-            distribution := obj.datasetdistribution_set.filter(modified__isnull=False)
-            .order_by("-modified")
-            .first()
-        ):
+        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by("-modified").first():
             if obj.frequency and obj.frequency.hours:
-                need_to_modify = distribution.modified + timedelta(
-                    hours=obj.frequency.hours
-                )
+                need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
                 now = timezone.now()
                 if need_to_modify < now:
                     late_for = now - need_to_modify
@@ -349,15 +300,9 @@ class DatasetReportAdmin(admin.ModelAdmin):
         return text
 
     def _is_late_for_days(self, obj):
-        if (
-            distribution := obj.datasetdistribution_set.filter(modified__isnull=False)
-            .order_by("-modified")
-            .first()
-        ):
+        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by("-modified").first():
             if obj.frequency and obj.frequency.hours:
-                need_to_modify = distribution.modified + timedelta(
-                    hours=obj.frequency.hours
-                )
+                need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
                 now = timezone.now()
                 if need_to_modify < now:
                     late_for = now - need_to_modify
@@ -415,17 +360,13 @@ class DatasetReportAdmin(admin.ModelAdmin):
 
     def _get_dataset_report(self, cols, queryset, request):
         for item in queryset:
-            coordinators = item.representatives.filter(
-                role=Representative.COORDINATOR
-            ).values_list("email", flat=True)
+            coordinators = item.representatives.filter(role=Representative.COORDINATOR).values_list("email", flat=True)
             if coordinators:
                 coordinators = "\n".join(coordinators)
             else:
                 coordinators = "-"
 
-            managers = item.representatives.filter(
-                role=Representative.MANAGER
-            ).values_list("email", flat=True)
+            managers = item.representatives.filter(role=Representative.MANAGER).values_list("email", flat=True)
             if managers:
                 managers = "\n".join(managers)
             else:
@@ -448,8 +389,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
                     "dataset_title": item.title,
                     "coordinators": coordinators,
                     "managers": managers,
-                    "dataset_url": "%s%s"
-                    % (get_current_domain(request), item.get_absolute_url()),
+                    "dataset_url": "%s%s" % (get_current_domain(request), item.get_absolute_url()),
                     "created": self.distribution_published_display(item),
                     "frequency": self.frequency_display(item),
                     "spinta_modified": self.spinta_modified_display(item),
@@ -498,6 +438,7 @@ class DatasetRelationAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request) -> QuerySet[DatasetRelation]:
         return super().get_queryset(request).select_related("dataset", "relation", "part_of")
+
 
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(DatasetRelation, DatasetRelationAdmin)

@@ -6,6 +6,7 @@ Base and helper serializers for formatting API payloads according to the Univers
 Reference:
 - UAPI Specification: https://ivpk.github.io/uapi/
 """
+
 import traceback
 from typing import Any
 
@@ -23,10 +24,8 @@ class BaseObjectMixin(serializers.Serializer):
     _created = serializers.DateTimeField(source="created")
     _updated = serializers.DateTimeField(source="modified")
 
-
     class Meta:
         fields = ("_context", "_type", "_id", "_revision", "_txn", "_created", "_updated")
-
 
     def to_representation(self, instance: Model) -> dict:
         representation = super().to_representation(instance)

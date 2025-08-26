@@ -46,9 +46,7 @@ def create_structure_objects(structure: DatasetStructure) -> None:
     ct = ContentType.objects.get_for_model(DatasetStructure)
 
     if structure.file:
-        Comment.objects.filter(
-            content_type=ct, object_id=structure.pk, type=Comment.STRUCTURE_ERROR
-        ).delete()
+        Comment.objects.filter(content_type=ct, object_id=structure.pk, type=Comment.STRUCTURE_ERROR).delete()
 
         encoding = get_encoding(structure.file.path)
         if errors := detect_read_errors(structure.file.path, encoding):
@@ -64,12 +62,8 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                 if state.errors:
                     errors = state.errors
                 else:
-                    _load_comments(
-                        structure.dataset, state.manifest.comments, structure
-                    )
-                    _load_prefixes(
-                        structure.dataset, state.manifest.prefixes, structure
-                    )
+                    _load_comments(structure.dataset, state.manifest.comments, structure)
+                    _load_prefixes(structure.dataset, state.manifest.prefixes, structure)
                     _load_datasets(state, structure.dataset)
                     structure.dataset.update_level()
 
@@ -109,26 +103,14 @@ def _load_datasets(state: struct.State, dataset: Dataset):
     _clean_errors(dataset.current_structure)
 
     for i, meta in enumerate(state.manifest.datasets.values(), 1):
-        if (
-            metadata := Metadata.objects.filter(content_type=ct, name=meta.name)
-            .exclude(dataset=dataset)
-            .first()
-        ):
+        if metadata := Metadata.objects.filter(content_type=ct, name=meta.name).exclude(dataset=dataset).first():
             meta.errors.append(_(f'Duomenų išteklius "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
         elif not meta.name.isascii():
-            meta.errors.append(
-                _(
-                    f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'
-                )
-            )
+            meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
             loaded_metadata.append(metadata)
         elif any([ch.isupper() for ch in meta.name]):
-            meta.errors.append(
-                _(
-                    f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik mažosios raidės.'
-                )
-            )
+            meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik mažosios raidės.'))
             loaded_metadata.append(metadata)
         else:
             if md := dataset.metadata.filter(name=meta.name).first():
@@ -178,9 +160,7 @@ def _load_prefixes(
                 if not meta.id:
                     meta.id = pr.metadata.first().uuid
 
-            prefix = Prefix(
-                name=meta.name, uri=meta.uri, content_type=ct, object_id=obj.pk
-            )
+            prefix = Prefix(name=meta.name, uri=meta.uri, content_type=ct, object_id=obj.pk)
             prefix, metadata = _create_or_update_metadata(dataset, meta, prefix, i)
             loaded_prefixes.append(prefix)
 
@@ -189,9 +169,7 @@ def _load_prefixes(
         prefix.delete()
 
 
-def _load_enums(
-    dataset: Dataset, enums: Dict[str, List[struct.Enum]], obj: Union[Dataset, Property]
-):
+def _load_enums(dataset: Dataset, enums: Dict[str, List[struct.Enum]], obj: Union[Dataset, Property]):
     ct = ContentType.objects.get_for_model(obj)
     enum_ct = ContentType.objects.get_for_model(EnumItem)
 
@@ -202,9 +180,7 @@ def _load_enums(
     loaded_enums = []
 
     for name, enum_items in enums.items():
-        enum, created = Enum.objects.get_or_create(
-            name=name, content_type=ct, object_id=obj.pk
-        )
+        enum, created = Enum.objects.get_or_create(name=name, content_type=ct, object_id=obj.pk)
         existing_enum_items = EnumItem.objects.filter(enum=enum)
         loaded_enum_items = []
 
@@ -224,9 +200,7 @@ def _load_enums(
                     if not meta.id:
                         meta.id = en.metadata.first().uuid
                 enum_item = EnumItem(enum=enum)
-                enum_item, metadata = _create_or_update_metadata(
-                    dataset, meta, enum_item, i
-                )
+                enum_item, metadata = _create_or_update_metadata(dataset, meta, enum_item, i)
                 loaded_enum_items.append(enum_item)
 
         loaded_enums.append(enum)
@@ -256,9 +230,7 @@ def _load_params(
     loaded_params = []
 
     for name, param_items in params.items():
-        param, created = Param.objects.get_or_create(
-            name=name, content_type=ct, object_id=obj.pk
-        )
+        param, created = Param.objects.get_or_create(name=name, content_type=ct, object_id=obj.pk)
         existing_param_items = ParamItem.objects.filter(param=param)
         loaded_param_items = []
 
@@ -279,9 +251,7 @@ def _load_params(
                         meta.id = pr.metadata.first().uuid
 
                 param_item = ParamItem(param=param)
-                param_item, metadata = _create_or_update_metadata(
-                    dataset, meta, param_item, i
-                )
+                param_item, metadata = _create_or_update_metadata(dataset, meta, param_item, i)
                 loaded_param_items.append(param_item)
 
         loaded_params.append(param)
@@ -367,9 +337,7 @@ def _load_comments(dataset: Dataset, comments: List[struct.Comment], obj: models
     ct = ContentType.objects.get_for_model(obj)
     sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
 
-    existing_comments = Comment.objects.filter(
-        content_type=ct, object_id=obj.pk, type=Comment.STRUCTURE
-    )
+    existing_comments = Comment.objects.filter(content_type=ct, object_id=obj.pk, type=Comment.STRUCTURE)
     loaded_comments = []
 
     for i, meta in enumerate(comments, 1):
@@ -392,9 +360,7 @@ def _load_comments(dataset: Dataset, comments: List[struct.Comment], obj: models
 
 def _clean_errors(obj: models.Model):
     ct = ContentType.objects.get_for_model(obj)
-    Comment.objects.filter(
-        content_type=ct, object_id=obj.pk, type=Comment.STRUCTURE_ERROR
-    ).delete()
+    Comment.objects.filter(content_type=ct, object_id=obj.pk, type=Comment.STRUCTURE_ERROR).delete()
 
 
 def _create_errors(errors: List[str], obj: models.Model):
@@ -462,38 +428,25 @@ def _create_or_update_metadata(
             dataset=dataset,
         ).exists()
     ):
-        metadata = Metadata.objects.filter(
-            uuid=obj_meta.id, content_type=ct, dataset=dataset
-        ).first()
+        metadata = Metadata.objects.filter(uuid=obj_meta.id, content_type=ct, dataset=dataset).first()
 
-        type_args = (
-            ", ".join(obj_meta.type_args)
-            if hasattr(obj_meta, "type_args") and obj_meta.type_args
-            else None
-        )
+        type_args = ", ".join(obj_meta.type_args) if hasattr(obj_meta, "type_args") and obj_meta.type_args else None
         access = _parse_access(obj_meta.access)
         visibility = _parse_visibility(obj_meta.visibility)
         status = _get_status(obj_meta.status)
-        if latest_version := metadata.metadataversion_set.order_by(
-            "-version__created"
-        ).first():
+        if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
             if (
-                (
-                    isinstance(metadata.object, Dataset)
-                    and latest_version.name != obj_meta.name
-                )
+                (isinstance(metadata.object, Dataset) and latest_version.name != obj_meta.name)
                 or (
                     isinstance(metadata.object, Model)
                     and (
                         latest_version.name != obj_meta.name
-                        or none_to_string(latest_version.ref)
-                        != none_to_string(obj_meta.ref)
+                        or none_to_string(latest_version.ref) != none_to_string(obj_meta.ref)
                         or latest_version.level_given != obj_meta.level_given
                         or (
                             latest_version.base
                             and obj_meta.base
-                            and latest_version.base.model.full_name
-                            != obj_meta.base.name
+                            and latest_version.base.model.full_name != obj_meta.base.name
                         )
                         or (not latest_version.base and obj_meta.base)
                         or (latest_version.base and not obj_meta.base)
@@ -507,8 +460,7 @@ def _create_or_update_metadata(
                         or latest_version.required != obj_meta.required
                         or latest_version.unique != obj_meta.unique
                         or latest_version.type_args != type_args
-                        or none_to_string(latest_version.ref)
-                        != none_to_string(obj_meta.ref)
+                        or none_to_string(latest_version.ref) != none_to_string(obj_meta.ref)
                         or latest_version.level_given != obj_meta.level_given
                         or latest_version.access != access
                     )
@@ -516,10 +468,8 @@ def _create_or_update_metadata(
                 or (
                     isinstance(metadata.object, EnumItem)
                     and (
-                        none_to_string(latest_version.prepare)
-                        != none_to_string(obj_meta.prepare)
-                        or none_to_string(latest_version.source)
-                        != none_to_string(obj_meta.source)
+                        none_to_string(latest_version.prepare) != none_to_string(obj_meta.prepare)
+                        or none_to_string(latest_version.source) != none_to_string(obj_meta.source)
                     )
                 )
             ):
@@ -581,9 +531,7 @@ def _create_or_update_metadata(
             object_id=obj.pk,
             required=obj_meta.required if hasattr(obj_meta, "required") else None,
             unique=obj_meta.unique if hasattr(obj_meta, "unique") else None,
-            type_args=", ".join(obj_meta.type_args)
-            if hasattr(obj_meta, "type_args") and obj_meta.type_args
-            else None,
+            type_args=", ".join(obj_meta.type_args) if hasattr(obj_meta, "type_args") and obj_meta.type_args else None,
         )
     return obj, metadata
 
@@ -598,15 +546,10 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset):
                     download_url=resource_meta.source,
                 ).first()
                 if not distribution:
-                    if (
-                        not dataset.datasetdistribution_set.exists()
-                        and dataset.is_public
-                    ):
+                    if not dataset.datasetdistribution_set.exists() and dataset.is_public:
                         dataset.status = Dataset.HAS_DATA
                         dataset.save()
-                        sys_user, _ = User.objects.get_or_create(
-                            email=settings.SYSTEM_USER_EMAIL
-                        )
+                        sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
 
                         Comment.objects.create(
                             content_type=ContentType.objects.get_for_model(dataset),
@@ -640,9 +583,7 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset):
                 _clean_errors(distribution)
                 _load_comments(dataset, resource_meta.comments, distribution)
                 for model_meta in resource_meta.models.values():
-                    if model := Model.objects.filter(
-                        metadata__uuid=model_meta.id, dataset=dataset
-                    ).first():
+                    if model := Model.objects.filter(metadata__uuid=model_meta.id, dataset=dataset).first():
                         model.distribution = distribution
                         model.save()
 
@@ -667,9 +608,7 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset):
             if not dataset.datasetdistribution_set.exists() and dataset.is_public:
                 dataset.status = Dataset.HAS_DATA
                 dataset.save()
-                sys_user, _ = User.objects.get_or_create(
-                    email=settings.SYSTEM_USER_EMAIL
-                )
+                sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
 
                 Comment.objects.create(
                     content_type=ContentType.objects.get_for_model(dataset),
@@ -705,9 +644,7 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset):
         _clean_errors(distribution)
         _load_comments(dataset, resource_meta.comments, distribution)
         for model_meta in dataset_meta.models.values():
-            if model := Model.objects.filter(
-                metadata__uuid=model_meta.id, dataset=dataset
-            ).first():
+            if model := Model.objects.filter(metadata__uuid=model_meta.id, dataset=dataset).first():
                 model.distribution = distribution
                 model.save()
 
@@ -845,9 +782,7 @@ def _link_denorm_props(
     ct = ContentType.objects.get_for_model(Property)
 
     parent_prop = prop_meta.name.rsplit(".", 1)[0]
-    if parent_prop_meta := Metadata.objects.filter(
-        content_type=ct, name=parent_prop, dataset=dataset
-    ).first():
+    if parent_prop_meta := Metadata.objects.filter(content_type=ct, name=parent_prop, dataset=dataset).first():
         parent_prop = parent_prop_meta.object
     else:
         meta = struct.Property(
@@ -884,14 +819,10 @@ def _check_uri(dataset: Dataset, meta: struct.Metadata, uri: str):
             & Q(name=prefix)
         ):
             if hasattr(meta, "errors"):
-                meta.errors.append(
-                    _(f'Prefiksas "{prefix}" duomenų ištekliuje neegzistuoja.')
-                )
+                meta.errors.append(_(f'Prefiksas "{prefix}" duomenų ištekliuje neegzistuoja.'))
 
 
-def get_data_from_spinta(
-    model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30
-):
+def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30):
     if uuid:
         url = f"{SPINTA_SERVER_URL}/{model}/{uuid}/?{query}"
     else:
@@ -899,11 +830,7 @@ def get_data_from_spinta(
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:
-        return {
-            "errors": [
-                f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"
-            ]
-        }
+        return {"errors": [f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"]}
     except requests.RequestException as e:
         return {"errors": [str(e)]}
 
@@ -914,9 +841,7 @@ def get_data_from_spinta(
         return {"errors": [str(e)]}
 
 
-async def get_data_from_spinta_async(
-    model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30
-):
+async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30):
     if uuid:
         url = f"{SPINTA_SERVER_URL}/{model}/{uuid}/?{query}"
     else:
@@ -924,11 +849,7 @@ async def get_data_from_spinta_async(
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:
-        return {
-            "errors": [
-                f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"
-            ]
-        }
+        return {"errors": [f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"]}
     except requests.RequestException as e:
         return {"errors": [str(e)]}
 
@@ -952,6 +873,7 @@ def _parse_access(value: str):
             access = Metadata.OPEN
     return access
 
+
 def _parse_visibility(value: str) -> int:
     visibility_mapper = {
         "private": Metadata.PRIVATE,
@@ -960,6 +882,7 @@ def _parse_visibility(value: str) -> int:
         "public": Metadata.VISIBILITY_PUBLIC,
     }
     return visibility_mapper.get(value)
+
 
 def _get_status(value: str) -> Status:
     if value:
@@ -1046,9 +969,7 @@ def _end_marker(name):
 
 def _prefixes_to_tabular(obj: models.Model, separator: bool = False):
     ct = ContentType.objects.get_for_model(obj)
-    prefixes = Prefix.objects.filter(content_type=ct, object_id=obj.pk).order_by(
-        "metadata__order"
-    )
+    prefixes = Prefix.objects.filter(content_type=ct, object_id=obj.pk).order_by("metadata__order")
 
     first = True
     for prefix in prefixes:
@@ -1190,9 +1111,7 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False):
                     "count": meta.count,
                     "eli": meta.eli,
                     "prepare": meta.prepare,
-                    "ref": ", ".join(
-                        [prop.property.name for prop in model.property_list.all()]
-                    )
+                    "ref": ", ".join([prop.property.name for prop in model.property_list.all()])
                     if model.property_list.exists()
                     else "",
                 },
@@ -1206,9 +1125,7 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False):
 
 
 def _resource_models_to_tabular(resource: DatasetDistribution, separator: bool = False):
-    resource_models = Model.objects.filter(
-        distribution=resource, dataset=resource.dataset
-    ).order_by("metadata__order")
+    resource_models = Model.objects.filter(distribution=resource, dataset=resource.dataset).order_by("metadata__order")
     base = None
     for model in resource_models:
         if model.base and not base:
@@ -1230,9 +1147,7 @@ def _resource_models_to_tabular(resource: DatasetDistribution, separator: bool =
                     "uri": meta.uri,
                     "source": meta.source,
                     "prepare": meta.prepare,
-                    "ref": ", ".join(
-                        [prop.property.name for prop in model.property_list.all()]
-                    )
+                    "ref": ", ".join([prop.property.name for prop in model.property_list.all()])
                     if model.property_list.exists()
                     else "",
                 },
@@ -1267,9 +1182,9 @@ def _resource_to_tabular(resource: DatasetDistribution):
 
 def _comments_to_tabular(obj: models.Model):
     ct = ContentType.objects.get_for_model(obj)
-    comments = Comment.objects.filter(
-        content_type=ct, object_id=obj.pk, type=Comment.STRUCTURE
-    ).order_by("metadata__order")
+    comments = Comment.objects.filter(content_type=ct, object_id=obj.pk, type=Comment.STRUCTURE).order_by(
+        "metadata__order"
+    )
 
     first = True
     for comment in comments:
@@ -1350,6 +1265,7 @@ def _get_access(acess: int) -> str:
         return "open"
     return ""
 
+
 def _get_visibility(visibility: int) -> str:
     if visibility == Metadata.PRIVATE:
         return "private"
@@ -1361,6 +1277,7 @@ def _get_visibility(visibility: int) -> str:
         return "public"
     return ""
 
+
 def _get_title(obj: Status | None) -> str:
     return "" if obj is None else obj.codename
 
@@ -1369,9 +1286,7 @@ def _prop_ref_to_tabular(prop: Property, meta: Metadata) -> str:
     ref = meta.ref
     if meta.type == "ref":
         ref_model = _to_relative_model_name(meta.ref, meta.dataset)
-        ref_props = prop.property_list.values_list(
-            "property__metadata__name", flat=True
-        )
+        ref_props = prop.property_list.values_list("property__metadata__name", flat=True)
         if ref_props:
             ref_props = ", ".join(ref_props)
             ref = f"{ref_model}[{ref_props}]"

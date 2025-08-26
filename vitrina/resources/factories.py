@@ -10,7 +10,9 @@ from vitrina.resources.models import (
     DatasetDistribution,
     Format,
     GeoportalFormat,
-    GeoportalFormatValue, CompressionFormat, PackagingFormat,
+    GeoportalFormatValue,
+    CompressionFormat,
+    PackagingFormat,
 )
 
 

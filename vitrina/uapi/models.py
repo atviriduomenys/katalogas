@@ -36,19 +36,19 @@ class Agent(UUIDBaseModel):
         max_length=64,
         choices=AgentType.choices,
         default=AgentType.SPINTA,
-        help_text=_('Nurodoma Agento rūšis t.y. ar bus naudojama "Spinta" ar kitas sprendimas.')
+        help_text=_('Nurodoma Agento rūšis t.y. ar bus naudojama "Spinta" ar kitas sprendimas.'),
     )
     is_open_data_published = models.BooleanField(
         verbose_name=_("Atviri duomenys publikuojami Saugykloje"),
         default=False,
-        help_text=_("Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų duomenų Saugyklą.")
+        help_text=_("Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų duomenų Saugyklą."),
     )
     open_data_publish_url = models.URLField(
         _("Atvirų duomenų publikavimo nuoroda"),
         max_length=1024,
         blank=True,
         default="https://get.data.gov.lt/",
-        help_text=_("Nuoroda, kur turėtų būti publikuojami atviri duomenys.")
+        help_text=_("Nuoroda, kur turėtų būti publikuojami atviri duomenys."),
     )
     is_enabled = models.BooleanField(
         verbose_name=_("Agentas įjungtas"),
@@ -60,7 +60,7 @@ class Agent(UUIDBaseModel):
         default=False,
         help_text=_(
             "Nurodo ar Agentas yra archyvuotas. Archyvuoti agentai nėra pasiekiami įprastiems platformos vartotojams"
-        )
+        ),
     )
     service = models.ForeignKey(
         "vitrina_datasets.Dataset",
@@ -81,16 +81,14 @@ class Agent(UUIDBaseModel):
         help_text=_("Jei kliento identifikatorius egzistuoja - agentas gali vykdyti užklausas į katalogą."),
     )
 
-
     class Meta:
         constraints = [
             models.UniqueConstraint(
                 fields=["codename", "organization"],
                 condition=models.Q(is_archived=False),
-                name="unique_name_and_organization_for_not_archived_agents"
+                name="unique_name_and_organization_for_not_archived_agents",
             )
         ]
-
 
     def save(self, *args, **kwargs) -> None:
         self.codename = self.get_codename(self.title)
@@ -105,7 +103,7 @@ class Agent(UUIDBaseModel):
 
     @staticmethod
     def get_codename(title: str) -> str:
-        return slugify(title).replace('-', '_')
+        return slugify(title).replace("-", "_")
 
     @property
     def global_codename(self) -> str:
@@ -113,7 +111,9 @@ class Agent(UUIDBaseModel):
 
 
 class RequestHistory(UUIDBaseModel):
-    agent = models.ForeignKey("vitrina_uapi.Agent", on_delete=models.CASCADE, verbose_name=_("Agentas"), related_name="requesthistory")
+    agent = models.ForeignKey(
+        "vitrina_uapi.Agent", on_delete=models.CASCADE, verbose_name=_("Agentas"), related_name="requesthistory"
+    )
     endpoint = models.CharField(max_length=255, verbose_name=_("API galinis taškas"))
     method = models.CharField(max_length=10, choices=HTTPMethods.choices, verbose_name=_("HTTP metodas"))
     http_result = models.IntegerField(verbose_name=_("HTTP rezultatas"))

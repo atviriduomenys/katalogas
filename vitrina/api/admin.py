@@ -25,15 +25,15 @@ class ClientIdFilter(admin.SimpleListFilter):
 class ApiScopeInline(admin.TabularInline):
     model = ApiScope
 
-    search_fields = ('organization', 'dataset')
-    autocomplete_fields = ('organization', 'dataset')
+    search_fields = ("organization", "dataset")
+    autocomplete_fields = ("organization", "dataset")
 
 
 class ApiKeyAdmin(VersionAdmin):
     list_display = ("organization", "client_id", "client_name")
     list_filter = [ClientIdFilter]
-    search_fields = ("organization", 'representative', 'project')
-    autocomplete_fields = ('organization', 'representative', 'project')
+    search_fields = ("organization", "representative", "project")
+    autocomplete_fields = ("organization", "representative", "project")
     inlines = [ApiScopeInline]
 
 

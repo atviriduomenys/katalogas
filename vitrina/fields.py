@@ -96,12 +96,8 @@ class FilerFieldMixin:
             if self.upload_to:
                 folders = self.upload_to.split("/")
                 for folder_name in folders:
-                    current_folder, created = Folder.objects.get_or_create(
-                        name=folder_name, parent=current_folder
-                    )
-            file = self.filer_model.objects.create(
-                file=file, original_filename=file.name, folder=current_folder
-            )
+                    current_folder, created = Folder.objects.get_or_create(name=folder_name, parent=current_folder)
+            file = self.filer_model.objects.create(file=file, original_filename=file.name, folder=current_folder)
         return file
 
 
@@ -146,9 +142,7 @@ class MultipleFileInput(ClearableFileInput):
                     file = File.objects.get(pk=val)
                     res.append(
                         {
-                            "value_text": pathlib.Path(file.file.name).name
-                            if file.file
-                            else "",
+                            "value_text": pathlib.Path(file.file.name).name if file.file else "",
                             "url": file.file.url,
                         }
                     )
@@ -161,11 +155,7 @@ class MultipleFileInput(ClearableFileInput):
                 if isinstance(val, int):
                     file = File.objects.get(pk=val)
                     files.append(file)
-        return (
-            all([super(MultipleFileInput, self).is_initial(file) for file in files])
-            if files
-            else False
-        )
+        return all([super(MultipleFileInput, self).is_initial(file) for file in files]) if files else False
 
 
 class MultipleFilerField(FileField):
@@ -205,12 +195,8 @@ class MultipleFilerField(FileField):
             if self.upload_to:
                 folders = self.upload_to.split("/")
                 for folder_name in folders:
-                    current_folder, created = Folder.objects.get_or_create(
-                        name=folder_name, parent=current_folder
-                    )
-            file = File.objects.create(
-                file=file, original_filename=file.name, folder=current_folder
-            )
+                    current_folder, created = Folder.objects.get_or_create(name=folder_name, parent=current_folder)
+            file = File.objects.create(file=file, original_filename=file.name, folder=current_folder)
         return file
 
     def to_python(self, data):
@@ -262,15 +248,11 @@ class StringListWidget(Widget):
     template_name: str = "component/multi_input.html"
     validation_errors: list[str | None]
 
-    def value_from_datadict(
-        self, data: QueryDict, files: MultiValueDict, name: str
-    ) -> list[str]:
+    def value_from_datadict(self, data: QueryDict, files: MultiValueDict, name: str) -> list[str]:
         values = data.getlist(name)
         return [value.strip() for value in values if value.strip()]
 
-    def get_context(
-        self, name: str, value: Sequence[str] | None, attrs: Mapping[str, Any] | None
-    ) -> dict[str, Any]:
+    def get_context(self, name: str, value: Sequence[str] | None, attrs: Mapping[str, Any] | None) -> dict[str, Any]:
         context = super().get_context(name, value, attrs)
         values = value or []
         validation_errors = getattr(self, "validation_errors", [None for __ in values])

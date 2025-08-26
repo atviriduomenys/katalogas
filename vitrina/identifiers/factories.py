@@ -12,8 +12,8 @@ class AgencyFactory(DjangoModelFactory):
 
     class Meta:
         model = Agency
-        
-        
+
+
 class IdentifierFactory(DjangoModelFactory):
     notation = "test-identifier"
     resource = factory.SubFactory(DatasetFactory)

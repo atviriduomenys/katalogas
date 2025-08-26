@@ -20,9 +20,7 @@ from vitrina.settings import (
 from vitrina.users.models import User
 
 
-def get_api_key_organization_and_user(
-    request: HttpRequest, raise_error: bool = True
-) -> (Organization, User):
+def get_api_key_organization_and_user(request: HttpRequest, raise_error: bool = True) -> (Organization, User):
     organization = user = dataset = None
     publisher = False
 
@@ -48,10 +46,7 @@ def get_api_key_organization_and_user(
                 if (
                     api_key_obj
                     and api_key_obj.enabled
-                    and (
-                        not api_key_obj.expires
-                        or api_key_obj.expires > timezone.make_aware(datetime.now())
-                    )
+                    and (not api_key_obj.expires or api_key_obj.expires > timezone.make_aware(datetime.now()))
                 ):
                     if representative := api_key_obj.representative:
                         content_object = representative.content_object

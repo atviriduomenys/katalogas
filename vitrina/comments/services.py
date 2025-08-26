@@ -33,9 +33,7 @@ def get_comment_form_class(obj: models.Model = None, user: User = None) -> Type:
 
 
 def has_comment_permission(obj: models.Model = None, user: User = None) -> bool:
-    if isinstance(
-        obj, (Dataset, Model, Property, DatasetStructure, DatasetDistribution)
-    ):
+    if isinstance(obj, (Dataset, Model, Property, DatasetStructure, DatasetDistribution)):
         if isinstance(obj, (Model, DatasetStructure, DatasetDistribution)):
             dataset = obj.dataset
         elif isinstance(obj, Property):

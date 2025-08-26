@@ -24,7 +24,7 @@ def generate_dataset_name(organization: Organization, dataset_title: str) -> str
         str: A string in the format "organization_part/dataset_part", where both parts are slugified.
     """
     slugify_ascii_lower = partial(slugify, lowercase=True, allow_unicode=False)
-    organization_part = organization.name or organization.slug or organization.title 
+    organization_part = organization.name or organization.slug or organization.title
     organization_part = slugify_ascii_lower(organization_part)
     dataset_part = slugify_ascii_lower(dataset_title)
     return f"datasets/gov/{organization_part}/{dataset_part}"
@@ -47,8 +47,7 @@ def generate_unique_dataset_name(organization: Organization, dataset: Dataset) -
     base_name = generate_dataset_name(organization, dataset.title)
 
     existing_names = Metadata.objects.filter(
-        content_type=ContentType.objects.get_for_model(Dataset),
-        name__startswith=base_name
+        content_type=ContentType.objects.get_for_model(Dataset), name__startswith=base_name
     ).values_list("name", flat=True)
 
     if base_name not in existing_names:
@@ -65,4 +64,3 @@ def generate_unique_dataset_name(organization: Organization, dataset: Dataset) -
                 max_index = index + 1
 
     return f"{base_name}_{max_index}"
-

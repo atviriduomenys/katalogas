@@ -104,9 +104,7 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
     email_identifier = "coordinator-request-approved"
 
     def dispatch(self, request, *args, **kwargs):
-        self.representative_request = get_object_or_404(
-            RepresentativeRequest, pk=kwargs.get("pk")
-        )
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -176,9 +174,7 @@ class RepresentativeRequestDownloadView(PermissionRequiredMixin, View):
     representative_request: RepresentativeRequest
 
     def dispatch(self, request, *args, **kwargs):
-        self.representative_request = get_object_or_404(
-            RepresentativeRequest, pk=kwargs.get("pk")
-        )
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -195,9 +191,7 @@ class RepresentativeRequestDownloadView(PermissionRequiredMixin, View):
             self.representative_request.document.read(),
             content_type="application/octet-stream",
         )
-        response["Content-Disposition"] = "inline; filename={}".format(
-            file_name.split("/")[-1]
-        )
+        response["Content-Disposition"] = "inline; filename={}".format(file_name.split("/")[-1])
         return response
 
 
@@ -210,9 +204,7 @@ class RepresentativeRequestDenyView(PermissionRequiredMixin, TemplateView):
     email_identifier = "coordinator-request-denied"
 
     def dispatch(self, request, *args, **kwargs):
-        self.representative_request = get_object_or_404(
-            RepresentativeRequest, pk=kwargs.get("pk")
-        )
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -245,9 +237,7 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
     template_name = "confirm_suspend.html"
 
     def dispatch(self, request, *args, **kwargs):
-        self.representative_request = get_object_or_404(
-            RepresentativeRequest, pk=kwargs.get("pk")
-        )
+        self.representative_request = get_object_or_404(RepresentativeRequest, pk=kwargs.get("pk"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -267,14 +257,10 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
             role=Representative.COORDINATOR,
         ).first()
         user_to_grant_coordiantor_rights = self.request.POST.get("user")
-        user_to_grant_coordiantor_rights = User.objects.filter(
-            email=user_to_grant_coordiantor_rights
-        ).first()
+        user_to_grant_coordiantor_rights = User.objects.filter(email=user_to_grant_coordiantor_rights).first()
         representative_role.user = user_to_grant_coordiantor_rights
         representative_role.save()
-        user_to_grant_coordiantor_rights.organization = (
-            self.representative_request.organization
-        )
+        user_to_grant_coordiantor_rights.organization = self.representative_request.organization
         user_to_grant_coordiantor_rights.save()
         self.representative_request.user = user_to_grant_coordiantor_rights
         self.representative_request.save()
@@ -307,12 +293,9 @@ class OrganizationListView(SearchView):
         query = self.request.GET.get("q", "")
         context["q"] = query
 
-        jurisdictions = Organization.public.values_list(
-            "jurisdiction_id", flat=True
-        ).distinct()
+        jurisdictions = Organization.public.values_list("jurisdiction_id", flat=True).distinct()
         jurisdictions_objects = {
-            jurisdiction: AreaOfManagement.objects.filter(id=jurisdiction).first()
-            for jurisdiction in jurisdictions
+            jurisdiction: AreaOfManagement.objects.filter(id=jurisdiction).first() for jurisdiction in jurisdictions
         }
 
         context["jurisdictions"] = [
@@ -330,19 +313,13 @@ class OrganizationListView(SearchView):
             for aom_id, aom_object in jurisdictions_objects.items()
             if filtered_queryset.filter(jurisdiction=aom_id)
         ]
-        context["jurisdictions"] = sorted(
-            context["jurisdictions"], key=lambda x: x["count"], reverse=True
-        )
+        context["jurisdictions"] = sorted(context["jurisdictions"], key=lambda x: x["count"], reverse=True)
 
         selected_jurisdiction_id = self.request.GET.get("jurisdiction")
         if selected_jurisdiction_id is None or not selected_jurisdiction_id.isdigit():
             selected_jurisdiction_id = None
-        selected_jurisdiction = AreaOfManagement.objects.filter(
-            id=selected_jurisdiction_id
-        ).first()
-        context["selected_jurisdiction"] = (
-            str(selected_jurisdiction) if selected_jurisdiction else None
-        )
+        selected_jurisdiction = AreaOfManagement.objects.filter(id=selected_jurisdiction_id).first()
+        context["selected_jurisdiction"] = str(selected_jurisdiction) if selected_jurisdiction else None
 
         context["jurisdiction_query"] = self.request.GET.get("jurisdiction", "")
         return context
@@ -372,9 +349,7 @@ class OrganizationManagementsView(OrganizationListView):
         frequency, ff = get_frequency_and_format(duration)
         end_date = datetime.now()
         start_date = get_start_date_based_on_frequency(frequency, end_date)
-        labels = pd.period_range(
-            start=start_date, end=end_date, freq=frequency
-        ).tolist()
+        labels = pd.period_range(start=start_date, end=end_date, freq=frequency).tolist()
         values = get_values_for_frequency(frequency, "created")
 
         for jur in jurisdictions:
@@ -383,9 +358,7 @@ class OrganizationManagementsView(OrganizationListView):
 
             if indicator == "organization-count":
                 items = (
-                    Organization.objects.filter(
-                        pk__in=jurisdiction_orgs.values_list("pk", flat=True)
-                    )
+                    Organization.objects.filter(pk__in=jurisdiction_orgs.values_list("pk", flat=True))
                     .values(*values)
                     .annotate(count=Count("pk"))
                 )
@@ -438,9 +411,7 @@ class OrganizationManagementsView(OrganizationListView):
             time_chart_data.append(dt)
 
         if sorting == "sort-desc":
-            jurisdictions = sorted(
-                jurisdictions, key=lambda x: x["count"], reverse=True
-            )
+            jurisdictions = sorted(jurisdictions, key=lambda x: x["count"], reverse=True)
         elif sorting == "sort-asc":
             jurisdictions = sorted(jurisdictions, key=lambda x: x["count"])
         max_count = max([x["count"] for x in jurisdictions]) if jurisdictions else 0
@@ -461,9 +432,7 @@ class OrganizationManagementsView(OrganizationListView):
         context["duration"] = duration
 
         context["has_time_graph"] = True
-        context["options"] = get_stats_filter_options_based_on_model(
-            Organization, duration, sorting, indicator
-        )
+        context["options"] = get_stats_filter_options_based_on_model(Organization, duration, sorting, indicator)
         return context
 
 
@@ -488,9 +457,7 @@ class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, DetailView):
         context_data = super().get_context_data(**kwargs)
         organization: Organization = self.object
         context_data["ancestors"] = organization.get_ancestors()
-        context_data["can_view_members"] = has_perm(
-            self.request.user, Action.VIEW, Representative, organization
-        )
+        context_data["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, organization)
         context_data["can_view_contacts"] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -603,15 +570,11 @@ class OrganizationContactsView(
             | Q(content_type=org_content_type, object_id=publisher_org)
             | Q(
                 content_type=ContentType.objects.get_for_model(User),
-                object_id__in=User.objects.filter(
-                    organization=self.object.pk
-                ).values_list("id", flat=True),
+                object_id__in=User.objects.filter(organization=self.object.pk).values_list("id", flat=True),
             )
             | Q(
                 content_type=ContentType.objects.get_for_model(User),
-                object_id__in=User.objects.filter(
-                    organization=publisher_org
-                ).values_list("id", flat=True),
+                object_id__in=User.objects.filter(organization=publisher_org).values_list("id", flat=True),
             )
         ).order_by("content_type", "email")
         return queryset
@@ -664,9 +627,7 @@ class ContactCreateView(
         return kwargs
 
     def get_success_url(self):
-        return reverse(
-            "organization-contacts", kwargs={"pk": self.kwargs.get("organization_id")}
-        )
+        return reverse("organization-contacts", kwargs={"pk": self.kwargs.get("organization_id")})
 
     def has_permission(self):
         return has_perm(self.request.user, Action.CREATE, Contact, self.organization)
@@ -686,16 +647,12 @@ class ContactCreateView(
             Contact,
             self.organization,
         )
-        context["contact_url"] = reverse(
-            "organization-contacts", args=[self.organization.pk]
-        )
+        context["contact_url"] = reverse("organization-contacts", args=[self.organization.pk])
         context["current_title"] = _("Tvarkytojo pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
         }
         context["organization_id"] = self.organization.pk
         return context
@@ -725,9 +682,7 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
     organization: Organization
 
     def dispatch(self, request, *args, **kwargs):
-        self.organization = get_object_or_404(
-            Organization, pk=kwargs.get("organization_id")
-        )
+        self.organization = get_object_or_404(Organization, pk=kwargs.get("organization_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
@@ -740,9 +695,7 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         return has_perm(self.request.user, Action.UPDATE, contact)
 
     def get_success_url(self):
-        return reverse(
-            "organization-contacts", kwargs={"pk": self.kwargs.get("organization_id")}
-        )
+        return reverse("organization-contacts", kwargs={"pk": self.kwargs.get("organization_id")})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -759,16 +712,12 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
             Contact,
             self.organization,
         )
-        context["representative_url"] = reverse(
-            "organization-members", args=[self.organization.pk]
-        )
+        context["representative_url"] = reverse("organization-members", args=[self.organization.pk])
         context["current_title"] = _("Kontaktų redagavimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
         }
         context["organization_id"] = self.organization.pk
         return context
@@ -804,14 +753,10 @@ class ContactDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return context
 
     def get_success_url(self):
-        return reverse(
-            "organization-contacts", kwargs={"pk": self.kwargs.get("organization_id")}
-        )
+        return reverse("organization-contacts", kwargs={"pk": self.kwargs.get("organization_id")})
 
 
-class OrganizationUpdateView(
-    LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView
-):
+class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
     model = Organization
     form_class = OrganizationUpdateForm
     template_name = "base_form.html"
@@ -860,7 +805,7 @@ class OrganizationUpdateView(
             node.move(parent_org, "sorted-child")
             self.object.refresh_from_db()
 
-        if 'jurisdiction' in form.changed_data:
+        if "jurisdiction" in form.changed_data:
             # save related datasets to update search index
             for dataset in self.object.dataset_set.all():
                 dataset.save()
@@ -884,9 +829,7 @@ class OrganizationCreateSearchUpdateView(TemplateView):
     def get_context_data(self, **kwargs):
         q = self.request.GET.get("q")
         context = super().get_context_data(**kwargs)
-        data = get_data_from_spinta(
-            model=self.model_uri, query=self.query_uri.format(q)
-        ).get("_data", [])
+        data = get_data_from_spinta(model=self.model_uri, query=self.query_uri.format(q)).get("_data", [])
         company_names = [data_item.get("ja_pavadinimas") for data_item in data]
         extra_context = {"company_names": company_names}
         context.update(extra_context)
@@ -913,9 +856,7 @@ class OrganizationCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
 
     def dispatch(self, request, *args, **kwargs):
         q = request.GET.get("q")
-        data = get_data_from_spinta(
-            model=self.model_uri, query=self.query_uri.format(q)
-        )
+        data = get_data_from_spinta(model=self.model_uri, query=self.query_uri.format(q))
         errors = data.get("errors", [])
         if errors:
             errors = [_("Nepavyko atnaujinti duomenų iš JAR:")] + errors
@@ -978,9 +919,7 @@ class OrganizationCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
         return reverse("organization-detail", kwargs={"pk": organization.pk})
 
 
-DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER = (
-    "auth-org-representative-without-credentials"
-)
+DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER = "auth-org-representative-without-credentials"
 ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER = "organization-member-add"
 
 
@@ -1006,14 +945,10 @@ class RepresentativeCreateView(
         return kwargs
 
     def get_success_url(self):
-        return reverse(
-            "organization-members", kwargs={"pk": self.kwargs.get("organization_id")}
-        )
+        return reverse("organization-members", kwargs={"pk": self.kwargs.get("organization_id")})
 
     def has_permission(self):
-        return has_perm(
-            self.request.user, Action.CREATE, Representative, self.organization
-        )
+        return has_perm(self.request.user, Action.CREATE, Representative, self.organization)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1030,16 +965,12 @@ class RepresentativeCreateView(
             Contact,
             self.object,
         )
-        context["representative_url"] = reverse(
-            "organization-members", args=[self.organization.pk]
-        )
+        context["representative_url"] = reverse("organization-members", args=[self.organization.pk])
         context["current_title"] = _("Tvarkytojo pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
         }
         context["organization_id"] = self.organization.pk
         return context
@@ -1071,14 +1002,10 @@ class RepresentativeCreateView(
                 get_current_domain(self.request),
                 reverse("organization-detail", kwargs={"pk": self.object.object_id}),
             )
-            manage_subscriptions_for_representative(
-                subscribe, user, self.organization, link
-            )
+            manage_subscriptions_for_representative(subscribe, user, self.organization, link)
         elif organization and self.request.user.is_superuser:
             if self.object.role == Representative.COORDINATOR:
-                form.add_error(
-                    "role", _("Organizacijai gali būti suteikta tik tvarkytojo rolė")
-                )
+                form.add_error("role", _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
                 return self.form_invalid(form)
             self.object.organization = organization
             self.object.save()
@@ -1096,9 +1023,7 @@ class RepresentativeCreateView(
             ):
                 self.object.save()
                 serializer = URLSafeSerializer(settings.SECRET_KEY)
-                token = serializer.dumps(
-                    {"representative_id": self.object.pk, "subscribe": subscribe}
-                )
+                token = serializer.dumps({"representative_id": self.object.pk, "subscribe": subscribe})
                 url = "%s%s" % (
                     get_current_domain(self.request),
                     reverse("representative-register", kwargs={"token": token}),
@@ -1111,16 +1036,12 @@ class RepresentativeCreateView(
                     {"organization": self.organization.title, "link": url},
                 )
 
-                messages.info(
-                    self.request, _("Naudotojui išsiųstas laiškas dėl registracijos")
-                )
+                messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
         self.object.save()
 
         if self.object.has_api_access:
             api_key = secrets.token_urlsafe()
-            ApiKey.objects.create(
-                api_key=hash_api_key(api_key), enabled=True, representative=self.object
-            )
+            ApiKey.objects.create(api_key=hash_api_key(api_key), enabled=True, representative=self.object)
             serializer = URLSafeSerializer(settings.SECRET_KEY)
             api_key = serializer.dumps({"api_key": api_key})
             return HttpResponseRedirect(
@@ -1146,9 +1067,7 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
     organization: Organization
 
     def dispatch(self, request, *args, **kwargs):
-        self.organization = get_object_or_404(
-            Organization, pk=kwargs.get("organization_id")
-        )
+        self.organization = get_object_or_404(Organization, pk=kwargs.get("organization_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_kwargs(self):
@@ -1161,9 +1080,7 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
         return has_perm(self.request.user, Action.UPDATE, representative)
 
     def get_success_url(self):
-        return reverse(
-            "organization-members", kwargs={"pk": self.kwargs.get("organization_id")}
-        )
+        return reverse("organization-members", kwargs={"pk": self.kwargs.get("organization_id")})
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1180,16 +1097,12 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
             Contact,
             self.object,
         )
-        context["representative_url"] = reverse(
-            "organization-members", args=[self.organization.pk]
-        )
+        context["representative_url"] = reverse("organization-members", args=[self.organization.pk])
         context["current_title"] = _("Tvarkytojo redagavimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
         }
         context["organization_id"] = self.organization.pk
         return context
@@ -1205,9 +1118,7 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Upda
             get_current_domain(self.request),
             reverse("organization-detail", kwargs={"pk": self.organization.pk}),
         )
-        manage_subscriptions_for_representative(
-            subscribe, self.object.user, self.organization, link
-        )
+        manage_subscriptions_for_representative(subscribe, self.object.user, self.organization, link)
         if self.object.has_api_access:
             if not self.object.apikey_set.exists():
                 api_key = secrets.token_urlsafe()
@@ -1275,9 +1186,7 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
         return context
 
     def get_success_url(self):
-        return reverse(
-            "organization-members", kwargs={"pk": self.kwargs.get("organization_id")}
-        )
+        return reverse("organization-members", kwargs={"pk": self.kwargs.get("organization_id")})
 
     def delete(self, request, *args, **kwargs):
         obj = self.get_object()
@@ -1305,9 +1214,7 @@ class RepresentativeRegisterView(RegisterView):
         except BadSignature:
             return redirect("register-link-expired")
 
-        self.representative = Representative.objects.filter(
-            pk=self.data.get("representative_id")
-        ).first()
+        self.representative = Representative.objects.filter(pk=self.data.get("representative_id")).first()
         if not self.representative or self.representative.user:
             return redirect("register-link-expired")
         return super().dispatch(request, *args, **kwargs)
@@ -1322,17 +1229,13 @@ class RepresentativeRegisterView(RegisterView):
         if form.is_valid():
             user = form.save()
 
-            EmailAddress.objects.create(
-                user=user, email=user.email, primary=True, verified=True
-            )
+            EmailAddress.objects.create(user=user, email=user.email, primary=True, verified=True)
             user.status = User.ACTIVE
             user.save()
 
             subscribe = self.data.get("subscribe")
             try:
-                representative = Representative.objects.get(
-                    pk=self.data.get("representative_id")
-                )
+                representative = Representative.objects.get(pk=self.data.get("representative_id"))
             except ObjectDoesNotExist:
                 representative = None
             if representative:
@@ -1350,9 +1253,7 @@ class RepresentativeRegisterView(RegisterView):
                             kwargs={"pk": representative.content_object.pk},
                         ),
                     )
-                    manage_subscriptions_for_representative(
-                        subscribe, user, representative.content_object, link
-                    )
+                    manage_subscriptions_for_representative(subscribe, user, representative.content_object, link)
 
                 elif isinstance(representative.content_object, Dataset):
                     user.organization = representative.content_object.organization
@@ -1365,21 +1266,15 @@ class RepresentativeRegisterView(RegisterView):
                             kwargs={"pk": representative.content_object.pk},
                         ),
                     )
-                    manage_dataset_subscriptions(
-                        subscribe, user, representative.content_object, link
-                    )
+                    manage_dataset_subscriptions(subscribe, user, representative.content_object, link)
 
             # update related representatives
-            if reps := Representative.objects.filter(
-                email=user.email, user__isnull=True
-            ):
+            if reps := Representative.objects.filter(email=user.email, user__isnull=True):
                 reps.update(user=user)
 
             login(request, user, backend="django.contrib.auth.backends.ModelBackend")
             return redirect("home")
-        return render(
-            request=request, template_name=self.template_name, context={"form": form}
-        )
+        return render(request=request, template_name=self.template_name, context={"form": form})
 
 
 class RepresentativeRegisterExpiredView(TemplateView):
@@ -1411,9 +1306,9 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
     def form_valid(self, form):
         org = form.cleaned_data.get("organization")
         if org and not isinstance(org, Organization):
-            org_data = get_data_from_spinta(
-                model=self.jar_model_uri, query=self.jar_query_uri.format(org)
-            ).get("_data")[0]
+            org_data = get_data_from_spinta(model=self.jar_model_uri, query=self.jar_query_uri.format(org)).get(
+                "_data"
+            )[0]
             org = Organization.add_root(
                 title=org_data.get("ja_pavadinimas"),
                 address=org_data.get("pilnas_adresas"),
@@ -1458,9 +1353,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
                     object_id=org.pk,
                 )
                 task.save()
-            url = "{}/coordinator-admin/vitrina_orgs/representativerequest/".format(
-                get_current_domain(self.request)
-            )
+            url = "{}/coordinator-admin/vitrina_orgs/representativerequest/".format(get_current_domain(self.request))
             email_data = prepare_email_by_identifier(
                 self.email_identifier,
                 self.base_template_content,
@@ -1500,21 +1393,15 @@ class OrganizationPlanView(PermissionRequiredMixin, PlanMixin, TemplateView):
             context["plans"] = self.organization.receiver_plans.filter(is_closed=True)
         else:
             context["plans"] = self.organization.receiver_plans.filter(is_closed=False)
-        context["can_manage_plans"] = has_perm(
-            self.request.user, Action.PLAN, self.organization
-        )
-        context["can_view_members"] = has_perm(
-            self.request.user, Action.VIEW, Representative, self.organization
-        )
+        context["can_manage_plans"] = has_perm(self.request.user, Action.PLAN, self.organization)
+        context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.organization)
         context["can_view_contacts"] = has_perm(
             self.request.user,
             Action.VIEW,
             Contact,
             self.organization,
         )
-        context["history_url"] = reverse(
-            "organization-plans-history", args=[self.organization.pk]
-        )
+        context["history_url"] = reverse("organization-plans-history", args=[self.organization.pk])
         context["history_url_name"] = "organization-plans-hisotry"
         context["can_manage_history"] = has_perm(
             self.request.user,
@@ -1548,9 +1435,7 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateV
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
             reverse("organization-plans", args=[self.organization.pk]): _("Planas"),
         }
         return context
@@ -1569,9 +1454,7 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, CreateV
         return redirect(reverse("organization-plans", args=[self.organization.pk]))
 
 
-class OrganizationApiKeysView(
-    LoginRequiredMixin, PermissionRequiredMixin, TemplateView
-):
+class OrganizationApiKeysView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/orgs/apikeys.html"
 
     object: Organization
@@ -1655,9 +1538,7 @@ class OrganizationApiKeysView(
             reverse("organization-detail", args=[self.object.pk]): self.object.title,
             reverse("organization-apikeys", args=[self.object.pk]): _("Raktai"),
         }
-        context_data["can_view_members"] = has_perm(
-            self.request.user, Action.VIEW, Representative, self.object
-        )
+        context_data["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.object)
         context_data["can_view_contacts"] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -1667,30 +1548,22 @@ class OrganizationApiKeysView(
         context_data["can_update_organization"] = has_perm(
             self.request.user, Action.UPDATE, Representative, self.object
         )
-        context_data["can_manage_keys"] = has_perm(
-            self.request.user, Action.MANAGE_KEYS, self.object
-        )
+        context_data["can_manage_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, self.object)
         if msg:
             context_data["success_message"] = msg
         context_data["organization_id"] = self.object.pk
         context_data["organization"] = self.object
         internal = ApiKey.objects.filter(organization=self.object)
-        scopes = ApiScope.objects.filter(organization=self.object).values_list(
-            "key_id", flat=True
-        )
+        scopes = ApiScope.objects.filter(organization=self.object).values_list("key_id", flat=True)
         external = ApiKey.objects.filter(pk__in=scopes).exclude(pk__in=internal)
-        project_ids = Project.objects.filter(
-            datasets__organization=self.object
-        ).values_list("pk", flat=True)
+        project_ids = Project.objects.filter(datasets__organization=self.object).values_list("pk", flat=True)
         project_keys = ApiKey.objects.filter(project_id__in=project_ids)
         context_data["internal_keys"] = internal
         context_data["external_keys"] = external | project_keys
         return context_data
 
 
-class OrganizationApiKeysDetailView(
-    LoginRequiredMixin, PermissionRequiredMixin, TemplateView
-):
+class OrganizationApiKeysDetailView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/orgs/apikeys_detail.html"
     pk_url_kwarg = "apikey_id"
 
@@ -1717,9 +1590,7 @@ class OrganizationApiKeysDetailView(
             reverse("organization-apikeys", args=[self.object.pk]): _("Raktai"),
         }
 
-        context_data["can_view_members"] = has_perm(
-            self.request.user, Action.VIEW, Representative, self.object
-        )
+        context_data["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.object)
         context_data["can_view_contacts"] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -1855,9 +1726,7 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, CreateView):
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
             reverse("organization-apikeys", args=[self.organization.pk]): _("Raktai"),
         }
         return context
@@ -1878,9 +1747,7 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, CreateView):
         error = False
         err_message = ""
         try:
-            response = get_auth_session().post(
-                SPINTA_SERVER_URL + "/auth/clients", json=data, headers=headers
-            )
+            response = get_auth_session().post(SPINTA_SERVER_URL + "/auth/clients", json=data, headers=headers)
         except requests.exceptions.RequestException as e:
             error = True
             err_message = f"Error creating apikey: {api_key}, {e}"
@@ -1901,10 +1768,7 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, CreateView):
                         )
                     messages.info(
                         self.request,
-                        _(
-                            "API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:"
-                            + api_key
-                        ),
+                        _("API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas raktas:" + api_key),
                     )
             else:
                 error = True
@@ -1959,14 +1823,10 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
             error = False
             err_message = ""
             try:
-                response = get_auth_session().get(
-                    SPINTA_SERVER_URL + "/auth/clients/" + self.api_key.client_id
-                )
+                response = get_auth_session().get(SPINTA_SERVER_URL + "/auth/clients/" + self.api_key.client_id)
             except requests.exceptions.RequestException as e:
                 error = True
-                err_message = (
-                    f"Error updating key with client_id: {self.api_key.client_id}, {e}"
-                )
+                err_message = f"Error updating key with client_id: {self.api_key.client_id}, {e}"
             else:
                 if response.status_code == 200:
                     if "scopes" in response.json():
@@ -1981,9 +1841,7 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
                             if any((match := ext) in scope for ext in suffixes):
                                 code = scope.removeprefix(prefix).removesuffix(match)
                                 if code:
-                                    org = Organization.objects.filter(
-                                        name=code.removeprefix("_datasets_gov_")
-                                    ).first()
+                                    org = Organization.objects.filter(name=code.removeprefix("_datasets_gov_")).first()
                             if scope != "spinta_set_meta_fields":
                                 ApiScope.objects.create(
                                     key=self.api_key,
@@ -2003,9 +1861,7 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
             reverse("organization-apikeys", args=[self.organization.pk]): _("Raktai"),
         }
         return context
@@ -2024,17 +1880,13 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
             )
         except requests.exceptions.RequestException as e:
             error = True
-            err_message = (
-                f"Error updating apikey with client_id: {self.api_key.client_id}, {e}"
-            )
+            err_message = f"Error updating apikey with client_id: {self.api_key.client_id}, {e}"
         else:
             if response.status_code == 200:
                 self.object.save()
             else:
                 error = True
-                err_message = (
-                    f"Error updating apikey with client_id: {self.api_key.client_id}"
-                )
+                err_message = f"Error updating apikey with client_id: {self.api_key.client_id}"
         if error:
             print(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
@@ -2072,9 +1924,7 @@ class OrganizationApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
             reverse("organization-apikeys", args=[self.organization.pk]): _("Raktai"),
         }
         return context
@@ -2107,9 +1957,7 @@ class OrganizationApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
         return redirect(reverse("organization-apikeys", args=[self.organization.pk]))
 
 
-class OrganizationApiKeysDeleteView(
-    LoginRequiredMixin, PermissionRequiredMixin, DeleteView
-):
+class OrganizationApiKeysDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = ApiKey
     template_name = "confirm_delete.html"
     pk_url_kwarg = "apikey_id"
@@ -2130,22 +1978,16 @@ class OrganizationApiKeysDeleteView(
         error = False
         err_message = ""
         try:
-            response = get_auth_session().delete(
-                SPINTA_SERVER_URL + "/auth/clients/" + self.apikey.client_id
-            )
+            response = get_auth_session().delete(SPINTA_SERVER_URL + "/auth/clients/" + self.apikey.client_id)
         except requests.exceptions.RequestException as e:
             error = True
-            err_message = (
-                f"Error removing apikey with client_id: {self.apikey.client_id}, {e}"
-            )
+            err_message = f"Error removing apikey with client_id: {self.apikey.client_id}, {e}"
         else:
             if response.status_code == 204:
                 self.apikey.delete()
             else:
                 error = True
-                err_message = (
-                    f"Error removing apikey with client_id: {self.apikey.client_id}"
-                )
+                err_message = f"Error removing apikey with client_id: {self.apikey.client_id}"
         if error:
             print(err_message)
             messages.error(self.request, _("API rakto pašalinti nepavyko."))
@@ -2227,9 +2069,7 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
             )
         else:
             target_org = Organization.objects.filter(name=scope_name)
-            metadata = Metadata.objects.filter(
-                content_type=ContentType.objects.get_for_model(Dataset), name=scope_name
-            )
+            metadata = Metadata.objects.filter(content_type=ContentType.objects.get_for_model(Dataset), name=scope_name)
             if target_org.exists():
                 if target_org.get().pk != self.organization.pk:
                     organization = target_org.get()
@@ -2292,9 +2132,7 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
             )
             scope_list.append(sc)
 
-        existing = ApiScope.objects.filter(key=self.api_key).values_list(
-            "scope", flat=True
-        )
+        existing = ApiScope.objects.filter(key=self.api_key).values_list("scope", flat=True)
 
         for new in scope_list:
             if new not in existing:
@@ -2376,14 +2214,9 @@ class OrganizationApiKeysScopeChangeView(PermissionRequiredMixin, FormView):
         create_wipe = False
 
         if self.name != "set_meta_fields" and self.name != "spinta_set_meta_fields":
-            scopes = ApiScope.objects.filter(key=self.api_key).exclude(
-                scope__icontains="datasets_gov"
-            )
+            scopes = ApiScope.objects.filter(key=self.api_key).exclude(scope__icontains="datasets_gov")
             for sc in scopes:
-                if (
-                    not sc.scope == "spinta_set_meta_fields"
-                    or not sc.scope == "set_meta_fields"
-                ):
+                if not sc.scope == "spinta_set_meta_fields" or not sc.scope == "set_meta_fields":
                     if form.cleaned_data.get("read"):
                         if not any(s in sc.scope for s in read):
                             create_read = True
@@ -2424,9 +2257,7 @@ class OrganizationApiKeysScopeChangeView(PermissionRequiredMixin, FormView):
                     organization=self.organization,
                     enabled=True,
                 )
-            existing = ApiScope.objects.filter(key=self.api_key).values_list(
-                "scope", flat=True
-            )
+            existing = ApiScope.objects.filter(key=self.api_key).values_list("scope", flat=True)
             headers = {"Content-Type": "application/json; charset=utf-8"}
             data = {"scopes": list(existing)}
             error = False
@@ -2569,9 +2400,7 @@ class OrganizationApiKeysScopeObjectChangeView(PermissionRequiredMixin, FormView
                 dataset=dataset,
                 enabled=True,
             )
-        existing = ApiScope.objects.filter(key=self.api_key).values_list(
-            "scope", flat=True
-        )
+        existing = ApiScope.objects.filter(key=self.api_key).values_list("scope", flat=True)
         headers = {"Content-Type": "application/json; charset=utf-8"}
         data = {"scopes": list(existing)}
         error = False
@@ -2602,9 +2431,7 @@ class OrganizationApiKeysScopeObjectChangeView(PermissionRequiredMixin, FormView
         )
 
 
-class OrganizationApiKeysScopeDeleteView(
-    LoginRequiredMixin, PermissionRequiredMixin, TemplateView
-):
+class OrganizationApiKeysScopeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     model = ApiScope
     template_name = "confirm_delete.html"
 
@@ -2638,9 +2465,7 @@ class OrganizationApiKeysScopeDeleteView(
         scope_name = kwargs.get("scope")
         api_key = kwargs.get("apikey_id")
         if scope_name == "spinta_set_meta_fields" or scope_name == "set_meta_fields":
-            scopes = ApiScope.objects.filter(
-                key_id=api_key, scope__contains="set_meta_fields"
-            )
+            scopes = ApiScope.objects.filter(key_id=api_key, scope__contains="set_meta_fields")
             for scope in scopes:
                 scope.delete()
         elif scope_name == "(viskas)":
@@ -2656,9 +2481,7 @@ class OrganizationApiKeysScopeDeleteView(
             for scope in scopes:
                 scope.delete()
 
-        existing = ApiScope.objects.filter(key=self.api_key).values_list(
-            "scope", flat=True
-        )
+        existing = ApiScope.objects.filter(key=self.api_key).values_list("scope", flat=True)
         headers = {"Content-Type": "application/json; charset=utf-8"}
         data = {"scopes": list(existing)}
         error = False
@@ -2687,9 +2510,7 @@ class OrganizationApiKeysScopeDeleteView(
         )
 
 
-class OrganizationApiKeysScopeObjectDeleteView(
-    LoginRequiredMixin, PermissionRequiredMixin, TemplateView
-):
+class OrganizationApiKeysScopeObjectDeleteView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     model = ApiScope
     template_name = "confirm_delete.html"
 
@@ -2731,9 +2552,7 @@ class OrganizationApiKeysScopeObjectDeleteView(
         for sc in scopes:
             sc.delete()
 
-        existing = ApiScope.objects.filter(key=self.api_key).values_list(
-            "scope", flat=True
-        )
+        existing = ApiScope.objects.filter(key=self.api_key).values_list("scope", flat=True)
         headers = {"Content-Type": "application/json; charset=utf-8"}
         data = {"scopes": list(existing)}
         error = False
@@ -2787,9 +2606,7 @@ class OrganizationApiKeysScopeToggleView(PermissionRequiredMixin, View):
     def get(self, request, **kwargs):
         scope_name = kwargs.get("scope")
         if scope_name == "spinta_set_meta_fields" or scope_name == "set_meta_fields":
-            scopes = ApiScope.objects.filter(
-                key_id=self.api_key, scope__contains="set_meta_fields"
-            )
+            scopes = ApiScope.objects.filter(key_id=self.api_key, scope__contains="set_meta_fields")
             for scope in scopes:
                 if scope.enabled:
                     scope.enabled = False
@@ -2813,9 +2630,7 @@ class OrganizationApiKeysScopeToggleView(PermissionRequiredMixin, View):
                     scope.enabled = True
                 scope.save()
 
-        existing = ApiScope.objects.filter(key=self.api_key, enabled=True).values_list(
-            "scope", flat=True
-        )
+        existing = ApiScope.objects.filter(key=self.api_key, enabled=True).values_list("scope", flat=True)
         headers = {"Content-Type": "application/json; charset=utf-8"}
         data = {"scopes": list(existing)}
         error = False
@@ -2899,9 +2714,7 @@ class OrganizationApiKeysScopeObjectToggleView(PermissionRequiredMixin, View):
                 sc.enabled = True
             sc.save()
 
-        existing = ApiScope.objects.filter(key=self.api_key, enabled=True).values_list(
-            "scope", flat=True
-        )
+        existing = ApiScope.objects.filter(key=self.api_key, enabled=True).values_list("scope", flat=True)
         headers = {"Content-Type": "application/json; charset=utf-8"}
         data = {"scopes": list(existing)}
         error = False
@@ -2938,9 +2751,7 @@ class OrganizationPlansHistoryView(PlanMixin, HistoryView):
     tabs_template_name = "vitrina/orgs/tabs.html"
 
     def get_history_objects(self):
-        organization_plan_ids = Plan.objects.filter(receiver=self.object).values_list(
-            "pk", flat=True
-        )
+        organization_plan_ids = Plan.objects.filter(receiver=self.object).values_list("pk", flat=True)
         return (
             Version.objects.get_for_model(Plan)
             .filter(object_id__in=list(organization_plan_ids))
@@ -2989,9 +2800,7 @@ class OrganizationMergeView(PermissionRequiredMixin, TemplateView):
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
         }
         context["form"] = OrganizationMergeForm()
         return context
@@ -3012,21 +2821,15 @@ class OrganizationMergeView(PermissionRequiredMixin, TemplateView):
             return render(request, self.template_name, context)
 
 
-class ConfirmOrganizationMergeView(
-    RevisionMixin, PermissionRequiredMixin, TemplateView
-):
+class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/orgs/confirm_merge.html"
 
     organization: Organization
     merge_organization: Organization
 
     def dispatch(self, request, *args, **kwargs):
-        self.organization = get_object_or_404(
-            Organization, pk=kwargs.get("organization_id")
-        )
-        self.merge_organization = get_object_or_404(
-            Organization, pk=kwargs.get("merge_organization_id")
-        )
+        self.organization = get_object_or_404(Organization, pk=kwargs.get("organization_id"))
+        self.merge_organization = get_object_or_404(Organization, pk=kwargs.get("merge_organization_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -3038,9 +2841,7 @@ class ConfirmOrganizationMergeView(
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
         }
         context["organization"] = self.organization
         context["merge_organization"] = self.merge_organization
@@ -3048,9 +2849,7 @@ class ConfirmOrganizationMergeView(
         # Related objects
         context["related_objects"] = {
             _("Duomenų ištekliai"): self.organization.dataset_set.all(),
-            _(
-                "Ryšiai su duomenų ištekliais"
-            ): self.organization.datasetattribution_set.all(),
+            _("Ryšiai su duomenų ištekliais"): self.organization.datasetattribution_set.all(),
             _("Poreikiai ir pasiūlymai"): self.organization.request_set.all(),
             _("Tvarkytojai"): Representative.objects.filter(
                 content_type=ContentType.objects.get_for_model(self.organization),
@@ -3061,12 +2860,8 @@ class ConfirmOrganizationMergeView(
             _("Užduotys"): self.organization.task_set.all(),
             _("Harvestinimo operacija"): self.organization.harvestingjob_set.all(),
             _("Finansavimo planai"): self.organization.financingplan_set.all(),
-            _(
-                "Planai (organizacija paslaugų gavėjas)"
-            ): self.organization.receiver_plans.all(),
-            _(
-                "Planai (organizacija paslaugų teikėjas)"
-            ): self.organization.publisher_plans.all(),
+            _("Planai (organizacija paslaugų gavėjas)"): self.organization.receiver_plans.all(),
+            _("Planai (organizacija paslaugų teikėjas)"): self.organization.publisher_plans.all(),
         }
 
         return context
@@ -3134,9 +2929,7 @@ class ConfirmOrganizationMergeView(
 
         self.organization.delete()
 
-        request_assignments = RequestAssignment.objects.filter(
-            organization=self.organization
-        )
+        request_assignments = RequestAssignment.objects.filter(organization=self.organization)
         for request_assignment in request_assignments:
             duplicate_ra = RequestAssignment.objects.filter(
                 organization=self.merge_organization, request=request_assignment.request
@@ -3146,9 +2939,7 @@ class ConfirmOrganizationMergeView(
             else:
                 request_assignment.organization = self.merge_organization
                 request_assignment.save()
-        return redirect(
-            reverse("organization-detail", args=[self.merge_organization.pk])
-        )
+        return redirect(reverse("organization-detail", args=[self.merge_organization.pk]))
 
 
 class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
@@ -3180,12 +2971,8 @@ class RepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
-            reverse(
-                "organization-detail", args=[self.organization.pk]
-            ): self.organization.title,
-            reverse("organization-members", args=[self.organization.pk]): _(
-                "Tvarkytojai"
-            ),
+            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
+            reverse("organization-members", args=[self.organization.pk]): _("Tvarkytojai"),
         }
         return context
 
@@ -3245,9 +3032,7 @@ def create_remote_organization(request):
     org = None
 
     if not exists:
-        data = get_data_from_spinta(
-            model=model_uri, query=query_uri.format(company_code)
-        )
+        data = get_data_from_spinta(model=model_uri, query=query_uri.format(company_code))
         organization_data = data.get("_data", [])
 
         errors = data.get("errors", [])

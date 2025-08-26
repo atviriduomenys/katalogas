@@ -42,9 +42,7 @@ class Prefix(models.Model):
 
 class MetadataManager(models.Manager):
     def average_level(self):
-        avg_level = self.exclude(average_level__isnull=True).aggregate(
-            Avg("average_level")
-        )["average_level__avg"]
+        avg_level = self.exclude(average_level__isnull=True).aggregate(Avg("average_level"))["average_level__avg"]
         return round(avg_level) if avg_level is not None else None
 
 
@@ -73,46 +71,28 @@ class Metadata(models.Model):
     prepare_ast = models.JSONField(_("Formulės AST"), blank=True, null=True)
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
-    average_level = models.IntegerField(
-        _("Apskaičiuotas brandos lygis"), null=True, blank=True
-    )
-    access = models.IntegerField(
-        _("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True
-    )
+    average_level = models.IntegerField(_("Apskaičiuotas brandos lygis"), null=True, blank=True)
+    access = models.IntegerField(_("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True)
     visibility = models.PositiveIntegerField(
         _("Metaduomenų matomumas"), null=True, blank=True, validators=[MaxValueValidator(3)]
     )
-    eli = models.URLField(
-        _("Europos teisės akto identifikatorius (ELI)"), blank=True, null=True, max_length=500
-    )
-    status = models.ForeignKey(
-        Status, models.SET_NULL, verbose_name=_("Būsena"), null=True, blank=True
-    )
+    eli = models.URLField(_("Europos teisės akto identifikatorius (ELI)"), blank=True, null=True, max_length=500)
+    status = models.ForeignKey(Status, models.SET_NULL, verbose_name=_("Būsena"), null=True, blank=True)
     count = models.PositiveIntegerField(_("Eilučių kiekis"), null=True, blank=True)
-    prefix = models.ForeignKey(
-        Prefix, models.SET_NULL, verbose_name=_("Prefiksas"), null=True, blank=True
-    )
+    prefix = models.ForeignKey(Prefix, models.SET_NULL, verbose_name=_("Prefiksas"), null=True, blank=True)
     uri = models.CharField(_("Žodyno atitikmuo"), max_length=255, blank=True)
     version = models.IntegerField(_("Versija"), blank=True)
     title = models.TextField(_("Pavadinimas"), blank=True, null=True)
     description = models.TextField(_("Aprašymas"), blank=True, null=True)
     order = models.IntegerField(_("Rikiavimo tvarka"), null=True, blank=True)
-    content_type = models.ForeignKey(
-        ContentType, models.CASCADE, verbose_name=_("Objekto tipas")
-    )
+    content_type = models.ForeignKey(ContentType, models.CASCADE, verbose_name=_("Objekto tipas"))
     object_id = models.PositiveIntegerField(_("Objekto id"))
     object = GenericForeignKey("content_type", "object_id")
-    dataset = models.ForeignKey(
-        "vitrina_datasets.Dataset", models.CASCADE, verbose_name=_("Duomenų rinkinys")
-    )
+    dataset = models.ForeignKey("vitrina_datasets.Dataset", models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     required = models.BooleanField(_("Privalomas"), null=True, blank=True)
     unique = models.BooleanField(_("Unikalus"), null=True, blank=True)
-    type_args = models.CharField(
-        _("Tipo argumentai"), max_length=255, null=True, blank=True
-    )
-    metadata_version = models.ForeignKey(
-        "Version", verbose_name=_("Versija"), on_delete=models.CASCADE, null=True
-    )
+    type_args = models.CharField(_("Tipo argumentai"), max_length=255, null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", verbose_name=_("Versija"), on_delete=models.CASCADE, null=True)
     draft = models.BooleanField(
         _("Priskirta versijai"),
         default=True,
@@ -136,8 +116,7 @@ class Metadata(models.Model):
             elif ":" in self.uri:
                 prefix, name = self.uri.split(":", 1)
                 if prefix := Prefix.objects.filter(
-                    Q(name=prefix, metadata__dataset=self.dataset)
-                    | Q(name=prefix, object_id=None, content_type=None)
+                    Q(name=prefix, metadata__dataset=self.dataset) | Q(name=prefix, object_id=None, content_type=None)
                 ).first():
                     link = f"{prefix.uri}{name}"
         return link
@@ -174,9 +153,7 @@ class Base(models.Model):
 @reversion.register()
 class Model(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
-    dataset = models.ForeignKey(
-        "vitrina_datasets.Dataset", models.CASCADE, verbose_name=_("Duomenų rinkinys")
-    )
+    dataset = models.ForeignKey("vitrina_datasets.Dataset", models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     distribution = models.ForeignKey(
         "vitrina_resources.DatasetDistribution",
         models.SET_NULL,
@@ -192,9 +169,7 @@ class Model(models.Model):
         verbose_name=_("Bazė"),
         related_name="base_models",
     )
-    is_parameterized = models.BooleanField(
-        default=False, verbose_name=_("Parametrizuotas")
-    )
+    is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
 
     objects = models.Manager()
     metadata = GenericRelation("Metadata")
@@ -256,9 +231,7 @@ class Model(models.Model):
                     )
                 )
             where = functools.reduce(operator.or_, where)
-            levels = Metadata.objects.filter(where, level__isnull=False).values_list(
-                "level", flat=True
-            )
+            levels = Metadata.objects.filter(where, level__isnull=False).values_list("level", flat=True)
             if levels:
                 metadata.average_level = round(sum(levels) / len(levels))
                 metadata.save()
@@ -287,9 +260,7 @@ class Model(models.Model):
 
     def get_api_url(self):
         if self.name:
-            return reverse(
-                "getall-api", kwargs={"pk": self.dataset.pk, "model": self.name}
-            )
+            return reverse("getall-api", kwargs={"pk": self.dataset.pk, "model": self.name})
         return None
 
     def get_given_props(self):
@@ -315,11 +286,7 @@ class Model(models.Model):
 
     @property
     def access_display_value(self):
-        access = (
-            Model.objects.annotate(access=Max("model_properties__metadata__access"))
-            .get(pk=self.pk)
-            .access
-        )
+        access = Model.objects.annotate(access=Max("model_properties__metadata__access")).get(pk=self.pk).access
         if access is not None:
             for type in Metadata.ACCESS_TYPES:
                 if type[0] == access:
@@ -452,9 +419,7 @@ class Enum(models.Model):
 
 
 class EnumItem(models.Model):
-    enum = models.ForeignKey(
-        Enum, models.CASCADE, verbose_name=_("Pasirinkimų sąrašas")
-    )
+    enum = models.ForeignKey(Enum, models.CASCADE, verbose_name=_("Pasirinkimų sąrašas"))
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
@@ -525,9 +490,7 @@ class Version(models.Model):
         unique_together = (("dataset", "version"),)
 
     def get_absolute_url(self):
-        return reverse(
-            "version-detail", kwargs={"pk": self.dataset.pk, "version_id": self.pk}
-        )
+        return reverse("version-detail", kwargs={"pk": self.dataset.pk, "version_id": self.pk})
 
     def __str__(self):
         return f"v{self.version}"
@@ -547,28 +510,20 @@ class MetadataVersion(models.Model):
         (OPEN, _("open")),
     )
 
-    version = models.ForeignKey(
-        Version, verbose_name=_("Versija"), on_delete=models.CASCADE
-    )
-    metadata = models.ForeignKey(
-        Metadata, verbose_name=_("Metaduomenys"), on_delete=models.CASCADE
-    )
+    version = models.ForeignKey(Version, verbose_name=_("Versija"), on_delete=models.CASCADE)
+    metadata = models.ForeignKey(Metadata, verbose_name=_("Metaduomenys"), on_delete=models.CASCADE)
 
     # Metadata changes that are included in version
     name = models.CharField(_("Vardas"), max_length=255, blank=True, null=True)
     type = models.CharField(_("Tipas"), max_length=255, blank=True, null=True)
     required = models.BooleanField(_("Privalomas"), null=True, blank=True)
     unique = models.BooleanField(_("Unikalus"), null=True, blank=True)
-    type_args = models.CharField(
-        _("Tipo argumentai"), max_length=255, null=True, blank=True
-    )
+    type_args = models.CharField(_("Tipo argumentai"), max_length=255, null=True, blank=True)
     ref = models.CharField(_("Ryšys"), max_length=255, blank=True, null=True)
     source = models.CharField(_("Šaltinis"), max_length=255, blank=True, null=True)
     prepare = models.CharField(_("Formulė"), max_length=255, blank=True, null=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
-    access = models.IntegerField(
-        _("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True
-    )
+    access = models.IntegerField(_("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True)
     base = models.ForeignKey(
         "Base",
         models.SET_NULL,

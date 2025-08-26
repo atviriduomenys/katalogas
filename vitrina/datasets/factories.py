@@ -156,9 +156,7 @@ class DatasetStructureFactory(DjangoModelFactory):
 
     version = 1
     title = factory.Faker("catch_phrase")
-    file = factory.SubFactory(
-        FilerFileFactory, file=FileField(filename="manifest.csv", data=MANIFEST)
-    )
+    file = factory.SubFactory(FilerFileFactory, file=FileField(filename="manifest.csv", data=MANIFEST))
     dataset = factory.SubFactory(DatasetFactory)
 
 
@@ -228,9 +226,7 @@ class ContactFactory(DjangoModelFactory):
     phone = factory.Faker("phone_number")
     email = factory.Faker("email")
     dataset = factory.SubFactory(DatasetFactory)
-    content_type = factory.LazyAttribute(
-        lambda o: ContentType.objects.get_for_model(o.organization)
-    )
+    content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.organization))
     object_id = factory.SelfAttribute("organization.id")
 
 
@@ -248,9 +244,6 @@ class AgentFactory(DjangoModelFactory):
     open_data_publish_url = "https://get.data.gov.lt/"
     is_enabled = True
     is_archived = False
-    service = factory.SubFactory(
-        DatasetFactory,
-        service=True
-    )
+    service = factory.SubFactory(DatasetFactory, service=True)
     organization = factory.SubFactory(OrganizationFactory)
     oauth_client_id = factory.Faker("uuid4")

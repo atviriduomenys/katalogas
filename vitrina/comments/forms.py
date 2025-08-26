@@ -15,9 +15,7 @@ PROJECT_STATUSES = (
 
 
 class CommentForm(forms.ModelForm):
-    body = forms.CharField(
-        widget=forms.Textarea(attrs={"rows": 4}), label=_("Komentaras")
-    )
+    body = forms.CharField(widget=forms.Textarea(attrs={"rows": 4}), label=_("Komentaras"))
 
     is_opened: bool
 
@@ -33,22 +31,14 @@ class CommentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if obj and isinstance(obj.__class__, ModelBase):
             self.auto_id = "id_" + str(obj.pk)
-            self.fields["body"].label = (
-                _("Komentaro tekstas objektui: ") + " " + str(obj)
-            )
-            self.fields["body"].widget.attrs.update(
-                {"title": _("Komentaras"), "id": "id_" + "body_" + str(obj.pk)}
-            )
-            self.fields["is_public"].widget.attrs.update(
-                {"id": "id_" + "is_public_" + str(obj.pk)}
-            )
+            self.fields["body"].label = _("Komentaro tekstas objektui: ") + " " + str(obj)
+            self.fields["body"].widget.attrs.update({"title": _("Komentaras"), "id": "id_" + "body_" + str(obj.pk)})
+            self.fields["is_public"].widget.attrs.update({"id": "id_" + "is_public_" + str(obj.pk)})
             self.obj = obj
 
 
 class RegisterRequestForm(CommentForm):
-    register_request = forms.BooleanField(
-        label=_("Registruoti kaip prašymą"), required=False
-    )
+    register_request = forms.BooleanField(label=_("Registruoti kaip prašymą"), required=False)
 
     class Meta(CommentForm.Meta):
         fields = (
@@ -87,18 +77,13 @@ class DatasetCommentForm(RegisterRequestForm):
             if not public:
                 self.add_error(
                     "is_public",
-                    _(
-                        "Jei komentaras registruojamas kaip prašymas, jis privalo būti"
-                        + " viešas"
-                    ),
+                    _("Jei komentaras registruojamas kaip prašymas, jis privalo būti" + " viešas"),
                 )
         return self.cleaned_data
 
 
 class RequestCommentForm(CommentForm):
-    status = forms.ChoiceField(
-        choices=Request.STATUSES, required=False, label=_("Būsena")
-    )
+    status = forms.ChoiceField(choices=Request.STATUSES, required=False, label=_("Būsena"))
 
     class Meta(CommentForm.Meta):
         fields = (
@@ -121,9 +106,7 @@ class RequestCommentForm(CommentForm):
 
 
 class ProjectCommentForm(CommentForm):
-    status = forms.ChoiceField(
-        choices=PROJECT_STATUSES, required=False, label=_("Būsena")
-    )
+    status = forms.ChoiceField(choices=PROJECT_STATUSES, required=False, label=_("Būsena"))
 
     class Meta(CommentForm.Meta):
         fields = (

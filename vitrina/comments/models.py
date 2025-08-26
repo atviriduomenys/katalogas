@@ -50,15 +50,11 @@ class Comment(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     deleted_date = models.DateTimeField(blank=True, null=True)
     body = models.TextField(blank=True, null=True)
-    parent = models.ForeignKey(
-        "Comment", blank=True, null=True, on_delete=models.SET_NULL
-    )
+    parent = models.ForeignKey("Comment", blank=True, null=True, on_delete=models.SET_NULL)
     user = models.ForeignKey("vitrina_users.User", on_delete=models.CASCADE)
     is_public = models.BooleanField(default=True, verbose_name=_("Viešas komentaras"))
     type = models.CharField(max_length=255, choices=TYPES, default=USER)
-    status = models.CharField(
-        max_length=255, blank=True, null=True, choices=COMBINED_STATUSES
-    )
+    status = models.CharField(max_length=255, blank=True, null=True, choices=COMBINED_STATUSES)
     content_type = models.ForeignKey(
         ContentType,
         on_delete=models.CASCADE,
@@ -96,9 +92,7 @@ class Comment(models.Model):
     def get_absolute_url(self):
         if self.content_object and hasattr(self.content_object, "get_absolute_url"):
             return self.content_object.get_absolute_url()
-        elif self.rel_content_object and hasattr(
-            self.rel_content_object, "get_absolute_url"
-        ):
+        elif self.rel_content_object and hasattr(self.rel_content_object, "get_absolute_url"):
             return self.rel_content_object.get_absolute_url()
         else:
             return None
@@ -111,9 +105,7 @@ class Comment(models.Model):
         if include_self:
             descendants.append(self)
         for child in children:
-            descendants.extend(
-                child.descendants(include_self=True, permission=permission)
-            )
+            descendants.extend(child.descendants(include_self=True, permission=permission))
         return descendants
 
     def ancestors(self, include_self=False):
@@ -133,31 +125,22 @@ class Comment(models.Model):
         Dataset = apps.get_model("vitrina_datasets", "Dataset")
         if self.type == self.REQUEST and self.rel_content_object:
             body_text = _(
-                f"Pateiktas naujas prašymas {self.rel_content_object.title}. "
-                f"{self.rel_content_object.description}"
+                f"Pateiktas naujas prašymas {self.rel_content_object.title}. {self.rel_content_object.description}"
             )
         elif self.type == self.PROJECT and self.rel_content_object:
-            body_text = _(
-                "Šis duomenų rinkinys įtrauktas į "
-                f"{self.rel_content_object.get_title()} projektą."
-            )
+            body_text = _(f"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title()} projektą.")
         elif self.type == self.STATUS:
             if isinstance(self.content_object, Request) and self.status == self.OPENED:
-                body_text = _(
-                    f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.OPENED)}."
-                )
+                body_text = _(f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.OPENED)}.")
             elif isinstance(self.content_object, Dataset) and self.status == self.OPENED:
-                body_text = _(
-                    f"Statusas pakeistas į {Dataset.HAS_DATA_TITLE}."
-                )
+                body_text = _(f"Statusas pakeistas į {Dataset.HAS_DATA_TITLE}.")
             else:
                 body_text = _(f"Statusas pakeistas į {self.get_status_display()}.")
             if self.body:
                 body_text = f"{body_text}\n{self.body}"
         elif self.type == self.PLAN and self.rel_content_object:
             body_text = mark_safe(
-                f"Įtraukta į planą "
-                f'<a href="{self.rel_content_object.get_absolute_url()}">{self.rel_content_object}</a>'
+                f'Įtraukta į planą <a href="{self.rel_content_object.get_absolute_url()}">{self.rel_content_object}</a>'
             )
         else:
             body_text = self.body

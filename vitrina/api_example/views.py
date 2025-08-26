@@ -34,9 +34,7 @@ class YamlFileImportView(
 
     def get(self, request, *args, **kwargs):
         if not settings.IS_DEV_FEATURES_ENABLED:
-            redirect_url = reverse(
-                "model-data", args=[self.dataset.pk, self.models[0].name]
-            )
+            redirect_url = reverse("model-data", args=[self.dataset.pk, self.models[0].name])
             return redirect(redirect_url)
         return super().get(request, *args, **kwargs)
 
@@ -49,9 +47,7 @@ class YamlFileImportView(
                 reverse("home"): _("Pradžia"),
                 reverse("dataset-list"): _("Duomenų ištekliai"),
                 reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
-                reverse("model-data", args=[self.dataset.pk, self.models[0].name]): _(
-                    f"{self.models[0].name}"
-                ),
+                reverse("model-data", args=[self.dataset.pk, self.models[0].name]): _(f"{self.models[0].name}"),
             },
             "parent_title": self.dataset.title,
             "parent_url": self.dataset.get_absolute_url(),
@@ -94,9 +90,7 @@ class YamlFileImportView(
         result = self.handle_existing_file(file_data_hash, yaml_content, form)
         if result:
             return self.render_to_response(
-                self.get_context_data(
-                    form=form, success=True, success_content="Atnaujinimas sėkmingas."
-                )
+                self.get_context_data(form=form, success=True, success_content="Atnaujinimas sėkmingas.")
             )
         elif result is False:
             return self.render_to_response(

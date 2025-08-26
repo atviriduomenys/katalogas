@@ -49,9 +49,7 @@ class Project(models.Model):
     deleted_on = models.DateTimeField(blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     title = models.CharField(max_length=255, blank=True, null=True)
-    image = FilerImageField(
-        null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL
-    )
+    image = FilerImageField(null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL)
 
     comments = GenericRelation("vitrina_comments.Comment")
     datasets = models.ManyToManyField("vitrina_datasets.Dataset")

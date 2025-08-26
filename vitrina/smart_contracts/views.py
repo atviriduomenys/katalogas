@@ -42,9 +42,7 @@ from vitrina.views import FormsetView, HistoryMixin
 
 
 class BaseProjectMixin:
-    def dispatch(
-        self, request: WSGIRequest, *args: Any, **kwargs: Any
-    ) -> HttpResponseBase:
+    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         self.object = get_object_or_404(
             Project.public.all().prefetch_related(
                 Prefetch(
@@ -60,13 +58,9 @@ class BaseProjectMixin:
 
 
 class BaseAgreementMixin:
-    def dispatch(
-        self, request: WSGIRequest, *args: Any, **kwargs: Any
-    ) -> HttpResponseBase:
+    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         self.agreement = get_object_or_404(
-            Agreement.objects.all()
-            .select_related("assigner")
-            .prefetch_related("scopes"),
+            Agreement.objects.all().select_related("assigner").prefetch_related("scopes"),
             project=self.object,
             pk=kwargs["agreement_id"],
         )
@@ -110,12 +104,8 @@ class AgreementListView(
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_obj": page,
                 "paginator": paginator,
-                "can_update_project": has_perm(
-                    self.request.user, Action.UPDATE, self.object
-                ),
-                "can_view_agreements": has_perm(
-                    self.request.user, Action.VIEW, Agreement, self.object
-                ),
+                "can_update_project": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("project-list"): _("Panaudojimo atvejai"),
@@ -149,9 +139,7 @@ class AgreementDetailView(
         return has_perm(self.request.user, Action.VIEW, self.agreement)
 
     def get_page_tite(self) -> str:
-        return _("Sutartis: {organization}").format(
-            organization=self.agreement.assigner
-        )
+        return _("Sutartis: {organization}").format(organization=self.agreement.assigner)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -164,12 +152,8 @@ class AgreementDetailView(
                 "agreement_files": self.agreement.files.all().order_by("-created_at"),
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_title": page_title,
-                "can_update_project": has_perm(
-                    self.request.user, Action.UPDATE, self.object
-                ),
-                "can_view_agreements": has_perm(
-                    self.request.user, Action.VIEW, Agreement, self.object
-                ),
+                "can_update_project": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("project-list"): _("Panaudojimo atvejai"),
@@ -196,13 +180,10 @@ class AgreementCreateView(
 
     def has_permission(self) -> bool:
         return getattr(self.request.user, "organization_id", None) and (
-            has_perm(self.request.user, Action.UPDATE, self.object)
-            or self.request.user == self.object.user
+            has_perm(self.request.user, Action.UPDATE, self.object) or self.request.user == self.object.user
         )
 
-    def dispatch(
-        self, request: WSGIRequest, *args: Any, **kwargs: Any
-    ) -> HttpResponseBase:
+    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         dispatch = super().dispatch(request, *args, **kwargs)
         if not self.get_dataset_metadata_by_organization:
             messages.error(
@@ -215,16 +196,12 @@ class AgreementCreateView(
 
     @cached_property
     def get_dataset_metadata_by_organization(self) -> dict[int, list[Metadata]]:
-        agreement_organization_ids = Agreement.objects.filter(
-            project=self.object
-        ).values_list("assigner_id", flat=True)
+        agreement_organization_ids = Agreement.objects.filter(project=self.object).values_list("assigner_id", flat=True)
         dataset_metadata_query = Metadata.objects.filter(
             content_type=ContentType.objects.get_for_model(Dataset),
             object_id__in=(d.id for d in self.object.public_datasets),
         ).exclude(
-            Q(dataset__organization_id__in=agreement_organization_ids)
-            | Q(name="")
-            | Q(name__isnull=True),
+            Q(dataset__organization_id__in=agreement_organization_ids) | Q(name="") | Q(name__isnull=True),
         )
 
         # Assign only one metadata for each dataset, in case there are more.
@@ -233,9 +210,7 @@ class AgreementCreateView(
         for metadata in dataset_metadata_query:
             dataset_metadata.setdefault(metadata.dataset_id, metadata)
 
-        sorted_dataset_metadata = sorted(
-            dataset_metadata.values(), key=lambda m: m.dataset.organization_id
-        )
+        sorted_dataset_metadata = sorted(dataset_metadata.values(), key=lambda m: m.dataset.organization_id)
         metadata_by_organization = {
             organization_id: list(organization_metadata)
             for organization_id, organization_metadata in groupby(
@@ -249,18 +224,14 @@ class AgreementCreateView(
         formset_kwargs = self.get_formset_kwargs()
         dataset_metadata_by_organization = self.get_dataset_metadata_by_organization
 
-        SmartContractFormset = modelformset_factory(
-            Organization, form=SmartContractForm, extra=0
+        SmartContractFormset = modelformset_factory(Organization, form=SmartContractForm, extra=0)
+        organization_queryset = Organization.objects.filter(pk__in=dataset_metadata_by_organization.keys()).order_by(
+            "pk"
         )
-        organization_queryset = Organization.objects.filter(
-            pk__in=dataset_metadata_by_organization.keys()
-        ).order_by("pk")
         formset = SmartContractFormset(
             **formset_kwargs,
             queryset=organization_queryset,
-            form_kwargs={
-                "dataset_metadata_by_organization": dataset_metadata_by_organization
-            },
+            form_kwargs={"dataset_metadata_by_organization": dataset_metadata_by_organization},
         )
 
         return formset
@@ -330,19 +301,12 @@ class AgreementGeneratePdf(
     template_name = "smart_contracts/agreement_generate_pdf.html"
 
     def get_page_tite(self) -> str:
-        return _("Sutarties generavimas: {organization}").format(
-            organization=self.agreement.assigner
-        )
+        return _("Sutarties generavimas: {organization}").format(organization=self.agreement.assigner)
 
     def has_permission(self) -> bool:
-        return (
-            has_perm(self.request.user, Action.UPDATE, self.agreement)
-            or self.request.user == self.object.user
-        )
+        return has_perm(self.request.user, Action.UPDATE, self.agreement) or self.request.user == self.object.user
 
-    def dispatch(
-        self, request: WSGIRequest, *args: Any, **kwargs: Any
-    ) -> HttpResponseBase:
+    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         dispatch = super().dispatch(request, *args, **kwargs)
         if self.agreement.status == AgreementStatuses.CREATED:
             return dispatch
@@ -364,18 +328,12 @@ class AgreementGeneratePdf(
     def form_valid(self, form: AgreementGeneratePdfForm) -> HttpResponse:
         contract_template: SmartContractTemplate = form.cleaned_data["template"]
         self.agreement.status = AgreementStatuses.FORMED
-        self.agreement.other_assigner_legislations = form.cleaned_data[
-            "other_assigner_legislations"
-        ]
-        self.agreement.other_assignee_legislations = form.cleaned_data[
-            "other_assignee_legislations"
-        ]
+        self.agreement.other_assigner_legislations = form.cleaned_data["other_assigner_legislations"]
+        self.agreement.other_assignee_legislations = form.cleaned_data["other_assignee_legislations"]
         self.agreement.payment_terms = form.cleaned_data["payment_terms"]
         self.agreement.save()
         self.agreement.generate_contract_pdf_file(template=contract_template)
-        name_without_ext, ext = os.path.splitext(
-            os.path.basename(contract_template.file.name)
-        )
+        name_without_ext, ext = os.path.splitext(os.path.basename(contract_template.file.name))
 
         copy_filename = f"{name_without_ext}_copy{ext}"
         with contract_template.file.open() as f:
@@ -405,14 +363,9 @@ class AgreementUploadSignedFile(
     template_name = "base_form.html"
 
     def has_permission(self) -> bool:
-        return (
-            has_perm(self.request.user, Action.UPDATE, self.agreement)
-            or self.request.user == self.object.user
-        )
+        return has_perm(self.request.user, Action.UPDATE, self.agreement) or self.request.user == self.object.user
 
-    def dispatch(
-        self, request: WSGIRequest, *args: Any, **kwargs: Any
-    ) -> HttpResponseBase:
+    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         dispatch = super().dispatch(request, *args, **kwargs)
         accepted_statuses = (AgreementStatuses.FORMED, AgreementStatuses.INITIATED)
         if self.agreement.status in accepted_statuses:
@@ -430,9 +383,7 @@ class AgreementUploadSignedFile(
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        agreement_details_title = _("Sutartis: {organization}").format(
-            organization=self.agreement.assigner
-        )
+        agreement_details_title = _("Sutartis: {organization}").format(organization=self.agreement.assigner)
         page_title = (
             _("Įkelti gavėjo pasirašytą dokumentą")
             if self.agreement.status == AgreementStatuses.FORMED
@@ -446,9 +397,7 @@ class AgreementUploadSignedFile(
                     reverse("project-list"): _("Panaudojimo atvejai"),
                     reverse("project-detail", args=[self.object.pk]): self.object,
                     reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
-                    reverse(
-                        "agreement-detail", args=[self.object.pk, self.agreement.pk]
-                    ): agreement_details_title,
+                    reverse("agreement-detail", args=[self.object.pk, self.agreement.pk]): agreement_details_title,
                     None: page_title,
                 },
             }

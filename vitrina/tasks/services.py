@@ -39,9 +39,7 @@ def get_past_work_date(
 
 
 def get_holidays(date_from: datetime.date, date_to: datetime.date):
-    return Holiday.objects.filter(date__range=[date_from, date_to]).values_list(
-        "date", flat=True
-    )
+    return Holiday.objects.filter(date__range=[date_from, date_to]).values_list("date", flat=True)
 
 
 def get_active_tasks(
@@ -52,9 +50,7 @@ def get_active_tasks(
 ) -> QuerySet:
     queryset = queryset or Task.objects.all()
     now = now or timezone.now().date()
-    holidays = get_holidays(
-        date_from=(now - timedelta(days=(VITRINA_TASK_RAISE_2 + 30))), date_to=now
-    )
+    holidays = get_holidays(date_from=(now - timedelta(days=(VITRINA_TASK_RAISE_2 + 30))), date_to=now)
     date_1 = get_past_work_date(days=VITRINA_TASK_RAISE_1, exclude=holidays, now=now)
     date_2 = get_past_work_date(days=VITRINA_TASK_RAISE_2, exclude=holidays, now=now)
 
@@ -95,7 +91,5 @@ def get_active_tasks(
         query = functools.reduce(operator.and_, [query])
     else:
         # By default, we are only interested in open tasks.
-        query = functools.reduce(
-            operator.and_, [query, Q(status__in=[Task.CREATED, Task.ASSIGNED])]
-        )
+        query = functools.reduce(operator.and_, [query, Q(status__in=[Task.CREATED, Task.ASSIGNED])])
     return queryset.filter(query)

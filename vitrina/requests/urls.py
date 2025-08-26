@@ -79,9 +79,7 @@ urlpatterns = [
         name="request-stats-publication-quarter",
     ),
     path("requests/add/", RequestCreateView.as_view(), name="request-create"),
-    path(
-        "requests/<int:pk>/change/", RequestUpdateView.as_view(), name="request-update"
-    ),
+    path("requests/<int:pk>/change/", RequestUpdateView.as_view(), name="request-update"),
     path(
         "requests/<int:pk>/history/",
         RequestHistoryView.as_view(),

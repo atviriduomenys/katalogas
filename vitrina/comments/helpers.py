@@ -92,11 +92,7 @@ def send_mail_and_create_tasks_for_subs(
         )
 
     for sub in object_subs:
-        if (
-            sub.dataset_comments_sub
-            or sub.request_comments_sub
-            or sub.project_comments_sub
-        ):
+        if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
             create_task(
                 comment_type=comment_type,
                 content_type=content_type,
@@ -105,18 +101,10 @@ def send_mail_and_create_tasks_for_subs(
                 obj=obj,
                 comment_object=comment_object,
             )
-        if (
-            sub.user.email
-            and sub.user.email not in email_list
-            and sub.user.email not in excluded_emails
-        ):
+        if sub.user.email and sub.user.email not in email_list and sub.user.email not in excluded_emails:
             email_list.append(sub.user.email)
     for sub in org_subs:
-        if (
-            sub.dataset_comments_sub
-            or sub.request_comments_sub
-            or sub.project_comments_sub
-        ):
+        if sub.dataset_comments_sub or sub.request_comments_sub or sub.project_comments_sub:
             create_task(
                 comment_type=comment_type,
                 content_type=content_type,
@@ -133,9 +121,7 @@ def send_mail_and_create_tasks_for_subs(
             ):
                 org_email_list.append(sub.user.email)
 
-    send_mail_to_object_subscribers(
-        email_list, content_type, object_id, link, comment_type, text=text
-    )
+    send_mail_to_object_subscribers(email_list, content_type, object_id, link, comment_type, text=text)
     if len(org_subs) > 0:
         send_mail_to_object_subscribers(
             org_email_list,
@@ -148,9 +134,7 @@ def send_mail_and_create_tasks_for_subs(
         )
 
 
-def send_mail_to_object_subscribers(
-    email_list, content_type, object_id, link, comment_type, org=None, text=""
-):
+def send_mail_to_object_subscribers(email_list, content_type, object_id, link, comment_type, org=None, text=""):
     if org:
         sub_object = org
     else:

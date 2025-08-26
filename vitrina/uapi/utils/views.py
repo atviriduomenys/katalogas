@@ -14,6 +14,7 @@ class UAPIExceptionHandlerMixin:
     Every response is described in the following URL:
     - https://ivpk.github.io/uapi/
     """
+
     def handle_exception(self, exc: Exception) -> Response:
         if isinstance(exc, UAPIException):
             serializer = BaseErrorSerializer(data=exc.detail)
@@ -21,36 +22,42 @@ class UAPIExceptionHandlerMixin:
             return Response(serializer.data, status=exc.status_code)
 
         if isinstance(exc, ValidationError):
-            serializer = BaseErrorSerializer(data={
-                "code": "validation_error",
-                "type": "ValidationError",
-                "template": "Request validation failed.",
-                "message": str(exc.detail),
-                "context": {"errors": exc.detail},
-                "additional_properties": None,
-            })
+            serializer = BaseErrorSerializer(
+                data={
+                    "code": "validation_error",
+                    "type": "ValidationError",
+                    "template": "Request validation failed.",
+                    "message": str(exc.detail),
+                    "context": {"errors": exc.detail},
+                    "additional_properties": None,
+                }
+            )
             serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
 
         if isinstance(exc, (Http404, NotFound)):
-            serializer = BaseErrorSerializer(data={
-                "code": "not_found",
-                "type": "NotFound",
-                "template": "The requested resource was not found.",
-                "message": str(exc),
-                "additional_properties": None,
-            })
+            serializer = BaseErrorSerializer(
+                data={
+                    "code": "not_found",
+                    "type": "NotFound",
+                    "template": "The requested resource was not found.",
+                    "message": str(exc),
+                    "additional_properties": None,
+                }
+            )
             serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_404_NOT_FOUND)
 
         if isinstance(exc, (RestPermissionDenied, PermissionDenied)):
-            serializer = BaseErrorSerializer(data={
-                "code": "Forbidden",
-                "type": "system",
-                "template": "Access is forbidden.",
-                "message": str(exc),
-                "additional_properties": None,
-            })
+            serializer = BaseErrorSerializer(
+                data={
+                    "code": "Forbidden",
+                    "type": "system",
+                    "template": "Access is forbidden.",
+                    "message": str(exc),
+                    "additional_properties": None,
+                }
+            )
             serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_403_FORBIDDEN)
 

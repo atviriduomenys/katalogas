@@ -23,9 +23,7 @@ class OrganizationFactory(DjangoModelFactory):
     title = factory.Faker("company")
     kind = factory.Faker("word")
     name = factory.Sequence(lambda n: f"{Faker().last_name()}_{n:04d}".lower())
-    company_code = factory.Faker(
-        "bothify", text="?????????", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
-    )
+    company_code = factory.Faker("bothify", text="?????????", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     email = factory.Faker("email")
     phone = Faker().phone_number()
     address = Faker().address()
@@ -50,9 +48,7 @@ class RepresentativeFactory(DjangoModelFactory):
     phone = factory.Sequence(lambda n: "+3706%07d" % n)
     version = 1
     role = Representative.COORDINATOR
-    email = factory.LazyAttribute(
-        lambda obj: f"{obj.first_name}.{obj.last_name}@gmail.com"
-    )
+    email = factory.LazyAttribute(lambda obj: f"{obj.first_name}.{obj.last_name}@gmail.com")
     user = factory.SubFactory(
         UserFactory,
         first_name=factory.SelfAttribute("..first_name"),

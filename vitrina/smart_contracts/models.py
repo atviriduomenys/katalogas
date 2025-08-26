@@ -74,12 +74,8 @@ class Agreement(UUIDBaseModel):
         default=AgreementStatuses.CREATED,
         verbose_name=_("Būsena"),
     )
-    is_agent_sync_enabled = models.BooleanField(
-        default=False, verbose_name=_("Agento sinchronizacija įjungta")
-    )
-    last_sync_date = models.DateTimeField(
-        null=True, blank=True, verbose_name=_("Paskutinės sinchronizacijos data")
-    )
+    is_agent_sync_enabled = models.BooleanField(default=False, verbose_name=_("Agento sinchronizacija įjungta"))
+    last_sync_date = models.DateTimeField(null=True, blank=True, verbose_name=_("Paskutinės sinchronizacijos data"))
     created_by = models.ForeignKey(
         User,
         on_delete=models.PROTECT,
@@ -92,9 +88,7 @@ class Agreement(UUIDBaseModel):
     other_assignee_legislations = models.TextField(
         default="", blank=True, verbose_name=_("Papildomi gavėjo teisės aktai")
     )
-    payment_terms = models.TextField(
-        default="", blank=True, verbose_name=_("Mokėjimo sąlygos")
-    )
+    payment_terms = models.TextField(default="", blank=True, verbose_name=_("Mokėjimo sąlygos"))
 
     class Meta:
         verbose_name = _("Sutartis")
@@ -106,15 +100,11 @@ class Agreement(UUIDBaseModel):
     def get_acl_parents(self) -> list["Agreement"]:
         return [self]
 
-    def generate_contract_pdf_file(
-        self, template: SmartContractTemplate
-    ) -> "AgreementFile":
+    def generate_contract_pdf_file(self, template: SmartContractTemplate) -> "AgreementFile":
         odrl_jsonld = self.generate_odrl_jsonld()
-        slugified_name = slugify(
-                f"{self.project}_{self.assigner}_{self.assignee}_{datetime.now().isoformat()}"
-            )
-        pdf_file_name = slugified_name  + ".pdf"
-        odrl_file_name = slugified_name  + "-odrl.json"
+        slugified_name = slugify(f"{self.project}_{self.assigner}_{self.assignee}_{datetime.now().isoformat()}")
+        pdf_file_name = slugified_name + ".pdf"
+        odrl_file_name = slugified_name + "-odrl.json"
         pdf_buffer = BytesIO()
         generate_contract(template.file.path, odrl_jsonld, pdf_buffer)
         pdf_buffer.seek(0)
@@ -133,9 +123,7 @@ class Agreement(UUIDBaseModel):
         NON_VALUE = " - "
 
         assignee_representative: Representative = (
-            (Representative.objects.filter(user=self.created_by).first())
-            if self.created_by
-            else None
+            (Representative.objects.filter(user=self.created_by).first()) if self.created_by else None
         )
         scopes = list(self.scopes.values_list("scope", flat=True))
         return {
@@ -153,11 +141,7 @@ class Agreement(UUIDBaseModel):
                     "ex:companyName": self.assigner.title,
                     "ex:companyCode": self.assigner.company_code,
                     "ex:address": self.assigner.address,
-                    "ex:representative": (
-                        assignee_representative.email
-                        if assignee_representative
-                        else NON_VALUE
-                    ),
+                    "ex:representative": (assignee_representative.email if assignee_representative else NON_VALUE),
                     "ex:email": self.assigner.email or NON_VALUE,
                     "ex:phone": self.assigner.phone or NON_VALUE,
                     "ex:personalCode": NON_VALUE,
@@ -186,10 +170,8 @@ class Agreement(UUIDBaseModel):
                 for dataset in self.project.datasets.filter(organization=self.assigner)
             ],
             "ex:paymentTerms": self.payment_terms or NON_VALUE,
-            "ex:otherAssignerLegislations": self.other_assigner_legislations
-            or NON_VALUE,
-            "ex:otherAssigneeLegislations": self.other_assignee_legislations
-            or NON_VALUE,
+            "ex:otherAssignerLegislations": self.other_assigner_legislations or NON_VALUE,
+            "ex:otherAssigneeLegislations": self.other_assignee_legislations or NON_VALUE,
         }
 
 

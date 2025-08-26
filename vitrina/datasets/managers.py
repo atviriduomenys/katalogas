@@ -53,6 +53,5 @@ class TranslatableMPNodeQuerySet(TranslatableQuerySet, MP_NodeQuerySet):
 
 
 class TranslatableMPNodeManager(Manager.from_queryset(TranslatableMPNodeQuerySet)):
-
     def get_queryset(self):
-        return TranslatableMPNodeQuerySet(self.model).order_by('path')
+        return TranslatableMPNodeQuerySet(self.model).order_by("path")

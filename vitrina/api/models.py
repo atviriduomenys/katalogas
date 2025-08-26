@@ -28,9 +28,7 @@ class ApiKey(models.Model):
         blank=True,
         null=True,
     )
-    organization = models.ForeignKey(
-        Organization, models.CASCADE, blank=True, null=True
-    )
+    organization = models.ForeignKey(Organization, models.CASCADE, blank=True, null=True)
     project = models.ForeignKey(Project, models.CASCADE, blank=True, null=True)
     agent = models.OneToOneField(Agent, models.CASCADE, blank=True, null=True)
     client_id = models.CharField(blank=True, null=True, max_length=255)

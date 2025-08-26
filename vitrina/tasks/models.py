@@ -76,12 +76,8 @@ class Task(models.Model):
     title = models.CharField(max_length=255)
     created = models.DateTimeField(auto_now_add=True)
     user = models.ForeignKey(to=User, blank=True, null=True, on_delete=models.SET_NULL)
-    organization = models.ForeignKey(
-        to=Organization, blank=True, null=True, on_delete=models.SET_NULL
-    )
-    comment_object = models.ForeignKey(
-        to=Comment, blank=True, null=True, on_delete=models.SET_NULL
-    )
+    organization = models.ForeignKey(to=Organization, blank=True, null=True, on_delete=models.SET_NULL)
+    comment_object = models.ForeignKey(to=Comment, blank=True, null=True, on_delete=models.SET_NULL)
     status = models.CharField(max_length=255, default=CREATED, choices=STATUSES)
     type = models.CharField(max_length=255, choices=TYPES, default=COMMENT)
     role = models.CharField(choices=ROLES, max_length=255, blank=True, null=True)
@@ -108,9 +104,7 @@ class Task(models.Model):
         super(Task, self).save(*args, **kwargs)
 
     def get_absolute_url(self):
-        return reverse(
-            "user-task-detail", kwargs={"pk": self.user.pk, "task_id": self.pk}
-        )
+        return reverse("user-task-detail", kwargs={"pk": self.user.pk, "task_id": self.pk})
 
     def is_due_or_expiring(self):
         due = pd.to_datetime(self.due_date).date()

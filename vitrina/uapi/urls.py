@@ -20,9 +20,9 @@ STATIC_UAPI_BASE_PATH = "uapi/datasets/org/vssa/isris/dcat/"
 urlpatterns = [
     path(
         "organizations/<int:organization_id>/agents/<uuid:agent_id>/history/<uuid:pk>/",
-         RequestDetailView.as_view(),
-         name="request-history"
-     ),
+        RequestDetailView.as_view(),
+        name="request-history",
+    ),
     path(
         "organizations/<int:organization_id>/agents/",
         AgentListView.as_view(),

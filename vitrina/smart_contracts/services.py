@@ -51,9 +51,7 @@ def is_checksum_valid(adoc_path: str, expected_checksum: str) -> bool:
         with zipfile.ZipFile(adoc_path, "r") as adoc_archive:
             pdf_path = get_pdf_path_in_adoc(adoc_archive)
 
-            with adoc_archive.open(pdf_path) as pdf_file, open(
-                TEMP_PDF_PATH, "wb"
-            ) as out_file:
+            with adoc_archive.open(pdf_path) as pdf_file, open(TEMP_PDF_PATH, "wb") as out_file:
                 out_file.write(pdf_file.read())
 
         actual_checksum = generate_pdf_checksum(TEMP_PDF_PATH)
@@ -66,9 +64,7 @@ def is_checksum_valid(adoc_path: str, expected_checksum: str) -> bool:
             os.remove(TEMP_PDF_PATH)
 
 
-def generate_contract(
-    template_path: str, odrl_data: dict, output: str | BytesIO
-) -> None:
+def generate_contract(template_path: str, odrl_data: dict, output: str | BytesIO) -> None:
     json_checksum = generate_checksum(json.dumps(odrl_data, sort_keys=True))
     md_template = Path(template_path).read_text(encoding="utf-8")
     template_checksum = generate_checksum(md_template)

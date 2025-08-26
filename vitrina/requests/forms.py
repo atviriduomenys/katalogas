@@ -68,11 +68,7 @@ class PublisherWidget(ModelSelect2MultipleWidget, SearchForm):
         if len(term) > 2:
             return queryset.filter(select).distinct().order_by("title")[:10]
         else:
-            return (
-                queryset.distinct()
-                .annotate(dataset_count=Count("dataset"))
-                .order_by("-dataset_count")[:10]
-            )
+            return queryset.distinct().annotate(dataset_count=Count("dataset")).order_by("-dataset_count")[:10]
 
 
 class RequestForm(ModelForm):
@@ -84,9 +80,7 @@ class RequestForm(ModelForm):
     )
     organizations = ModelMultipleChoiceField(
         label=_("Organizacija"),
-        queryset=Organization.public.annotate(dataset_count=Count("dataset")).order_by(
-            "-dataset_count"
-        ),
+        queryset=Organization.public.annotate(dataset_count=Count("dataset")).order_by("-dataset_count"),
         required=False,
         help_text=_("Pasirinkimo laukas, organizacija(-os), kurioms poreikio įgyvendinimas/atsakymas yra aktualus."),
     )
@@ -213,17 +207,13 @@ class RequestSearchForm(FacetedSearchForm):
 class PlanChoiceField(ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.deadline:
-            return mark_safe(
-                f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>"
-            )
+            return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title} ({obj.deadline})</a>")
         else:
             return mark_safe(f"<a href={obj.get_absolute_url()}>{obj.title}</a>")
 
 
 class RequestIncludePlanForm(ModelForm):
-    plan = PlanChoiceField(
-        label=_("Terminas"), widget=RadioSelect(), queryset=Plan.objects.all()
-    )
+    plan = PlanChoiceField(label=_("Terminas"), widget=RadioSelect(), queryset=Plan.objects.all())
     form_type = CharField(widget=HiddenInput(), initial="include_form")
 
     class Meta:
@@ -298,17 +288,13 @@ class RequestPlanForm(OrganizationPlanForm):
             content_type=ContentType.objects.get_for_model(Dataset),
             request_id=self.obj.pk,
         ).values_list("object_id", flat=True)
-        datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by(
-            "-created"
-        )
+        datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by("-created")
         self.fields["datasets"].queryset = datasets
         if len(self.organizations) == 1:
             self.initial["receiver"] = self.organizations[0]
             self.fields["receiver"].widget = HiddenInput()
         else:
             organization_ids = [org.pk for org in self.organizations]
-            self.fields["receiver"].queryset = self.fields["receiver"].queryset.filter(
-                pk__in=organization_ids
-            )
+            self.fields["receiver"].queryset = self.fields["receiver"].queryset.filter(pk__in=organization_ids)
 
         self.initial["title"] = self.obj.get_plan_title()

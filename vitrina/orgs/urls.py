@@ -66,9 +66,7 @@ urlpatterns = [
         OrganizationManagementsView.as_view(),
         name="organization-stats-jurisdiction",
     ),
-    path(
-        "orgs/<int:pk>/", OrganizationDetailView.as_view(), name="organization-detail"
-    ),
+    path("orgs/<int:pk>/", OrganizationDetailView.as_view(), name="organization-detail"),
     path(
         "orgs/<int:pk>/update/",
         OrganizationUpdateView.as_view(),
@@ -291,7 +289,5 @@ urlpatterns = [
         create_remote_organization,
         name="create-remote-organization",
     ),
-    path(
-        "orgs/remote-organization-check/", check_organization, name="check-organization"
-    ),
+    path("orgs/remote-organization-check/", check_organization, name="check-organization"),
 ]

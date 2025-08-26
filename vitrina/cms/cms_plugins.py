@@ -37,9 +37,7 @@ class LearningMaterialPlugin(CMSPluginBase):
         context = super().render(context, instance, placeholder)
         context.update(
             {
-                "items": LearningMaterial.objects.filter(
-                    published__isnull=False
-                ).order_by("-published"),
+                "items": LearningMaterial.objects.filter(published__isnull=False).order_by("-published"),
             }
         )
         return context
@@ -70,9 +68,7 @@ class EUCommissionPortalPlugin(CMSPluginBase):
         context.update(
             {
                 "title": _("Europos komisijos portalai"),
-                "items": ExternalSite.objects.filter(
-                    type=ExternalSite.EU_COMISSION_PORTAL
-                ),
+                "items": ExternalSite.objects.filter(type=ExternalSite.EU_COMISSION_PORTAL),
             }
         )
         return context

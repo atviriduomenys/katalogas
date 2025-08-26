@@ -18,7 +18,7 @@ from vitrina.requests.models import RequestObject, Request
 
 
 class DatasetIndex(SearchIndex, Indexable):
-    django_pk = IntegerField(model_attr='pk')
+    django_pk = IntegerField(model_attr="pk")
     text = EdgeNgramField(document=True, use_template=True)
     # used for search
     lt_title = CharField(model_attr="lt_title", boost=1)
@@ -27,13 +27,9 @@ class DatasetIndex(SearchIndex, Indexable):
     en_title_s = CharField(model_attr="en_title", indexed=False, stored=True, boost=1)
     tags = MultiValueField(model_attr="get_tag_list", faceted=True, boost=1)
     lt_description = CharField(model_attr="lt_description", boost=0.9)
-    lt_description_s = CharField(
-        model_attr="lt_description", indexed=False, stored=True, boost=0.9
-    )
+    lt_description_s = CharField(model_attr="lt_description", indexed=False, stored=True, boost=0.9)
     en_description = CharField(model_attr="en_description", boost=0.9)
-    en_description_s = CharField(
-        model_attr="en_description", indexed=False, stored=True, boost=0.9
-    )
+    en_description_s = CharField(model_attr="en_description", indexed=False, stored=True, boost=0.9)
     name = CharField(model_attr="name", boost=0.9)
     resource_title = MultiValueField(model_attr="get_resource_titles", boost=0.9)
     model_title = MultiValueField(model_attr="get_model_title_list", boost=0.9)
@@ -42,35 +38,17 @@ class DatasetIndex(SearchIndex, Indexable):
     request_title = MultiValueField(model_attr="get_request_title_list", boost=0.9)
     project_title = MultiValueField(model_attr="get_project_title_list", boost=0.9)
     category = MultiValueField(model_attr="category__pk", faceted=True, boost=0.8)
-    organization = MultiValueField(
-        model_attr="organization__pk", faceted=True, null=True, boost=0.8
-    )
+    organization = MultiValueField(model_attr="organization__pk", faceted=True, null=True, boost=0.8)
     resource_description = MultiValueField(model_attr="get_resource_titles", boost=0.7)
-    model_description = MultiValueField(
-        model_attr="get_model_title_description", boost=0.7
-    )
-    property_description = MultiValueField(
-        model_attr="get_property_title_description", boost=0.7
-    )
-    request_description = MultiValueField(
-        model_attr="get_request_title_description", boost=0.7
-    )
-    project_description = MultiValueField(
-        model_attr="get_project_title_description", boost=0.7
-    )
-    parent_category = MultiValueField(
-        model_attr="parent_category", faceted=True, null=True, boost=0.6
-    )
-    parent_category_titles = MultiValueField(
-        model_attr="parent_category_titles", boost=0.6
-    )
-    parent_organization_title = CharField(
-        model_attr="get_parent_organization_title", boost=0.6
-    )
+    model_description = MultiValueField(model_attr="get_model_title_description", boost=0.7)
+    property_description = MultiValueField(model_attr="get_property_title_description", boost=0.7)
+    request_description = MultiValueField(model_attr="get_request_title_description", boost=0.7)
+    project_description = MultiValueField(model_attr="get_project_title_description", boost=0.7)
+    parent_category = MultiValueField(model_attr="parent_category", faceted=True, null=True, boost=0.6)
+    parent_category_titles = MultiValueField(model_attr="parent_category_titles", boost=0.6)
+    parent_organization_title = CharField(model_attr="get_parent_organization_title", boost=0.6)
     # only for filters
-    published_created_s = DateTimeField(
-        model_attr="published_created_sort", indexed=False, stored=True
-    )
+    published_created_s = DateTimeField(model_attr="published_created_sort", indexed=False, stored=True)
     jurisdiction = MultiValueField(model_attr="jurisdiction", faceted=True, null=True)
     groups = MultiValueField(model_attr="get_group_list", faceted=True)
     formats = MultiValueField(model_attr="filter_formats", faceted=True)
@@ -107,9 +85,7 @@ class DatasetIndex(SearchIndex, Indexable):
     def prepare_category(self, obj):
         categories = []
         for category in obj.category.all():
-            categories.extend(
-                [cat.pk for cat in category.get_ancestors() if cat.dataset_set.exists()]
-            )
+            categories.extend([cat.pk for cat in category.get_ancestors() if cat.dataset_set.exists()])
             categories.append(category.pk)
         return categories
 
@@ -133,11 +109,7 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
                 if index.index_queryset().filter(pk=instance.pk):
                     index.update_object(instance, using=using)
                     if isinstance(instance, Dataset):
-                        req_index = (
-                            self.connections[using]
-                            .get_unified_index()
-                            .get_index(Request)
-                        )
+                        req_index = self.connections[using].get_unified_index().get_index(Request)
                         reqs = RequestObject.objects.filter(
                             content_type=ContentType.objects.get_for_model(instance),
                             object_id=instance.pk,

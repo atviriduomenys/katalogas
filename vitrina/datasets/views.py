@@ -72,6 +72,7 @@ from vitrina.structure.views import DatasetStructureMixin
 
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
+from vitrina.datasets.mixins import DatasetBreadcrumbsMixin, Crumb
 from vitrina.datasets.services import (
     update_facet_data,
     get_projects,
@@ -432,6 +433,7 @@ class DatasetRedirectView(View):
 
 
 class DatasetDetailView(
+    DatasetBreadcrumbsMixin,
     LanguageChoiceMixin,
     HistoryMixin,
     DatasetStructureMixin,
@@ -624,6 +626,7 @@ class DatasetDistributionPreviewView(ListView):
 
 
 class DatasetCreateView(
+    DatasetBreadcrumbsMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     RevisionMixin,
@@ -663,7 +666,25 @@ class DatasetCreateView(
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
         return has_perm(self.request.user, Action.CREATE, Dataset, self.organization)
-
+    
+    def get_breadcrumbs(self) -> list[Crumb]:
+        """Generate hierarchical breadcrumbs for the dataset"""
+        
+        ACCUSATIVE_FORMS = {
+            "dataset": _("Pridėti duomenų rinkinį"),
+            "service": _("Pridėti duomenų publikavimo paslaugą"),
+            "series": _("Pridėti duomenų rinkinio seriją"),
+            "information_system": _("Pridėti informacinę sistemą"),
+            "catalog": _("Pridėti metaduomenų katalogą")
+        }
+        subclass = get_object_or_404(DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid"))
+        return self.breadcrumbs_organization(self.organization) + [
+            Crumb(title=_("Duomenų ištekliai"), url=reverse("dataset-list")),
+            Crumb(title=_("Pridėti duomenų išteklių"),
+                  url=reverse("resource-subclass-add", kwargs={"pk": self.organization.pk})),
+            Crumb(title=ACCUSATIVE_FORMS.get(subclass.name, subclass.name), url=None, is_current=True)
+        ]
+                    
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         subclass_uuid = self.kwargs.get("subclass_uuid")
@@ -691,13 +712,6 @@ class DatasetCreateView(
                 "information_title": subclass.translated_title,
                 "information_description": subclass.translated_description,
                 "button": _("Sukurti"),
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("organization-list"): _("Organizacijos"),
-                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    reverse("dataset-list"): _("Duomenų ištekliai"),
-                    "": _("Pridėti duomenų išteklių"),
-                },
                 "current_step": 2,
                 "current_percentage": 100,
                 "selected_subclass_uuid": str(subclass_uuid),
@@ -895,6 +909,7 @@ class DatasetCreateView(
 
 
 class ResourceSubclassCreateView(
+    DatasetBreadcrumbsMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
     RevisionMixin,
@@ -915,6 +930,15 @@ class ResourceSubclassCreateView(
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
         return has_perm(self.request.user, Action.CREATE, Dataset, organization)
+    
+    def get_breadcrumbs(self) -> list[Crumb]:
+        """Generate hierarchical breadcrumbs for the dataset"""
+        
+        org = get_object_or_404(Organization, id=self.kwargs["pk"])
+        return self.breadcrumbs_organization(org) + [
+            Crumb(title=_("Duomenų ištekliai"), url=reverse("dataset-list")),
+            Crumb(title=_("Pridėti duomenų išteklių"), url=None, is_current=True),
+        ]
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -942,13 +966,6 @@ class ResourceSubclassCreateView(
                     Contact,
                     self.object,
                 ),
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("organization-list"): _("Organizacijos"),
-                    reverse("organization-detail", args=[organization.pk]): organization.title,
-                    reverse("dataset-list"): _("Duomenų ištekliai"),
-                    "": _("Pridėti duomenų išteklių"),
-                },
                 "current_step": 1,
                 "current_percentage": 50,
             }
@@ -973,6 +990,7 @@ class ResourceSubclassCreateView(
 
 
 class DatasetUpdateView(
+    DatasetBreadcrumbsMixin,
     DatasetStructureMixin,
     PlanMixin,
     HistoryView,
@@ -992,6 +1010,7 @@ class DatasetUpdateView(
     history_url_name = "dataset-history"
     plan_url_name = "dataset-plans"
     tabs_template_name = "vitrina/datasets/tabs.html"
+    breadcrumb_title = _("Redaguoti")
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
@@ -1004,11 +1023,6 @@ class DatasetUpdateView(
         context.update(
             {
                 "current_title": _("Duomenų ištekliaus redagavimas"),
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("dataset-list"): _("Duomenų ištekliai"),
-                    reverse("dataset-detail", args=[self.object.pk]): self.object.title,
-                },
                 "form_title": self.object.subclass.translated_title,
                 "information_title": self.object.subclass.translated_title,
                 "information_description": self.object.subclass.translated_description,
@@ -3667,12 +3681,19 @@ class DatasetRepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
         return context
 
 
-class DatasetChildResourceListView(LanguageChoiceMixin, HistoryMixin, DatasetStructureMixin, DatasetListView):
+class DatasetChildResourceListView(
+    DatasetBreadcrumbsMixin,
+    LanguageChoiceMixin, 
+    HistoryMixin, 
+    DatasetStructureMixin, 
+    DatasetListView
+):
     model = Dataset
     detail_url_name = DatasetDetailView.detail_url_name
     history_url_name = DatasetDetailView.history_url_name
     plan_url_name = DatasetDetailView.plan_url_name
     tabs_template_name = "vitrina/datasets/tabs.html"
+    breadcrumb_title = _("Ištekliai")
 
     @property
     def page_title(self) -> str:

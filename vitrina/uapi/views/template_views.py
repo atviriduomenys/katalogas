@@ -176,7 +176,7 @@ class AgentCreateView(CreateView, BaseAgentView):
         try:
             with transaction.atomic():
                 form.instance.organization = self.organization
-                form.instance.service = Dataset.objects.create(
+                instance = Dataset.add_root(
                     title=f'Agento "{title}" Duomenų Paslauga',
                     description="Ši duomenų paslauga buvo automatiškai sukurta kuriant Agentą.",
                     access_rights=Dataset.NON_PUBLIC,
@@ -188,12 +188,13 @@ class AgentCreateView(CreateView, BaseAgentView):
                     endpoint_description_type=Format.objects.filter(extension="Open API").first(),
                     is_public=False,
                 )
+                form.instance.service = instance
                 form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
                 form.instance.service.save_translations()
 
                 self.object = form.save()
 
-                # self.request.session["secret"] = self._create_oauth_client(agent=self.object)
+                self.request.session["secret"] = self._create_oauth_client(agent=self.object)
                 self.request.session["scopes"] = settings.OAUTH_AGENT_DEFAULT_SCOPES
 
                 messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))

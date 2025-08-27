@@ -2,7 +2,7 @@ import pytest
 from django.core.exceptions import ValidationError
 from django.db import IntegrityError
 
-from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.factories import DatasetFactory, AgentFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.uapi.models import Agent
 
@@ -47,3 +47,12 @@ def test_agent_created_with_attached_data_resource_that_is_not_service():
 
     with pytest.raises(ValidationError):
         Agent.objects.create(title="agent", organization=organization, service=dataset)
+
+
+def test_update_agent_codename_when_agent_title_updated_using_update_fields() -> None:
+    agent = AgentFactory()
+    agent.title = "foo"
+    agent.save(update_fields=["title"])
+
+    agent.refresh_from_db()
+    assert agent.codename == "foo"

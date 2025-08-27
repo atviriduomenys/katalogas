@@ -3,7 +3,8 @@ import uuid
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
-from django.http import Http404
+from django.forms import BaseForm
+from django.http import Http404, HttpResponse
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -284,18 +285,12 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
             resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
             return redirect(resource.dataset)
 
-    def get(self, *args, **kwargs):
-        return self.post(*args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        return self.delete(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
         with create_revision():
             add_to_revision(resource)
-            set_user(request.user)
+            set_user(self.request.user)
             set_comment((f'Ištrintas duomenų šaltinis "{resource.lt_title()}".'))
             resource.delete()
 

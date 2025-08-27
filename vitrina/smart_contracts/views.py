@@ -138,12 +138,8 @@ class AgreementDetailView(
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, self.agreement)
 
-    def get_page_tite(self) -> str:
-        return _("Sutartis: {organization}").format(organization=self.agreement.assigner)
-
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        page_title = self.get_page_tite()
 
         context.update(
             {
@@ -151,7 +147,7 @@ class AgreementDetailView(
                 "agreement": self.agreement,
                 "agreement_files": self.agreement.files.all().order_by("-created_at"),
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
-                "page_title": page_title,
+                "page_title": self.agreement.detail_page_title,
                 "can_update_project": has_perm(self.request.user, Action.UPDATE, self.object),
                 "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "parent_links": {
@@ -159,7 +155,7 @@ class AgreementDetailView(
                     reverse("project-list"): _("Panaudojimo atvejai"),
                     reverse("project-detail", args=[self.object.pk]): self.object,
                     reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
-                    None: page_title,
+                    None: self.agreement.detail_page_title,
                 },
             }
         )
@@ -295,37 +291,33 @@ class AgreementGeneratePdf(
     BaseProjectMixin,
     BaseAgreementMixin,
     PermissionRequiredMixin,
+    HistoryMixin,
     FormView,
 ):
     form_class = AgreementGeneratePdfForm
-    template_name = "smart_contracts/agreement_generate_pdf.html"
-
-    def get_page_tite(self) -> str:
-        return _("Sutarties generavimas: {organization}").format(organization=self.agreement.assigner)
+    template_name = "base_form.html"
+    detail_url_name = "project-detail"
+    history_url_name = "project-history"
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, self.agreement) or self.request.user == self.object.user
-
-    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
-        dispatch = super().dispatch(request, *args, **kwargs)
-        if self.agreement.status == AgreementStatuses.CREATED:
-            return dispatch
-
-        error_msg = _(
-            "Sutarties dokumentas gali būti generuojamas sutarčiai su "
-            "būsena {accepted_status}. Dabartinė būsena: {current_status}"
-        ).format(
-            accepted_status=AgreementStatuses.CREATED,
-            current_status=self.agreement.status,
-        )
-        messages.error(request, error_msg)
-        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self) -> str:
         return reverse("agreement-detail", args=[self.object.pk, self.agreement.pk])
 
     @transaction.atomic
     def form_valid(self, form: AgreementGeneratePdfForm) -> HttpResponse:
+        if self.agreement.status != AgreementStatuses.CREATED:
+            error_msg = _(
+                "Sutarties dokumentas gali būti generuojamas sutarčiai su "
+                "būsena {accepted_status}. Dabartinė būsena: {current_status}"
+            ).format(
+                accepted_status=AgreementStatuses.CREATED,
+                current_status=self.agreement.status,
+            )
+            messages.error(self.request, error_msg)
+            return HttpResponseRedirect(self.get_success_url())
+
         contract_template: SmartContractTemplate = form.cleaned_data["template"]
         self.agreement.status = AgreementStatuses.FORMED
         self.agreement.other_assigner_legislations = form.cleaned_data["other_assigner_legislations"]
@@ -350,6 +342,29 @@ class AgreementGeneratePdf(
         kwargs = super().get_form_kwargs()
         kwargs["agreement"] = self.agreement
         return kwargs
+
+    def get_context_data(self, **kwargs) -> dict:
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "tabs": "vitrina/projects/tabs.html",
+                "has_perm": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
+                "current_title": _("Generuoti sutarties dokumentą"),
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("project-list"): _("Panaudojimo atvejai"),
+                    reverse("project-detail", args=[self.object.pk]): self.object,
+                    reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
+                    reverse(
+                        "agreement-detail", args=[self.object.pk, self.agreement.pk]
+                    ): self.agreement.detail_page_title,
+                    None: _("Generuoti sutarties dokumentą"),
+                },
+            }
+        )
+
+        return context
 
 
 class AgreementUploadSignedFile(

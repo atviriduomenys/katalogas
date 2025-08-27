@@ -24,6 +24,7 @@ from vitrina.classifiers.factories import (
 )
 from vitrina.classifiers.factories import LicenceFactory, ApplicableLegislationFactory
 from vitrina.classifiers.models import Category, AreaOfManagement
+from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import (
     DatasetFactory,
@@ -52,6 +53,8 @@ from vitrina.orgs.models import Representative
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.factories import ProjectFactory
+from vitrina.requests.factories import RequestObjectFactory, RequestFactory
+from vitrina.requests.models import RequestObject
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory
@@ -1920,6 +1923,17 @@ class TestDatasetCreateView:
         assert dataset3.name == "datasets/gov/test-organization/test-dataset_4"
 
 
+class TestDatasetDeleteView:
+    def test_delete_dataset(self, app: DjangoTestApp) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        dataset = DatasetFactory()
+
+        app.post(reverse("dataset-delete", args=[dataset.pk]))
+        assert not Dataset.objects.filter(pk=dataset.pk).exists()
+
+
 class TestDatasetMembers:
     def test_dataset_members_view_bad_login(self, app: DjangoTestApp):
         dataset = DatasetFactory()
@@ -2390,7 +2404,7 @@ class TestDatasetAttribution:
         dataset_attribution = DatasetAttributionFactory()
         dataset = dataset_attribution.dataset
 
-        resp = app.get(reverse("attribution-delete", args=[dataset.pk, dataset_attribution.pk]))
+        resp = app.post(reverse("attribution-delete", args=[dataset.pk, dataset_attribution.pk]))
 
         assert resp.url == dataset.get_absolute_url()
         assert dataset.datasetattribution_set.count() == 0
@@ -2590,6 +2604,28 @@ class TestDatasetProject:
         )
 
         assert resp.status_code == 302
+
+    def test_remove_dataset_from_project_no_permission(self, app: DjangoTestApp):
+        user = UserFactory()
+        project = ProjectFactory(user=user)
+        dataset = DatasetFactory()
+        project.datasets.add(dataset)
+        assert project.datasets.all().count() == 1
+
+        app.set_user(user)
+
+        resp = app.post(
+            reverse(
+                "dataset-project-remove",
+                kwargs={"pk": dataset.pk, "project_id": project.pk},
+            ),
+            expect_errors=True,
+        )
+
+        assert resp.status_code == 302
+        assert Dataset.objects.exists()
+        project.refresh_from_db()
+        assert not project.datasets.exists()
 
     def test_remove_project_with_permission(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
@@ -2867,7 +2903,7 @@ def test_delete_last_distribution_from_dataset(app: DjangoTestApp):
     dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
     resource = DatasetDistributionFactory(dataset=dataset)
 
-    app.get(reverse("resource-delete", args=[resource.pk]))
+    app.post(reverse("resource-delete", args=[resource.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 0
@@ -2885,7 +2921,7 @@ def test_delete_non_last_distribution_from_dataset(app: DjangoTestApp):
     resource1 = DatasetDistributionFactory(dataset=dataset)
     resource2 = DatasetDistributionFactory(dataset=dataset)
 
-    app.get(reverse("resource-delete", args=[resource2.pk]))
+    app.post(reverse("resource-delete", args=[resource2.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 1
@@ -2900,7 +2936,7 @@ def test_delete_last_distribution_from_non_public_dataset(app: DjangoTestApp):
     dataset = DatasetFactory(organization=organization, status=Dataset.UNASSIGNED, is_public=False)
     resource = DatasetDistributionFactory(dataset=dataset)
 
-    app.get(reverse("resource-delete", args=[resource.pk]))
+    app.post(reverse("resource-delete", args=[resource.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 0
@@ -2917,7 +2953,7 @@ def test_delete_last_distribution_from_dataset_with_plans(app: DjangoTestApp):
     plan = PlanFactory()
     PlanDataset.objects.create(dataset=dataset, plan=plan)
 
-    app.get(reverse("resource-delete", args=[resource.pk]))
+    app.post(reverse("resource-delete", args=[resource.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 0
@@ -2973,7 +3009,7 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
             resource.modified.strftime("%Y-%m-%d"),
             "PeržiūrėtiAtsisiųsti",
             "Redaguoti",
-            "Trinti",
+            "Ištrinti",
         ],
         [
             "",
@@ -3061,7 +3097,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
             resource.modified.strftime("%Y-%m-%d"),
             "PeržiūrėtiAtsisiųsti",
             "Redaguoti",
-            "Trinti",
+            "Ištrinti",
         ],
         [
             "",
@@ -3802,3 +3838,53 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     </dcat:DataService>
 </rdf:RDF>"""
     )
+
+
+class TestDeleteMemberView:
+    def test_remove_dataset_publisher_of_related_dataset_if_representative_is_deleted(
+        self, app: DjangoTestApp
+    ) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(publisher=organization)
+        ct = ContentType.objects.get_for_model(dataset)
+        representative = RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=Representative.MANAGER,
+            organization=organization,
+        )
+
+        app.post(reverse("dataset-representative-delete", args=[dataset.pk, representative.pk]))
+
+        assert not Representative.objects.filter(pk=representative.pk).exists()
+        dataset.refresh_from_db()
+        assert dataset.publisher is None
+
+
+class TestRemoveRequestView:
+    def test_delete_dataset_comments_and_related_request_object(
+        self, app: DjangoTestApp
+    ) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        dataset = DatasetFactory()
+        request = RequestFactory(dataset=dataset)
+        comment = CommentFactory(
+            rel_content_type=ContentType.objects.get_for_model(request),
+            rel_object_id=request.pk,
+        )
+        request_object = RequestObjectFactory(
+            request=request,
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+        )
+
+        app.post(reverse("dataset-request-remove", args=[dataset.pk, request_object.pk]))
+
+        assert Dataset.objects.filter(pk=dataset.pk).exists()
+        assert not Comment.objects.filter(pk=comment.pk).exists()
+        assert not RequestObject.objects.filter(pk=request_object.pk).exists()

@@ -3,6 +3,7 @@ import secrets
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
+from django.forms import BaseForm
 from django.http import HttpResponseRedirect, HttpResponse
 from django.http.response import HttpResponseBase
 from django.shortcuts import get_object_or_404, redirect
@@ -587,10 +588,9 @@ class RemoveDatasetView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
     def has_permission(self):
         return has_perm(self.request.user, Action.UPDATE, self.object)
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object.datasets.remove(self.kwargs.get("dataset_id"))
-        success_url = self.get_success_url()
-        return HttpResponseRedirect(success_url)
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("project-datasets", kwargs={"pk": self.object.pk})

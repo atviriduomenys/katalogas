@@ -284,11 +284,15 @@
                                     <td><a href="{{ dr.part_of.get_absolute_url }}">{{ dr.part_of }}</a></td>
                                     <td>
                                         {% if can_update_dataset %}
-                                        <a href="{% url 'dataset-relation-delete' dataset.pk dr.pk %}"
-                                           onclick="return confirm('Ar jūs tikrai norite trinti šį ryšį?')"
-                                           class="button is-link is-small is-pulled-right"
-                                           id="delete_resource">{% translate "Trinti" %}
-                                        </a>
+                                            <form method="post" action="{% url 'dataset-relation-delete' dataset.pk dr.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                        class="button is-link is-small is-pulled-right"
+                                                        onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %})"
+                                                        id="delete_resource">
+                                                    {% translate "Ištrinti" %}
+                                                </button>
+                                            </form>
                                         {% endif %}
                                     </td>
                                 </tr>
@@ -320,11 +324,15 @@
                                 <td><a href="{{ dr.dataset.get_absolute_url }}">{{ dr.dataset }}</a></td>
                                 <td>
                                     {% if can_update_dataset %}
-                                    <a href="{% url 'dataset-relation-delete' dataset.pk dr.pk %}"
-                                       onclick="return confirm('Ar jūs tikrai norite trinti šį ryšį?')"
-                                       class="button is-link is-small is-pulled-right"
-                                       id="delete_resource">{% translate "Trinti" %}
-                                    </a>
+                                        <form method="post" action="{% url 'dataset-relation-delete' dataset.pk dr.pk %}">
+                                            {% csrf_token %}
+                                            <button type="submit"
+                                                    class="button is-link is-small is-pulled-right"
+                                                    onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %})"
+                                                    id="delete_resource">
+                                                {% translate "Ištrinti" %}
+                                            </button>
+                                        </form>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -365,11 +373,15 @@
                             </td>
                             <td>
                                 {% if can_update_dataset %}
-                                <a href="{%url 'attribution-delete' dataset.pk a.pk %}"
-                                   onclick="return confirm('Ar jūs tikrai norite ištrinti?')"
-                                   class="button is-link is-small is-pulled-right"
-                                   id="delete_attribution">{% translate "Trinti" %}
-                                </a>
+                                    <form method="post" action="{% url 'attribution-delete' dataset.pk a.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                                class="button is-link is-small is-pulled-right"
+                                                onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti?' %})"
+                                                id="delete_attribution">
+                                            {% translate "Ištrinti" %}
+                                        </button>
+                                    </form>
                                 {% endif %}
                             </td>
                         </tr>

@@ -7,7 +7,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.forms import ModelForm
+from django.forms import ModelForm, BaseForm
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
@@ -291,7 +291,13 @@ class AgentDeleteView(DeleteView, BaseAgentView):
         )
         return context
 
-    def delete(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+    def get_form_kwargs(self) -> dict:
+        kwargs = super().get_form_kwargs()
+        kwargs.pop("organization")
+
+        return kwargs
+
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         """Object is soft-deleted (archived) so to not lose the related service and other related objects."""
         self.object.is_archived = True
         self.object.save(update_fields=["is_archived", "updated_at"])

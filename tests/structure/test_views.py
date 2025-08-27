@@ -1622,7 +1622,7 @@ def test_property_enum_item_delete(app: DjangoTestApp):
         source="TEST",
     )
 
-    resp = app.get(reverse('enum-delete', args=[
+    resp = app.post(reverse('enum-delete', args=[
         dataset.pk,
         model.name,
         prop.name,
@@ -1995,7 +1995,7 @@ def test_param_delete(app: DjangoTestApp):
         prepare='param'
     )
 
-    resp = app.get(reverse('param-delete', args=[dataset.pk, param_item.pk]))
+    resp = app.post(reverse('param-delete', args=[dataset.pk, param_item.pk]))
     assert resp.url == distribution.get_absolute_url()
     assert distribution.params.first().paramitem_set.count() == 0
 

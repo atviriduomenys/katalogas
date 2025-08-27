@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-25 16:23+0300\n"
+"POT-Creation-Date: 2025-08-26 11:11+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -480,9 +480,6 @@ msgstr "Evaluated"
 msgid "Viešas komentaras"
 msgstr "Public comment"
 
-msgid "Šis duomenų rinkinys įtrauktas į "
-msgstr "This dataset was added to "
-
 msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
 msgstr "Your organization was added to request organization list"
 
@@ -604,8 +601,8 @@ msgid ""
 "Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų ištekliaus "
 "prieinamumą. Atitinka dct:publisher."
 msgstr ""
-"An entity (organisation) responsible for making the Dataset available. "
-"Corresponds to dct:publisher."
+"This property indicates the entity (organization) responsible for providing "
+"access to the resource. Corresponds to dct:publisher"
 
 msgid ""
 "Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio "
@@ -1396,7 +1393,10 @@ msgstr "Open"
 msgid "Redaguoti"
 msgstr "Edit"
 
-msgid "Trinti"
+msgid "Ar jūs tikrai norite ištrinti šį šaltinį?"
+msgstr "Are you sure you want to delete this resource?"
+
+msgid "Ištrinti"
 msgstr "Delete"
 
 msgid "Duomenų ištekliaus peržiūros"
@@ -1438,8 +1438,14 @@ msgstr "Data sources"
 msgid "Susieti su duomenų ištekliumi"
 msgstr "Link to resource"
 
+msgid "Ar jūs tikrai norite ištrinti šį ryšį?"
+msgstr "Are you sure you want to delete this relation?"
+
 msgid "Priskirtos organizacijos"
 msgstr "Assigned organizations"
+
+msgid "Ar jūs tikrai norite ištrinti?"
+msgstr "Are you sure you want to delete?"
 
 msgid "Priskirti organizaciją"
 msgstr "Assign organization"
@@ -3054,11 +3060,6 @@ msgstr "Request organizations"
 msgid "Poreikių valdymo sritys"
 msgstr "Request management areas"
 
-msgid "pagal rinkinio valdymo sritį rinkinio įkėlimo datai"
-msgstr ""
-"{self.get_title_for_indicator(indicator)} for dataset categories and "
-"publication date"
-
 msgid "Poreikių kiekis metuose"
 msgstr "Request count by years"
 
@@ -3361,6 +3362,9 @@ msgstr "Other assignee legislations"
 msgid "Mokėjimo sąlygos"
 msgstr "Payment terms"
 
+msgid "Generuoti sutarties dokumentą"
+msgstr "Generate agreement document"
+
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr "File must be in Markdown format (.md)."
 
@@ -3387,6 +3391,10 @@ msgstr "Other assigner legislations"
 
 msgid "Sutartis"
 msgstr "Agreement"
+
+#, python-brace-format
+msgid "Sutartis: {organization}"
+msgstr "Agreement: {organization}"
 
 msgid "Sutarties leidimas"
 msgstr "Agreement scope"
@@ -3415,9 +3423,6 @@ msgstr "Generate agreements"
 msgid "Grįžti į sutartis"
 msgstr "Go back to agreements"
 
-msgid "Generuoti sutarties dokumentą"
-msgstr "Generate agreement document"
-
 msgid "Įkelti gavėjo pasirašytą dokumentą"
 msgstr "Upload document signed by data receiver"
 
@@ -3433,15 +3438,8 @@ msgstr "Creation date"
 msgid "Nėra sutarčių dokumentų."
 msgstr "No agreement documents."
 
-msgid "Generuoti"
-msgstr "Generate"
-
 msgid "Nėra sutarčių."
 msgstr "No agreements."
-
-#, python-brace-format
-msgid "Sutartis: {organization}"
-msgstr "Agreement: {organization}"
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
 msgstr "This use case already has existing agreements."
@@ -3451,10 +3449,6 @@ msgstr "Agreements generated successfully"
 
 msgid "Sutarčių generavime kilo klaidų"
 msgstr "Errors occurred while generating agreements"
-
-#, python-brace-format
-msgid "Sutarties generavimas: {organization}"
-msgstr "Agreement generation: {organization}"
 
 #, python-brace-format
 msgid ""
@@ -4184,6 +4178,9 @@ msgstr "New property"
 msgid "Baziniai modeliai"
 msgstr "Base model"
 
+msgid "Ar tikrai norite ištrinti?"
+msgstr "Are you sure you want to delete?"
+
 msgid "Parametrai"
 msgstr "Parameters"
 
@@ -4558,9 +4555,6 @@ msgstr "Admin"
 
 msgid "Atnaujinti"
 msgstr "Update"
-
-msgid "Ištrinti"
-msgstr "Delete"
 
 msgid ""
 "Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "

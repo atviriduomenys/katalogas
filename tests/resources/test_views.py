@@ -150,7 +150,7 @@ def test_delete_wrong_login(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     resource = DatasetDistributionFactory()
-    response = app.get(reverse('resource-delete', kwargs={'pk': resource.id}))
+    response = app.post(reverse('resource-delete', kwargs={'pk': resource.id}))
     assert response.status_code == 302
     assert str(resource.dataset_id) in response.location
 
@@ -160,19 +160,9 @@ def test_delete_correct_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    resp = app.get(reverse('resource-delete', kwargs={'pk': resource.pk}))
+    resp = app.post(reverse('resource-delete', kwargs={'pk': resource.pk}))
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 0
-
-
-@pytest.mark.django_db
-def test_click_delete_button(app: DjangoTestApp):
-    resource = DatasetDistributionFactory()
-    user = UserFactory(is_staff=True, organization=resource.dataset.organization)
-    app.set_user(user)
-    response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id}))
-    response.click(linkid='delete_resource')
-    assert response.status_code == 200
 
 
 @pytest.mark.django_db

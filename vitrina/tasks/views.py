@@ -3,7 +3,8 @@ import datetime
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.db.models import Case, When, Value, CharField, F, Q
 from django.db.models.functions import Concat
-from django.http import HttpResponseRedirect
+from django.forms import BaseForm
+from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views.generic import DetailView, DeleteView, TemplateView, ListView
@@ -190,6 +191,7 @@ class TaskView(PermissionRequiredMixin, DetailView):
 class CloseTaskView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = Task
     template_name = "confirm_close.html"
+
     pk_url_kwarg = "task_id"
 
     def dispatch(self, request, *args, **kwargs):
@@ -208,12 +210,11 @@ class CloseTaskView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
         context["current_title"] = _("Užduoties uždarymas")
         return context
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object.status = Task.COMPLETED
         self.object.completed = datetime.datetime.now()
         self.object.save()
-        success_url = self.get_success_url()
-        return HttpResponseRedirect(success_url)
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("user-task-list", kwargs={"pk": self.request.user.pk})

@@ -21,6 +21,7 @@ from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
+from django.forms import BaseForm
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.http.response import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect, render
@@ -128,7 +129,7 @@ from vitrina.settings import ELASTIC_FACET_SIZE, SPINTA_SERVER_URL
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.statistics.models import DatasetStats, ModelDownloadStats
 from vitrina.statistics.views import StatsMixin
-from vitrina.structure.models import Model, Metadata, Property
+from vitrina.structure.models import Metadata, Property, Model
 from vitrina.structure.services import (
     create_structure_objects,
     get_model_name,
@@ -540,6 +541,7 @@ class DatasetDetailView(
 class DatasetDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
     model = Dataset
     template_name = "confirm_delete.html"
+    success_url = reverse_lazy("dataset-list")
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
@@ -547,14 +549,6 @@ class DatasetDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
             return True
         else:
             return has_perm(self.request.user, Action.DELETE, dataset)
-
-    def get_success_url(self):
-        return reverse("dataset-list")
-
-    def delete(self, request, *args, **kwargs):
-        dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        dataset.delete()
-        return HttpResponseRedirect(self.get_success_url())
 
 
 class DatasetRDFDownloadView(PermissionRequiredMixin, View):
@@ -1822,14 +1816,16 @@ class DeleteMemberView(
             },
         )
 
-    def delete(self, request, *args, **kwargs):
-        super().delete((self, request, args, kwargs))
-        if self.object.content_type == ContentType.objects.get_for_model(Dataset):
-            dataset = Dataset.objects.get(id=self.object.object_id)
-            if dataset.publisher == self.object.organization:
-                dataset.publisher = None
-            dataset.save()
-        return HttpResponseRedirect(self.get_success_url())
+    def form_valid(self, form: BaseForm) -> HttpResponse:
+        if self.object.content_type != ContentType.objects.get_for_model(Dataset):
+            return super().form_valid(form)
+
+        dataset = Dataset.objects.filter(id=self.object.object_id, publisher=self.object.organization).first()
+        if dataset:
+            dataset.publisher = None
+            dataset.save(update_fields=["publisher"])
+
+        return super().form_valid(form)
 
 
 class DatasetProjectsView(DatasetStructureMixin, PermissionRequiredMixin, HistoryMixin, PlanMixin, ListView):
@@ -2023,14 +2019,14 @@ class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse("dataset-requests", kwargs={"pk": self.dataset.pk}))
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         Comment.objects.filter(
             rel_object_id=self.request_object.request.pk,
             rel_content_type=ContentType.objects.get_for_model(self.request_object.request),
         ).delete()
         self.request_object.delete()
-        success_url = self.get_success_url()
-        return HttpResponseRedirect(success_url)
+
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("dataset-requests", kwargs={"pk": self.dataset.pk})
@@ -2102,10 +2098,9 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse("dataset-projects", kwargs={"pk": self.dataset.pk}))
 
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         self.project.datasets.remove(self.dataset.pk)
-        success_url = self.get_success_url()
-        return HttpResponseRedirect(success_url)
+        return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self):
         return reverse("dataset-projects", kwargs={"pk": self.dataset.pk})
@@ -3127,17 +3122,14 @@ class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
     def has_permission(self):
         return has_perm(self.request.user, Action.UPDATE, self.dataset)
 
-    def get(self, request, *args, **kwargs):
-        return self.post(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         with create_revision():
             self.object = self.get_object()
-            set_user(request.user)
+            set_user(self.request.user)
             add_to_revision(self.object)
             set_comment(Dataset.ATTRIBUTION_DELETED)
 
-        return super().delete(request, *args, **kwargs)
+        return super().form_valid(form)
 
     def get_success_url(self):
         return self.dataset.get_absolute_url()
@@ -3210,16 +3202,13 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
     def has_permission(self):
         return has_perm(self.request.user, Action.UPDATE, self.dataset)
 
-    def get(self, *args, **kwargs):
-        return self.post(*args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
+    def form_valid(self, form: BaseForm) -> HttpResponse:
         with create_revision():
             self.object = self.get_object()
-            set_user(request.user)
+            set_user(self.request.user)
             set_comment(Dataset.RELATION_DELETED)
             add_to_revision(self.object)
-        return super().delete(request, *args, **kwargs)
+        return super().form_valid(form)
 
     def get_success_url(self):
         return self.dataset.get_absolute_url()

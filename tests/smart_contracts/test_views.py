@@ -294,6 +294,22 @@ class TestAgreementGeneratePdf:
         )
         assert response.status_code == 403
 
+    def test_page_loads_without_error(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset,
+    ) -> None:
+        user = UserFactory(organization=organization)
+        app.set_user(user)
+        project = ProjectFactory(user=user, datasets=[dataset])
+        agreement = AgreementFactory(
+            project=project, assigner=organization, status=AgreementStatuses.CREATED,
+        )
+
+        response = app.get(
+            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
+        )
+
+        assert response.status_code == 200
+
     @pytest.mark.parametrize(
         "status",
         [
@@ -317,10 +333,23 @@ class TestAgreementGeneratePdf:
         agreement = AgreementFactory(
             project=project, assigner=organization, status=status
         )
-
-        response = app.get(
-            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk])
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
         )
+
+        response = app.post(
+            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
+            {
+                "template": template.pk,
+                "other_assigner_legislations": "",
+                "other_assignee_legislations": "",
+                "payment_terms": "",
+            },
+        )
+
         agreement.refresh_from_db()
         assert response.status_code == 302
         assert agreement.status == status

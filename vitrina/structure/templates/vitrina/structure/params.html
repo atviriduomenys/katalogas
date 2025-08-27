@@ -37,10 +37,14 @@
                                             <a href="{%url 'param-update' dataset.pk param_item.pk %}" class="button is-link is-small">
                                                 {% translate "Redaguoti" %}
                                             </a>
-                                            <a href="{%url 'param-delete' dataset.pk param_item.pk %}" class="button is-link is-small"
-                                            onclick="return confirm('Ar tikrai norite pašalinti?')">
-                                                {% translate "Trinti" %}
-                                            </a>
+                                            <form method="post" action="{% url 'param-delete' dataset.pk param_item.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                        class="button is-link is-small"
+                                                        onclick="return confirm({% translate 'Ar tikrai norite ištrinti?' %})">
+                                                    {% translate "Ištrinti" %}
+                                                </button>
+                                            </form>
                                         </div>
                                     {% endif %}
                                 </td>

@@ -174,6 +174,10 @@ class Agreement(UUIDBaseModel):
             "ex:otherAssigneeLegislations": self.other_assignee_legislations or NON_VALUE,
         }
 
+    @property
+    def detail_page_title(self) -> str:
+        return _("Sutartis: {organization}").format(organization=self.assigner)
+
 
 class AgreementScope(UUIDBaseModel):
     agreement = models.ForeignKey(

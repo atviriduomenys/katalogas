@@ -1013,10 +1013,11 @@ class TestDatasetUpdateView:
         assert response.status_code == 403
 
     def test_change_form_correct_login(self, app: DjangoTestApp):
+        parent_dataset = DatasetFactory()
         frequency = FrequencyFactory(is_default=True)
         category = CategoryFactory()
         org = OrganizationFactory()
-        dataset = DatasetFactory(
+        dataset: Dataset= DatasetFactory(
             published=timezone.localize(datetime(2022, 9, 7)),
             slug="test-dataset-slug",
             description="test description",
@@ -1030,6 +1031,7 @@ class TestDatasetUpdateView:
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
         form["title"] = "Edited title"
         form["description"] = "edited dataset description"
+        form["parent"] = parent_dataset.pk
         resp = form.submit()
         dataset.refresh_from_db()
         assert resp.status_code == 302
@@ -1041,6 +1043,48 @@ class TestDatasetUpdateView:
         assert dataset.metadata.count() == 1
         assert dataset.metadata.first().title == "Edited title"
         assert dataset.metadata.first().description == "edited dataset description"
+        assert dataset.get_parent() == parent_dataset
+
+    def test_change_parent(self, app: DjangoTestApp):
+        old_parent_dataset = DatasetFactory()
+        new_parent_dataset = DatasetFactory()
+        dataset: Dataset= DatasetFactory(
+            published=timezone.localize(datetime(2022, 9, 7)),
+            slug="test-dataset-slug",
+            description="test description",
+        )
+        dataset.move(old_parent_dataset)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset.manager = user
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
+
+        form["parent"] = new_parent_dataset.pk
+        resp = form.submit()
+        dataset.refresh_from_db()
+        assert resp.status_code == 302
+        assert resp.url == reverse("dataset-detail", kwargs={"pk": dataset.id})
+        assert dataset.get_parent() == new_parent_dataset
+
+    def test_remove_parent(self, app: DjangoTestApp):
+        old_parent_dataset = DatasetFactory()
+        dataset: Dataset= DatasetFactory(
+            published=timezone.localize(datetime(2022, 9, 7)),
+            slug="test-dataset-slug",
+            description="test description",
+        )
+        dataset.move(old_parent_dataset)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset.manager = user
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
+
+        form["parent"] = ''
+        resp = form.submit()
+        dataset.refresh_from_db()
+        assert resp.status_code == 302
+        assert resp.url == reverse("dataset-detail", kwargs={"pk": dataset.id})
+        assert dataset.get_parent() is None
 
     def test_dataset_update_existing_identifier(self, app: DjangoTestApp):
         subclass = DCATResourceSubclassFactory(name="information_system")
@@ -1446,6 +1490,7 @@ class TestDatasetCreateView:
         assert response.status_code == 403
 
     def test_add_form_correct_login(self, app: DjangoTestApp):
+        parent_dataset = DatasetFactory()
         FrequencyFactory(is_default=True)
         subclass = DCATResourceSubclassFactory()
         org = OrganizationFactory(
@@ -1464,18 +1509,21 @@ class TestDatasetCreateView:
         form["description"] = "Added new dataset description"
         form["tags"] = ["test tag"]
         form["access_rights"] = Dataset.PUBLIC
+        form["parent"] = parent_dataset.id
         resp = form.submit()
-        added_dataset = Dataset.objects.filter(translations__title="Added title")
-        assert added_dataset.count() == 2
-        assert added_dataset[0].tags.all()[0].name == "test tag"
-        assert added_dataset[0].access_rights == Dataset.PUBLIC
+        added_datasets = Dataset.objects.filter(translations__title="Added title")
+        assert added_datasets.count() == 2
+        assert added_datasets[0].tags.all()[0].name == "test tag"
+        assert added_datasets[0].access_rights == Dataset.PUBLIC
         assert resp.status_code == 302
-        assert str(added_dataset[0].id) in resp.url
-        assert Version.objects.get_for_object(added_dataset.first()).count() == 1
-        assert Version.objects.get_for_object(added_dataset.first()).first().revision.comment == Dataset.CREATED
-        assert added_dataset.first().metadata.count() == 1
-        assert added_dataset.first().metadata.first().title == "Added title"
-        assert added_dataset.first().metadata.first().description == "Added new dataset description"
+        assert str(added_datasets[0].id) in resp.url
+        added_dataset = added_datasets.first()
+        assert Version.objects.get_for_object(added_dataset).count() == 1
+        assert Version.objects.get_for_object(added_dataset).first().revision.comment == Dataset.CREATED
+        assert added_dataset.metadata.count() == 1
+        assert added_dataset.metadata.first().title == "Added title"
+        assert added_dataset.metadata.first().description == "Added new dataset description"
+        assert added_dataset.get_parent() == parent_dataset
 
     def test_dataset_add_form_initial_values(self, app: DjangoTestApp):
         default_frequency = FrequencyFactory(is_default=True)

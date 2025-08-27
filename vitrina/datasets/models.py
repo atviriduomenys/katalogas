@@ -87,16 +87,23 @@ class Resource(MP_Node, TranslatableModel):
     class Meta:
         abstract = True
 
-    def save(self, *args, **kwargs):
-        for field in self.node_order_by:
-            if field != "path" and not getattr(self, field):
-                logger.warning(f"Missing required field {field}")
-        super().save(*args, **kwargs)
+    def save(self, *args, **kwargs) -> None:
+        if not self.path:
+            self.add_root(instance=self)
+        else:
+            super().save(*args, **kwargs)
+
+    def add_self_as_root(self) -> None:
+        last_root = self.get_last_root_node()
+        self.depth = 1
+        self.path = last_root._inc_path() if last_root else self._get_path(None, 1, 1)
+        self.save()
+        self.fix_tree(fix_paths=True)
 
 
 @reversion.register(follow=["category", "part_of"])
 class Dataset(Resource):
-    node_order_by = ("organization_id",)
+    node_order_by = ("subclass",)
 
     UPLOAD_TO = "data/files"
 

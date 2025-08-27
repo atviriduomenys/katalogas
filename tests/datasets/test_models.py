@@ -1,13 +1,45 @@
+from datetime import datetime
+
 import pytest
+import pytz
+from django.conf import settings
 
 from vitrina.classifiers.factories import ConceptFactory
 from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
-from vitrina.datasets.models import DCATResourceSubclass
+from vitrina.datasets.models import DCATResourceSubclass, Dataset
+from vitrina.orgs.factories import OrganizationFactory
 
 pytestmark = pytest.mark.django_db
 
 
 class TestDatasets:
+    def test_translations_default_language(self):
+        dataset = DatasetFactory()
+        default_language = dataset.get_current_language()
+        assert default_language == "lt"
+
+    def test_language_changes(self):
+        dataset = DatasetFactory()
+        dataset.set_current_language("en")
+        current = dataset.get_current_language()
+        assert current == "en"
+
+    def test_public_manager_filtering(self):
+        organization = OrganizationFactory(slug="org", kind="gov")
+
+        DatasetFactory(is_public=False, organization=organization)
+        DatasetFactory(
+            deleted=True,
+            deleted_on=pytz.timezone(settings.TIME_ZONE).localize(datetime.now()),
+            organization=organization,
+        )
+        DatasetFactory(deleted=True, deleted_on=None, organization=organization)
+        DatasetFactory(deleted=None, deleted_on=None, organization=organization)
+        DatasetFactory(organization=organization)
+
+        public_datasets = Dataset.public.all()
+        assert public_datasets.count() == 2
+
     @pytest.mark.parametrize(
         "field_name",
         [
@@ -37,7 +69,6 @@ class TestDatasets:
 
         value = getattr(dataset, field_name)
         assert value == concept
-
 
 
 class TestDCATResourceSubclass:

@@ -769,9 +769,6 @@ class DatasetCreateView(
         subclass = DCATResourceSubclass.objects.get(pk=self.kwargs.get("subclass_uuid"))
         self.object.subclass = subclass
 
-        self.object.save()
-        form.save_m2m()
-
         parent: Dataset | None
         if parent := form.cleaned_data.pop("parent", None):
             parent.add_child(instance=self.object)
@@ -1109,9 +1106,6 @@ class DatasetUpdateView(
         self.object: Dataset = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
-        form.save_m2m()
-
-        self.object.save()
         form.save_m2m()
 
         if ("endpoint_url" in form.changed_data) or (self.object.is_public and not self.object.published):

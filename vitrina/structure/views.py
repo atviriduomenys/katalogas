@@ -146,12 +146,7 @@ class DatasetStructureMixin(StructureMixin):
 
 
 class DatasetStructureView(
-    DatasetBreadcrumbsMixin, 
-    PermissionRequiredMixin, 
-    HistoryMixin, 
-    StructureMixin, 
-    PlanMixin, 
-    TemplateView
+    DatasetBreadcrumbsMixin, PermissionRequiredMixin, HistoryMixin, StructureMixin, PlanMixin, TemplateView
 ):
     template_name = "vitrina/structure/dataset_structure.html"
     detail_url_name = "dataset-detail"
@@ -180,7 +175,7 @@ class DatasetStructureView(
             )
 
         return super().dispatch(request, *args, **kwargs)
-    
+
     def has_permission(self):
         if self.object.is_public:
             return True
@@ -225,12 +220,7 @@ class DatasetStructureView(
 
 
 class ModelStructureView(
-    DatasetBreadcrumbsMixin,
-    HistoryMixin, 
-    StructureMixin, 
-    PlanMixin, 
-    PermissionRequiredMixin, 
-    TemplateView
+    DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
 ):
     template_name = "vitrina/structure/model_structure.html"
     detail_url_name = "dataset-detail"
@@ -285,7 +275,7 @@ class ModelStructureView(
                 .exclude(metadata__visibility=Metadata.PRIVATE)
             )
         return super().dispatch(request, *args, **kwargs)
-    
+
     def get_breadcrumbs(self):
         crumbs = self.dataset_hierarchy(self.object, include_home=True, make_current=False)
         crumbs.append(Crumb(title=_("Struktūra"), url=reverse("dataset-structure", kwargs={"pk": self.object.pk})))
@@ -465,12 +455,7 @@ class PropertyGraphView(PermissionRequiredMixin, View):
 
 
 class PropertyStructureView(
-    DatasetBreadcrumbsMixin, 
-    HistoryMixin, 
-    StructureMixin, 
-    PlanMixin, 
-    PermissionRequiredMixin, 
-    TemplateView
+    DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
 ):
     template_name = "vitrina/structure/property_structure.html"
     detail_url_name = "dataset-detail"
@@ -530,14 +515,19 @@ class PropertyStructureView(
             )
 
         return super().dispatch(request, *args, **kwargs)
-    
+
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(self.object, include_home=True, make_current=False)
         crumbs.append(Crumb(title=_("Struktūra"), url=reverse("dataset-structure", kwargs={"pk": self.object.pk})))
-        crumbs.append(Crumb(title=self.model.title, url=reverse("model-structure", kwargs={"pk": self.object.pk, "model": self.model.name})))
+        crumbs.append(
+            Crumb(
+                title=self.model.title,
+                url=reverse("model-structure", kwargs={"pk": self.object.pk, "model": self.model.name}),
+            )
+        )
         crumbs.append(Crumb(title=self.property.title, url=None, is_current=True))
         return crumbs
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["dataset"] = self.object
@@ -767,12 +757,7 @@ async def get_model_data_count(request, *args, **kwargs):
 
 
 class ModelDataView(
-    DatasetBreadcrumbsMixin, 
-    HistoryMixin, 
-    StructureMixin, 
-    PlanMixin, 
-    PermissionRequiredMixin, 
-    TemplateView
+    DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
 ):
     template_name = "vitrina/structure/model_data.html"
     detail_url_name = "dataset-detail"
@@ -836,7 +821,7 @@ class ModelDataView(
                 query = "&".join(query)
                 return redirect(f"https://get.data.gov.lt/{self.model}?{query}")
         return super().get(request, *args, **kwargs)
-    
+
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(self.object, include_home=True)
         crumbs.append(
@@ -984,12 +969,7 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
 
 
 class ObjectDataView(
-    DatasetBreadcrumbsMixin, 
-    HistoryMixin, 
-    StructureMixin, 
-    PlanMixin, 
-    PermissionRequiredMixin, 
-    TemplateView
+    DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
 ):
     template_name = "vitrina/structure/object_data.html"
     detail_url_name = "dataset-detail"
@@ -1099,14 +1079,7 @@ class ObjectDataView(
         return None
 
 
-class ApiView(
-    DatasetBreadcrumbsMixin, 
-    HistoryMixin, 
-    StructureMixin, 
-    PlanMixin, 
-    PermissionRequiredMixin, 
-    TemplateView
-):
+class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/structure/api.html"
     detail_url_name = "dataset-detail"
     history_url_name = "model-history"
@@ -1287,7 +1260,7 @@ class GetAllApiView(ApiView):
             }
 
         return context
-    
+
     def get_breadcrumbs(self):
         crumbs = super().dataset_hierarchy(self.object, include_home=True, make_current=False)
         crumbs.append(
@@ -1780,12 +1753,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         return kwargs
 
 
-class ModelUpdateView(
-    DatasetBreadcrumbsMixin,
-    PermissionRequiredMixin, 
-    RevisionMixin, 
-    UpdateView
-):
+class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
     model = Metadata
     template_name = "vitrina/structure/model_form.html"
     form_class = ModelUpdateForm
@@ -1938,11 +1906,13 @@ class ModelUpdateView(
         set_user(self.request.user)
 
         return redirect(model.get_absolute_url())
-    
+
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(self.dataset, include_home=True)
         crumbs.append(Crumb(title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk])))
-        crumbs.append(Crumb(title=self.object.title, url=reverse("model-structure", args=[self.dataset.pk, self.model_obj.name])))
+        crumbs.append(
+            Crumb(title=self.object.title, url=reverse("model-structure", args=[self.dataset.pk, self.model_obj.name]))
+        )
         crumbs.append(Crumb(title=_("Modelio redagavimas"), url=None, is_current=True))
         return crumbs
 
@@ -1957,12 +1927,7 @@ class ModelUpdateView(
         return kwargs
 
 
-class PropertyCreateView(
-    DatasetBreadcrumbsMixin,
-    PermissionRequiredMixin, 
-    RevisionMixin, 
-    CreateView
-):
+class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
     model = Metadata
     template_name = "vitrina/structure/property_form.html"
     form_class = PropertyForm
@@ -2023,14 +1988,18 @@ class PropertyCreateView(
         set_comment(_(f'Pridėtas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
-    
+
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(dataset=self.dataset)
         crumbs.append(Crumb(title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk])))
-        crumbs.append(Crumb(title=self.model_obj.title, url=reverse("model-structure", args=[self.dataset.pk, self.model_obj.name])))
+        crumbs.append(
+            Crumb(
+                title=self.model_obj.title, url=reverse("model-structure", args=[self.dataset.pk, self.model_obj.name])
+            )
+        )
         crumbs.append(Crumb(title=_("Duomenų lauko pridėjimas"), url=None, is_current=True))
         return crumbs
-    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Duomenų lauko pridėjimas")
@@ -2124,23 +2093,29 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
         set_comment(_(f'Redaguotas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
-    
+
     def get_breadcrumbs(self):
         crumbs = self.dataset_hierarchy(self.dataset, include_home=True)
-        crumbs.append(Crumb(
-            title=_("Struktūra"),
-            url=reverse("dataset-structure", kwargs={"pk": self.dataset.pk}),
-        ))
-        crumbs.append(Crumb(
-            title=self.model_obj.title or self.model_obj.name,
-            url=reverse("model-structure", kwargs={"pk": self.dataset.pk, "model": self.model_obj.name}),
-        ))
+        crumbs.append(
+            Crumb(
+                title=_("Struktūra"),
+                url=reverse("dataset-structure", kwargs={"pk": self.dataset.pk}),
+            )
+        )
+        crumbs.append(
+            Crumb(
+                title=self.model_obj.title or self.model_obj.name,
+                url=reverse("model-structure", kwargs={"pk": self.dataset.pk, "model": self.model_obj.name}),
+            )
+        )
         prop_url = getattr(self.property, "get_absolute_url", None)
         prop_url = prop_url() if callable(prop_url) else None
-        crumbs.append(Crumb(
-            title=self.property.title or self.property.name,
-            url=prop_url,
-        ))
+        crumbs.append(
+            Crumb(
+                title=self.property.title or self.property.name,
+                url=prop_url,
+            )
+        )
         crumbs.append(Crumb(title=_("Redaguoti"), url=None, is_current=True))
         return crumbs
 

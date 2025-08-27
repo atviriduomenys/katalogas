@@ -666,16 +666,16 @@ class DatasetCreateView(
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
         return has_perm(self.request.user, Action.CREATE, Dataset, self.organization)
-    
+
     def get_breadcrumbs(self) -> list[Crumb]:
         """Generate hierarchical breadcrumbs for the dataset"""
-        
+
         ACCUSATIVE_FORMS = {
             "dataset": _("Pridėti duomenų rinkinį"),
             "service": _("Pridėti duomenų publikavimo paslaugą"),
             "series": _("Pridėti duomenų rinkinio seriją"),
             "information_system": _("Pridėti informacinę sistemą"),
-            "catalog": _("Pridėti metaduomenų katalogą")
+            "catalog": _("Pridėti metaduomenų katalogą"),
         }
         subclass = get_object_or_404(DCATResourceSubclass, pk=self.kwargs.get("subclass_uuid"))
         if parent_id := self.kwargs.get("parent_id"):
@@ -683,25 +683,21 @@ class DatasetCreateView(
             crumbs = self.dataset_hierarchy(parent_dataset, include_home=True)
             crumbs.append(
                 Crumb(
-                    title=_("Pridėti vaikinį duomenų išteklių"), 
-                    url=reverse("child-resource-subclass-add", args=[self.organization.pk, parent_id])
+                    title=_("Pridėti vaikinį duomenų išteklių"),
+                    url=reverse("child-resource-subclass-add", args=[self.organization.pk, parent_id]),
                 )
             )
-            crumbs.append(
-                Crumb(
-                    title=ACCUSATIVE_FORMS.get(subclass.name, subclass.name), url=None, is_current=True)
-                )
+            crumbs.append(Crumb(title=ACCUSATIVE_FORMS.get(subclass.name, subclass.name), url=None, is_current=True))
             return crumbs
-        
+
         return self.breadcrumbs_organization(self.organization) + [
             Crumb(title=_("Duomenų ištekliai"), url=reverse("dataset-list")),
             Crumb(
-                title=_("Pridėti duomenų išteklių"),
-                url=reverse("resource-subclass-add", args=[self.organization.pk])
+                title=_("Pridėti duomenų išteklių"), url=reverse("resource-subclass-add", args=[self.organization.pk])
             ),
-            Crumb(title=ACCUSATIVE_FORMS.get(subclass.name, subclass.name), url=None, is_current=True)
+            Crumb(title=ACCUSATIVE_FORMS.get(subclass.name, subclass.name), url=None, is_current=True),
         ]
-                    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         subclass_uuid = self.kwargs.get("subclass_uuid")
@@ -947,7 +943,7 @@ class ResourceSubclassCreateView(
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
         return has_perm(self.request.user, Action.CREATE, Dataset, organization)
-    
+
     def get_breadcrumbs(self) -> list[Crumb]:
         if parent_id := self.kwargs.get("parent_id"):
             parent_dataset = get_object_or_404(Dataset, pk=parent_id)
@@ -3703,11 +3699,7 @@ class DatasetRepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
 
 
 class DatasetChildResourceListView(
-    DatasetBreadcrumbsMixin,
-    LanguageChoiceMixin, 
-    HistoryMixin, 
-    DatasetStructureMixin, 
-    DatasetListView
+    DatasetBreadcrumbsMixin, LanguageChoiceMixin, HistoryMixin, DatasetStructureMixin, DatasetListView
 ):
     model = Dataset
     detail_url_name = DatasetDetailView.detail_url_name

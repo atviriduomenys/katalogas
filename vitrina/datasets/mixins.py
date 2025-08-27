@@ -4,6 +4,9 @@ from typing import List, Optional
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Organization
+
 
 @dataclass(frozen=True)
 class Crumb:
@@ -22,14 +25,14 @@ class BaseBreadcrumbsMixin:
         context["breadcrumbs"] = self.get_breadcrumbs()
         return context
 
-    def breadcrumbs_home(self):
+    def breadcrumbs_home(self) -> List[Crumb]:
         return [Crumb(title=_("Pradžia"), url=reverse("home"))]
 
-    def get_breadcrumb_title(self) -> Optional[str]:
+    def get_breadcrumb_title(self) -> str | None:
         """Get custom breadcrumb title - override in subclasses"""
         return self.breadcrumb_title
 
-    def get_breadcrumb_url(self) -> Optional[str]:
+    def get_breadcrumb_url(self) -> str | None:
         """Get custom breadcrumb URL - override in subclasses"""
         return self.breadcrumb_url
 
@@ -46,7 +49,7 @@ class BaseBreadcrumbsMixin:
             return self.breadcrumbs_home()
         return []
 
-    def breadcrumbs_organization(self, organization) -> List[Crumb]:
+    def breadcrumbs_organization(self, organization: Organization) -> List[Crumb]:
         """Generate breadcrumbs up to organization level"""
         crumbs = []
         if self.include_home_in_breadcrumbs:
@@ -56,13 +59,13 @@ class BaseBreadcrumbsMixin:
 
 
 class DatasetBreadcrumbsMixin(BaseBreadcrumbsMixin):
-    def _org_for_dataset(self, dataset):
+    def _org_for_dataset(self, dataset: Dataset) -> Organization:
         ancestors = dataset.get_ancestors()
         if ancestors.exists():
             return ancestors.first().organization
         return dataset.organization
 
-    def dataset_hierarchy(self, dataset, include_home=True, make_current=False) -> List[Crumb]:
+    def dataset_hierarchy(self, dataset: Dataset, include_home: bool = True, make_current: bool = False) -> List[Crumb]:
         """Generate full dataset hierarchy breadcrumbs"""
         crumbs: List[Crumb] = []
 
@@ -85,7 +88,7 @@ class DatasetBreadcrumbsMixin(BaseBreadcrumbsMixin):
         )
         return crumbs
 
-    def get_dataset(self):
+    def get_dataset(self) -> Dataset | None:
         if hasattr(self, "object") and hasattr(self.object, "get_ancestors"):
             return self.object
         elif hasattr(self, "get_object"):

@@ -466,6 +466,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("information_system_importance"),
             Field("information_system_publisher"),
             Field("information_system_creator"),
+            Field("parent"),
             Field("applicable_legislation"),
         )
 

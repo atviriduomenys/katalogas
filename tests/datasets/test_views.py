@@ -1923,6 +1923,17 @@ class TestDatasetCreateView:
         assert dataset3.name == "datasets/gov/test-organization/test-dataset_4"
 
 
+class TestDatasetDeleteView:
+    def test_delete_dataset(self, app: DjangoTestApp) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        dataset = DatasetFactory()
+
+        app.post(reverse("dataset-delete", args=[dataset.pk]))
+        assert not Dataset.objects.filter(pk=dataset.pk).exists()
+
+
 class TestDatasetMembers:
     def test_dataset_members_view_bad_login(self, app: DjangoTestApp):
         dataset = DatasetFactory()
@@ -3827,17 +3838,6 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     </dcat:DataService>
 </rdf:RDF>"""
     )
-
-
-class TestDatasetDeleteView:
-    def test_delete_dataset(self, app: DjangoTestApp) -> None:
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        dataset = DatasetFactory()
-
-        app.post(reverse("dataset-delete", args=[dataset.pk]))
-        assert not Dataset.objects.filter(pk=dataset.pk).exists()
 
 
 class TestDeleteMemberView:

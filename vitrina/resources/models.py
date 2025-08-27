@@ -118,7 +118,7 @@ class PackagingFormat(models.Model):
 
 @reversion.register()
 class DatasetDistribution(TranslatableModel):
-    DISTRIBUTION_STATUS_URI="http://publications.europa.eu/resource/authority/distribution-status"
+    DISTRIBUTION_STATUS_URI = "http://publications.europa.eu/resource/authority/distribution-status"
     UPLOAD_TO = "data"
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -234,7 +234,15 @@ class DatasetDistribution(TranslatableModel):
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
         help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
     )
-    status = models.ForeignKey(Concept, on_delete=models.PROTECT, related_name="dataset_distributions", verbose_name=_("Duomenų distribucijos būsena."), help_text=_("Duomenų distribucija gali būti kuriama, suplanuota kūrimui arba įgyvendinta - veikianti.",))
+    status = models.ForeignKey(
+        Concept,
+        on_delete=models.PROTECT,
+        related_name="dataset_distributions",
+        verbose_name=_("Duomenų distribucijos būsena."),
+        help_text=_(
+            "Duomenų distribucija gali būti kuriama, suplanuota kūrimui arba įgyvendinta - veikianti.",
+        ),
+    )
 
     rights_relation = models.URLField(
         verbose_name=_("Teisės - Susijęs dokumentas"),

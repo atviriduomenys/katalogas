@@ -63,9 +63,13 @@ class DatasetDistributionFactory(DjangoModelFactory):
     period_start = date(2022, 1, 1)
     period_end = date(2022, 12, 31)
     file = factory.SubFactory(FilerFileFactory)
-    status = factory.LazyFunction(lambda: Concept.objects.get(code="DEVELOP"))
     type = "FILE"
     version = 1
+    status = factory.LazyFunction(
+        lambda: Concept.objects.get(
+            code="DEVELOP",
+        )
+    )
 
     class Params:
         uapi_format = factory.Trait(

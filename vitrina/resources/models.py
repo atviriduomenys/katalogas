@@ -16,6 +16,10 @@ from vitrina.datasets.models import Dataset
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
 
+def get_default_status() -> Concept:
+    return Concept.objects.get(uri="http://publications.europa.eu/resource/authority/distribution-status/DEVELOP").pk
+
+
 class FormatName(StrEnum):
     API = "API"
     UAPI = "UAPI"
@@ -234,6 +238,7 @@ class DatasetDistribution(TranslatableModel):
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
         help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
     )
+
     status = models.ForeignKey(
         Concept,
         on_delete=models.PROTECT,
@@ -242,6 +247,7 @@ class DatasetDistribution(TranslatableModel):
         help_text=_(
             "Duomenų distribucija gali būti kuriama, suplanuota kūrimui arba įgyvendinta - veikianti.",
         ),
+        default=get_default_status,
     )
 
     rights_relation = models.URLField(

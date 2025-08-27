@@ -4,7 +4,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
 
-from vitrina.classifiers.models import Status
+from vitrina.classifiers.models import Status, Concept
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
@@ -2305,6 +2305,8 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
     form['title'] = 'Edited title'
     form['description'] = 'Edited description'
     form['format'] = dist_format.pk
+    form['status'] = Concept.objects.filter(code="DEVELOP").first().pk
+
     resp = form.submit()
     assert resp.url == reverse('resource-detail', args=[structure.dataset.pk, distribution.pk])
     assert distribution.metadata.count() == 1
@@ -2350,6 +2352,7 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
     form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk})).forms['resource-form']
     form['level'] = 2
     form['format'] = dist_format.pk
+    form['status'] = Concept.objects.filter(code="DEVELOP").first().pk
     resp = form.submit()
     assert resp.url == reverse('resource-detail', args=[structure.dataset.pk, distribution.pk])
     assert distribution.metadata.count() == 1

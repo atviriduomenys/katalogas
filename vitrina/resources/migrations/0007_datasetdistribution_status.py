@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
+import vitrina.resources.models
 
 
 def populate_existing_rows(apps, schema_editor):
@@ -37,6 +38,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='datasetdistribution',
             name='status',
-            field=models.ForeignKey(help_text='Duomenų distribucija gali būti kuriama, suplanuota kūrimui arba įgyvendinta - veikianti.',on_delete=django.db.models.deletion.PROTECT, related_name='dataset_distributions',to='vitrina_classifiers.concept',verbose_name='Duomenų distribucijos būsena.'),
+            field=models.ForeignKey(default=vitrina.resources.models.get_default_status, help_text='Duomenų distribucija gali būti kuriama, suplanuota kūrimui arba įgyvendinta - veikianti.', on_delete=django.db.models.deletion.PROTECT, related_name='dataset_distributions', to='vitrina_classifiers.concept', verbose_name='Duomenų distribucijos būsena.'),
         )
     ]

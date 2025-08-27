@@ -1411,6 +1411,20 @@ class TestDatasetUpdateView:
         assert resp.url == reverse("dataset-detail", kwargs={"pk": dataset.id})
         assert dataset.landing_page == "https://example.com"
 
+    def test_dataset_update_files(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        assert not dataset.dataset_files.all().exists()
+
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
+        form["files"] = [Upload("foo.txt", content=b"foo")]
+        form.submit()
+
+        dataset.refresh_from_db()
+        assert dataset.dataset_files.all().exists()
+        assert form.enctype == "multipart/form-data"
+
 
 class TestDatasetCreateView:
     def test_add_form_no_login(self, app: DjangoTestApp):
@@ -1921,6 +1935,26 @@ class TestDatasetCreateView:
 
         dataset3 = Dataset.objects.last()
         assert dataset3.name == "datasets/gov/test-organization/test-dataset_4"
+
+    def test_dataset_create_files(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        subclass = DCATResourceSubclassFactory()
+        FrequencyFactory(is_default=True)
+        organization = OrganizationFactory()
+
+        form = app.get(reverse("dataset-add", args=[organization.pk, subclass.pk])).forms[
+            "dataset-form"
+        ]
+        form["title"] = "Test Dataset"
+        form["description"] = "Added new dataset description"
+        form["access_rights"] = Dataset.PUBLIC
+        form["files"] = [Upload("foo.txt", content=b"foo")]
+        form.submit()
+
+        dataset = Dataset.objects.get(organization=organization)
+        assert dataset.dataset_files.all().exists()
+        assert form.enctype == "multipart/form-data"
 
 
 class TestDatasetDeleteView:

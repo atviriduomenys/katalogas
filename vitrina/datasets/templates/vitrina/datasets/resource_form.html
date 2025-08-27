@@ -42,7 +42,7 @@
 {% endif %}
 
 {% include 'vitrina/datasets/resource_information.html' %}
-<form method="post" id="dataset-form" novalidate>
+<form method="post" id="dataset-form" enctype="multipart/form-data" novalidate>
   {% csrf_token %}
 
   <div class="column is-half">

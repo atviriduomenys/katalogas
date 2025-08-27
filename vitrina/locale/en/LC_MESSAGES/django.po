@@ -1686,7 +1686,7 @@ msgid "Pridėti duomenų publikavimo paslaugą"
 msgstr "Add Data Service"
 
 msgid "Pridėti duomenų rinkinio seriją"
-msgstr "Add Dat Serias"
+msgstr "Add Data Serias"
 
 msgid "Pridėti informacinę sistemą"
 msgstr "Add Information System"

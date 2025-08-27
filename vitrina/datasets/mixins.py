@@ -20,7 +20,7 @@ class BaseBreadcrumbsMixin:
     breadcrumb_title: Optional[str] = None
     breadcrumb_url: Optional[str] = None
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         context["breadcrumbs"] = self.get_breadcrumbs()
         return context
@@ -61,8 +61,8 @@ class BaseBreadcrumbsMixin:
 class DatasetBreadcrumbsMixin(BaseBreadcrumbsMixin):
     def _org_for_dataset(self, dataset: Dataset) -> Organization:
         ancestors = dataset.get_ancestors()
-        if ancestors.exists():
-            return ancestors.first().organization
+        if ancestor := ancestors.select_related("organization").first():
+            return ancestor.organization
         return dataset.organization
 
     def dataset_hierarchy(self, dataset: Dataset, include_home: bool = True, make_current: bool = False) -> List[Crumb]:

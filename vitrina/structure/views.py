@@ -276,7 +276,7 @@ class ModelStructureView(
             )
         return super().dispatch(request, *args, **kwargs)
 
-    def get_breadcrumbs(self):
+    def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(self.object, include_home=True, make_current=False)
         crumbs.append(Crumb(title=_("Struktūra"), url=reverse("dataset-structure", kwargs={"pk": self.object.pk})))
         crumbs.append(Crumb(title=self.model.title, url=None, is_current=True))
@@ -1261,7 +1261,7 @@ class GetAllApiView(ApiView):
 
         return context
 
-    def get_breadcrumbs(self):
+    def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = super().dataset_hierarchy(self.object, include_home=True, make_current=False)
         crumbs.append(
             Crumb(
@@ -2094,7 +2094,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
 
         return redirect(prop.get_absolute_url())
 
-    def get_breadcrumbs(self):
+    def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(self.dataset, include_home=True)
         crumbs.append(
             Crumb(
@@ -2119,7 +2119,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
         crumbs.append(Crumb(title=_("Redaguoti"), url=None, is_current=True))
         return crumbs
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Duomenų lauko redagavimas")
         return context

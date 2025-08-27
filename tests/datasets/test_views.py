@@ -2404,7 +2404,7 @@ class TestDatasetAttribution:
         dataset_attribution = DatasetAttributionFactory()
         dataset = dataset_attribution.dataset
 
-        resp = app.get(reverse("attribution-delete", args=[dataset.pk, dataset_attribution.pk]))
+        resp = app.post(reverse("attribution-delete", args=[dataset.pk, dataset_attribution.pk]))
 
         assert resp.url == dataset.get_absolute_url()
         assert dataset.datasetattribution_set.count() == 0

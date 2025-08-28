@@ -21,6 +21,7 @@ from vitrina.classifiers.factories import (
     AreaOfManagementFactory,
     ConceptSchemaFactory,
     ConceptFactory,
+    DocumentationFactory,
 )
 from vitrina.classifiers.factories import LicenceFactory, ApplicableLegislationFactory
 from vitrina.classifiers.models import Category, AreaOfManagement
@@ -1297,6 +1298,27 @@ class TestDatasetUpdateView:
         assert response.status_code == 302
         assert set(dataset.applicable_legislation.values_list("url", flat=True)) == set(new_urls)
 
+    def test_dataset_change_with_documentation(self, app: DjangoTestApp):
+        category = CategoryFactory()
+        dataset = DatasetFactory()
+        dataset.category.add(category)
+        dataset.documentation.set(DocumentationFactory.create_batch(4))
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset.manager = user
+
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
+
+        new_urls = ("http://www.google.", "http://www.example.com")
+        for i, field in enumerate(form.fields["documentation"]):
+            field.value = new_urls[i] if i < len(new_urls) else ""
+        response = form.submit()
+        dataset.refresh_from_db()
+
+        assert response.status_code == 302
+        assert set(dataset.documentation.values_list("documentation_link", flat=True)) == set(new_urls)
+
     def test_dataset_update_contact(self, app: DjangoTestApp):
         org = OrganizationFactory()
         user = UserFactory(is_staff=True, organization=org)
@@ -1828,6 +1850,33 @@ class TestDatasetCreateView:
         dataset = Dataset.objects.filter(translations__title="Added title").first()
         assert response.status_code == 302
         assert set(dataset.applicable_legislation.values_list("url", flat=True)) == set(applicable_legislation_urls)
+
+    def test_dataset_create_with_documentation(self, app: DjangoTestApp):
+        FrequencyFactory(is_default=True)
+        subclass = DCATResourceSubclassFactory()
+        org = OrganizationFactory(
+            title="Org_title",
+            created=timezone.localize(datetime(2022, 8, 22, 10, 30)),
+            jurisdiction=AreaOfManagement.objects.get(id=1),
+            slug="test-org-slug",
+            kind="test_org_kind",
+        )
+        documentation_urls = ["http://www.google.com", "http://www.example.com"]
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
+            "dataset-form"
+        ]
+        form["title"] = "Added title"
+        form["description"] = "Added new dataset description"
+        form["access_rights"] = Dataset.PUBLIC
+        form["documentation"] = documentation_urls
+        response = form.submit()
+
+        dataset = Dataset.objects.filter(translations__title="Added title").first()
+        assert response.status_code == 302
+        assert set(dataset.documentation.values_list("documentation_link", flat=True)) == set(documentation_urls)
 
     @pytest.mark.parametrize(
         "dataset_name, dataset_title, organization_name, organization_slug, organization_title, expected_dataset_name",
@@ -3875,9 +3924,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
 
 
 class TestDeleteMemberView:
-    def test_remove_dataset_publisher_of_related_dataset_if_representative_is_deleted(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_remove_dataset_publisher_of_related_dataset_if_representative_is_deleted(self, app: DjangoTestApp) -> None:
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -3899,9 +3946,7 @@ class TestDeleteMemberView:
 
 
 class TestRemoveRequestView:
-    def test_delete_dataset_comments_and_related_request_object(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_delete_dataset_comments_and_related_request_object(self, app: DjangoTestApp) -> None:
         user = UserFactory(is_staff=True)
         app.set_user(user)
 

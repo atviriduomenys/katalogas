@@ -6,6 +6,15 @@ v 1.2 (unreleased)
 New features:
 
 
+https://github.com/atviriduomenys/katalogas/issues/1812
+Upgrade Django 3.2 -> Django 4.2:
+    - Changed `delete(..)` methods to `form_valid(..)` in all `DeleteView` views.
+    - Changed some model `save(..)` methods to automatically update fields, if `update_fields` are used.
+    - Few smaller fixes for deprecated features.
+Fix `AgreementGeneratePdf` view errors by adding missing urls to context. Also reuse `base_form.html` instead of custom one.
+
+https://github.com/atviriduomenys/katalogas/issues/1758
+Add CI/CD for checking `ruff format`. Also run `ruff format` on codebase.
 
 https://github.com/atviriduomenys/katalogas/issues/1725
 Add `applicable_legislation` field to Dataset,

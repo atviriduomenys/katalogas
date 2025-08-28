@@ -456,7 +456,12 @@ class DatasetDetailView(
             return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_queryset(self) -> QuerySet[Dataset]:
-        return super().get_queryset().select_related("subclass", "information_system_type")
+        return (
+            super()
+            .get_queryset()
+            .select_related("subclass", "information_system_type")
+            .prefetch_related("documentation", "applicable_legislation")
+        )
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

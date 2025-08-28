@@ -17,7 +17,7 @@ class Migration(migrations.Migration):
                 ('uuid', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('created_at', models.DateTimeField(auto_now_add=True, null=True)),
                 ('updated_at', models.DateTimeField(auto_now=True, null=True)),
-                ('documentation_link', models.CharField(blank=True, max_length=500)),
+                ('documentation_link', models.CharField(blank=True, unique=True, max_length=500)),
             ],
             options={
                 'abstract': False,

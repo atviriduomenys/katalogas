@@ -1625,7 +1625,7 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
 
 
 class Documentation(UUIDBaseModel):
-    documentation_link = models.CharField(max_length=500, blank=True)
+    documentation_link = models.CharField(max_length=500, blank=True, unique=True)
 
 
 class Relation(TranslatableModel):

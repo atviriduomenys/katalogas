@@ -2305,7 +2305,6 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
     form['title'] = 'Edited title'
     form['description'] = 'Edited description'
     form['format'] = dist_format.pk
-
     resp = form.submit()
     assert resp.url == reverse('resource-detail', args=[structure.dataset.pk, distribution.pk])
     assert distribution.metadata.count() == 1

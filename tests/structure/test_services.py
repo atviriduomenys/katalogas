@@ -4,7 +4,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
 
-from vitrina.classifiers.models import Status, Concept
+from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment

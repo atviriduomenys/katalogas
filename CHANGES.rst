@@ -27,6 +27,8 @@ Add hierarchical breadcrumbs for datasets
 https://github.com/atviriduomenys/katalogas/issues/1736
 Add `documentation` field to Dataset
 
+https://github.com/atviriduomenys/katalogas/issues/1751
+Add enhancements to organization, dataset, model and property page titles.
 
 Bug fixes:
 

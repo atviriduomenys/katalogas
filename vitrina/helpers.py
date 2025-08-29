@@ -33,6 +33,7 @@ from crispy_forms.layout import Div, Submit
 from vitrina.messages.models import EmailTemplate, SentMail
 from vitrina.orgs.models import Organization
 from vitrina.requests.models import Request
+from vitrina.structure.models import Model as StructureModel, Property as StructureProperty
 
 
 class Filter:
@@ -706,3 +707,99 @@ def validate_file(file):
         owner=None,
         mime_type=mime_type,
     )
+
+
+def build_page_title_context(
+    *,
+    dataset: Dataset | None = None,
+    organization: Organization | None = None,
+    model: StructureModel | None = None,
+    prop: StructureProperty | None = None,
+    language_code: str = "lt",
+) -> dict[str, str]:
+    """Build page title context based on the provided objects."""
+
+    context: dict[str, str] = {}
+
+    if organization is not None:
+        context["title"] = organization.title
+        context["object_type"] = _("Organizacija")
+        return context
+
+    if dataset is None:
+        return context
+
+    _add_common_dataset_context(context, dataset, language_code)
+
+    if prop is not None and model is not None:
+        context["title"] = getattr(prop, "title", None) or prop.name
+        context["object_type"] = _("Modelio laukas")
+    elif model is not None:
+        context["title"] = getattr(model, "title", None) or model.name
+        context["object_type"] = _("Modelis")
+    else:
+        title = dataset.safe_translation_getter("title", language_code=language_code) or ""
+        context["title"] = title
+        context["object_type"] = dataset.subclass.translated_title if dataset.subclass else ""
+
+    return context
+
+
+def _add_common_dataset_context(context: dict[str, str], dataset: Dataset, language_code: str) -> None:
+    """Add common context elements that are shared across dataset-based objects."""
+    try:
+        parent_dataset = _get_parent_dataset(dataset)
+        context["root_label"] = _("Organizacija")
+        context["root_name"] = parent_dataset.organization.title
+    except Exception:
+        pass
+
+    info_title = _find_information_system_title(dataset, language_code)
+    if info_title:
+        context["info_system_label"] = _("Informacinė sistema")
+        context["info_system_name"] = info_title
+
+
+def _find_information_system_title(dataset: Dataset, language_code: str) -> str | None:
+    """Given a dataset and language, return title of any parent dataset that is an
+    Information System. Returns None if the current dataset itself is an Information System.
+    """
+
+    if dataset.subclass and getattr(dataset.subclass, "is_information_system", False):
+        return None
+
+    try:
+        part_of_qs = dataset.part_of.all()
+    except Exception:
+        part_of_qs = []
+
+    for rel in part_of_qs:
+        try:
+            parent = rel.part_of
+        except Exception:
+            parent = None
+        if parent and parent.subclass and getattr(parent.subclass, "is_information_system", False):
+            return parent.safe_translation_getter("title", language_code=language_code) or parent.title
+
+    # Fallback: Use MP Node logic to traverse up the tree
+    try:
+        ancestors = dataset.get_ancestors()
+        for ancestor in ancestors:
+            if ancestor.subclass and getattr(ancestor.subclass, "is_information_system", False):
+                return ancestor.safe_translation_getter("title", language_code=language_code) or ancestor.title
+    except Exception:
+        try:
+            current = dataset
+            while current.get_parent():
+                current = current.get_parent()
+                if current.subclass and getattr(current.subclass, "is_information_system", False):
+                    return current.safe_translation_getter("title", language_code=language_code) or current.title
+        except Exception:
+            pass
+    return None
+
+
+def _get_parent_dataset(dataset: Dataset) -> Dataset:
+    ancestor = dataset.get_ancestors().select_related("organization").first()
+    return ancestor if ancestor else dataset
+

@@ -2,9 +2,12 @@ from unittest.mock import Mock
 
 import pytest
 from django.test import RequestFactory
+from django.utils.translation import gettext as _
 
 from vitrina.helpers import get_selected_value, get_filter_url
-from vitrina.helpers import prepare_email_by_identifier
+from vitrina.helpers import prepare_email_by_identifier, build_page_title_context
+from vitrina.datasets.factories import DatasetFactory
+from vitrina.orgs.factories import OrganizationFactory
 
 
 @pytest.mark.django_db
@@ -62,3 +65,30 @@ def test_get_filter_url_with_page(rf: RequestFactory):
     filter_url = get_filter_url(request, 'key', 'value')
     assert filter_url == "?selected_facets=key_exact%3Avalue"
 
+
+@pytest.mark.django_db
+def test_organization_only():
+    organization = OrganizationFactory(title="Test Organization")
+    result = build_page_title_context(organization=organization)
+    expected = {
+            "title": "Test Organization",
+            "object_type": str(_("Organizacija"))
+        }
+    assert result == expected
+
+
+@pytest.mark.django_db
+def test_dataset_only():
+    parent_org = OrganizationFactory(title="Parent Organization")
+
+    dataset = DatasetFactory(
+        title="Test Dataset",
+        organization=parent_org
+    )
+    result = build_page_title_context(dataset=dataset, language_code="en")
+    
+    assert result["title"] == "Test Dataset"
+    assert result["root_label"] == str(_("Organizacija"))
+    assert result["root_name"] == "Parent Organization"
+    assert "info_system_label" not in result
+    assert "info_system_name" not in result

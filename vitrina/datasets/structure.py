@@ -469,7 +469,11 @@ def read(reader: Iterable[Row]) -> State:
     state.push(state.manifest)
 
     for row in reader:
-        upper, dim, lower = _split_dim(DIMS, row)
+        try:
+            upper, dim, lower = _split_dim(DIMS, row)
+        except ValueError as e:
+            state.errors.append(_('DSA trūksta privalomo stulpelio "%(column)s".') % {"column": e})
+            break
 
         # Main dimension
         if dim:
@@ -896,7 +900,11 @@ def _split_dim(
     lower = []
     found = None
     for dim in dims:
-        if row[dim]:
+        try:
+            value = row[dim]
+        except (KeyError, IndexError):
+            raise ValueError(dim)
+        if value:
             found = dim
         elif found:
             lower.append(dim)

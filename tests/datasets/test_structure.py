@@ -132,3 +132,21 @@ id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri
 
     assert props['id'].type == 'integer'
     assert len(props['description'].comments) == 1
+
+
+def test_read_structure_table_without_mandatory_columns_throws_error():
+    manifest_without_mandatory_columns = """\
+id,dataset,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description
+,example,,,,,,,,,,,,,,,
+,users,,,,dask/json,,/Users/martynasraila/Documents/projects/VSSA/spinta/dsa/testing/users.json,,,,,,,,,
+,,,User,,,id,users,,4,completed,package,open,,,Pavadinimas,
+,,,,id,integer,,id,,,,,,,,,
+,,,,full_name,string,,name,,,,,,,,,
+,,,,email_address,string,,email,,,,,,,,,
+,,,,active,boolean,,isActive,,,,,,,,,
+"""
+
+    f = io.StringIO(manifest_without_mandatory_columns)
+    reader = csv.DictReader(f)
+    state = read(reader)
+    assert state.errors == ['DSA trūksta privalomo stulpelio "resource".']

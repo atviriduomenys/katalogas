@@ -16,9 +16,7 @@
 {% endblock %}
 
 {% block current_title %}
-    {% objectlanguage dataset LANGUAGE_CODE %}
-        {{ dataset.title }}
-    {% endobjectlanguage %}
+    {% include "component/page_title.html" %}
 {% endblock %}
 
 {% block head %}

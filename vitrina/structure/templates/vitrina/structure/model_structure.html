@@ -5,11 +5,7 @@
 {% load util_tags %}
 
 {% block current_title %}
-    {% if model.title %}
-        {{ model.title }}
-    {% else %}
-        {{ model.name }}
-    {% endif %}
+{% include "component/page_title.html" %}
 {% endblock %}
 {% block parent_links %}
     {% include "component/breadcrumbs.html" %}

@@ -1,8 +1,11 @@
 {% extends "base.html" %}
 {% load i18n %}
 {% load subscription_tags %}
+
 {% block parent_title %}{% translate "Organizacija" %}{% endblock %}
-{% block current_title %}{{ organization.title }}{% endblock %}
+{% block current_title %}
+	{% include "component/page_title.html" %}
+{% endblock %}
 
 {% block parent_links %}
     <ul class="p-t-sm">

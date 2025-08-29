@@ -30,7 +30,7 @@ from shapely.wkt import loads
 
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.mixins import Crumb, DatasetBreadcrumbsMixin
-from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none
+from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none, build_page_title_context
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
@@ -307,6 +307,11 @@ class ModelStructureView(
         context["can_manage_structure"] = self.can_manage_structure
         context["base_props"] = self.model.get_base_props()
         context["params"] = self.model.params.all().order_by("name")
+        context["page_title"] = build_page_title_context(
+            dataset=self.object,
+            model=self.model,
+            language_code=self.request.LANGUAGE_CODE,
+        )
         return context
 
     def get_structure_url(self):
@@ -563,7 +568,12 @@ class PropertyStructureView(
                 ]
             ):
                 context["has_graph"] = True
-
+        context["page_title"] = build_page_title_context(
+            dataset=self.object,
+            model=self.model,
+            prop=self.property,
+            language_code=self.request.LANGUAGE_CODE,
+        )
         return context
 
     def get_structure_url(self):
@@ -1919,6 +1929,11 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Modelio redagavimas")
+        context["page_title"] = build_page_title_context(
+            dataset=self.dataset,
+            model=self.object.object,
+            language_code=self.request.LANGUAGE_CODE,
+        )
         return context
 
     def get_form_kwargs(self):
@@ -2122,6 +2137,12 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Duomenų lauko redagavimas")
+        context["page_title"] = build_page_title_context(
+            dataset=self.dataset,
+            model=self.object.object,
+            prop=self.property,
+            language_code=self.request.LANGUAGE_CODE,
+        )
         return context
 
     def get_form_kwargs(self):

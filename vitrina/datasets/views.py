@@ -113,6 +113,7 @@ from vitrina.helpers import (
     DateFilter,
     get_stats_filter_options_based_on_model,
     get_current_domain,
+    build_page_title_context,
 )
 from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.helpers import is_org_dataset_list
@@ -503,6 +504,10 @@ class DatasetDetailView(
         extra_context_data["related_datasets"] = [(relation, list(values)) for relation, values in related_datasets]
 
         context_data.update(extra_context_data)
+        context_data["page_title"] = build_page_title_context(
+            dataset=dataset,
+            language_code=self.request.LANGUAGE_CODE,
+        )
         return context_data
 
     def get_json_ld_from_dataset(self, dataset):
@@ -1042,6 +1047,10 @@ class DatasetUpdateView(
         context = super().get_context_data(**kwargs)
         subclass_uuid = self.object.subclass.uuid
         switch_language(self.object, get_language())
+        context["page_title"] = build_page_title_context(
+            dataset=self.object,
+            language_code=self.request.LANGUAGE_CODE,
+        )
         context.update(
             {
                 "current_title": _("Duomenų ištekliaus redagavimas"),

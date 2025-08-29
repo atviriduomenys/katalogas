@@ -802,4 +802,3 @@ def _find_information_system_title(dataset: Dataset, language_code: str) -> str 
 def _get_parent_dataset(dataset: Dataset) -> Dataset:
     ancestor = dataset.get_ancestors().select_related("organization").first()
     return ancestor if ancestor else dataset
-

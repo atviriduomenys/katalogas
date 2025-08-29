@@ -20,6 +20,9 @@ msgstr ""
 "11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? "
 "1 : n % 1 != 0 ? 2: 3);\n"
 
+msgid "Organizacija"
+msgstr ""
+
 msgid "kliento id"
 msgstr ""
 
@@ -36,9 +39,6 @@ msgid "API raktas"
 msgstr ""
 
 msgid "Taikymo sritis"
-msgstr ""
-
-msgid "Organizacija"
 msgstr ""
 
 msgid "Duomenų išteklius"
@@ -1279,7 +1279,10 @@ msgstr ""
 msgid "Redaguoti"
 msgstr ""
 
-msgid "Trinti"
+msgid "Ar jūs tikrai norite ištrinti šį šaltinį?"
+msgstr ""
+
+msgid "Ištrinti"
 msgstr ""
 
 msgid "Duomenų ištekliaus peržiūros"
@@ -1321,7 +1324,13 @@ msgstr ""
 msgid "Susieti su duomenų ištekliumi"
 msgstr ""
 
+msgid "Ar jūs tikrai norite ištrinti šį ryšį?"
+msgstr ""
+
 msgid "Priskirtos organizacijos"
+msgstr ""
+
+msgid "Ar jūs tikrai norite ištrinti?"
 msgstr ""
 
 msgid "Priskirti organizaciją"
@@ -1570,6 +1579,9 @@ msgstr ""
 msgid "Pridėti vaikinių duomenų išteklių"
 msgstr ""
 
+msgid "Organizacijos"
+msgstr ""
+
 msgid "Duomenų išteklius sukurtas sėkmingai"
 msgstr ""
 
@@ -1660,9 +1672,6 @@ msgstr ""
 msgid "Termino pašalinimas"
 msgstr ""
 
-msgid "Organizacijos"
-msgstr ""
-
 msgid "vaikiniai duomenų ištekliai"
 msgstr ""
 
@@ -1730,6 +1739,12 @@ msgid "Koordinatorių skaičius"
 msgstr ""
 
 msgid "Tvarkytojų skaičius"
+msgstr ""
+
+msgid "Modelio laukas"
+msgstr ""
+
+msgid "Modelis"
 msgstr ""
 
 msgid "Identifikatoriai"
@@ -3168,6 +3183,9 @@ msgstr ""
 msgid "Mokėjimo sąlygos"
 msgstr ""
 
+msgid "Generuoti sutarties dokumentą"
+msgstr ""
+
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr ""
 
@@ -3193,6 +3211,10 @@ msgid "Papildomi tiekėjo teisės aktai"
 msgstr ""
 
 msgid "Sutartis"
+msgstr ""
+
+#, python-brace-format
+msgid "Sutartis: {organization}"
 msgstr ""
 
 msgid "Sutarties leidimas"
@@ -3222,9 +3244,6 @@ msgstr ""
 msgid "Grįžti į sutartis"
 msgstr ""
 
-msgid "Generuoti sutarties dokumentą"
-msgstr ""
-
 msgid "Įkelti gavėjo pasirašytą dokumentą"
 msgstr ""
 
@@ -3240,14 +3259,7 @@ msgstr ""
 msgid "Nėra sutarčių dokumentų."
 msgstr ""
 
-msgid "Generuoti"
-msgstr ""
-
 msgid "Nėra sutarčių."
-msgstr ""
-
-#, python-brace-format
-msgid "Sutartis: {organization}"
 msgstr ""
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
@@ -3257,10 +3269,6 @@ msgid "Sutartys sėkmingai sugeneruotos"
 msgstr ""
 
 msgid "Sutarčių generavime kilo klaidų"
-msgstr ""
-
-#, python-brace-format
-msgid "Sutarties generavimas: {organization}"
 msgstr ""
 
 #, python-brace-format
@@ -3783,9 +3791,6 @@ msgstr ""
 msgid "Bazė"
 msgstr ""
 
-msgid "Modelis"
-msgstr ""
-
 msgid "Susijęs modelis"
 msgstr ""
 
@@ -3913,6 +3918,9 @@ msgid "Naujas duomenų laukas"
 msgstr ""
 
 msgid "Baziniai modeliai"
+msgstr ""
+
+msgid "Ar tikrai norite ištrinti?"
 msgstr ""
 
 msgid "Parametrai"
@@ -4283,9 +4291,6 @@ msgid "Administratorius"
 msgstr ""
 
 msgid "Atnaujinti"
-msgstr ""
-
-msgid "Ištrinti"
 msgstr ""
 
 msgid ""

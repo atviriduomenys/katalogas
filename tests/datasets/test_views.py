@@ -2030,8 +2030,8 @@ class TestDatasetCreateView:
         form["access_rights"] = Dataset.PUBLIC
         response = form.submit()
         assert response.status_code == 302
-        assert Dataset.objects.count() == 1
-        dataset = Dataset.objects.first()
+        assert Dataset.objects.exclude(id=1).count() == 1
+        dataset = Dataset.objects.exclude(id=1).first()
         assert dataset.name == expected_dataset_name
 
     def test_create_dataset_without_name_generate_unique_name(self, app: DjangoTestApp):
@@ -2064,7 +2064,7 @@ class TestDatasetCreateView:
         form["access_rights"] = Dataset.PUBLIC
         response = form.submit()
         assert response.status_code == 302
-        assert Dataset.objects.count() == 3
+        assert Dataset.objects.exclude(id=1).count() == 3
 
         dataset1.refresh_from_db()
         assert dataset1.name == "datasets/gov/test-organization/test-dataset"

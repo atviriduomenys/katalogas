@@ -296,7 +296,8 @@ def test_retrieve_licence_list_with_correct_api_key(app: DjangoTestApp):
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
-    assert res.json == [{
+    data = [licence_obj for licence_obj in res.json if licence_obj["id"] == str(licence.identifier)]
+    assert data == [{
         'description': licence.description,
         'id': str(licence.identifier),
         'title': licence.title
@@ -533,7 +534,7 @@ def test_create_dataset(app: DjangoTestApp):
         'periodicity': frequency.title,
         'theme': [category.title]
     })
-    assert Dataset.objects.exclude(endpoint_url="https://get.data.gov.lt").count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.language == "en lt"
     assert list(dataset.tags.all()) == ['tag1', 'tag2']

@@ -32,7 +32,7 @@ def test_redirection_exists_no_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_dataset_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/dataset/',
         new_path='/datasets/',
@@ -42,7 +42,7 @@ def test_dataset_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_usecases_examples_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/usecases/examples/',
         new_path='/projects/',
@@ -52,7 +52,7 @@ def test_usecases_examples_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_usecases_applications_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/usecases/applications/',
         new_path='/projects/',
@@ -64,7 +64,7 @@ def test_usecases_applications_has_new_path(app: DjangoTestApp):
 def test_usecase_has_new_path(app: DjangoTestApp):
     user1 = User.objects.create_user(email='user1@test.com', password='12345')
     app.set_user(user1)
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/usecase/',
         new_path='/projects/add/',
@@ -74,7 +74,7 @@ def test_usecase_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_policy_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/regulation/',
         new_path='/more/regulation/',
@@ -85,7 +85,7 @@ def test_policy_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_links_have_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/nuorodos/',
         new_path='/more/nuorodos/',
@@ -95,7 +95,7 @@ def test_links_have_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_notions_have_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/savokos/',
         new_path='/more/savokos/',
@@ -105,7 +105,7 @@ def test_notions_have_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_about_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/apie/',
         new_path='/more/apie/',
@@ -115,7 +115,7 @@ def test_about_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_contacts_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/contacts/',
         new_path='/more/contacts/',
@@ -125,7 +125,7 @@ def test_contacts_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_templates_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/templates/',
         new_path='/more/templates/',
@@ -135,7 +135,7 @@ def test_templates_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_storage_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/saugykla/',
         new_path='/opening-tips/saugykla/',
@@ -145,7 +145,7 @@ def test_storage_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_guide_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/vadovas/',
         new_path='/opening-tips/vadovas/',
@@ -155,7 +155,7 @@ def test_guide_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_summary_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/aprasas/',
         new_path='/opening-tips/aprasas/',
@@ -165,7 +165,7 @@ def test_summary_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_data_opening_tools_have_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/data-opening-tools/',
         new_path='/opening-tips/data-opening-tools/',
@@ -175,7 +175,7 @@ def test_data_opening_tools_have_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_learning_material_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/opening/learningmaterial/',
         new_path='/opening-tips/opening/learningmaterial/',
@@ -185,7 +185,7 @@ def test_learning_material_has_new_path(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_faq_has_new_path(app: DjangoTestApp):
-    Redirect.objects.create(
+    Redirect.objects.get(
         site_id=1,
         old_path='/page/opening_faq/',
         new_path='/opening-tips/opening_faq/',

@@ -68,5 +68,5 @@ def test_change_default_status(app: DjangoTestApp):
 
     form.submit()
 
-    assert Status.objects.filter(is_default=True).first() == another_status
-    assert Status.objects.filter(is_default=False).first() == default_status
+    assert Status.objects.filter(id=default_status.id).values_list("is_default", flat=True)[0] is False
+    assert Status.objects.filter(id=another_status.id).values_list("is_default", flat=True)[0] is True

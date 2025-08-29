@@ -25,7 +25,7 @@ from vitrina.classifiers.factories import (
     DocumentationFactory,
 )
 from vitrina.classifiers.factories import LicenceFactory, ApplicableLegislationFactory
-from vitrina.classifiers.models import Category, AreaOfManagement
+from vitrina.classifiers.models import Category, AreaOfManagement, ConceptSchema
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import (
@@ -64,7 +64,7 @@ from vitrina.testing.templates import strip_empty_lines
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
 from vitrina.identifiers.factories import AgencyFactory, IdentifierFactory
-from vitrina.identifiers.models import Identifier
+from vitrina.identifiers.models import Identifier, Agency
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -1096,6 +1096,9 @@ class TestDatasetUpdateView:
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
         )
         information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
+        information_system_importance_concept_schema = ConceptSchema.objects.get(
+            uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
+        )
         information_system_importance_concept = ConceptFactory(
             concept_schemas=[information_system_importance_concept_schema]
         )
@@ -1106,7 +1109,7 @@ class TestDatasetUpdateView:
             information_system_creator=organization,
             information_system_publisher=organization,
         )
-        agency = AgencyFactory()
+        agency = Agency.objects.filter(name="Registrų ir valstybės informacinių sistemų registras").first()
         IdentifierFactory(resource=dataset, notation="1234", scheme_agency=agency)
         user = UserFactory(is_staff=True)
         app.set_user(user)
@@ -1136,16 +1139,16 @@ class TestDatasetUpdateView:
         form.submit()
         response = form.submit(expect_errors=True)
         assert "Žymėjimas turi atitikti šabloną" in response.text
-        
+
     def test_dataset_update_non_existing_identifier(self, app: DjangoTestApp):
-        AgencyFactory()
         subclass = DCATResourceSubclassFactory(name="information_system")
         organization = OrganizationFactory()
-        information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
-        information_system_importance_concept_schema = ConceptSchemaFactory(
+        information_system_type_concept_schema = ConceptSchema.objects.get(
+            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+        information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
+        information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
         )
-        information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
         information_system_importance_concept = ConceptFactory(
             concept_schemas=[information_system_importance_concept_schema]
         )
@@ -1245,15 +1248,15 @@ class TestDatasetUpdateView:
 
         assert type(response.context.get("form")) == form_class
 
-    def test_dataset_update_information_system(self, app: DjangoTestApp):
+    def test_dataset_update_information_system(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name="information_system")
         dataset = DatasetFactory(subclass=subclass)
         catalog = CatalogFactory()
         frequency = FrequencyFactory(is_default=True)
-        information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+        information_system_type_concept_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
         information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
-        information_system_importance_concept_schema = ConceptSchemaFactory(
+        information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
         )
         information_system_importance_concept = ConceptFactory(
@@ -1281,7 +1284,7 @@ class TestDatasetUpdateView:
         }
         response = app.post(url, data)
 
-        dataset = Dataset.objects.first()
+        dataset = Dataset.objects.filter(pk=dataset.pk).first()
         assert dataset
         assert response.url == dataset.get_absolute_url()
         assert dataset.title == "test_information_system"
@@ -1601,11 +1604,12 @@ class TestDatasetCreateView:
         subclass = DCATResourceSubclassFactory(name="information_system")
         catalog = CatalogFactory()
         frequency = FrequencyFactory(is_default=True)
-        information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
-        information_system_importance_concept_schema = ConceptSchemaFactory(
+        information_system_type_concept_schema = ConceptSchema.objects.get(
+            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+        information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
+        information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
         )
-        information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
         information_system_importance_concept = ConceptFactory(
             concept_schemas=[information_system_importance_concept_schema]
         )
@@ -1631,7 +1635,7 @@ class TestDatasetCreateView:
         }
         response = app.post(url, data)
 
-        dataset = Dataset.objects.first()
+        dataset = Dataset.objects.filter(pk=response.context["object"].pk).first()
         assert dataset
         assert response.url == dataset.get_absolute_url()
         assert dataset.title == "test_information_system"
@@ -1733,14 +1737,14 @@ class TestDatasetCreateView:
 
     def test_information_system_create_with_identifier(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
-        AgencyFactory()
         organization = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name="information_system")
-        information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
-        information_system_importance_concept_schema = ConceptSchemaFactory(
+        information_system_type_concept_schema = ConceptSchema.objects.get(
+            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+        information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
+        information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
         )
-        information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
         information_system_importance_concept = ConceptFactory(
             concept_schemas=[information_system_importance_concept_schema]
         )
@@ -2863,7 +2867,7 @@ def test_click_add_button(app: DjangoTestApp):
 
 @pytest.mark.haystack
 def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp):
-    jurisdiction = AreaOfManagementFactory(name_lt="Organization")
+    jurisdiction = AreaOfManagementFactory(id=30, name_lt="Organization")
     organization = OrganizationFactory(title="Organization", jurisdiction=jurisdiction)
     dataset1 = DatasetFactory(organization=organization)
     dataset2 = DatasetFactory(organization=organization)
@@ -3417,7 +3421,7 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         == f'''\
 <?xml version="1.0"?>
 <rdf:RDF
-    xml:base="http://example.com"
+    xml:base="http://localhost"
     xmlns:edp="https://europeandataportal.eu/voc#"
     xmlns:dct="http://purl.org/dc/terms/"
     xmlns:spdx="http://spdx.org/rdf/terms#"
@@ -3432,7 +3436,7 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
     xmlns:eli="https://data.europa.eu/eli/">
-    <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
+    <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
@@ -3464,14 +3468,14 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         </dcat:contactPoint>
         <dcat:landingPage rdf:resource="https://landing-page.com"/>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist1.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist1.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 1</dct:title>
                 <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
-                <dcat:downloadURL rdf:resource="http://example.com{dist1.file.url}"/>
+                <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -3487,14 +3491,14 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
             </dcat:Distribution>
         </dcat:distribution>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist2.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist2.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 2</dct:title>
                 <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{dataset.landing_page}"/>
-                <dcat:downloadURL rdf:resource="http://example.com{dist2.file.url}"/>
+                <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -3574,7 +3578,7 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         == f'''\
 <?xml version="1.0"?>
 <rdf:RDF
-    xml:base="http://example.com"
+    xml:base="http://localhost"
     xmlns:edp="https://europeandataportal.eu/voc#"
     xmlns:dct="http://purl.org/dc/terms/"
     xmlns:spdx="http://spdx.org/rdf/terms#"
@@ -3589,7 +3593,7 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
     xmlns:eli="https://data.europa.eu/eli/">
-    <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
+    <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
@@ -3620,14 +3624,14 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
             </vcard:Kind>
         </dcat:contactPoint>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist1.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist1.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 1</dct:title>
                 <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
-                <dcat:downloadURL rdf:resource="http://example.com{dist1.file.url}"/>
+                <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -3643,14 +3647,14 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
             </dcat:Distribution>
         </dcat:distribution>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist2.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist2.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 2</dct:title>
                 <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="http://example.com{dist2.file.url}"/>
-                <dcat:downloadURL rdf:resource="http://example.com{dist2.file.url}"/>
+                <dcat:accessURL rdf:resource="http://localhost{dist2.file.url}"/>
+                <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -3757,7 +3761,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         == f'''\
 <?xml version="1.0"?>
 <rdf:RDF
-    xml:base="http://example.com"
+    xml:base="http://localhost"
     xmlns:edp="https://europeandataportal.eu/voc#"
     xmlns:dct="http://purl.org/dc/terms/"
     xmlns:spdx="http://spdx.org/rdf/terms#"
@@ -3772,7 +3776,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
     xmlns:eli="https://data.europa.eu/eli/">
-    <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
+    <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
@@ -3803,7 +3807,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
             </vcard:Kind>
         </dcat:contactPoint>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist.id}/dataset/json">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist.id}/dataset/json">
                 <dct:type rdf:resource="URL"/>
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
@@ -3811,7 +3815,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/json"/>
-                <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
+                <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -3819,15 +3823,15 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
                 </dct:license>
                 <dcat:mediaType>
-                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/json"/>
+                    <dct:MediaType rdf:about=""/>
                 </dcat:mediaType>
                 <dct:format>
-                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/JSON"/>
+                    <dct:MediaTypeOrExtent rdf:about=""/>
                 </dct:format>
             </dcat:Distribution>
         </dcat:distribution>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist.id}/dataset/jsonl">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist.id}/dataset/jsonl">
                 <dct:type rdf:resource="URL"/>
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
@@ -3835,7 +3839,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/jsonl"/>
-                <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
+                <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -3843,15 +3847,15 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
                 </dct:license>
                 <dcat:mediaType>
-                    <dct:MediaType rdf:about="http://www.iana.org/assignments/media-types/application/jsonl"/>
+                    <dct:MediaType rdf:about=""/>
                 </dcat:mediaType>
                 <dct:format>
-                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/JSONL"/>
+                    <dct:MediaTypeOrExtent rdf:about=""/>
                 </dct:format>
             </dcat:Distribution>
         </dcat:distribution>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist.id}/dataset/rdf">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist.id}/dataset/rdf">
                 <dct:type rdf:resource="URL"/>
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
@@ -3859,7 +3863,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/rdf"/>
-                <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
+                <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -3875,7 +3879,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
             </dcat:Distribution>
         </dcat:distribution>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist.id}/TestModel/csv">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist.id}/TestModel/csv">
                 <dct:type rdf:resource="URL"/>
                 <dct:title xml:lang="lt">Duomenys</dct:title>
                 <dct:description xml:lang="lt">Duomenys iš spintos</dct:description>
@@ -3883,7 +3887,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist.modified.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset"/>
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/TestModel/:format/csv"/>
-                <dcat:accessService rdf:resource="http://example.com/datasets/{data_service.pk}/"/>
+                <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -3951,7 +3955,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
         == f"""\
 <?xml version="1.0"?>
 <rdf:RDF
-    xml:base="http://example.com"
+    xml:base="http://localhost"
     xmlns:edp="https://europeandataportal.eu/voc#"
     xmlns:dct="http://purl.org/dc/terms/"
     xmlns:spdx="http://spdx.org/rdf/terms#"
@@ -3966,7 +3970,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
     xmlns:eli="https://data.europa.eu/eli/">
-    <dcat:DataService rdf:about="http://example.com/datasets/{dataset.id}/">
+    <dcat:DataService rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
@@ -4002,7 +4006,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
         </dct:format>
         <dcat:endpointDescription rdf:resource="https://endpoint-description.com"/>
         <dcat:servesDataset>
-            <dcat:Dataset rdf:about="http://example.com/datasets/{relation.dataset.pk}/" />
+            <dcat:Dataset rdf:about="http://localhost/datasets/{relation.dataset.pk}/" />
         </dcat:servesDataset>
     </dcat:DataService>
 </rdf:RDF>"""

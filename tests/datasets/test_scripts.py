@@ -67,7 +67,7 @@ def test_geoportal_import__title_and_description_create(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.geoportal_id == "1"
     dataset.set_current_language("lt")
@@ -123,7 +123,7 @@ def test_geoportal_import__title_and_description_update(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset.set_current_language("lt")
     assert dataset.title == "Naujas duomenų rinkinys"
     assert dataset.description == "Naujo duomenų rinkinio aprašymas"
@@ -171,7 +171,7 @@ def test_geoportal_import__title_and_description_create_without_translation(app:
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.geoportal_id == "1"
     dataset.set_current_language("lt")
@@ -238,7 +238,7 @@ def test_geoportal_import__tags_create(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.geoportal_id == "1"
     assert sorted(list(dataset.tags.values_list('name', flat=True))) == ['žymė1', 'žymė2', 'žymė3']
@@ -303,7 +303,7 @@ def test_geoportal_import__tags_update(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert sorted(list(dataset.tags.values_list('name', flat=True))) == ['žymė1', 'žymė2', 'žymė3']
 
 
@@ -355,7 +355,7 @@ def test_geoportal_import__frequency_create_with_existing_value(app: DjangoTestA
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.frequency == frequency
 
@@ -406,7 +406,7 @@ def test_geoportal_import__frequency_create_with_not_existing_value(app: DjangoT
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.frequency is None
 
@@ -465,7 +465,7 @@ def test_geoportal_import__frequency_update(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.frequency == frequency
 
 
@@ -516,7 +516,7 @@ def test_geoportal_import__access_rights_public(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.access_rights == Dataset.PUBLIC
 
@@ -563,7 +563,7 @@ def test_geoportal_import__access_rights_restricted(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.access_rights == Dataset.RESTRICTED
 
@@ -618,7 +618,7 @@ def test_geoportal_import__access_rights_public_update(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.access_rights == Dataset.PUBLIC
 
 
@@ -667,7 +667,7 @@ def test_geoportal_import__access_rights_restricted_update(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.access_rights == Dataset.RESTRICTED
 
 
@@ -753,7 +753,7 @@ def test_geoportal_import__distribution_conditions_create(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
@@ -913,7 +913,7 @@ def test_geoportal_import__existing_publisher(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.publisher == organization
     assert dataset.representatives.count() == 1
@@ -964,7 +964,7 @@ def test_geoportal_import__not_existing_publisher(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.publisher is None
 
@@ -1022,7 +1022,7 @@ def test_geoportal_import__existing_creator(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.organization == organization
 
@@ -1076,7 +1076,7 @@ def test_geoportal_import__existing_creator_municipality(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.organization == organization
 
@@ -1133,7 +1133,7 @@ def test_geoportal_import__existing_creator_alternative_title(app: DjangoTestApp
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.organization == organization
 
@@ -1187,7 +1187,7 @@ def test_geoportal_import__not_existing_creator(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.organization is None
     assert dataset.creator_text == "Jonavos rajonas"
@@ -1249,7 +1249,7 @@ def test_geoportal_import__distribution_create_with_url(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 1
     assert dataset.datasetdistribution_set.first().download_url == "https://example.com/file.csv"
@@ -1303,7 +1303,7 @@ def test_geoportal_import__distribution_create_without_url(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.status == Dataset.INVENTORED
@@ -1362,7 +1362,7 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 1
     assert dataset.datasetdistribution_set.first().download_url == "https://example.com/file.csv"
@@ -1433,7 +1433,7 @@ def test_geoportal_import__distribution_create_with_multiple_formats(app: Django
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 2
     assert sorted(list(dataset.datasetdistribution_set.values_list('download_url', flat=True))) == sorted([
@@ -1505,7 +1505,7 @@ def test_geoportal_import__distribution_update_with_url(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
     assert distribution.download_url == "https://example.com/file.csv"
@@ -1571,7 +1571,7 @@ def test_geoportal_import__distribution_update_with_format(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
     assert distribution.download_url == "https://example.com/file.csv"
@@ -1634,7 +1634,7 @@ def test_geoportal_import__distribution_update_with_not_existing_format(app: Dja
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
     assert distribution.download_url == "https://example.com/file.csv"
@@ -1699,7 +1699,7 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 1
     assert dataset.datasetdistribution_set.first().download_url == "https://example.com/file.csv"
@@ -1777,8 +1777,8 @@ def test_geoportal_import__distribution_update_with_multiple_formats(app: Django
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
-    dataset = Dataset.objects.first()
+    assert Dataset.objects.exclude(id=1).count() == 1
+    # dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 2
     assert sorted(list(dataset.datasetdistribution_set.values_list('download_url', flat=True))) == sorted([
         "https://example.com/file.zip",
@@ -1849,7 +1849,7 @@ def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.subclass is not None
@@ -1908,7 +1908,7 @@ def test_geoportal_import__service_create_without_url(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 0
     assert dataset.subclass is not None
@@ -1973,7 +1973,7 @@ def test_geoportal_import__service_create_with_not_existing_format(app: DjangoTe
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.subclass is not None
     assert dataset.subclass.name == "service"
@@ -2051,7 +2051,7 @@ def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.subclass is not None
     assert dataset.subclass.name == "service"
     assert dataset.datasetdistribution_set.count() == 0
@@ -2124,7 +2124,7 @@ def test_geoportal_import__service_update_with_format(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.subclass is not None
     assert dataset.subclass.name == "service"
     assert dataset.datasetdistribution_set.count() == 0
@@ -2191,7 +2191,7 @@ def test_geoportal_import__service_update_with_not_existing_format(app: DjangoTe
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.subclass is not None
     assert dataset.subclass.name == "service"
     assert dataset.datasetdistribution_set.count() == 0
@@ -2265,7 +2265,7 @@ def test_geoportal_import__categories_create_existing_values(app: DjangoTestApp)
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.category.count() == 3
     assert sorted(list(dataset.category.values_list('title', flat=True))) == [
@@ -2328,7 +2328,7 @@ def test_geoportal_import__categories_create_not_existing_values(app: DjangoTest
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert dataset.category.count() == 1
     assert sorted(list(dataset.category.values_list('title', flat=True))) == ['Energetika']
@@ -2400,7 +2400,7 @@ def test_geoportal_import__categories_update(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.category.count() == 3
     assert sorted(list(dataset.category.values_list('title', flat=True))) == [
         'Energetika',
@@ -2470,7 +2470,7 @@ def test_geoportal_import__removed_categories_update(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.category.count() == 1
     assert sorted(list(dataset.category.values_list('title', flat=True))) == [
         'Flora ir fauna'
@@ -2532,7 +2532,7 @@ def test_geoportal_import__recurring_error_message(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.category.count() == 0
 
     assert Task.objects.count() == 1
@@ -2614,7 +2614,7 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.category.count() == 0
 
     assert Task.objects.count() == 2
@@ -2689,7 +2689,7 @@ def test_geoportal_import__subscription_create(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert Task.objects.filter(user=coordinator.user).count() == 1
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [coordinator.user.email]
@@ -2757,7 +2757,7 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert Task.objects.filter(user=coordinator.user).count() == 1
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == [coordinator.user.email]
@@ -2829,7 +2829,7 @@ def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert Task.objects.filter(user=coordinator.user).count() == 0
     assert len(mail.outbox) == 0
 
@@ -2877,7 +2877,7 @@ def test_geoportal_import__history_create(app: DjangoTestApp):
         geoportal_import()
 
     sys_user = User.objects.get(email=settings.SYSTEM_USER_EMAIL)
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.first()
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.CREATED
@@ -2930,7 +2930,7 @@ def test_geoportal_import__history_update(app: DjangoTestApp):
 
     sys_user = User.objects.get(email=settings.SYSTEM_USER_EMAIL)
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert Version.objects.get_for_object(dataset).count() == 1
     assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
     assert Version.objects.get_for_object(dataset).first().revision.user == sys_user
@@ -2985,7 +2985,7 @@ def test_geoportal_import__history_update_no_changes(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 1
     assert Version.objects.get_for_object(dataset).count() == 0
 
 
@@ -3034,7 +3034,7 @@ def test_geoportal_import__add_to_geoportal_catalog(app: DjangoTestApp):
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    assert Dataset.objects.count() == 2
+    assert Dataset.objects.exclude(id=1).count() == 2
     dataset = Dataset.objects.filter(geoportal_id="1").first()
     assert dataset.dataset_relations.count() == 1
     assert dataset.dataset_relations.first().relation == relation
@@ -3092,7 +3092,7 @@ def test_geoportal_import__deleted_dataset(app: DjangoTestApp):
         geoportal_import()
 
     dataset.refresh_from_db()
-    assert Dataset.objects.count() == 2
-    assert Dataset.public.count() == 1
+    assert Dataset.objects.exclude(id=1).count() == 2
+    assert Dataset.public.exclude(id=1).count() == 1
     assert dataset.deleted is True
     assert dataset.deleted_on is not None

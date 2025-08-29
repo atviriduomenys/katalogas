@@ -1,8 +1,8 @@
+import json
 import sys
 import uuid
 from typing import Set
 
-import bcrypt
 import dataset
 from dataset import Database, Table
 from faker import Faker
@@ -338,12 +338,14 @@ def _anonymize_socialaccount_socialaccount(
     for record in objects.all():
         data = {
             pk_name: record[pk_name],
-            "extra_data": {
-                "personal_code": "example-hashed-code",
-                "coordinator_phone_number": None,
-                "coordinator_email": fake.email(domain="example.com"),
-                "password_not_set": False,
-            },
+            "extra_data": json.dumps(
+                {
+                    "personal_code": "example-hashed-code",
+                    "coordinator_phone_number": None,
+                    "coordinator_email": fake.email(domain="example.com"),
+                    "password_not_set": False,
+                }
+            ),
         }
         objects.update(data, [pk_name])
         pbar.update(1)
@@ -498,7 +500,7 @@ def _anonymize_contact(db: Database, fake: Faker, pbar: tqdm, users: dict[str, d
 
 
 def _anonymize_user(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    passwd = _hash_password("secret")
+    passwd = _get_unusable_password()
     for user in db["user"].all():
         first_name = fake.first_name()
         last_name = fake.last_name()
@@ -542,7 +544,7 @@ def _anonymize_representative(db: Database, fake: Faker, pbar: tqdm, users: dict
 
 
 def _anonymize_old_password(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    passwd = _hash_password("secret")
+    passwd = _get_unusable_password()
     for user in db["old_password"].all():
         data = {
             "id": user["id"],
@@ -671,9 +673,9 @@ def _email_plus_uuid(fake) -> str:
     return f"{fake.user_name()}.{uuid.uuid4().hex[:10]}@example.com"
 
 
-def _hash_password(password: str) -> str:
-    salt = bcrypt.gensalt(10)
-    return bcrypt.hashpw("test".encode(), salt).decode("ascii")
+def _get_unusable_password() -> str:
+    UNUSABLE_PASSWORD_PREFIX = "!"  # This will never be a valid encoded hash
+    return f"{UNUSABLE_PASSWORD_PREFIX}{uuid.uuid4()}"
 
 
 if __name__ == "__main__":

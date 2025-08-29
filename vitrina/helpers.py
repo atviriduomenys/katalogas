@@ -721,20 +721,20 @@ def build_page_title_context(
 
     context: dict[str, str] = {}
 
-    if organization is not None:
+    if organization:
         context["title"] = organization.title
         context["object_type"] = _("Organizacija")
         return context
 
-    if dataset is None:
+    if not dataset:
         return context
 
     _add_common_dataset_context(context, dataset, language_code)
 
-    if prop is not None and model is not None:
+    if prop and model:
         context["title"] = getattr(prop, "title", None) or prop.name
         context["object_type"] = _("Modelio laukas")
-    elif model is not None:
+    elif model:
         context["title"] = getattr(model, "title", None) or model.name
         context["object_type"] = _("Modelis")
     else:
@@ -782,23 +782,18 @@ def _find_information_system_title(dataset: Dataset, language_code: str) -> str 
             return parent.safe_translation_getter("title", language_code=language_code) or parent.title
 
     # Fallback: Use MP Node logic to traverse up the tree
-    try:
-        ancestors = dataset.get_ancestors()
-        for ancestor in ancestors:
-            if ancestor.subclass and getattr(ancestor.subclass, "is_information_system", False):
-                return ancestor.safe_translation_getter("title", language_code=language_code) or ancestor.title
-    except Exception:
-        try:
-            current = dataset
-            while current.get_parent():
-                current = current.get_parent()
-                if current.subclass and getattr(current.subclass, "is_information_system", False):
-                    return current.safe_translation_getter("title", language_code=language_code) or current.title
-        except Exception:
-            pass
+    ancestors = dataset.get_ancestors()
+    for ancestor in ancestors:
+        if ancestor.subclass and getattr(ancestor.subclass, "is_information_system", False):
+            return ancestor.safe_translation_getter("title", language_code=language_code) or ancestor.title
+        current = dataset
+        while current.get_parent():
+            current = current.get_parent()
+            if current.subclass and getattr(current.subclass, "is_information_system", False):
+                return current.safe_translation_getter("title", language_code=language_code) or current.title
     return None
 
 
 def _get_parent_dataset(dataset: Dataset) -> Dataset:
     ancestor = dataset.get_ancestors().select_related("organization").first()
-    return ancestor if ancestor else dataset
+    return ancestor or dataset

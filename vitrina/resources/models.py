@@ -243,7 +243,7 @@ class DatasetDistribution(TranslatableModel):
         Concept,
         on_delete=models.PROTECT,
         related_name="dataset_distributions",
-        verbose_name=_("Duomenų distribucijos būsena."),
+        verbose_name=_("Statusas"),
         help_text=_(
             "Duomenų distribucija gali būti kuriama, suplanuota kūrimui, pasenusi, atsisakyta arba įgyvendinta - veikianti.",
         ),

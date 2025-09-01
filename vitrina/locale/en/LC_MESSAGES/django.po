@@ -3353,8 +3353,8 @@ msgstr "Importing external metadata catalog"
 msgid "Licencija"
 msgstr "License"
 
-msgid "Duomenų distribucijos būsena."
-msgstr "Distribution status."
+msgid "Statusas"
+msgstr "Status"
 
 msgid ""
 "Duomenų distribucija gali būti kuriama, suplanuota kūrimui, pasenusi, "
@@ -3368,9 +3368,6 @@ msgstr "Download dataset distribution"
 
 msgid "Atidaryti duomenų šaltinį"
 msgstr "Open dataset distribution"
-
-msgid "Statusas"
-msgstr "Status"
 
 msgid "Publikuojamas saugykloje"
 msgstr "Published in storage"

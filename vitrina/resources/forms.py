@@ -167,21 +167,17 @@ class DatasetResourceForm(TranslatableModelForm):
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
         self.fields["status"].queryset = (
-            Concept.objects.filter(
-                concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI
-            )
+            Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
             .distinct()
             .order_by(
                 Case(
                     *[When(code=code, then=pos) for pos, code in enumerate(code_order)],
                     default=len(code_order),
-                    output_field=IntegerField()
+                    output_field=IntegerField(),
                 )
             )
         )
-        self.fields["status"].label_from_instance = (
-            lambda obj: obj.safe_translation_getter("label", any_language=True)
-        )
+        self.fields["status"].label_from_instance = lambda obj: obj.safe_translation_getter("label", any_language=True)
 
         self.helper.layout = Layout(
             Field(

@@ -69,9 +69,9 @@ def ensure_default_subclasses(db):
 
 
 # TODO: remove this after the pipeline starts running migrations before testing
-@pytest.fixture(autouse=True)
+@pytest.fixture(scope="session", autouse=True)
 def ensure_needed_concepts_exist():
-    schema, _ = ConceptSchema.objects.get_or_create(
+    schema, _ = ConceptSchema.objects.create(
         uri="http://publications.europa.eu/resource/authority/distribution-status"
     )
 
@@ -114,13 +114,44 @@ def ensure_needed_concepts_exist():
                     "label": "Development planned",
                     "description": "The development of this distribution is planned.",
                 },
-                "lt": {"label": "Kūrimas suplanuotas", "description": "Šios distribucijos kūrimas suplanuotas."},
+                "lt": {
+                    "label": "Kūrimas suplanuotas",
+                    "description": "Šios distribucijos kūrimas suplanuotas.",
+                },
             },
         },
+        {
+            "code": "DEPRECATED",
+            "valid_since": date(2015, 10, 23),
+            "translations": {
+                "en": {
+                    "label": "Deprecated",
+                    "description": "It is recommended that the contents of this distribution no longer be used.",
+                },
+                "lt": {
+                    "label": "Pasenęs",
+                    "description": "Rekomenduojama nebenaudoti šios distribucijos turinio."
+                }
+            }
+        },
+        {
+            "code": "WITHDRAWN",
+            "valid_since": date(2015, 10, 23),
+            "translations": {
+                "en": {
+                    "label": "Withdrawn",
+                    "description": "This distribution is no longer meant to be published.",
+                },
+                "lt": {
+                    "label": "Atsisakytas",
+                    "description": "Ši distribucija neturėtų būti publikuojama."
+                }
+            }
+        }
     ]
 
     for data in concepts_data:
-        concept, created = Concept.objects.get_or_create(
+        concept, created = Concept.objects.create(
             code=data["code"],
             defaults={
                 "uri": data.get("uri"),

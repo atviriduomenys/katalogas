@@ -16,7 +16,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
 
-def get_default_status() -> Concept:
+def get_default_status() -> UUID:
     return Concept.objects.get(uri="http://publications.europa.eu/resource/authority/distribution-status/DEVELOP").pk
 
 

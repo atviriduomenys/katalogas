@@ -3354,14 +3354,14 @@ msgid "Licencija"
 msgstr "License"
 
 msgid "Duomenų distribucijos būsena."
-msgstr "Distribution status"
+msgstr "Distribution status."
 
 msgid ""
-"Duomenų distribucija gali būti kuriama, suplanuota kūrimui arba įgyvendinta "
-"- veikianti."
+"Duomenų distribucija gali būti kuriama, suplanuota kūrimui, pasenusi, "
+"atsisakyta arba įgyvendinta - veikianti."
 msgstr ""
-"The distribution may be under development, planned for development or "
-"completed."
+"The distribution may be under development, planned for development, "
+"deprecated, withdrawn or completed."
 
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"
@@ -3371,15 +3371,6 @@ msgstr "Open dataset distribution"
 
 msgid "Statusas"
 msgstr "Status"
-
-msgid "Kuriamas"
-msgstr "Developed"
-
-msgid "Kūrimas suplanuotas"
-msgstr "Planned"
-
-msgid "Įgyvendintas - veikiantis"
-msgstr "Completed"
 
 msgid "Publikuojamas saugykloje"
 msgstr "Published in storage"

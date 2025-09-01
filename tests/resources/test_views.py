@@ -549,4 +549,4 @@ def test_distribution_form_status_options(app: DjangoTestApp):
 
     status_select = form.fields['status'][0]
     values = [value for _, _, value in status_select.options]
-    assert values == ["COMPLETED", "DEVELOP", "PLANNED"]
+    assert values == ["COMPLETED", "DEPRECATED", "DEVELOP", "PLANNED", "WITHDRAWN"]

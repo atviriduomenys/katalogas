@@ -2,13 +2,31 @@
 from datetime import date
 from django.db import migrations
 
+concept_schema_uri="http://publications.europa.eu/resource/authority/distribution-status"
+
+
+def create_concept_schema(apps, schema_editor):
+    ConceptSchema = apps.get_model("vitrina_classifiers", "ConceptSchema")
+    schema, created = ConceptSchema.objects.get_or_create(
+        uri=concept_schema_uri,
+    )
+    if created:
+        schema.set_current_language("lt")
+        schema.label = "Pasiskirstymo būsena"
+        schema.description = "Duomenų pasiskirstymo būsena"
+        schema.save()
+        schema.set_current_language("en")
+        schema.label = "Distribution status"
+        schema.description = "Data distribution status"
+        schema.save()
+
 
 def create_concepts(apps, schema_editor):
     ConceptSchema = apps.get_model("vitrina_classifiers", "ConceptSchema")
     Concept = apps.get_model("vitrina_classifiers", "Concept")
 
     concept_schema = ConceptSchema.objects.get(
-        uri="http://publications.europa.eu/resource/authority/distribution-status"
+        uri=concept_schema_uri,
     )
 
     concepts_data = [
@@ -56,6 +74,34 @@ def create_concepts(apps, schema_editor):
                 },
             },
         },
+        {
+            "code": "DEPRECATED",
+            "valid_since": date(2015, 10, 23),
+            "translations": {
+                "en": {
+                    "label": "Deprecated",
+                    "description": "It is recommended that the contents of this distribution no longer be used.",
+                },
+                "lt": {
+                    "label": "Pasenęs",
+                    "description": "Rekomenduojama nebenaudoti šios distribucijos turinio."
+                }
+            }
+        },
+        {
+            "code": "WITHDRAWN",
+            "valid_since": date(2015, 10, 23),
+            "translations": {
+                "en": {
+                    "label": "Withdrawn",
+                    "description": "This distribution is no longer meant to be published.",
+                },
+                "lt": {
+                    "label": "Atsisakytas",
+                    "description": "Ši distribucija neturėtų būti publikuojama."
+                }
+            }
+        }
     ]
 
     for data in concepts_data:
@@ -77,9 +123,10 @@ def create_concepts(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ("vitrina_classifiers", "0015_distribution_status_concept_schema"),
+        ("vitrina_classifiers", "0014_concept_schema_addition"),
     ]
 
     operations = [
+        migrations.RunPython(create_concept_schema, reverse_code=migrations.RunPython.noop),
         migrations.RunPython(create_concepts, reverse_code=migrations.RunPython.noop),
     ]

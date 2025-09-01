@@ -101,13 +101,7 @@
                                 <tr>
                                     <th>{% translate "Statusas" %}</th>
                                     <td>
-                                        {% if resource.status.code == "DEVELOP" %}
-                                            {% translate "Kuriamas" %}
-                                        {% elif resource.status.code == "PLANNED" %}
-                                            {% translate "Kūrimas suplanuotas" %}
-                                        {% elif resource.status.code == "COMPLETED" %}
-                                            {% translate "Įgyvendintas - veikiantis" %}
-                                        {% endif %}
+                                        {{ resource.status.translated_label }}
                                     </td>
                                 </tr>
                                 {% endif %}

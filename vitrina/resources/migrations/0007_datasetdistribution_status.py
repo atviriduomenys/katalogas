@@ -23,7 +23,7 @@ def populate_existing_rows(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_classifiers', '0016_concepts_with_distribution_status'),
+        ('vitrina_classifiers', '0015_concepts_with_distribution_status'),
         ('vitrina_resources', '0006_datasetdistribution_applicable_legislation'),
     ]
 

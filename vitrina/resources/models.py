@@ -245,7 +245,7 @@ class DatasetDistribution(TranslatableModel):
         related_name="dataset_distributions",
         verbose_name=_("Duomenų distribucijos būsena."),
         help_text=_(
-            "Duomenų distribucija gali būti kuriama, suplanuota kūrimui arba įgyvendinta - veikianti.",
+            "Duomenų distribucija gali būti kuriama, suplanuota kūrimui, pasenusi, atsisakyta arba įgyvendinta - veikianti.",
         ),
         default=get_default_status,
     )

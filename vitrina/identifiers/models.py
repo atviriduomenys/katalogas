@@ -26,17 +26,14 @@ class Agency(UUIDBaseModel):
         help_text=_(
             "Pasirinkite metodą, kaip tikrinti identifikatorių formatą. "
             "Reguliarioji išraiška leidžia nustatyti tikslų šabloną."
-        )
+        ),
     )
     identifier_validation_options = models.CharField(
         _("Identifikatoriaus tikrinimo parinktys"),
         max_length=255,
         null=True,
         blank=True,
-        help_text=_(
-            "Tikrinimo parametrai pagal pasirinktą tipą. "
-            "Reguliariajai išraiškai - įveskite regex šabloną "
-        )
+        help_text=_("Tikrinimo parametrai pagal pasirinktą tipą. Reguliariajai išraiškai - įveskite regex šabloną "),
     )
 
     class Meta:
@@ -49,8 +46,10 @@ class Agency(UUIDBaseModel):
     def clean(self):
         if bool(self.identifier_validation_type) ^ bool(self.identifier_validation_options):
             raise ValidationError(
-                _("Jei nustatytas vienas laukų „Identifikatoriaus tikrinimo tipas“ arba „parinktys“, "
-                  "abu turi būti užpildyti.")
+                _(
+                    "Jei nustatytas vienas laukų „Identifikatoriaus tikrinimo tipas“ arba „parinktys“, "
+                    "abu turi būti užpildyti."
+                )
             )
 
 
@@ -101,11 +100,9 @@ class Identifier(UUIDBaseModel):
         is_regexp = agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP
         if is_regexp and (pattern := agency.identifier_validation_options):
             if not re.fullmatch(pattern, self.notation):
-                raise ValidationError({
-                        "notation": _(
-                            "Žymėjimas turi atitikti šabloną: %(pattern)s"
-                        ) % {"pattern": pattern}
-                    })
+                raise ValidationError(
+                    {"notation": _("Žymėjimas turi atitikti šabloną: %(pattern)s") % {"pattern": pattern}}
+                )
 
     def save(self, *args, **kwargs):
         self.full_clean()  # ensures clean() is called

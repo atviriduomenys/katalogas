@@ -1,6 +1,6 @@
 import pathlib
 from enum import StrEnum
-
+import uuid
 import requests
 import reversion
 from django.contrib.contenttypes.fields import GenericRelation
@@ -16,7 +16,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.settings import TRANSLATION_CLIENT_ID
 
 
-def get_default_status() -> UUID:
+def get_default_status() -> uuid.UUID:
     return Concept.objects.get(uri="http://publications.europa.eu/resource/authority/distribution-status/DEVELOP").pk
 
 

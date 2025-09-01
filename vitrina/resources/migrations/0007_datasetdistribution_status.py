@@ -12,12 +12,8 @@ def populate_existing_rows(apps, schema_editor):
     completed = Concept.objects.get(code="COMPLETED")
     develop = Concept.objects.get(code="DEVELOP")
 
-    for distribution in DatasetDistribution.objects.all():
-        if distribution.dataset.access_rights == "PUBLIC":
-            distribution.status = completed
-        else:
-            distribution.status = develop
-        distribution.save()
+    DatasetDistribution.objects.filter(dataset__access_rights="PUBLIC").update(status=completed)
+    DatasetDistribution.objects.exclude(dataset__access_rights="PUBLIC").update(status=develop)
 
 
 class Migration(migrations.Migration):

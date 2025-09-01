@@ -70,98 +70,98 @@ def ensure_default_subclasses(db):
 
 # TODO: remove this after the pipeline starts running migrations before testing
 @pytest.fixture(scope="session", autouse=True)
-def ensure_needed_concepts_exist():
-    schema, _ = ConceptSchema.objects.create(
-        uri="http://publications.europa.eu/resource/authority/distribution-status"
-    )
-
-    concepts_data = [
-        {
-            "uri": "http://publications.europa.eu/resource/authority/distribution-status/COMPLETED",
-            "code": "COMPLETED",
-            "valid_since": date(2015, 10, 23),
-            "translations": {
-                "en": {
-                    "label": "Completed",
-                    "description": "This distribution is considered to be complete, it holds all information that is intended.",
-                },
-                "lt": {
-                    "label": "Įgyvendintas – veikiantis",
-                    "description": "Ši distribucija laikoma įgyvendinta – veikiančia, joje yra visa reikiama informacija.",
-                },
-            },
-        },
-        {
-            "uri": "http://publications.europa.eu/resource/authority/distribution-status/DEVELOP",
-            "code": "DEVELOP",
-            "valid_since": date(2015, 10, 23),
-            "translations": {
-                "en": {
-                    "label": "Under development",
-                    "description": "This distribution is currently being assembled. It may be in an incomplete or faulty state.",
-                },
-                "lt": {
-                    "label": "Kuriamas",
-                    "description": "Ši distribucija yra kuriama. Ji gali būti nebaigta arba klaidinga.",
-                },
-            },
-        },
-        {
-            "code": "PLANNED",
-            "valid_since": date(2019, 1, 1),
-            "translations": {
-                "en": {
-                    "label": "Development planned",
-                    "description": "The development of this distribution is planned.",
-                },
-                "lt": {
-                    "label": "Kūrimas suplanuotas",
-                    "description": "Šios distribucijos kūrimas suplanuotas.",
-                },
-            },
-        },
-        {
-            "code": "DEPRECATED",
-            "valid_since": date(2015, 10, 23),
-            "translations": {
-                "en": {
-                    "label": "Deprecated",
-                    "description": "It is recommended that the contents of this distribution no longer be used.",
-                },
-                "lt": {
-                    "label": "Pasenęs",
-                    "description": "Rekomenduojama nebenaudoti šios distribucijos turinio."
-                }
-            }
-        },
-        {
-            "code": "WITHDRAWN",
-            "valid_since": date(2015, 10, 23),
-            "translations": {
-                "en": {
-                    "label": "Withdrawn",
-                    "description": "This distribution is no longer meant to be published.",
-                },
-                "lt": {
-                    "label": "Atsisakytas",
-                    "description": "Ši distribucija neturėtų būti publikuojama."
-                }
-            }
-        }
-    ]
-
-    for data in concepts_data:
-        concept, created = Concept.objects.create(
-            code=data["code"],
-            defaults={
-                "uri": data.get("uri"),
-                "valid_since": data["valid_since"],
-            },
+def ensure_needed_concepts_exist(django_db_setup, django_db_blocker):
+    with django_db_blocker.unblock():
+        schema, _ = ConceptSchema.objects.get_or_create(
+            uri="http://publications.europa.eu/resource/authority/distribution-status"
         )
-        if created:
-            for lang, fields in data["translations"].items():
-                concept.set_current_language(lang)
-                concept.label = fields["label"]
-                concept.description = fields["description"]
-            concept.save()
-        concept.concept_schemas.add(schema)
+        concepts_data = [
+            {
+                "uri": "http://publications.europa.eu/resource/authority/distribution-status/COMPLETED",
+                "code": "COMPLETED",
+                "valid_since": date(2015, 10, 23),
+                "translations": {
+                    "en": {
+                        "label": "Completed",
+                        "description": "This distribution is considered to be complete, it holds all information that is intended.",
+                    },
+                    "lt": {
+                        "label": "Įgyvendintas – veikiantis",
+                        "description": "Ši distribucija laikoma įgyvendinta – veikiančia, joje yra visa reikiama informacija.",
+                    },
+                },
+            },
+            {
+                "uri": "http://publications.europa.eu/resource/authority/distribution-status/DEVELOP",
+                "code": "DEVELOP",
+                "valid_since": date(2015, 10, 23),
+                "translations": {
+                    "en": {
+                        "label": "Under development",
+                        "description": "This distribution is currently being assembled. It may be in an incomplete or faulty state.",
+                    },
+                    "lt": {
+                        "label": "Kuriamas",
+                        "description": "Ši distribucija yra kuriama. Ji gali būti nebaigta arba klaidinga.",
+                    },
+                },
+            },
+            {
+                "code": "PLANNED",
+                "valid_since": date(2019, 1, 1),
+                "translations": {
+                    "en": {
+                        "label": "Development planned",
+                        "description": "The development of this distribution is planned.",
+                    },
+                    "lt": {
+                        "label": "Kūrimas suplanuotas",
+                        "description": "Šios distribucijos kūrimas suplanuotas.",
+                    },
+                },
+            },
+            {
+                "code": "DEPRECATED",
+                "valid_since": date(2015, 10, 23),
+                "translations": {
+                    "en": {
+                        "label": "Deprecated",
+                        "description": "It is recommended that the contents of this distribution no longer be used.",
+                    },
+                    "lt": {
+                        "label": "Pasenęs",
+                        "description": "Rekomenduojama nebenaudoti šios distribucijos turinio."
+                    }
+                }
+            },
+            {
+                "code": "WITHDRAWN",
+                "valid_since": date(2015, 10, 23),
+                "translations": {
+                    "en": {
+                        "label": "Withdrawn",
+                        "description": "This distribution is no longer meant to be published.",
+                    },
+                    "lt": {
+                        "label": "Atsisakytas",
+                        "description": "Ši distribucija neturėtų būti publikuojama."
+                    }
+                }
+            }
+        ]
+
+        for data in concepts_data:
+            concept, created = Concept.objects.get_or_create(
+                code=data["code"],
+                defaults={
+                    "uri": data.get("uri"),
+                    "valid_since": data["valid_since"],
+                },
+            )
+            if created:
+                for lang, fields in data["translations"].items():
+                    concept.set_current_language(lang)
+                    concept.label = fields["label"]
+                    concept.description = fields["description"]
+                concept.save()
+            concept.concept_schemas.add(schema)

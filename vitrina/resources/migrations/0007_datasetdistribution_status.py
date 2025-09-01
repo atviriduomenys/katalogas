@@ -34,6 +34,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='datasetdistribution',
             name='status',
-            field=models.ForeignKey(default=vitrina.resources.models.get_default_status, help_text='Duomenų distribucija gali būti kuriama, suplanuota kūrimui, pasenusi, atsisakyta arba įgyvendinta - veikianti.', on_delete=django.db.models.deletion.PROTECT, related_name='dataset_distributions', to='vitrina_classifiers.concept', verbose_name='Statusas'),
+            field=models.ForeignKey(default=vitrina.resources.models.get_default_status, help_text='Duomenų distribucija gali būti įgyvendinta - veikianti, kuriama, suplanuota kūrimui, pasenusi arba atsisakyta.', on_delete=django.db.models.deletion.PROTECT, related_name='dataset_distributions', to='vitrina_classifiers.concept', verbose_name='Statusas'),
         )
     ]

@@ -65,7 +65,7 @@ def create_concepts(apps, schema_editor):
             "valid_since": date(2019, 1, 1),
             "translations": {
                 "en": {
-                    "label": "Development planned",
+                    "label": "Planned",
                     "description": "The development of this distribution is planned.",
                 },
                 "lt": {

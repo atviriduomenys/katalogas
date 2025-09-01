@@ -13,6 +13,9 @@ from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField, StringListField
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
+from django.db.models import Case, When, IntegerField
+
+code_order = ["COMPLETED", "DEVELOP", "PLANNED", "DEPRECATED", "WITHDRAWN"]
 
 
 def _get_level_title(title, description=None):
@@ -164,12 +167,21 @@ class DatasetResourceForm(TranslatableModelForm):
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
         self.fields["status"].queryset = (
-            Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
+            Concept.objects.filter(
+                concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI
+            )
             .distinct()
-            .order_by("code")
+            .order_by(
+                Case(
+                    *[When(code=code, then=pos) for pos, code in enumerate(code_order)],
+                    default=len(code_order),
+                    output_field=IntegerField()
+                )
+            )
         )
-        if default_status := Concept.objects.get(code="DEVELOP"):
-            self.fields["status"].initial = default_status
+        self.fields["status"].label_from_instance = (
+            lambda obj: obj.safe_translation_getter("label", any_language=True)
+        )
 
         self.helper.layout = Layout(
             Field(

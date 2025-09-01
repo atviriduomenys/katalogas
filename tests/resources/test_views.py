@@ -543,10 +543,10 @@ def test_distribution_form_status_options(app: DjangoTestApp):
     app.set_user(user)
 
     response = app.get(reverse("resource-add", args=[dataset.pk]))
-    form = response.forms['resource-form']
+    form = response.forms["resource-form"]
 
     assert response.status_code == 200
 
     status_select = form.fields['status'][0]
     values = [value for _, _, value in status_select.options]
-    assert values == ["COMPLETED", "DEPRECATED", "DEVELOP", "PLANNED", "WITHDRAWN"]
+    assert values == ["Įgyvendintas – veikiantis", "Kuriamas", "Kūrimas suplanuotas", "Pasenęs", "Atsisakytas",]

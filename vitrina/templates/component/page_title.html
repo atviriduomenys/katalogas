@@ -85,31 +85,32 @@
     }
 </style>
 
-<div class="page-header">
-    <div class="content-wrapper">
-        <div class="title-container">
-            <span class="main-title">{{ page_title.title }}</span>
-            {% if page_title.object_type %}
-                <div class="type-badge">
-                    <span class="type-text">{{ page_title.object_type }}</span>
-                </div>
-            {% endif %}
-        </div>
-        <div class="info-container">
-            {% if page_title.root_name %}
-                <span class="info-text info-label">{{ page_title.root_label }}:</span>
-                <span class="info-text info-value">{{ page_title.root_name }}</span>
-            {% endif %}
-            {% if page_title.root_name and page_title.info_system_name %}
-                <div class="separator"></div>
-            {% endif %}
-            {% if page_title.info_system_name %}
-                <span class="info-text info-label">{{ page_title.info_system_label }}:</span>
-                <span class="info-text info-value">{{ page_title.info_system_name }}</span>
-            {% endif %}
+{% if page_title.title %}
+    <div class="page-header">
+        <div class="content-wrapper">
+            <div class="title-container">
+                <span class="main-title">{{ page_title.title }}</span>
+                {% if page_title.object_type %}
+                    <div class="type-badge">
+                        <span class="type-text">{{ page_title.object_type }}</span>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="info-container">
+                {% if page_title.root_name %}
+                    <span class="info-text info-label">{{ page_title.root_label }}:</span>
+                    <span class="info-text info-value">{{ page_title.root_name }}</span>
+                {% endif %}
+                {% if page_title.root_name and page_title.info_system_name %}
+                    <div class="separator"></div>
+                {% endif %}
+                {% if page_title.info_system_name %}
+                    <span class="info-text info-label">{{ page_title.info_system_label }}:</span>
+                    <span class="info-text info-value">{{ page_title.info_system_name }}</span>
+                {% endif %}
+            </div>
         </div>
     </div>
-</div>
-{% if current_title %}
+{% elif current_title %}
     {{ current_title }}
 {% endif %}

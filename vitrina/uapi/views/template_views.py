@@ -207,8 +207,9 @@ class AgentCreateView(CreateView, BaseAgentView):
                     ),
                 )
                 return redirect(reverse("agent-detail", args=[self.organization.pk, self.object.pk]))
-        except Exception:
+        except Exception as e:
             messages.error(self.request, _("Įvyko klaida, nepavyko sukurti agento."))
+            logger.exception(f"Agent creation failed with exception {e}")
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs: Any) -> dict:

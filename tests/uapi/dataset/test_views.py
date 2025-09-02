@@ -129,6 +129,13 @@ def test_create(
             True,
             False,
         ),
+        # Defaults to Dataset when value is not given.
+        (
+            DCATResourceSubclass.DATASET,
+            {},
+            False,
+            False,
+        ),
     ],
 )
 def test_create_specific_resource(
@@ -141,6 +148,7 @@ def test_create_specific_resource(
     url_dataset: str,
     domain: str,
     valid_token: str,
+    create_dcat_resource_subclasses: None,
 ):
     """Test that a specific resource is created on API call.
 

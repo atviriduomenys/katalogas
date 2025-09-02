@@ -135,10 +135,8 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
             language = getattr(request, "LANGUAGE_CODE", "lt")
             instance.set_current_language(language)
-            if title is not None:
-                instance.title = title
-            if description is not None:
-                instance.description = description
+            instance.title = title or instance.title
+            instance.description = description or instance.description
             instance.save()
 
         Metadata.objects.create(

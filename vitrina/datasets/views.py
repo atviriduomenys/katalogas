@@ -65,7 +65,8 @@ from vitrina.datasets.forms import (
     ResourceSubclassForm,
     ServiceResourceForm,
     InformationSystemResourceForm,
-    DatasetResourceForm, CatalogResourceForm,
+    DatasetResourceForm,
+    CatalogResourceForm,
 )
 from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name
 from vitrina.structure.views import DatasetStructureMixin

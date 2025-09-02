@@ -12,7 +12,15 @@ class UAPIDatasetSerializer(BaseObjectMixin, DatasetSerializer):
     )
 
     class Meta(DatasetSerializer.Meta):
-        fields = DatasetSerializer.Meta.fields + BaseObjectMixin.Meta.fields + ("service", "subclass")
+        fields = (
+            DatasetSerializer.Meta.fields
+            + BaseObjectMixin.Meta.fields
+            + (
+                "subclass",
+                "service",
+                "series",
+            )
+        )
 
 
 class UAPIDatasetCreateSerializer(PostDatasetSerializer):
@@ -21,9 +29,21 @@ class UAPIDatasetCreateSerializer(PostDatasetSerializer):
         queryset=DCATResourceSubclass.objects.all(),
         default=DCATResourceSubclass.DATASET,
     )
+    service = serializers.BooleanField(default=False)
+    series = serializers.BooleanField(default=False)
+    parent_id = serializers.CharField(required=False, allow_null=True)
 
     class Meta(PostDatasetSerializer.Meta):
-        fields = PostDatasetSerializer.Meta.fields + ("name", "service", "subclass")
+        fields = (
+            PostDatasetSerializer.Meta.fields
+            + (
+                "name",
+                "subclass",
+                "parent_id",
+                "service",
+                "series",
+            )
+        )
 
 
 class UAPIDistributionSerializer(BaseObjectMixin, DatasetDistributionSerializer):

@@ -120,8 +120,26 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
                 "access_rights": Dataset.NON_PUBLIC,
                 "organization_id": organization.id,
             }
+
+            title = dataset_data.get("title", None)
+            description = dataset_data.get("description", None)
+            parent_id = dataset_data.pop("parent_id", None)
+
             instance = Dataset(**dataset_data)
-            Dataset.add_root(instance=instance)
+
+            if parent_id:
+                parent = Dataset.objects.filter(id=parent_id).first()
+                parent.add_child(instance=instance)
+            else:
+                Dataset.add_root(instance=instance)
+
+            language = getattr(request, "LANGUAGE_CODE", "lt")
+            instance.set_current_language(language)
+            if title is not None:
+                instance.title = title
+            if description is not None:
+                instance.description = description
+            instance.save()
 
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
@@ -129,8 +147,8 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             content_type=ContentType.objects.get_for_model(serializer.Meta.model),
             object_id=instance.pk,
             name=self.request.data.get("name", ""),
-            title=serializer.validated_data["title"],
-            description=serializer.validated_data["description"],
+            title=title,
+            description=description,
             prepare_ast={},
             version=1,
         )

@@ -1,4 +1,4 @@
-from typing import Iterable
+from typing import Iterable, Any
 from unittest.mock import patch, PropertyMock
 from urllib.parse import quote
 
@@ -32,12 +32,14 @@ def test_create(
     domain: str,
     valid_token: str,
 ):
+    dataset_parent = DatasetFactory()
     data = {
         "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
         "title": "DataSet 1",
         "description": "DataSet 1 description",
         "service": True,
         "subclass": DCATResourceSubclass.SERVICE,
+        "parent_id": dataset_parent.pk,
     }
     response = app.post(
         url_dataset,
@@ -53,7 +55,11 @@ def test_create(
         access_rights=Dataset.NON_PUBLIC,
         organization=organization,
     ).first()
+
     assert dataset
+    assert dataset.path is not None
+    assert dataset.is_child_of(dataset_parent) is True  # Parent is set.
+
     assert response.json == {
         "@context": "",
         "_type": url_dataset.rstrip("/"),
@@ -79,8 +85,84 @@ def test_create(
         "organization_id": organization.id,
         "organization_title": organization.title,
         "service": True,
+        "series": False,
         "subclass": DCATResourceSubclass.SERVICE,
     }
+
+
+@pytest.mark.parametrize(
+    "subclass, subclass_additional_data, is_service, is_series",
+    [
+        (
+            DCATResourceSubclass.DATASET,
+            {"subclass": DCATResourceSubclass.DATASET},
+            False,
+            False,
+        ),
+        (
+            DCATResourceSubclass.INFORMATION_SYSTEM,
+            {"subclass": DCATResourceSubclass.INFORMATION_SYSTEM},
+            False,
+            False,
+        ),
+        (
+            DCATResourceSubclass.CATALOG,
+            {"subclass": DCATResourceSubclass.CATALOG},
+            False,
+            False,
+        ),
+        (
+            DCATResourceSubclass.SERIES,
+            {
+                "subclass": DCATResourceSubclass.SERIES,
+                "series": True,
+            },
+            False,
+            True,
+        ),
+        (
+            DCATResourceSubclass.SERVICE,
+            {
+                "subclass": DCATResourceSubclass.SERVICE,
+                "service": True,
+            },
+            True,
+            False,
+        ),
+    ],
+)
+def test_create_specific_resource(
+    subclass: DCATResourceSubclass,
+    subclass_additional_data: dict[str, Any],
+    is_service: bool,
+    is_series: bool,
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset: str,
+    domain: str,
+    valid_token: str,
+):
+    """Test that a specific resource is created on API call.
+
+    Following DCAT, the Dataset model serves 5 resources: Dataset, Data Service, Catalog, IS & Data Series.
+    We need this API to be able to create any one of these resources.
+    """
+    data = {
+        "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
+        "title": "Example",
+        "description": "Example description",
+        **subclass_additional_data,
+    }
+    response = app.post(
+        url_dataset,
+        data,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+    )
+
+    assert response.status_code == status.HTTP_201_CREATED
+    assert response.json["subclass"] == subclass
+    assert response.json["series"] == is_series
+    assert response.json["service"] == is_service
 
 
 def test_create_specific_scope(
@@ -140,6 +222,7 @@ def test_create_specific_scope(
         "organization_id": organization.id,
         "organization_title": organization.title,
         "service": False,
+        "series": False,
         "subclass": DCATResourceSubclass.DATASET,
     }
 
@@ -317,6 +400,7 @@ def test_list(
                 "organization_title": organization.title,
                 "id": str(dataset.id),
                 "service": False,
+                "series": False,
                 "subclass": DCATResourceSubclass.DATASET,
             }
         ]
@@ -370,6 +454,7 @@ def test_list_specific_scope(
                 "organization_title": organization.title,
                 "id": str(dataset.id),
                 "service": False,
+                "series": False,
                 "subclass": DCATResourceSubclass.DATASET,
             }
         ]
@@ -481,6 +566,7 @@ def test_list_with_query_parameters(
                 "organization_title": organization.title,
                 "id": str(dataset.id),
                 "service": False,
+                "series": False,
                 "subclass": DCATResourceSubclass.DATASET,
             }
         ]

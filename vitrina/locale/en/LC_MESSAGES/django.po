@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-26 19:02+0300\n"
+"POT-Creation-Date: 2025-09-02 14:06+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -238,9 +238,6 @@ msgstr "Answer"
 
 msgid "Tipas"
 msgstr "Type"
-
-msgid "Nuoroda"
-msgstr "URL"
 
 msgid "Duomenys"
 msgstr "Data"
@@ -1057,8 +1054,11 @@ msgstr ""
 "Spatial resolution (in meters). Corresponds to "
 "dcat:spatialResolutionInMeters."
 
-msgid "Platinimo sąlygų nuoroda"
-msgstr "Conditions link"
+msgid "Teisės - Susijęs dokumentas"
+msgstr "Rights - Related document"
+
+msgid "Teisės - Aprašymas"
+msgstr "Rights - Description"
 
 msgid "Teisių deklaracijos nuoroda. Atitinka dct:relation."
 msgstr "Reference to the declaration of rights. Corresponds to dct:relation."
@@ -1345,16 +1345,6 @@ msgstr "Last update date"
 
 msgid "Kada paskutinį kartą buvo atnaujinti duomenys"
 msgstr "When the data was last updated"
-
-msgid "Platinimo sąlygos"
-msgstr "Condition terms"
-
-msgid ""
-"Ribojimai ar sąlygos, taikomos duomenų naudojimui (pvz., naudojimo "
-"apribojimai, prieigos teisės)"
-msgstr ""
-"Restrictions or conditions applied to data usage (e.g., usage restrictions, "
-"access rights)"
 
 msgid "Naudojimo limitas"
 msgstr "Use limitation"

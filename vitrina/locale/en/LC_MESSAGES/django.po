@@ -692,13 +692,13 @@ msgid "Surašykite aktualius raktinius žodžius"
 msgstr "List relevant keywords"
 
 msgid "Metaduomenų katalogo pavadinimas"
-msgstr "Catalog title"
+msgstr "Metadata catalog title"
 
 msgid "Metaduomenų katalogo kodinis pavadinimas"
-msgstr "Catalog code name"
+msgstr "Metadata catalog code name"
 
 msgid "Detalus metaduomenų katalogo aprašas"
-msgstr "Detailed description of the catalog"
+msgstr "Detailed description of the metadata catalog"
 
 msgid "Identifikatorius"
 msgstr "Identifier"

@@ -34,15 +34,12 @@ class UAPIDatasetCreateSerializer(PostDatasetSerializer):
     parent_id = serializers.CharField(required=False, allow_null=True)
 
     class Meta(PostDatasetSerializer.Meta):
-        fields = (
-            PostDatasetSerializer.Meta.fields
-            + (
-                "name",
-                "subclass",
-                "parent_id",
-                "service",
-                "series",
-            )
+        fields = PostDatasetSerializer.Meta.fields + (
+            "name",
+            "subclass",
+            "parent_id",
+            "service",
+            "series",
         )
 
 

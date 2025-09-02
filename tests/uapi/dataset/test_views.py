@@ -132,7 +132,7 @@ def test_create(
     ],
 )
 def test_create_specific_resource(
-    subclass: DCATResourceSubclass,
+    subclass: str,
     subclass_additional_data: dict[str, Any],
     is_service: bool,
     is_series: bool,

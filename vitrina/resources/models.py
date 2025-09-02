@@ -130,14 +130,11 @@ class DatasetDistribution(TranslatableModel):
         title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
         description=models.TextField(_("Aprašymas"), blank=True),
         conditions=models.TextField(
-            _("Platinimo sąlygos"),
-            help_text=_(
-                "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. "
-                "Atitinka dct:description."
-            ),
+            _("Teisės - Aprašymas"),
+            help_text=_("Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:description."),
             blank=True,
             null=True,
-        )
+        ),
     )
 
     access_url = models.CharField(
@@ -237,7 +234,7 @@ class DatasetDistribution(TranslatableModel):
     )
 
     rights_relation = models.URLField(
-        verbose_name=_("Platinimo sąlygų nuoroda"),
+        verbose_name=_("Teisės - Susijęs dokumentas"),
         max_length=1024,
         null=True,
         blank=True,

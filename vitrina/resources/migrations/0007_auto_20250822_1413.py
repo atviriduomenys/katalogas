@@ -6,17 +6,17 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_datasets', '0021_auto_20250821_1654'),
+        ('vitrina_resources', '0006_datasetdistribution_applicable_legislation'),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='dataset',
+            model_name='datasetdistribution',
             name='rights_relation',
             field=models.URLField(blank=True, help_text='Teisių deklaracijos nuoroda. Atitinka dct:relation.', max_length=1024, null=True, verbose_name='Teisės - Susijęs dokumentas'),
         ),
-        migrations.AddField(
-            model_name='datasettranslation',
+        migrations.AlterField(
+            model_name='datasetdistributiontranslation',
             name='conditions',
             field=models.TextField(blank=True, help_text='Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:description.', null=True, verbose_name='Teisės - Aprašymas'),
         ),

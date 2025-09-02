@@ -195,7 +195,7 @@ class Dataset(Resource):
             help_text=_("Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."),
         ),
         conditions=models.TextField(
-            verbose_name=_("Platinimo sąlygos"),
+            verbose_name=_("Teisės - Aprašymas"),
             blank=True,
             null=True,
             help_text=_("Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:description."),
@@ -498,7 +498,7 @@ class Dataset(Resource):
     )
 
     rights_relation = models.URLField(
-        verbose_name=_("Platinimo sąlygų nuoroda"),
+        verbose_name=_("Teisės - Susijęs dokumentas"),
         max_length=1024,
         null=True,
         blank=True,

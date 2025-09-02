@@ -1217,6 +1217,11 @@ msgid ""
 "dct:temporal."
 msgstr ""
 
+msgid ""
+"Informacinės sistemos identifikatorius pagal Valstybės informacinių išteklių "
+"valdymo įstatymo reikalavimus. Atitinka dcataplt:Identifier."
+msgstr ""
+
 msgid "Peržiūrėti papildomą informaciją"
 msgstr ""
 
@@ -1310,7 +1315,10 @@ msgstr ""
 msgid "Redaguoti"
 msgstr ""
 
-msgid "Trinti"
+msgid "Ar jūs tikrai norite ištrinti šį šaltinį?"
+msgstr ""
+
+msgid "Ištrinti"
 msgstr ""
 
 msgid "Duomenų ištekliaus peržiūros"
@@ -1352,7 +1360,13 @@ msgstr ""
 msgid "Susieti su duomenų ištekliumi"
 msgstr ""
 
+msgid "Ar jūs tikrai norite ištrinti šį ryšį?"
+msgstr ""
+
 msgid "Priskirtos organizacijos"
+msgstr ""
+
+msgid "Ar jūs tikrai norite ištrinti?"
 msgstr ""
 
 msgid "Priskirti organizaciją"
@@ -3223,6 +3237,9 @@ msgstr ""
 msgid "Mokėjimo sąlygos"
 msgstr ""
 
+msgid "Generuoti sutarties dokumentą"
+msgstr ""
+
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr ""
 
@@ -3248,6 +3265,10 @@ msgid "Papildomi tiekėjo teisės aktai"
 msgstr ""
 
 msgid "Sutartis"
+msgstr ""
+
+#, python-brace-format
+msgid "Sutartis: {organization}"
 msgstr ""
 
 msgid "Sutarties leidimas"
@@ -3277,9 +3298,6 @@ msgstr ""
 msgid "Grįžti į sutartis"
 msgstr ""
 
-msgid "Generuoti sutarties dokumentą"
-msgstr ""
-
 msgid "Įkelti gavėjo pasirašytą dokumentą"
 msgstr ""
 
@@ -3295,14 +3313,7 @@ msgstr ""
 msgid "Nėra sutarčių dokumentų."
 msgstr ""
 
-msgid "Generuoti"
-msgstr ""
-
 msgid "Nėra sutarčių."
-msgstr ""
-
-#, python-brace-format
-msgid "Sutartis: {organization}"
 msgstr ""
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
@@ -3312,10 +3323,6 @@ msgid "Sutartys sėkmingai sugeneruotos"
 msgstr ""
 
 msgid "Sutarčių generavime kilo klaidų"
-msgstr ""
-
-#, python-brace-format
-msgid "Sutarties generavimas: {organization}"
 msgstr ""
 
 #, python-brace-format
@@ -3970,6 +3977,9 @@ msgstr ""
 msgid "Baziniai modeliai"
 msgstr ""
 
+msgid "Ar tikrai norite ištrinti?"
+msgstr ""
+
 msgid "Parametrai"
 msgstr ""
 
@@ -4338,9 +4348,6 @@ msgid "Administratorius"
 msgstr ""
 
 msgid "Atnaujinti"
-msgstr ""
-
-msgid "Ištrinti"
 msgstr ""
 
 msgid ""

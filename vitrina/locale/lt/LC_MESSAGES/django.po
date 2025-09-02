@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-25 10:31+0300\n"
+"POT-Creation-Date: 2025-09-02 18:08+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -180,6 +180,15 @@ msgstr ""
 msgid "Sąvokos"
 msgstr ""
 
+msgid "Nuoroda"
+msgstr ""
+
+msgid "Teisinis pagrindas"
+msgstr ""
+
+msgid "Teisiniai pagrindai"
+msgstr ""
+
 msgid "Pranešimas (lietuvių kalba)"
 msgstr ""
 
@@ -220,9 +229,6 @@ msgid "Atsakymas"
 msgstr ""
 
 msgid "Tipas"
-msgstr ""
-
-msgid "Nuoroda"
 msgstr ""
 
 msgid "Duomenys"
@@ -436,9 +442,6 @@ msgstr ""
 msgid "Viešas komentaras"
 msgstr ""
 
-msgid "Šis duomenų rinkinys įtrauktas į "
-msgstr ""
-
 msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
 msgstr ""
 
@@ -563,6 +566,14 @@ msgid ""
 "atvėrimą?"
 msgstr ""
 
+msgid ""
+"Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys."
+"<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
+"konkrečią nuorodą, pvz., „#17.2“.<br>Tais atvejais, kai yra keli dokumentai "
+"su priedais: „#priedas1/17.2“, „17.2/17.2.5“, kur „priedas1“ yra dokumento "
+"failo pavadinimas.<br>Atitinka eli:LegalResource."
+msgstr ""
+
 msgid "Tėvinis išteklius"
 msgstr ""
 
@@ -587,6 +598,9 @@ msgstr ""
 msgid ""
 "Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
 "pavadinimą."
+msgstr ""
+
+msgid "Yra klaidų sąraše."
 msgstr ""
 
 msgid "API adresas"
@@ -639,6 +653,14 @@ msgstr ""
 msgid ""
 "Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. "
 "Atitinka foaf:homepage."
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. "
+"Atitinka dct:publisher"
+msgstr ""
+
+msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
 msgstr ""
 
 #, python-format
@@ -916,6 +938,12 @@ msgid ""
 "dct:temporal."
 msgstr ""
 
+msgid "Informacinės sistemos tvarkytojas"
+msgstr ""
+
+msgid "Informacinės sistemos valdytojas"
+msgstr ""
+
 msgid "Laiko skiriamoji geba (sekundėmis)"
 msgstr ""
 
@@ -1162,6 +1190,11 @@ msgid ""
 "dct:temporal."
 msgstr ""
 
+msgid ""
+"Informacinės sistemos identifikatorius pagal Valstybės informacinių išteklių "
+"valdymo įstatymo reikalavimus. Atitinka dcataplt:Identifier."
+msgstr ""
+
 msgid "Peržiūrėti papildomą informaciją"
 msgstr ""
 
@@ -1255,7 +1288,10 @@ msgstr ""
 msgid "Redaguoti"
 msgstr ""
 
-msgid "Trinti"
+msgid "Ar jūs tikrai norite ištrinti šį šaltinį?"
+msgstr ""
+
+msgid "Ištrinti"
 msgstr ""
 
 msgid "Duomenų ištekliaus peržiūros"
@@ -1297,7 +1333,13 @@ msgstr ""
 msgid "Susieti su duomenų ištekliumi"
 msgstr ""
 
+msgid "Ar jūs tikrai norite ištrinti šį ryšį?"
+msgstr ""
+
 msgid "Priskirtos organizacijos"
+msgstr ""
+
+msgid "Ar jūs tikrai norite ištrinti?"
 msgstr ""
 
 msgid "Priskirti organizaciją"
@@ -1600,16 +1642,7 @@ msgstr ""
 msgid "Duomenų rinkinių būsenos"
 msgstr ""
 
-msgid "pagal rinkinio valdymo sritį rinkinio įkėlimo datai"
-msgstr ""
-
 msgid "Duomenų rinkinių brandos lygiai"
-msgstr ""
-
-msgid "pagal rinkinio brandos lygį rinkinio įkėlimo datai"
-msgstr ""
-
-msgid "pagal rinkinio organizaciją rinkinio įkėlimo datai"
 msgstr ""
 
 msgid "Duomenų rinkinių žymės"
@@ -1621,19 +1654,10 @@ msgstr ""
 msgid "Duomenų rinkinių atnaujinimo dažnumas"
 msgstr ""
 
-msgid "pagal rinkinio atnaujinimą rinkinio įkėlimo datai"
-msgstr ""
-
 msgid "Duomenų rinkinių grupės"
 msgstr ""
 
-msgid "pagal rinkinio grupes rinkinio įkėlimo datai"
-msgstr ""
-
 msgid "Duomenų rinkinių prieigos teisės"
-msgstr ""
-
-msgid "pagal rinkinio prieigos teises rinkinio įkėlimo datai"
 msgstr ""
 
 msgid "Duomenų rinkinių kiekis metuose"
@@ -3171,6 +3195,9 @@ msgstr ""
 msgid "Mokėjimo sąlygos"
 msgstr ""
 
+msgid "Generuoti sutarties dokumentą"
+msgstr ""
+
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr ""
 
@@ -3196,6 +3223,10 @@ msgid "Papildomi tiekėjo teisės aktai"
 msgstr ""
 
 msgid "Sutartis"
+msgstr ""
+
+#, python-brace-format
+msgid "Sutartis: {organization}"
 msgstr ""
 
 msgid "Sutarties leidimas"
@@ -3225,9 +3256,6 @@ msgstr ""
 msgid "Grįžti į sutartis"
 msgstr ""
 
-msgid "Generuoti sutarties dokumentą"
-msgstr ""
-
 msgid "Įkelti gavėjo pasirašytą dokumentą"
 msgstr ""
 
@@ -3243,14 +3271,7 @@ msgstr ""
 msgid "Nėra sutarčių dokumentų."
 msgstr ""
 
-msgid "Generuoti"
-msgstr ""
-
 msgid "Nėra sutarčių."
-msgstr ""
-
-#, python-brace-format
-msgid "Sutartis: {organization}"
 msgstr ""
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
@@ -3260,10 +3281,6 @@ msgid "Sutartys sėkmingai sugeneruotos"
 msgstr ""
 
 msgid "Sutarčių generavime kilo klaidų"
-msgstr ""
-
-#, python-brace-format
-msgid "Sutarties generavimas: {organization}"
 msgstr ""
 
 #, python-brace-format
@@ -3918,6 +3935,9 @@ msgstr ""
 msgid "Baziniai modeliai"
 msgstr ""
 
+msgid "Ar tikrai norite ištrinti?"
+msgstr ""
+
 msgid "Parametrai"
 msgstr ""
 
@@ -4283,9 +4303,6 @@ msgid "Administratorius"
 msgstr ""
 
 msgid "Atnaujinti"
-msgstr ""
-
-msgid "Ištrinti"
 msgstr ""
 
 msgid ""

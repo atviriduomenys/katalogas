@@ -336,6 +336,16 @@
             </th>
             <td>{{ dataset.information_system_importance.translated_label }}</td>
         </tr>
+        <tr>
+            <th>
+                {% translate "Informacinės sistemos identifikatorius" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Informacinės sistemos identifikatorius pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Identifier.' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
+            <td>{{ dataset.identifier }}</td>
+        </tr>
     {% endif %}
     </tbody>
 </table>

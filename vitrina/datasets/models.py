@@ -168,6 +168,7 @@ class Dataset(Resource):
     RESTRICTED = "RESTRICTED"
     NON_PUBLIC = "NON_PUBLIC"
     CONFIDENTIAL = "CONFIDENTIAL"
+    # SENSITIVE ?
 
     ACCESS_RIGHTS = (
         (PUBLIC, _("Vieši")),
@@ -321,7 +322,7 @@ class Dataset(Resource):
     access_rights = models.CharField(
         _("Prieigos teisės"),
         blank=True,
-        null=True,
+        default=CONFIDENTIAL,
         choices=ACCESS_RIGHTS,
         max_length=255,
         help_text=_(

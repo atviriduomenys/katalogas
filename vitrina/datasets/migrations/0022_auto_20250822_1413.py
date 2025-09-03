@@ -13,11 +13,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='dataset',
             name='rights_relation',
-            field=models.URLField(blank=True, help_text='Teisių deklaracijos nuoroda. Atitinka dct:relation.', max_length=1024, null=True, verbose_name='Teisės - Susijęs dokumentas'),
+            field=models.URLField(blank=True, help_text='Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation.', max_length=1024, null=True, verbose_name='Teisės - Susijęs dokumentas'),
         ),
         migrations.AddField(
             model_name='datasettranslation',
             name='conditions',
-            field=models.TextField(blank=True, help_text='Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:description.', null=True, verbose_name='Teisės - Aprašymas'),
+            field=models.TextField(blank=True, help_text='Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description.', null=True, verbose_name='Teisės - Aprašymas'),
         ),
     ]

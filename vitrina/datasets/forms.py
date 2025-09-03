@@ -460,6 +460,19 @@ class CatalogResourceForm(BaseResourceForm):
             Field("rights_relation"),
         )
 
+    def clean(self) -> None:
+        rights_relation = self.cleaned_data.get("rights_relation")
+        conditions = self.cleaned_data.get("conditions")
+        if bool(rights_relation) == bool(conditions):
+            self.add_error(
+                "conditions",
+                _("Užpildykite tik vieną teisių deklaracijų lauką."),
+            )
+            self.add_error(
+                "rights_relation",
+                _("Užpildykite tik vieną teisių deklaracijų lauką."),
+            )
+
 
 class InformationSystemResourceForm(CatalogResourceForm):
     identifier = forms.CharField(label=_("Identifikatorius"), required=False)
@@ -542,6 +555,9 @@ class InformationSystemResourceForm(CatalogResourceForm):
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
         )
         self.fields["information_system_importance"].label_from_instance = lambda obj: str(obj.translated_label)
+
+    def clean(self):
+        super().clean()
 
 
 class DatasetResourceForm(BaseResourceForm):

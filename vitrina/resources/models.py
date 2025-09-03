@@ -131,7 +131,9 @@ class DatasetDistribution(TranslatableModel):
         description=models.TextField(_("Aprašymas"), blank=True),
         conditions=models.TextField(
             _("Teisės - Aprašymas"),
-            help_text=_("Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:description."),
+            help_text=_(
+                "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description."
+            ),
             blank=True,
             null=True,
         ),
@@ -238,7 +240,7 @@ class DatasetDistribution(TranslatableModel):
         max_length=1024,
         null=True,
         blank=True,
-        help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:relation."),
+        help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
     )
 
     # Deprecated fields bellow

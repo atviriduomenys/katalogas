@@ -198,7 +198,9 @@ class Dataset(Resource):
             verbose_name=_("Teisės - Aprašymas"),
             blank=True,
             null=True,
-            help_text=_("Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:description."),
+            help_text=_(
+                "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description."
+            ),
         ),
     )
 
@@ -502,7 +504,7 @@ class Dataset(Resource):
         max_length=1024,
         null=True,
         blank=True,
-        help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:relation."),
+        help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
     )
 
     # TODO: To be removed:

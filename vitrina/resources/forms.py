@@ -217,6 +217,8 @@ class DatasetResourceForm(TranslatableModelForm):
         url = self.cleaned_data.get("download_url")
         access_url = self.cleaned_data.get("access_url")
         upload = self.cleaned_data.get("upload_to_storage")
+        rights_relation = self.cleaned_data.get("rights_relation")
+        conditions = self.cleaned_data.get("conditions")
 
         if file and url:
             raise ValidationError(_("Užpildykit vieną iš pasirinktų laukų: URL lauką arba įkelkit failą, ne abu."))
@@ -241,6 +243,17 @@ class DatasetResourceForm(TranslatableModelForm):
                     "download_url",
                     _("Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."),
                 )
+
+        if bool(rights_relation) == bool(conditions):
+            self.add_error(
+                "conditions",
+                _("Užpildykite tik vieną teisių deklaracijų lauką."),
+            )
+            self.add_error(
+                "rights_relation",
+                _("Užpildykite tik vieną teisių deklaracijų lauką."),
+            )
+
         return self.cleaned_data
 
     def clean_access(self):

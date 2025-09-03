@@ -189,6 +189,26 @@
             </td>
         </tr>
     {% endif %}
+    {% if dataset.dataset_files.exists %}
+        <tr>
+            <th>
+                {% translate "Dokumentacija" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page.' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
+            <td>
+                <ul>
+                    {% for file in dataset.dataset_files.all %}
+                        <div>
+                            <span><a href="{{ file.file.url }}"><i class="fas fa-file"></i> {{ file.filename_without_path }}</a></span>
+                        </div>
+                    {% endfor %}
+                </ul>
+            </td>
+        </tr>
+    {% endif %}
     <tr>
         <th>
             {% translate "Katalogas" %}

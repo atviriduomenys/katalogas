@@ -173,7 +173,7 @@ class BaseResourceForm(TranslatableModelForm):
         **kwargs,
     ) -> None:
         super().__init__(*args, **kwargs)
-        instance = self.instance if self.instance and self.instance.pk else None
+        instance: Dataset | None = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-form"
@@ -182,6 +182,9 @@ class BaseResourceForm(TranslatableModelForm):
         if parent_id := request.resolver_match.kwargs.get("parent_id"):
             self.fields["parent"].initial = parent_id
             self.fields["parent"].widget = forms.HiddenInput()
+        elif instance:
+            self.fields["parent"].initial = instance.get_parent()
+            self.fields["parent"].queryset = Dataset.objects.exclude(pk=instance.pk)
 
         self.fields["access_rights"].required = True
 
@@ -463,6 +466,7 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("information_system_importance"),
             Field("information_system_publisher"),
             Field("information_system_creator"),
+            Field("parent"),
             Field("applicable_legislation"),
         )
 

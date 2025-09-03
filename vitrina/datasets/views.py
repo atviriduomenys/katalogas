@@ -1080,7 +1080,7 @@ class DatasetUpdateView(
         return kwargs
 
     def form_valid(self, form):
-        self.object = form.save(commit=False)
+        self.object: Dataset = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
 
@@ -1326,6 +1326,13 @@ class DatasetUpdateView(
             self.object.save()
 
         self.object.save()
+
+        selected_parent: Dataset | None = form.cleaned_data.get("parent")
+        if self.object.get_parent() != selected_parent:
+            if not selected_parent:
+                self.object.add_self_as_root()
+            else:
+                self.object.move(selected_parent, "sorted-child")
         return HttpResponseRedirect(self.get_success_url())
 
 

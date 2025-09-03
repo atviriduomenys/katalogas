@@ -185,6 +185,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("data_service"),
             Field("upload_to_storage"),
             Field("licence"),
+            Field("parent"),
             Field("applicable_legislation"),
             Field("conditions"),
             Submit("submit", button, css_class="button is-primary"),

@@ -485,6 +485,11 @@ class Dataset(Resource):
         related_name="datasets",
         blank=True,
     )
+    documentation = models.ManyToManyField(
+        verbose_name=_("Dokumentacija"),
+        to="Documentation",
+        blank=True,
+    )
 
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------
@@ -1195,6 +1200,18 @@ class Dataset(Resource):
         for entry in all_entries.filter(url__in=new_urls):
             entry.update_description()
 
+    def update_documentation(self, urls: list[str]) -> None:
+        existing_urls = set(
+            Documentation.objects.filter(documentation_link__in=urls).values_list("documentation_link", flat=True)
+        )
+        new_urls = [url for url in urls if url not in existing_urls]
+
+        if new_urls:
+            Documentation.objects.bulk_create([Documentation(documentation_link=url) for url in new_urls])
+
+        all_entries = Documentation.objects.filter(documentation_link__in=urls)
+        self.documentation.set(all_entries)
+
 
 class DatasetReport(Dataset):
     class Meta:
@@ -1612,6 +1629,10 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     @property
     def is_dataset(self) -> bool:
         return self.name == DCATResourceSubclass.DATASET
+
+
+class Documentation(UUIDBaseModel):
+    documentation_link = models.CharField(max_length=500, blank=True, unique=True)
 
 
 class Relation(TranslatableModel):

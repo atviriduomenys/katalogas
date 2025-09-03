@@ -48,9 +48,7 @@ class TestInformationSystemResourceForm:
 
 
 class DatasetResourceForm:
-    def test_temporal_start_date_must_be_lower_then_temporal_end_date(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_temporal_start_date_must_be_lower_then_temporal_end_date(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)
@@ -75,7 +73,7 @@ class DatasetResourceForm:
 
 
 class CatalogResourceForm:
-    def test_create_catalog_with_conditions(self, app: DjangoTestApp) -> None:
+    def test_create_catalog_with_conditions_error(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)
@@ -95,5 +93,5 @@ class CatalogResourceForm:
 
         assert isinstance(form, CatalogResourceForm)
         assert response.status_code == 200
-        assert form.cleaned_data["conditions"] == "Conditions"
-        assert form.cleaned_data["rights_relation"] == "https://example.com"
+        form_in_context = response.context["form"]
+        assert "Užpildykite tik vieną teisių deklaracijų lauką." in form_in_context.errors

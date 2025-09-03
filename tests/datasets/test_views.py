@@ -2072,7 +2072,7 @@ class TestDatasetCreateView:
         dataset2.refresh_from_db()
         assert dataset2.name == "datasets/gov/test-organization/test-dataset_3"
 
-        dataset3 = Dataset.objects.last()
+        dataset3 = Dataset.objects.exclude(id=1).last()
         assert dataset3.name == "datasets/gov/test-organization/test-dataset_4"
 
     def test_dataset_create_files(self, app: DjangoTestApp):

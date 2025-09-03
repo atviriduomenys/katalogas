@@ -13,6 +13,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='dataset',
             name='access_rights',
-            field=models.CharField(blank=True, choices=[('PUBLIC', 'Vieši'), ('RESTRICTED', 'Apriboti'), ('NON_PUBLIC', 'Nevieši'), ('CONFIDENTIAL', 'Konfidencialūs')], help_text='Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos apribojimai, ar jis nėra viešas. Atitinka dct:accessRights.', max_length=255, null=True, verbose_name='Prieigos teisės'),
+            field=models.CharField(blank=True, choices=[('PUBLIC', 'Vieši'), ('RESTRICTED', 'Apriboti'), ('NON_PUBLIC', 'Nevieši'), ('CONFIDENTIAL', 'Konfidencialūs')], help_text='Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos apribojimai, ar jis nėra viešas, ar jis konfidencialus. Atitinka dct:accessRights.', max_length=255, null=True, verbose_name='Prieigos teisės'),
         ),
     ]

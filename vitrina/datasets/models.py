@@ -324,7 +324,7 @@ class Dataset(Resource):
         choices=ACCESS_RIGHTS,
         max_length=255,
         help_text=_(
-            "Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos apribojimai, ar jis nėra viešas. Atitinka dct:accessRights."
+            "Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos apribojimai, ar jis nėra viešas, ar jis konfidencialus. Atitinka dct:accessRights."
         ),
     )
 

@@ -23,6 +23,9 @@ Add `applicable_legislation` field to Dataset Distribution.
 
 Bug fixes:
 
+https://github.com/atviriduomenys/katalogas/issues/1869
+Fix files not saving in Resource create/update
+
 
 
 v 1.1 (2025-08-22)

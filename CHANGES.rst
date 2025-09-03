@@ -24,6 +24,10 @@ https://github.com/atviriduomenys/katalogas/issues/1752
 Add hierarchical breadcrumbs for datasets
 
 
+https://github.com/atviriduomenys/katalogas/issues/1736
+Add `documentation` field to Dataset
+
+
 Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/1869

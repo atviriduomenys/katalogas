@@ -534,8 +534,10 @@ def test_create_dataset(app: DjangoTestApp):
         'periodicity': frequency.title,
         'theme': [category.title]
     })
-    assert Dataset.objects.exclude(id=1).count() == 1
-    dataset = Dataset.objects.first()
+    dataset_objects = Dataset.objects.exclude(id=1)
+
+    assert dataset_objects.count() == 1
+    dataset = dataset_objects.first()
     assert dataset.language == "en lt"
     assert list(dataset.tags.all()) == ['tag1', 'tag2']
     assert dataset.frequency == frequency

@@ -6,6 +6,13 @@ v 1.2 (unreleased)
 New features:
 
 
+https://github.com/atviriduomenys/spinta/issues/1415
+Some additional improvements for the synchronization:
+    - Added new fields for Dataset API that conforms to the UAPI: `service` & `series`.
+    - Added `parent_id` to the API to be able to add hierarchy via the API.
+    - Fixed a bug where the translations were not setting properly.
+
+
 https://github.com/atviriduomenys/katalogas/issues/1812
 Upgrade Django 3.2 -> Django 4.2:
     - Changed `delete(..)` methods to `form_valid(..)` in all `DeleteView` views.

@@ -10,8 +10,8 @@ from django.contrib.contenttypes.models import ContentType
 from django.contrib.sites.models import Site
 from django.urls import reverse
 
-from vitrina.datasets.factories import DatasetFactory
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
@@ -57,6 +57,17 @@ def _generate_test_token(
 @pytest.fixture(autouse=True)
 def override_oauth_jwk(settings, test_jwk):
     settings.OAUTH_SERVER_PUBLIC_JWK_JSON = test_jwk.as_dict(is_private=False)
+
+
+# TODO: Remove after https://github.com/atviriduomenys/katalogas/issues/1840 is complete.
+#   These classes should be created via migrations.
+@pytest.fixture
+def create_dcat_resource_subclasses() -> None:
+    DCATResourceSubclassFactory(name=DCATResourceSubclass.DATASET)
+    DCATResourceSubclassFactory(name=DCATResourceSubclass.SERIES)
+    DCATResourceSubclassFactory(name=DCATResourceSubclass.SERVICE)
+    DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+    DCATResourceSubclassFactory(name=DCATResourceSubclass.CATALOG)
 
 
 @pytest.fixture(scope="session")

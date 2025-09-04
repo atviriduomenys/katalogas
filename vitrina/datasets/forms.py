@@ -463,15 +463,9 @@ class CatalogResourceForm(BaseResourceForm):
     def clean(self) -> None:
         rights_relation = self.cleaned_data.get("rights_relation")
         conditions = self.cleaned_data.get("conditions")
-        if bool(rights_relation) == bool(conditions):
-            self.add_error(
-                "conditions",
-                _("Užpildykite tik vieną teisių deklaracijų lauką."),
-            )
-            self.add_error(
-                "rights_relation",
-                _("Užpildykite tik vieną teisių deklaracijų lauką."),
-            )
+        if rights_relation and conditions:
+            self.add_error("conditions", _("Užpildykite tik vieną teisių deklaracijų lauką."))
+            self.add_error("rights_relation", _("Užpildykite tik vieną teisių deklaracijų lauką."))
 
 
 class InformationSystemResourceForm(CatalogResourceForm):

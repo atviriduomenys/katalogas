@@ -244,7 +244,7 @@ class DatasetResourceForm(TranslatableModelForm):
                     _("Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."),
                 )
 
-        if bool(rights_relation) == bool(conditions):
+        if rights_relation and conditions:
             self.add_error(
                 "conditions",
                 _("Užpildykite tik vieną teisių deklaracijų lauką."),

@@ -291,7 +291,7 @@ class TestDatasetDetailView:
             organization=organization,
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
-            user=None,
+            user=user,
             role=Representative.MANAGER,
         )
 
@@ -1318,7 +1318,7 @@ class TestDatasetUpdateView:
             organization=organization,
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
-            user=None,
+            user=user,
             role=Representative.MANAGER,
         )
 
@@ -1548,10 +1548,11 @@ class TestDatasetCreateView:
         resp = form.submit()
         added_datasets = Dataset.objects.filter(translations__title="Added title")
         assert added_datasets.count() == 2
-        assert added_datasets[0].tags.all()[0].name == "test tag"
-        assert added_datasets[0].access_rights == Dataset.PUBLIC
+        added_dataset = added_datasets.first()
+        assert added_dataset.tags.all()[0].name == "test tag"
+        assert added_dataset.access_rights == Dataset.PUBLIC
         assert resp.status_code == 302
-        assert str(added_datasets[0].id) in resp.url
+        assert str(added_dataset.id) in resp.url
         added_dataset = added_datasets.first()
         assert Version.objects.get_for_object(added_dataset).count() == 1
         assert Version.objects.get_for_object(added_dataset).first().revision.comment == Dataset.CREATED
@@ -2101,8 +2102,23 @@ class TestDatasetDeleteView:
 
 
 class TestDatasetMembers:
-    def test_dataset_members_view_bad_login(self, app: DjangoTestApp):
+    def test_dataset_members_view_public_by_anyone_authenticated(self, app: DjangoTestApp):
         dataset = DatasetFactory()
+        ct = ContentType.objects.get_for_model(dataset)
+        representative = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.MANAGER)
+        user = UserFactory()
+        app.set_user(user)
+        url = reverse(
+            "dataset-members",
+            kwargs={
+                "pk": representative.object_id,
+            },
+        )
+        response = app.get(url, expect_errors=True)
+        assert response.status_code == 200
+
+    def test_dataset_members_cant_view_public_by_anyone_authenticated(self, app: DjangoTestApp):
+        dataset = DatasetFactory(is_public=False, access_rights=Dataset.CONFIDENTIAL)
         ct = ContentType.objects.get_for_model(dataset)
         representative = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.MANAGER)
         user = UserFactory()
@@ -2935,12 +2951,20 @@ def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp
     assert sorted([int(obj.pk) for obj in resp.context["object_list"]]) == sorted([dataset1.pk, dataset2.pk])
 
 
-def test_dataset_history_view_without_permission(app: DjangoTestApp):
+def test_dataset_history_cant_view_without_permission(app: DjangoTestApp):
     user = UserFactory()
-    dataset = DatasetFactory()
+    dataset = DatasetFactory(is_public=True, access_rights=Dataset.CONFIDENTIAL)
     app.set_user(user)
     resp = app.get(reverse("dataset-history", args=[dataset.pk]), expect_errors=True)
     assert resp.status_code == 403
+
+
+def test_dataset_history_can_view_public(app: DjangoTestApp):
+    user = UserFactory()
+    dataset = DatasetFactory(is_public=True, access_rights=Dataset.PUBLIC)
+    app.set_user(user)
+    resp = app.get(reverse("dataset-history", args=[dataset.pk]), expect_errors=True)
+    assert resp.status_code == 200
 
 
 def test_dataset_history_view_with_permission(app: DjangoTestApp):

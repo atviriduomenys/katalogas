@@ -143,8 +143,8 @@ class PublisherOrganization(Organization):
 
 
 class Representative(models.Model):
-    COORDINATOR = "coordinator"
-    MANAGER = "manager"
+    COORDINATOR = "coordinator"  # Tvarkytojas + tvarko kitus Representative
+    MANAGER = "manager"  # Tvarkytojas
     SUPERVISOR = "supervisor"
     ROLES = ((COORDINATOR, _("Koordinatorius")), (MANAGER, _("Tvarkytojas")))
 

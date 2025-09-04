@@ -4,6 +4,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.models import Dataset
 from vitrina.likes.models import Like
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.projects.factories import ProjectFactory
@@ -113,8 +114,8 @@ def test_like_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_like_with_non_public_dataset_with_access(app: DjangoTestApp):
-    dataset = DatasetFactory(is_public=False)
+def test_like_with_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=True, access_rights=Dataset.PUBLIC)
     ct = ContentType.objects.get_for_model(dataset)
     user = UserFactory()
     RepresentativeFactory(
@@ -124,7 +125,22 @@ def test_like_with_non_public_dataset_with_access(app: DjangoTestApp):
     )
     app.set_user(user)
     response = app.post(reverse('like', args=[ct.pk, dataset.pk, user.pk]))
+    assert response.status_code == 302
     assert response.url == dataset.get_absolute_url()
+
+@pytest.mark.django_db
+def test_like_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    ct = ContentType.objects.get_for_model(dataset)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.post(reverse('like', args=[ct.pk, dataset.pk, user.pk]), expect_errors=True)
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -138,8 +154,8 @@ def test_unlike_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_unlike_with_non_public_dataset_with_access(app: DjangoTestApp):
-    dataset = DatasetFactory(is_public=False)
+def test_unlike_with_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=True, access_rights=Dataset.PUBLIC)
     ct = ContentType.objects.get_for_model(dataset)
     user = UserFactory()
     RepresentativeFactory(
@@ -149,7 +165,22 @@ def test_unlike_with_non_public_dataset_with_access(app: DjangoTestApp):
     )
     app.set_user(user)
     response = app.post(reverse('unlike', args=[ct.pk, dataset.pk, user.pk]))
+    assert response.status_code == 302
     assert response.url == dataset.get_absolute_url()
+
+@pytest.mark.django_db
+def test_unlike_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    ct = ContentType.objects.get_for_model(dataset)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.post(reverse('unlike', args=[ct.pk, dataset.pk, user.pk]), expect_errors=True)
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db

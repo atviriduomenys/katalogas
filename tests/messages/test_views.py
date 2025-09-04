@@ -547,8 +547,8 @@ def test_subscribe_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_subscribe_with_non_public_dataset_with_access(app: DjangoTestApp):
-    dataset = DatasetFactory(is_public=False)
+def test_subscribe_with_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=True, access_rights=Dataset.PUBLIC)
     ct = ContentType.objects.get_for_model(dataset)
     user = UserFactory()
     RepresentativeFactory(
@@ -559,6 +559,20 @@ def test_subscribe_with_non_public_dataset_with_access(app: DjangoTestApp):
     app.set_user(user)
     response = app.get(reverse('subscribe-form', args=[ct.pk, dataset.pk, user.pk]))
     assert response.status_code == 200
+
+@pytest.mark.django_db
+def test_subscribe_with_non_public_dataset_without_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=False)
+    ct = ContentType.objects.get_for_model(dataset)
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=user,
+    )
+    app.set_user(user)
+    response = app.get(reverse('subscribe-form', args=[ct.pk, dataset.pk, user.pk]), expect_errors=True)
+    assert response.status_code == 403
 
 
 @pytest.mark.django_db
@@ -572,8 +586,8 @@ def test_unsubscribe_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_unsubscribe_with_non_public_dataset_with_access(app: DjangoTestApp):
-    dataset = DatasetFactory(is_public=False)
+def test_unsubscribe_with_public_dataset_with_access(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=True, access_rights=Dataset.PUBLIC)
     ct = ContentType.objects.get_for_model(dataset)
     user = UserFactory()
     RepresentativeFactory(

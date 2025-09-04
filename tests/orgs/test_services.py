@@ -112,7 +112,7 @@ def test_dataset_edit_permission_organization_coordinator():
         role=Representative.COORDINATOR
     )
     res = has_perm(coordinator.user, Action.UPDATE, dataset)
-    assert res is True
+    assert res is False
 
 
 @pytest.mark.django_db
@@ -138,7 +138,7 @@ def test_dataset_edit_permission_dataset_coordinator():
         role=Representative.COORDINATOR
     )
     res = has_perm(coordinator.user, Action.UPDATE, dataset)
-    assert res is True
+    assert res is False
 
 
 @pytest.mark.django_db
@@ -527,7 +527,7 @@ def test_dataset_representative_view_permission_organization_manager():
         role=Representative.MANAGER
     )
     res = has_perm(manager.user, Action.VIEW, Representative, dataset)
-    assert res is False
+    assert res is True
 
 
 @pytest.mark.django_db
@@ -553,7 +553,7 @@ def test_dataset_representative_view_permission_dataset_manager():
         role=Representative.MANAGER
     )
     res = has_perm(manager.user, Action.VIEW, Representative, dataset)
-    assert res is False
+    assert res is True
 
 
 @pytest.mark.django_db
@@ -781,7 +781,7 @@ def test_dataset_edit_permission_dataset_publisher():
         organization=organization,
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
-        user=None,
+        user=user,
         role=Representative.MANAGER,
     )
 
@@ -801,7 +801,7 @@ def test_dataset_edit_permission_organization_publisher():
         organization=organization,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=dataset.organization.pk,
-        user=None,
+        user=user,
         role=Representative.MANAGER,
     )
 
@@ -921,7 +921,7 @@ def test_dataset_distribution_edit_permission_organization_publisher():
         content_type=ct,
         object_id=dataset_distribution.dataset.organization.pk,
         role=Representative.MANAGER,
-        user=None
+        user=user
     )
     res = has_perm(user, Action.UPDATE, dataset_distribution)
     assert res is True

@@ -9,7 +9,7 @@ import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Sum, ForeignKey
+from django.db.models import Sum, ForeignKey, QuerySet, Q
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
@@ -168,7 +168,6 @@ class Dataset(Resource):
     RESTRICTED = "RESTRICTED"
     NON_PUBLIC = "NON_PUBLIC"
     CONFIDENTIAL = "CONFIDENTIAL"
-    # SENSITIVE ?
 
     ACCESS_RIGHTS = (
         (PUBLIC, _("Vieši")),
@@ -787,9 +786,32 @@ class Dataset(Resource):
     def get_members_url(self):
         return reverse("dataset-members", kwargs={"pk": self.pk})
 
-    def get_managers(self):
-        ct = ContentType.objects.get_for_model(Dataset)
-        return list(Representative.objects.filter(content_type=ct, object_id=self.id).values_list("user_id", flat=True))
+    def get_resource_managers_queryset(self) -> QuerySet["Dataset"]:
+        datasets_ids = {self.id}
+        organization_ids = {self.organization_id}
+        for parent_dataset in self.get_ancestors().only("pk", "organization_id"):
+            datasets_ids.add(parent_dataset.pk)
+            organization_ids.add(parent_dataset.organization_id)
+        return (
+            Representative.objects.filter(
+                Q(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    object_id__in=datasets_ids,
+                )
+                | Q(
+                    content_type=ContentType.objects.get_for_model(Organization),
+                    object_id__in=organization_ids,
+                )
+                | Q(organization_id__in=organization_ids),
+                user__isnull=False,
+            )
+            .values_list("user_id", flat=True)
+            .distinct()
+        )
+
+    @property
+    def resource_managers(self) -> set[int]:
+        return set(self.get_resource_managers_queryset())
 
     @property
     def language_array(self):

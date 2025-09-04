@@ -10,18 +10,20 @@ from django.core.handlers.wsgi import HttpRequest
 from django.db.models import Q
 from django.urls import reverse
 from haystack.backends import SQ
+from haystack.query import SearchQuerySet
 
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
-from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
 from vitrina.resources.models import Format
 from vitrina.settings import SPINTA_SERVER_URL
+from vitrina.users.models import User
+from rest_framework.request import Request as DrfRequest
 
 
 def update_facet_data(
@@ -246,7 +248,7 @@ def get_public_dataset_id_list():
     return public_dataset_id_list
 
 
-def filter_datasets_for_user(user, datasets):
+def filter_datasets_for_user(user: User, datasets: SearchQuerySet) -> SearchQuerySet:
     coordinator_orgs = [
         rep.object_id
         for rep in user.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))
@@ -258,32 +260,23 @@ def filter_datasets_for_user(user, datasets):
     return datasets
 
 
-def get_datasets_for_user(request, datasets):
-    is_org_dataset = False
-    if is_org_dataset_list(request) and request.user.is_authenticated:
-        if request.user.organization_id == request.resolver_match.kwargs["pk"]:
-            is_org_dataset = True
-    datasets = filter_out_non_public_datasets_for_user(request.user, datasets, is_org_dataset)
+def get_datasets_for_user(request: DrfRequest, datasets: SearchQuerySet) -> SearchQuerySet:
+    datasets = filter_out_non_public_datasets_for_user(request.user, datasets)
     datasets = datasets.models(Dataset)
     return datasets
 
 
-def filter_out_non_public_datasets_for_user(user, datasets, is_org_dataset):
-    if user.is_authenticated:
-        if not (user.is_staff or user.is_superuser):
-            if user.representative_set.all():
-                if is_org_dataset:
-                    return datasets.filter(
-                        SQ(is_public="true") | SQ(is_public="false") | SQ(managers__contains=user.id)
-                    )
-                else:
-                    return datasets.filter(SQ(is_public="true") | SQ(managers__contains=user.id))
-            else:
-                return datasets.filter(is_public="true")
-        else:
-            return datasets
-    else:
-        return datasets.filter(is_public="true")
+def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet) -> SearchQuerySet:
+    public_filter: SQ = SQ(is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
+    if not user.is_authenticated:
+        return datasets.filter(public_filter)
+    elif user.is_staff or user.is_superuser:
+        return datasets
+    elif user.is_gov_organization_manager:
+        return datasets.filter(
+            is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC)
+        )
+    return datasets.filter(SQ(resource_manager_contains=user.pk) | public_filter)
 
 
 def create_subscription(user, dataset):

@@ -7,6 +7,7 @@ from vitrina import settings
 from vitrina.classifiers.models import Concept
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
+from vitrina.orgs.models import Representative
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat, CompressionFormatFactory, \
     PackagingFormatFactory
 from vitrina.resources.models import DatasetDistribution
@@ -251,7 +252,9 @@ def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTest
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
-        user=user
+        user=user,
+        role=Representative.MANAGER
+
     )
     app.set_user(user)
     response = app.get(reverse('resource-detail', args=[dataset.pk, resource.pk]))

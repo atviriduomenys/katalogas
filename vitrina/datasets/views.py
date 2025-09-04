@@ -33,6 +33,7 @@ from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from haystack.generic_views import FacetedSearchView
+from haystack.query import SearchQuerySet
 from itsdangerous import URLSafeSerializer
 from parler.utils.context import switch_language
 from parler.utils.i18n import get_language
@@ -192,42 +193,41 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         return super().get(request)
 
     def get_queryset(self):
-        datasets = super().get_queryset()
-        datasets = get_datasets_for_user(self.request, datasets)
+        queryset: SearchQuerySet = get_datasets_for_user(self.request, super().get_queryset())
         sorting = self.request.GET.get("sort", None)
-        datasets = datasets.models(Dataset)
+        queryset = queryset.models(Dataset)
         if self.request.GET.get("q") and not sorting:
             sorting = "sort-by-relevance"
 
         options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
-            datasets = datasets.facet(field, **options)
+            queryset = queryset.facet(field, **options)
 
         if is_manager_dataset_list(self.request):
             org_ids = [
                 rep.object_id for rep in self.request.user.representative_set.filter(role=Representative.MANAGER)
             ]
-            datasets = datasets.filter(organization__in=org_ids)
+            queryset = queryset.filter(organization__in=org_ids)
 
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(
                 Organization,
                 pk=self.kwargs["pk"],
             )
-            datasets = datasets.filter(organization=self.organization.pk)
+            queryset = queryset.filter(organization=self.organization.pk)
 
         if not sorting or sorting == "sort-by-date-newest":
-            datasets = datasets.order_by("-published_created_s")
+            queryset = queryset.order_by("-published_created_s")
         elif sorting == "sort-by-date-oldest":
-            datasets = datasets.order_by("published_created_s")
+            queryset = queryset.order_by("published_created_s")
         elif sorting == "sort-by-title":
             if self.request.LANGUAGE_CODE == "lt":
-                datasets = datasets.order_by("lt_title_s", "-type_order")
+                queryset = queryset.order_by("lt_title_s", "-type_order")
             else:
-                datasets = datasets.order_by("en_title_s", "-type_order")
+                queryset = queryset.order_by("en_title_s", "-type_order")
         elif sorting == "sort-by-relevance":
-            datasets = datasets.order_by("-type_order")
-        return datasets
+            queryset = queryset.order_by("-type_order")
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

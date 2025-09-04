@@ -12,6 +12,7 @@ from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.orgs.models import Organization, Representative
 from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
 from vitrina.requests.models import Request
 from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory
@@ -546,8 +547,9 @@ def test_view_reply_to_comment_not_public_without_permission(app: DjangoTestApp)
 
 
 @pytest.mark.django_db
-def test_view_reply_to_comment_not_public_with_permission(app: DjangoTestApp):
+def test_view_reply_to_comment_not_public_with_resource_permission(app: DjangoTestApp):
     dataset = DatasetFactory()
+    organization = OrganizationFactory(kind=Organization.GOV)
     ct = ContentType.objects.get_for_model(dataset)
     comment = CommentFactory(
         content_type=ct,
@@ -562,7 +564,9 @@ def test_view_reply_to_comment_not_public_with_permission(app: DjangoTestApp):
     )
     representative = RepresentativeFactory(
         content_type=ct,
-        object_id=dataset.pk
+        object_id=dataset.pk,
+        user=UserFactory(organization=organization),
+        role=Representative.MANAGER
     )
     app.set_user(representative.user)
     resp = app.get(dataset.get_absolute_url())

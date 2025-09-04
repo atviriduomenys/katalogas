@@ -62,7 +62,7 @@ class DatasetIndex(SearchIndex, Indexable):
     type = MultiValueField(model_attr="public_types", faceted=True)
     type_order = IntegerField(model_attr="type_order")
     is_public = BooleanField(model_attr="is_public", faceted=True, null=False)
-    managers = MultiValueField(model_attr="get_managers", faceted=True)
+    resource_managers = MultiValueField(model_attr="resource_managers", faceted=True)
     access_rights = CharField(model_attr="access_rights", faceted=True, null=True)
     publisher = MultiValueField(model_attr="publisher__pk", faceted=True, null=True)
 

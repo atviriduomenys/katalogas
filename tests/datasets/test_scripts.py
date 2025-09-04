@@ -1349,8 +1349,6 @@ def test_geoportal_import__distribution_create_without_url(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__distribution_create_with_not_existing_format(app: DjangoTestApp):
-    UserFactory(is_superuser=True)
-
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"

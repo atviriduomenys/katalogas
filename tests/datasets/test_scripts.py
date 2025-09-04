@@ -1399,9 +1399,9 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-    dataset_objects = Dataset.objects.exclude(id=1)
-    assert dataset_objects.count() == 1
-    dataset = dataset_objects.first()
+
+    assert Dataset.objects.exclude(id=1).count() == 1
+    dataset = Dataset.objects.filter(geoportal_id="1").first()
     assert dataset.datasetdistribution_set.count() == 1
     assert dataset.datasetdistribution_set.first().download_url == "https://example.com/file.csv"
     assert dataset.datasetdistribution_set.first().format is None

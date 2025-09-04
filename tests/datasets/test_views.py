@@ -44,7 +44,7 @@ from vitrina.datasets.forms import (
     ServiceResourceForm,
     BaseResourceForm,
     InformationSystemResourceForm,
-    DatasetResourceForm,
+    DatasetResourceForm, CatalogResourceForm,
 )
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
@@ -1210,7 +1210,7 @@ class TestDatasetUpdateView:
         "subclass_name, form_class",
         [
             ("dataset", DatasetResourceForm),
-            ("catalog", ResourceForm),
+            ("catalog", CatalogResourceForm),
             ("information_system", InformationSystemResourceForm),
             ("service", ServiceResourceForm),
             ("series", ResourceForm),
@@ -1562,7 +1562,7 @@ class TestDatasetCreateView:
         "subclass_name, form_class",
         [
             ("dataset", DatasetResourceForm),
-            ("catalog", ResourceForm),
+            ("catalog", CatalogResourceForm),
             ("information_system", InformationSystemResourceForm),
             ("service", ServiceResourceForm),
             ("series", ResourceForm),

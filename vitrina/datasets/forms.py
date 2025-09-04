@@ -418,7 +418,57 @@ class ServiceResourceForm(BaseResourceForm):
         )
 
 
-class InformationSystemResourceForm(BaseResourceForm):
+class CatalogResourceForm(BaseResourceForm):
+    class Meta:
+        model = Dataset
+        fields = (
+            "title",
+            "description",
+            "is_public",
+            "tags",
+            "catalog",
+            "frequency",
+            "access_rights",
+            "name",
+            "contact",
+            "creator",
+            "publisher",
+            "managed_by_publisher",
+            "landing_page",
+            "conditions",
+            "rights_relation",
+        )
+
+    def __init__(self, request=None, organization=None, *args, **kwargs):
+        super().__init__(request, organization, *args, **kwargs)
+        self.helper.layout = Layout(
+            Field("is_public", placeholder=_("Ar duomenys vieši?")),
+            Field("title", placeholder=_("Metaduomenų katalogo pavadinimas")),
+            Field("name", placeholder=_("Metaduomenų katalogo kodinis pavadinimas")),
+            Field("description", placeholder=_("Detalus metaduomenų katalogo aprašas")),
+            Field("files"),
+            Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
+            Field("landing_page"),
+            Field("catalog"),
+            Field("frequency"),
+            Field("access_rights"),
+            Field("contact"),
+            Field("managed_by_publisher"),
+            Field("creator"),
+            Field("publisher"),
+            Field("conditions"),
+            Field("rights_relation"),
+        )
+
+    def clean(self) -> None:
+        rights_relation = self.cleaned_data.get("rights_relation")
+        conditions = self.cleaned_data.get("conditions")
+        if rights_relation and conditions:
+            self.add_error("conditions", _("Užpildykite tik vieną teisių deklaracijų lauką."))
+            self.add_error("rights_relation", _("Užpildykite tik vieną teisių deklaracijų lauką."))
+
+
+class InformationSystemResourceForm(CatalogResourceForm):
     identifier = forms.CharField(label=_("Identifikatorius"), required=False)
 
     class Meta:
@@ -442,6 +492,8 @@ class InformationSystemResourceForm(BaseResourceForm):
             "information_system_publisher",
             "information_system_creator",
             "applicable_legislation",
+            "conditions",
+            "rights_relation",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -471,6 +523,8 @@ class InformationSystemResourceForm(BaseResourceForm):
             Field("information_system_creator"),
             Field("parent"),
             Field("applicable_legislation"),
+            Field("conditions"),
+            Field("rights_relation"),
         )
 
         self.fields["landing_page"].label = _("Tinklalapis")
@@ -495,6 +549,9 @@ class InformationSystemResourceForm(BaseResourceForm):
             concept_schemas__uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
         )
         self.fields["information_system_importance"].label_from_instance = lambda obj: str(obj.translated_label)
+
+    def clean(self):
+        super().clean()
 
 
 class DatasetResourceForm(BaseResourceForm):

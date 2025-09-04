@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-26 19:02+0300\n"
+"POT-Creation-Date: 2025-09-03 14:41+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -691,6 +691,18 @@ msgstr "Detailed description of the dataset"
 msgid "Surašykite aktualius raktinius žodžius"
 msgstr "List relevant keywords"
 
+msgid "Metaduomenų katalogo pavadinimas"
+msgstr "Metadata catalog title"
+
+msgid "Metaduomenų katalogo kodinis pavadinimas"
+msgstr "Metadata catalog code name"
+
+msgid "Detalus metaduomenų katalogo aprašas"
+msgstr "Detailed description of the metadata catalog"
+
+msgid "Užpildykite tik vieną teisių deklaracijų lauką."
+msgstr "Please fill in only one field for rights."
+
 msgid "Identifikatorius"
 msgstr "Identifier"
 
@@ -893,6 +905,16 @@ msgstr "A name given to the record. Corresponds to dct:title."
 msgid "Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."
 msgstr "A free-text account of the record. Corresponds to dct:description."
 
+msgid "Teisės - Aprašymas"
+msgstr "Rights - Description"
+
+msgid ""
+"Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka "
+"dct:rights / dct:description."
+msgstr ""
+"The description of the declaration of rights. Corresponds to "
+"dct:rights  / dct:description."
+
 msgid "Katalogas"
 msgstr "Directory"
 
@@ -1039,6 +1061,14 @@ msgid ""
 msgstr ""
 "Spatial resolution (in meters). Corresponds to "
 "dcat:spatialResolutionInMeters."
+
+msgid "Teisės - Susijęs dokumentas"
+msgstr "Rights - Related document"
+
+msgid "Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."
+msgstr ""
+"Reference to the declaration of rights. Corresponds to dct:rights / "
+"dct:relation."
 
 msgid "Dataset"
 msgstr "Dataset"
@@ -1321,16 +1351,6 @@ msgstr "Last update date"
 
 msgid "Kada paskutinį kartą buvo atnaujinti duomenys"
 msgstr "When the data was last updated"
-
-msgid "Platinimo sąlygos"
-msgstr "Distribution terms"
-
-msgid ""
-"Ribojimai ar sąlygos, taikomos duomenų naudojimui (pvz., naudojimo "
-"apribojimai, prieigos teisės)"
-msgstr ""
-"Restrictions or conditions applied to data usage (e.g., usage restrictions, "
-"access rights)"
 
 msgid "Naudojimo limitas"
 msgstr "Use limitation"

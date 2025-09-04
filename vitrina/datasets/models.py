@@ -194,6 +194,14 @@ class Dataset(Resource):
             blank=True,
             help_text=_("Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."),
         ),
+        conditions=models.TextField(
+            verbose_name=_("Teisės - Aprašymas"),
+            blank=True,
+            null=True,
+            help_text=_(
+                "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description."
+            ),
+        ),
     )
 
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
@@ -489,6 +497,14 @@ class Dataset(Resource):
         verbose_name=_("Dokumentacija"),
         to="Documentation",
         blank=True,
+    )
+
+    rights_relation = models.URLField(
+        verbose_name=_("Teisės - Susijęs dokumentas"),
+        max_length=1024,
+        null=True,
+        blank=True,
+        help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
     )
 
     # TODO: To be removed:
@@ -1629,6 +1645,10 @@ class DCATResourceSubclass(TranslatableModel, UUIDBaseModel):
     @property
     def is_dataset(self) -> bool:
         return self.name == DCATResourceSubclass.DATASET
+
+    @property
+    def is_catalog(self) -> bool:
+        return self.name == DCATResourceSubclass.CATALOG
 
 
 class Documentation(UUIDBaseModel):

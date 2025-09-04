@@ -7,7 +7,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('vitrina_classifiers', '0013_applicablelegislation'),
-        ('vitrina_datasets', '0021_auto_20250821_1654'),
+        ('vitrina_datasets', '0022_auto_20250822_1413'),
     ]
 
     operations = [

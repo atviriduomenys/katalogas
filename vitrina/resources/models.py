@@ -129,7 +129,14 @@ class DatasetDistribution(TranslatableModel):
     translations = TranslatedFields(
         title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
         description=models.TextField(_("Aprašymas"), blank=True),
-        conditions=models.TextField(_("Platinimo sąlygos"), blank=True, null=True),
+        conditions=models.TextField(
+            _("Teisės - Aprašymas"),
+            help_text=_(
+                "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:rights / dct:description."
+            ),
+            blank=True,
+            null=True,
+        ),
     )
 
     access_url = models.CharField(
@@ -226,6 +233,14 @@ class DatasetDistribution(TranslatableModel):
         null=True,
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
         help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
+    )
+
+    rights_relation = models.URLField(
+        verbose_name=_("Teisės - Susijęs dokumentas"),
+        max_length=1024,
+        null=True,
+        blank=True,
+        help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
     )
 
     # Deprecated fields bellow

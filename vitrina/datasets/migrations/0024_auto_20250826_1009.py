@@ -7,7 +7,7 @@ import uuid
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_datasets', '0022_dataset_applicable_legislation'),
+        ('vitrina_datasets', '0023_dataset_applicable_legislation'),
     ]
 
     operations = [

@@ -48,9 +48,7 @@ class TestInformationSystemResourceForm:
 
 
 class DatasetResourceForm:
-    def test_temporal_start_date_must_be_lower_then_temporal_end_date(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_temporal_start_date_must_be_lower_then_temporal_end_date(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         user = UserFactory(is_staff=True)
         app.set_user(user)
@@ -72,3 +70,28 @@ class DatasetResourceForm:
         assert response.status_code == 200
         form_in_context = response.context["form"]
         assert "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data." in form_in_context.errors
+
+
+class CatalogResourceForm:
+    def test_create_catalog_with_conditions_error(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        subclass = DCATResourceSubclassFactory(name="catalog")
+
+        form = app.get(
+            reverse(
+                "dataset-add",
+                kwargs={"pk": organization.id, "subclass_uuid": subclass.pk},
+            )
+        ).context["form"]
+
+        form["conditions"] = "Conditions"
+        form["rights_relation"] = "https://example.com"
+
+        response = form.submit()
+
+        assert isinstance(form, CatalogResourceForm)
+        assert response.status_code == 200
+        form_in_context = response.context["form"]
+        assert "Užpildykite tik vieną teisių deklaracijų lauką." in form_in_context.errors

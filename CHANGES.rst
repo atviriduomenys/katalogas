@@ -5,6 +5,8 @@ v 1.2 (unreleased)
 
 New features:
 
+https://github.com/atviriduomenys/dvms/issues/185
+Introduce scripts to export users dump and to execute SQL queries
 
 https://github.com/atviriduomenys/spinta/issues/1415
 Some additional improvements for the synchronization:
@@ -40,6 +42,11 @@ Bug fixes:
 https://github.com/atviriduomenys/katalogas/issues/1869
 Fix files not saving in Resource create/update
 
+https://github.com/atviriduomenys/katalogas/issues/1857
+Fix can changes parent Resource from Resource edit form.
+
+https://github.com/atviriduomenys/dvms/issues/185
+Update anonymization script to include more tables with potential sensitive data
 
 
 v 1.1 (2025-08-22)

@@ -1,6 +1,3 @@
-import uuid
-from django.utils import timezone
-
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
@@ -13,7 +10,6 @@ from django.views import View
 from django.views.generic import CreateView
 from django.utils.translation import gettext_lazy as _
 
-from datetime import timedelta
 from vitrina.datasets.models import Dataset
 from vitrina.messages.forms import SubscriptionForm
 from vitrina.messages.models import Subscription, NewsletterSubscriber
@@ -215,18 +211,13 @@ class NewsletterSubscribeView(View):
             return self.redirect_back()
 
         if subscriber.status == NewsletterSubscriber.PENDING and not subscriber.is_confirmation_expired():
-            messages.info(
-                request,
-                _("Patvirtinimo nuorodą vis dar galiojanti, patikrinkite el. pašto dežutę.")
-            )
+            messages.info(request, _("Patvirtinimo nuorodą vis dar galiojanti, patikrinkite el. pašto dežutę."))
             return self.redirect_back()
 
         subscriber.initiate_subscription()
 
         confirmation_url = request.build_absolute_uri(
-            reverse(
-                "newsletter-confirm", kwargs={"token": subscriber.confirmation_token}
-            )
+            reverse("newsletter-confirm", kwargs={"token": subscriber.confirmation_token})
         )
 
         email(
@@ -242,10 +233,7 @@ class NewsletterSubscribeView(View):
 
         messages.success(
             request,
-            _(
-                "Patvirtinimo nuoroda išsiųsta į jūsų el. paštą. "
-                "Nuoroda galioja 24 valandas."
-            ),
+            _("Patvirtinimo nuoroda išsiųsta į jūsų el. paštą. Nuoroda galioja 24 valandas."),
         )
 
         return self.redirect_back()
@@ -261,15 +249,15 @@ class NewsletterConfirmView(View):
     def get(self, request, token):
         try:
             subscriber = get_object_or_404(
-                NewsletterSubscriber, confirmation_token=token, status=NewsletterSubscriber.PENDING,
+                NewsletterSubscriber,
+                confirmation_token=token,
+                status=NewsletterSubscriber.PENDING,
             )
 
             if subscriber.is_confirmation_expired():
                 messages.error(
                     request,
-                    _(
-                        "Patvirtinimo nuoroda nebegalioja. Prašome užsisakyti prenumeratą iš naujo."
-                    ),
+                    _("Patvirtinimo nuoroda nebegalioja. Prašome užsisakyti prenumeratą iš naujo."),
                 )
                 return redirect("newsletter-subscribe")
 
@@ -292,9 +280,7 @@ class NewsletterConfirmView(View):
                 override=True,
             )
 
-            messages.success(
-                request, _("Naujienlaiškio prenumerata sėkmingai patvirtinta!")
-            )
+            messages.success(request, _("Naujienlaiškio prenumerata sėkmingai patvirtinta!"))
             return render(request, "newsletter/confirmed.html")
 
         except Exception:
@@ -310,9 +296,7 @@ class NewsletterUnsubscribeView(View):
             status=NewsletterSubscriber.SUBSCRIBED,
         )
 
-        return render(
-            request, "newsletter/unsubscribe_confirm.html", {"subscriber": subscriber}
-        )
+        return render(request, "newsletter/unsubscribe_confirm.html", {"subscriber": subscriber})
 
     def post(self, request, token):
         subscriber = get_object_or_404(

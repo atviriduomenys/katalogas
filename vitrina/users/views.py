@@ -235,8 +235,7 @@ class ProfileView(LoginRequiredMixin, PermissionRequiredMixin, DetailView):
         )
         newsletter_subscription = NewsletterSubscriber.objects.filter(
             email=user.email,
-            is_active=True,
-            is_confirmed=True,
+            status=NewsletterSubscriber.SUBSCRIBED,
         ).first()
         for sub in subscriptions:
             sub.fields = [(_("Laiškai"), sub.email_subscribed)]

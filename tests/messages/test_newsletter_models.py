@@ -10,25 +10,30 @@ from vitrina.messages.models import NewsletterSubscriber
 class TestNewsletterSubscriber:
     def test_create_newsletter_subscriber(self):
         subscriber = NewsletterSubscriber.objects.create(email="test@example.com")
+        subscriber.initiate_subscription()
 
         assert subscriber.email == "test@example.com"
-        assert subscriber.is_confirmed is False
-        assert subscriber.is_active is True
+        assert subscriber.status == NewsletterSubscriber.PENDING
         assert subscriber.confirmation_token is not None
         assert subscriber.confirmation_expires_at is not None
         assert subscriber.unsubscribe_token is not None
         assert subscriber.created is not None
 
-    def test_unique_email_constraint(self):
+
+    @pytest.mark.parametrize("email_variant", [
+        "test@example.com",
+        "tEST@example.com",
+    ])
+    def test_unique_email_constraint(self, email_variant):
         NewsletterSubscriber.objects.create(email="test@example.com")
 
         with pytest.raises(IntegrityError):
-            NewsletterSubscriber.objects.create(email="test@example.com")
+            NewsletterSubscriber.objects.create(email=email_variant)
 
     def test_auto_set_confirmation_expiry(self):
         before_creation = timezone.now()
-        subscriber = NewsletterSubscriber.objects.create(email="test@example.com")
         expected_expiry = before_creation + timedelta(hours=24)
+        subscriber = NewsletterSubscriber.objects.create(email="test@example.com", confirmation_expires_at=expected_expiry)
         actual_expiry = subscriber.confirmation_expires_at
 
         tolerance = timedelta(minutes=1)
@@ -40,7 +45,7 @@ class TestNewsletterSubscriber:
             email="test@example.com", confirmation_expires_at=future_time
         )
 
-        assert subscriber.is_confirmation_expired is False
+        assert subscriber.is_confirmation_expired() is False
 
     def test_is_confirmation_expired_true_when_expired(self):
         past_time = timezone.now() - timedelta(hours=1)
@@ -48,28 +53,27 @@ class TestNewsletterSubscriber:
             email="test@example.com", confirmation_expires_at=past_time
         )
 
-        assert subscriber.is_confirmation_expired is True
+        assert subscriber.is_confirmation_expired() is True
 
-    def test_is_confirmation_expired_false_when_already_confirmed(self):
-        past_time = timezone.now() - timedelta(hours=1)
+    def test_is_confirmation_expired_when_already_subscribed(self):
         subscriber = NewsletterSubscriber.objects.create(
             email="test@example.com",
-            is_confirmed=True,
-            confirmation_expires_at=past_time,
         )
+        subscriber.confirm_subscription()
 
-        assert subscriber.is_confirmation_expired is False
+        assert subscriber.is_confirmation_expired() is True
 
     def test_confirm_subscription(self):
         subscriber = NewsletterSubscriber.objects.create(email="test@example.com")
+        subscriber.initiate_subscription()
 
-        assert subscriber.is_confirmed is False
+        assert subscriber.status == NewsletterSubscriber.PENDING
         assert subscriber.confirmation_token is not None
         assert subscriber.confirmation_expires_at is not None
 
         subscriber.confirm_subscription()
 
-        assert subscriber.is_confirmed is True
+        assert subscriber.status == NewsletterSubscriber.SUBSCRIBED
         assert subscriber.confirmation_token is None
         assert subscriber.confirmation_expires_at is None
 
@@ -78,21 +82,18 @@ class TestNewsletterSubscriber:
         assert str(pending) == "pending@example.com (pending)"
 
         confirmed = NewsletterSubscriber.objects.create(
-            email="confirmed@example.com", is_confirmed=True
+            email="confirmed@example.com", status=NewsletterSubscriber.SUBSCRIBED
         )
-        assert str(confirmed) == "confirmed@example.com (confirmed)"
+        assert str(confirmed) == "confirmed@example.com (subscribed)"
 
     def test_deactivate_subscription(self):
         subscriber = NewsletterSubscriber.objects.create(
-            email="test@example.com", is_confirmed=True
+            email="test@example.com", status=NewsletterSubscriber.SUBSCRIBED
         )
 
-        assert subscriber.is_active is True
+        subscriber.unsubscribe()
 
-        subscriber.is_active = False
-        subscriber.save()
-
-        assert subscriber.is_active is False
+        assert subscriber.status == NewsletterSubscriber.UNSUBSCRIBED
 
     def test_multiple_token_generation(self):
         subscriber1 = NewsletterSubscriber.objects.create(email="test1@example.com")

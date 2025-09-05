@@ -21,7 +21,6 @@ def send_newsletter_to_subscribers(sender, **kwargs):
     last_month_end = first_day_this_month - timedelta(seconds=1)
     last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
-
     blog_posts = Post.objects.filter(
         publish=True,
         date_published__gte=last_month_start,
@@ -83,8 +82,7 @@ def send_newsletter_to_subscribers(sender, **kwargs):
     sent_count = 0
     for subscriber in subscribers:
         unsubscribe_url = (
-            f"https://{domain}"
-            f"{reverse('newsletter-unsubscribe', kwargs={'token': subscriber.unsubscribe_token})}"
+            f"https://{domain}{reverse('newsletter-unsubscribe', kwargs={'token': subscriber.unsubscribe_token})}"
         )
 
         context = {

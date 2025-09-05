@@ -4,6 +4,7 @@ from datetime import timedelta
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models.functions import Lower
 from django.utils import timezone
 
 from vitrina.users.models import User
@@ -68,9 +69,7 @@ class SentMail(models.Model):
     email_subject = models.TextField(blank=True, null=True, verbose_name="Tema")
     email_content = models.TextField(blank=True, null=True, verbose_name="Turinys")
     email_sent = models.BooleanField(blank=True, null=True, verbose_name="Išsiųsta")
-    identifier = models.CharField(
-        max_length=255, blank=True, null=True, verbose_name=_("Identifikatorius")
-    )
+    identifier = models.CharField(max_length=255, blank=True, null=True, verbose_name=_("Identifikatorius"))
 
     class Meta:
         managed = True
@@ -85,14 +84,10 @@ class UserSubscription(models.Model):
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
 
-    dataset = models.ForeignKey(
-        Dataset, models.CASCADE, db_column="dataset", blank=True, null=True
-    )
+    dataset = models.ForeignKey(Dataset, models.CASCADE, db_column="dataset", blank=True, null=True)
     # dataset = models.ForeignKey(Dataset, models.DO_NOTHING, blank=True, null=True)
 
-    user = models.ForeignKey(
-        User, models.CASCADE, db_column="user", blank=True, null=True
-    )
+    user = models.ForeignKey(User, models.CASCADE, db_column="user", blank=True, null=True)
     # user = models.ForeignKey(User, models.DO_NOTHING, blank=True, null=True)
 
     active = models.BooleanField()
@@ -128,30 +123,14 @@ class Subscription(models.Model):
         null=True,
         verbose_name=_("Prenumeratos tipas"),
     )
-    email_subscribed = models.BooleanField(
-        default=False, verbose_name=_("Prenumeratos laiško užsisakymas")
-    )
-    dataset_update_sub = models.BooleanField(
-        default=False, verbose_name=_("Susijusių duomenų rinkinių prenumerata")
-    )
-    dataset_comments_sub = models.BooleanField(
-        default=False, verbose_name=_("Duomenų rinkinių komentarų prenumerata")
-    )
-    request_update_sub = models.BooleanField(
-        default=False, verbose_name=_("Susijusių poreikių prenumerata")
-    )
-    request_comments_sub = models.BooleanField(
-        default=False, verbose_name=_("Poreikių komentarų prenumerata")
-    )
-    project_update_sub = models.BooleanField(
-        default=False, verbose_name=_("Susijusių projektų prenumerata")
-    )
-    project_comments_sub = models.BooleanField(
-        default=False, verbose_name=_("Projektų komentarų prenumerata")
-    )
-    comment_replies_sub = models.BooleanField(
-        default=False, verbose_name=_("Komentaro atsako prenumerata")
-    )
+    email_subscribed = models.BooleanField(default=False, verbose_name=_("Prenumeratos laiško užsisakymas"))
+    dataset_update_sub = models.BooleanField(default=False, verbose_name=_("Susijusių duomenų rinkinių prenumerata"))
+    dataset_comments_sub = models.BooleanField(default=False, verbose_name=_("Duomenų rinkinių komentarų prenumerata"))
+    request_update_sub = models.BooleanField(default=False, verbose_name=_("Susijusių poreikių prenumerata"))
+    request_comments_sub = models.BooleanField(default=False, verbose_name=_("Poreikių komentarų prenumerata"))
+    project_update_sub = models.BooleanField(default=False, verbose_name=_("Susijusių projektų prenumerata"))
+    project_comments_sub = models.BooleanField(default=False, verbose_name=_("Projektų komentarų prenumerata"))
+    comment_replies_sub = models.BooleanField(default=False, verbose_name=_("Komentaro atsako prenumerata"))
 
     class Meta:
         db_table = "subscription"
@@ -185,9 +164,7 @@ class NewsletterSubscriber(models.Model):
         default=PENDING,
     )
 
-    confirmation_token = models.UUIDField(
-        default=uuid.uuid4, unique=True, null=True, blank=True
-    )
+    confirmation_token = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
     confirmation_expires_at = models.DateTimeField(null=True, blank=True)
 
     unsubscribe_token = models.UUIDField(default=uuid.uuid4, unique=True)
@@ -220,4 +197,4 @@ class NewsletterSubscriber(models.Model):
 
     class Meta:
         db_table = "newsletter_subscriber"
-
+        constraints = [models.UniqueConstraint(Lower("email"), name="unique_lowercase_email")]

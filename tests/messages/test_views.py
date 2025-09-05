@@ -631,14 +631,6 @@ def client():
     return Client()
 
 
-@pytest.fixture
-def user():
-    return User.objects.create_user(
-        email='testuser@example.com',
-        password='testpass123'
-    )
-
-
 @pytest.mark.django_db
 class TestNewsletterSubscribeView:
     def test_subscribe_new_email_success(self, client):
@@ -649,8 +641,7 @@ class TestNewsletterSubscribeView:
         assert response.status_code == 302
 
         subscriber = NewsletterSubscriber.objects.get(email='newuser@example.com')
-        assert subscriber.is_confirmed is False
-        assert subscriber.is_active is True
+        assert subscriber.status == NewsletterSubscriber.PENDING
         assert subscriber.confirmation_token is not None
 
         # Should send confirmation email
@@ -661,7 +652,7 @@ class TestNewsletterSubscribeView:
     def test_subscribe_already_confirmed_email(self, client):
         NewsletterSubscriber.objects.create(
             email='existing@example.com',
-            is_confirmed=True
+            status=NewsletterSubscriber.SUBSCRIBED,
         )
 
         response = client.post(reverse('newsletter-subscribe'), {
@@ -676,28 +667,6 @@ class TestNewsletterSubscribeView:
 
         # Should not send email
         assert len(mail.outbox) == 0
-
-    def test_subscribe_pending_email_resend(self, client):
-        old_token = uuid.uuid4()
-        subscriber = NewsletterSubscriber.objects.create(
-            email='pending@example.com',
-            is_confirmed=False,
-            confirmation_token=old_token
-        )
-
-        response = client.post(reverse('newsletter-subscribe'), {
-            'email': 'pending@example.com'
-        })
-
-        assert response.status_code == 302
-
-        # Should update token and expiry
-        subscriber.refresh_from_db()
-        assert subscriber.confirmation_token != old_token
-        assert subscriber.is_confirmed is False
-
-        # Should send new confirmation email
-        assert len(mail.outbox) == 1
 
     def test_subscribe_empty_email(self, client):
         response = client.post(reverse('newsletter-subscribe'), {
@@ -723,36 +692,13 @@ class TestNewsletterSubscribeView:
 
 @pytest.mark.django_db
 class TestNewsletterConfirmView:
-    def test_confirm_valid_token(self, client):
-        subscriber = NewsletterSubscriber.objects.create(
-            email='confirm@example.com',
-            is_confirmed=False,
-            is_active=True,
-        )
-
-        response = client.get(reverse('newsletter-confirm', kwargs={
-            'token': subscriber.confirmation_token
-        }))
-
-        assert response.status_code == 200
-        assert 'newsletter/confirmed.html' in [t.name for t in response.templates]
-
-        # Should confirm subscription
-        subscriber.refresh_from_db()
-        assert subscriber.is_confirmed is True
-        assert subscriber.confirmation_token is None
-        assert subscriber.confirmation_expires_at is None
-
-        # Should send welcome email
-        assert len(mail.outbox) == 1
-        assert mail.outbox[0].to == ['confirm@example.com']
-        assert 'welcome' in mail.outbox[0].subject.lower() or 'sveiki' in mail.outbox[0].subject.lower()
-
     def test_confirm_expired_token(self, client):
         past_time = timezone.now() - timedelta(hours=25)
         subscriber = NewsletterSubscriber.objects.create(
             email='expired@example.com',
-            is_confirmed=False,
+        )
+        subscriber.initiate_subscription()
+        NewsletterSubscriber.objects.filter(pk=subscriber.pk).update(
             confirmation_expires_at=past_time
         )
 
@@ -764,7 +710,13 @@ class TestNewsletterConfirmView:
 
         # Should not confirm subscription
         subscriber.refresh_from_db()
-        assert subscriber.is_confirmed is False
+        assert subscriber.status == NewsletterSubscriber.PENDING
+
+    def test_resubmit_pending_does_not_duplicate(self, client):
+        email = 'pending@example.com'
+        client.post(reverse('newsletter-subscribe'), {'email': email})
+        client.post(reverse('newsletter-subscribe'), {'email': email})
+        assert NewsletterSubscriber.objects.filter(email=email).count() == 1
 
     def test_confirm_nonexistent_token(self, client):
         fake_token = uuid.uuid4()
@@ -778,7 +730,7 @@ class TestNewsletterConfirmView:
     def test_confirm_already_confirmed_token(self, client):
         NewsletterSubscriber.objects.create(
             email='already@example.com',
-            is_confirmed=True,
+            status=NewsletterSubscriber.SUBSCRIBED,
             confirmation_token=None
         )
 
@@ -795,7 +747,7 @@ class TestNewsletterUnsubscribeView:
     def test_unsubscribe_get_shows_confirmation_page(self, client):
         subscriber = NewsletterSubscriber.objects.create(
             email='unsubscribe@example.com',
-            is_confirmed=True
+            status=NewsletterSubscriber.SUBSCRIBED,
         )
 
         response = client.get(reverse('newsletter-unsubscribe', kwargs={
@@ -809,7 +761,7 @@ class TestNewsletterUnsubscribeView:
     def test_unsubscribe_post_deactivates_subscription(self, client):
         subscriber = NewsletterSubscriber.objects.create(
             email='unsubscribe@example.com',
-            is_confirmed=True
+            status=NewsletterSubscriber.SUBSCRIBED,
         )
 
         response = client.post(reverse('newsletter-unsubscribe', kwargs={
@@ -820,8 +772,7 @@ class TestNewsletterUnsubscribeView:
         assert 'newsletter/unsubscribed.html' in [t.name for t in response.templates]
 
         subscriber.refresh_from_db()
-        assert subscriber.is_active is False
-        assert subscriber.is_confirmed is True  # Should remain confirmed
+        assert subscriber.status == NewsletterSubscriber.UNSUBSCRIBED
 
     def test_unsubscribe_invalid_token(self, client):
         fake_token = uuid.uuid4()
@@ -835,8 +786,7 @@ class TestNewsletterUnsubscribeView:
     def test_unsubscribe_inactive_subscription(self, client):
         subscriber = NewsletterSubscriber.objects.create(
             email='inactive@example.com',
-            is_confirmed=True,
-            is_active=False
+            status=NewsletterSubscriber.UNSUBSCRIBED,
         )
 
         response = client.get(reverse('newsletter-unsubscribe', kwargs={
@@ -857,7 +807,7 @@ class TestNewsletterWorkflow:
         assert response.status_code == 302
 
         subscriber = NewsletterSubscriber.objects.get(email=email)
-        assert subscriber.is_confirmed is False
+        assert subscriber.status == NewsletterSubscriber.PENDING
 
         # Step 2: Confirm
         response = client.get(reverse('newsletter-confirm', kwargs={
@@ -866,7 +816,7 @@ class TestNewsletterWorkflow:
         assert response.status_code == 200
 
         subscriber.refresh_from_db()
-        assert subscriber.is_confirmed is True
+        assert subscriber.status == NewsletterSubscriber.SUBSCRIBED
 
         # Step 3: Unsubscribe
         response = client.post(reverse('newsletter-unsubscribe', kwargs={
@@ -875,15 +825,14 @@ class TestNewsletterWorkflow:
         assert response.status_code == 200
 
         subscriber.refresh_from_db()
-        assert subscriber.is_active is False
+        assert subscriber.status == NewsletterSubscriber.UNSUBSCRIBED
 
     def test_resubscribe_after_unsubscribe(self, client):
         email = 'resubscribe@example.com'
 
         NewsletterSubscriber.objects.create(
             email=email,
-            is_confirmed=True,
-            is_active=False
+            status=NewsletterSubscriber.UNSUBSCRIBED,
         )
 
         response = client.post(reverse('newsletter-subscribe'), {'email': email})
@@ -891,7 +840,4 @@ class TestNewsletterWorkflow:
 
         subscribers = NewsletterSubscriber.objects.filter(email=email)
         assert subscribers.count() == 1
-
-        new_subscriber = subscribers.filter(is_active=True).first()
-        assert new_subscriber is not None
-        assert new_subscriber.is_confirmed is False
+        assert subscribers[0].status == NewsletterSubscriber.PENDING

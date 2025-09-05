@@ -1,4 +1,5 @@
 from datetime import date
+import re
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
@@ -6,6 +7,7 @@ from django.core.handlers.wsgi import WSGIRequest
 from django.core.validators import RegexValidator, URLValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
+from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2Widget, Select2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
@@ -49,6 +51,7 @@ from vitrina.datasets.models import (
     Contact,
     DCATResourceSubclass,
 )
+from vitrina.identifiers.models import Agency
 from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
@@ -552,6 +555,23 @@ class InformationSystemResourceForm(CatalogResourceForm):
 
     def clean(self):
         super().clean()
+
+    def clean_identifier(self) -> str:
+        identifier = self.cleaned_data.get("identifier")
+        if not identifier:
+            return identifier
+
+        agency = get_object_or_404(Agency, code="risr")
+        is_regexp = agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP
+        if is_regexp and (pattern := agency.identifier_validation_options):
+            if not re.fullmatch(pattern, identifier):
+                raise ValidationError(
+                    _("Žymėjimas turi atitikti šabloną: %(pattern)s"),
+                    params={"pattern": pattern},
+                    code="invalid_format",
+                )
+
+        return identifier
 
 
 class DatasetResourceForm(BaseResourceForm):

@@ -740,6 +740,10 @@ msgstr ""
 "The entity responsible for the creation of the information system (IS). "
 "Corresponds to dct:creator"
 
+#, python-format
+msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
+msgstr "The notation must match the pattern: %(pattern)s"
+
 msgid "Laikotarpio pradžia"
 msgstr "Period start"
 
@@ -1327,6 +1331,14 @@ msgstr ""
 "This property indicates the period covered by the dataset. Corresponds to "
 "dct:temporal."
 
+msgid ""
+"Informacinės sistemos identifikatorius pagal Valstybės informacinių išteklių "
+"valdymo įstatymo reikalavimus. Atitinka dcataplt:Identifier."
+msgstr ""
+"Information systems types according to the data processed in them by Article "
+"9 of the Law on State Information Resources Management of the Republic of "
+"Lithuania. Corresponds to dcataplt:Identifier."
+
 msgid "Peržiūrėti papildomą informaciją"
 msgstr "View additional information"
 
@@ -1885,6 +1897,9 @@ msgstr "Manager count"
 msgid "Identifikatoriai"
 msgstr "Identifiers"
 
+msgid "Reguliarioji išraiška"
+msgstr "Regular expession"
+
 msgid "Schemos atstovybės pavadinimas"
 msgstr "Agency name"
 
@@ -1897,11 +1912,38 @@ msgstr "Schema authority URI"
 msgid "adms:schemeAgency – schemos atstovybės URI"
 msgstr "adms:schemeAgency – schema authority URI"
 
+msgid "Identifikatoriaus tikrinimo tipas"
+msgstr "Identifier validation type"
+
+msgid ""
+"Pasirinkite metodą, kaip tikrinti identifikatorių formatą. Reguliarioji "
+"išraiška leidžia nustatyti tikslų šabloną."
+msgstr ""
+"Choose a method for how to validate identifier format. Regular expression "
+"allows you to set a precise pattern."
+
+msgid "Identifikatoriaus tikrinimo parinktys"
+msgstr "Identifier validation options"
+
+msgid ""
+"Tikrinimo parametrai pagal pasirinktą tipą. Reguliariajai išraiškai - "
+"įveskite regex šabloną "
+msgstr ""
+"Validation parameters according to the selected type. For regular expression "
+"- enter regex pattern"
+
 msgid "Atstovybė"
 msgstr "Agency"
 
 msgid "Atstovybės"
 msgstr "Agencies"
+
+msgid ""
+"Jei nustatytas vienas laukų „Identifikatoriaus tikrinimo tipas“ arba "
+"„parinktys“, abu turi būti užpildyti."
+msgstr ""
+"If one of the fields “Identifier validation type” or “options” is set, both "
+"must be filled."
 
 msgid "Nuoroda (URI)"
 msgstr "URI"

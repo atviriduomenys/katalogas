@@ -687,6 +687,37 @@ msgstr ""
 msgid "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
 msgstr ""
 
+msgid "Duomenų rinkinio identifikatorius"
+msgstr ""
+
+#, python-format
+msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
+msgstr ""
+
+msgid "Laikotarpio pradžia"
+msgstr ""
+
+msgid "Duomenų rinkinio laikotarpio pradžia. Atitinka dct:temporal."
+msgstr ""
+
+msgid "Laikotarpio pabaiga"
+msgstr ""
+
+msgid "Duomenų rinkinio laikotarpio pabaiga. Atitinka dct:temporal."
+msgstr ""
+
+msgid "Ar duomenys vieši"
+msgstr ""
+
+msgid "Pasirinkite pradžios datą"
+msgstr ""
+
+msgid "Pasirinkite pabaigos datą"
+msgstr ""
+
+msgid "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
+msgstr ""
+
 msgid "Failas"
 msgstr ""
 
@@ -1186,6 +1217,11 @@ msgid ""
 "dct:temporal."
 msgstr ""
 
+msgid ""
+"Informacinės sistemos identifikatorius pagal Valstybės informacinių išteklių "
+"valdymo įstatymo reikalavimus. Atitinka dcataplt:Identifier."
+msgstr ""
+
 msgid "Peržiūrėti papildomą informaciją"
 msgstr ""
 
@@ -1279,7 +1315,10 @@ msgstr ""
 msgid "Redaguoti"
 msgstr ""
 
-msgid "Trinti"
+msgid "Ar jūs tikrai norite ištrinti šį šaltinį?"
+msgstr ""
+
+msgid "Ištrinti"
 msgstr ""
 
 msgid "Duomenų ištekliaus peržiūros"
@@ -1321,7 +1360,13 @@ msgstr ""
 msgid "Susieti su duomenų ištekliumi"
 msgstr ""
 
+msgid "Ar jūs tikrai norite ištrinti šį ryšį?"
+msgstr ""
+
 msgid "Priskirtos organizacijos"
+msgstr ""
+
+msgid "Ar jūs tikrai norite ištrinti?"
 msgstr ""
 
 msgid "Priskirti organizaciją"
@@ -1735,6 +1780,9 @@ msgstr ""
 msgid "Identifikatoriai"
 msgstr ""
 
+msgid "Reguliarioji išraiška"
+msgstr ""
+
 msgid "Schemos atstovybės pavadinimas"
 msgstr ""
 
@@ -1747,10 +1795,31 @@ msgstr ""
 msgid "adms:schemeAgency – schemos atstovybės URI"
 msgstr ""
 
+msgid "Identifikatoriaus tikrinimo tipas"
+msgstr ""
+
+msgid ""
+"Pasirinkite metodą, kaip tikrinti identifikatorių formatą. Reguliarioji "
+"išraiška leidžia nustatyti tikslų šabloną."
+msgstr ""
+
+msgid "Identifikatoriaus tikrinimo parinktys"
+msgstr ""
+
+msgid ""
+"Tikrinimo parametrai pagal pasirinktą tipą. Reguliariajai išraiškai - "
+"įveskite regex šabloną "
+msgstr ""
+
 msgid "Atstovybė"
 msgstr ""
 
 msgid "Atstovybės"
+msgstr ""
+
+msgid ""
+"Jei nustatytas vienas laukų „Identifikatoriaus tikrinimo tipas“ arba "
+"„parinktys“, abu turi būti užpildyti."
 msgstr ""
 
 msgid "Nuoroda (URI)"
@@ -3168,6 +3237,9 @@ msgstr ""
 msgid "Mokėjimo sąlygos"
 msgstr ""
 
+msgid "Generuoti sutarties dokumentą"
+msgstr ""
+
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr ""
 
@@ -3193,6 +3265,10 @@ msgid "Papildomi tiekėjo teisės aktai"
 msgstr ""
 
 msgid "Sutartis"
+msgstr ""
+
+#, python-brace-format
+msgid "Sutartis: {organization}"
 msgstr ""
 
 msgid "Sutarties leidimas"
@@ -3222,9 +3298,6 @@ msgstr ""
 msgid "Grįžti į sutartis"
 msgstr ""
 
-msgid "Generuoti sutarties dokumentą"
-msgstr ""
-
 msgid "Įkelti gavėjo pasirašytą dokumentą"
 msgstr ""
 
@@ -3240,14 +3313,7 @@ msgstr ""
 msgid "Nėra sutarčių dokumentų."
 msgstr ""
 
-msgid "Generuoti"
-msgstr ""
-
 msgid "Nėra sutarčių."
-msgstr ""
-
-#, python-brace-format
-msgid "Sutartis: {organization}"
 msgstr ""
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
@@ -3257,10 +3323,6 @@ msgid "Sutartys sėkmingai sugeneruotos"
 msgstr ""
 
 msgid "Sutarčių generavime kilo klaidų"
-msgstr ""
-
-#, python-brace-format
-msgid "Sutarties generavimas: {organization}"
 msgstr ""
 
 #, python-brace-format
@@ -3915,6 +3977,9 @@ msgstr ""
 msgid "Baziniai modeliai"
 msgstr ""
 
+msgid "Ar tikrai norite ištrinti?"
+msgstr ""
+
 msgid "Parametrai"
 msgstr ""
 
@@ -4283,9 +4348,6 @@ msgid "Administratorius"
 msgstr ""
 
 msgid "Atnaujinti"
-msgstr ""
-
-msgid "Ištrinti"
 msgstr ""
 
 msgid ""

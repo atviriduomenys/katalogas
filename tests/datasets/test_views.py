@@ -1,4 +1,5 @@
 from datetime import datetime, date, timedelta
+from urllib import response
 
 import pytz
 import webtest
@@ -1106,21 +1107,36 @@ class TestDatasetUpdateView:
             information_system_publisher=organization,
         )
         agency = AgencyFactory()
-        IdentifierFactory(resource=dataset, notation="test-identifier", scheme_agency=agency)
+        IdentifierFactory(resource=dataset, notation="1234", scheme_agency=agency)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
-        assert form["identifier"].value == "test-identifier"
-        form["identifier"] = "new-identifier"
+        assert form["identifier"].value == "1234"
+        form["identifier"] = "4321"
         form.submit()
         dataset.refresh_from_db()
-        assert dataset.identifier == "new-identifier"
+        assert dataset.identifier == "4321"
 
         identifiers = Identifier.objects.filter(resource=dataset)
         assert identifiers.count() == 1
-        assert identifiers.first().notation == "new-identifier"
+        assert identifiers.first().notation == "4321"
 
+    def test_dataset_update_non_existing_identifier_validation(self, app: DjangoTestApp):
+        AgencyFactory()
+        subclass = DCATResourceSubclassFactory(name="information_system")
+        dataset = DatasetFactory(subclass=subclass)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
+            "dataset-form"
+        ]
+        form["identifier"] = "not-valid-identifier"
+        form.submit()
+        response = form.submit(expect_errors=True)
+        assert "Žymėjimas turi atitikti šabloną" in response.text
+        
     def test_dataset_update_non_existing_identifier(self, app: DjangoTestApp):
         AgencyFactory()
         subclass = DCATResourceSubclassFactory(name="information_system")
@@ -1144,14 +1160,14 @@ class TestDatasetUpdateView:
         app.set_user(user)
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
-        form["identifier"] = "new-identifier"
+        form["identifier"] = "1234"
         form.submit()
         dataset.refresh_from_db()
-        assert dataset.identifier == "new-identifier"
+        assert dataset.identifier == "1234"
 
         identifiers = Identifier.objects.filter(resource=dataset)
         assert identifiers.count() == 1
-        assert identifiers.first().notation == "new-identifier"
+        assert identifiers.first().notation == "1234"
 
     def test_dataset_update_from_public_to_non_public(self, app: DjangoTestApp):
         LicenceFactory(is_default=True)
@@ -1737,7 +1753,7 @@ class TestDatasetCreateView:
         form["description"] = "Test dataset description"
         form["is_public"] = True
         form["access_rights"] = Dataset.PUBLIC
-        form["identifier"] = "test-identifier"
+        form["identifier"] = "1234"
         form["information_system_type"] = information_system_type_concept.pk
         form["information_system_importance"] = information_system_importance_concept.pk
         form["information_system_creator"] = organization.pk
@@ -1747,9 +1763,31 @@ class TestDatasetCreateView:
         assert added_dataset.first().is_public is True
         assert added_dataset.first().published is not None
         assert added_dataset.first().access_rights == Dataset.PUBLIC
-        assert added_dataset.first().identifier == "test-identifier"
+        assert added_dataset.first().identifier == "1234"
 
-        assert Identifier.objects.filter(notation="test-identifier", resource=added_dataset.first()).exists()
+        assert Identifier.objects.filter(notation="1234", resource=added_dataset.first()).exists()
+
+    def test_information_system_create_with_identifier_validation(self, app: DjangoTestApp):
+        FrequencyFactory(is_default=True)
+        AgencyFactory()
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="information_system")
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        form = app.get(
+            reverse(
+                "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})).forms[
+                    "dataset-form"
+        ]
+        form["title"] = "Test dataset"
+        form["description"] = "Test dataset description"
+        form["is_public"] = True
+        form["access_rights"] = Dataset.PUBLIC
+        form["identifier"] = "not-valid-identifier"
+        form.submit()
+        response = form.submit(expect_errors=True)
+        assert "Žymėjimas turi atitikti šabloną" in response.text
+
 
     def test_create_dataset_change_creator(self, app: DjangoTestApp):
         frequency = FrequencyFactory(is_default=True)

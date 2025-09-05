@@ -9,13 +9,16 @@ class AgencyFactory(DjangoModelFactory):
     code = "risr"
     name = "Registrų ir valstybės informacinių sistemų registras"
     uri = "http://registrai.lt"
+    identifier_validation_type = "REGEXP"
+    identifier_validation_options = r"^\d{4}$"
 
     class Meta:
         model = Agency
 
 
 class IdentifierFactory(DjangoModelFactory):
-    notation = "test-identifier"
+    notation = "1234"
+    identifier_type = "OTHER"
     resource = factory.SubFactory(DatasetFactory)
     scheme_agency = factory.SubFactory(AgencyFactory)
 

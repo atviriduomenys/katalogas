@@ -402,7 +402,9 @@ class ServiceResourceForm(BaseResourceForm):
         self.fields["service_type"].queryset = Concept.objects.filter(
             concept_schemas__uri=Dataset.SERVICE_TYPE_SCHEME_URI
         ).distinct()
-        self.fields["service_type"].label_from_instance = lambda obj: obj.safe_translation_getter("label", any_language=True)
+        self.fields["service_type"].label_from_instance = lambda obj: obj.safe_translation_getter(
+            "label", any_language=True
+        )
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),

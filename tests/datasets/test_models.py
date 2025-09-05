@@ -40,7 +40,7 @@ class TestDatasets:
         DatasetFactory(deleted=None, deleted_on=None, organization=organization)
         DatasetFactory(organization=organization)
 
-        public_datasets = Dataset.public.all()
+        public_datasets = Dataset.public.all().exclude(id=1)
         assert public_datasets.count() == 2
 
     @pytest.mark.parametrize(

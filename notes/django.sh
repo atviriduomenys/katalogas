@@ -5,7 +5,7 @@ docker-compose up -d
 poetry install
 
 # Run tests
-poetry run pytest -vvxra --tb=short --no-migrations tests
+poetry run pytest -vvxra --tb=short tests
 
 # Run migrations
 poetry run python manage.py migrate

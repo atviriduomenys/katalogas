@@ -3,6 +3,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 
 from vitrina.classifiers.factories import ConceptSchemaFactory, ConceptFactory
+from vitrina.classifiers.models import ConceptSchema
 from vitrina.datasets.factories import DCATResourceSubclassFactory
 from vitrina.datasets.forms import InformationSystemResourceForm
 from vitrina.datasets.models import Dataset
@@ -30,7 +31,7 @@ class TestInformationSystemResourceForm:
 
         schema_uri = getattr(Dataset, schema_uri_attr)
 
-        concept_schema = ConceptSchemaFactory(uri=schema_uri)
+        concept_schema = ConceptSchema.objects.filter(uri=schema_uri).first()
         concept_schema2 = ConceptSchemaFactory(uri="foo")
         concept = ConceptFactory(concept_schemas=[concept_schema])
         ConceptFactory(concept_schemas=[concept_schema2])

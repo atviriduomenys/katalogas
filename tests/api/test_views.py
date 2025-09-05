@@ -296,7 +296,8 @@ def test_retrieve_licence_list_with_correct_api_key(app: DjangoTestApp):
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     res = app.get(reverse("api-licence-list"), expect_errors=True)
-    assert res.json == [{
+    data = [licence_obj for licence_obj in res.json if licence_obj["id"] == str(licence.identifier)]
+    assert data == [{
         'description': licence.description,
         'id': str(licence.identifier),
         'title': licence.title
@@ -533,8 +534,10 @@ def test_create_dataset(app: DjangoTestApp):
         'periodicity': frequency.title,
         'theme': [category.title]
     })
-    assert Dataset.objects.count() == 1
-    dataset = Dataset.objects.first()
+    dataset_objects = Dataset.objects.exclude(id=1)
+
+    assert dataset_objects.count() == 1
+    dataset = dataset_objects.first()
     assert dataset.language == "en lt"
     assert list(dataset.tags.all()) == ['tag1', 'tag2']
     assert dataset.frequency == frequency
@@ -2040,7 +2043,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
     assert strip_empty_lines(res.text) == f'''\
 <?xml version="1.0"?>
 <rdf:RDF
-    xml:base="http://example.com"
+    xml:base="http://localhost"
     xmlns:edp="https://europeandataportal.eu/voc#"
     xmlns:dct="http://purl.org/dc/terms/"
     xmlns:spdx="http://spdx.org/rdf/terms#"
@@ -2055,7 +2058,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
     xmlns:eli="https://data.europa.eu/eli/">
-    <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
+    <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
@@ -2086,14 +2089,14 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
             </vcard:Kind>
         </dcat:contactPoint>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist1.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist1.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">CSV failas</dct:title>
                 <dct:description xml:lang="lt">Atviras duomenų šaltinis.</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="http://example.com{dist1.file.url}"/>
-                <dcat:downloadURL rdf:resource="http://example.com{dist1.file.url}"/>
+                <dcat:accessURL rdf:resource="http://localhost{dist1.file.url}"/>
+                <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -2109,14 +2112,14 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
             </dcat:Distribution>
         </dcat:distribution>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://example.com/datasets/{dataset.id}/resource/{dist2.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist2.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/WEB_SERVICE"/>
                 <dct:title xml:lang="lt">Duomenų teikimo paslauga</dct:title>
                 <dct:description xml:lang="lt">Universali duomenų teikimo paslauga.</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
-                <dcat:accessURL rdf:resource="http://example.com{dist2.file.url}"/>
-                <dcat:downloadURL rdf:resource="http://example.com{dist2.file.url}"/>
+                <dcat:accessURL rdf:resource="http://localhost{dist2.file.url}"/>
+                <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
                     <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
                 </dct:rights>
@@ -2347,7 +2350,7 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     assert strip_empty_lines(res.text) == f'''\
 <?xml version="1.0"?>
 <rdf:RDF
-    xml:base="http://example.com"
+    xml:base="http://localhost"
     xmlns:edp="https://europeandataportal.eu/voc#"
     xmlns:dct="http://purl.org/dc/terms/"
     xmlns:spdx="http://spdx.org/rdf/terms#"
@@ -2362,7 +2365,7 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
     xmlns:eli="https://data.europa.eu/eli/">
-    <dcat:Dataset rdf:about="http://example.com/datasets/{dataset.id}/">
+    <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>

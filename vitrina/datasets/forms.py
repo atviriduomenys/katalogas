@@ -555,7 +555,7 @@ class InformationSystemResourceForm(CatalogResourceForm):
 
     def clean(self):
         super().clean()
-        
+
     def clean_identifier(self) -> str:
         identifier = self.cleaned_data.get("identifier")
         if not identifier:

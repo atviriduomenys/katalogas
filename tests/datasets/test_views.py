@@ -1091,10 +1091,7 @@ class TestDatasetUpdateView:
     def test_dataset_update_existing_identifier(self, app: DjangoTestApp):
         subclass = DCATResourceSubclassFactory(name="information_system")
         organization = OrganizationFactory()
-        information_system_type_concept_schema = ConceptSchemaFactory(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
-        information_system_importance_concept_schema = ConceptSchemaFactory(
-            uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
-        )
+        information_system_type_concept_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
         information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
         information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
@@ -1126,7 +1123,6 @@ class TestDatasetUpdateView:
         assert identifiers.first().notation == "4321"
 
     def test_dataset_update_non_existing_identifier_validation(self, app: DjangoTestApp):
-        AgencyFactory()
         subclass = DCATResourceSubclassFactory(name="information_system")
         dataset = DatasetFactory(subclass=subclass)
         user = UserFactory(is_staff=True)
@@ -1773,7 +1769,6 @@ class TestDatasetCreateView:
 
     def test_information_system_create_with_identifier_validation(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
-        AgencyFactory()
         organization = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name="information_system")
         user = UserFactory(is_staff=True)

@@ -126,5 +126,9 @@ class TestServiceResourceForm:
         concept2.concept_schemas.add(wrong_concept_schema)
         concept3.concept_schemas.add(needed_concept_schema)
 
+        form_fields = list(form.fields['service_type'].queryset)
         assert isinstance(form, ServiceResourceForm)
-        assert len(form.fields['service_type'].queryset) == 2
+        assert concept1 in form_fields
+        assert concept3 in form_fields
+        assert concept2 not in form_fields
+

@@ -5,6 +5,11 @@ v 1.2 (unreleased)
 
 New features:
 
+https://github.com/atviriduomenys/katalogas/issues/1780
+Changed ENUM values for access rights:
+    - Added value confidential.
+    - Changed translations by the specification.
+
 https://github.com/atviriduomenys/dvms/issues/185
 Introduce scripts to export users dump and to execute SQL queries
 

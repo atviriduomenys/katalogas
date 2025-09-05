@@ -186,6 +186,7 @@ class Dataset(Resource):
 
     INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"
     INFORMATION_SYSTEM_TYPE_SCHEMA_URI = "dcataplt:Type"
+    SERVICE_TYPE_SCHEME_URI = "http://publications.europa.eu/resource/authority/data-service-type"
 
     translations = TranslatedFields(
         title=models.TextField(
@@ -586,6 +587,13 @@ class Dataset(Resource):
     public = PublicDatasetManager()
     edp_public = EdpPublicDatasetManager()
     edp_restricted = EdpRestrictedDatasetManager()
+    service_type = models.ManyToManyField(
+        Concept,
+        blank=True,
+        related_name="dataset_service_types",
+        verbose_name=_("Tipas"),
+        help_text=_("Paslaugos tipas. Atitinka dct:type"),
+    )
 
     class Meta:
         db_table = "dataset"

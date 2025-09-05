@@ -100,6 +100,25 @@
             </td>
         </tr>
     {% endif %}
+    {% if dataset.service_type.exists %}
+        <tr>
+            <th>
+                {% translate "Tipas" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Paslaugos tipas. Atitinka dct:type' %}">
+                <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
+            <td>
+                <ul class="mt-0 ml-4">
+                    {% for service_type in dataset.service_type.all %}
+                        <li>{{ service_type.label }}</li>
+                    {% endfor %}
+                </ul>
+            </td>
+        </tr>
+    {% endif %}
+
     {% if status %}
         <tr>
             <th>

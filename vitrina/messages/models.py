@@ -168,10 +168,22 @@ class Subscription(models.Model):
 
 
 class NewsletterSubscriber(models.Model):
+    PENDING = "pending"
+    SUBSCRIBED = "subscribed"
+    UNSUBSCRIBED = "unsubscribed"
+    STATUS_CHOICES = (
+        (PENDING, _("Laukiama patvirtinimo")),
+        (SUBSCRIBED, _("Prenumeruojama")),
+        (UNSUBSCRIBED, _("Prenumeracija nutraukta")),
+    )
+
     email = models.EmailField(unique=True)
     created = models.DateTimeField(auto_now_add=True)
-    is_confirmed = models.BooleanField(default=False)
-    is_active = models.BooleanField(default=True)
+    status = models.CharField(
+        max_length=12,
+        choices=STATUS_CHOICES,
+        default=PENDING,
+    )
 
     confirmation_token = models.UUIDField(
         default=uuid.uuid4, unique=True, null=True, blank=True
@@ -180,23 +192,32 @@ class NewsletterSubscriber(models.Model):
 
     unsubscribe_token = models.UUIDField(default=uuid.uuid4, unique=True)
 
-    def save(self, *args, **kwargs):
-        if not self.is_confirmed and not self.confirmation_expires_at:
-            self.confirmation_expires_at = timezone.now() + timedelta(hours=24)
-        super().save(*args, **kwargs)
+    def initiate_subscription(self):
+        self.status = self.PENDING
+        self.confirmation_token = uuid.uuid4()
+        self.confirmation_expires_at = timezone.now() + timedelta(hours=24)
+        self.save()
 
-    @property
     def is_confirmation_expired(self):
-        if self.is_confirmed or not self.confirmation_expires_at:
-            return False
+        if self.confirmation_expires_at is None:
+            return True
         return timezone.now() > self.confirmation_expires_at
 
     def confirm_subscription(self):
-        self.is_confirmed = True
+        self.status = self.SUBSCRIBED
+        self.confirmation_token = None
+        self.confirmation_expires_at = None
+        self.save()
+
+    def unsubscribe(self):
+        self.status = self.UNSUBSCRIBED
         self.confirmation_token = None
         self.confirmation_expires_at = None
         self.save()
 
     def __str__(self):
-        status = "confirmed" if self.is_confirmed else "pending"
-        return f"{self.email} ({status})"
+        return f"{self.email} ({self.status})"
+
+    class Meta:
+        db_table = "newsletter_subscriber"
+

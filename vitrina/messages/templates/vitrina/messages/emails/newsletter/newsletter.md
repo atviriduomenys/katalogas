@@ -22,6 +22,8 @@ Mėnesinis naujienlaiškis - {{ month_year }}
 {% endfor %}
 {% endif %}
 
+Pagarbiai,
+Valstybės skaitmeninių sprendimų agentūra
 ---
 
 *Šį laišką gavote, nes užsiprenumeravote mūsų naujienlaiškį.*  

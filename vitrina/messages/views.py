@@ -205,28 +205,23 @@ class NewsletterSubscribeView(View):
             messages.error(request, _("Prašome įvesti el. pašto adresą."))
             return self.redirect_back()
 
-        subscriber, created = NewsletterSubscriber.objects.get_or_create(
-            email=email_input,
-            defaults={
-                "is_confirmed": False,
-                "is_active": True,
-            },
-        )
+        subscriber, created = NewsletterSubscriber.objects.get_or_create(email=email_input)
 
-        if not created and subscriber.is_confirmed and subscriber.is_active:
+        if subscriber.status == NewsletterSubscriber.SUBSCRIBED:
             messages.info(
                 request,
                 _("Šis el. pašto adresas jau prenumeruoja naujienlaiškį."),
             )
             return self.redirect_back()
 
-        if not created:
-            subscriber.is_active = True
-            subscriber.is_confirmed = False
+        if subscriber.status == NewsletterSubscriber.PENDING and not subscriber.is_confirmation_expired():
+            messages.info(
+                request,
+                _("Patvirtinimo nuorodą vis dar galiojanti, patikrinkite el. pašto dežutę.")
+            )
+            return self.redirect_back()
 
-        subscriber.confirmation_token = uuid.uuid4()
-        subscriber.confirmation_expires_at = timezone.now() + timedelta(hours=24)
-        subscriber.save()
+        subscriber.initiate_subscription()
 
         confirmation_url = request.build_absolute_uri(
             reverse(
@@ -242,6 +237,7 @@ class NewsletterSubscribeView(View):
                 "confirmation_url": confirmation_url,
                 "expiry_hours": 24,
             },
+            override=True,
         )
 
         messages.success(
@@ -265,10 +261,10 @@ class NewsletterConfirmView(View):
     def get(self, request, token):
         try:
             subscriber = get_object_or_404(
-                NewsletterSubscriber, confirmation_token=token, is_confirmed=False
+                NewsletterSubscriber, confirmation_token=token, status=NewsletterSubscriber.PENDING,
             )
 
-            if subscriber.is_confirmation_expired:
+            if subscriber.is_confirmation_expired():
                 messages.error(
                     request,
                     _(
@@ -293,6 +289,7 @@ class NewsletterConfirmView(View):
                 {
                     "unsubscribe_url": unsubscribe_url,
                 },
+                override=True,
             )
 
             messages.success(
@@ -310,8 +307,7 @@ class NewsletterUnsubscribeView(View):
         subscriber = get_object_or_404(
             NewsletterSubscriber,
             unsubscribe_token=token,
-            is_active=True,
-            is_confirmed=True,
+            status=NewsletterSubscriber.SUBSCRIBED,
         )
 
         return render(
@@ -322,13 +318,8 @@ class NewsletterUnsubscribeView(View):
         subscriber = get_object_or_404(
             NewsletterSubscriber,
             unsubscribe_token=token,
-            is_active=True,
-            is_confirmed=True,
+            status=NewsletterSubscriber.SUBSCRIBED,
         )
-
-        subscriber.is_active = False
-        subscriber.save()
-
-        messages.success(request, _("Naujienlaiškio prenumerata sėkmingai atšaukta."))
+        subscriber.unsubscribe()
 
         return render(request, "newsletter/unsubscribed.html")

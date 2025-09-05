@@ -1,19 +1,16 @@
 Sveiki atvykę į mūsų naujienlaiškio prenumeratorių bendruomenę!
 
-Ačiū, kad prisijungėte prie mūsų naujienlaiškio prenumeratorių!
+Sveikiname prisijungus!
 
 Dabar gausite reguliarius atnaujinimus apie:
-- Naujus straipsnius ir turinį
-- Svarbius pranešimus
-- Specialius pasiūlymus
+  
+- Naujus straipsnius ir turinį  
+- Svarbius pranešimus  
+- Specialius pasiūlymus  
 
-Jei kada nors norėsite atšaukti prenumeratą, galite tai padaryti spausdami šią nuorodą:
+Jei kada nors norėsite nutraukti prenumeratą, galite tai padaryti spausdami šią nuorodą:
 
-**[Atšaukti prenumeratą]({{ unsubscribe_url }})**
+**[Nutraukti prenumeratą]({{ unsubscribe_url }})**
 
----
-
-Su pagarba,
-Atvirų duomenų portalo komanda
-https://data.gov.lt
----
+Pagarbiai,  
+Valstybės skaitmeninių sprendimų agentūra

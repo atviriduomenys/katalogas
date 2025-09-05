@@ -81,7 +81,7 @@ def create_concepts(apps, schema_editor):
         {
             "uri": "http://publications.europa.eu/resource/authority/data-service-type/OP_DATPRO",
             "code": "OP_DATPRO",
-            "valid_since": date(2021, 8, 30),
+            "valid_since": date(2019, 1, 1),
             "translations": {
                 "en": {
                     "label": "OP DATPRO service",
@@ -106,7 +106,36 @@ def create_concepts(apps, schema_editor):
                 }
             }
         },
+        {
+            "uri": "http://purl.org/dc/dcmitype/Service",
+            "code": "SERVICE",
+            "valid_since": date(2019, 1, 1),
+            "translations": {
+                "en": {
+                    "label": "Service",
+                },
+                "lt": {
+                    "label": "Paslauga",
+                }
+            }
+        },
     ]
+    for data in concepts_data:
+        concept, created = Concept.objects.get_or_create(
+            code=data["code"],
+            defaults={
+                "uri": data.get("uri"),
+                "valid_since": data["valid_since"],
+            },
+        )
+        if created:
+            for lang, fields in data["translations"].items():
+                concept.set_current_language(lang)
+                concept.label = fields["label"]
+                concept.description = fields.get("description", "")
+            concept.save()
+        concept.concept_schemas.add(concept_schema)
+
 
 class Migration(migrations.Migration):
 
@@ -116,4 +145,5 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(create_concept_schema, delete_concept_schema),
+        migrations.RunPython(create_concepts, migrations.RunPython.noop),
     ]

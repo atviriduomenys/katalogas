@@ -112,7 +112,7 @@
             <td>
                 <ul class="mt-0 ml-4">
                     {% for service_type in dataset.service_type.all %}
-                        <li>{{ service_type }}</li>
+                        <li>{{ service_type.label }}</li>
                     {% endfor %}
                 </ul>
             </td>

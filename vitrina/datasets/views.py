@@ -818,7 +818,6 @@ class DatasetCreateView(
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
         self.object.save()
-        form.save_m2m()
         set_comment(Dataset.CREATED)
         if not form.cleaned_data.get("creator"):
             Representative.objects.create(
@@ -929,6 +928,9 @@ class DatasetCreateView(
 
         if documentation_urls := form.cleaned_data.get("documentation"):
             self.object.update_documentation(documentation_urls)
+
+        if service_type := form.cleaned_data.get("service_type"):
+            self.object.service_type.set(service_type)
 
         messages.success(self.request, _("Duomenų išteklius sukurtas sėkmingai"))
 
@@ -1103,7 +1105,6 @@ class DatasetUpdateView(
         self.object: Dataset = form.save(commit=False)
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
-        form.save_m2m()
 
         if ("endpoint_url" in form.changed_data) or (self.object.is_public and not self.object.published):
             if self.object.is_public and not self.object.published:
@@ -1162,6 +1163,9 @@ class DatasetUpdateView(
 
         if "documentation" in form.changed_data:
             self.object.update_documentation(form.cleaned_data["documentation"])
+
+        if "service_type" in form.changed_data:
+            self.object.service_type.set(form.cleaned_data["service_type"])
 
         self.object.save()
         set_comment(Dataset.EDITED)

@@ -20,6 +20,9 @@ msgstr ""
 "11) ? 0 : (n % 10 >= 2 && n % 10 <=9) && (n % 100 > 19 || n % 100 < 11) ? "
 "1 : n % 1 != 0 ? 2: 3);\n"
 
+msgid "Organizacija"
+msgstr ""
+
 msgid "kliento id"
 msgstr ""
 
@@ -36,9 +39,6 @@ msgid "API raktas"
 msgstr ""
 
 msgid "Taikymo sritis"
-msgstr ""
-
-msgid "Organizacija"
 msgstr ""
 
 msgid "Duomenų išteklius"
@@ -1615,6 +1615,9 @@ msgstr ""
 msgid "Pridėti vaikinių duomenų išteklių"
 msgstr ""
 
+msgid "Organizacijos"
+msgstr ""
+
 msgid "Duomenų išteklius sukurtas sėkmingai"
 msgstr ""
 
@@ -1705,9 +1708,6 @@ msgstr ""
 msgid "Termino pašalinimas"
 msgstr ""
 
-msgid "Organizacijos"
-msgstr ""
-
 msgid "vaikiniai duomenų ištekliai"
 msgstr ""
 
@@ -1775,6 +1775,12 @@ msgid "Koordinatorių skaičius"
 msgstr ""
 
 msgid "Tvarkytojų skaičius"
+msgstr ""
+
+msgid "Modelio laukas"
+msgstr ""
+
+msgid "Modelis"
 msgstr ""
 
 msgid "Identifikatoriai"
@@ -3843,9 +3849,6 @@ msgid "Paveldimas modelis"
 msgstr ""
 
 msgid "Bazė"
-msgstr ""
-
-msgid "Modelis"
 msgstr ""
 
 msgid "Susijęs modelis"

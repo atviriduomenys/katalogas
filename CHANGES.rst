@@ -36,6 +36,8 @@ Add hierarchical breadcrumbs for datasets
 https://github.com/atviriduomenys/katalogas/issues/1736
 Add `documentation` field to Dataset
 
+https://github.com/atviriduomenys/katalogas/issues/1751
+Add enhancements to organization, dataset, model and property page titles.
 
 https://github.com/atviriduomenys/katalogas/issues/1762
 Adds configurable RISR identifier validation to the Agency model.

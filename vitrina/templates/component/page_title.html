@@ -1,0 +1,116 @@
+{% load i18n %}
+<style>
+    .page-header {
+        width: 695px;
+        height: 73px;
+        top: 130px;
+        left: 60px;
+        gap: 8px;
+        border-radius: 6px;
+        padding: 16px;
+        display: flex;
+    }
+    .content-wrapper {
+        width: 506px;
+        height: 41px;
+        gap: 2px;
+        display: flex; 
+        flex-direction: column;
+    }
+    .title-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 0px;
+        gap: 8px;
+        height: 23px;
+    }
+    .main-title {
+        height: 23px;
+        font-family: 'Roboto';
+        font-style: normal;
+        font-weight: 700;
+        font-size: 20px;
+        line-height: 23px;
+        color: #363636;
+        white-space: nowrap;
+    }
+    .type-badge {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 4px 8px;
+        gap: 4px;
+        height: 23px;
+        background: rgba(2, 125, 177, 0.1);
+        border-radius: 4px;
+        white-space: nowrap;
+    }
+    .type-text {
+        height: 14px;
+        font-family: 'Roboto';
+        font-style: normal;
+        font-weight: 700;
+        font-size: 12px;
+        line-height: 14px;
+        text-transform: uppercase;
+        color: #027DB1;
+    }
+    .info-container {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
+        padding: 0px;
+        gap: 8px;
+        height: 16px;
+    }
+    .info-text {
+        font-family: 'Roboto';
+        font-style: normal;
+        font-size: 12px;
+        line-height: 14px;
+    }
+    .info-label {
+        font-weight: 400;
+        color: #6B6B6B;
+    }
+    .info-value {
+        font-weight: 700;
+        color: #363636;
+    }
+    .separator {
+        width: 1px;
+        height: 12px;
+        background: #DBDBDB;
+    }
+</style>
+
+{% if page_title.title %}
+    <div class="page-header">
+        <div class="content-wrapper">
+            <div class="title-container">
+                <span class="main-title">{{ page_title.title }}</span>
+                {% if page_title.object_type %}
+                    <div class="type-badge">
+                        <span class="type-text">{{ page_title.object_type }}</span>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="info-container">
+                {% if page_title.root_name %}
+                    <span class="info-text info-label">{{ page_title.root_label }}:</span>
+                    <span class="info-text info-value">{{ page_title.root_name }}</span>
+                {% endif %}
+                {% if page_title.root_name and page_title.info_system_name %}
+                    <div class="separator"></div>
+                {% endif %}
+                {% if page_title.info_system_name %}
+                    <span class="info-text info-label">{{ page_title.info_system_label }}:</span>
+                    <span class="info-text info-value">{{ page_title.info_system_name }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% elif current_title %}
+    {{ current_title }}
+{% endif %}

@@ -40,7 +40,7 @@ from vitrina.messages.models import SentMail
 from vitrina.orgs.helpers import get_or_create_parent_org
 from vitrina.requests.models import RequestAssignment
 from reversion.views import RevisionMixin
-from vitrina.helpers import get_stats_filter_options_based_on_model
+from vitrina.helpers import get_stats_filter_options_based_on_model, build_page_title_context
 from vitrina.api.services import get_auth_session
 from vitrina.helpers import (
     prepare_email_by_identifier,
@@ -470,6 +470,10 @@ class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, DetailView):
             self.request.user, Action.UPDATE, Representative, organization
         )
         context_data["organization_id"] = organization.pk
+        context_data["page_title"] = build_page_title_context(
+            organization=organization,
+            language_code=self.request.LANGUAGE_CODE,
+        )
         return context_data
 
 
@@ -779,6 +783,7 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Revisi
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Organizacijos redagavimas")
+        context["page_title"] = build_page_title_context(organization=self.object)
         return context
 
     def get_form_kwargs(self):

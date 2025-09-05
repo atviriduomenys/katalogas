@@ -18,6 +18,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "Organizacija"
+msgstr "Organization"
+
 msgid "kliento id"
 msgstr "client id"
 
@@ -37,9 +40,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -1893,6 +1893,12 @@ msgstr "Coordinator count"
 
 msgid "Tvarkytojų skaičius"
 msgstr "Manager count"
+
+msgid "Modelio laukas"
+msgstr "Model field."
+
+msgid "Modelis"
+msgstr "Model"
 
 msgid "Identifikatoriai"
 msgstr "Identifiers"
@@ -4125,9 +4131,6 @@ msgstr "Inherited model"
 
 msgid "Bazė"
 msgstr "Base"
-
-msgid "Modelis"
-msgstr "Model"
 
 msgid "Susijęs modelis"
 msgstr "Related model"

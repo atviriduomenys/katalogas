@@ -6,11 +6,7 @@
 {% load util_tags %}
 
 {% block current_title %}
-    {% if prop.title %}
-        {{ prop.title }}
-    {% else %}
-        {{ prop.name }}
-    {% endif %}
+    {% include "component/page_title.html" %}
 {% endblock %}
 {% block parent_links %}
     {% include "component/breadcrumbs.html" %}

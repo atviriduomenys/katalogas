@@ -16,9 +16,11 @@ send_monthly_newsletter = Signal()
 
 @receiver(send_monthly_newsletter)
 def send_newsletter_to_subscribers(sender, **kwargs):
-    last_month_start = timezone.now().replace(day=1) - timedelta(days=1)
-    last_month_start = last_month_start.replace(day=1)
-    last_month_end = timezone.now().replace(day=1) - timedelta(seconds=1)
+    now = timezone.now()
+    first_day_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_end = first_day_this_month - timedelta(seconds=1)
+    last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
 
     blog_posts = Post.objects.filter(
         publish=True,
@@ -37,7 +39,7 @@ def send_newsletter_to_subscribers(sender, **kwargs):
     if not blog_posts and not datasets:
         return 0
 
-    subscribers = NewsletterSubscriber.objects.filter(is_confirmed=True, is_active=True)
+    subscribers = NewsletterSubscriber.objects.filter(status=NewsletterSubscriber.SUBSCRIBED)
 
     domain = Site.objects.get_current().domain
 
@@ -74,7 +76,6 @@ def send_newsletter_to_subscribers(sender, **kwargs):
             "id": dataset.id,
             "title": dataset.title,
             "description": dataset.description,
-            "status_display": dataset.get_status_display(),
         }
         for dataset in datasets
     ]

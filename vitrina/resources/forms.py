@@ -15,7 +15,7 @@ from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
 from django.db.models import Case, When, IntegerField
 
-code_order = ["COMPLETED", "DEVELOP", "PLANNED", "DEPRECATED", "WITHDRAWN"]
+CODE_ORDER = ["COMPLETED", "DEVELOP", "PLANNED", "DEPRECATED", "WITHDRAWN"]
 
 
 def _get_level_title(title, description=None):
@@ -171,8 +171,8 @@ class DatasetResourceForm(TranslatableModelForm):
             .distinct()
             .order_by(
                 Case(
-                    *[When(code=code, then=pos) for pos, code in enumerate(code_order)],
-                    default=len(code_order),
+                    *[When(code=code, then=pos) for pos, code in enumerate(CODE_ORDER)],
+                    default=len(CODE_ORDER),
                     output_field=IntegerField(),
                 )
             )

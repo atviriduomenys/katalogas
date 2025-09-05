@@ -5,6 +5,12 @@ v 1.2 (unreleased)
 
 New features:
 
+https://github.com/atviriduomenys/katalogas/issues/1818
+Introduced `DistributionStatus` into the distribution form
+    - Created `DistributionStatus` `ConceptSchema` (migration)
+    - Created new instances in `Concept` which connect to the created `ConceptSchema`.
+    - Made a data correction, so that old distributions get this `Status` field.
+
 https://github.com/atviriduomenys/katalogas/issues/1780
 Changed ENUM values for access rights:
     - Added value confidential.

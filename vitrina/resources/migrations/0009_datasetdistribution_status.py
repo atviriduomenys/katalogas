@@ -20,7 +20,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('vitrina_classifiers', '0015_concepts_with_distribution_status'),
-        ('vitrina_resources', '0007_auto_20250822_1413'),
+        ('vitrina_resources', '0008_auto_20250905_1303'),
     ]
 
     operations = [

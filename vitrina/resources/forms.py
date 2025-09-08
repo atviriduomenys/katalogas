@@ -8,11 +8,14 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Field, Submit, Layout
 from parler.forms import TranslatedField, TranslatableModelForm
 
-from vitrina.classifiers.models import Licence
+from vitrina.classifiers.models import Licence, Concept
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField, StringListField
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.structure.models import Metadata
+from django.db.models import Case, When, IntegerField
+
+CODE_ORDER = ["COMPLETED", "DEVELOP", "PLANNED", "DEPRECATED", "WITHDRAWN"]
 
 
 def _get_level_title(title, description=None):
@@ -152,6 +155,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "temporal_resolution",
             "spatial_resolution",
             "applicable_legislation",
+            "status",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -162,6 +166,19 @@ class DatasetResourceForm(TranslatableModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
+        self.fields["status"].queryset = (
+            Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
+            .distinct()
+            .order_by(
+                Case(
+                    *[When(code=code, then=pos) for pos, code in enumerate(CODE_ORDER)],
+                    default=len(CODE_ORDER),
+                    output_field=IntegerField(),
+                )
+            )
+        )
+        self.fields["status"].label_from_instance = lambda obj: obj.safe_translation_getter("label", any_language=True)
+
         self.helper.layout = Layout(
             Field(
                 "title",
@@ -180,6 +197,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("format"),
             Field("compression_format"),
             Field("packaging_format"),
+            Field("status"),
             Field("file", placeholder=_("Šaltinio failas")),
             Field("download_url"),
             Field("imported"),

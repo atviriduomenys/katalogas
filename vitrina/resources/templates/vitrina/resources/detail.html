@@ -97,6 +97,14 @@
                                     <td>{{ resource.spatial_resolution }}</td>
                                 </tr>
                                 {% endif %}
+                                {% if resource.status %}
+                                <tr>
+                                    <th>{% translate "Statusas" %}</th>
+                                    <td>
+                                        {{ resource.status.translated_label }}
+                                    </td>
+                                </tr>
+                                {% endif %}
 
                                 {% if resource.compression_format %}
                                 <tr>

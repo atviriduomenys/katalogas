@@ -73,6 +73,38 @@ class DatasetResourceForm:
         assert "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data." in form_in_context.errors
 
 
+class TestServiceResourceForm:
+    def test_dataset_service_subclass_service_type_management(self, app: DjangoTestApp):
+        organization = OrganizationFactory()
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        subclass = DCATResourceSubclassFactory(name="service")
+
+        form = app.get(
+            reverse(
+                "dataset-add",
+                kwargs={"pk": organization.id, "subclass_uuid": subclass.pk},
+            )
+        ).context["form"]
+        concept1 = ConceptFactory()
+        concept2 = ConceptFactory()
+        concept3 = ConceptFactory()
+        needed_concept_schema, _ = ConceptSchema.objects.get_or_create(
+            uri="http://publications.europa.eu/resource/authority/data-service-type"
+        )
+
+        wrong_concept_schema, _ = ConceptSchema.objects.get_or_create(
+            uri="dcataplt:Importance"
+        )
+
+        concept1.concept_schemas.add(needed_concept_schema)
+        concept2.concept_schemas.add(wrong_concept_schema)
+        concept3.concept_schemas.add(needed_concept_schema)
+
+        assert isinstance(form, ServiceResourceForm)
+        assert len(form.fields['service_type'].queryset) == 2
+
+
 class CatalogResourceForm:
     def test_create_catalog_with_conditions_error(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()

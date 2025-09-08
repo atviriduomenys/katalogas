@@ -1,6 +1,6 @@
 import pathlib
 from enum import StrEnum
-
+import uuid
 import requests
 import reversion
 from django.contrib.contenttypes.fields import GenericRelation
@@ -11,9 +11,13 @@ from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
-from vitrina.classifiers.models import Licence, ApplicableLegislation
+from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
 from vitrina.datasets.models import Dataset
 from vitrina.settings import TRANSLATION_CLIENT_ID
+
+
+def get_default_status() -> uuid.UUID:
+    return Concept.objects.get(uri="http://publications.europa.eu/resource/authority/distribution-status/DEVELOP").pk
 
 
 class FormatName(StrEnum):
@@ -118,13 +122,13 @@ class PackagingFormat(models.Model):
 
 @reversion.register()
 class DatasetDistribution(TranslatableModel):
+    DISTRIBUTION_STATUS_URI = "http://publications.europa.eu/resource/authority/distribution-status"
     UPLOAD_TO = "data"
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-
     dataset = models.ForeignKey(Dataset, models.CASCADE)
     translations = TranslatedFields(
         title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
@@ -233,6 +237,17 @@ class DatasetDistribution(TranslatableModel):
         null=True,
         verbose_name=_("Erdvinė skiriamoji geba (metrais)"),
         help_text=_("Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."),
+    )
+
+    status = models.ForeignKey(
+        Concept,
+        on_delete=models.PROTECT,
+        related_name="dataset_distributions",
+        verbose_name=_("Statusas"),
+        help_text=_(
+            "Duomenų distribucija gali būti įgyvendinta - veikianti, kuriama, suplanuota kūrimui, pasenusi arba atsisakyta.",
+        ),
+        default=get_default_status,
     )
 
     rights_relation = models.URLField(

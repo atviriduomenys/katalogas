@@ -7,8 +7,20 @@ from vitrina.cms.forms import (
     ExternalSiteAdminForm,
     PublishedReportAdminForm,
 )
-from vitrina.cms.models import LearningMaterial, Faq, ExternalSite, Deployment
+from vitrina.cms.models import (
+    LearningMaterial,
+    Faq,
+    ExternalSite,
+    Deployment,
+    LearningMaterialFile,
+)
 from vitrina.orgs.models import PublishedReport
+
+
+class LearningMaterialFileInline(admin.TabularInline):
+    model = LearningMaterialFile
+    extra = 1
+    fields = ("file", "name")
 
 
 class LearningMaterialAdmin(admin.ModelAdmin):
@@ -17,6 +29,7 @@ class LearningMaterialAdmin(admin.ModelAdmin):
         "published",
     )
     form = LearningMaterialAdminForm
+    inlines = [LearningMaterialFileInline]
 
     def save_model(self, request, obj, form, change):
         if obj.version:

@@ -38,6 +38,7 @@ def main(
         "dataset_resource_migrate",
         "dataset_resource",
         "dataset_migrate",
+        "dataset_event",
         "dataset",
         "cms_page",
         "account_emailconfirmation",
@@ -53,6 +54,7 @@ def main(
         "user_email_device",
         "account_emailaddress",
         "otp_email_emaildevice",
+        "open_data_gov_lt_entry",
         "representative_request",
         "api_key",
         "user",
@@ -65,6 +67,10 @@ def main(
         "suggestion",
         "comment",
         "request_event",
+        "djangocms_text_ckeditor_text",
+        "cms_attachment",
+        "dataset_translation",
+        "request",
     )
 
     total = sum([db[t].count() for t in tables])
@@ -78,7 +84,8 @@ def main(
     fake = Faker()
     fake.seed_instance(0)
     pbar = tqdm("Anonymizing", total=total)
-    users = {}
+    users: dict[str, dict[str, str | None]] = {}
+
     with pbar:
         for table in tables:
             func = sys.modules[__name__].__dict__[f"_anonymize_{table}"]
@@ -86,7 +93,7 @@ def main(
 
 
 def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    objects: Table = db["djangocms_blog_post_translation"]
+    objects: Table = db["organization"]
     pk_name = "id"
     for record in objects.all():
         data = {
@@ -99,9 +106,7 @@ def _anonymize_organization(db: Database, fake: Faker, pbar: tqdm, users: dict[s
         pbar.update(1)
 
 
-def _anonymize_djangocms_blog_post_translation(
-    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
-) -> None:
+def _anonymize_djangocms_blog_post_translation(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     objects: Table = db["djangocms_blog_post_translation"]
     pk_name = "id"
     for record in objects.all():
@@ -115,6 +120,7 @@ def _anonymize_djangocms_blog_post_translation(
             "meta_keywords": "example",
             "subtitle": "<p>example</p>",
             "post_text": "<p>example</p>",
+            "phone": fake.phone_number(),
         }
         objects.update(data, [pk_name])
         pbar.update(1)
@@ -137,15 +143,16 @@ def _anonymize_news_item(db: Database, fake: Faker, pbar: tqdm, users: dict[str,
 
 
 def _anonymize_adp_cms_page(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
-    objects: Table = db["news_item"]
+    objects: Table = db["adp_cms_page"]
     pk_name = "id"
     for record in objects.all():
+        x = f"example-{uuid.uuid4()}"
         data = {
             pk_name: record[pk_name],
-            "body": "<p>example</p>",
+            "body": f"<p>{x}</p>",
             "title": "example",
-            "description": "example",
-            "slug": f"example-{uuid.uuid4()}",
+            "description": x,
+            "slug": x
         }
         objects.update(data, [pk_name])
         pbar.update(1)
@@ -206,7 +213,12 @@ def _anonymize_hitcount_hit(db: Database, fake: Faker, pbar: tqdm, users: dict[s
     objects: Table = db["hitcount_hit"]
     pk_name = "id"
     for record in objects.all():
-        data = {pk_name: record[pk_name], "ip": "127.0.0.1", "session": "example-session-hash"}
+        data = {
+            pk_name: record[pk_name],
+            "ip": "127.0.0.1",
+            "session": "example-session-hash",
+            "user_agent": "example-user-agent",
+        }
         objects.update(data, [pk_name])
         pbar.update(1)
 
@@ -248,7 +260,11 @@ def _anonymize_dataset_resource_migrate(
     objects: Table = db["dataset_resource_migrate"]
     pk_name = "id"
     for record in objects.all():
-        data = {pk_name: record[pk_name], "url": fake.url()}
+        data = {
+            pk_name: record[pk_name],
+            "url": fake.url(),
+            "data": None
+        }
         objects.update(data, [pk_name])
         pbar.update(1)
 
@@ -272,6 +288,8 @@ def _anonymize_dataset(db: Database, fake: Faker, pbar: tqdm, users: dict[str, d
         data = {
             pk_name: record[pk_name],
             "meta": json.dumps({}),
+            "notes": fake.sentence(nb_words=12, variable_nb_words=True),
+            "structure_data": fake.sentence(nb_words=12, variable_nb_words=True),
         }
         objects.update(data, [pk_name])
         pbar.update(1)
@@ -397,11 +415,12 @@ def _anonymize_api_key(db: Database, fake: Faker, pbar: tqdm, users: dict[str, d
     objects: Table = db["api_key"]
     pk_name = "id"
     for record in objects.all():
+        uuidx = uuid.uuid4()
         data = {
             pk_name: record[pk_name],
-            "api_key": f"example-{uuid.uuid4()}",
-            "client_id": f"example-{uuid.uuid4()}",
-            "client_name": f"example-{uuid.uuid4()}",
+            "api_key": f"api-key-{uuidx}",
+            "client_id": f"client-id-{uuidx}",
+            "client_name": f"client-name-{uuidx}",
         }
         objects.update(data, [pk_name])
         pbar.update(1)
@@ -568,8 +587,7 @@ def _anonymize_password_reset_token(
 
 
 def _anonymize_newsletter_subscription(
-    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
-) -> None:
+        db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     for row in db["newsletter_subscription"].all():
         if row["email"] and "@" in row["email"]:
             email = _email_plus_uuid(fake)
@@ -584,8 +602,7 @@ def _anonymize_newsletter_subscription(
 
 
 def _anonymize_partner_application(
-    db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]
-) -> None:
+        db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
     for row in db["partner_application"].all():
         first_name = fake.first_name()
         last_name = fake.last_name()
@@ -599,6 +616,8 @@ def _anonymize_partner_application(
             "viisp_email": email,
             "viisp_phone": fake.phone_number() if row["viisp_phone"] else None,
             "viisp_dob": None,
+            "comment": "This is a test comment.",
+            "letter": None
         }
         db["partner_application"].update(data, ["id"])
         pbar.update(1)
@@ -651,9 +670,93 @@ def _anonymize_request_event(db: Database, fake: Faker, pbar: tqdm, users: dict[
         data = {
             "id": row["id"],
             "meta": f"{first_name} {last_name}",
+            "comment": "This is a test comment."
         }
         db["request_event"].update(data, ["id"])
         pbar.update(1)
+
+
+def _anonymize_djangocms_text_ckeditor_text(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+    table_name = "djangocms_text_ckeditor_text"
+    for row in db[table_name].all():
+        sentence = fake.sentence(nb_words=12, variable_nb_words=True)
+        data = {
+            "id": row["id"],
+            "body": f"<p>{sentence}</p>",
+        }
+        db[table_name].update(data, ["id"])
+        pbar.update(1)
+
+
+def _anonymize_dataset_event(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+    table_name = "dataset_event"
+    for row in db[table_name].all():
+        data = {
+            "id": row[id],
+            "details": fake.sentence(nb_words=10, variable_nb_words=True)
+            # Todo: what is this? check real data.
+            # user = models.TextField(blank=True, null=True)
+        }
+        db[table_name].update(data, ["id"])
+        pbar.update(1)
+
+
+def _anonymize_open_data_gov_lt_entry(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+    objects: Table = db["open_data_gov_lt_entry"]
+    for record in objects.all():
+        data = {
+            "id": record["id"],
+            "contact_info": f"Example, {fake.first_name()}, {fake.last_name()}, {fake.email()}, {fake.phone_number()}",
+            "dataset_conditions": f"Example, {fake.first_name()}, {fake.last_name()}, {fake.email()}, {fake.phone_number()}",
+        }
+        objects.update(data, ["id"])
+        pbar.update(1)
+
+
+def _anonymize_cms_attachment(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+    objects: Table = db["cms_attachment"]
+    for record in objects.all():
+        data = {
+            "id": record["id"],
+            "file_data": None
+        }
+        objects.update(data, ["id"])
+        pbar.update(1)
+
+
+def _anonymize_dataset_translation(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+    objects: Table = db["dataset_translation"]
+    for record in objects.all():
+        data = {
+            "id": record["id"],
+            "description": fake.sentence(nb_words=12, variable_nb_words=True)
+        }
+        objects.update(data, ["id"])
+        pbar.update(1)
+
+
+def _anonymize_request(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+    objects: Table = db["request"]
+    for record in objects.all():
+        data = {
+            "id": record["id"],
+            "comment": "This is a test comment",
+            "description": 'This is a test description',
+
+        }
+        objects.update(data, ["id"])
+        pbar.update(1)
+
+
+# def _anonymize_(db: Database, fake: Faker, pbar: tqdm, users: dict[str, dict[str, str | None]]) -> None:
+#     objects: Table = db[""]
+#     for record in objects.all():
+#         data = {
+#             "id": record["id"],
+#             "": None
+#         }
+#         objects.update(data, ["id"])
+#         pbar.update(1)
 
 
 def _ensure_unique_email(

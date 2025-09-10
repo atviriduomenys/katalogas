@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}
+    {% translate "Prenumerata patvirtinta" %}
+{% endblock %}
+
+{% block content %}
+    <div class="columns is-centered">
+        <div class="column is-half">
+            <div class="box has-text-centered">
+                <div class="icon is-large has-text-success mb-4">
+                    <i class="fas fa-check-circle fa-3x"></i>
+                </div>
+
+                <h2 class="title is-3 has-text-success">
+                    {% translate "Prenumerata sėkmingai patvirtinta!" %}
+                </h2>
+
+                <div class="content">
+                    <p class="is-size-5">
+                        {% translate "Ačiū! Jūsų el. pašto adresas sėkmingai užprenumeravo naujienlaiškį." %}
+                    </p>
+
+                    <p>
+                        {% translate "Gausite naujienlaiškį kai tik bus paskelbtas naujas turinys." %}
+                    </p>
+                </div>
+
+                <hr>
+
+                <div class="buttons is-centered">
+                    <a href="/" class="button is-primary">
+                        <span class="icon">
+                            <i class="fas fa-home"></i>
+                        </span>
+                        <span>{% translate "Grįžti į pagrindinį puslapį" %}</span>
+                    </a>
+                </div>
+
+                <p class="is-size-7 has-text-grey mt-4">
+                    {% translate "Jei kada nors norėsite atšaukti prenumeratą, galėsite tai padaryti paspausdami nuorodą bet kuriame gautame naujienlaiškio laiške." %}
+                </p>
+            </div>
+        </div>
+    </div>
+{% endblock %}

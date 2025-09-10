@@ -1,22 +1,23 @@
-from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db import IntegrityError
 from django.http import HttpResponseRedirect
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.urls import reverse
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import CreateView
+from django.utils.translation import gettext_lazy as _
 
 from vitrina.datasets.models import Dataset
 from vitrina.messages.forms import SubscriptionForm
-from vitrina.messages.models import Subscription
+from vitrina.messages.models import Subscription, NewsletterSubscriber
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.users.models import User
 from vitrina.helpers import email, get_current_domain
-from django.utils.translation import gettext_lazy as _
 
 
 class UnsubscribeView(LoginRequiredMixin, PermissionRequiredMixin, View):
@@ -190,3 +191,119 @@ class SubscribeFormView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
                     _("Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."),
                 )
         return HttpResponseRedirect(self.obj.get_absolute_url())
+
+
+class NewsletterSubscribeView(View):
+    def post(self, request, *args, **kwargs):
+        email_input = request.POST.get("email", "").strip()
+
+        if not email_input:
+            messages.error(request, _("Prašome įvesti el. pašto adresą."))
+            return self.redirect_back()
+
+        subscriber, created = NewsletterSubscriber.objects.get_or_create(email=email_input)
+
+        if subscriber.status == NewsletterSubscriber.SUBSCRIBED:
+            messages.info(
+                request,
+                _("Šis el. pašto adresas jau prenumeruoja naujienlaiškį."),
+            )
+            return self.redirect_back()
+
+        if subscriber.status == NewsletterSubscriber.PENDING and not subscriber.is_confirmation_expired():
+            messages.info(request, _("Patvirtinimo nuorodą vis dar galiojanti, patikrinkite el. pašto dežutę."))
+            return self.redirect_back()
+
+        subscriber.initiate_subscription()
+
+        confirmation_url = request.build_absolute_uri(
+            reverse("newsletter-confirm", kwargs={"token": subscriber.confirmation_token})
+        )
+
+        email(
+            [subscriber.email],
+            "newsletter-confirmation",
+            "vitrina/messages/emails/newsletter/confirmation.md",
+            {
+                "confirmation_url": confirmation_url,
+                "expiry_hours": 24,
+            },
+            override=True,
+        )
+
+        messages.success(
+            request,
+            _("Patvirtinimo nuoroda išsiųsta į jūsų el. paštą. Nuoroda galioja 24 valandas."),
+        )
+
+        return self.redirect_back()
+
+    def redirect_back(self):
+        referer = self.request.META.get("HTTP_REFERER")
+        if referer and url_has_allowed_host_and_scheme:
+            return redirect(referer)
+        return redirect("/")
+
+
+class NewsletterConfirmView(View):
+    def get(self, request, token):
+        try:
+            subscriber = get_object_or_404(
+                NewsletterSubscriber,
+                confirmation_token=token,
+                status=NewsletterSubscriber.PENDING,
+            )
+
+            if subscriber.is_confirmation_expired():
+                messages.error(
+                    request,
+                    _("Patvirtinimo nuoroda nebegalioja. Prašome užsisakyti prenumeratą iš naujo."),
+                )
+                return redirect("newsletter-subscribe")
+
+            subscriber.confirm_subscription()
+
+            unsubscribe_url = request.build_absolute_uri(
+                reverse(
+                    "newsletter-unsubscribe",
+                    kwargs={"token": subscriber.unsubscribe_token},
+                )
+            )
+
+            email(
+                [subscriber.email],
+                "newsletter-welcome",
+                "vitrina/messages/emails/newsletter/welcome.md",
+                {
+                    "unsubscribe_url": unsubscribe_url,
+                },
+                override=True,
+            )
+
+            messages.success(request, _("Naujienlaiškio prenumerata sėkmingai patvirtinta!"))
+            return render(request, "newsletter/confirmed.html")
+
+        except Exception:
+            messages.error(request, _("Įvyko klaida patvirtinant prenumeratą."))
+            return redirect("/")
+
+
+class NewsletterUnsubscribeView(View):
+    def get(self, request, token):
+        subscriber = get_object_or_404(
+            NewsletterSubscriber,
+            unsubscribe_token=token,
+            status=NewsletterSubscriber.SUBSCRIBED,
+        )
+
+        return render(request, "newsletter/unsubscribe_confirm.html", {"subscriber": subscriber})
+
+    def post(self, request, token):
+        subscriber = get_object_or_404(
+            NewsletterSubscriber,
+            unsubscribe_token=token,
+            status=NewsletterSubscriber.SUBSCRIBED,
+        )
+        subscriber.unsubscribe()
+
+        return render(request, "newsletter/unsubscribed.html")

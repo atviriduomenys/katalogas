@@ -113,12 +113,48 @@
             </div>
             <div class="tab-content" style="display: none;" id="sub_id">
                 <div class="column">
+                    {% if newsletter_subscription %}
+                        <article class="box media is-expanded">
+                        <div class="media-content">
+                            <div class="content">
+                                <div class="columns is-justify-content-space-between">
+                                    <div class="column is-4">
+                                        <a href="/blog">
+                                            <strong>Naujienlaiškio prenumerata</strong>
+                                        </a>
+                                    </div>
+                                    <div class="column is-4">
+                                        <form action="{% url 'newsletter-unsubscribe' token=newsletter_subscription.unsubscribe_token %}"
+                                              method="post" class="rating-form" id="unsubscribe-form">
+                                            {% csrf_token %}
+                                            <input type="submit" class="button is-primary"
+                                                   value='{% translate "Atsisakyti prenumeratos" %}'>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        </article>
+                    {% else %}
+                        <article>
+                            <div class="column is-4">
+                                <form action="{% url 'newsletter-subscribe' %}"
+                                      method="post" class="rating-form" id="subscribe-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="email" value="{{ request.user.email }}">
+                                    <input type="submit" class="button is-primary"
+                                           value='{% translate "Prenumeruoti naujienlaiškį" %}'>
+                                </form>
+                            </div>
+                        </article>
+                        <hr>
+                    {% endif %}
                     {% for sub in subscriptions %}
                         {% if sub.content_type.id and sub.object_id and sub.user.pk %}
                         <article class="box media is-expanded">
                         <div class="media-content">
                             <div class="content">
-                                <div class="columns">
+                                <div class="columns is-justify-content-space-between">
                                     <div class="column is-4">
                                         <a href="{{ sub.content_object.get_absolute_url }}">
                                             <strong class="dataset-list-title">{{ sub.content_object }}</strong>

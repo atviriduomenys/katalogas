@@ -2060,6 +2060,63 @@ msgstr "Comment subscription"
 msgid "Prenumeratos tipas"
 msgstr "Subscription type"
 
+msgid "Prenumerata patvirtinta"
+msgstr "Subscription confirmed"
+
+msgid "Prenumerata sėkmingai patvirtinta!"
+msgstr "Subscription was successfully confirmed!"
+
+msgid "Ačiū! Jūsų el. pašto adresas sėkmingai užprenumeravo naujienlaiškį."
+msgstr "Thank you! Your email was successfully added to newsletter subscription."
+
+msgid "Gausite naujienlaiškį kai tik bus paskelbtas naujas turinys."
+msgstr "You will receive the newsletter whenever new post will be published."
+
+msgid "Grįžti į pagrindinį puslapį"
+msgstr "Go back to home page"
+
+msgid "Jei kada nors norėsite atšaukti prenumeratą, galėsite tai padaryti paspausdami nuorodą bet kuriame gautame naujienlaiškio laiške."
+msgstr "If you ever decide to cancel your newsletter subscription, you can do so by clicking the unsubscribe link in any newsletter you receive."
+
+msgid "Atšaukti prenumeratą"
+msgstr "Cancel subscription"
+
+msgid "Atšaukti naujienlaiškio prenumeratą"
+msgstr "Cancel newsletter subscription"
+
+msgid "Ar tikrai norite atšaukti prenumeratą el. pašto adresui"
+msgstr "Are you sure you want to cancel subscription for email"
+
+msgid "Po prenumeratos atšaukimo nebegausite mūsų naujienlaiškių."
+msgstr "After canceling subscription you will stop receiving our newsletters."
+
+msgid "Taip, atšaukti prenumeratą"
+msgstr "Yes, cancel subscription"
+
+msgid "Ne, grįžti atgal"
+msgstr "No, go back"
+
+msgid "Jei pakeisite nuomonę, galėsite bet kada prenumeruoti iš naujo mūsų svetainėje."
+msgstr "If you ever change your decision, you can renew your subscription anytime on our website."
+
+msgid "Prenumerata atšaukta"
+msgstr "Subscription cancelled"
+
+msgid "Prenumerata sėkmingai atšaukta"
+msgstr "Subscription was successfully cancelled"
+
+msgid "Jūsų el. pašto adresas daugiau negaus mūsų naujienlaiškio."
+msgstr "Your email address will stop receiving our newsletter."
+
+msgid "Dėkojame, kad buvote su mumis!"
+msgstr "Thank you for being with us!"
+
+msgid "Norėtumėte vėl prenumeruoti?"
+msgstr "Would you like to subscribe again?"
+
+msgid "Jei turite klausimų ar pasiūlymų, susisiekite su mumis:"
+msgstr "If you have any questions or suggestions, contact us:"
+
 msgid "Prenumeratos laiško užsisakymas"
 msgstr "E-mail subscription"
 

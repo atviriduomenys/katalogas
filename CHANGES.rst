@@ -1,6 +1,6 @@
 Changes
 #######
-v 1.2 (unreleased)
+v 1.2 (2025-09-10)
 ==================
 
 New features:
@@ -17,7 +17,7 @@ Changed ENUM values for access rights:
     - Changed translations by the specification.
 
 https://github.com/atviriduomenys/dvms/issues/185
-Introduce scripts to export users dump and to execute SQL queries
+Introduce scripts to export users dump and to execute SQL queries; improved anonymization.
 
 https://github.com/atviriduomenys/spinta/issues/1415
 Some additional improvements for the synchronization:
@@ -53,6 +53,14 @@ Add enhancements to organization, dataset, model and property page titles.
 https://github.com/atviriduomenys/katalogas/issues/1762
 Adds configurable RISR identifier validation to the Agency model.
 
+https://github.com/atviriduomenys/katalogas/issues/1860
+Added a github template for registering a bug in UAT testing.
+
+https://github.com/atviriduomenys/katalogas/issues/1784
+Added field "Resource type" to the resource form.
+
+https://github.com/atviriduomenys/katalogas/issues/1840
+Tests runs are improved by removing --no-migrations command which allows to catch migrations conflicts.
 
 Bug fixes:
 
@@ -62,9 +70,17 @@ Fix files not saving in Resource create/update
 https://github.com/atviriduomenys/katalogas/issues/1857
 Fix can changes parent Resource from Resource edit form.
 
-https://github.com/atviriduomenys/dvms/issues/185
-Update anonymization script to include more tables with potential sensitive data
+https://github.com/atviriduomenys/katalogas/issues/1602
+Fixed newsletter subscription.
 
+https://github.com/atviriduomenys/katalogas/issues/1511
+Added new icons for categories.
+
+https://github.com/atviriduomenys/katalogas/issues/1511
+Added an endpoint to return protected datasets for EDP.
+
+https://github.com/atviriduomenys/katalogas/issues/1658
+Changes to
 
 v 1.1 (2025-08-22)
 ==================

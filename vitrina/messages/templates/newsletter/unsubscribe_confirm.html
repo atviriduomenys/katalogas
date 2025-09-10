@@ -1,0 +1,60 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}
+    {% translate "Atšaukti prenumeratą" %}
+{% endblock %}
+
+{% block content %}
+    <div class="columns is-centered">
+        <div class="column is-half">
+            <div class="box has-text-centered">
+                <div class="icon is-large has-text-warning mb-4">
+                    <i class="fas fa-exclamation-triangle fa-3x"></i>
+                </div>
+
+                <h2 class="title is-3">
+                    {% translate "Atšaukti naujienlaiškio prenumeratą" %}
+                </h2>
+
+                <div class="content">
+                    <p class="is-size-5">
+                        {% translate "Ar tikrai norite atšaukti prenumeratą el. pašto adresui" %} <strong>{{ subscriber.email }}</strong>?
+                    </p>
+
+                    <p class="has-text-grey">
+                        {% translate "Po prenumeratos atšaukimo nebegausite mūsų naujienlaiškių." %}
+                    </p>
+                </div>
+
+                <hr>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="buttons is-centered">
+                        <button type="submit" class="button is-danger is-medium">
+                            <span class="icon">
+                                <i class="fas fa-times"></i>
+                            </span>
+                            <span>{% translate "Taip, atšaukti prenumeratą" %}</span>
+                        </button>
+
+                        <a href="/" class="button is-light is-medium">
+                            <span class="icon">
+                                <i class="fas fa-arrow-left"></i>
+                            </span>
+                            <span>{% translate "Ne, grįžti atgal" %}</span>
+                        </a>
+                    </div>
+                </form>
+
+                <div class="notification is-info is-light mt-4">
+                    <p class="is-size-7">
+                        <strong>{% translate "Pastaba:" %}</strong>
+                        {% translate "Jei pakeisite nuomonę, galėsite bet kada prenumeruoti iš naujo mūsų svetainėje." %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

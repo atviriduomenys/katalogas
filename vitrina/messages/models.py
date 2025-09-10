@@ -1,6 +1,11 @@
+import uuid
+from datetime import timedelta
+
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.db.models.functions import Lower
+from django.utils import timezone
 
 from vitrina.users.models import User
 from vitrina.datasets.models import Dataset
@@ -139,3 +144,57 @@ class Subscription(models.Model):
             return self.content_object.get_absolute_url()
         else:
             return None
+
+
+class NewsletterSubscriber(models.Model):
+    PENDING = "pending"
+    SUBSCRIBED = "subscribed"
+    UNSUBSCRIBED = "unsubscribed"
+    STATUS_CHOICES = (
+        (PENDING, _("Laukiama patvirtinimo")),
+        (SUBSCRIBED, _("Prenumeruojama")),
+        (UNSUBSCRIBED, _("Prenumeracija nutraukta")),
+    )
+
+    email = models.EmailField(unique=True)
+    created = models.DateTimeField(auto_now_add=True)
+    status = models.CharField(
+        max_length=12,
+        choices=STATUS_CHOICES,
+        default=PENDING,
+    )
+
+    confirmation_token = models.UUIDField(default=uuid.uuid4, unique=True, null=True, blank=True)
+    confirmation_expires_at = models.DateTimeField(null=True, blank=True)
+
+    unsubscribe_token = models.UUIDField(default=uuid.uuid4, unique=True)
+
+    def initiate_subscription(self):
+        self.status = self.PENDING
+        self.confirmation_token = uuid.uuid4()
+        self.confirmation_expires_at = timezone.now() + timedelta(hours=24)
+        self.save()
+
+    def is_confirmation_expired(self):
+        if self.confirmation_expires_at is None:
+            return True
+        return timezone.now() > self.confirmation_expires_at
+
+    def confirm_subscription(self):
+        self.status = self.SUBSCRIBED
+        self.confirmation_token = None
+        self.confirmation_expires_at = None
+        self.save()
+
+    def unsubscribe(self):
+        self.status = self.UNSUBSCRIBED
+        self.confirmation_token = None
+        self.confirmation_expires_at = None
+        self.save()
+
+    def __str__(self):
+        return f"{self.email} ({self.status})"
+
+    class Meta:
+        db_table = "newsletter_subscriber"
+        constraints = [models.UniqueConstraint(Lower("email"), name="unique_lowercase_email")]

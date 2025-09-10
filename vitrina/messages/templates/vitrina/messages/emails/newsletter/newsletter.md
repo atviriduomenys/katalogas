@@ -10,13 +10,20 @@ Mėnesinis naujienlaiškis - {{ month_year }}
 {% endfor %}
 
 {% endif %}
-{% if datasets %}
+{% if top_datasets %}
 ## Nauji duomenų rinkiniai
 
-{% for dataset in datasets %}
+{% for dataset in top_datasets %}
 ### {{ dataset.title }}
 [Peržiūrėti duomenų rinkinį](https://{{ domain }}/datasets/{{ dataset.id }}/)  
 {% if dataset.description %}{{ dataset.description|truncatechars:200 }}{% endif %}
+{% endfor %}
+
+{% endif %}
+{% if list_datasets %}
+#### Likusiu duomenų rinkinių sąrašas
+{% for dataset in list_datasets %}
+- [{{ dataset.month }} {{ dataset.day }} d.] [{{ dataset.title }}](https://{{ domain }}/datasets/{{ dataset.id }}/)  
 {% endfor %}
 {% endif %}
 

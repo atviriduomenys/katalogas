@@ -16,10 +16,18 @@ send_monthly_newsletter = Signal()
 
 @receiver(send_monthly_newsletter)
 def send_newsletter_to_subscribers(sender, **kwargs):
+    context = {}
+    list_datasets = None
+    top_dataset_to_show = 3
     now = timezone.now()
     first_day_this_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
     last_month_end = first_day_this_month - timedelta(seconds=1)
     last_month_start = last_month_end.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    subscribers = NewsletterSubscriber.objects.filter(status=NewsletterSubscriber.SUBSCRIBED)
+    if not subscribers.exists():
+        logger.warning("No subscribers found.")
+        return
 
     blog_posts = Post.objects.filter(
         publish=True,
@@ -38,9 +46,14 @@ def send_newsletter_to_subscribers(sender, **kwargs):
     if not blog_posts and not datasets:
         return 0
 
-    subscribers = NewsletterSubscriber.objects.filter(status=NewsletterSubscriber.SUBSCRIBED)
+    if len(datasets) > top_dataset_to_show:
+        top_datasets = datasets[:top_dataset_to_show]
+        list_datasets = datasets[top_dataset_to_show:]
+    else:
+        top_datasets = datasets[:top_dataset_to_show]
 
     domain = Site.objects.get_current().domain
+    context["domain"] = domain
 
     month_names = {
         1: "sausis",
@@ -59,6 +72,7 @@ def send_newsletter_to_subscribers(sender, **kwargs):
     current_month = timezone.now().month
     current_year = timezone.now().year
     month_year = f"{current_year} m. {month_names[current_month]}"
+    context["month_year"] = month_year
 
     blog_posts_data = [
         {
@@ -69,15 +83,28 @@ def send_newsletter_to_subscribers(sender, **kwargs):
         }
         for post in blog_posts
     ]
-
-    datasets_data = [
+    context["blog_posts"] = blog_posts_data
+    top_datasets_data = [
         {
             "id": dataset.id,
             "title": dataset.title,
             "description": dataset.description,
         }
-        for dataset in datasets
+        for dataset in top_datasets
     ]
+    context["top_datasets"] = top_datasets_data
+    if list_datasets:
+        list_datasets_data = [
+            {
+                "id": dataset.id,
+                "title": dataset.title,
+                "description": dataset.description,
+                "day": dataset.published.day,
+                "month": month_names[dataset.published.month],
+            }
+            for dataset in list_datasets
+        ]
+        context["list_datasets"] = list_datasets_data
 
     sent_count = 0
     for subscriber in subscribers:
@@ -85,13 +112,7 @@ def send_newsletter_to_subscribers(sender, **kwargs):
             f"https://{domain}{reverse('newsletter-unsubscribe', kwargs={'token': subscriber.unsubscribe_token})}"
         )
 
-        context = {
-            "month_year": month_year,
-            "blog_posts": blog_posts_data,
-            "datasets": datasets_data,
-            "domain": domain,
-            "unsubscribe_url": unsubscribe_url,
-        }
+        context["unsubscribe_url"] = unsubscribe_url
 
         try:
             email(

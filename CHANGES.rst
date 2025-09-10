@@ -1,9 +1,17 @@
 Changes
 #######
+
+v 1.3 (unreleased)
+==================
+
+
 v 1.2 (2025-09-10)
 ==================
 
 New features:
+
+https://github.com/atviriduomenys/katalogas/issues/1626
+Learning material should have an option to upload a file.
 
 https://github.com/atviriduomenys/katalogas/issues/1818
 Introduced `DistributionStatus` into the distribution form

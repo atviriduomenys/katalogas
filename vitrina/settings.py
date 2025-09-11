@@ -85,7 +85,7 @@ DEBUG = env("DEBUG", default=True)
 
 IS_DEV_FEATURES_ENABLED = env("IS_DEV_FEATURES_ENABLED", default=False)
 
-ALLOWED_HOSTS = ["localhost", "127.0.0.1", "0.0.0.0"] + env.list("ALLOWED_HOSTS", default=[])
+ALLOWED_HOSTS = ["localhost", "127.0.0.1"] + env.list("ALLOWED_HOSTS", default=[])
 
 # If runing behind proxy, set this to HTTP_X_FORWARDED_PROTO
 _SECURE_PROXY_SSL_HEADER = env.str(
@@ -507,7 +507,7 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = None
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
-CSRF_TRUSTED_ORIGINS = ["https://*.gov.lt", "http://*"]
+CSRF_TRUSTED_ORIGINS = ["https://*.gov.lt"]
 LANGUAGE_COOKIE_SECURE = True
 
 OTP_EMAIL_TOKEN_VALIDITY = 600

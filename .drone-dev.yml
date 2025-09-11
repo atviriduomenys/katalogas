@@ -27,4 +27,4 @@ volumes:
   host:
     path: /var/run/docker.sock
 node:
-	katalogas:dev1
+	katalogas: dev1

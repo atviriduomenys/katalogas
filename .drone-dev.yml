@@ -27,4 +27,4 @@ volumes:
   host:
     path: /var/run/docker.sock
 node:
-	environment: dev
+  environment: dev

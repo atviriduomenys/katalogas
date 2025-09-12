@@ -167,7 +167,7 @@ class OrganizationUpdateForm(ModelForm):
         label=_("Valdymo sritis"),
         required=True,
     )
-    image = FilerImageField(label=_("Paveiksliukas"), required=True, upload_to=Organization.UPLOAD_TO)
+    image = FilerImageField(label=_("Paveiksliukas"), upload_to=Organization.UPLOAD_TO, required=False)
     email = CharField(label=_("Elektroninis paštas"), required=True)
     phone = CharField(label=_("Telefono numeris"), required=True)
     address = CharField(label=_("Adresas"), required=True)
@@ -250,7 +250,7 @@ class OrganizationCreateForm(ModelForm):
         label=_("Valdymo sritis"),
         required=True,
     )
-    image = FilerImageField(label=_("Paveiksliukas"), required=False, upload_to=Organization.UPLOAD_TO)
+    image = FilerImageField(label=_("Paveiksliukas"), upload_to=Organization.UPLOAD_TO, required=False)
     email = CharField(label=_("Elektroninis paštas"), required=True)
     phone = CharField(label=_("Telefono numeris"), required=True)
     address = CharField(label=_("Adresas"), required=True)

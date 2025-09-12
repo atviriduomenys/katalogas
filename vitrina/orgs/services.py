@@ -14,7 +14,9 @@ from vitrina.api_example.models import ApiExample
 from vitrina.datasets.models import (
     Dataset,
     DatasetStructure,
-    Contact, DatasetAttribution, DatasetRelation,
+    Contact,
+    DatasetAttribution,
+    DatasetRelation,
 )
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
@@ -71,7 +73,9 @@ DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     DatasetAttribution,
     DatasetRelation,
     Request,
+    Representative,
 
+    # TODO check these
     # Project,
     # Plan,
     # Contact,
@@ -183,6 +187,10 @@ _dataset_request_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_cl
 _dataset_request_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
 _dataset_request_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
 
+_dataset_representative_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Representative)
+_dataset_representative_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Representative)
+_dataset_representative_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Representative)
+
 _dataset_structure_create_acl: ACL = inherit_acl(
     _dataset_create_acl, new_model_class=DatasetStructure, new_action=Action.STRUCTURE
 )
@@ -208,6 +216,9 @@ acl: ACL = (
     | _dataset_request_create_acl
     | _dataset_request_update_acl
     | _dataset_request_delete_acl
+    | _dataset_representative_create_acl
+    | _dataset_representative_update_acl
+    | _dataset_representative_delete_acl
     | _dataset_structure_acl
     | _dataset_structure_create_acl
     | {
@@ -296,7 +307,16 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
 
 
 def _has_dataset_perm(user: User, action: Action, obj: Model) -> bool:
-    dataset: Dataset = obj if isinstance(obj, Dataset) else getattr(obj, "dataset")
+    dataset: Dataset
+    if isinstance(obj, Dataset):
+        dataset = obj
+    elif hasattr(obj, "dataset"):
+        dataset = getattr(obj, "dataset")
+    elif hasattr(obj, "content_type") and hasattr(obj, "object_id"):
+        dataset = Dataset.objects.get(getattr(obj, "object_id"))
+    else:
+        raise NotImplementedError(f"Dataset field does not exist on {obj=}")
+
     rule: EXISTING_DATASET_ACL_RULE = obj.__class__, dataset.is_public, dataset.access_rights, action
     user_role: Role = determine_user_role(user, dataset)
     allowed_roles = acl[rule]

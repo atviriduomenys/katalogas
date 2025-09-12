@@ -14,7 +14,7 @@ from vitrina.api_example.models import ApiExample
 from vitrina.datasets.models import (
     Dataset,
     DatasetStructure,
-    Contact,
+    Contact, DatasetAttribution, DatasetRelation,
 )
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
@@ -68,11 +68,11 @@ DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
     DatasetDistribution,
     DatasetStructure,
-    # DatasetFile,
-    # DatasetStructureField,
-    # DatasetRemark,
-    # DatasetAttribution,
-    # DatasetRelation,
+    DatasetAttribution,
+    DatasetRelation,
+
+    # Project,
+    # Plan,
     # Contact,
     # PlanDataset,
     # Metadata,
@@ -170,6 +170,14 @@ _dataset_distribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_mod
 _dataset_distribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetDistribution)
 _dataset_distribution_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=DatasetDistribution)
 
+_dataset_attribution_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
+_dataset_attribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
+_dataset_attribution_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
+
+_dataset_relation_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
+_dataset_relation_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
+_dataset_relation_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
+
 _dataset_structure_create_acl: ACL = inherit_acl(
     _dataset_create_acl, new_model_class=DatasetStructure, new_action=Action.STRUCTURE
 )
@@ -186,6 +194,12 @@ acl: ACL = (
     | _dataset_distribution_create_acl
     | _dataset_distribution_update_acl
     | _dataset_distribution_delete_acl
+    | _dataset_attribution_create_acl
+    | _dataset_attribution_update_acl
+    | _dataset_attribution_delete_acl
+    | _dataset_relation_create_acl
+    | _dataset_relation_update_acl
+    | _dataset_relation_delete_acl
     | _dataset_structure_acl
     | _dataset_structure_create_acl
     | {

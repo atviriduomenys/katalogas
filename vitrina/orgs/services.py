@@ -70,6 +70,7 @@ DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     DatasetStructure,
     DatasetAttribution,
     DatasetRelation,
+    Request,
 
     # Project,
     # Plan,
@@ -178,6 +179,10 @@ _dataset_relation_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_c
 _dataset_relation_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
 _dataset_relation_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
 
+_dataset_request_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
+_dataset_request_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
+_dataset_request_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
+
 _dataset_structure_create_acl: ACL = inherit_acl(
     _dataset_create_acl, new_model_class=DatasetStructure, new_action=Action.STRUCTURE
 )
@@ -200,6 +205,9 @@ acl: ACL = (
     | _dataset_relation_create_acl
     | _dataset_relation_update_acl
     | _dataset_relation_delete_acl
+    | _dataset_request_create_acl
+    | _dataset_request_update_acl
+    | _dataset_request_delete_acl
     | _dataset_structure_acl
     | _dataset_structure_create_acl
     | {

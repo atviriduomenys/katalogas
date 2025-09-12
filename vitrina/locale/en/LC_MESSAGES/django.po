@@ -2471,9 +2471,6 @@ msgstr ""
 msgid "Taip, esu tikras"
 msgstr "Yes, I am sure"
 
-msgid "Ne, grįžti atgal"
-msgstr "No, go back"
-
 msgid "Šablono redagavimas"
 msgstr "Edit template"
 
@@ -5485,3 +5482,6 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+msgid "Leidžiama keisti duomenis"
+msgstr "Can edit data"

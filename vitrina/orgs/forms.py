@@ -370,6 +370,7 @@ class RepresentativeUpdateForm(ModelForm):
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     regenerate_api_key = BooleanField(label=_("Pergeneruoti raktą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
+    can_write = BooleanField(label=_("Leidžiama keisti duomenis"), required=False)
 
     object_model = Organization
 
@@ -380,6 +381,7 @@ class RepresentativeUpdateForm(ModelForm):
             "phone",
             "has_api_access",
             "regenerate_api_key",
+            "can_write",
         )
 
     def __init__(self, *args, **kwargs):
@@ -394,6 +396,7 @@ class RepresentativeUpdateForm(ModelForm):
             Field("has_api_access"),
             Field("regenerate_api_key"),
             Field("subscribe"),
+            Field("can_write"),
             Submit("submit", _("Redaguoti"), css_class="button is-primary"),
         )
         if self.instance.user is None and self.instance.organization is not None:
@@ -448,13 +451,14 @@ class RepresentativeCreateForm(ModelForm):
     )
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False, disabled=True, initial=True)
+    can_write = BooleanField(label=_("Leidžiama keisti duomenis"), required=False)
 
     object_model = Organization
     object_id: int
 
     class Meta:
         model = Representative
-        fields = ("email", "role", "phone", "has_api_access")
+        fields = ("email", "role", "phone", "has_api_access", "can_write")
 
     def __init__(self, object_id=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -468,6 +472,7 @@ class RepresentativeCreateForm(ModelForm):
             Field("phone", placeholder=_("Formatas 0... arba +370...")),
             Field("has_api_access"),
             Field("subscribe"),
+            Field("can_write"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
 

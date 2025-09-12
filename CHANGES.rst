@@ -8,6 +8,10 @@ https://github.com/atviriduomenys/katalogas/issues/1929
 Removed content editing language tab from forms.
 Replaced old format scopes with the prefix of `spinta_` with UDTS format scopes.
 
+https://github.com/atviriduomenys/katalogas/issues/1875
+Add checkbox "Can edit data" to organization and dataset representative form
+
+
 v 1.3 (2025-09-30)
 ==================
 

@@ -50,10 +50,10 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         OAuthTokenHasValidOrganizationClaim,
     ]
     required_scopes = {
-        "create": ["spinta_datasets_gov_vssa_dataset_insert"],
-        "list": ["spinta_datasets_gov_vssa_dataset_getall"],
-        "upload_dataset_structure": ["spinta_datasets_gov_vssa_dataset_dsa_insert"],
-        "update_dataset_structure": ["spinta_datasets_gov_vssa_dataset_dsa_update"],
+        "create": ["uapi:/datasets/gov/vssa/dcat/Dataset/:create"],
+        "list": ["uapi:/datasets/gov/vssa/dcat/Dataset/:getall"],
+        "upload_dataset_structure": ["uapi:/datasets/gov/vssa/dcat/Dsa/:create"],
+        "update_dataset_structure": ["uapi:/datasets/gov/vssa/dcat/Dsa/:patch"],
     }
 
     @cached_property
@@ -234,8 +234,8 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         OAuthTokenHasValidOrganizationClaim,
     ]
     required_scopes = {
-        "create": ["spinta_datasets_gov_vssa_distribution_insert"],
-        "list": ["spinta_datasets_gov_vssa_distribution_getall"],
+        "create": ["uapi:/datasets/gov/vssa/dcat/Distribution/:create"],
+        "list": ["uapi:/datasets/gov/vssa/dcat/Distribution/:getall"],
     }
 
     @cached_property
@@ -324,7 +324,7 @@ class AgentSyncDoneViewSet(viewsets.ModelViewSet):
         OAuthTokenHasScopes,
         OAuthTokenHasValidOrganizationClaim,
     ]
-    required_scopes = {"update": ["spinta_datasets_gov_vssa_agreement_update"]}
+    required_scopes = {"update": ["uapi:/datasets/gov/vssa/dcat/Agreement/:patch"]}
 
     lookup_url_kwarg = "agreement_id"
 

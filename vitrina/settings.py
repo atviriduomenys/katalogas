@@ -65,14 +65,14 @@ OAUTH_CLIENT_NAME = env("OAUTH_CLIENT_NAME")
 OAUTH_CLIENT_SECRET_BASE64 = base64.b64encode(f"{OAUTH_CLIENT_NAME}:{OAUTH_CLIENT_SECRET}".encode()).decode()
 OAUTH_CLIENTS_MANAGEMENT_SCOPE = env("OAUTH_CLIENTS_MANAGEMENT_SCOPE", default="spinta_auth_clients")
 OAUTH_AGENT_DEFAULT_SCOPES = (
-    "spinta_datasets_gov_vssa_dataset_getall",
-    "spinta_datasets_gov_vssa_dataset_insert",
-    "spinta_datasets_gov_vssa_dataset_dsa_getone",
-    "spinta_datasets_gov_vssa_dataset_dsa_insert",
-    "spinta_datasets_gov_vssa_dataset_dsa_update",
-    "spinta_datasets_gov_vssa_distribution_getall",
-    "spinta_datasets_gov_vssa_distribution_insert",
-    "spinta_datasets_gov_vssa_agreement_update",
+    "uapi:/datasets/gov/vssa/dcat/Dataset/:getall",
+    "uapi:/datasets/gov/vssa/dcat/Dataset/:create",
+    "uapi:/datasets/gov/vssa/dcat/Dsa/:getone",
+    "uapi:/datasets/gov/vssa/dcat/Dsa/:create",
+    "uapi:/datasets/gov/vssa/dcat/Dsa/:patch",
+    "uapi:/datasets/gov/vssa/dcat/Distribution/:getall",
+    "uapi:/datasets/gov/vssa/dcat/Distribution/:create",
+    "uapi:/datasets/gov/vssa/dcat/Agreement/:patch",
 )
 
 SPINTA_EXECUTABLE = BASE_DIR / env("SPINTA_EXECUTABLE")

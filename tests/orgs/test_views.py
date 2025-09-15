@@ -377,6 +377,23 @@ def test_representative_create_valid_phone(app: DjangoTestApp, representative_da
 
 
 @pytest.mark.django_db
+@pytest.mark.parametrize("can_write", [True, False])
+def test_representative_create_with_can_write_flag(app: DjangoTestApp, representative_data: dict, can_write: bool):
+    app.set_user(representative_data["coordinator"])
+    form = app.get(
+        reverse("representative-create", kwargs={"organization_id": representative_data["organization"].pk})
+    ).forms["representative-form"]
+    form["role"] = "manager"
+    form["email"] = "new@gmail.com"
+    form["can_write"] = can_write
+
+    response = form.submit()
+    assert response.status_code == 302
+    representative = Representative.objects.filter(email="new@gmail.com").first()
+    assert representative.can_write == can_write
+
+
+@pytest.mark.django_db
 def test_representative_update_phone(app: DjangoTestApp, representative_data):
     representative_data['representative_manager'].user = representative_data['manager']
     representative_data['representative_manager'].save()
@@ -487,6 +504,30 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert representative_data['representative_manager'].role == "coordinator"
     assert representative_data['representative_manager'].user.organization == representative_data['organization']
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("can_write", [True, False])
+def test_representative_update_can_write_flag(app: DjangoTestApp, representative_data: dict, can_write: bool):
+    representative = RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(representative_data["organization"]),
+        object_id=representative_data["organization"].pk,
+        role=Representative.MANAGER,
+        can_write=can_write,
+    )
+
+    app.set_user(representative_data["coordinator"])
+    form = app.get(
+        reverse("representative-update", kwargs={
+            "organization_id": representative_data["organization"].pk, "pk": representative.pk
+        })
+    ).forms["representative-form"]
+    form["can_write"] = not can_write
+
+    response = form.submit()
+    assert response.status_code == 302
+    representative.refresh_from_db()
+    assert representative.can_write == (not can_write)
 
 
 @pytest.mark.django_db

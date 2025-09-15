@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-08 09:29+0300\n"
+"POT-Creation-Date: 2025-09-15 13:21+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -286,6 +286,20 @@ msgstr "Read more"
 
 msgid "Prie mokymo medžiagos pridėti failai"
 msgstr "Learning material files"
+
+msgid "Įkeltas"
+msgstr "Uploaded"
+
+msgid "Atsisiųsti failą"
+msgstr "Download file"
+
+msgid "Atsisiųsti"
+msgstr "Download"
+
+msgid ""
+"Spustelėkite atsisiųsti mygtuką, kad išsaugotumėte failą savo kompiuteryje"
+msgstr ""
+"Press download button to save file to your computer"
 
 msgid "Privatumo politika"
 msgstr "Privacy policy"
@@ -1431,9 +1445,6 @@ msgstr "unassigned name"
 msgid "Peržiūrėti"
 msgstr "Review"
 
-msgid "Atsisiųsti"
-msgstr "Download"
-
 msgid "Atidaryti"
 msgstr "Open"
 
@@ -2060,63 +2071,6 @@ msgstr "Comment subscription"
 msgid "Prenumeratos tipas"
 msgstr "Subscription type"
 
-msgid "Prenumerata patvirtinta"
-msgstr "Subscription confirmed"
-
-msgid "Prenumerata sėkmingai patvirtinta!"
-msgstr "Subscription was successfully confirmed!"
-
-msgid "Ačiū! Jūsų el. pašto adresas sėkmingai užprenumeravo naujienlaiškį."
-msgstr "Thank you! Your email was successfully added to newsletter subscription."
-
-msgid "Gausite naujienlaiškį kai tik bus paskelbtas naujas turinys."
-msgstr "You will receive the newsletter whenever new post will be published."
-
-msgid "Grįžti į pagrindinį puslapį"
-msgstr "Go back to home page"
-
-msgid "Jei kada nors norėsite atšaukti prenumeratą, galėsite tai padaryti paspausdami nuorodą bet kuriame gautame naujienlaiškio laiške."
-msgstr "If you ever decide to cancel your newsletter subscription, you can do so by clicking the unsubscribe link in any newsletter you receive."
-
-msgid "Atšaukti prenumeratą"
-msgstr "Cancel subscription"
-
-msgid "Atšaukti naujienlaiškio prenumeratą"
-msgstr "Cancel newsletter subscription"
-
-msgid "Ar tikrai norite atšaukti prenumeratą el. pašto adresui"
-msgstr "Are you sure you want to cancel subscription for email"
-
-msgid "Po prenumeratos atšaukimo nebegausite mūsų naujienlaiškių."
-msgstr "After canceling subscription you will stop receiving our newsletters."
-
-msgid "Taip, atšaukti prenumeratą"
-msgstr "Yes, cancel subscription"
-
-msgid "Ne, grįžti atgal"
-msgstr "No, go back"
-
-msgid "Jei pakeisite nuomonę, galėsite bet kada prenumeruoti iš naujo mūsų svetainėje."
-msgstr "If you ever change your decision, you can renew your subscription anytime on our website."
-
-msgid "Prenumerata atšaukta"
-msgstr "Subscription cancelled"
-
-msgid "Prenumerata sėkmingai atšaukta"
-msgstr "Subscription was successfully cancelled"
-
-msgid "Jūsų el. pašto adresas daugiau negaus mūsų naujienlaiškio."
-msgstr "Your email address will stop receiving our newsletter."
-
-msgid "Dėkojame, kad buvote su mumis!"
-msgstr "Thank you for being with us!"
-
-msgid "Norėtumėte vėl prenumeruoti?"
-msgstr "Would you like to subscribe again?"
-
-msgid "Jei turite klausimų ar pasiūlymų, susisiekite su mumis:"
-msgstr "If you have any questions or suggestions, contact us:"
-
 msgid "Prenumeratos laiško užsisakymas"
 msgstr "E-mail subscription"
 
@@ -2141,6 +2095,84 @@ msgstr "Project comment subscription"
 msgid "Komentaro atsako prenumerata"
 msgstr "Comment reply subscription"
 
+msgid "Laukiama patvirtinimo"
+msgstr "Waiting for confirmation"
+
+msgid "Prenumeruojama"
+msgstr "Subscribed"
+
+msgid "Prenumeracija nutraukta"
+msgstr "Subscription cancelled"
+
+msgid "Prenumerata patvirtinta"
+msgstr "Subscription confirmed"
+
+msgid "Prenumerata sėkmingai patvirtinta!"
+msgstr "Subscription was successfully confirmed!"
+
+msgid "Ačiū! Jūsų el. pašto adresas sėkmingai užprenumeravo naujienlaiškį."
+msgstr ""
+"Thank you! Your email was successfully added to newsletter subscription."
+
+msgid "Gausite naujienlaiškį kai tik bus paskelbtas naujas turinys."
+msgstr "You will receive the newsletter whenever new post will be published."
+
+msgid "Grįžti į pagrindinį puslapį"
+msgstr "Go back to home page"
+
+msgid ""
+"Jei kada nors norėsite atšaukti prenumeratą, galėsite tai padaryti "
+"paspausdami nuorodą bet kuriame gautame naujienlaiškio laiške."
+msgstr ""
+"If you ever decide to cancel your newsletter subscription, you can do so by "
+"clicking the unsubscribe link in any newsletter you receive."
+
+msgid "Atšaukti prenumeratą"
+msgstr "Cancel subscription"
+
+msgid "Atšaukti naujienlaiškio prenumeratą"
+msgstr "Cancel newsletter subscription"
+
+msgid "Ar tikrai norite atšaukti prenumeratą el. pašto adresui"
+msgstr "Are you sure you want to cancel subscription for email"
+
+msgid "Po prenumeratos atšaukimo nebegausite mūsų naujienlaiškių."
+msgstr "After canceling subscription you will stop receiving our newsletters."
+
+msgid "Taip, atšaukti prenumeratą"
+msgstr "Yes, cancel subscription"
+
+msgid "Ne, grįžti atgal"
+msgstr "No, go back"
+
+msgid "Pastaba:"
+msgstr "Note:"
+
+msgid ""
+"Jei pakeisite nuomonę, galėsite bet kada prenumeruoti iš naujo mūsų "
+"svetainėje."
+msgstr ""
+"If you ever change your decision, you can renew your subscription anytime on "
+"our website."
+
+msgid "Prenumerata atšaukta"
+msgstr "Subscription cancelled"
+
+msgid "Prenumerata sėkmingai atšaukta"
+msgstr "Subscription was successfully cancelled"
+
+msgid "Šiuo el. paštu nebegausite naujienlaiškio."
+msgstr "You will stop receiving our newsletters to this email address."
+
+msgid "Dėkojame, kad buvote su mumis!"
+msgstr "Thank you for being with us!"
+
+msgid "Norėtumėte vėl prenumeruoti?"
+msgstr "Would you like to subscribe again?"
+
+msgid "Jei turite klausimų ar pasiūlymų, susisiekite su mumis:"
+msgstr "If you have any questions or suggestions, contact us:"
+
 msgid "Jūs neturit teisės sukurti prenumeratos kitam naudotojui."
 msgstr "You don't have permission to create subscription for other user."
 
@@ -2155,6 +2187,32 @@ msgstr "Subscription was created successfully"
 
 msgid "Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."
 msgstr "Found existing object subscription. It was updated successfully."
+
+msgid "Prašome įvesti el. pašto adresą."
+msgstr "Please enter your email address."
+
+msgid "Šis el. pašto adresas jau prenumeruoja naujienlaiškį."
+msgstr "This email already has newsletter subscription."
+
+msgid "Patvirtinimo nuorodą vis dar galiojanti, patikrinkite el. pašto dežutę."
+msgstr ""
+"Verification link is still valid. Please check your email."
+
+msgid ""
+"Patvirtinimo nuoroda išsiųsta į jūsų el. paštą. Nuoroda galioja 24 valandas."
+msgstr ""
+"Verification link has been sent to your email address. It is valid for 24 hours."
+
+msgid ""
+"Patvirtinimo nuoroda nebegalioja. Prašome užsisakyti prenumeratą iš naujo."
+msgstr ""
+"Verification link is no longer valid. Please subscribe to newsletter again."
+
+msgid "Naujienlaiškio prenumerata sėkmingai patvirtinta!"
+msgstr "Newsletter subscription was successfully confirmed!"
+
+msgid "Įvyko klaida patvirtinant prenumeratą."
+msgstr "An error has occurred when accepting subscription."
 
 msgid "organizacija"
 msgstr "organization"
@@ -2247,6 +2305,9 @@ msgstr "Regenerate key"
 
 msgid "Prenumeruoti pranešimus"
 msgstr "Subscribe to notifications"
+
+msgid "Leidžiama keisti duomenis"
+msgstr "Can edit data"
 
 msgid "Formatas 0... arba +370..."
 msgstr "Format 0... or +370..."
@@ -5191,9 +5252,6 @@ msgstr "Confirm"
 msgid "Aktyvus"
 msgstr "Active"
 
-msgid "Laukiama patvirtinimo"
-msgstr "Waiting for confirmation"
-
 msgid "Suspenduotas"
 msgstr "Suspended"
 
@@ -5332,6 +5390,9 @@ msgstr "Logged in for"
 
 msgid "Keisti duomenis"
 msgstr "Change data"
+
+msgid "Prenumeruoti naujienlaiškį"
+msgstr "Subscribe to newsletter"
 
 msgid "Naudotojo registracija"
 msgstr "User registration"
@@ -5482,6 +5543,3 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
-
-msgid "Leidžiama keisti duomenis"
-msgstr "Can edit data"

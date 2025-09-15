@@ -13,12 +13,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="representative",
             name="can_write",
-            field=models.BooleanField(default=True),
+            field=models.BooleanField(default=True, verbose_name='Leidžiama keisti duomenis'),
             preserve_default=False,
         ),
         migrations.AlterField(
             model_name="representative",
             name="can_write",
-            field=models.BooleanField(default=False),
+            field=models.BooleanField(default=False, verbose_name='Leidžiama keisti duomenis'),
         ),
     ]

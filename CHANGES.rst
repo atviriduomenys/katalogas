@@ -4,6 +4,9 @@ Changes
 v 1.3 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/1916
+Create or update organisation should not require icon.
+
 
 v 1.2 (2025-09-10)
 ==================

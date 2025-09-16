@@ -167,21 +167,26 @@ class Dataset(Resource):
     PUBLIC = "PUBLIC"
     RESTRICTED = "RESTRICTED"
     NON_PUBLIC = "NON_PUBLIC"
+    CONFIDENTIAL = "CONFIDENTIAL"
+
     ACCESS_RIGHTS = (
-        (PUBLIC, _("Atviri duomenys")),
-        (RESTRICTED, _("Apsaugoti duomenys")),
-        (NON_PUBLIC, _("Uždari duomenys")),
+        (PUBLIC, _("Vieši")),
+        (RESTRICTED, _("Apriboti")),
+        (NON_PUBLIC, _("Nevieši")),
+        (CONFIDENTIAL, _("Konfidencialūs")),
     )
     FILTER_ACCESS_RIGHTS = {
-        PUBLIC: _("Atviri duomenys"),
-        RESTRICTED: _("Apsaugoti duomenys"),
-        NON_PUBLIC: _("Uždari duomenys"),
+        PUBLIC: _("Vieši"),
+        RESTRICTED: _("Apriboti"),
+        NON_PUBLIC: _("Nevieši"),
+        CONFIDENTIAL: _("Konfidencialūs"),
     }
 
     API_ORIGIN = "api"
 
     INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"
     INFORMATION_SYSTEM_TYPE_SCHEMA_URI = "dcataplt:Type"
+    SERVICE_TYPE_SCHEME_URI = "http://publications.europa.eu/resource/authority/data-service-type"
 
     translations = TranslatedFields(
         title=models.TextField(
@@ -320,7 +325,7 @@ class Dataset(Resource):
         choices=ACCESS_RIGHTS,
         max_length=255,
         help_text=_(
-            "Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos apribojimai, ar jis nėra viešas. Atitinka dct:accessRights."
+            "Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos apribojimai, ar jis nėra viešas, ar jis konfidencialus. Atitinka dct:accessRights."
         ),
     )
 
@@ -582,6 +587,13 @@ class Dataset(Resource):
     public = PublicDatasetManager()
     edp_public = EdpPublicDatasetManager()
     edp_restricted = EdpRestrictedDatasetManager()
+    service_type = models.ManyToManyField(
+        Concept,
+        blank=True,
+        related_name="dataset_service_types",
+        verbose_name=_("Tipas"),
+        help_text=_("Paslaugos tipas. Atitinka dct:type"),
+    )
 
     class Meta:
         db_table = "dataset"

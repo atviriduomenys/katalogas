@@ -4,6 +4,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 
 from vitrina import settings
+from vitrina.classifiers.models import Concept
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat, CompressionFormatFactory, \
@@ -533,3 +534,19 @@ def test_distribution_detail_dynamic_resource_rdf(app: DjangoTestApp):
     assert list(response.context['resource']['models']) == list(resource.model_set.all())
     assert response.context['format'] == 'RDF'
     assert response.context['resource']['dataset'] == dataset
+
+
+@pytest.mark.django_db
+def test_distribution_form_status_options(app: DjangoTestApp):
+    dataset = DatasetFactory(is_public=True)
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    response = app.get(reverse("resource-add", args=[dataset.pk]))
+    form = response.forms["resource-form"]
+
+    assert response.status_code == 200
+
+    status_select = form.fields['status'][0]
+    values = [value for _, _, value in status_select.options]
+    assert values == ["Įgyvendintas – veikiantis", "Kuriamas", "Kūrimas suplanuotas", "Pasenęs", "Atsisakytas",]

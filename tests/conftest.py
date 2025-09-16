@@ -1,4 +1,5 @@
 import builtins
+from datetime import date
 
 import pytest
 
@@ -9,6 +10,7 @@ from pytest_django.lazy_django import skip_if_no_django
 
 from pprintpp import pprint as pp
 
+from vitrina.classifiers.models import Concept, ConceptSchema
 from vitrina.datasets.models import DCATResourceSubclass
 
 builtins.pp = pp

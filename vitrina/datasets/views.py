@@ -929,6 +929,9 @@ class DatasetCreateView(
         if documentation_urls := form.cleaned_data.get("documentation"):
             self.object.update_documentation(documentation_urls)
 
+        if service_type := form.cleaned_data.get("service_type"):
+            self.object.service_type.set(service_type)
+
         messages.success(self.request, _("Duomenų išteklius sukurtas sėkmingai"))
 
         return HttpResponseRedirect(self.get_success_url())
@@ -1160,6 +1163,9 @@ class DatasetUpdateView(
 
         if "documentation" in form.changed_data:
             self.object.update_documentation(form.cleaned_data["documentation"])
+
+        if "service_type" in form.changed_data:
+            self.object.service_type.set(form.cleaned_data["service_type"])
 
         self.object.save()
         set_comment(Dataset.EDITED)

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-03 14:41+0300\n"
+"POT-Creation-Date: 2025-09-08 09:29+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,9 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "kliento id"
 msgstr "client id"
@@ -40,6 +37,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -567,14 +567,18 @@ msgstr "Resource subclass"
 msgid "Šis laukas yra privalomas."
 msgstr "This field is required."
 
-msgid "Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page."
-msgstr "This property refers to the document about this dataset. Corresponds to foaf:page."
-
-msgid "Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."
-msgstr "This property refers to the page about this dataset. Corresponds to foaf:page."
-
 msgid "Dokumentacija"
 msgstr "Documentation"
+
+msgid "Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page."
+msgstr ""
+"This property refers to the document about this dataset. Corresponds to "
+"foaf:page."
+
+msgid "Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."
+msgstr ""
+"This property refers to the page about this dataset. Corresponds to "
+"foaf:page."
 
 msgid "Duomenų ištekliaus identifikatorius. Atitinka dct:identifier."
 msgstr "The main identifier for the resource. Corresponds to dct:identifier."
@@ -894,14 +898,17 @@ msgstr "Added to organization"
 msgid "Pašalinta iš organizacijos"
 msgstr "Removed from organization"
 
-msgid "Atviri duomenys"
-msgstr "Public data"
+msgid "Vieši"
+msgstr "Public"
 
-msgid "Apsaugoti duomenys"
-msgstr "Protected data"
+msgid "Apriboti"
+msgstr "Restricted"
 
-msgid "Uždari duomenys"
-msgstr "Private data"
+msgid "Nevieši"
+msgstr "Non Public"
+
+msgid "Konfidencialūs"
+msgstr "Confidential"
 
 msgid "Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."
 msgstr "A name given to the record. Corresponds to dct:title."
@@ -916,8 +923,8 @@ msgid ""
 "Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka "
 "dct:rights / dct:description."
 msgstr ""
-"The description of the declaration of rights. Corresponds to "
-"dct:rights  / dct:description."
+"The description of the declaration of rights. Corresponds to dct:rights  / "
+"dct:description."
 
 msgid "Katalogas"
 msgstr "Directory"
@@ -947,10 +954,12 @@ msgstr "Access rights"
 
 msgid ""
 "Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos "
-"apribojimai, ar jis nėra viešas. Atitinka dct:accessRights."
+"apribojimai, ar jis nėra viešas, ar jis konfidencialus. Atitinka "
+"dct:accessRights."
 msgstr ""
 "Describe level of access rights according to the list of values (i.e., "
-"Public, non-public, and restricted). Corresponds to dct:accessRights."
+"Public, non public, confidential and restricted). Corresponds to "
+"dct:accessRights."
 
 msgid "Žymės"
 msgstr "Tags"
@@ -1073,6 +1082,9 @@ msgid "Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."
 msgstr ""
 "Reference to the declaration of rights. Corresponds to dct:rights / "
 "dct:relation."
+
+msgid "Paslaugos tipas. Atitinka dct:type"
+msgstr "Service type. Corresponds to dct:type"
 
 msgid "Dataset"
 msgstr "Dataset"
@@ -2047,6 +2059,63 @@ msgstr "Comment subscription"
 
 msgid "Prenumeratos tipas"
 msgstr "Subscription type"
+
+msgid "Prenumerata patvirtinta"
+msgstr "Subscription confirmed"
+
+msgid "Prenumerata sėkmingai patvirtinta!"
+msgstr "Subscription was successfully confirmed!"
+
+msgid "Ačiū! Jūsų el. pašto adresas sėkmingai užprenumeravo naujienlaiškį."
+msgstr "Thank you! Your email was successfully added to newsletter subscription."
+
+msgid "Gausite naujienlaiškį kai tik bus paskelbtas naujas turinys."
+msgstr "You will receive the newsletter whenever new post will be published."
+
+msgid "Grįžti į pagrindinį puslapį"
+msgstr "Go back to home page"
+
+msgid "Jei kada nors norėsite atšaukti prenumeratą, galėsite tai padaryti paspausdami nuorodą bet kuriame gautame naujienlaiškio laiške."
+msgstr "If you ever decide to cancel your newsletter subscription, you can do so by clicking the unsubscribe link in any newsletter you receive."
+
+msgid "Atšaukti prenumeratą"
+msgstr "Cancel subscription"
+
+msgid "Atšaukti naujienlaiškio prenumeratą"
+msgstr "Cancel newsletter subscription"
+
+msgid "Ar tikrai norite atšaukti prenumeratą el. pašto adresui"
+msgstr "Are you sure you want to cancel subscription for email"
+
+msgid "Po prenumeratos atšaukimo nebegausite mūsų naujienlaiškių."
+msgstr "After canceling subscription you will stop receiving our newsletters."
+
+msgid "Taip, atšaukti prenumeratą"
+msgstr "Yes, cancel subscription"
+
+msgid "Ne, grįžti atgal"
+msgstr "No, go back"
+
+msgid "Jei pakeisite nuomonę, galėsite bet kada prenumeruoti iš naujo mūsų svetainėje."
+msgstr "If you ever change your decision, you can renew your subscription anytime on our website."
+
+msgid "Prenumerata atšaukta"
+msgstr "Subscription cancelled"
+
+msgid "Prenumerata sėkmingai atšaukta"
+msgstr "Subscription was successfully cancelled"
+
+msgid "Jūsų el. pašto adresas daugiau negaus mūsų naujienlaiškio."
+msgstr "Your email address will stop receiving our newsletter."
+
+msgid "Dėkojame, kad buvote su mumis!"
+msgstr "Thank you for being with us!"
+
+msgid "Norėtumėte vėl prenumeruoti?"
+msgstr "Would you like to subscribe again?"
+
+msgid "Jei turite klausimų ar pasiūlymų, susisiekite su mumis:"
+msgstr "If you have any questions or suggestions, contact us:"
 
 msgid "Prenumeratos laiško užsisakymas"
 msgstr "E-mail subscription"
@@ -3337,6 +3406,16 @@ msgstr "Importing external metadata catalog"
 
 msgid "Licencija"
 msgstr "License"
+
+msgid "Statusas"
+msgstr "Status"
+
+msgid ""
+"Duomenų distribucija gali būti įgyvendinta - veikianti, kuriama, suplanuota "
+"kūrimui, pasenusi arba atsisakyta."
+msgstr ""
+"The distribution may be completed, developed, planned, deprecated or "
+"withdrawn."
 
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"

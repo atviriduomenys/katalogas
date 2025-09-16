@@ -576,7 +576,7 @@ def test_structure_with_comments(app: DjangoTestApp):
     assert Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Comment)
     ).count() == 3
-    assert Comment.objects.count() == 3
+    assert Comment.objects.filter(type=Comment.STRUCTURE).count() == 3
     assert Comment.objects.filter(
         content_type=ContentType.objects.get_for_model(Dataset)
     ).first().content_object == structure.dataset

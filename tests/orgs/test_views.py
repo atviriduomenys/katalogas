@@ -87,7 +87,7 @@ def organizations():
             jurisdiction=AreaOfManagement.objects.get(id=1),
         )
     with freeze_time(timezone.localize(datetime(2022, 10, 22, 10, 30))):
-        jurisdiction2 = AreaOfManagementFactory(id=2)
+        jurisdiction2 = AreaOfManagementFactory(id=30)
         organization2 = OrganizationFactory(
             slug="org2",
             title="Organization 2",
@@ -135,9 +135,9 @@ def test_filter_without_query(app: DjangoTestApp, organizations):
     assert resp.context['selected_jurisdiction'] is None
     assert resp.context['jurisdictions'] == [
         {
-            'id': 2,
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=2",
+            'id': 30,
+            'title': 'Jurisdiction30',
+            'query': "?jurisdiction=30",
             'count': 2
         },
         {
@@ -166,15 +166,15 @@ def test_filter_with_jurisdiction(app: DjangoTestApp, organizations):
 
 @pytest.mark.haystack
 def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
-    resp = app.get("%s?jurisdiction=2" % reverse('organization-list'))
+    resp = app.get("%s?jurisdiction=30" % reverse('organization-list'))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [organizations[1].pk,
                                                                     organizations[2].pk]
-    assert resp.context['selected_jurisdiction'] == "Jurisdiction2"
+    assert resp.context['selected_jurisdiction'] == "Jurisdiction30"
     assert resp.context['jurisdictions'] == [
         {
-            'id': 2,
-            'title': 'Jurisdiction2',
-            'query': "?jurisdiction=2",
+            'id': 30,
+            'title': 'Jurisdiction30',
+            'query': "?jurisdiction=30",
             'count': 2
         }
     ]
@@ -190,14 +190,14 @@ def test_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations
 
 @pytest.mark.haystack
 def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
-    resp = app.get("%s?q=2&jurisdiction=2" % reverse('organization-list'))
+    resp = app.get("%s?q=2&jurisdiction=30" % reverse('organization-list'))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [organizations[1].pk]
-    assert resp.context['selected_jurisdiction'] == "Jurisdiction2"
+    assert resp.context['selected_jurisdiction'] == "Jurisdiction30"
     assert resp.context['jurisdictions'] == [
         {
-            'id': 2,
-            'title': 'Jurisdiction2',
-            'query': "?q=2&jurisdiction=2",
+            'id': 30,
+            'title': 'Jurisdiction30',
+            'query': "?q=2&jurisdiction=30",
             'count': 1
         },
     ]
@@ -205,16 +205,16 @@ def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
 
 @pytest.mark.haystack
 def test_filter_with_query_containing_special_characters(app: DjangoTestApp):
-    jurisdiction = AreaOfManagementFactory(id=3, name_lt="Jurisdiction\"<'>\\", name_en="Jurisdiction\"<'>\\")
+    jurisdiction = AreaOfManagementFactory(id=30, name_lt="Jurisdiction\"<'>\\", name_en="Jurisdiction\"<'>\\")
     organization = OrganizationFactory(title="Organization \"<'>\\", jurisdiction=jurisdiction)
-    resp = app.get("%s?q=\"<'>\\&jurisdiction=3" % reverse('organization-list'))
+    resp = app.get("%s?q=\"<'>\\&jurisdiction=30" % reverse('organization-list'))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [organization.pk]
     assert resp.context['selected_jurisdiction'] == "Jurisdiction\"<'>\\"
     assert resp.context['jurisdictions'] == [
         {
-            'id' : 3,
+            'id' : 30,
             'title': "Jurisdiction\"<'>\\",
-            'query': "?q=\"<'>\\&jurisdiction=3",
+            'query': "?q=\"<'>\\&jurisdiction=30",
             'count': 1
         },
     ]
@@ -676,7 +676,7 @@ def generate_photo_file(height, length) -> bytes:
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
     org = OrganizationFactory()
-    jurisdiction = AreaOfManagementFactory(id=2, name_lt="Jurisdiction2", name_en="Jurisdiction2")
+    jurisdiction = AreaOfManagementFactory(id=30, name_lt="Jurisdiction30", name_en="Jurisdiction30")
 
     user = UserFactory(is_staff=True)
     app.set_user(user)

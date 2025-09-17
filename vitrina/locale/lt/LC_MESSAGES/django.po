@@ -1512,9 +1512,6 @@ msgstr ""
 msgid "Šis duomenų rinkinys neturi jam registruotų poreikių."
 msgstr ""
 
-msgid "Pasirinkite turinio redagavimo kalbą"
-msgstr ""
-
 msgid "Atšaukti"
 msgstr ""
 

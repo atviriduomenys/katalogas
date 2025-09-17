@@ -368,6 +368,12 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             extra_context["can_view_members"] = has_perm(
                 self.request.user, Action.VIEW, Representative, self.organization
             )
+            extra_context["can_view_contacts"] = has_perm(
+                self.request.user,
+                Action.VIEW,
+                Contact,
+                self.organization,
+            )
             extra_context["can_create_dataset"] = has_perm(
                 self.request.user,
                 Action.CREATE,

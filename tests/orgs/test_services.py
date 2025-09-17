@@ -6,7 +6,7 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action, pre_representative_delete
+from vitrina.orgs.services import has_perm, Action, pre_representative_delete, _has_dataset_perm
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.requests.factories import RequestFactory
@@ -925,3 +925,69 @@ def test_dataset_distribution_edit_permission_organization_publisher():
     )
     res = has_perm(user, Action.UPDATE, dataset_distribution)
     assert res is True
+
+
+class TestHasDatasetPerm:
+    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC])
+    def test_permissions_with_dataset_representative_when_dataset_not_confidential(self, access_rights: str):
+        dataset = DatasetFactory(access_rights=access_rights)
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+        )
+
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset) is True
+
+    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC])
+    def test_permissions_with_organization_representative_when_dataset_not_confidential(self, access_rights: str):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(access_rights=access_rights, organization=organization)
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+        )
+
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset) is True
+
+    @pytest.mark.parametrize("representative_can_write, result", [(True, True), (False, False)])
+    def test_permissions_with_dataset_representative_when_dataset_confidential(
+        self, representative_can_write: bool, result: bool
+    ):
+        dataset = DatasetFactory(access_rights=Dataset.CONFIDENTIAL)
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            can_write=representative_can_write,
+        )
+
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset) == result
+
+    @pytest.mark.parametrize("representative_can_write, result", [(True, True), (False, False)])
+    def test_permissions_with_organization_representative_when_dataset_confidential(
+        self, representative_can_write: bool, result: bool
+    ):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(access_rights=Dataset.CONFIDENTIAL, organization=organization)
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            can_write=representative_can_write,
+        )
+
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset) == result
+
+    def test_permission_with_organization_representative_for_all_related_datasets(self):
+        parent_organization = OrganizationFactory()
+        parent_dataset = DatasetFactory(organization=parent_organization)
+        child_organization = OrganizationFactory()
+        child_dataset = DatasetFactory(organization=child_organization)
+
+        child_dataset.move(parent_dataset, "sorted-child")
+        child_dataset.refresh_from_db()
+        parent_dataset.refresh_from_db()
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(parent_organization),
+            object_id=parent_organization.pk,
+        )
+
+        assert _has_dataset_perm(representative.user, Action.UPDATE, child_dataset)

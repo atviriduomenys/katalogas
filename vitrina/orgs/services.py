@@ -74,7 +74,6 @@ DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     DatasetRelation,
     Request,
     Representative,
-
     # TODO check these
     # Project,
     # Plan,
@@ -306,16 +305,25 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
     return Role.AUTHENTICATED
 
 
-def _has_dataset_perm(user: User, action: Action, obj: Model) -> bool:
-    dataset: Dataset
+def _get_dataset_instance(obj: Model) -> Dataset:
     if isinstance(obj, Dataset):
         dataset = obj
     elif hasattr(obj, "dataset"):
         dataset = getattr(obj, "dataset")
     elif hasattr(obj, "content_type") and hasattr(obj, "object_id"):
-        dataset = Dataset.objects.get(getattr(obj, "object_id"))
+        content_object = getattr(obj, "content_object")
+        if isinstance(content_object, Dataset):
+            dataset = content_object
+        else:
+            raise Dataset.DoesNotExist(f"Cannot determine dataset from {obj}")
     else:
         raise NotImplementedError(f"Dataset field does not exist on {obj=}")
+
+    return dataset
+
+
+def _has_dataset_perm(user: User, action: Action, obj: Model) -> bool:
+    dataset: Dataset = _get_dataset_instance(obj)
 
     rule: EXISTING_DATASET_ACL_RULE = obj.__class__, dataset.is_public, dataset.access_rights, action
     user_role: Role = determine_user_role(user, dataset)
@@ -324,17 +332,20 @@ def _has_dataset_perm(user: User, action: Action, obj: Model) -> bool:
     is_confidential_dataset = dataset.access_rights == dataset.CONFIDENTIAL
     if has_perm and action in WRITE_ACTIONS and is_confidential_dataset:
         return Representative.objects.filter(
-            user=user, can_write=True, content_type=ContentType.objects.get_for_model(Dataset), object_id=dataset.pk
+            Q(content_type=ContentType.objects.get_for_model(Dataset), object_id=dataset.pk)
+            | Q(content_type=ContentType.objects.get_for_model(Organization), object_id=dataset.organization.pk),
+            user=user,
+            can_write=True,
         ).exists()
+
     return has_perm
 
 
 def has_perm(
     user: User,  # request.user
     action: Action,
-    obj: Model | Type[Model],  # when action is update, delete  # when action is create
-    # when action is create, object based on which a new objects is created
-    parent: Model | None = None,
+    obj: Model | Type[Model],  # when action is update, delete
+    parent: Model | None = None,  # when action is create, object based on which new object is created
 ) -> bool:
     if user.is_authenticated and user.is_superuser:
         return True

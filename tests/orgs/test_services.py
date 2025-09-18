@@ -936,7 +936,7 @@ class TestHasDatasetPerm:
             object_id=dataset.pk,
         )
 
-        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset) is True
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
 
     @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC])
     def test_permissions_with_organization_representative_when_dataset_not_confidential(self, access_rights: str):
@@ -947,7 +947,7 @@ class TestHasDatasetPerm:
             object_id=organization.pk,
         )
 
-        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset) is True
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
 
     @pytest.mark.parametrize("representative_can_write, result", [(True, True), (False, False)])
     def test_permissions_with_dataset_representative_when_dataset_confidential(
@@ -960,7 +960,7 @@ class TestHasDatasetPerm:
             can_write=representative_can_write,
         )
 
-        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset) == result
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) == result
 
     @pytest.mark.parametrize("representative_can_write, result", [(True, True), (False, False)])
     def test_permissions_with_organization_representative_when_dataset_confidential(
@@ -974,7 +974,7 @@ class TestHasDatasetPerm:
             can_write=representative_can_write,
         )
 
-        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset) == result
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) == result
 
     def test_permission_with_organization_representative_for_all_related_datasets(self):
         parent_organization = OrganizationFactory()
@@ -990,4 +990,4 @@ class TestHasDatasetPerm:
             object_id=parent_organization.pk,
         )
 
-        assert _has_dataset_perm(representative.user, Action.UPDATE, child_dataset)
+        assert _has_dataset_perm(representative.user, Action.UPDATE, child_dataset, child_dataset)

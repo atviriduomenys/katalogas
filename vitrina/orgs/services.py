@@ -305,7 +305,7 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
     return Role.AUTHENTICATED
 
 
-def _get_dataset_instance(obj: Model) -> Dataset:
+def _get_dataset_instance(obj: Model) -> Dataset | None:
     if isinstance(obj, Dataset):
         dataset = obj
     elif hasattr(obj, "dataset"):
@@ -315,16 +315,14 @@ def _get_dataset_instance(obj: Model) -> Dataset:
         if isinstance(content_object, Dataset):
             dataset = content_object
         else:
-            raise Dataset.DoesNotExist(f"Cannot determine dataset from {obj}")
+            dataset = None
     else:
         raise NotImplementedError(f"Dataset field does not exist on {obj=}")
 
     return dataset
 
 
-def _has_dataset_perm(user: User, action: Action, obj: Model) -> bool:
-    dataset: Dataset = _get_dataset_instance(obj)
-
+def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) -> bool:
     rule: EXISTING_DATASET_ACL_RULE = obj.__class__, dataset.is_public, dataset.access_rights, action
     user_role: Role = determine_user_role(user, dataset)
     allowed_roles = acl[rule]
@@ -355,8 +353,12 @@ def has_perm(
         klass = obj
     else:
         klass = obj.__class__
-    if action != Action.CREATE and klass in DATASET_RELATED_OBJECTS:
-        return _has_dataset_perm(user, action, parent or obj)
+    if (
+        action != Action.CREATE
+        and klass in DATASET_RELATED_OBJECTS
+        and (dataset := _get_dataset_instance(parent or obj))
+    ):
+        return _has_dataset_perm(user, action, parent or obj, dataset)
     else:
         if not user.is_authenticated:
             return False

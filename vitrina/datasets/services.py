@@ -276,7 +276,7 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
         return datasets.filter(
             is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC)
         )
-    return datasets.filter(SQ(resource_manager_contains=user.pk) | public_filter)
+    return datasets.filter(SQ(resource_managers__in=[user.pk]) | public_filter)
 
 
 def create_subscription(user, dataset):

@@ -74,14 +74,6 @@ DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     DatasetRelation,
     Request,
     Representative,
-    # TODO check these
-    # Project,
-    # Plan,
-    # Contact,
-    # PlanDataset,
-    # Metadata,
-    # Model,
-    # Version,
 }
 IS_PUBLIC_DATASET = True
 ACL_RULE = tuple[type[Model], Action]
@@ -89,7 +81,12 @@ EXISTING_DATASET_ACL_RULE = tuple[Union[DATASET_RELATED_OBJECTS], bool, str, Act
 ACL = dict[ACL_RULE | EXISTING_DATASET_ACL_RULE, set[Role] | tuple[Role]]
 
 
-def inherit_acl(base_acl: ACL, new_model_class: type[Model] | None = None, new_action: Action | None = None) -> ACL:
+def inherit_acl(
+    base_acl: ACL,
+    new_model_class: type[Model] | None = None,
+    new_action: Action | None = None,
+    new_roles: set[Role] | None = None,
+) -> ACL:
     action_position_in_rule = -1
     model_class_position_in_rule = 0
     new_acl = {}
@@ -100,7 +97,7 @@ def inherit_acl(base_acl: ACL, new_model_class: type[Model] | None = None, new_a
         if new_model_class:
             new_rule[model_class_position_in_rule] = new_model_class
         new_rule = cast(ACL_RULE, tuple(new_rule))
-        new_acl[new_rule] = roles
+        new_acl[new_rule] = new_roles or roles
     return new_acl
 
 
@@ -108,40 +105,49 @@ _dataset_update_acl: ACL = {
     (Dataset, IS_PUBLIC_DATASET, Dataset.PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
     },
     (Dataset, IS_PUBLIC_DATASET, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
     },
     (Dataset, IS_PUBLIC_DATASET, Dataset.NON_PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
     },
     (Dataset, IS_PUBLIC_DATASET, Dataset.CONFIDENTIAL, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,  # TODO additional logic
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,  # TODO additional logic
     },
     (Dataset, not IS_PUBLIC_DATASET, Dataset.PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
     },
     (Dataset, not IS_PUBLIC_DATASET, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
     },
     (Dataset, not IS_PUBLIC_DATASET, Dataset.NON_PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
     },
     (Dataset, not IS_PUBLIC_DATASET, Dataset.CONFIDENTIAL, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
     },
 }
 _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW) | {
     (Dataset, IS_PUBLIC_DATASET, Dataset.PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
         Role.MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
@@ -149,6 +155,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
     (Dataset, IS_PUBLIC_DATASET, Dataset.RESTRICTED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
         Role.MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
@@ -156,6 +163,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
     (Dataset, IS_PUBLIC_DATASET, Dataset.NON_PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
         Role.MANAGER,
     },
 }
@@ -172,23 +180,38 @@ _dataset_plan_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.PLAN
 
 _dataset_distribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetDistribution)
 _dataset_distribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetDistribution)
-_dataset_distribution_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=DatasetDistribution)
+_dataset_distribution_delete_acl: ACL = inherit_acl(
+    _dataset_delete_acl, new_model_class=DatasetDistribution, new_action=Action.DELETE
+)
 
 _dataset_attribution_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
 _dataset_attribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
-_dataset_attribution_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
+_dataset_attribution_delete_acl: ACL = inherit_acl(
+    _dataset_update_acl, new_model_class=DatasetAttribution, new_action=Action.DELETE
+)
 
 _dataset_relation_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
 _dataset_relation_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
-_dataset_relation_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
+_dataset_relation_delete_acl: ACL = inherit_acl(
+    _dataset_update_acl, new_model_class=DatasetRelation, new_action=Action.DELETE
+)
 
 _dataset_request_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
 _dataset_request_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
-_dataset_request_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
+_dataset_request_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request, new_action=Action.DELETE)
 
-_dataset_representative_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Representative)
-_dataset_representative_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Representative)
-_dataset_representative_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Representative)
+_dataset_representative_create_acl: ACL = inherit_acl(
+    _dataset_update_acl, new_model_class=Representative, new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR}
+)
+_dataset_representative_update_acl: ACL = inherit_acl(
+    _dataset_update_acl, new_model_class=Representative, new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR}
+)
+_dataset_representative_delete_acl: ACL = inherit_acl(
+    _dataset_update_acl,
+    new_model_class=Representative,
+    new_action=Action.DELETE,
+    new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR},
+)
 
 _dataset_structure_create_acl: ACL = inherit_acl(
     _dataset_create_acl, new_model_class=DatasetStructure, new_action=Action.STRUCTURE
@@ -224,10 +247,6 @@ acl: ACL = (
         (Organization, Action.UPDATE): (Role.COORDINATOR,),
         (Organization, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
         (Organization, Action.HISTORY_VIEW): (Role.COORDINATOR, Role.MANAGER),
-        (Representative, Action.CREATE): (Role.COORDINATOR,),
-        (Representative, Action.UPDATE): (Role.COORDINATOR,),
-        (Representative, Action.DELETE): (Role.COORDINATOR,),
-        (Representative, Action.VIEW): (Role.COORDINATOR,),
         (Agent, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
         (Agent, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
         (Agent, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER),
@@ -298,10 +317,10 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.VISITOR
     if user.is_staff:
         return Role.GLOBAL_MANAGER
+    if resource.get_resource_managers_queryset().filter(user=user).exists():
+        return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
     if user.is_gov_organization_manager:
         return Role.MANAGER
-    if resource.get_resource_managers_queryset().filter(user=user).exists():
-        return Role.RESOURCE_MANAGER
     return Role.AUTHENTICATED
 
 
@@ -325,7 +344,7 @@ def _get_dataset_instance(obj: Model) -> Dataset | None:
 def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) -> bool:
     rule: EXISTING_DATASET_ACL_RULE = obj.__class__, dataset.is_public, dataset.access_rights, action
     user_role: Role = determine_user_role(user, dataset)
-    allowed_roles = acl[rule]
+    allowed_roles = acl.get(rule)
     has_perm: bool = allowed_roles and user_role in allowed_roles
     is_confidential_dataset = dataset.access_rights == dataset.CONFIDENTIAL
     if has_perm and action in WRITE_ACTIONS and is_confidential_dataset:

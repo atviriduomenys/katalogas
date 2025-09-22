@@ -1985,6 +1985,7 @@ def test_create_model_statistics(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_edp_dcat_ap_rdf(app: DjangoTestApp):
+    Dataset.objects.all().delete()
     iana = 'http://www.iana.org/assignments'
     po = 'http://publications.europa.eu/resource/authority'
 
@@ -2308,6 +2309,7 @@ class EdpDcatApPublicRdfTests(TestCase):
 
 @pytest.mark.django_db
 def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
+    Dataset.objects.all().delete()
     hvd_group = DatasetGroupFactory()
     hvd_group.set_current_language("lt")
     hvd_group.title = "Didelės vertės rinkiniai"

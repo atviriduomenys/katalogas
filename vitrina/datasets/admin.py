@@ -148,6 +148,9 @@ class DatasetReportAdmin(admin.ModelAdmin):
     )
     change_list_template = "vitrina/datasets/admin/dataset_report_change_list.html"
 
+    def has_module_permission(self, request):
+        return request.user.has_perm("vitrina_datasets.view_datasetreport")
+
     def has_add_permission(self, request):
         return False
 

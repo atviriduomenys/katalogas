@@ -63,9 +63,9 @@ class TestSmartContractForm:
         )
 
         assert set(form.fields["scopes"].choices) == {
-            ("test_dataset_getall", "test_dataset_getall"),
-            ("test_dataset_search", "test_dataset_search"),
-            ("test_dataset_select", "test_dataset_select"),
+            ("test/dataset/:getall", "test/dataset/:getall"),
+            ("test/dataset/:search", "test/dataset/:search"),
+            ("test/dataset/:select", "test/dataset/:select"),
         }
 
 

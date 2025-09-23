@@ -10,6 +10,12 @@ Create or update organisation should not require icon.
 https://github.com/atviriduomenys/katalogas/issues/1928
 Add contact tab to Dataset list form.
 
+https://github.com/atviriduomenys/spinta/issues/1488
+Adjustments from the Catalog side for spinta changes:
+- Create Metadata w/ the initial data service that is created during agent creation
+- Assign subclass to the service
+- Add an explicit message for Agent creation form, when the auth server is unavailable/unreachable
+- Define better error messages for Agent creation form
 
 v 1.2 (2025-09-10)
 ==================

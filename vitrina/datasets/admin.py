@@ -49,6 +49,29 @@ class DatasetAdmin(TranslatableAdmin, VersionAdmin):
     list_display = ("title", "description", "is_public")
     form = DatasetAdminForm
 
+    def has_change_permission(self, request, obj=None):
+        """Control who can edit datasets"""
+        return request.user.has_perm("vitrina_datasets.change_dataset")
+
+    def has_delete_permission(self, request, obj=None):
+        """Control who can delete datasets"""
+        return request.user.has_perm("vitrina_datasets.delete_dataset")
+
+    def has_add_permission(self, request):
+        """Control who can add datasets"""
+        return request.user.has_perm("vitrina_datasets.add_dataset")
+
+    def get_readonly_fields(self, request, obj=None):
+        """Make fields readonly for view-only users"""
+        readonly_fields = list(super().get_readonly_fields(request, obj))
+
+        if request.user.has_perm("vitrina_datasets.view_dataset") and not request.user.has_perm(
+            "vitrina_datasets.change_dataset"
+        ):
+            readonly_fields.extend([field.name for field in self.model._meta.fields])
+
+        return readonly_fields
+
 
 class GroupAdmin(TranslatableAdmin):
     list_display = ("title",)

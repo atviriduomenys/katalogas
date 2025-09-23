@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import pytz
-import tagulous
 from django.contrib import admin
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import QuerySet
@@ -35,6 +34,9 @@ from vitrina.helpers import get_current_domain
 from vitrina.orgs.models import Representative
 from vitrina.resources.models import FormatName
 from vitrina.structure.services import get_data_from_spinta, to_row
+
+
+TagModel = Dataset.tags.tag_model
 
 
 class AttributionAdmin(admin.ModelAdmin):
@@ -463,6 +465,35 @@ class DatasetRelationAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related("dataset", "relation", "part_of")
 
 
+@admin.register(TagModel)
+class DatasetTagAdmin(admin.ModelAdmin):
+    list_display = ("name", "count")
+    search_fields = ("name",)
+
+    def has_add_permission(self, request):
+        return request.user.has_perm("vitrina_datasets.add_tagulous_dataset_tags")
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.has_perm("vitrina_datasets.change_tagulous_dataset_tags")
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.has_perm("vitrina_datasets.delete_tagulous_dataset_tags")
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+
+        # Remove merge action for view-only users
+        if not request.user.has_perm("vitrina_datasets.change_tagulous_dataset_tags"):
+            actions.pop("merge_tags", None)
+
+        return actions
+
+    def get_readonly_fields(self, request, obj=None):
+        if not request.user.has_perm("vitrina_datasets.change_tagulous_dataset_tags"):
+            return [field.name for field in self.model._meta.fields]
+        return []
+
+
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(DatasetRelation, DatasetRelationAdmin)
 admin.site.register(Attribution, AttributionAdmin)
@@ -472,5 +503,3 @@ admin.site.register(DCATResourceSubclass, DCATResourceSubclassAdmin)
 admin.site.register(Relation, RelationAdmin)
 admin.site.register(DatasetReport, DatasetReportAdmin)
 admin.site.register(Contact, ContactAdmin)
-
-tagulous.admin.register(Dataset.tags)

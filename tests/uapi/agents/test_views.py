@@ -7,7 +7,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 from vitrina.api.models import ApiKey
 from vitrina.datasets.factories import DatasetFactory, AgentFactory
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.uapi import AgentType
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
@@ -95,9 +95,11 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
     assert response.status_code == HTTPStatus.FOUND
     assert Agent.objects.count() == 1
     agent = Agent.objects.filter(title=data["title"], organization=organization).first()
+    agent_service = agent.service
     assert agent.oauth_client_id == mocked_id
-    assert agent is not None
-    assert ApiKey.objects.count() == 0 # No longer relying on API keys, using oauth client file instead.
+    assert agent_service.service is True
+    assert agent_service.subclass == DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE)
+    assert agent_service.metadata.first().name == Agent().get_codename(data["title"])
     assert mock_create_oauth_client.called
 
 

@@ -1,9 +1,11 @@
 import codecs
 import logging
+import uuid
 from typing import Any
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.contenttypes.models import ContentType
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -19,14 +21,16 @@ from django.views.generic import (
     TemplateView,
 )
 from django_otp.plugins.otp_email.conf import settings
+from requests.exceptions import ConnectionError as RequestsConnectionError
 
 from vitrina.api.oauth import Secret, OAuthClientManagement
-from vitrina.datasets.models import Dataset, Contact, Type
+from vitrina.datasets.models import Dataset, Contact, Type, DCATResourceSubclass
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import (
     has_perm,
     Action,
 )
+from vitrina.structure.models import Metadata
 from vitrina.uapi.models import RequestHistory
 from vitrina.resources.models import Format
 from vitrina.uapi.forms import AgentForm
@@ -176,23 +180,35 @@ class AgentCreateView(CreateView, BaseAgentView):
         try:
             with transaction.atomic():
                 form.instance.organization = self.organization
-                instance = Dataset.add_root(
+                service = Dataset.add_root(
                     title=f'Agento "{title}" Duomenų Paslauga',
                     description="Ši duomenų paslauga buvo automatiškai sukurta kuriant Agentą.",
                     access_rights=Dataset.NON_PUBLIC,
                     organization=self.organization,
                     service=True,
+                    subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE),
                     endpoint_url=None,
                     endpoint_type=Format.objects.filter(extension="UAPI").first(),
                     endpoint_description="https://ivpk.github.io/uapi",
                     endpoint_description_type=Format.objects.filter(extension="Open API").first(),
                     is_public=False,
                 )
-                form.instance.service = instance
+                form.instance.service = service
                 form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
                 form.instance.service.save_translations()
-
                 self.object = form.save()
+
+                Metadata.objects.create(
+                    uuid=str(uuid.uuid4()),
+                    dataset=service,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    object_id=service.pk,
+                    name=self.object.codename,
+                    title=title,
+                    description=_("Duomenų paslauga automatiškai sukurta kuriant agentą."),
+                    prepare_ast={},
+                    version=1,
+                )
 
                 self.request.session["secret"] = self._create_oauth_client(agent=self.object)
                 self.request.session["scopes"] = settings.OAUTH_AGENT_DEFAULT_SCOPES
@@ -207,9 +223,13 @@ class AgentCreateView(CreateView, BaseAgentView):
                     ),
                 )
                 return redirect(reverse("agent-detail", args=[self.organization.pk, self.object.pk]))
-        except Exception as e:
-            messages.error(self.request, _("Įvyko klaida, nepavyko sukurti agento."))
-            logger.exception(f"Agent creation failed with exception {e}")
+        except RequestsConnectionError:
+            error = _("Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento kūrimas nepavyko.")
+            messages.error(self.request, error % {"url": settings.OAUTH_SERVER_CLIENTS_URL})
+            return self.form_invalid(form)
+        except Exception as general_exception:
+            error = _("Įvyko klaida, nepavyko sukurti agento. Klaida: %(exception)s")
+            messages.error(self.request, error % {"exception": str(general_exception)})
             return self.form_invalid(form)
 
     def get_context_data(self, **kwargs: Any) -> dict:

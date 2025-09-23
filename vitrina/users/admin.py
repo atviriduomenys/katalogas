@@ -104,6 +104,7 @@ class UserAdmin(BaseUserAdmin):
                     "is_active",
                     "is_staff",
                     "is_superuser",
+                    "groups",
                 ),
             },
         ),
@@ -131,6 +132,7 @@ class UserAdmin(BaseUserAdmin):
                     "is_active",
                     "is_staff",
                     "is_superuser",
+                    "groups",
                 ),
             },
         ),
@@ -151,6 +153,7 @@ class UserAdmin(BaseUserAdmin):
             },
         ),
     )
+    filter_horizontal = ("groups",)
 
     def get_fieldsets(self, request, obj=None):
         if not obj:

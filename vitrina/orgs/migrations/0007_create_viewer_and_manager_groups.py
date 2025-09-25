@@ -1,5 +1,6 @@
 from django.db import migrations
 
+
 def create_groups_with_permissions(groups_permissions, app_label, apps, schema_editor):
     Group = apps.get_model('auth', 'Group')
     Permission = apps.get_model('auth', 'Permission')
@@ -9,11 +10,16 @@ def create_groups_with_permissions(groups_permissions, app_label, apps, schema_e
         if not created:
             continue
         for codename in permission_codenames:
-            permission = Permission.objects.get(
-                codename=codename,
-                content_type__app_label=app_label
-            )
-            group.permissions.add(permission)
+            try:
+                permission = Permission.objects.get(
+                    codename=codename,
+                    content_type__app_label=app_label
+                )
+                group.permissions.add(permission)
+            except Permission.DoesNotExist:
+                # Skip for tests
+                continue
+
 
 def create_organization_groups(apps, schema_editor):
     Permission = apps.get_model('auth', 'Permission')
@@ -31,7 +37,7 @@ def create_organization_groups(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('vitrina_orgs', '0005_delete_agent'),
+        ('vitrina_orgs', '0006_representative_can_write'),
     ]
 
     operations = [

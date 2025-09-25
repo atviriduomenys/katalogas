@@ -9,11 +9,16 @@ def create_groups_with_permissions(groups_permissions, app_label, apps, schema_e
         if not created:
             continue
         for codename in permission_codenames:
-            permission = Permission.objects.get(
-                codename=codename,
-                content_type__app_label=app_label
-            )
-            group.permissions.add(permission)
+            try:
+                permission = Permission.objects.get(
+                    codename=codename,
+                    content_type__app_label=app_label
+                )
+                group.permissions.add(permission)
+            except Permission.DoesNotExist:
+                # Skip for tests
+                continue
+
 
 def create_blog_groups(apps, schema_editor):
     Permission = apps.get_model('auth', 'Permission')

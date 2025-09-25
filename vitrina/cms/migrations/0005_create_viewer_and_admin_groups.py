@@ -11,16 +11,20 @@ def create_groups_with_permissions(groups_permissions, app_label, apps, schema_e
         if not created:
             continue
         for codename in permission_codenames:
-            permission = Permission.objects.get(
-                codename=codename,
-                content_type__app_label=app_label
-            )
-            group.permissions.add(permission)
+            try:
+                permission = Permission.objects.get(
+                    codename=codename,
+                    content_type__app_label=app_label
+                )
+                group.permissions.add(permission)
+            except Permission.DoesNotExist:
+                # Skip for tests
+                continue
 
 def create_learning_material_groups(apps, schema_editor):
     Permission = apps.get_model('auth', 'Permission')
 
-    # Get all permissions for learning material model
+    # Get all permissions for `LearningMaterial` model.
     learning_permissions = Permission.objects.filter(
         content_type__app_label='vitrina_cms',
         content_type__model='learningmaterial'

@@ -59,6 +59,28 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
     list_filter = (RootOrganizationFilter,)
     search_fields = ("title",)
 
+    def has_view_permission(self, request, obj=None):
+        return request.user.has_perm("vitrina_orgs.view_organization")
+
+    def has_add_permission(self, request):
+        return request.user.has_perm("vitrina_orgs.add_organization")
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.has_perm("vitrina_orgs.change_organization")
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.has_perm("vitrina_orgs.delete_organization")
+
+    def get_readonly_fields(self, request, obj=None):
+        readonly_fields = list(super().get_readonly_fields(request, obj))
+
+        if request.user.has_perm("vitrina_orgs.view_organization") and not request.user.has_perm(
+            "vitrina_orgs.change_organization"
+        ):
+            readonly_fields.extend([field.name for field in self.model._meta.fields])
+
+        return readonly_fields
+
 
 class RepresentativeAdmin(admin.ModelAdmin):
     search_fields = ("email",)

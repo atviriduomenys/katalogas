@@ -16,6 +16,7 @@ from tests.uapi.conftest import _generate_test_token
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
@@ -517,7 +518,7 @@ def test_list_no_organization_id_inside_token_payload(
     }
 
 
-def test_list_with_query_parameters(
+def test_list_with_name_query_parameter(
     app: DjangoTestApp,
     organization: Organization,
     dataset: Dataset,
@@ -579,6 +580,37 @@ def test_list_with_query_parameters(
             }
         ]
     }
+
+
+def test_list_with_parent_id_query_parameter(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    url_dataset: str,
+    domain: str,
+    valid_token: str,
+):
+    dataset_2 = DatasetFactory(organization=organization)
+    dataset_3 = DatasetFactory(organization=organization)
+    dataset_orphan = DatasetFactory(organization=organization)
+    dataset_other_organization = DatasetFactory(organization=OrganizationFactory())
+
+    # Attach children to the Data Service (saved instances).
+    dataset_2.move(dataset, pos='sorted-child')
+    dataset_3.move(dataset, pos='sorted-child')
+
+    response = app.get(
+        url_dataset,
+        params={"parent_id": dataset.pk},
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    child_dataset_ids = {dataset["_id"] for dataset in response.json["_data"]}
+    assert str(dataset_2.pk) in child_dataset_ids
+    assert str(dataset_3.pk) in child_dataset_ids
+    assert str(dataset_orphan.pk) not in child_dataset_ids
+    assert str(dataset_other_organization.pk) not in child_dataset_ids
 
 
 def test_list_no_datasets_exist(

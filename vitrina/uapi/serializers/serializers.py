@@ -50,6 +50,7 @@ class UAPIDistributionSerializer(BaseObjectMixin, DatasetDistributionSerializer)
 
 class DatasetQueryParameterSerializer(serializers.Serializer):
     name = serializers.CharField(required=False, max_length=255)
+    parent_id = serializers.CharField(required=False, max_length=255)
 
 
 class DistributionQueryParameterSerializer(serializers.Serializer):

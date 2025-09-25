@@ -91,6 +91,9 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             if name := query_parameter_serializer.validated_data.get("name"):
                 queryset = queryset.filter(metadata__name=name)
 
+            if parent_id := query_parameter_serializer.validated_data.get("parent_id"):
+                queryset = queryset.filter(id=parent_id).first().get_children()
+
         return queryset
 
     def get_serializer_class(self) -> Serializer:

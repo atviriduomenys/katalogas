@@ -6,13 +6,15 @@ import pytest
 import pytz
 from authlib.jose import RSAKey
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.base import ContentFile
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from filer.models import File
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
 from reversion.models import Version
 
-from tests.uapi.conftest import _generate_test_token
+from tests.uapi.conftest import _generate_test_token, _build_reverse_uapi_url
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
@@ -956,6 +958,72 @@ def test_action_upload_dataset_structure_transaction_rollback_on_failure(
         "additionalProperties": None,
     }
 
+
+def test_action_get_dataset_structure(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    valid_token: str,
+):
+    dataset.current_structure = DatasetStructure.objects.create(
+        dataset=dataset,
+        file=File.objects.create(
+            original_filename=f"dataset_{dataset.id}_structure.csv",
+            file=ContentFile(dsa, name=f"dataset_{dataset.id}_structure.csv"),
+        ),
+        filename=f"dataset_{dataset.id}_structure.csv",
+        mime_type="text/csv",
+        size=len(dsa),
+    )
+    dataset.save()
+
+    response = app.get(
+        url_dataset_structure, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.headers["Content-Type"] == "text/csv"
+    assert response.content.decode("utf-8") == dsa
+
+
+def test_action_get_dataset_structure_no_dataset(
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset_structure: str,
+    valid_token: str
+):
+    response = app.get(
+        _build_reverse_uapi_url("uapi-dataset-structure", dataset_id=1_000_000),
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json == {
+        "code": "not_found",
+        "type": "NotFound",
+        "template": "The requested resource was not found.",
+        "message": "No Dataset matches the given query.",
+        "additionalProperties": None,
+    }
+
+
+def test_action_get_dataset_structure_no_dataset_structure(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    valid_token: str,
+):
+    response = app.get(
+        url_dataset_structure, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json == {"detail": "Dataset structure not found."}
 
 
 def test_action_update_dataset_structure(

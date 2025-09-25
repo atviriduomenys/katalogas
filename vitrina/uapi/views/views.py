@@ -5,6 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import QuerySet, Q
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -220,6 +221,27 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         dataset.save()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+    @action(detail=False, methods=["get"], url_path="dsa")
+    def get_dataset_structure(self, request: Request, *args: Any, **kwargs: Any) -> Response | HttpResponse:
+        dataset = get_object_or_404(
+            Dataset,
+            ~Q(deleted=True),
+            id=self.kwargs["dataset_id"],
+            organization=self.request.organization,
+        )
+
+        if not dataset.current_structure or not dataset.current_structure.file:
+            return Response(
+                {"detail": "Dataset structure not found."},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        csv_content = ""
+        with dataset.current_structure.file.file.open("r") as file:
+            csv_content = file.read()
+
+        return HttpResponse(csv_content, content_type="text/csv", status=200)
 
     @transaction.atomic
     @action(detail=False, methods=["put"], url_path="dsa")

@@ -24,10 +24,7 @@ class LikeView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def has_permission(self):
         if isinstance(self.obj, Dataset):
-            if self.obj.is_public:
-                return True
-            else:
-                return has_perm(self.request.user, Action.VIEW, self.obj)
+            return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
             if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
                 return True
@@ -57,10 +54,7 @@ class UnlikeView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def has_permission(self):
         if isinstance(self.obj, Dataset):
-            if self.obj.is_public:
-                return True
-            else:
-                return has_perm(self.request.user, Action.VIEW, self.obj)
+            return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
             if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
                 return True

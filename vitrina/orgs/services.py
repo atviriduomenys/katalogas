@@ -34,6 +34,7 @@ class Action(Enum):
     CREATE = "create"
     UPDATE = "update"
     DELETE = "delete"
+    REQUEST_UPDATE = "request_update"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
@@ -75,6 +76,8 @@ DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Request,
     Representative,
 }
+EXCLUDED_ACTIONS: set[Action] = {Action.CREATE, Action.ASSIGN, Action.PLAN, Action.REQUEST_UPDATE}
+
 IS_PUBLIC_DATASET = True
 ACL_RULE = tuple[type[Model], Action]
 EXISTING_DATASET_ACL_RULE = tuple[Union[DATASET_RELATED_OBJECTS], bool, str, Action]
@@ -176,46 +179,47 @@ _dataset_history_view_acl: ACL = inherit_acl(_dataset_view_acl, new_action=Actio
 _dataset_structure_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.STRUCTURE) | inherit_acl(
     _dataset_view_acl, new_model_class=DatasetStructure, new_action=Action.STRUCTURE
 )
-_dataset_plan_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.PLAN)
 
 _dataset_distribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetDistribution)
 _dataset_distribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetDistribution)
-_dataset_distribution_delete_acl: ACL = inherit_acl(
-    _dataset_delete_acl, new_model_class=DatasetDistribution, new_action=Action.DELETE
-)
+_dataset_distribution_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=DatasetDistribution)
 
-_dataset_attribution_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
+_dataset_attribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetAttribution)
 _dataset_attribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
-_dataset_attribution_delete_acl: ACL = inherit_acl(
-    _dataset_update_acl, new_model_class=DatasetAttribution, new_action=Action.DELETE
-)
+_dataset_attribution_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=DatasetAttribution)
 
-_dataset_relation_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
+_dataset_relation_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetRelation)
 _dataset_relation_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
 _dataset_relation_delete_acl: ACL = inherit_acl(
-    _dataset_update_acl, new_model_class=DatasetRelation, new_action=Action.DELETE
+    _dataset_delete_acl,
+    new_model_class=DatasetRelation,
 )
 
-_dataset_request_create_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
+_dataset_request_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=Request)
 _dataset_request_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
-_dataset_request_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request, new_action=Action.DELETE)
+_dataset_request_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=Request, new_action=Action.DELETE)
+_dataset_request_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request, new_action=Action.COMMENT)
+_dataset_request_history_view_acl: ACL = inherit_acl(
+    _dataset_history_view_acl, new_model_class=Request, new_roles={Role.GLOBAL_MANAGER}
+)
 
 _dataset_representative_create_acl: ACL = inherit_acl(
-    _dataset_update_acl, new_model_class=Representative, new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR}
+    _dataset_create_acl, new_model_class=Representative, new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR}
 )
 _dataset_representative_update_acl: ACL = inherit_acl(
     _dataset_update_acl, new_model_class=Representative, new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR}
 )
 _dataset_representative_delete_acl: ACL = inherit_acl(
-    _dataset_update_acl,
+    _dataset_delete_acl,
     new_model_class=Representative,
-    new_action=Action.DELETE,
     new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR},
 )
-
-_dataset_structure_create_acl: ACL = inherit_acl(
-    _dataset_create_acl, new_model_class=DatasetStructure, new_action=Action.STRUCTURE
+_dataset_representative_view_acl = inherit_acl(
+    _dataset_view_acl,
+    new_model_class=Representative,
+    new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR},
 )
+_dataset_structure_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetStructure)
 
 
 acl: ACL = (
@@ -225,7 +229,6 @@ acl: ACL = (
     | _dataset_comment_acl
     | _dataset_delete_acl
     | _dataset_history_view_acl
-    | _dataset_plan_acl
     | _dataset_distribution_create_acl
     | _dataset_distribution_update_acl
     | _dataset_distribution_delete_acl
@@ -238,9 +241,12 @@ acl: ACL = (
     | _dataset_request_create_acl
     | _dataset_request_update_acl
     | _dataset_request_delete_acl
+    | _dataset_request_comment_acl
+    | _dataset_request_history_view_acl
     | _dataset_representative_create_acl
     | _dataset_representative_update_acl
     | _dataset_representative_delete_acl
+    | _dataset_representative_view_acl
     | _dataset_structure_acl
     | _dataset_structure_create_acl
     | {
@@ -258,7 +264,7 @@ acl: ACL = (
         (Contact, Action.DELETE): (Role.COORDINATOR,),
         (Contact, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
         (Request, Action.CREATE): (Role.AUTHENTICATED,),
-        (Request, Action.UPDATE): (Role.AUTHOR,),
+        (Request, Action.REQUEST_UPDATE): (Role.AUTHOR,),
         (Request, Action.DELETE): (Role.AUTHOR,),
         (Request, Action.COMMENT): (Role.COORDINATOR, Role.MANAGER),
         (Request, Action.VIEW): (Role.AUTHOR, Role.COORDINATOR, Role.MANAGER),
@@ -276,6 +282,10 @@ acl: ACL = (
         (RequestAssignment, Action.CREATE): (Role.COORDINATOR,),
         (RequestAssignment, Action.DELETE): (Role.COORDINATOR,),
         (ApiExample, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
+        (Representative, Action.CREATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.UPDATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.DELETE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.VIEW): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
     }
 )
 
@@ -373,7 +383,7 @@ def has_perm(
     else:
         klass = obj.__class__
     if (
-        action != Action.CREATE
+        action not in EXCLUDED_ACTIONS
         and klass in DATASET_RELATED_OBJECTS
         and (dataset := _get_dataset_instance(parent or obj))
     ):

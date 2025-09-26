@@ -38,10 +38,7 @@ class ResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetStructure
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, dataset)
+        return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_history_object(self):
         return self.object.dataset
@@ -344,10 +341,7 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, dataset)
+        return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_data(self, dataset_pk, model_name, distribution_format):
         dataset = get_object_or_404(Dataset, id=dataset_pk)

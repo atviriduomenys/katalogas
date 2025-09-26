@@ -177,10 +177,7 @@ class DatasetStructureView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        if self.object.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object)
+        return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -234,10 +231,7 @@ class ModelStructureView(
     can_manage_structure: bool
 
     def has_permission(self):
-        if self.object.is_public:
-            return self.model in self.models
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
+        return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -477,10 +471,7 @@ class PropertyStructureView(
     def has_permission(self):
         if (metadata := self.property.metadata.first()) and metadata.visibility == Metadata.PRIVATE:
             return has_perm(self.request.user, Action.STRUCTURE, self.object) and self.property in self.props
-        if self.object.is_public:
-            return self.property in self.props
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object) and self.property in self.props
+        return has_perm(self.request.user, Action.VIEW, self.object) and self.property in self.props
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -629,10 +620,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
     can_manage_structure: bool
 
     def has_permission(self):
-        if self.object.is_public:
-            return self.model in self.models
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
+        return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -781,10 +769,7 @@ class ModelDataView(
     can_manage_structure: bool
 
     def has_permission(self):
-        if self.object.is_public:
-            return self.model in self.models
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
+        return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -916,10 +901,7 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
     can_manage_structure: bool
 
     def has_permission(self):
-        if self.object.is_public:
-            return self.model in self.models
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
+        return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -993,10 +975,7 @@ class ObjectDataView(
     can_manage_structure: bool
 
     def has_permission(self):
-        if self.object.is_public:
-            return self.model in self.models
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
+        return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -1101,10 +1080,7 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
     can_manage_structure: bool
 
     def has_permission(self):
-        if self.object.is_public:
-            return self.model in self.models
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
+        return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
@@ -2794,10 +2770,7 @@ class VersionListView(
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, dataset)
+        return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2841,10 +2814,7 @@ class VersionDetailView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        if self.version.dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.version.dataset)
+        return has_perm(self.request.user, Action.VIEW, self.version.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

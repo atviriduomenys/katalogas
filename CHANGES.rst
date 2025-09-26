@@ -1,8 +1,11 @@
 Changes
 #######
 
-v 1.3 (unreleased)
+v 1.3 (2025-09-30)
 ==================
+
+https://github.com/atviriduomenys/katalogas/issues/1621
+Data migrations to add the Public access rights to those datasets which currently have no access rights.
 
 https://github.com/atviriduomenys/katalogas/issues/1916
 Create or update organisation should not require icon.

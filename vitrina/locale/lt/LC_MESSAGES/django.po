@@ -694,30 +694,6 @@ msgstr ""
 msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
 msgstr ""
 
-msgid "Laikotarpio pradžia"
-msgstr ""
-
-msgid "Duomenų rinkinio laikotarpio pradžia. Atitinka dct:temporal."
-msgstr ""
-
-msgid "Laikotarpio pabaiga"
-msgstr ""
-
-msgid "Duomenų rinkinio laikotarpio pabaiga. Atitinka dct:temporal."
-msgstr ""
-
-msgid "Ar duomenys vieši"
-msgstr ""
-
-msgid "Pasirinkite pradžios datą"
-msgstr ""
-
-msgid "Pasirinkite pabaigos datą"
-msgstr ""
-
-msgid "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
-msgstr ""
-
 msgid "Failas"
 msgstr ""
 

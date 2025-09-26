@@ -43,13 +43,14 @@ from vitrina.datasets.forms import (
     ServiceResourceForm,
     BaseResourceForm,
     InformationSystemResourceForm,
-    DatasetResourceForm, CatalogResourceForm,
+    DatasetResourceForm,
+    CatalogResourceForm,
 )
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
-from vitrina.orgs.models import Representative
+from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.factories import ProjectFactory
@@ -481,6 +482,12 @@ class TestDatasetListView:
         org = OrganizationFactory()
         dataset = DatasetFactory(title="testt", organization=org)
         user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=org.pk,
+            role=Representative.COORDINATOR,
+            user=user,
+        )
         app.set_user(user)
         resp = app.get(reverse("dataset-list"))
         resp = resp.click(linkid="org-dataset-url")
@@ -1017,7 +1024,7 @@ class TestDatasetUpdateView:
         frequency = FrequencyFactory(is_default=True)
         category = CategoryFactory()
         org = OrganizationFactory()
-        dataset: Dataset= DatasetFactory(
+        dataset: Dataset = DatasetFactory(
             published=timezone.localize(datetime(2022, 9, 7)),
             slug="test-dataset-slug",
             description="test description",
@@ -1048,7 +1055,7 @@ class TestDatasetUpdateView:
     def test_change_parent(self, app: DjangoTestApp):
         old_parent_dataset = DatasetFactory()
         new_parent_dataset = DatasetFactory()
-        dataset: Dataset= DatasetFactory(
+        dataset: Dataset = DatasetFactory(
             published=timezone.localize(datetime(2022, 9, 7)),
             slug="test-dataset-slug",
             description="test description",
@@ -1068,7 +1075,7 @@ class TestDatasetUpdateView:
 
     def test_remove_parent(self, app: DjangoTestApp):
         old_parent_dataset = DatasetFactory()
-        dataset: Dataset= DatasetFactory(
+        dataset: Dataset = DatasetFactory(
             published=timezone.localize(datetime(2022, 9, 7)),
             slug="test-dataset-slug",
             description="test description",
@@ -1079,7 +1086,7 @@ class TestDatasetUpdateView:
         dataset.manager = user
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
 
-        form["parent"] = ''
+        form["parent"] = ""
         resp = form.submit()
         dataset.refresh_from_db()
         assert resp.status_code == 302
@@ -1089,7 +1096,9 @@ class TestDatasetUpdateView:
     def test_dataset_update_existing_identifier(self, app: DjangoTestApp):
         subclass = DCATResourceSubclassFactory(name="information_system")
         organization = OrganizationFactory()
-        information_system_type_concept_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+        information_system_type_concept_schema = ConceptSchema.objects.get(
+            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+        )
         information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
         information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
@@ -1126,9 +1135,7 @@ class TestDatasetUpdateView:
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
-        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms[
-            "dataset-form"
-        ]
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
         form["identifier"] = "not-valid-identifier"
         form.submit()
         response = form.submit(expect_errors=True)
@@ -1138,7 +1145,8 @@ class TestDatasetUpdateView:
         subclass = DCATResourceSubclassFactory(name="information_system")
         organization = OrganizationFactory()
         information_system_type_concept_schema = ConceptSchema.objects.get(
-            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+        )
         information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
         information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
@@ -1248,7 +1256,9 @@ class TestDatasetUpdateView:
         dataset = DatasetFactory(subclass=subclass)
         catalog = CatalogFactory()
         frequency = FrequencyFactory(is_default=True)
-        information_system_type_concept_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+        information_system_type_concept_schema = ConceptSchema.objects.get(
+            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+        )
         information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
         information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
@@ -1600,7 +1610,8 @@ class TestDatasetCreateView:
         catalog = CatalogFactory()
         frequency = FrequencyFactory(is_default=True)
         information_system_type_concept_schema = ConceptSchema.objects.get(
-            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+        )
         information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
         information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
@@ -1735,7 +1746,8 @@ class TestDatasetCreateView:
         organization = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name="information_system")
         information_system_type_concept_schema = ConceptSchema.objects.get(
-            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI)
+            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+        )
         information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
         information_system_importance_concept_schema = ConceptSchema.objects.get(
             uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
@@ -1772,10 +1784,8 @@ class TestDatasetCreateView:
         subclass = DCATResourceSubclassFactory(name="information_system")
         user = UserFactory(is_staff=True)
         app.set_user(user)
-        form = app.get(
-            reverse(
-                "dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})).forms[
-                    "dataset-form"
+        form = app.get(reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})).forms[
+            "dataset-form"
         ]
         form["title"] = "Test dataset"
         form["description"] = "Test dataset description"
@@ -1785,7 +1795,6 @@ class TestDatasetCreateView:
         form.submit()
         response = form.submit(expect_errors=True)
         assert "Žymėjimas turi atitikti šabloną" in response.text
-
 
     def test_create_dataset_change_creator(self, app: DjangoTestApp):
         frequency = FrequencyFactory(is_default=True)
@@ -2076,9 +2085,7 @@ class TestDatasetCreateView:
         FrequencyFactory(is_default=True)
         organization = OrganizationFactory()
 
-        form = app.get(reverse("dataset-add", args=[organization.pk, subclass.pk])).forms[
-            "dataset-form"
-        ]
+        form = app.get(reverse("dataset-add", args=[organization.pk, subclass.pk])).forms["dataset-form"]
         form["title"] = "Test Dataset"
         form["description"] = "Added new dataset description"
         form["access_rights"] = Dataset.PUBLIC
@@ -2144,18 +2151,14 @@ class TestDatasetMembers:
     def test_dataset_members_create_member(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)
+        coordinator_user = UserFactory()
+        RepresentativeFactory(
+            content_type=ct, object_id=dataset.pk, role=Representative.COORDINATOR, user=coordinator_user
+        )
+        app.set_user(coordinator_user)
         url = reverse("dataset-members", kwargs={"pk": dataset.pk})
 
-        coordinator = RepresentativeFactory(
-            content_type=ct,
-            object_id=dataset.pk,
-            role=Representative.COORDINATOR,
-        )
-
-        app.set_user(coordinator.user)
-
         resp = app.get(url)
-
         resp = resp.click(linkid="add-member-btn")
 
         form = resp.forms["representative-form"]
@@ -2300,9 +2303,7 @@ class TestDatasetMembers:
         )
         app.set_user(coordinator.user)
 
-        form = app.get(
-            reverse("dataset-representative-create", kwargs={"pk": dataset.pk})
-        ).forms["representative-form"]
+        form = app.get(reverse("dataset-representative-create", kwargs={"pk": dataset.pk})).forms["representative-form"]
         form["email"] = "test@example.com"
         form["role"] = Representative.MANAGER
         form["can_write"] = can_write
@@ -2944,6 +2945,8 @@ def test_organization_dataset_list_with_matching_jurisdiction(app: DjangoTestApp
     organization = OrganizationFactory(title="Organization", jurisdiction=jurisdiction)
     dataset1 = DatasetFactory(organization=organization)
     dataset2 = DatasetFactory(organization=organization)
+    user = UserFactory()
+    app.set_user(user)
     resp = app.get(
         "%s?selected_facets=organization_exact:%s"
         % (reverse("organization-datasets", args=[organization.pk]), organization.pk)

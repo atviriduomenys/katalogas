@@ -40,15 +40,15 @@ def test_get_comment_form_class_for_request_with_staff_perm():
 def test_get_comment_form_class_for_request_with_manager_perm():
     request_assignment = RequestAssignmentFactory()
     request = request_assignment.request
-    organization = request_assignment.organization
-    request.save()
-    ct = ContentType.objects.get_for_model(organization)
-    manager = RepresentativeFactory(
-        content_type=ct,
-        object_id=organization.pk,
-        role=Representative.MANAGER
+    resource = request.dataset
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(resource.organization),
+        object_id=resource.organization.pk,
+        role=Representative.MANAGER,
+        user=user,
     )
-    res = get_comment_form_class(request, manager.user)
+    res = get_comment_form_class(request, user)
     assert res == RequestCommentForm
 
 
@@ -56,15 +56,15 @@ def test_get_comment_form_class_for_request_with_manager_perm():
 def test_get_comment_form_class_for_request_with_coordinator_perm():
     request_assignment = RequestAssignmentFactory()
     request = request_assignment.request
-    organization = request_assignment.organization
-    request.save()
-    ct = ContentType.objects.get_for_model(organization)
-    coordinator = RepresentativeFactory(
-        content_type=ct,
-        object_id=organization.pk,
-        role=Representative.COORDINATOR
+    resource = request.dataset
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(resource.organization),
+        object_id=resource.organization.pk,
+        role=Representative.COORDINATOR,
+        user=user,
     )
-    res = get_comment_form_class(request, coordinator.user)
+    res = get_comment_form_class(request, user)
     assert res == RequestCommentForm
 
 

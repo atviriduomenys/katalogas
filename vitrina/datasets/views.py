@@ -555,19 +555,13 @@ class DatasetDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.DELETE, dataset)
+        return has_perm(self.request.user, Action.DELETE, dataset)
 
 
 class DatasetRDFDownloadView(PermissionRequiredMixin, View):
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, dataset)
+        return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get(self, request, **kwargs):
         dataset = Dataset.objects.filter(pk=kwargs.get("pk"))
@@ -1908,10 +1902,7 @@ class DatasetProjectsView(DatasetStructureMixin, PermissionRequiredMixin, Histor
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        if self.object.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object)
+        return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         return get_projects(self.request.user, self.object, order_value="-created")
@@ -1956,10 +1947,7 @@ class DatasetRequestsView(DatasetStructureMixin, PermissionRequiredMixin, Histor
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        if self.object.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object)
+        return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         model_ids = Model.objects.filter(dataset=self.object).values_list("pk", flat=True)
@@ -2010,12 +1998,7 @@ class AddRequestView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        if self.dataset.is_public:
-            return get_requests(self.request.user, self.dataset)
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.dataset) and get_requests(
-                self.request.user, self.dataset
-            )
+        return has_perm(self.request.user, Action.VIEW, self.dataset) and get_requests(self.request.user, self.dataset)
 
     def get_form_kwargs(self):
         kwargs = super(AddRequestView, self).get_form_kwargs()
@@ -3291,10 +3274,7 @@ class DatasetPlanView(
     plan_url_name = "dataset-plans"
 
     def has_permission(self):
-        if self.dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.dataset)
+        return has_perm(self.request.user, Action.VIEW, self.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3304,7 +3284,7 @@ class DatasetPlanView(
             context["plans"] = self.dataset.plandataset_set.filter(plan__is_closed=True)
         else:
             context["plans"] = self.dataset.plandataset_set.filter(plan__is_closed=False)
-        context["can_manage_plans"] = has_perm(self.request.user, Action.PLAN, self.dataset)
+        context["can_manage_plans"] = has_perm(self.request.user, Action.UPDATE, self.dataset)
         context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
         context["selected_tab"] = status
         return context
@@ -3331,7 +3311,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.PLAN, self.dataset)
+        return has_perm(self.request.user, Action.UPDATE, self.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3405,7 +3385,7 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def has_permission(self):
         dataset = self.get_object().dataset
-        return has_perm(self.request.user, Action.PLAN, dataset)
+        return has_perm(self.request.user, Action.UPDATE, dataset)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()

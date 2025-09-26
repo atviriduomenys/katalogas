@@ -628,7 +628,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
             # "related_object": request.object,
             "status": request.get_status_display(),
             "user_count": 0,
-            "can_update_request": has_perm(self.request.user, Action.UPDATE, request),
+            "can_update_request": has_perm(self.request.user, Action.REQUEST_UPDATE, request),
             "can_manage_plans": has_perm(self.request.user, Action.PLAN, request)
             and self.object.status == Request.APPROVED,
         }
@@ -1001,7 +1001,7 @@ class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
 
     def has_permission(self):
         request = get_object_or_404(Request, pk=self.kwargs.get("pk"))
-        return has_perm(self.request.user, Action.UPDATE, request)
+        return has_perm(self.request.user, Action.REQUEST_UPDATE, request)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

@@ -47,11 +47,11 @@ class Action(Enum):
 
 class Role(Enum):
     COORDINATOR = Representative.COORDINATOR
-    MANAGER = Representative.MANAGER  # Visi Tvarkytojai
-    RESOURCE_MANAGER = "resource_manager"  # Ištekliaus Tvarkytojas
-    GLOBAL_MANAGER = "global_manager"  # Globalus Tvarkytojas (is staff)
+    MANAGER = Representative.MANAGER  # All Managers
+    RESOURCE_MANAGER = Representative.RESOURCE_MANAGER  # Resource Manager
     SUPERVISOR = Representative.SUPERVISOR
     AUTHOR = "author"
+    GLOBAL_MANAGER = "global_manager"  # Global Manager (is staff)
     AUTHENTICATED = "all"  # All authenticated users
     VISITOR = "visitor"  # All unauthenticated users
 
@@ -78,7 +78,7 @@ DATASET_RELATED_OBJECTS: set[Type[Model]] = {
 }
 EXCLUDED_ACTIONS: set[Action] = {Action.CREATE, Action.ASSIGN, Action.PLAN, Action.REQUEST_UPDATE}
 
-IS_PUBLIC_DATASET = True
+DATASET_IS_PUBLIC = True
 ACL_RULE = tuple[type[Model], Action]
 EXISTING_DATASET_ACL_RULE = tuple[Union[DATASET_RELATED_OBJECTS], bool, str, Action]
 ACL = dict[ACL_RULE | EXISTING_DATASET_ACL_RULE, set[Role] | tuple[Role]]
@@ -105,49 +105,49 @@ def inherit_acl(
 
 
 _dataset_update_acl: ACL = {
-    (Dataset, IS_PUBLIC_DATASET, Dataset.PUBLIC, Action.UPDATE): {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
     },
-    (Dataset, IS_PUBLIC_DATASET, Dataset.RESTRICTED, Action.UPDATE): {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
     },
-    (Dataset, IS_PUBLIC_DATASET, Dataset.NON_PUBLIC, Action.UPDATE): {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
     },
-    (Dataset, IS_PUBLIC_DATASET, Dataset.CONFIDENTIAL, Action.UPDATE): {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,  # TODO additional logic
     },
-    (Dataset, not IS_PUBLIC_DATASET, Dataset.PUBLIC, Action.UPDATE): {
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
     },
-    (Dataset, not IS_PUBLIC_DATASET, Dataset.RESTRICTED, Action.UPDATE): {
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
     },
-    (Dataset, not IS_PUBLIC_DATASET, Dataset.NON_PUBLIC, Action.UPDATE): {
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
     },
-    (Dataset, not IS_PUBLIC_DATASET, Dataset.CONFIDENTIAL, Action.UPDATE): {
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
     },
 }
 _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW) | {
-    (Dataset, IS_PUBLIC_DATASET, Dataset.PUBLIC, Action.VIEW): {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
@@ -155,7 +155,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.AUTHENTICATED,
         Role.VISITOR,
     },
-    (Dataset, IS_PUBLIC_DATASET, Dataset.RESTRICTED, Action.VIEW): {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
@@ -163,7 +163,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.AUTHENTICATED,
         Role.VISITOR,
     },
-    (Dataset, IS_PUBLIC_DATASET, Dataset.NON_PUBLIC, Action.VIEW): {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
@@ -377,14 +377,14 @@ def has_perm(
     if user.is_authenticated and user.is_superuser:
         return True
     if parent:
-        klass = parent.__class__
+        class_object = parent.__class__
     elif inspect.isclass(obj):
-        klass = obj
+        class_object = obj
     else:
-        klass = obj.__class__
+        class_object = obj.__class__
     if (
         action not in EXCLUDED_ACTIONS
-        and klass in DATASET_RELATED_OBJECTS
+        and class_object in DATASET_RELATED_OBJECTS
         and (dataset := _get_dataset_instance(parent or obj))
     ):
         return _has_dataset_perm(user, action, parent or obj, dataset)
@@ -406,27 +406,27 @@ def has_perm(
             nodes = get_parents(obj)
 
         where = []
-        if acl.get((model, action)):
-            for role in acl[(model, action)]:
-                if role == Role.AUTHENTICATED:
+        roles = acl.get((model, action))
+        if not roles:
+            return False
+
+        for role in roles:
+            if role == Role.AUTHENTICATED:
+                return True
+            for node in nodes:
+                if (role == Role.AUTHOR and is_author(user, node)) or (
+                    role == Role.SUPERVISOR and is_supervisor(user, node)
+                ):
                     return True
-                else:
-                    for node in nodes:
-                        if role == Role.AUTHOR:
-                            if is_author(user, node):
-                                return True
-                        elif role == Role.SUPERVISOR:
-                            if is_supervisor(user, node):
-                                return True
-                        else:
-                            ct = ContentType.objects.get_for_model(node)
-                            where.append(
-                                Q(
-                                    content_type=ct,
-                                    object_id=node.pk,
-                                    role=role.value,
-                                )
-                            )
+                if role not in {Role.AUTHOR, Role.SUPERVISOR}:
+                    ct = ContentType.objects.get_for_model(node)
+                    where.append(
+                        Q(
+                            content_type=ct,
+                            object_id=node.pk,
+                            role=role.value,
+                        )
+                    )
         if where:
             where = functools.reduce(operator.or_, where)
             if Representative.objects.filter(where, user=user).exists():

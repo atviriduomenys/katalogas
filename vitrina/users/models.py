@@ -86,12 +86,12 @@ class User(AbstractUser):
 
     @property
     def is_gov_organization_manager(self) -> bool:
-        organization_representative = Representative.objects.filter(
-            user=self, content_type=ContentType.objects.get_for_model(Organization), object_id=self.organization_id
-        )
-        return bool(
-            self.organization and self.organization.kind == Organization.GOV and organization_representative.exists()
-        )
+        gov_org_content_type = ContentType.objects.get_for_model(Organization)
+        return Representative.objects.filter(
+            user=self,
+            content_type=gov_org_content_type,
+            object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
+        ).exists()
 
     @property
     def can_see_manager_dataset_list_url(self):

@@ -352,20 +352,31 @@ def _get_dataset_instance(obj: Model) -> Dataset | None:
 
 
 def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) -> bool:
-    rule: EXISTING_DATASET_ACL_RULE = obj.__class__, dataset.is_public, dataset.access_rights, action
-    user_role: Role = determine_user_role(user, dataset)
-    allowed_roles = acl.get(rule)
-    has_perm: bool = allowed_roles and user_role in allowed_roles
-    is_confidential_dataset = dataset.access_rights == dataset.CONFIDENTIAL
-    if has_perm and action in WRITE_ACTIONS and is_confidential_dataset:
-        return Representative.objects.filter(
-            Q(content_type=ContentType.objects.get_for_model(Dataset), object_id=dataset.pk)
-            | Q(content_type=ContentType.objects.get_for_model(Organization), object_id=dataset.organization.pk),
-            user=user,
-            can_write=True,
-        ).exists()
+    for dataset_to_check in [dataset] + list(dataset.get_ancestors()):
+        rule: EXISTING_DATASET_ACL_RULE = (
+            obj.__class__,
+            dataset_to_check.is_public,
+            dataset_to_check.access_rights,
+            action,
+        )
+        user_role: Role = determine_user_role(user, dataset_to_check)
+        allowed_roles = acl.get(rule)
+        has_perm: bool = allowed_roles and user_role in allowed_roles
+        is_confidential_dataset = dataset_to_check.access_rights == dataset_to_check.CONFIDENTIAL
+        if has_perm and action in WRITE_ACTIONS and is_confidential_dataset:
+            return Representative.objects.filter(
+                Q(content_type=ContentType.objects.get_for_model(Dataset), object_id=dataset_to_check.pk)
+                | Q(
+                    content_type=ContentType.objects.get_for_model(Organization),
+                    object_id=dataset_to_check.organization.pk,
+                ),
+                user=user,
+                can_write=True,
+            ).exists()
 
-    return has_perm
+        return has_perm
+
+    return False
 
 
 def has_perm(

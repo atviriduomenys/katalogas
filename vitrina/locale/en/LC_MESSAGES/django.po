@@ -1246,11 +1246,6 @@ msgstr "New source"
 msgid "Eksportuoti"
 msgstr "Export"
 
-#, fuzzy
-#| msgid "Eksportuoti"
-msgid "Eksportu"
-msgstr "Export"
-
 msgid "Organizacijos priskyrimas"
 msgstr "Organization attribution"
 

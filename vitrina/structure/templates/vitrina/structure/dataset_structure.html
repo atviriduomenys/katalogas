@@ -28,6 +28,9 @@
             <a class="button is-primary" href="{% url 'dataset-structure-export' view.kwargs.pk %}">
                 {% translate "Eksportuoti" %}
             </a>
+            <a class="button is-primary" href="{% url 'dataset-structure-export-openapi' view.kwargs.pk %}">
+                {% translate "Eksportuoti OpenAPI" %}
+            </a>
             <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
                 {% translate "Importuoti" %}
             </a>
@@ -176,7 +179,7 @@
                     </div>
                     <div class="column is-1">
                         {% if metadata.count %}
-                             <span 
+                             <span
                              class="tag ml-3 icon is-small has-text-grey"
                              data-tooltip="{% translate 'Objektų kiekis' %}"
                              >

@@ -123,7 +123,7 @@ _dataset_update_acl: ACL = {
     (Dataset, DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,  # TODO additional logic
+        Role.COORDINATOR,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,

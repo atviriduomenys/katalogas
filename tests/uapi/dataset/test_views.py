@@ -6,23 +6,24 @@ import pytest
 import pytz
 from authlib.jose import RSAKey
 from django.contrib.contenttypes.models import ContentType
-from django.core.files.base import ContentFile
 from django.urls import reverse
 from django_webtest import DjangoTestApp
-from filer.models import File
+from factory.django import FileField
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
 from reversion.models import Version
 
+from tests.conftest import _normalize_csv
 from tests.uapi.conftest import _generate_test_token, _build_reverse_uapi_url
 from vitrina import settings
-from vitrina.datasets.factories import DatasetFactory
+from vitrina.cms.factories import FilerFileFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
-
+from vitrina.structure.services import create_structure_objects
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -967,25 +968,37 @@ def test_action_get_dataset_structure(
     url_dataset_structure: str,
     valid_token: str,
 ):
-    dataset.current_structure = DatasetStructure.objects.create(
+    structure = DatasetStructureFactory(
         dataset=dataset,
-        file=File.objects.create(
-            original_filename=f"dataset_{dataset.id}_structure.csv",
-            file=ContentFile(dsa, name=f"dataset_{dataset.id}_structure.csv"),
-        ),
-        filename=f"dataset_{dataset.id}_structure.csv",
-        mime_type="text/csv",
-        size=len(dsa),
+        file=FilerFileFactory(
+            file=FileField(filename=f"dataset_{dataset.id}_structure.csv", data=dsa)
+        )
     )
+    dataset.current_structure = structure
     dataset.save()
+    create_structure_objects(structure)
 
     response = app.get(
-        url_dataset_structure, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        url_dataset_structure,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
     )
 
     assert response.status_code == status.HTTP_200_OK
     assert response.headers["Content-Type"] == "text/csv"
-    assert response.content.decode("utf-8") == dsa
+
+    metadata_to_id_map = dict(Metadata.objects.all().values_list("name", "uuid"))
+    expected_csv = f"""id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description
+{metadata_to_id_map["example70"]},example70,,,,,,,,,,,,,,,,,,Title of the Dataset,Description of the Dataset.
+{metadata_to_id_map["users"]},,users,,,,dask/json,,/path,,,,,,,,,,,users,
+{metadata_to_id_map["example70/User"]},,,,User,,,id,users,,,,,4,completed,package,open,,,Pavadinimas,
+{metadata_to_id_map["id"]},,,,,id,integer,,id,,,,,,,,,,,,
+{metadata_to_id_map["full_name"]},,,,,full_name,string,,name,,,,,,,,,,,,
+{metadata_to_id_map["email_address"]},,,,,email_address,string,,email,,,,,,,,,,,,
+{metadata_to_id_map["active"]},,,,,active,boolean,,isActive,,,,,,,,,,,,
+"""
+    actual_rows = _normalize_csv(response.content.decode("utf-8"))
+    expected_rows = _normalize_csv(expected_csv)
+    assert actual_rows == expected_rows
 
 
 def test_action_get_dataset_structure_no_dataset(

@@ -5,7 +5,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.db import transaction
 from django.db.models import QuerySet, Q
-from django.http import HttpResponse
+from django.http import StreamingHttpResponse
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
@@ -30,7 +30,7 @@ from vitrina.resources.models import DatasetDistribution
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.models import Metadata
-from vitrina.structure.services import create_structure_objects
+from vitrina.structure.services import create_structure_objects, export_dataset_structure
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer
 from vitrina.uapi.serializers.serializers import (
     UAPIDatasetSerializer,
@@ -223,7 +223,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=False, methods=["get"], url_path="dsa")
-    def get_dataset_structure(self, request: Request, *args: Any, **kwargs: Any) -> Response | HttpResponse:
+    def get_dataset_structure(self, request: Request, *args: Any, **kwargs: Any) -> Response | StreamingHttpResponse:
         dataset = get_object_or_404(
             Dataset,
             ~Q(deleted=True),
@@ -237,11 +237,10 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
                 status=status.HTTP_404_NOT_FOUND,
             )
 
-        csv_content = ""
-        with dataset.current_structure.file.file.open("r") as file:
-            csv_content = file.read()
-
-        return HttpResponse(csv_content, content_type="text/csv", status=200)
+        stream = export_dataset_structure(dataset)
+        response = StreamingHttpResponse(stream, content_type="text/csv")
+        response["Content-Disposition"] = "attachment; filename=manifest.csv"
+        return response
 
     @transaction.atomic
     @action(detail=False, methods=["put"], url_path="dsa")

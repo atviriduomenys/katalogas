@@ -158,8 +158,7 @@ def url_dataset_structure(dataset: Dataset) -> str:
 
 @pytest.fixture
 def dsa() -> str:
-    return """
-id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description
+    return """id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description
 ,example70,,,,,,,,,,,,,,,,,
 ,,users,,,,dask/json,,/path,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,

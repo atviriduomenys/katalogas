@@ -1,6 +1,12 @@
 Changes
 #######
 
+v 1.4 (unreleased)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/1929
+Removed content editing language tab from forms.
+
 v 1.3 (2025-09-30)
 ==================
 

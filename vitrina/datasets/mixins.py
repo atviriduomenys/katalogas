@@ -3,6 +3,8 @@ from typing import List, Optional
 
 from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
+from parler.utils.i18n import get_language
+from parler.utils.context import switch_language
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
@@ -69,6 +71,8 @@ class DatasetBreadcrumbsMixin(BaseBreadcrumbsMixin):
         """Generate full dataset hierarchy breadcrumbs"""
         crumbs: List[Crumb] = []
 
+        lang = get_language()
+
         if include_home:
             crumbs.extend(self.breadcrumbs_home())
 
@@ -77,15 +81,17 @@ class DatasetBreadcrumbsMixin(BaseBreadcrumbsMixin):
             crumbs.append(Crumb(title=organization.title, url=organization.get_absolute_url()))
 
         for node in dataset.get_ancestors():
-            crumbs.append(Crumb(title=node.title, url=node.get_absolute_url()))
+            with switch_language(node, lang):
+                crumbs.append(Crumb(title=node.title, url=node.get_absolute_url()))
 
-        crumbs.append(
-            Crumb(
-                title=dataset.title,
-                url=None if make_current else dataset.get_absolute_url(),
-                is_current=make_current,
+        with switch_language(dataset, lang):
+            crumbs.append(
+                Crumb(
+                    title=dataset.title,
+                    url=None if make_current else dataset.get_absolute_url(),
+                    is_current=make_current,
+                )
             )
-        )
         return crumbs
 
     def get_dataset(self) -> Dataset | None:

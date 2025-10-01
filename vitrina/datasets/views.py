@@ -771,6 +771,8 @@ class DatasetCreateView(
 
     def form_valid(self, form):
         self.object = form.save(commit=False)
+        lang = self.request.GET.get("language", get_language())
+        self.object.set_current_language(lang)
         self.object.organization_id = self.kwargs.get("pk")
         subclass = DCATResourceSubclass.objects.get(pk=self.kwargs.get("subclass_uuid"))
         self.object.subclass = subclass
@@ -1106,6 +1108,12 @@ class DatasetUpdateView(
         kwargs = super().get_form_kwargs()
         kwargs["request"] = self.request
         return kwargs
+
+    def get_object(self, queryset=None):
+        obj = super().get_object(queryset)
+        lang = self.request.GET.get("language", get_language())
+        obj.set_current_language(lang)
+        return obj
 
     def form_valid(self, form):
         self.object: Dataset = form.save(commit=False)

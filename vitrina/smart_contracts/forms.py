@@ -51,9 +51,9 @@ class SmartContractForm(forms.ModelForm):
             choice_name = metadata.name
             choices.extend(
                 [
-                    (f"{choice_name}/:getall", f"{choice_name}/:getall"),
-                    (f"{choice_name}/:search", f"{choice_name}/:search"),
-                    (f"{choice_name}/:select", f"{choice_name}/:select"),
+                    (f"uapi:/{choice_name}/:getall", f"uapi:/{choice_name}/:getall"),
+                    (f"uapi:/{choice_name}/:search", f"uapi:/{choice_name}/:search"),
+                    (f"uapi:/{choice_name}/:select", f"uapi:/{choice_name}/:select"),
                 ]
             )
         return choices

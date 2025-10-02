@@ -86,7 +86,7 @@ def test_create_specific_scope(
     token = _generate_test_token(
         test_jwk,
         organization=organization,
-        scopes=["spinta_datasets_gov_vssa_distribution_insert"],
+        scopes=["uapi:/datasets/gov/vssa/dcat/Distribution/:create"],
     )
     file_content = b"Sample CSV content"
     data = {
@@ -309,7 +309,7 @@ def test_list_specific_scope(
     token = _generate_test_token(
         test_jwk,
         organization=organization,
-        scopes=["spinta_datasets_gov_vssa_distribution_getall"],
+        scopes=["uapi:/datasets/gov/vssa/dcat/Distribution/:getall"],
     )
     response = app.get(url_distribution, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"})
 

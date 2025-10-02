@@ -118,7 +118,7 @@ def test_sync_done_does_not_update_agreement_updated_at(
         token = _generate_test_token(
             test_jwk,
             organization=organization,
-            scopes=["spinta_datasets_gov_vssa_agreement_update"],
+            scopes=["uapi:/datasets/gov/vssa/dcat/Agreement/:patch"],
         )
         response = app.put(
             reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),

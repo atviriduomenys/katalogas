@@ -183,7 +183,7 @@ def test_create_specific_scope(
     token = _generate_test_token(
         test_jwk,
         organization=organization,
-        scopes=["spinta_datasets_gov_vssa_dataset_insert"],
+        scopes=["uapi:/datasets/gov/vssa/dcat/Dataset/:create"],
     )
     data = {
         "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
@@ -426,7 +426,7 @@ def test_list_specific_scope(
     token = _generate_test_token(
         test_jwk,
         organization=organization,
-        scopes=["spinta_datasets_gov_vssa_dataset_getall"],
+        scopes=["uapi:/datasets/gov/vssa/dcat/Dataset/:getall"],
     )
 
     response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"})
@@ -739,7 +739,7 @@ def test_action_upload_dataset_structure_specific_scope(
     token = _generate_test_token(
         test_jwk,
         organization=organization,
-        scopes=["spinta_datasets_gov_vssa_dataset_dsa_insert"],
+        scopes=["uapi:/datasets/gov/vssa/dcat/Dsa/:create"],
     )
     response = app.post(
         url_dataset_structure,
@@ -957,7 +957,7 @@ def test_action_update_dataset_structure_specific_scope(
     token = _generate_test_token(
         test_jwk,
         organization=organization,
-        scopes=["spinta_datasets_gov_vssa_dataset_dsa_update"],
+        scopes=["uapi:/datasets/gov/vssa/dcat/Dsa/:patch"],
     )
 
     response = app.put(

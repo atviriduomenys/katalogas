@@ -48,15 +48,14 @@ class SmartContractForm(forms.ModelForm):
             if not metadata.name:
                 continue
 
-            choice_name = metadata.name.replace("/", "_")
+            choice_name = metadata.name
             choices.extend(
                 [
-                    (f"{choice_name}_getall", f"{choice_name}_getall"),
-                    (f"{choice_name}_search", f"{choice_name}_search"),
-                    (f"{choice_name}_select", f"{choice_name}_select"),
+                    (f"uapi:/{choice_name}/:getall", f"uapi:/{choice_name}/:getall"),
+                    (f"uapi:/{choice_name}/:search", f"uapi:/{choice_name}/:search"),
+                    (f"uapi:/{choice_name}/:select", f"uapi:/{choice_name}/:select"),
                 ]
             )
-
         return choices
 
 

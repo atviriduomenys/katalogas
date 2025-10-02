@@ -166,7 +166,7 @@ class TestAgreementCreateView:
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
         form = response.forms["agreement-create"]
-        form["form-0-scopes"] = ["test_dataset_getall"]
+        form["form-0-scopes"] = ["uapi:/test/dataset/:getall"]
         response = form.submit()
 
         assert response.status_code == 302
@@ -178,9 +178,9 @@ class TestAgreementCreateView:
         assert agreement.scopes.count() == 1
 
         agreement_scope = agreement.scopes.first()
-        assert agreement_scope.resource == "test_dataset"
+        assert agreement_scope.resource == "uapi:/test/dataset"
         assert agreement_scope.action == "getall"
-        assert agreement_scope.scope == "test_dataset_getall"
+        assert agreement_scope.scope == "uapi:/test/dataset/:getall"
 
     def test_creates_multiple_agreements_and_scopes(
         self, app: DjangoTestApp, organization: Organization
@@ -214,11 +214,11 @@ class TestAgreementCreateView:
         response = app.get(reverse("agreement-create", args=[project.pk]))
         form = response.forms["agreement-create"]
         form["form-0-scopes"] = [
-            "test_dataset1_getall",
-            "test_dataset2_search",
-            "test_dataset2_select",
+            "uapi:/test/dataset1/:getall",
+            "uapi:/test/dataset2/:search",
+            "uapi:/test/dataset2/:select",
         ]
-        form["form-1-scopes"] = ["datasets_gov_org_dataset_getall"]
+        form["form-1-scopes"] = ["uapi:/datasets/gov/org/dataset/:getall"]
         response = form.submit()
 
         assert response.status_code == 302
@@ -229,12 +229,12 @@ class TestAgreementCreateView:
             AgreementScope.objects.filter(agreement__assigner=organization).values_list(
                 "scope", flat=True
             )
-        ) == {"test_dataset1_getall", "test_dataset2_search", "test_dataset2_select"}
+        ) == {"uapi:/test/dataset1/:getall", "uapi:/test/dataset2/:search", "uapi:/test/dataset2/:select"}
         assert set(
             AgreementScope.objects.filter(
                 agreement__assigner=diff_organization
             ).values_list("scope", flat=True)
-        ) == {"datasets_gov_org_dataset_getall"}
+        ) == {"uapi:/datasets/gov/org/dataset/:getall"}
 
     def test_can_create_agreements_for_organizations_that_currently_do_not_have_one(
         self, app: DjangoTestApp, dataset: Dataset, organization: Organization

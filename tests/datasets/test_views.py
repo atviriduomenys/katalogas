@@ -1,5 +1,4 @@
 from datetime import datetime, date, timedelta
-from urllib import response
 
 import pytz
 import webtest
@@ -20,7 +19,6 @@ from vitrina.classifiers.factories import (
     CategoryFactory,
     FrequencyFactory,
     AreaOfManagementFactory,
-    ConceptSchemaFactory,
     ConceptFactory,
     DocumentationFactory,
 )
@@ -2276,6 +2274,28 @@ class TestDatasetMembers:
         assert rep.has_api_access is True
         assert rep.apikey_set.count() == 1
 
+    @pytest.mark.parametrize("can_write", [True, False])
+    def test_create_dataset_representative_with_can_write_flag(self, app: DjangoTestApp, can_write: bool) -> None:
+        dataset = DatasetFactory()
+        coordinator = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id=dataset.pk,
+            role=Representative.COORDINATOR,
+        )
+        app.set_user(coordinator.user)
+
+        form = app.get(
+            reverse("dataset-representative-create", kwargs={"pk": dataset.pk})
+        ).forms["representative-form"]
+        form["email"] = "test@example.com"
+        form["role"] = Representative.MANAGER
+        form["can_write"] = can_write
+
+        response = form.submit()
+        assert response.headers["location"] == reverse("dataset-members", kwargs={"pk": dataset.pk})
+        representative = Representative.objects.get(email="test@example.com")
+        assert representative.can_write == can_write
+
     def test_dataset_members_update_member(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)
@@ -2333,6 +2353,28 @@ class TestDatasetMembers:
         assert coordinator.has_api_access is True
         assert coordinator.apikey_set.count() == 1
 
+    @pytest.mark.parametrize("can_write", [True, False])
+    def test_update_dataset_representative_can_write_flag(self, app: DjangoTestApp, can_write: bool) -> None:
+        dataset = DatasetFactory()
+
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id=dataset.pk,
+            role=Representative.COORDINATOR,
+            can_write=can_write,
+        )
+        app.set_user(representative.user)
+
+        form = app.get(
+            reverse("dataset-representative-update", kwargs={"pk": dataset.pk, "representative_id": representative.pk}),
+        ).forms["representative-form"]
+        form["can_write"] = not can_write
+
+        response = form.submit()
+        assert response.headers["location"] == reverse("dataset-members", kwargs={"pk": dataset.pk})
+        representative.refresh_from_db()
+        assert representative.can_write == (not can_write)
+
     def test_dataset_members_delete_member(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)
@@ -2369,6 +2411,26 @@ class TestDatasetMembers:
         assert not qs.exists()
 
         assert len(mail.outbox) == 0
+
+    def test_remove_dataset_publisher_of_related_dataset_if_representative_is_deleted(self, app: DjangoTestApp) -> None:
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(publisher=organization)
+        ct = ContentType.objects.get_for_model(dataset)
+        representative = RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=Representative.MANAGER,
+            organization=organization,
+        )
+
+        app.post(reverse("dataset-representative-delete", args=[dataset.pk, representative.pk]))
+
+        assert not Representative.objects.filter(pk=representative.pk).exists()
+        dataset.refresh_from_db()
+        assert dataset.publisher is None
 
     def test_add_member_to_dataset_with_org_representative(self, app: DjangoTestApp):
         dataset = DatasetFactory(is_public=False)
@@ -4006,28 +4068,6 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     </dcat:DataService>
 </rdf:RDF>"""
     )
-
-
-class TestDeleteMemberView:
-    def test_remove_dataset_publisher_of_related_dataset_if_representative_is_deleted(self, app: DjangoTestApp) -> None:
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(publisher=organization)
-        ct = ContentType.objects.get_for_model(dataset)
-        representative = RepresentativeFactory(
-            content_type=ct,
-            object_id=dataset.pk,
-            role=Representative.MANAGER,
-            organization=organization,
-        )
-
-        app.post(reverse("dataset-representative-delete", args=[dataset.pk, representative.pk]))
-
-        assert not Representative.objects.filter(pk=representative.pk).exists()
-        dataset.refresh_from_db()
-        assert dataset.publisher is None
 
 
 class TestRemoveRequestView:

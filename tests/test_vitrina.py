@@ -17,7 +17,7 @@ def test_home(app: DjangoTestApp):
 
     assert resp.status == '200 OK'
     assert resp.context['counts'] == {
-        'dataset': 1,
+        'dataset': 0,
         'organization': 1,
         'project': 0,
         'coordinators': 0,
@@ -30,7 +30,7 @@ def test_home(app: DjangoTestApp):
         for elem in resp.html.select('a.stats')
     ] == [
         ['1', 'Organizacijos'],
-        ['1', 'Duomenų ištekliai'],
+        ['0', 'Duomenų ištekliai'],
         ['0', 'Panaudojimo atvejai'],
         # ['0', 'Koordinatoriai'],
         # ['0', 'Tvarkytojai'],

@@ -46,7 +46,7 @@ def home(request):
         "landing.html",
         {
             "counts": {
-                "dataset": Dataset.public.count(),
+                "dataset": Dataset.restricted.for_user(request.user).count(),
                 "organization": Organization.public.count(),
                 "project": Project.objects.filter(status="APPROVED").count(),
                 "coordinators": coordinator_count,
@@ -54,7 +54,9 @@ def home(request):
                 "users": user_count,
             },
             "categories": (Category.objects.filter(featured=True).order_by("title")),
-            "datasets": (Dataset.public.select_related("organization").order_by("-published")[:3]),
+            "datasets": (
+                Dataset.restricted.for_user(request.user).select_related("organization").order_by("-published")[:3]
+            ),
             "requests": (Request.public.prefetch_related("organizations").order_by("-created")[:3]),
             "projects": (Project.public.filter(image__isnull=False, status="APPROVED").order_by("-created")[:3]),
             "orgs": (

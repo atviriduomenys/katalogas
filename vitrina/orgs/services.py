@@ -74,7 +74,6 @@ DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     DatasetAttribution,
     DatasetRelation,
     Request,
-    Representative,
 }
 EXCLUDED_ACTIONS: set[Action] = {Action.CREATE, Action.ASSIGN, Action.PLAN, Action.REQUEST_UPDATE}
 
@@ -202,23 +201,6 @@ _dataset_request_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_model_c
 _dataset_request_history_view_acl: ACL = inherit_acl(
     _dataset_history_view_acl, new_model_class=Request, new_roles={Role.GLOBAL_MANAGER}
 )
-
-_dataset_representative_create_acl: ACL = inherit_acl(
-    _dataset_create_acl, new_model_class=Representative, new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR}
-)
-_dataset_representative_update_acl: ACL = inherit_acl(
-    _dataset_update_acl, new_model_class=Representative, new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR}
-)
-_dataset_representative_delete_acl: ACL = inherit_acl(
-    _dataset_delete_acl,
-    new_model_class=Representative,
-    new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR},
-)
-_dataset_representative_view_acl = inherit_acl(
-    _dataset_view_acl,
-    new_model_class=Representative,
-    new_roles={Role.GLOBAL_MANAGER, Role.COORDINATOR},
-)
 _dataset_structure_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetStructure)
 
 
@@ -243,10 +225,6 @@ acl: ACL = (
     | _dataset_request_delete_acl
     | _dataset_request_comment_acl
     | _dataset_request_history_view_acl
-    | _dataset_representative_create_acl
-    | _dataset_representative_update_acl
-    | _dataset_representative_delete_acl
-    | _dataset_representative_view_acl
     | _dataset_structure_acl
     | _dataset_structure_create_acl
     | {
@@ -352,29 +330,42 @@ def _get_dataset_instance(obj: Model) -> Dataset | None:
 
 
 def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) -> bool:
-    for dataset_to_check in [dataset] + list(dataset.get_ancestors()):
+    datasets_to_check: set[Dataset] = {
+        dataset,
+        *dataset.get_ancestors(),
+        *(d for d in get_parents(dataset) if isinstance(d, Dataset)),
+    }
+
+    organizations_to_check: set[Organization] = {d.organization for d in datasets_to_check if d.organization}
+
+    representatives: list[Representative] = list(
+        Representative.objects.filter(user_id=user.id).filter(
+            Q(content_type=ContentType.objects.get_for_model(Dataset), object_id__in=[d.pk for d in datasets_to_check])
+            | Q(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__in=[o.pk for o in organizations_to_check],
+            )
+        )
+    )
+    can_write_representative: bool = any(r.can_write for r in representatives)
+    for current_dataset in [dataset, *dataset.get_ancestors()]:
         rule: EXISTING_DATASET_ACL_RULE = (
             obj.__class__,
-            dataset_to_check.is_public,
-            dataset_to_check.access_rights,
+            current_dataset.is_public,
+            current_dataset.access_rights,
             action,
         )
-        user_role: Role = determine_user_role(user, dataset_to_check)
+        user_role: Role = determine_user_role(user, current_dataset)
         allowed_roles = acl.get(rule)
         has_perm: bool = allowed_roles and user_role in allowed_roles
-        is_confidential_dataset = dataset_to_check.access_rights == dataset_to_check.CONFIDENTIAL
-        if has_perm and action in WRITE_ACTIONS and is_confidential_dataset:
-            return Representative.objects.filter(
-                Q(content_type=ContentType.objects.get_for_model(Dataset), object_id=dataset_to_check.pk)
-                | Q(
-                    content_type=ContentType.objects.get_for_model(Organization),
-                    object_id=dataset_to_check.organization.pk,
-                ),
-                user=user,
-                can_write=True,
-            ).exists()
+        is_confidential_dataset: bool = dataset.access_rights == Dataset.CONFIDENTIAL
+        if has_perm and action in WRITE_ACTIONS:
+            if is_confidential_dataset and current_dataset == dataset:
+                return can_write_representative
+            return True
 
-        return has_perm
+        if has_perm and current_dataset == dataset:
+            return True
 
     return False
 

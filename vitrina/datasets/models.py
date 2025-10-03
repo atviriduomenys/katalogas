@@ -31,6 +31,7 @@ from vitrina.datasets.managers import (
     EdpRestrictedDatasetManager,
     PublicDatasetManager,
     TranslatableMPNodeManager,
+    PermittedDatasetManager,
 )
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
@@ -585,6 +586,7 @@ class Dataset(Resource):
 
     objects = TranslatableMPNodeManager()
     public = PublicDatasetManager()
+    restricted = PermittedDatasetManager()
     edp_public = EdpPublicDatasetManager()
     edp_restricted = EdpRestrictedDatasetManager()
     service_type = models.ManyToManyField(

@@ -107,6 +107,11 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
     form_class = ProjectForm
     template_name = "base_form.html"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
     def has_permission(self):
         return has_perm(self.request.user, Action.CREATE, Project)
 

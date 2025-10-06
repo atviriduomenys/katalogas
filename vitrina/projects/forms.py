@@ -1,9 +1,11 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.forms import ModelForm, CharField, Textarea, ModelChoiceField
+from django.contrib.contenttypes.models import ContentType
 
 from vitrina.fields import FilerImageField
 from vitrina.projects.models import Project, UseCaseClientScope, UseCaseClient
+from vitrina.orgs.models import Organization
 
 from django.utils.translation import gettext_lazy as _
 
@@ -16,6 +18,12 @@ class ProjectForm(ModelForm):
         label=_("Aprašymas"),
         widget=Textarea,
         help_text=_("Išsamus pasiūlymo aprašymas."),
+    )
+    organization = ModelChoiceField(
+        Organization.objects.none(),
+        label=_("Organizacija"),
+        required=False,
+        help_text=_("Organizacija, kurios vardu teikiamas panaudos atvejis. Atitinka: legal:LegalEntity"),
     )
     url = CharField(
         label=_("Nuoroda į panaudojimo atvejį"),
@@ -31,18 +39,24 @@ class ProjectForm(ModelForm):
 
     class Meta:
         model = Project
-        fields = ["title", "description", "url", "image"]
+        fields = ["title", "description", "organization", "url", "image"]
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args, user, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
         project_instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if project_instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "project-form"
+        self.fields["organization"].queryset = Organization.objects.filter(
+            representatives__content_type=ContentType.objects.get_for_model(Organization),
+            representatives__user=user,
+        )
         self.helper.layout = Layout(
             Field("title", placeholder=_("Pavadinimas")),
             Field("description", placeholder=_("Aprašymas")),
+            Field("organization"),
             Field("url", placeholder=_("Nuoroda į panaudojimo atvejį")),
             Field("image"),
             Submit("submit", button, css_class="button is-primary"),

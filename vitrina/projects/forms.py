@@ -49,10 +49,7 @@ class ProjectForm(ModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "project-form"
-        self.fields["organization"].queryset = Organization.objects.filter(
-            representatives__content_type=ContentType.objects.get_for_model(Organization),
-            representatives__user=user,
-        )
+        self.fields["organization"].queryset = self._organization_queryset()
         self.helper.layout = Layout(
             Field("title", placeholder=_("Pavadinimas")),
             Field("description", placeholder=_("Aprašymas")),
@@ -60,6 +57,15 @@ class ProjectForm(ModelForm):
             Field("url", placeholder=_("Nuoroda į panaudojimo atvejį")),
             Field("image"),
             Submit("submit", button, css_class="button is-primary"),
+        )
+
+    def _organization_queryset(self):
+        if self.user.is_superuser or self.user.is_staff:
+            return Organization.public.all()
+
+        return Organization.public.filter(
+            representatives__content_type=ContentType.objects.get_for_model(Organization),
+            representatives__user=self.user,
         )
 
 

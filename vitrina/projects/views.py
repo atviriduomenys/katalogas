@@ -153,6 +153,11 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
     form_class = ProjectForm
     template_name = "base_form.html"
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
     def has_permission(self):
         project = self.get_object()
         return has_perm(self.request.user, Action.UPDATE, project)

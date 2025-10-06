@@ -6,7 +6,8 @@ from parler.managers import TranslatableManager, TranslatableQuerySet
 from treebeard.mp_tree import MP_NodeQuerySet
 
 if TYPE_CHECKING:
-    from vitrina.datasets.models import Dataset, Organization, Representative
+    from vitrina.datasets.models import Dataset
+    from vitrina.users.models import User
 
 
 class PublicDatasetManager(TranslatableManager):

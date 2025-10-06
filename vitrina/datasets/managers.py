@@ -1,9 +1,12 @@
-from __future__ import annotations
+from typing import TYPE_CHECKING
 
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Manager, QuerySet, Q
 from parler.managers import TranslatableManager, TranslatableQuerySet
 from treebeard.mp_tree import MP_NodeQuerySet
+
+if TYPE_CHECKING:
+    from vitrina.datasets.models import Dataset, Organization, Representative
 
 
 class PublicDatasetManager(TranslatableManager):
@@ -58,20 +61,17 @@ class PermittedDatasetManager(TranslatableManager):
             ).values_list("path", flat=True)
         )
 
-        # Collect all organization paths the user directly represents
-        represented_org_paths = list(
-            Organization.objects.filter(
-                pk__in=Representative.objects.filter(content_type=org_ct, user_id=user.id).values_list(
-                    "object_id", flat=True
-                )
-            ).values_list("path", flat=True)
+        represented_orgs = Organization.objects.filter(
+            pk__in=Representative.objects.filter(content_type=org_ct, user_id=user.id).values_list(
+                "object_id", flat=True
+            )
         )
+
+        datasets_in_represented_orgs = Dataset.objects.filter(organization__in=represented_orgs)
+        represented_dataset_paths += list(datasets_in_represented_orgs.values_list("path", flat=True))
 
         for ds_path in represented_dataset_paths:
             accessible_filter |= Q(path__startswith=ds_path)
-
-        for org_path in represented_org_paths:
-            accessible_filter |= Q(organization__path__startswith=org_path)
 
         if user.is_gov_organization_manager:
             accessible_filter |= Q(

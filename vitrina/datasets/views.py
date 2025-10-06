@@ -33,6 +33,7 @@ from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
 from haystack.generic_views import FacetedSearchView
+from haystack.query import SearchQuerySet
 from itsdangerous import URLSafeSerializer
 from parler.utils.context import switch_language
 from parler.utils.i18n import get_language
@@ -192,42 +193,41 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         return super().get(request)
 
     def get_queryset(self):
-        datasets = super().get_queryset()
-        datasets = get_datasets_for_user(self.request, datasets)
+        queryset: SearchQuerySet = get_datasets_for_user(self.request, super().get_queryset())
         sorting = self.request.GET.get("sort", None)
-        datasets = datasets.models(Dataset)
+        queryset = queryset.models(Dataset)
         if self.request.GET.get("q") and not sorting:
             sorting = "sort-by-relevance"
 
         options = {"size": ELASTIC_FACET_SIZE}
         for field in self.facet_fields:
-            datasets = datasets.facet(field, **options)
+            queryset = queryset.facet(field, **options)
 
         if is_manager_dataset_list(self.request):
             org_ids = [
                 rep.object_id for rep in self.request.user.representative_set.filter(role=Representative.MANAGER)
             ]
-            datasets = datasets.filter(organization__in=org_ids)
+            queryset = queryset.filter(organization__in=org_ids)
 
         if is_org_dataset_list(self.request):
             self.organization = get_object_or_404(
                 Organization,
                 pk=self.kwargs["pk"],
             )
-            datasets = datasets.filter(organization=self.organization.pk)
+            queryset = queryset.filter(organization=self.organization.pk)
 
         if not sorting or sorting == "sort-by-date-newest":
-            datasets = datasets.order_by("-published_created_s")
+            queryset = queryset.order_by("-published_created_s")
         elif sorting == "sort-by-date-oldest":
-            datasets = datasets.order_by("published_created_s")
+            queryset = queryset.order_by("published_created_s")
         elif sorting == "sort-by-title":
             if self.request.LANGUAGE_CODE == "lt":
-                datasets = datasets.order_by("lt_title_s", "-type_order")
+                queryset = queryset.order_by("lt_title_s", "-type_order")
             else:
-                datasets = datasets.order_by("en_title_s", "-type_order")
+                queryset = queryset.order_by("en_title_s", "-type_order")
         elif sorting == "sort-by-relevance":
-            datasets = datasets.order_by("-type_order")
-        return datasets
+            queryset = queryset.order_by("-type_order")
+        return queryset
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -458,10 +458,7 @@ class DatasetDetailView(
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, dataset)
+        return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get_queryset(self) -> QuerySet[Dataset]:
         return (
@@ -564,19 +561,13 @@ class DatasetDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.DELETE, dataset)
+        return has_perm(self.request.user, Action.DELETE, dataset)
 
 
 class DatasetRDFDownloadView(PermissionRequiredMixin, View):
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, dataset)
+        return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get(self, request, **kwargs):
         dataset = Dataset.objects.filter(pk=kwargs.get("pk"))
@@ -1925,10 +1916,7 @@ class DatasetProjectsView(DatasetStructureMixin, PermissionRequiredMixin, Histor
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        if self.object.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object)
+        return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         return get_projects(self.request.user, self.object, order_value="-created")
@@ -1973,10 +1961,7 @@ class DatasetRequestsView(DatasetStructureMixin, PermissionRequiredMixin, Histor
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        if self.object.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.object)
+        return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
         model_ids = Model.objects.filter(dataset=self.object).values_list("pk", flat=True)
@@ -2027,12 +2012,7 @@ class AddRequestView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        if self.dataset.is_public:
-            return get_requests(self.request.user, self.dataset)
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.dataset) and get_requests(
-                self.request.user, self.dataset
-            )
+        return has_perm(self.request.user, Action.VIEW, self.dataset) and get_requests(self.request.user, self.dataset)
 
     def get_form_kwargs(self):
         kwargs = super(AddRequestView, self).get_form_kwargs()
@@ -3308,10 +3288,7 @@ class DatasetPlanView(
     plan_url_name = "dataset-plans"
 
     def has_permission(self):
-        if self.dataset.is_public:
-            return True
-        else:
-            return has_perm(self.request.user, Action.VIEW, self.dataset)
+        return has_perm(self.request.user, Action.VIEW, self.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3321,7 +3298,7 @@ class DatasetPlanView(
             context["plans"] = self.dataset.plandataset_set.filter(plan__is_closed=True)
         else:
             context["plans"] = self.dataset.plandataset_set.filter(plan__is_closed=False)
-        context["can_manage_plans"] = has_perm(self.request.user, Action.PLAN, self.dataset)
+        context["can_manage_plans"] = has_perm(self.request.user, Action.UPDATE, self.dataset)
         context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
         context["selected_tab"] = status
         return context
@@ -3348,7 +3325,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.PLAN, self.dataset)
+        return has_perm(self.request.user, Action.UPDATE, self.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3422,7 +3399,7 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def has_permission(self):
         dataset = self.get_object().dataset
-        return has_perm(self.request.user, Action.PLAN, dataset)
+        return has_perm(self.request.user, Action.UPDATE, dataset)
 
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()

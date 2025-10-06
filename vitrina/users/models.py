@@ -1,4 +1,5 @@
 from django.contrib.auth.models import AbstractUser
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.utils.timezone import now
 from django_otp.plugins.otp_email.models import EmailDevice
@@ -82,6 +83,15 @@ class User(AbstractUser):
     @property
     def is_supervisor(self):
         return bool(self.representative_set.filter(role=Representative.SUPERVISOR))
+
+    @property
+    def is_gov_organization_manager(self) -> bool:
+        gov_org_content_type = ContentType.objects.get_for_model(Organization)
+        return Representative.objects.filter(
+            user=self,
+            content_type=gov_org_content_type,
+            object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
+        ).exists()
 
     @property
     def can_see_manager_dataset_list_url(self):

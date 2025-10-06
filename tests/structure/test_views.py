@@ -19,6 +19,7 @@ from reversion.models import Version
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
+from vitrina.orgs.models import Representative
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
@@ -1870,6 +1871,7 @@ def test_param_create_for_resource(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
+        role=Representative.MANAGER
     )
     app.set_user(representative.user)
 
@@ -1912,6 +1914,7 @@ def test_param_create_for_model(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
+        role=Representative.MANAGER
     )
     app.set_user(representative.user)
 
@@ -1944,6 +1947,7 @@ def test_param_update(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
+        role=Representative.MANAGER
     )
     app.set_user(representative.user)
     ct = ContentType.objects.get_for_model(distribution)
@@ -1978,6 +1982,7 @@ def test_param_delete(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
+        role=Representative.MANAGER
     )
     app.set_user(representative.user)
     ct = ContentType.objects.get_for_model(distribution)
@@ -2803,6 +2808,7 @@ def test_structure_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=Representative.MANAGER,
     )
     app.set_user(user)
     response = app.get(reverse('dataset-structure', args=[dataset.pk]))
@@ -2828,6 +2834,7 @@ def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=Representative.MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('version-list', args=[dataset.pk]))
@@ -2853,6 +2860,7 @@ def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=Representative.MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('version-detail', args=[dataset.pk, version.pk]))
@@ -2918,6 +2926,7 @@ def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp)
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=Representative.MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('model-structure', args=[dataset.pk, model.name]))
@@ -2983,6 +2992,7 @@ def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestA
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=Representative.MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('property-structure', args=[dataset.pk, model.name, prop.name]))
@@ -3048,6 +3058,7 @@ def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=Representative.MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('model-data', args=[dataset.pk, model.name]))
@@ -3113,6 +3124,7 @@ def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=Representative.MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('object-data', args=[dataset.pk, model.name, "123456789"]))
@@ -3178,6 +3190,7 @@ def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=Representative.MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('getall-api', args=[dataset.pk, model.name]))
@@ -3257,6 +3270,7 @@ def test_private_visibility_with_access(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=structure.dataset.pk,
+        role=Representative.MANAGER
     )
     app.set_user(representative.user)
 

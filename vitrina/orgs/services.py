@@ -1,17 +1,23 @@
 import functools
+import inspect
 import operator
 from enum import Enum
-from typing import Type
+from typing import Type, cast, Union
 
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Model
-from django.db.models import Q
+from django.db.models import Model, Q
 
 from vitrina import settings
 from vitrina.api_example.models import ApiExample
-from vitrina.datasets.models import Dataset, DatasetStructure, Contact
+from vitrina.datasets.models import (
+    Dataset,
+    DatasetStructure,
+    Contact,
+    DatasetAttribution,
+    DatasetRelation,
+)
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative, Organization
@@ -28,6 +34,7 @@ class Action(Enum):
     CREATE = "create"
     UPDATE = "update"
     DELETE = "delete"
+    REQUEST_UPDATE = "request_update"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
@@ -40,62 +47,225 @@ class Action(Enum):
 
 class Role(Enum):
     COORDINATOR = Representative.COORDINATOR
-    MANAGER = Representative.MANAGER
+    MANAGER = Representative.MANAGER  # All Managers
+    RESOURCE_MANAGER = Representative.RESOURCE_MANAGER  # Resource Manager
     SUPERVISOR = Representative.SUPERVISOR
     AUTHOR = "author"
-    ALL = "all"  # All authenticated users
+    GLOBAL_MANAGER = "global_manager"  # Global Manager (is staff)
+    AUTHENTICATED = "all"  # All authenticated users
+    VISITOR = "visitor"  # All unauthenticated users
 
 
-acl = {
-    (Organization, Action.UPDATE): (Role.COORDINATOR,),
-    (Organization, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
-    (Organization, Action.HISTORY_VIEW): (Role.COORDINATOR, Role.MANAGER),
-    (Representative, Action.CREATE): (Role.COORDINATOR,),
-    (Representative, Action.UPDATE): (Role.COORDINATOR,),
-    (Representative, Action.DELETE): (Role.COORDINATOR,),
-    (Representative, Action.VIEW): (Role.COORDINATOR,),
-    (Agent, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
-    (Agent, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
-    (Agent, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER),
-    (Agent, Action.DELETE): (Role.COORDINATOR, Role.MANAGER),
-    (Agreement, Action.CREATE): (Role.AUTHOR,),
-    (Agreement, Action.VIEW): (Role.AUTHOR,),
-    (Contact, Action.CREATE): (Role.COORDINATOR,),
-    (Contact, Action.UPDATE): (Role.COORDINATOR,),
-    (Contact, Action.DELETE): (Role.COORDINATOR,),
-    (Contact, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
-    (Dataset, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
-    (Dataset, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER),
-    (Dataset, Action.DELETE): (Role.COORDINATOR, Role.MANAGER),
-    (Dataset, Action.HISTORY_VIEW): (Role.COORDINATOR, Role.MANAGER),
-    (Dataset, Action.STRUCTURE): (Role.COORDINATOR, Role.MANAGER),
-    (Dataset, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
-    (Dataset, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
-    (Dataset, Action.COMMENT): (Role.COORDINATOR, Role.MANAGER),
-    (DatasetDistribution, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
-    (DatasetDistribution, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER),
-    (DatasetDistribution, Action.DELETE): (Role.COORDINATOR, Role.MANAGER),
-    (DatasetStructure, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
-    (Request, Action.CREATE): (Role.ALL,),
-    (Request, Action.UPDATE): (Role.AUTHOR,),
-    (Request, Action.DELETE): (Role.AUTHOR,),
-    (Request, Action.COMMENT): (Role.COORDINATOR, Role.MANAGER),
-    (Request, Action.VIEW): (Role.AUTHOR, Role.COORDINATOR, Role.MANAGER),
-    (Request, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
-    (Request, Action.ASSIGN): (Role.COORDINATOR, Role.MANAGER),
-    (Project, Action.CREATE): (Role.ALL,),
-    (Project, Action.UPDATE): (Role.AUTHOR,),
-    (Project, Action.DELETE): (Role.AUTHOR,),
-    (Project, Action.VIEW): (Role.AUTHOR,),
-    (User, Action.UPDATE): (Role.AUTHOR,),
-    (User, Action.VIEW): (Role.AUTHOR,),
-    (Task, Action.UPDATE): (Role.ALL,),
-    (Organization, Action.MANAGE_KEYS): (Role.COORDINATOR, Role.MANAGER),
-    (Project, Action.MANAGE_PROJECT_KEYS): (Role.AUTHOR, Role.SUPERVISOR),
-    (RequestAssignment, Action.CREATE): (Role.COORDINATOR,),
-    (RequestAssignment, Action.DELETE): (Role.COORDINATOR,),
-    (ApiExample, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
+WRITE_ACTIONS: set[Action] = {
+    Action.CREATE,
+    Action.UPDATE,
+    Action.DELETE,
+    Action.COMMENT,
+    Action.STRUCTURE,
+    Action.PLAN,
+    Action.MANAGE_KEYS,
+    Action.MANAGE_PROJECT_KEYS,
+    Action.ASSIGN,
 }
+DATASET_RELATED_OBJECTS: set[Type[Model]] = {
+    Dataset,
+    DatasetDistribution,
+    DatasetStructure,
+    DatasetAttribution,
+    DatasetRelation,
+    Request,
+}
+EXCLUDED_ACTIONS: set[Action] = {Action.CREATE, Action.ASSIGN, Action.PLAN, Action.REQUEST_UPDATE}
+
+DATASET_IS_PUBLIC = True
+ACL_RULE = tuple[type[Model], Action]
+EXISTING_DATASET_ACL_RULE = tuple[Union[DATASET_RELATED_OBJECTS], bool, str, Action]
+ACL = dict[ACL_RULE | EXISTING_DATASET_ACL_RULE, set[Role] | tuple[Role]]
+
+
+def inherit_acl(
+    base_acl: ACL,
+    new_model_class: type[Model] | None = None,
+    new_action: Action | None = None,
+    new_roles: set[Role] | None = None,
+) -> ACL:
+    action_position_in_rule = -1
+    model_class_position_in_rule = 0
+    new_acl = {}
+    for rule, roles in base_acl.items():
+        new_rule = list(rule)
+        if new_action:
+            new_rule[action_position_in_rule] = new_action
+        if new_model_class:
+            new_rule[model_class_position_in_rule] = new_model_class
+        new_rule = cast(ACL_RULE, tuple(new_rule))
+        new_acl[new_rule] = new_roles or roles
+    return new_acl
+
+
+_dataset_update_acl: ACL = {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+    },
+    (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+    },
+    (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+    },
+    (Dataset, DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+    },
+}
+_dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW) | {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.VIEW): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.AUTHENTICATED,
+        Role.VISITOR,
+    },
+    (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.VIEW): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.AUTHENTICATED,
+        Role.VISITOR,
+    },
+    (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.VIEW): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+    },
+}
+
+_dataset_create_acl: ACL = {(Dataset, Action.CREATE): (Role.COORDINATOR, Role.MANAGER, Role.GLOBAL_MANAGER)}
+
+_dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.COMMENT)
+_dataset_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.DELETE)
+_dataset_history_view_acl: ACL = inherit_acl(_dataset_view_acl, new_action=Action.HISTORY_VIEW)
+_dataset_structure_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.STRUCTURE) | inherit_acl(
+    _dataset_view_acl, new_model_class=DatasetStructure, new_action=Action.STRUCTURE
+)
+
+_dataset_distribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetDistribution)
+_dataset_distribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetDistribution)
+_dataset_distribution_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=DatasetDistribution)
+
+_dataset_attribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetAttribution)
+_dataset_attribution_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetAttribution)
+_dataset_attribution_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=DatasetAttribution)
+
+_dataset_relation_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetRelation)
+_dataset_relation_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=DatasetRelation)
+_dataset_relation_delete_acl: ACL = inherit_acl(
+    _dataset_delete_acl,
+    new_model_class=DatasetRelation,
+)
+
+_dataset_request_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=Request)
+_dataset_request_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
+_dataset_request_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=Request, new_action=Action.DELETE)
+_dataset_request_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request, new_action=Action.COMMENT)
+_dataset_request_history_view_acl: ACL = inherit_acl(
+    _dataset_history_view_acl, new_model_class=Request, new_roles={Role.GLOBAL_MANAGER}
+)
+_dataset_structure_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetStructure)
+
+
+acl: ACL = (
+    _dataset_view_acl
+    | _dataset_create_acl
+    | _dataset_update_acl
+    | _dataset_comment_acl
+    | _dataset_delete_acl
+    | _dataset_history_view_acl
+    | _dataset_distribution_create_acl
+    | _dataset_distribution_update_acl
+    | _dataset_distribution_delete_acl
+    | _dataset_attribution_create_acl
+    | _dataset_attribution_update_acl
+    | _dataset_attribution_delete_acl
+    | _dataset_relation_create_acl
+    | _dataset_relation_update_acl
+    | _dataset_relation_delete_acl
+    | _dataset_request_create_acl
+    | _dataset_request_update_acl
+    | _dataset_request_delete_acl
+    | _dataset_request_comment_acl
+    | _dataset_request_history_view_acl
+    | _dataset_structure_acl
+    | _dataset_structure_create_acl
+    | {
+        (Organization, Action.UPDATE): (Role.COORDINATOR,),
+        (Organization, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
+        (Organization, Action.HISTORY_VIEW): (Role.COORDINATOR, Role.MANAGER),
+        (Agent, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
+        (Agent, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
+        (Agent, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER),
+        (Agent, Action.DELETE): (Role.COORDINATOR, Role.MANAGER),
+        (Agreement, Action.CREATE): (Role.AUTHOR,),
+        (Agreement, Action.VIEW): (Role.AUTHOR,),
+        (Contact, Action.CREATE): (Role.COORDINATOR,),
+        (Contact, Action.UPDATE): (Role.COORDINATOR,),
+        (Contact, Action.DELETE): (Role.COORDINATOR,),
+        (Contact, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
+        (Request, Action.CREATE): (Role.AUTHENTICATED,),
+        (Request, Action.REQUEST_UPDATE): (Role.AUTHOR,),
+        (Request, Action.DELETE): (Role.AUTHOR,),
+        (Request, Action.COMMENT): (Role.COORDINATOR, Role.MANAGER),
+        (Request, Action.VIEW): (Role.AUTHOR, Role.COORDINATOR, Role.MANAGER),
+        (Request, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
+        (Request, Action.ASSIGN): (Role.COORDINATOR, Role.MANAGER),
+        (Project, Action.CREATE): (Role.AUTHENTICATED,),
+        (Project, Action.UPDATE): (Role.AUTHOR,),
+        (Project, Action.DELETE): (Role.AUTHOR,),
+        (Project, Action.VIEW): (Role.AUTHOR,),
+        (User, Action.UPDATE): (Role.AUTHOR,),
+        (User, Action.VIEW): (Role.AUTHOR,),
+        (Task, Action.UPDATE): (Role.AUTHENTICATED,),
+        (Organization, Action.MANAGE_KEYS): (Role.COORDINATOR, Role.MANAGER),
+        (Project, Action.MANAGE_PROJECT_KEYS): (Role.AUTHOR, Role.SUPERVISOR),
+        (RequestAssignment, Action.CREATE): (Role.COORDINATOR,),
+        (RequestAssignment, Action.DELETE): (Role.COORDINATOR,),
+        (ApiExample, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
+        (Representative, Action.CREATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.UPDATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.DELETE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.VIEW): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
+    }
+)
 
 
 def is_author(user: User, node: Model) -> bool:
@@ -130,63 +300,144 @@ def get_parents(obj: Model) -> list:
     return obj.get_acl_parents()
 
 
+def determine_user_role(user: User, resource: Dataset) -> Role:
+    if not user.is_authenticated:
+        return Role.VISITOR
+    if user.is_staff:
+        return Role.GLOBAL_MANAGER
+    if resource.get_resource_managers_queryset().filter(user=user).exists():
+        return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
+    if user.is_gov_organization_manager:
+        return Role.MANAGER
+    return Role.AUTHENTICATED
+
+
+def _get_dataset_instance(obj: Model) -> Dataset | None:
+    if isinstance(obj, Dataset):
+        dataset = obj
+    elif hasattr(obj, "dataset"):
+        dataset = getattr(obj, "dataset")
+    elif hasattr(obj, "content_type") and hasattr(obj, "object_id"):
+        content_object = getattr(obj, "content_object")
+        if isinstance(content_object, Dataset):
+            dataset = content_object
+        else:
+            dataset = None
+    else:
+        raise NotImplementedError(f"Dataset field does not exist on {obj=}")
+
+    return dataset
+
+
+def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) -> bool:
+    datasets_to_check: set[Dataset] = {
+        dataset,
+        *dataset.get_ancestors(),
+        *(d for d in get_parents(dataset) if isinstance(d, Dataset)),
+    }
+
+    organizations_to_check: set[Organization] = {d.organization for d in datasets_to_check if d.organization}
+
+    representatives: list[Representative] = list(
+        Representative.objects.filter(user_id=user.id).filter(
+            Q(content_type=ContentType.objects.get_for_model(Dataset), object_id__in=[d.pk for d in datasets_to_check])
+            | Q(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__in=[o.pk for o in organizations_to_check],
+            )
+        )
+    )
+    can_write_representative: bool = any(r.can_write for r in representatives)
+    for current_dataset in [dataset, *dataset.get_ancestors()]:
+        rule: EXISTING_DATASET_ACL_RULE = (
+            obj.__class__,
+            current_dataset.is_public,
+            current_dataset.access_rights,
+            action,
+        )
+        user_role: Role = determine_user_role(user, current_dataset)
+        allowed_roles = acl.get(rule)
+        has_perm: bool = allowed_roles and user_role in allowed_roles
+        is_confidential_dataset: bool = dataset.access_rights == Dataset.CONFIDENTIAL
+        if has_perm and action in WRITE_ACTIONS:
+            if is_confidential_dataset and current_dataset == dataset:
+                return can_write_representative
+            return True
+
+        if has_perm and current_dataset == dataset:
+            return True
+
+    return False
+
+
 def has_perm(
     user: User,  # request.user
     action: Action,
-    obj: (
-        Model  # when action is update, delete
-        | Type[Model]  # when action is create
-    ),
-    # when action is create, object based on which a new objects is created
-    parent: Model | None = None,
+    obj: Model | Type[Model],  # when action is update, delete
+    parent: Model | None = None,  # when action is create, object based on which new object is created
 ) -> bool:
-    if not user.is_authenticated:
-        return False
-
-    if user.is_staff or user.is_superuser:
+    if user.is_authenticated and user.is_superuser:
         return True
-
-    if isinstance(obj, Type):
-        model = obj
-        if parent:
-            nodes = get_parents(parent)
-        else:
-            nodes = []
+    if parent:
+        class_object = parent.__class__
+    elif inspect.isclass(obj):
+        class_object = obj
     else:
-        model = type(obj)
-        nodes = get_parents(obj)
+        class_object = obj.__class__
+    if (
+        action not in EXCLUDED_ACTIONS
+        and class_object in DATASET_RELATED_OBJECTS
+        and (dataset := _get_dataset_instance(parent or obj))
+    ):
+        return _has_dataset_perm(user, action, parent or obj, dataset)
+    else:
+        if not user.is_authenticated:
+            return False
 
-    where = []
-    if acl.get((model, action)):
-        for role in acl[(model, action)]:
-            if role == Role.ALL:
-                return True
+        if user.is_staff:
+            return True
+
+        if isinstance(obj, Type):
+            model = obj
+            if parent:
+                nodes = get_parents(parent)
             else:
-                for node in nodes:
-                    if role == Role.AUTHOR:
-                        if is_author(user, node):
-                            return True
-                    elif role == Role.SUPERVISOR:
-                        if is_supervisor(user, node):
-                            return True
-                    else:
-                        ct = ContentType.objects.get_for_model(node)
-                        where.append(
-                            Q(
-                                content_type=ct,
-                                object_id=node.pk,
-                                role=role.value,
-                            )
-                        )
-    if where:
-        where = functools.reduce(operator.or_, where)
-        if Representative.objects.filter(where, user=user).exists():
-            return True
+                nodes = []
+        else:
+            model = type(obj)
+            nodes = get_parents(obj)
 
-        user_org = getattr(user, "organization", None)
-        if user_org and Representative.objects.filter(where, organization=user_org).exists():
-            return True
-    return False
+        where = []
+        roles = acl.get((model, action))
+        if not roles:
+            return False
+
+        for role in roles:
+            if role == Role.AUTHENTICATED:
+                return True
+            for node in nodes:
+                if (role == Role.AUTHOR and is_author(user, node)) or (
+                    role == Role.SUPERVISOR and is_supervisor(user, node)
+                ):
+                    return True
+                if role not in {Role.AUTHOR, Role.SUPERVISOR}:
+                    ct = ContentType.objects.get_for_model(node)
+                    where.append(
+                        Q(
+                            content_type=ct,
+                            object_id=node.pk,
+                            role=role.value,
+                        )
+                    )
+        if where:
+            where = functools.reduce(operator.or_, where)
+            if Representative.objects.filter(where, user=user).exists():
+                return True
+
+            user_org = getattr(user, "organization", None)
+            if user_org and Representative.objects.filter(where, organization=user_org).exists():
+                return True
+        return False
 
 
 def get_coordinators_count(model: Type[Model], object_id: int) -> int:

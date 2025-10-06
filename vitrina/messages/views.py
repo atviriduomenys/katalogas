@@ -27,10 +27,7 @@ class UnsubscribeView(LoginRequiredMixin, PermissionRequiredMixin, View):
 
     def has_permission(self):
         if isinstance(self.obj, Dataset):
-            if self.obj.is_public:
-                return True
-            else:
-                return has_perm(self.request.user, Action.VIEW, self.obj)
+            return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
             if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
                 return True
@@ -105,11 +102,12 @@ class SubscribeFormView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
     user: User
 
     def has_permission(self):
-        if isinstance(self.obj, (Dataset, Organization)):
+        if isinstance(self.obj, Organization):
             if self.obj.is_public:
                 return True
-            else:
-                return has_perm(self.request.user, Action.VIEW, self.obj)
+            return has_perm(self.request.user, Action.VIEW, self.obj)
+        elif isinstance(self.obj, Dataset):
+            return has_perm(self.request.user, Action.VIEW, self.obj)
         elif isinstance(self.obj, Project):
             if self.obj.status == Project.APPROVED or self.obj.user == self.request.user:
                 return True

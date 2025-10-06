@@ -1,13 +1,13 @@
 from typing import Union
 
-from django.http import HttpRequest
 from django.utils.translation import gettext_lazy as _
+from rest_framework.request import Request
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.orgs.models import Organization
 
 
-def is_org_dataset_list(request: HttpRequest):
+def is_org_dataset_list(request: Request):
     return request.resolver_match.url_name == "organization-datasets"
 
 

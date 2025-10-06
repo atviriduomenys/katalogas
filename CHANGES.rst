@@ -11,6 +11,9 @@ Replaced old format scopes with the prefix of `spinta_` with UDTS format scopes.
 https://github.com/atviriduomenys/katalogas/issues/1875
 Add checkbox "Can edit data" to organization and dataset representative form
 
+https://github.com/atviriduomenys/katalogas/issues/1836
+Changed ACL list for Dataset read/update access, introduced `PermittedDatasetManager`
+
 
 v 1.3 (2025-09-30)
 ==================

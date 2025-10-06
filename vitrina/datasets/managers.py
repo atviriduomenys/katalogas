@@ -37,40 +37,49 @@ class PermittedDatasetManager(TranslatableManager):
     def _filter_datasets_for_user(self, user: "User", datasets: QuerySet["Dataset"]) -> QuerySet["Dataset"]:
         from vitrina.datasets.models import Dataset, Organization, Representative
 
+        dataset_ct = ContentType.objects.get_for_model(Dataset)
+        org_ct = ContentType.objects.get_for_model(Organization)
+
         public_filter: Q = Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
 
         if not user.is_authenticated:
             return datasets.filter(public_filter)
         if user.is_staff or user.is_superuser:
             return datasets
+
+        # Collect all dataset paths the user directly represents
+        represented_dataset_paths = list(
+            Dataset.objects.filter(
+                pk__in=Representative.objects.filter(content_type=dataset_ct, user_id=user.id).values_list(
+                    "object_id", flat=True
+                )
+            ).values_list("path", flat=True)
+        )
+
+        # Collect all organization paths the user directly represents
+        represented_org_paths = list(
+            Organization.objects.filter(
+                pk__in=Representative.objects.filter(content_type=org_ct, user_id=user.id).values_list(
+                    "object_id", flat=True
+                )
+            ).values_list("path", flat=True)
+        )
+
+        accessible_filter = public_filter
+
+        for ds_path in represented_dataset_paths:
+            accessible_filter |= Q(path__startswith=ds_path)
+
+        for org_path in represented_org_paths:
+            accessible_filter |= Q(organization__path__startswith=org_path)
+
         if user.is_gov_organization_manager:
-            return datasets.filter(
-                Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC))
+            accessible_filter |= Q(
+                is_public=True,
+                access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC),
             )
 
-        dataset_ct = ContentType.objects.get_for_model(Dataset)
-        org_ct = ContentType.objects.get_for_model(Organization)
-
-        user_dataset_ids = set(
-            Representative.objects.filter(content_type=dataset_ct, user_id=user.id).values_list("object_id", flat=True)
-        )
-
-        user_org_ids = set(
-            Representative.objects.filter(content_type=org_ct, user_id=user.id).values_list("object_id", flat=True)
-        )
-
-        accessible_ids = set()
-        for ds in datasets:
-            ds_and_ancestors = [ds.pk] + [d.pk for d in ds.get_ancestors()]
-            if user_dataset_ids.intersection(ds_and_ancestors):
-                accessible_ids.add(ds.pk)
-                continue
-
-            if ds.organization and ds.organization.pk in user_org_ids:
-                accessible_ids.add(ds.pk)
-                continue
-
-        return datasets.filter(Q(pk__in=accessible_ids) | public_filter)
+        return datasets.filter(accessible_filter).distinct()
 
 
 class EdpPublicDatasetManager(TranslatableManager):

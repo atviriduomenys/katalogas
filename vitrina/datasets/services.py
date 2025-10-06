@@ -268,15 +268,17 @@ def get_datasets_for_user(request: DrfRequest, datasets: SearchQuerySet) -> Sear
 
 def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet) -> SearchQuerySet:
     public_filter: SQ = SQ(is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
+    combined_filter = public_filter | SQ(resource_managers__in=[user.pk])
     if not user.is_authenticated:
         return datasets.filter(public_filter)
     elif user.is_staff or user.is_superuser:
         return datasets
-    elif user.is_gov_organization_manager:
-        return datasets.filter(
+
+    if user.is_gov_organization_manager:
+        combined_filter |= SQ(
             is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC)
         )
-    return datasets.filter(SQ(resource_managers__in=[user.pk]) | public_filter)
+    return datasets.filter(combined_filter)
 
 
 def create_subscription(user, dataset):

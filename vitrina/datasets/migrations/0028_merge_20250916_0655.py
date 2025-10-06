@@ -8,6 +8,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('vitrina_datasets', '0025_auto_20250905_1100'),
         ('vitrina_datasets', '0026_dataset_service_type'),
+        ('vitrina_datasets', '0027_alter_dataset_access_rights'),
     ]
 
     operations = [

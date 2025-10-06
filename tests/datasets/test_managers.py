@@ -81,7 +81,7 @@ class TestDatasetViewPermissions:
         )
 
     @pytest.mark.parametrize(
-        "user_attr,ds_attr,is_public,access_rights,expected",
+        "user_attributes,dataset_attributes,is_public,access_rights,expected",
         [
             # not public dataset
             ("regular_user", "grandchild", False, "PUBLIC", False),
@@ -124,13 +124,13 @@ class TestDatasetViewPermissions:
     def test_view_permissions(
         self,
         user_attributes: str,
-        datasets_attributes: str,
+        dataset_attributes: str,
         is_public: bool,
         access_rights: str,
         expected: bool,
     ):
         user = getattr(self, user_attributes)
-        dataset = getattr(self, datasets_attributes)
+        dataset = getattr(self, dataset_attributes)
 
         dataset.is_public = is_public
         dataset.access_rights = access_rights

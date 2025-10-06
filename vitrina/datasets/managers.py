@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Manager, QuerySet, Q
 from parler.managers import TranslatableManager, TranslatableQuerySet

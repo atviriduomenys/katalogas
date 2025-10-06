@@ -50,6 +50,7 @@ class User(AbstractUser):
     failed_login_attempts = models.IntegerField(default=0)
     password_last_updated = models.DateTimeField(default=now, null=True)
     is_viisp_login = models.BooleanField(default=False)
+    receive_request_email = models.BooleanField(default=False)
 
     # Deprecated fields bellow
     disabled = models.BooleanField(default=False)

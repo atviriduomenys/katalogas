@@ -678,7 +678,7 @@ class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         )
         sub_email_list = []
         if not orgs:
-            sub_email_list = User.objects.filter(is_superuser=True).values_list("email", flat=True)
+            sub_email_list = User.objects.filter(receive_request_email=True).values_list("email", flat=True)
         else:
             for organization in orgs:
                 if organization.email:

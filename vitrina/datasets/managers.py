@@ -23,7 +23,7 @@ class PublicDatasetManager(TranslatableManager):
 
 class PermittedDatasetManager(TranslatableManager):
     def for_user(self, user: "User") -> QuerySet["Dataset"]:
-        base_qs: QuerySet["Dataset"] = (
+        base_queryset: QuerySet["Dataset"] = (
             super()
             .get_queryset()
             .filter(
@@ -32,7 +32,7 @@ class PermittedDatasetManager(TranslatableManager):
                 organization_id__isnull=False,
             )
         )
-        return self._filter_datasets_for_user(user, base_qs)
+        return self._filter_datasets_for_user(user, base_queryset)
 
     def _filter_datasets_for_user(self, user: "User", datasets: QuerySet["Dataset"]) -> QuerySet["Dataset"]:
         from vitrina.datasets.models import Dataset, Organization, Representative
@@ -40,10 +40,10 @@ class PermittedDatasetManager(TranslatableManager):
         dataset_ct = ContentType.objects.get_for_model(Dataset)
         org_ct = ContentType.objects.get_for_model(Organization)
 
-        public_filter: Q = Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
+        accessible_filter: Q = Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
 
         if not user.is_authenticated:
-            return datasets.filter(public_filter)
+            return datasets.filter(accessible_filter)
         if user.is_staff or user.is_superuser:
             return datasets
 
@@ -64,8 +64,6 @@ class PermittedDatasetManager(TranslatableManager):
                 )
             ).values_list("path", flat=True)
         )
-
-        accessible_filter = public_filter
 
         for ds_path in represented_dataset_paths:
             accessible_filter |= Q(path__startswith=ds_path)

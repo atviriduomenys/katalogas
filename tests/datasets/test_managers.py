@@ -123,20 +123,20 @@ class TestDatasetViewPermissions:
     )
     def test_view_permissions(
         self,
-        user_attr: str,
-        ds_attr: str,
+        user_attributes: str,
+        datasets_attributes: str,
         is_public: bool,
         access_rights: str,
         expected: bool,
     ):
-        user = getattr(self, user_attr)
-        ds = getattr(self, ds_attr)
+        user = getattr(self, user_attributes)
+        dataset = getattr(self, datasets_attributes)
 
-        ds.is_public = is_public
-        ds.access_rights = access_rights
-        ds.save()
+        dataset.is_public = is_public
+        dataset.access_rights = access_rights
+        dataset.save()
 
-        qs = Dataset.restricted.for_user(user)
-        result = ds in qs
+        queryset = Dataset.restricted.for_user(user)
+        result = dataset in queryset
 
         assert result is expected

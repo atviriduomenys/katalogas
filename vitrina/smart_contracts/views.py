@@ -42,19 +42,19 @@ from vitrina.views import FormsetView, HistoryMixin
 
 
 class BaseProjectMixin:
-    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
-        self.object = get_object_or_404(
-            Project.public.all().prefetch_related(
-                Prefetch(
-                    "datasets",
-                    queryset=Dataset.public.all().order_by("organization_id"),
-                    to_attr="public_datasets",
-                )
-            ),
-            pk=kwargs["pk"],
+    def get_project_queryset(self):
+        return Project.public.all().prefetch_related(
+            Prefetch(
+                "datasets",
+                queryset=Dataset.public.all().order_by("organization_id"),
+                to_attr="public_datasets",
+            )
         )
 
-        return super().dispatch(request, *args, **kwargs)
+    def get_project(self, project_id: int):
+        if not hasattr(self, "_project"):
+            self._project = get_object_or_404(self.get_project_queryset(), pk=project_id)
+        return self._project
 
 
 class BaseAgreementMixin:
@@ -84,6 +84,7 @@ class AgreementListView(
     object: Project
 
     def has_permission(self) -> bool:
+        self.object = self.get_project(self.kwargs["pk"])
         return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_context_data(self, **kwargs: Any) -> dict:
@@ -135,6 +136,10 @@ class AgreementDetailView(
     object: Project
     agreement: Agreement
 
+    def setup(self, request, *args, **kwargs):
+        self.object = self.get_project(kwargs["pk"])
+        return super().setup(request, *args, **kwargs)
+
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, self.agreement)
 
@@ -175,12 +180,15 @@ class AgreementCreateView(
     template_name = "smart_contracts/agreement_create.html"
 
     def has_permission(self) -> bool:
+        self.object = self.get_project(self.kwargs["pk"])
         return getattr(self.request.user, "organization_id", None) and (
             has_perm(self.request.user, Action.UPDATE, self.object) or self.request.user == self.object.user
         )
 
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
-        dispatch = super().dispatch(request, *args, **kwargs)
+        if not self.has_permission():
+            return self.handle_no_permission()
+
         if not self.get_dataset_metadata_by_organization:
             messages.error(
                 self.request,
@@ -188,7 +196,7 @@ class AgreementCreateView(
             )
             return HttpResponseRedirect(self.get_success_url())
 
-        return dispatch
+        return super(PermissionRequiredMixin, self).dispatch(request, *args, **kwargs)
 
     @cached_property
     def get_dataset_metadata_by_organization(self) -> dict[int, list[Metadata]]:
@@ -300,6 +308,10 @@ class AgreementGeneratePdf(
     detail_url_name = "project-detail"
     history_url_name = "project-history"
 
+    def setup(self, request, *args, **kwargs):
+        self.object = self.get_project(kwargs["pk"])
+        return super().setup(request, *args, **kwargs)
+
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, self.agreement) or self.request.user == self.object.user
 
@@ -377,6 +389,10 @@ class AgreementUploadSignedFile(
 ):
     form_class = AgreementUploadForm
     template_name = "base_form.html"
+
+    def setup(self, request, *args, **kwargs):
+        self.object = self.get_project(kwargs["pk"])
+        return super().setup(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, self.agreement) or self.request.user == self.object.user

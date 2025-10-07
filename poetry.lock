@@ -5507,7 +5507,7 @@ migrations = ["alembic (>=1.11.0,<1.12.0)"]
 type = "git"
 url = "https://github.com/atviriduomenys/spinta.git"
 reference = "ft/1463-manifest-to-openapi"
-resolved_reference = "b4b4f88ecf00c3ffc08012fb7a19a242cd8273b4"
+resolved_reference = "b085a8b2f0c3ffaf55f690d4cf9a3ba5526d15de"
 
 [[package]]
 name = "sqlalchemy"

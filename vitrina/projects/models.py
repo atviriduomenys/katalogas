@@ -52,7 +52,6 @@ class Project(models.Model):
     title = models.CharField(max_length=255, blank=True, null=True)
     image = FilerImageField(null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL)
     organization = models.ForeignKey(Organization, models.PROTECT, blank=True, null=True)
-    representatives = GenericRelation(Representative, related_query_name="organization")
 
     comments = GenericRelation("vitrina_comments.Comment")
     datasets = models.ManyToManyField("vitrina_datasets.Dataset")

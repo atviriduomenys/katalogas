@@ -196,6 +196,13 @@ class AgreementCreateView(
             )
             return HttpResponseRedirect(self.get_success_url())
 
+        if not self.object.organization:
+            messages.error(
+                self.request,
+                _("Privaūs asmenys negali sudaryti sutarčių."),
+            )
+            return HttpResponseRedirect(self.get_success_url())
+
         return super(PermissionRequiredMixin, self).dispatch(request, *args, **kwargs)
 
     @cached_property
@@ -271,7 +278,7 @@ class AgreementCreateView(
                 assigner=form.instance,
                 status=AgreementStatuses.CREATED,
                 created_by=current_user,
-                assignee=current_user.organization,
+                assignee=self.object.organization,
             )
             agreement_scopes = []
             for scope in form.cleaned_data["scopes"]:

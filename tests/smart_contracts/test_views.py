@@ -161,7 +161,7 @@ class TestAgreementCreateView:
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
         user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -208,7 +208,7 @@ class TestAgreementCreateView:
             name="datasets/gov/org/dataset",
         )
         user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset1, dataset2, diff_dataset])
+        project = ProjectFactory(user=user, datasets=[dataset1, dataset2, diff_dataset], organization=organization)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -249,7 +249,7 @@ class TestAgreementCreateView:
             dataset=dataset2,
             name="test/dataset2",
         )
-        project = ProjectFactory(user=user, datasets=[dataset, dataset2])
+        project = ProjectFactory(user=user, datasets=[dataset, dataset2], organization=organization)
         AgreementFactory(project=project, assigner=organization)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -262,7 +262,7 @@ class TestAgreementCreateView:
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
         user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
         app.set_user(user)
 
         data = {

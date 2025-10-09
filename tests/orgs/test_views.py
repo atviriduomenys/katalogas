@@ -262,7 +262,7 @@ def representative_data():
 def test_representative_create_without_permission(app: DjangoTestApp, representative_data):
     app.set_user(representative_data['manager'])
     resp = app.get(reverse('representative-create', kwargs={
-        'organization_id': representative_data['organization'].pk
+        'pk': representative_data['organization'].pk
     }), expect_errors=True)
     assert resp.status_code == 403
 
@@ -271,7 +271,7 @@ def test_representative_create_without_permission(app: DjangoTestApp, representa
 def test_representative_create_with_existing_user(app: DjangoTestApp, representative_data):
     app.set_user(representative_data['coordinator'])
     form = app.get(reverse('representative-create', kwargs={
-        'organization_id': representative_data['organization'].pk
+        'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "manager@gmail.com"
     form['role'] = "coordinator"
@@ -291,7 +291,7 @@ def test_representative_create_with_existing_user(app: DjangoTestApp, representa
 def test_representative_create_without_user(app: DjangoTestApp, representative_data):
     app.set_user(representative_data['coordinator'])
     form = app.get(reverse('representative-create', kwargs={
-        'organization_id': representative_data['organization'].pk
+        'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "new@gmail.com"
     form['role'] = "manager"
@@ -314,14 +314,14 @@ def test_representative_create_without_user_for_two_organizations(app: DjangoTes
     app.set_user(user)
 
     form = app.get(reverse('representative-create', kwargs={
-        'organization_id': organization1.pk
+        'pk': organization1.pk
     })).forms['representative-form']
     form['email'] = "new@gmail.com"
     form['role'] = "manager"
     form.submit()
 
     form = app.get(reverse('representative-create', kwargs={
-        'organization_id': organization2.pk
+        'pk': organization2.pk
     })).forms['representative-form']
     form['email'] = "new@gmail.com"
     form['role'] = "manager"
@@ -336,7 +336,7 @@ def test_representative_create_without_user_for_two_organizations(app: DjangoTes
 def test_representative_create_invalid_phone(app: DjangoTestApp, representative_data):
     app.set_user(representative_data['coordinator'])
     form = app.get(reverse('representative-create', kwargs={
-        'organization_id': representative_data['organization'].pk
+        'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "new@gmail.com"
     form['role'] = "manager"
@@ -352,7 +352,7 @@ def test_representative_create_valid_phone(app: DjangoTestApp, representative_da
     app.set_user(representative_data['coordinator'])
 
     form = app.get(reverse('representative-create', kwargs={
-        'organization_id': representative_data['organization'].pk
+        'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "new1@gmail.com"
     form['role'] = "manager"
@@ -364,7 +364,7 @@ def test_representative_create_valid_phone(app: DjangoTestApp, representative_da
     assert rep_queryset.first().phone == "+37061234567"
 
     form = app.get(reverse('representative-create', kwargs={
-        'organization_id': representative_data['organization'].pk
+        'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "new2@gmail.com"
     form['role'] = "manager"
@@ -381,7 +381,7 @@ def test_representative_create_valid_phone(app: DjangoTestApp, representative_da
 def test_representative_create_with_can_write_flag(app: DjangoTestApp, representative_data: dict, can_write: bool):
     app.set_user(representative_data["coordinator"])
     form = app.get(
-        reverse("representative-create", kwargs={"organization_id": representative_data["organization"].pk})
+        reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})
     ).forms["representative-form"]
     form["role"] = "manager"
     form["email"] = "new@gmail.com"
@@ -399,8 +399,8 @@ def test_representative_update_phone(app: DjangoTestApp, representative_data):
     representative_data['representative_manager'].save()
     app.set_user(representative_data['coordinator'])
     form = app.get(reverse('representative-update', kwargs={
-        'organization_id': representative_data['organization'].pk,
-        'pk': representative_data['representative_manager'].pk
+        'pk': representative_data['organization'].pk,
+        'representative_id': representative_data['representative_manager'].pk
     })).forms['representative-form']
     form['phone'] = "061234567"
     resp = form.submit()
@@ -418,7 +418,7 @@ def test_representative_subscription(app: DjangoTestApp, representative_data):
     app.set_user(user)
 
     form = app.get(reverse('representative-create', kwargs={
-        'organization_id': representative_data['organization'].pk
+        'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "manager@gmail.com"
     form['role'] = "manager"
@@ -471,7 +471,7 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
 def test_representative_update_without_permission(app: DjangoTestApp, representative_data):
     app.set_user(representative_data['manager'])
     resp = app.get(reverse('representative-create', kwargs={
-        'organization_id': representative_data['organization'].pk
+        'pk': representative_data['organization'].pk
     }), expect_errors=True)
     assert resp.status_code == 403
 
@@ -480,8 +480,8 @@ def test_representative_update_without_permission(app: DjangoTestApp, representa
 def test_representative_update_no_coordinators(app: DjangoTestApp, representative_data):
     app.set_user(representative_data['coordinator'])
     form = app.get(reverse('representative-update', kwargs={
-        'organization_id': representative_data['organization'].pk,
-        'pk': representative_data['representative_coordinator'].pk
+        'pk': representative_data['organization'].pk,
+        'representative_id': representative_data['representative_coordinator'].pk
     })).forms['representative-form']
     form['role'] = "manager"
     resp = form.submit()
@@ -494,8 +494,8 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
     representative_data['representative_manager'].save()
     app.set_user(representative_data['coordinator'])
     form = app.get(reverse('representative-update', kwargs={
-        'organization_id': representative_data['organization'].pk,
-        'pk': representative_data['representative_manager'].pk
+        'pk': representative_data['organization'].pk,
+        'representative_id': representative_data['representative_manager'].pk
     })).forms['representative-form']
     form['role'] = "coordinator"
     resp = form.submit()
@@ -519,7 +519,7 @@ def test_representative_update_can_write_flag(app: DjangoTestApp, representative
     app.set_user(representative_data["coordinator"])
     form = app.get(
         reverse("representative-update", kwargs={
-            "organization_id": representative_data["organization"].pk, "pk": representative.pk
+            "pk": representative_data["organization"].pk, "representative_id": representative.pk
         })
     ).forms["representative-form"]
     form["can_write"] = not can_write
@@ -938,7 +938,7 @@ def test_contact_create_for_org(app, representative_data):
     ds = DatasetFactory(organization=org)
     app.set_user(representative_data['coordinator'])
     form = app.get(reverse('contact-create', kwargs={
-        'organization_id': org.pk
+        'pk': org.pk
     })).forms['contact-form']
 
     form['contact'] = f"org-{org.pk}"
@@ -975,7 +975,7 @@ def test_contact_create_for_user_valid_data(app, representative_data):
     ds = DatasetFactory(organization=org)
 
     form = app.get(reverse('contact-create', kwargs={
-        'organization_id': org.pk
+        'pk': org.pk
     })).forms['contact-form']
 
     form['contact'] = f"user-{user.pk}"
@@ -1006,7 +1006,7 @@ def test_contact_create_for_user_valid_data(app, representative_data):
 def test_contact_create_no_permission(app, representative_data):
     app.set_user(representative_data['manager'])
     resp = app.get(reverse('contact-create', kwargs={
-        'organization_id': representative_data['organization'].pk
+        'pk': representative_data['organization'].pk
     }), expect_errors=True)
     assert resp.status_code == 403
 
@@ -1025,8 +1025,8 @@ def test_contact_update_org(app, representative_data):
     )
 
     form = app.get(reverse('contact-update', kwargs={
-        'organization_id': org.pk,
-        'pk': contact.pk
+        'pk': org.pk,
+        'contact_id': contact.pk
     })).forms['contact-form']
 
     form['email'] = "updated@test.com"
@@ -1054,8 +1054,8 @@ def test_contact_update_user(app, representative_data):
         phone="+37061234567"
     )
     form = app.get(reverse('contact-update', kwargs={
-        'organization_id': org.pk,
-        'pk': contact.pk
+        'pk': org.pk,
+        'contact_id': contact.pk
     })).forms['contact-form']
 
     form['email'] = "updated@test.com"
@@ -1101,8 +1101,8 @@ def test_contact_delete_no_permission(app, representative_data):
     )
 
     resp = app.get(reverse('contact-delete', kwargs={
-        'organization_id': org.pk,
-        'pk': contact.pk
+        'pk': org.pk,
+        'contact_id': contact.pk
     }), expect_errors=True)
 
     assert resp.status_code == 403

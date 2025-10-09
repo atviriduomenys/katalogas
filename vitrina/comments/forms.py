@@ -95,6 +95,7 @@ class RequestCommentForm(CommentForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields["body"].required = False
+        self.fields["status"].initial = self.obj.status
 
     def clean(self):
         body = self.cleaned_data.get("body")

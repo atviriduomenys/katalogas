@@ -1,4 +1,5 @@
 from datetime import date, timedelta
+from unittest.mock import patch
 
 import pytest
 import pytz
@@ -497,3 +498,41 @@ def test_remove_dataset_from_request_with_organization_permission(app: DjangoTes
         object_id=dataset.pk,
         content_type=ContentType.objects.get_for_model(dataset),
     ).exists()
+
+
+@pytest.mark.django_db
+@patch('vitrina.requests.views.email')
+def test_request_create_email_only_to_users_with_flag(mock_email, app: DjangoTestApp):
+    creator = UserFactory(is_staff=True)
+    UserFactory(email='with_flag@test.com', receive_request_email=True)
+    UserFactory(email='without_flag@test.com', receive_request_email=False)
+
+    app.set_user(creator)
+    form = app.get(reverse("request-create")).forms['request-form']
+    form['title'] = "Test Request"
+    form['description'] = "Test Description"
+    form.submit()
+
+    mock_email.assert_called_once()
+    email_list = list(mock_email.call_args[0][0])
+
+    assert 'with_flag@test.com' in email_list
+    assert 'without_flag@test.com' not in email_list
+
+
+@pytest.mark.django_db
+@patch('vitrina.requests.views.email')
+def test_request_create_no_email_when_no_users_have_flag(mock_email, app: DjangoTestApp):
+    creator = UserFactory(is_staff=True)
+    UserFactory(email='user1@test.com', receive_request_email=False)
+    UserFactory(email='user2@test.com', receive_request_email=False)
+
+    app.set_user(creator)
+    form = app.get(reverse("request-create")).forms['request-form']
+    form['title'] = "Test Request"
+    form['description'] = "Test Description"
+    form.submit()
+
+    if mock_email.called:
+        email_list = list(mock_email.call_args[0][0])
+        assert len(email_list) == 0

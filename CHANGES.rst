@@ -24,6 +24,9 @@ Add Catalog model to admin.
 https://github.com/atviriduomenys/katalogas/issues/720
 Add cronjobs for periodic scripts.
 
+https://github.com/atviriduomenys/katalogas/issues/1968
+Add `receive_request_email` flag to User.
+Change default status in `RequestCommentForm`.
 
 v 1.3 (2025-09-30)
 ==================

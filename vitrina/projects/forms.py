@@ -23,7 +23,9 @@ class ProjectForm(ModelForm):
         Organization.objects.none(),
         label=_("Organizacija"),
         required=False,
-        help_text=_("Organizacija, kurios vardu teikiamas panaudos atvejis. Atitinka: legal:LegalEntity"),
+        help_text=_(
+            "Nurodžius organizaciją panaudos atvejis kuriamas organizacijos vardu, nenurodžius - privataus asmens vardu. Atitinka legal:LegalEntity"
+        ),
     )
     url = CharField(
         label=_("Nuoroda į panaudojimo atvejį"),

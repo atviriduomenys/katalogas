@@ -5,109 +5,82 @@
 {% load subscription_tags %}
 {% load like_tags %}
 {% load comment_tags %}
-
 {% block parent_title %}{% translate "Panaudojimo atvejai" %}{% endblock %}
 {% block current_title %}{{ project.get_title }}{% endblock %}
-
 {% block content %}
-
-    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
-
-    <div class="columns no-margin-bottom">
-        <div class="column is-one-quarter">
-            {% get_hit_count for project as total_hits %}
-            {% if total_hits %}
-            <div class="content">
-                <p>
-                    {% translate "Peržiūrėjo" %}:
-                    <b id="total_hits">{{ total_hits }}</b>
-                </p>
-            </div>
-            {% endif %}
-            {% if can_update_project %}
-            <div class="content">
-                <p>
-                    {% translate "Būsena" %}:
-                    {% if project.status == "APPROVED"%}
-                        <b id="status_approved" style="color:green;">{% translate "PATVIRTINTAS" %}</b>
-                    {% elif project.status == "REJECTED" %}
-                        <b id="status_rejected" style="color:red;">{% translate "ATMESTAS" %}</b>
-                    {% else %}
-                        <b id="status_created">{% translate "NAUJAS" %}</b>
-                    {% endif %}
-                </p>
-            </div>
-            {% endif %}
-            <div class="content" id="project_likes">
-                {% if user.is_authenticated %}
-                    <p>{% translate "Ar jums patinka šis projektas?" %}</p>
-                    
-                {% else %}
-                    <p>
-                        {% translate "Patinka" %}:
-                        <b>{% like obj=project user=request.user %}</b>
-                    </p>
-                {% endif %}
-            </div>
-            <div class="content" id="project_subscription">
-                {% translate "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju" as description %}
-                {% subscription obj=project user=request.user description=description %}
-            </div>
-        </div>
-        <div class="column is-two-quarters">
-            {% if can_update_project %}
-                <div class="buttons is-right">
-                    <a href="{%url 'project-update' pk=project.pk %}" class="button is-primary">
-                        {% translate "Keisti" %}
-                    </a>
+{% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
+{# templates/projects/detail.html #}
+{% load i18n hitcount_tags %}
+<div class="container">
+    <div class="columns is-variable is-6">
+        {# LEFT: main content #}
+        <div class="column is-8">
+            <div class="level">
+                <div class="level-left">
+                    <div class="level-item">
+                        {% get_hit_count for project as total_hits %}
+                        {% if total_hits %}
+                        <p class="has-text-grey-dark">
+                            {% translate "Panaudojimo atvejo peržiūros" %}:
+                            <strong id="total_hits">{{ total_hits }}</strong>
+                        </p>
+                        {% endif %}
+                    </div>
                 </div>
-            {% endif %}
-
-            <div class="content">
-                <p>{{ project.description|linebreaks|urlizetrunc:72 }} </p>
-
-                {% if project.benefit %}
-                <p class=" no-margin-bottom"><b>{% translate "Teikiama nauda" %}:</b></p>
-                {{ project.benefit|linebreaks|urlizetrunc:72 }}
-                {% endif %}
-
-                {% if project.beneficiaryGroup %}
-                <p class=" no-margin-bottom"><b>{% translate "Naudos gavėjų grupė" %}:</b></p>
-                {{ project.beneficiaryGroup|linebreaks|urlizetrunc:72 }}
-                {% endif %}
-
-                {% if project.extraInformation %}
-                <p class=" no-margin-bottom"><b>{% translate "Papildoma informacija" %}:</b></p>
-                {{ project.extraInformation|linebreaks|urlizetrunc:72 }}
-                {% endif %}
-
-                {% if project.url %}
-                <p class=" no-margin-bottom"><b>{% translate "Nuoroda" %}:</b></p>
-                <p>{{ project.url|urlizetrunc:72 }}</p>
-                {% endif %}
+                <div class="level-right">
+                    {% if can_update_project %}
+                    <a href="{% url 'project-update' project.pk %}" class="button is-link">
+                    {% translate "Redaguoti" %}
+                    </a>
+                    {% endif %}
+                </div>
             </div>
-
-            {% if datasets %}
-            <br/>
-            <p><b>{% translate "Panaudoti duomenų rinkiniai" %}:</b></p>
-            {# TODO: Add datasets. #}
+            <div class="content">
+                <h5 class="has-text-weight-bold">{% translate "Aprašymas" %}</h5>
+                <p>{{ project.description|linebreaksbr }}</p>
+            </div>
+            {% if project.url %}
+            <div class="content">
+                <h5 class="has-text-weight-semibold">{% translate "Nuoroda" %}</h5>
+                <p>
+                    <a href="{{ project.url }}" target="_blank" rel="noopener">{{ project.url }}</a>
+                </p>
+            </div>
             {% endif %}
+            <hr>
+            <div class="content">
+                <div class="columns no-margin-bottom">
+                    <div class="column">
+                        {% comments obj=project user=request.user %}
+                    </div>
+                </div>
+            </div>
         </div>
+        <aside class="column is-4">
+            {% trans "Duomenų gavėjas" as header_text %}
+            {% include "component/organization_card.html" with organization=project.organization header=header_text %}
+            <hr>
+            <p>
+                <span>{% translate "Būsena" %}:</span>
+                <span class="has-text-weight-semibold">
+                {{ project.get_status_display|default:project.status }}
+                </span>
+            </p>
+            <div class="mt-3">
+                <div class="content" id="project_subscription">
+                    {% translate "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju" as description %}
+                    {% subscription obj=project user=request.user description=description %}
+                </div>
+            </div>
+        </aside>
     </div>
-    <div class="columns no-margin-bottom">
-        <div class="column is-one-quarter"></div>
-        <div class="column is-three-quarters">
-            {% comments obj=project user=request.user %}
-        </div>
-    </div>
-
+</div>
 {% endblock %}
-
 {% block scripts %}
-    {% get_hit_count_js_variables for project as hitcount %}
-    <script type="text/javascript">
-        $(function () {
-            $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
-        });
-    </script>
+{% get_hit_count_js_variables for project as hitcount %}
+<script type="text/javascript">
+   $(function () {
+       $.postCSRF("{{ hitcount.ajax_url }}", { hitcountPK : "{{ hitcount.pk }}" });
+   });
+</script>
 {% endblock %}

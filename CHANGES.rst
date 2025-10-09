@@ -18,6 +18,9 @@ https://github.com/atviriduomenys/katalogas/issues/1935
 Add different staff groups for Organization, LearningMaterial, DjangoCms and Dataset.
 Add Catalog model to admin.
 
+https://github.com/atviriduomenys/katalogas/issues/720
+Add cronjobs for periodic scripts.
+
 
 v 1.3 (2025-09-30)
 ==================

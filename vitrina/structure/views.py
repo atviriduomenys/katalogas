@@ -61,12 +61,15 @@ from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
     get_data_from_spinta,
     export_dataset_structure,
+    _export_dataset_structure_to_stringio,
     get_model_name,
     get_srid,
     transform_coordinates,
     get_data_from_spinta_async,
 )
 from vitrina.tasks.models import Task
+from spinta.manifests.open_api.helpers import create_openapi_manifest
+from spinta.manifests.components import ManifestPath
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
 
 EXCLUDED_COLS = ["_type", "_revision", "_base"]
@@ -1355,6 +1358,23 @@ class DatasetStructureExportView(PermissionRequiredMixin, View):
 
         response = StreamingHttpResponse(stream, content_type="text/csv")
         response["Content-Disposition"] = "attachment; filename=manifest.csv"
+        return response
+
+
+class DatasetStructureExportOpenAPIView(PermissionRequiredMixin, View):
+    def has_permission(self):
+        dataset = get_object_or_404(Dataset, pk=self.kwargs.get("pk"))
+        return has_perm(self.request.user, Action.STRUCTURE, Dataset, dataset)
+
+    def get(self, request, *args, **kwargs):
+        dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+
+        manifest_stream = _export_dataset_structure_to_stringio(dataset)
+        manifest_path = ManifestPath(file=manifest_stream)
+        openapi_spec = create_openapi_manifest(manifest_path)
+
+        response = JsonResponse(openapi_spec, json_dumps_params={"indent": 2, "ensure_ascii": False})
+        response["Content-Disposition"] = "attachment; filename=manifest.json"
         return response
 
 

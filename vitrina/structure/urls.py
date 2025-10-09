@@ -3,6 +3,7 @@ from django.urls import path
 from vitrina.api_example.views import YamlFileImportView
 from vitrina.structure.views import DatasetStructureView, VersionCreateView
 from vitrina.structure.views import DatasetStructureExportView
+from vitrina.structure.views import DatasetStructureExportOpenAPIView
 from vitrina.structure.views import ModelStructureView
 from vitrina.structure.views import PropertyStructureView
 from vitrina.structure.views import ModelDataView
@@ -172,6 +173,11 @@ urlpatterns = [
         "datasets/<int:pk>/structure/export/",
         DatasetStructureExportView.as_view(),
         name="dataset-structure-export",
+    ),
+    path(
+        "datasets/<int:pk>/structure/export/openapi/",
+        DatasetStructureExportOpenAPIView.as_view(),
+        name="dataset-structure-export-openapi",
     ),
     path(
         "datasets/<int:pk>/<str:model>/<str:prop>/enum/add/",

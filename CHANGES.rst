@@ -28,6 +28,9 @@ https://github.com/atviriduomenys/katalogas/issues/1968
 Add `receive_request_email` flag to User.
 Change default status in `RequestCommentForm`.
 
+https://github.com/atviriduomenys/katalogas/issues/1904
+Export Dataset structure to OpenAPI
+
 v 1.3 (2025-09-30)
 ==================
 

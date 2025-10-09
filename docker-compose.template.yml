@@ -6,7 +6,7 @@ services:
   katalogas-${BRANCH}:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: docker/Dockerfile
     command:
       - ./auto-entrypoint.sh
     environment:

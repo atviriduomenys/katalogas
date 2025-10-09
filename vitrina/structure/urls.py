@@ -175,7 +175,7 @@ urlpatterns = [
         name="dataset-structure-export",
     ),
     path(
-        "datasets/<int:pk>/structure/export-openapi/",
+        "datasets/<int:pk>/structure/export/openapi/",
         DatasetStructureExportOpenAPIView.as_view(),
         name="dataset-structure-export-openapi",
     ),

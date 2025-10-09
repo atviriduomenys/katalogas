@@ -49,7 +49,7 @@ def create_dataset_tag_groups(apps, schema_editor):
 
 class Migration(migrations.Migration):
     dependencies = [
-        ('vitrina_datasets', '0027_merge_20250916_0655'),
+        ('vitrina_datasets', '0028_merge_20250916_0655'),
     ]
 
     operations = [

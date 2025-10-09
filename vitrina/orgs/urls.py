@@ -94,12 +94,12 @@ urlpatterns = [
         name="organization-datasets",
     ),
     path(
-        "orgs/<int:organization_id>/members/add/",
+        "orgs/<int:pk>/members/add/",
         RepresentativeCreateView.as_view(),
         name="representative-create",
     ),
     path(
-        "orgs/<int:organization_id>/members/<int:pk>/change/",
+        "orgs/<int:pk>/members/<int:representative_id>/change/",
         RepresentativeUpdateView.as_view(),
         name="representative-update",
     ),
@@ -114,17 +114,17 @@ urlpatterns = [
         name="organization-contacts",
     ),
     path(
-        "orgs/<int:organization_id>/contacts/add/",
+        "orgs/<int:pk>/contacts/add/",
         ContactCreateView.as_view(),
         name="contact-create",
     ),
     path(
-        "orgs/<int:organization_id>/contacts/<int:pk>/change/",
+        "orgs/<int:pk>/contacts/<int:contact_id>/change/",
         ContactUpdateView.as_view(),
         name="contact-update",
     ),
     path(
-        "orgs/<int:organization_id>/contacts/<int:pk>/delete/",
+        "orgs/<int:pk>/contacts/<int:contact_id>/delete/",
         ContactDeleteView.as_view(),
         name="contact-delete",
     ),

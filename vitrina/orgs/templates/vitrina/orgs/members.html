@@ -78,7 +78,7 @@
                         <td></td>
                         {% else %}
                         <td>
-                            <a href="{% url 'representative-update' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-primary is-small">
+                            <a href="{% url 'representative-update' pk=request.resolver_match.kwargs.pk representative_id=m.pk %}" class="button is-primary is-small">
                                 {% translate "Redaguoti" %}
                             </a>
                         </td>

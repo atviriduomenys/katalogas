@@ -9,7 +9,7 @@ from filer.fields.image import FilerImageField
 
 from vitrina.models import UUIDBaseModel
 from vitrina.users.models import User
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization
 from vitrina.projects.managers import PublicProjectManager
 
 

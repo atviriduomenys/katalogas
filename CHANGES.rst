@@ -14,6 +14,9 @@ Add checkbox "Can edit data" to organization and dataset representative form
 https://github.com/atviriduomenys/katalogas/issues/1836
 Changed ACL list for Dataset read/update access, introduced `PermittedDatasetManager`
 
+https://github.com/atviriduomenys/katalogas/issues/1967
+Add `_version/` endpoint to see project version.
+
 https://github.com/atviriduomenys/katalogas/issues/1935
 Add different staff groups for Organization, LearningMaterial, DjangoCms and Dataset.
 Add Catalog model to admin.

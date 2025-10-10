@@ -53,13 +53,50 @@ ALLOWED_ATTRIBUTES = {
     "pre": ["class"],
     "span": ["class"],
     "div": ["class"],
+    # ARIA attributes for accessibility (required by law for government sites)
+    "*": [
+        "aria-label",
+        "aria-labelledby",
+        "aria-describedby",
+        "aria-hidden",
+        "aria-live",
+        "aria-atomic",
+        "aria-relevant",
+        "aria-busy",
+        "aria-controls",
+        "aria-haspopup",
+        "aria-expanded",
+        "aria-pressed",
+        "aria-checked",
+        "aria-selected",
+        "aria-current",
+    ],
 }
 
 # Allowed URL protocols
 ALLOWED_PROTOCOLS = ["http", "https", "mailto"]
 
 
-def sanitize_html(html_content: str, strip=False) -> str:
+def set_safe_link_attrs(attrs, new=False):
+    """
+    Callback for bleach.linkify to add security attributes to links.
+
+    - nofollow: Prevent search engine following
+    - noopener: Prevent window.opener access (security)
+    - noreferrer: Don't send referrer header (privacy)
+
+    Args:
+        attrs: Dictionary of link attributes
+        new: Whether this is a newly created link
+
+    Returns:
+        Updated attrs dictionary
+    """
+    attrs[(None, "rel")] = "nofollow noopener noreferrer"
+    return attrs
+
+
+def sanitize_html(html_content: str, strip: bool = False) -> str:
     """
     Sanitize HTML content to prevent XSS attacks.
 
@@ -96,11 +133,11 @@ def sanitize_html(html_content: str, strip=False) -> str:
     )
 
     # Also run linkify to ensure all links are safe
-    # This adds rel="nofollow" to external links
+    # This adds rel="nofollow noopener noreferrer" to external links
     clean_html = bleach.linkify(
         clean_html,
         parse_email=True,
-        callbacks=[],
+        callbacks=[set_safe_link_attrs],
     )
 
     return clean_html

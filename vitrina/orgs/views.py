@@ -697,6 +697,38 @@ class ContactDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return reverse("organization-contacts", kwargs={"pk": self.kwargs.get("pk")})
 
 
+class OrganizationProjectsView(
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    OrganizationBaseViewMixin,
+    ListView,
+):
+    template_name = "vitrina/orgs/projects_list.html"
+    context_object_name = "projects"
+    paginate_by = 9
+
+    organization: Organization
+
+    def has_permission(self):
+        if self.organization.is_public:
+            return True
+        else:
+            return has_perm(self.request.user, Action.VIEW, self.organization)
+
+    def get_queryset(self):
+        return Project.public.filter(organization=self.organization).exclude(status=Project.REJECTED)
+
+    def get_context_data(self, **kwargs):
+        context_data = super().get_context_data(**kwargs)
+        context_data["has_permission"] = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            self.organization,
+        )
+
+        return context_data
+
+
 class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
     model = Organization
     form_class = OrganizationUpdateForm

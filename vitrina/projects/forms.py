@@ -43,15 +43,18 @@ class ProjectForm(ModelForm):
         model = Project
         fields = ["title", "description", "organization", "url", "image"]
 
-    def __init__(self, *args, user, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop("user")
+        organization_id = kwargs.pop("organization_id", None)
         super().__init__(*args, **kwargs)
-        self.user = user
         project_instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if project_instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "project-form"
         self.fields["organization"].queryset = self._organization_queryset()
+        if not project_instance and organization_id:
+            self.fields["organization"].initial = organization_id
         self.helper.layout = Layout(
             Field("title", placeholder=_("Pavadinimas")),
             Field("description", placeholder=_("Aprašymas")),

@@ -55,6 +55,7 @@ from vitrina.orgs.views import (
     OrganizationCreateSearchView,
     OrganizationCreateView,
     OrganizationCreateSearchUpdateView,
+    OrganizationProjectsView,
 )
 
 
@@ -127,6 +128,11 @@ urlpatterns = [
         "orgs/<int:pk>/contacts/<int:contact_id>/delete/",
         ContactDeleteView.as_view(),
         name="contact-delete",
+    ),
+    path(
+        "orgs/<int:pk>/projects/",
+        OrganizationProjectsView.as_view(),
+        name="organization-projects",
     ),
     path(
         "register/<token>/",

@@ -25,6 +25,11 @@
                 {% translate "Duomenų ištekliai" %}
             </a>
         </li>
+        <li class="{%if request.resolver_match.url_name == 'organization-projects' %} is-active {% endif %}">
+            <a href="{% url 'organization-projects' organization.id %}">
+                {% translate "Panaudojimo atvejai" %}
+            </a>
+        </li>
         {% if plan_url %}
             <li class="{% if request.resolver_match.url_name == plan_url_name or request.resolver_match.url_name == 'plan-detail' %} is-active {% endif %}">
                 <a href="{{ plan_url }}">

@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block parent_links %}
+    <ul class="p-t-sm">
+        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
+        <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
+        <li><a href="{% url 'organization-detail' organization.pk %}"><span>{{ organization.title }}</span></a></li>
+    </ul>
+{% endblock %}
+{% block current_title %}
+{% translate "Organizacijos narių sąrašas" %}
+{% endblock %}
+
+{% block content %}
+
+	{% include 'vitrina/orgs/tabs.html' %}
+
+    {% if has_permission %}
+        <div class="buttons is-right">
+            <a class="button is-primary m-t-xs m-b-lg"
+               href="{% url 'project-create' %}?organization_id={{ organization.id }}">
+                {% translate "Registruoti panaudojimo atvejį" %}
+            </a>
+        </div>
+    {% endif %}
+    {% if projects %}
+        <table class="table is-fullwidth">
+            <tbody>
+                {% for project in projects %}
+                    <tr>
+                    <td>
+                    <article class="media">
+                        <div class="media-content">
+                            <div class="content">
+                                <div>
+                                    <strong>
+                                        <a href="{{ project.get_absolute_url }}" class="dataset-list-title">
+                                              {{ project.get_title }}
+                                        </a>
+                                    </strong>
+                                </div>
+                                <p class="dataset-list-description">
+                                    {{ project.description }}
+                                </p>
+                            </div>
+                        </div>
+                    </article>
+                    </td>
+                    <td>
+                        {% if project.user == request.user or request.user.is_staff or request.user.is_superuser %}
+                        <div class="buttons is-right">
+                            <a id="update-project-{{ project.pk }}-btn"  class="button is-link is-small"
+                                href="{% url 'project-update' pk=project.pk %}">
+                                {% translate "Redaguoti" %}
+                            </a>
+                        </div>
+                        {% endif %}
+                    </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% include "vitrina/common/pagination.html" %}
+    {% else %}
+        {% translate "Šio duomenų rinkinio duomenys nėra naudojami nei viename panaudojimo atvejyje." %}
+    {% endif %}
+    <br/>
+{% endblock %}

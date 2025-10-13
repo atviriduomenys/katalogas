@@ -101,6 +101,11 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
+        organization_id = self.request.GET.get("organization_id")
+        try:
+            kwargs["organization_id"] = int(organization_id) if organization_id is not None else None
+        except ValueError:
+            kwargs["organization_id"] = None
         return kwargs
 
     def has_permission(self):

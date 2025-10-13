@@ -176,10 +176,9 @@ class DatasetReportAdmin(admin.ModelAdmin):
             vda_representative_emails=ArrayAgg(
                 "organization__representatives__email",
                 filter=Q(
-                    Q(tags__name__iexact='vda') &
-                    Q(organization__representatives__email__icontains="@stat.gov.lt")
+                    Q(tags__name__iexact="vda") & Q(organization__representatives__email__icontains="@stat.gov.lt")
                 ),
-                distinct=True
+                distinct=True,
             )
         )
         return queryset
@@ -253,9 +252,9 @@ class DatasetReportAdmin(admin.ModelAdmin):
 
     def vda_display(self, obj):
         if obj.tags.filter(name__iexact="vda").exists() and obj.organization:
-            representatives = obj.organization.representatives.filter(
-                email__icontains="@stat.gov.lt"
-            ).values_list("email", flat=True)
+            representatives = obj.organization.representatives.filter(email__icontains="@stat.gov.lt").values_list(
+                "email", flat=True
+            )
             if representatives:
                 return mark_safe("<br/>".join(representatives))
         return "-"
@@ -427,9 +426,9 @@ class DatasetReportAdmin(admin.ModelAdmin):
 
             vda_representatives = "-"
             if item.tags.filter(name__iexact="vda").exists() and item.organization:
-                representatives = item.organization.representatives.filter(
-                    email__icontains="@stat.gov.lt"
-                ).values_list("email", flat=True)
+                representatives = item.organization.representatives.filter(email__icontains="@stat.gov.lt").values_list(
+                    "email", flat=True
+                )
                 if representatives:
                     vda_representatives = "\n".join(representatives)
 

@@ -40,6 +40,7 @@ from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
 from vitrina.helpers import get_current_domain
+from vitrina.projects.services import can_update_project, can_view_project
 
 
 class ProjectListView(ListView):
@@ -78,23 +79,13 @@ class ProjectDetailView(PermissionRequiredMixin, HistoryMixin, DetailView):
     history_url_name = "project-history"
 
     def has_permission(self):
-        project = get_object_or_404(Project, pk=self.kwargs.get("pk"))
-        has_update_perm = has_perm(
-            self.request.user,
-            Action.UPDATE,
-            project,
-        )
-        if not has_update_perm:
-            if self.request.user.is_authenticated:
-                return project.status == Project.APPROVED or project.user == self.request.user
-            else:
-                return project.status == Project.APPROVED
-        return True
+        self.project = get_object_or_404(Project, pk=self.kwargs.get("pk"))
+        return can_view_project(self.request.user, self.project)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["can_update_project"] = has_perm(self.request.user, Action.UPDATE, self.object)
-        context["can_view_agreements"] = has_perm(self.request.user, Action.VIEW, Agreement, self.object)
+        context["can_update_project"] = can_update_project(self.request.user, self.project)
+        context["can_view_agreements"] = has_perm(self.request.user, Action.VIEW, Agreement, self.project)
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("project-list"): _("Panaudojimo atvejai"),
@@ -160,7 +151,7 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
 
     def has_permission(self):
         project = self.get_object()
-        return has_perm(self.request.user, Action.UPDATE, project)
+        return can_update_project(self.request.user, project)
 
     def form_valid(self, form):
         super().form_valid(form)
@@ -233,12 +224,7 @@ class ProjectDatasetsView(PermissionRequiredMixin, HistoryMixin, ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        if not has_perm(self.request.user, Action.UPDATE, self.object):
-            if self.request.user.is_authenticated:
-                return self.object.status == Project.APPROVED or self.object.user == self.request.user
-            else:
-                return self.object.status == Project.APPROVED
-        return True
+        return can_view_project(self.request.user, self.object)
 
     def get_queryset(self):
         return Dataset.public.filter(project=self.object).select_related("organization")
@@ -246,7 +232,7 @@ class ProjectDatasetsView(PermissionRequiredMixin, HistoryMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["project"] = self.object
-        context["can_update_project"] = has_perm(self.request.user, Action.UPDATE, self.object)
+        context["can_update_project"] = can_update_project(self.request.user, self.object)
         context["can_view_agreements"] = has_perm(self.request.user, Action.VIEW, Agreement, self.object)
 
         context["parent_links"] = {
@@ -596,7 +582,7 @@ class RemoveDatasetView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.object)
+        return can_update_project(self.request.user, self.object)
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object.datasets.remove(self.kwargs.get("dataset_id"))

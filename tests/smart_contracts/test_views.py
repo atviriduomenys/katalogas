@@ -278,6 +278,38 @@ class TestAgreementCreateView:
         assert response.status_code == 200
         assert Agreement.objects.filter(project=project).count() == 0
 
+    def test_create_agreement_for_personal_project(
+        self, app: DjangoTestApp, dataset: Dataset
+    ) -> None:
+        user = UserFactory()
+        project = ProjectFactory(user=user, datasets=[dataset])
+        app.set_user(user)
+
+        response = app.get(reverse("agreement-create", args=[project.pk]), status=403)
+        # response = form.submit(status=403)
+
+        assert response.status_code == 403
+
+    def test_create_for_organization_project_mid_change_to_personal(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
+        user = UserFactory(organization=organization)
+        project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
+        app.set_user(user)
+
+        response = app.get(reverse("agreement-create", args=[project.pk]))
+        form = response.forms["agreement-create"]
+        form["form-0-scopes"] = ["uapi:/test/dataset/:getall"]
+        project.organization = None
+        project.save()
+        response = form.submit()
+
+        assert response.status_code == 302
+        assert response.url == reverse("agreement-list", args=[project.pk])
+
+        agreement = Agreement.objects.filter(project=project)
+        assert not agreement.exists()
+
 
 class TestAgreementGeneratePdf:
     def test_cannot_generate_pdf_without_permission(

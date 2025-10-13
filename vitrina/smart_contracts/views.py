@@ -23,6 +23,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
+from vitrina.projects.services import can_view_project, can_update_project
 from vitrina.smart_contracts import AgreementStatuses, AGREEMENT_STATUS_DESCRIPTIONS
 from vitrina.smart_contracts.forms import (
     SmartContractForm,
@@ -85,7 +86,7 @@ class AgreementListView(
 
     def has_permission(self) -> bool:
         self.object = self.get_project(self.kwargs["pk"])
-        return has_perm(self.request.user, Action.VIEW, self.object)
+        return can_view_project(self.request.user, self.object)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -105,7 +106,7 @@ class AgreementListView(
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_obj": page,
                 "paginator": paginator,
-                "can_update_project": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_update_project": can_update_project(self.request.user, self.object),
                 "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
@@ -153,7 +154,7 @@ class AgreementDetailView(
                 "agreement_files": self.agreement.files.all().order_by("-created_at"),
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_title": self.agreement.detail_page_title,
-                "can_update_project": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_update_project": can_update_project(self.request.user, self.object),
                 "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
@@ -182,7 +183,7 @@ class AgreementCreateView(
     def has_permission(self) -> bool:
         self.object = self.get_project(self.kwargs["pk"])
         return getattr(self.request.user, "organization_id", None) and (
-            has_perm(self.request.user, Action.UPDATE, self.object) or self.request.user == self.object.user
+            can_update_project(self.request.user, self.object)
         )
 
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
@@ -368,7 +369,7 @@ class AgreementGeneratePdf(
         context.update(
             {
                 "tabs": "vitrina/projects/tabs.html",
-                "has_perm": has_perm(self.request.user, Action.UPDATE, self.object),
+                "has_perm": can_update_project(self.request.user, self.object),
                 "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "current_title": _("Generuoti sutarties dokumentą"),
                 "parent_links": {

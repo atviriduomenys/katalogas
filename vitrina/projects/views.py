@@ -205,7 +205,7 @@ class ProjectHistoryView(HistoryView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["has_perm"] = has_perm(self.request.user, Action.UPDATE, self.object)
+        context["has_perm"] = can_update_project(self.request.user, self.object)
         context["can_view_agreements"] = has_perm(self.request.user, Action.VIEW, Agreement, self.object)
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
@@ -267,7 +267,7 @@ class ProjectPermissionsView(HistoryMixin, PermissionRequiredMixin, TemplateView
         # todo
         viisp_authorized = True
         context["project"] = self.object
-        context["can_update_project"] = has_perm(self.request.user, Action.UPDATE, self.object)
+        context["can_update_project"] = can_update_project(self.request.user, self.object)
         context["can_view_agreements"] = has_perm(self.request.user, Action.VIEW, Agreement, self.object)
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
@@ -541,7 +541,7 @@ class ProjectApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["project"] = self.project
-        context["can_update_project"] = has_perm(self.request.user, Action.UPDATE, self.project)
+        context["can_update_project"] = can_update_project(self.request.user, self.project)
         context["can_view_agreements"] = has_perm(self.request.user, Action.VIEW, Agreement, self.object)
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
@@ -621,7 +621,7 @@ class ClientListView(HistoryMixin, PermissionRequiredMixin, TemplateView):
         context.update(
             {
                 "project": self.object,
-                "can_update_project": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_update_project": can_update_project(self.request.user, self.object),
                 "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
@@ -752,7 +752,7 @@ class ClientDetailView(HistoryMixin, LoginRequiredMixin, PermissionRequiredMixin
             {
                 "project": self.object,
                 "client": self.client,
-                "can_update_project": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_update_project": can_update_project(self.request.user, self.object),
                 "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "scopes": scopes,
                 "parent_links": {

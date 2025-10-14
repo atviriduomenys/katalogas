@@ -86,7 +86,7 @@ class AgreementListView(
 
     def has_permission(self) -> bool:
         self.object = self.get_project(self.kwargs["pk"])
-        return can_view_project(self.request.user, self.object)
+        return can_update_project(self.request.user, self.object)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)

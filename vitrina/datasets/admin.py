@@ -6,7 +6,7 @@ from urllib.parse import urlparse
 import pytz
 from django.contrib import admin
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.http import StreamingHttpResponse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -128,6 +128,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
         "title_display",
         "coordinators_display",
         "managers_display",
+        "vda_display",
         "distribution_published_display",
         "frequency_display",
         "spinta_modified_display",
@@ -140,6 +141,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
         "organization__title",
         "creator_text",
         "representative_emails",
+        "vda_representative_emails",
     )
     list_filter = (
         FormatFilter,
@@ -170,6 +172,15 @@ class DatasetReportAdmin(admin.ModelAdmin):
             status=Dataset.HAS_DATA,
         ).distinct()
         queryset = queryset.annotate(representative_emails=ArrayAgg("representatives__email"))
+        queryset = queryset.annotate(
+            vda_representative_emails=ArrayAgg(
+                "organization__representatives__email",
+                filter=Q(
+                    Q(tags__name__iexact="vda") & Q(organization__representatives__email__icontains="@stat.gov.lt")
+                ),
+                distinct=True,
+            )
+        )
         return queryset
 
     def organization_display(self, obj):
@@ -238,6 +249,18 @@ class DatasetReportAdmin(admin.ModelAdmin):
 
     managers_display.short_description = _("Tvarkytojai")
     managers_display.allow_tags = True
+
+    def vda_display(self, obj):
+        if obj.tags.filter(name__iexact="vda").exists() and obj.organization:
+            representatives = obj.organization.representatives.filter(email__icontains="@stat.gov.lt").values_list(
+                "email", flat=True
+            )
+            if representatives:
+                return mark_safe("<br/>".join(representatives))
+        return "-"
+
+    vda_display.short_description = _("VDA tvarkytojai")
+    vda_display.allow_tags = True
 
     def distribution_published_display(self, obj):
         if distribution := obj.datasetdistribution_set.order_by("created").first():
@@ -368,6 +391,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
             "dataset_title": _("Duomenų rinkinio pavadinimas"),
             "coordinators": _("Koodinatoriai"),
             "managers": _("Tvarkytojai"),
+            "vda_representatives": _("VDA tvarkytojai"),
             "dataset_url": _("Duomenų rinkinio nuoroda"),
             "created": _("Duomenų šaltinio pirmo publikavimo data saugykloje"),
             "frequency": _("Duomenų atnaujinimo periodiškumas"),
@@ -400,6 +424,14 @@ class DatasetReportAdmin(admin.ModelAdmin):
             else:
                 managers = "-"
 
+            vda_representatives = "-"
+            if item.tags.filter(name__iexact="vda").exists() and item.organization:
+                representatives = item.organization.representatives.filter(email__icontains="@stat.gov.lt").values_list(
+                    "email", flat=True
+                )
+                if representatives:
+                    vda_representatives = "\n".join(representatives)
+
             organization = "-"
             root_organization = "-"
             if item.organization:
@@ -417,6 +449,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
                     "dataset_title": item.title,
                     "coordinators": coordinators,
                     "managers": managers,
+                    "vda_representatives": vda_representatives,
                     "dataset_url": "%s%s" % (get_current_domain(request), item.get_absolute_url()),
                     "created": self.distribution_published_display(item),
                     "frequency": self.frequency_display(item),

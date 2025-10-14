@@ -55,6 +55,8 @@ class ProjectForm(ModelForm):
         self.fields["organization"].queryset = self._organization_queryset()
         if not project_instance and organization_id:
             self.fields["organization"].initial = organization_id
+        if project_instance and project_instance.user != self.user:
+            self.fields["organization"].empty_label = None
         self.helper.layout = Layout(
             Field("title", placeholder=_("Pavadinimas")),
             Field("description", placeholder=_("Aprašymas")),

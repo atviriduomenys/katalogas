@@ -23,7 +23,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
-from vitrina.projects.services import can_view_project, can_update_project
+from vitrina.projects.services import can_update_project
 from vitrina.smart_contracts import AgreementStatuses, AGREEMENT_STATUS_DESCRIPTIONS
 from vitrina.smart_contracts.forms import (
     SmartContractForm,

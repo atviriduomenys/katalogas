@@ -12,7 +12,7 @@ from pdfminer.high_level import extract_text
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
@@ -162,6 +162,8 @@ class TestAgreementCreateView:
     ) -> None:
         user = UserFactory(organization=organization)
         project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -209,6 +211,8 @@ class TestAgreementCreateView:
         )
         user = UserFactory(organization=organization)
         project = ProjectFactory(user=user, datasets=[dataset1, dataset2, diff_dataset], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -250,6 +254,8 @@ class TestAgreementCreateView:
             name="test/dataset2",
         )
         project = ProjectFactory(user=user, datasets=[dataset, dataset2], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
         AgreementFactory(project=project, assigner=organization)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -263,6 +269,8 @@ class TestAgreementCreateView:
     ) -> None:
         user = UserFactory(organization=organization)
         project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
         app.set_user(user)
 
         data = {
@@ -295,6 +303,8 @@ class TestAgreementCreateView:
     ) -> None:
         user = UserFactory(organization=organization)
         project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))

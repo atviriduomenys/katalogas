@@ -89,6 +89,7 @@ from vitrina.orgs.services import (
 )
 from vitrina.plans.models import Plan
 from vitrina.projects.models import Project
+from vitrina.projects.services import get_projects
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import get_data_from_spinta
@@ -716,7 +717,7 @@ class OrganizationProjectsView(
             return has_perm(self.request.user, Action.VIEW, self.organization)
 
     def get_queryset(self):
-        return Project.public.filter(organization=self.organization).exclude(status=Project.REJECTED)
+        return get_projects(self.request.user, organization=self.organization)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

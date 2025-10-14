@@ -40,7 +40,7 @@ from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
 from vitrina.helpers import get_current_domain
-from vitrina.projects.services import can_update_project, can_view_project
+from vitrina.projects.services import can_update_project, can_view_project, get_projects
 
 
 class ProjectListView(ListView):
@@ -58,13 +58,7 @@ class ProjectListView(ListView):
         return super().dispatch(request, *args, **kwargs)
 
     def get_queryset(self):
-        qs = super().get_queryset()
-        if not self.has_update_perm:
-            if self.request.user.is_authenticated:
-                qs = qs.filter(Q(status=Project.APPROVED) | Q(user=self.request.user))
-            else:
-                qs = qs.filter(status=Project.APPROVED)
-        return qs.order_by("-created")
+        return get_projects(self.request.user)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -5,6 +5,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.core.exceptions import ValidationError
 from django.db.models import Count, Q
+from parler.forms import TranslatableModelForm
 from django.forms import (
     BooleanField,
     CharField,
@@ -71,7 +72,7 @@ class PublisherWidget(ModelSelect2MultipleWidget, SearchForm):
             return queryset.distinct().annotate(dataset_count=Count("dataset")).order_by("-dataset_count")[:10]
 
 
-class RequestForm(ModelForm):
+class RequestForm(TranslatableModelForm):
     title = CharField(label=_("Pavadinimas"), help_text=_("Trumpas poreikio pavadinimas."))
     description = CharField(
         label=_("Aprašymas"),

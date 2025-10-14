@@ -12,12 +12,14 @@ from vitrina.requests.models import (
 )
 
 
+fake = faker.Faker()
+
+
 class RequestFactory(DjangoModelFactory):
     class Meta:
         model = Request
         django_get_or_create = ("title",)
 
-    title = factory.Faker("catch_phrase")
     version = 1
     is_existing = True
     is_public = True
@@ -41,6 +43,23 @@ class RequestFactory(DjangoModelFactory):
             # A list of groups were passed in, use them
             for org in extracted:
                 self.organizations.add(org)
+
+    @factory.post_generation
+    def translations(obj, create, extracted, **kwargs):
+        if not create:
+            return
+
+        # Lithuanian
+        obj.set_current_language("lt")
+        obj.title = kwargs.get("title_lt", fake.catch_phrase())
+        obj.description = kwargs.get("description_lt", fake.text())
+        obj.save()
+
+        # English
+        obj.set_current_language("en")
+        obj.title = kwargs.get("title_en", fake.catch_phrase())
+        obj.description = kwargs.get("description_en", fake.text())
+        obj.save()
 
 
 class RequestStructureFactory(DjangoModelFactory):

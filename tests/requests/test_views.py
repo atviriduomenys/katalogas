@@ -31,10 +31,10 @@ def test_request_create(app: DjangoTestApp):
     form['title'] = "Request"
     form['description'] = "Description"
     resp = form.submit()
-    added_request = Request.objects.filter(title="Request")
+    added_request = Request.objects.filter(translations__title="Request")
     assert added_request.count() == 1
     assert resp.status_code == 302
-    assert resp.url == Request.objects.filter(title='Request').first().get_absolute_url()
+    assert resp.url == Request.objects.filter(translations__title='Request').first().get_absolute_url()
     assert Version.objects.get_for_object(added_request.first()).count() == 1
     assert Version.objects.get_for_object(added_request.first()).first().revision.comment == Request.CREATED
 
@@ -59,11 +59,11 @@ def test_request_update_with_permitted_user(app: DjangoTestApp):
     form['title'] = "Updated title"
     form['description'] = "Updated description"
     resp = form.submit()
-    request.refresh_from_db()
     assert resp.status_code == 302
     assert resp.url == request.get_absolute_url()
-    assert request.title == "Updated title"
-    assert request.description == "Updated description"
+    updated_request = Request.objects.get(pk=request.pk)
+    assert updated_request.title == "Updated title"
+    assert updated_request.description == "Updated description"
     assert Version.objects.get_for_object(request).count() == 1
     assert Version.objects.get_for_object(request).first().revision.comment == Request.EDITED
 

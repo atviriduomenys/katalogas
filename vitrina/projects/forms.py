@@ -2,6 +2,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.forms import ModelForm, CharField, Textarea, ModelChoiceField
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import QuerySet
 
 from vitrina.fields import FilerImageField
 from vitrina.projects.models import Project, UseCaseClientScope, UseCaseClient
@@ -66,7 +67,7 @@ class ProjectForm(ModelForm):
             Submit("submit", button, css_class="button is-primary"),
         )
 
-    def _organization_queryset(self):
+    def _organization_queryset(self) -> QuerySet["Organization"]:
         if self.user.is_superuser or self.user.is_staff:
             return Organization.public.all()
 

@@ -200,7 +200,7 @@ class AgreementCreateView(
         if not self.object.organization:
             messages.error(
                 self.request,
-                _("Privaūs asmenys negali sudaryti sutarčių."),
+                _("Privatūs asmenys negali sudaryti sutarčių."),
             )
             return HttpResponseRedirect(self.get_success_url())
 

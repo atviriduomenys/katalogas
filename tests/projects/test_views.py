@@ -68,9 +68,8 @@ def test_project_create_with_organization(app: DjangoTestApp):
     form['image'] = Upload('example.png', generate_photo_file(), 'image')
     resp = form.submit()
 
-    added_project = Project.objects.filter(title='Project')
-    assert added_project.exists()
-    added_project = added_project.first()
+    added_project = Project.objects.filter(title='Project').first()
+    assert added_project
     assert resp.status_code == 302
     assert resp.url == added_project.get_absolute_url()
     assert Version.objects.get_for_object(added_project).count() == 1

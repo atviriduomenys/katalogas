@@ -294,7 +294,6 @@ class TestAgreementCreateView:
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]), status=403)
-        # response = form.submit(status=403)
 
         assert response.status_code == 403
 
@@ -317,8 +316,7 @@ class TestAgreementCreateView:
         assert response.status_code == 302
         assert response.url == reverse("agreement-list", args=[project.pk])
 
-        agreement = Agreement.objects.filter(project=project)
-        assert not agreement.exists()
+        assert not Agreement.objects.filter(project=project).exists()
 
 
 class TestAgreementGeneratePdf:

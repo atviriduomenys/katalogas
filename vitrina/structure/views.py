@@ -172,10 +172,7 @@ class DatasetStructureView(
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         self.models = Model.objects.filter(dataset=self.object)
         if self.can_manage_structure:
-            if self.version:
-                self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
-            else:
-                self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))

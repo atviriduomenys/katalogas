@@ -4,6 +4,13 @@ Changes
 v 1.4 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/1948
+Add optional `organization` field to `Project` model.
+Add `organization_card.html` component to display organization info where needed.
+Add `OrganizationProjectsView` to show `Organization`s projects.
+Refactor organization views to use `OrganizationBaseViewMixin` for shared properties
+Refine project view permission checks to match updated logic
+
 https://github.com/atviriduomenys/katalogas/issues/1929
 Removed content editing language tab from forms.
 Replaced old format scopes with the prefix of `spinta_` with UDTS format scopes.

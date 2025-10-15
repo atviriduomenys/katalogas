@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-02 14:33+0300\n"
+"POT-Creation-Date: 2025-10-15 10:22+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,9 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "kliento id"
 msgstr "client id"
@@ -40,6 +37,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -521,6 +521,9 @@ msgid "Koordinatoriai"
 msgstr "Coordinators"
 
 msgid "Tvarkytojai"
+msgstr "Managers"
+
+msgid "VDA tvarkytojai"
 msgstr "Managers"
 
 msgid "Duomenų šaltinio pirmo</br>publikavimo data saugykloje"
@@ -1468,20 +1471,20 @@ msgstr "Delete"
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
 
-msgid "Institucija, teikianti duomenis"
-msgstr "The institution providing the data"
-
-msgid "El. paštas"
-msgstr "E-mail"
-
-msgid "Telefonas"
-msgstr "Phone number"
+msgid "Duomenis teikianti organizacija"
+msgstr "Data-providing organisation"
 
 msgid "Institucija, atsakinga už duomenų atvėrimą"
 msgstr "The institution responsible for opening the data to the public"
 
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
+
+msgid "El. paštas"
+msgstr "E-mail"
+
+msgid "Telefonas"
+msgstr "Phone number"
 
 msgid "Dalintis socialiniuose tinkluose"
 msgstr "Share on social networks"
@@ -2670,6 +2673,9 @@ msgstr ""
 msgid "Naujas terminas"
 msgstr "New deadline"
 
+msgid "Registruoti panaudojimo atvejį"
+msgstr "Register a new use case"
+
 msgid "Registracija negalima"
 msgstr "Registration is not allowed"
 
@@ -2839,6 +2845,13 @@ msgstr "Title of the Proposed use case."
 msgid "Išsamus pasiūlymo aprašymas."
 msgstr "Detailed description of the proposal."
 
+msgid ""
+"Nurodžius organizaciją panaudos atvejis kuriamas organizacijos vardu, "
+"nenurodžius - privataus asmens vardu. Atitinka odrl:asignee"
+msgstr ""
+"If an organization is specified, the use case is created on behalf of the organization; "
+"if not, it’s created on behalf of a private individual. Corresponds to odrl:asignee."
+
 msgid "Nuoroda į panaudojimo atvejį"
 msgstr "URL to use case"
 
@@ -2905,35 +2918,14 @@ msgstr "Currently, there are no scopes for this client"
 msgid "Duomenų rinkinių sąrašas"
 msgstr "Dataset list"
 
-msgid "Peržiūrėjo"
-msgstr "Viewed"
+msgid "Panaudojimo atvejo peržiūros"
+msgstr "Use case views"
 
-msgid "PATVIRTINTAS"
-msgstr "APPROVED"
-
-msgid "ATMESTAS"
-msgstr "REJECTED"
-
-msgid "NAUJAS"
-msgstr "NEW"
-
-msgid "Ar jums patinka šis projektas?"
-msgstr "Do you like this project?"
+msgid "Duomenų gavėjas"
+msgstr "Data assignee"
 
 msgid "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju"
 msgstr "Subscribe to the news associated with this use case"
-
-msgid "Teikiama nauda"
-msgstr "Benefits"
-
-msgid "Naudos gavėjų grupė"
-msgstr "Beneficiary group"
-
-msgid "Papildoma informacija"
-msgstr "Additional information"
-
-msgid "Panaudoti duomenų rinkiniai"
-msgstr "Used datasets"
 
 msgid ""
 "\n"
@@ -3163,6 +3155,9 @@ msgstr "Notes"
 
 msgid "Struktūros failas"
 msgstr "Structure file"
+
+msgid "Papildoma informacija"
+msgstr "Additional information"
 
 msgid "Šis laukas privalomas"
 msgstr "This field is mandatory"
@@ -3588,9 +3583,6 @@ msgstr "File must be in Markdown format (.md)."
 msgid "Nurodoma organizacija, kuriai priskirtas šablonas."
 msgstr "Specifies the organization to which the template is assigned."
 
-msgid "Duomenis teikianti organizacija"
-msgstr "Data provider organization"
-
 msgid "Duomenis gaunanti organizacija"
 msgstr "Data receiver organization"
 
@@ -3660,6 +3652,9 @@ msgstr "No agreements."
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
 msgstr "This use case already has existing agreements."
+
+msgid "Privatūs asmenys negali sudaryti sutarčių."
+msgstr "Private individuals cannot enter into contracts."
 
 msgid "Sutartys sėkmingai sugeneruotos"
 msgstr "Agreements generated successfully"
@@ -4643,6 +4638,9 @@ msgstr "Logout"
 msgid "Prisijungti"
 msgstr "Login"
 
+msgid "Fizinis asmuo"
+msgstr "Individual person"
+
 msgid "Duomenų paieška"
 msgstr "Data search"
 
@@ -4705,9 +4703,6 @@ msgstr "Register data provider"
 
 msgid "Duomenų panaudojimo atvejai"
 msgstr "Data use cases"
-
-msgid "Registruoti panaudojimo atvejį"
-msgstr "Submit a new use case"
 
 msgid "Prašymai atverti duomenis"
 msgstr "Requests to open data"

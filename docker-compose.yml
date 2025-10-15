@@ -5,6 +5,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+    image: vitrina-app:latest
     command:
       - ./entrypoint.sh
     environment:
@@ -77,3 +78,18 @@ services:
     volumes:
       - ./var/redis/dаta:/root/redis
       - ./var/redis/redis.conf:/usr/local/etc/redis/redis.conf
+
+  celery:
+    image: vitrina-app:latest
+    container_name: vitrina-celery
+    command: celery -A vitrina worker -l info
+    environment:
+      - REDIS_URL=redis://redis:6379/
+      - DJANGO_SETTINGS_MODULE=vitrina.settings
+    volumes:
+      - .:/app
+    depends_on:
+      - redis
+      - vitrina
+    restart: always
+

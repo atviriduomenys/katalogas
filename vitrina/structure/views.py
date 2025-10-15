@@ -2089,6 +2089,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 or none_to_string(latest_version.ref) != none_to_string(self.object.ref)
                 or latest_version.level_given != self.object.level_given
                 or latest_version.access != self.object.access
+                or latest_version.status != self.object.status
             ):
                 self.object.draft = True
             else:
@@ -2770,6 +2771,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                     level_given=meta.level_given,
                     access=meta.access,
                     base=meta.object.base if isinstance(meta.object, Model) else None,
+                    status=meta.status if meta.status else None,
                 )
 
         return redirect(reverse("dataset-structure", args=[self.dataset.pk]))

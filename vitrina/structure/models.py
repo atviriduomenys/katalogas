@@ -532,6 +532,7 @@ class MetadataVersion(models.Model):
         null=True,
         verbose_name=_("Bazė"),
     )
+    status = models.ForeignKey(Status, models.SET_NULL, verbose_name=_("Būsena"), null=True, blank=True)
 
     class Meta:
         db_table = "metadata_version"

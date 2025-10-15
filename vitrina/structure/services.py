@@ -429,7 +429,6 @@ def _create_or_update_metadata(
         ).exists()
     ):
         metadata = Metadata.objects.filter(uuid=obj_meta.id, content_type=ct, dataset=dataset).first()
-
         type_args = ", ".join(obj_meta.type_args) if hasattr(obj_meta, "type_args") and obj_meta.type_args else None
         access = _parse_access(obj_meta.access)
         visibility = _parse_visibility(obj_meta.visibility)
@@ -443,6 +442,7 @@ def _create_or_update_metadata(
                         latest_version.name != obj_meta.name
                         or none_to_string(latest_version.ref) != none_to_string(obj_meta.ref)
                         or latest_version.level_given != obj_meta.level_given
+                        or latest_version.status != obj_meta.status
                         or (
                             latest_version.base
                             and obj_meta.base
@@ -457,6 +457,7 @@ def _create_or_update_metadata(
                     and (
                         latest_version.name != obj_meta.name
                         or latest_version.type != obj_meta.type
+                        or latest_version.status != obj_meta.status
                         or latest_version.required != obj_meta.required
                         or latest_version.unique != obj_meta.unique
                         or latest_version.type_args != type_args

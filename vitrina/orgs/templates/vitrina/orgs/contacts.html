@@ -54,12 +54,12 @@
                     <td>{{ c.get_type }}</td>
                     {% if has_permission %}
                         <td>
-                            <a id="update-member-{{ c.pk }}-btn" href="{% url 'contact-update' organization_id=request.resolver_match.kwargs.pk pk=c.pk %}" class="button is-primary is-small">
+                            <a id="update-member-{{ c.pk }}-btn" href="{% url 'contact-update' pk=request.resolver_match.kwargs.pk contact_id=c.pk %}" class="button is-primary is-small">
                                 {% translate "Redaguoti" %}
                             </a>
                         </td>
                         <td>
-                            <a id="delete-contact-{{ c.pk }}-btn"  href="{% url 'contact-delete' organization_id=request.resolver_match.kwargs.pk pk=c.pk %}" class="button is-link is-small">
+                            <a id="delete-contact-{{ c.pk }}-btn"  href="{% url 'contact-delete' pk=request.resolver_match.kwargs.pk contact_id=c.pk %}" class="button is-link is-small">
                                 {% translate "Pašalinti" %}
                             </a>
                         </td>

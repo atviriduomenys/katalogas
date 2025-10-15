@@ -85,93 +85,17 @@
         <div class="column is-one-third">
             <div>
                 {% with main_contact=dataset.get_main_contact %}
-                    {% if org_logo %}
-                        <div class="is-hidden-mobile">
-                            <figure class="image max-128x128">
-                                <img src="{{MEDIA_URL}}{{ org_logo.url }}"
-                                     class="image max-128x128 m-b-md"
-                                     alt="{{ dataset.organization.title }}">
-                            </figure>
-                        </div>
-                    {% endif %}
 
-                    {% if main_contact.content_object == dataset.organization %}
-                        <p class="has-text-dark">{% translate "Institucija, teikianti duomenis" %}</p>
-                        <p class="has-text-black organization-title">
-                            <a href="{{ dataset.organization.get_absolute_url }}">{{ dataset.organization.title }}</a>
-                        </p>
-                        {% if dataset.organization.website %}
-                            <p class="has-text-dark">{% translate "Tinklalapis" %}</p>
-                            <p class="has-text-black">
-                                <a href="{{ dataset.organization.website }}" target="_blank">
-                                    {{ dataset.organization.website }}
-                                </a>
-                            </p>
-                        {% endif %}
-                        {% if main_contact.get_email %}
-                            <p class="has-text-dark">{% translate "El. paštas" %}</p>
-                            <p class="has-text-black">
-                                <a href="mailto:{{ main_contact.get_email }}">{{ main_contact.get_email }}</a>
-                            </p>
-                        {% endif %}
-                        {% if main_contact.phone %}
-                            <p class="has-text-dark">{% translate "Telefonas" %}</p>
-                            <p class="has-text-black">{{ main_contact.phone }}</p>
-                        {% endif %}
-                    {% else %}
-                        <p class="has-text-dark">{% translate "Institucija, teikianti duomenis" %}</p>
-                        <p class="has-text-black organization-title">
-                            <a href="{{ dataset.organization.get_absolute_url }}">{{ dataset.organization.title }}</a>
-                        </p>
-                        {% if dataset.organization.website %}
-                            <p class="has-text-dark">{% translate "Tinklalapis" %}</p>
-                            <p class="has-text-black">
-                                <a href="{{ dataset.organization.website }}" target="_blank">
-                                    {{ dataset.organization.website }}
-                                </a>
-                            </p>
-                        {% endif %}
-                    {% endif %}
+                    {% trans "Duomenis teikianti organizacija" as header_text %}
+                    {% include "component/organization_card.html" with organization=dataset.organization header=header_text %}
 
                     {% if dataset.publisher %}
-                        {% if main_contact.content_object == dataset.publisher %}
-                            <hr class="custom-line-margin">
-                            <p class="has-text-dark">{% translate "Institucija, atsakinga už duomenų atvėrimą" %}</p>
-                            <p class="has-text-black creator-title">
-                                <a href="{{ dataset.publisher.get_absolute_url }}">{{ dataset.publisher.title }}</a>
-                            </p>
-                            {% if dataset.publisher.website %}
-                                <p class="has-text-dark">{% translate "Tinklalapis" %}</p>
-                                <p class="has-text-black">
-                                    <a href="{{ dataset.publisher.website }}" target="_blank">
-                                        {{ dataset.publisher.website }}
-                                    </a>
-                                </p>
-                            {% endif %}
-                            {% if main_contact.get_email %}
-                                <p class="has-text-dark">{% translate "El. paštas" %}</p>
-                                <p class="has-text-black">
-                                    <a href="mailto:{{ main_contact.get_email }}">{{ main_contact.get_email }}</a>
-                                </p>
-                            {% endif %}
-                            {% if main_contact.phone %}
-                                <p class="has-text-dark">{% translate "Telefonas" %}</p>
-                                <p class="has-text-black">{{ main_contact.phone }}</p>
-                            {% endif %}
-                        {% elif dataset.publisher != dataset.organization %}
-                            <hr class="custom-line-margin">
-                            <p class="has-text-dark">{% translate "Institucija, atsakinga už duomenų atvėrimą" %}</p>
-                            <p class="has-text-black creator-title">
-                                <a href="{{ dataset.publisher.get_absolute_url }}">{{ dataset.publisher.title }}</a>
-                            </p>
-                            {% if dataset.publisher.website %}
-                                <p class="has-text-dark">{% translate "Tinklalapis" %}</p>
-                                <p class="has-text-black">
-                                    <a href="{{ dataset.publisher.website }}" target="_blank">
-                                        {{ dataset.publisher.website }}
-                                    </a>
-                                </p>
-                            {% endif %}
+                        {% if main_contact.content_object == dataset.publisher or dataset.publisher != dataset.organization %}
+                        <hr class="custom-line-margin">
+
+                            {% trans "Institucija, atsakinga už duomenų atvėrimą" as header_text %}
+                            {% include "component/organization_card.html" with organization=dataset.publisher header=header_text email=main_contact.get_email phone=main_contact.phone %}
+
                         {% endif %}
                     {% endif %}
 

@@ -11,6 +11,7 @@ from reversion.views import RevisionMixin
 from vitrina.orgs.forms import OrganizationPlanForm
 from vitrina.orgs.models import Representative, Organization
 from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.views import OrganizationBaseViewMixin
 from vitrina.plans.models import Plan
 from vitrina.plans.services import has_plan_close_permission
 from vitrina.views import PlanMixin, HistoryView
@@ -115,7 +116,7 @@ class PlanDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         return context
 
 
-class PlanHistoryView(PlanMixin, HistoryView):
+class PlanHistoryView(PlanMixin, OrganizationBaseViewMixin, HistoryView):
     model = Organization
     detail_url_name = "organization-detail"
     history_url_name = "plan-history"
@@ -123,21 +124,11 @@ class PlanHistoryView(PlanMixin, HistoryView):
     tabs_template_name = "vitrina/orgs/tabs.html"
 
     plan: Plan
+    organization: Organization
 
     def dispatch(self, request, *args, **kwargs):
         self.plan = get_object_or_404(Plan, pk=kwargs.get("plan_id"))
         return super().dispatch(request, *args, **kwargs)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["can_view_members"] = has_perm(
-            self.request.user,
-            Action.VIEW,
-            Representative,
-            self.object,
-        )
-        context["organization_id"] = self.object.pk
-        return context
 
     def get_history_objects(self):
         return Version.objects.get_for_object(self.plan).order_by("-revision__date_created")

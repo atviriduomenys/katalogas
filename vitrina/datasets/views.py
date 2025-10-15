@@ -178,11 +178,11 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
 
     def has_permission(self):
         if is_org_dataset_list(self.request):
-            organization = get_object_or_404(Organization, pk=self.kwargs["pk"])
-            if organization.is_public:
+            self.organization = get_object_or_404(Organization, pk=self.kwargs["pk"])
+            if self.organization.is_public:
                 return True
             else:
-                return has_perm(self.request.user, Action.VIEW, organization)
+                return has_perm(self.request.user, Action.VIEW, self.organization)
         return True
 
     def get(self, request, **kwargs):
@@ -210,10 +210,6 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             queryset = queryset.filter(organization__in=org_ids)
 
         if is_org_dataset_list(self.request):
-            self.organization = get_object_or_404(
-                Organization,
-                pk=self.kwargs["pk"],
-            )
             queryset = queryset.filter(organization=self.organization.pk)
 
         if not sorting or sorting == "sort-by-date-newest":

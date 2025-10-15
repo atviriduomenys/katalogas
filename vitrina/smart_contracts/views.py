@@ -23,6 +23,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
+from vitrina.projects.services import can_update_project
 from vitrina.smart_contracts import AgreementStatuses, AGREEMENT_STATUS_DESCRIPTIONS
 from vitrina.smart_contracts.forms import (
     SmartContractForm,
@@ -42,19 +43,19 @@ from vitrina.views import FormsetView, HistoryMixin
 
 
 class BaseProjectMixin:
-    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
-        self.object = get_object_or_404(
-            Project.public.all().prefetch_related(
-                Prefetch(
-                    "datasets",
-                    queryset=Dataset.public.all().order_by("organization_id"),
-                    to_attr="public_datasets",
-                )
-            ),
-            pk=kwargs["pk"],
+    def get_project_queryset(self):
+        return Project.public.all().prefetch_related(
+            Prefetch(
+                "datasets",
+                queryset=Dataset.public.all().order_by("organization_id"),
+                to_attr="public_datasets",
+            )
         )
 
-        return super().dispatch(request, *args, **kwargs)
+    def get_project(self, project_id: int):
+        if not hasattr(self, "_project"):
+            self._project = get_object_or_404(self.get_project_queryset(), pk=project_id)
+        return self._project
 
 
 class BaseAgreementMixin:
@@ -84,7 +85,8 @@ class AgreementListView(
     object: Project
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.VIEW, self.object)
+        self.object = self.get_project(self.kwargs["pk"])
+        return can_update_project(self.request.user, self.object)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -104,7 +106,7 @@ class AgreementListView(
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_obj": page,
                 "paginator": paginator,
-                "can_update_project": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_update_project": can_update_project(self.request.user, self.object),
                 "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
@@ -135,6 +137,10 @@ class AgreementDetailView(
     object: Project
     agreement: Agreement
 
+    def setup(self, request, *args, **kwargs):
+        self.object = self.get_project(kwargs["pk"])
+        return super().setup(request, *args, **kwargs)
+
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, self.agreement)
 
@@ -148,7 +154,7 @@ class AgreementDetailView(
                 "agreement_files": self.agreement.files.all().order_by("-created_at"),
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_title": self.agreement.detail_page_title,
-                "can_update_project": has_perm(self.request.user, Action.UPDATE, self.object),
+                "can_update_project": can_update_project(self.request.user, self.object),
                 "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
@@ -175,12 +181,15 @@ class AgreementCreateView(
     template_name = "smart_contracts/agreement_create.html"
 
     def has_permission(self) -> bool:
+        self.object = self.get_project(self.kwargs["pk"])
         return getattr(self.request.user, "organization_id", None) and (
-            has_perm(self.request.user, Action.UPDATE, self.object) or self.request.user == self.object.user
+            can_update_project(self.request.user, self.object)
         )
 
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
-        dispatch = super().dispatch(request, *args, **kwargs)
+        if not self.has_permission():
+            return self.handle_no_permission()
+
         if not self.get_dataset_metadata_by_organization:
             messages.error(
                 self.request,
@@ -188,7 +197,14 @@ class AgreementCreateView(
             )
             return HttpResponseRedirect(self.get_success_url())
 
-        return dispatch
+        if not self.object.organization:
+            messages.error(
+                self.request,
+                _("Privatūs asmenys negali sudaryti sutarčių."),
+            )
+            return HttpResponseRedirect(self.get_success_url())
+
+        return super(PermissionRequiredMixin, self).dispatch(request, *args, **kwargs)
 
     @cached_property
     def get_dataset_metadata_by_organization(self) -> dict[int, list[Metadata]]:
@@ -263,7 +279,7 @@ class AgreementCreateView(
                 assigner=form.instance,
                 status=AgreementStatuses.CREATED,
                 created_by=current_user,
-                assignee=current_user.organization,
+                assignee=self.object.organization,
             )
             agreement_scopes = []
             for scope in form.cleaned_data["scopes"]:
@@ -299,6 +315,10 @@ class AgreementGeneratePdf(
     template_name = "base_form.html"
     detail_url_name = "project-detail"
     history_url_name = "project-history"
+
+    def setup(self, request, *args, **kwargs):
+        self.object = self.get_project(kwargs["pk"])
+        return super().setup(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, self.agreement) or self.request.user == self.object.user
@@ -349,7 +369,7 @@ class AgreementGeneratePdf(
         context.update(
             {
                 "tabs": "vitrina/projects/tabs.html",
-                "has_perm": has_perm(self.request.user, Action.UPDATE, self.object),
+                "has_perm": can_update_project(self.request.user, self.object),
                 "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
                 "current_title": _("Generuoti sutarties dokumentą"),
                 "parent_links": {
@@ -377,6 +397,10 @@ class AgreementUploadSignedFile(
 ):
     form_class = AgreementUploadForm
     template_name = "base_form.html"
+
+    def setup(self, request, *args, **kwargs):
+        self.object = self.get_project(kwargs["pk"])
+        return super().setup(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, self.agreement) or self.request.user == self.object.user

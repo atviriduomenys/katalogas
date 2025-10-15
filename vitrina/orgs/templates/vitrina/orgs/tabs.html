@@ -2,27 +2,32 @@
 <div class="tabs">
     <ul>
         <li class="{%if request.resolver_match.url_name == 'organization-detail' %} is-active {% endif %}">
-            <a href="{% url 'organization-detail' organization_id %}#info">
+            <a href="{% url 'organization-detail' organization.id %}#info">
                 {% translate "Informacija" %}
             </a>
         </li>
         {% if can_view_members %}
         <li class="{%if request.resolver_match.url_name == 'organization-members' or request.resolver_match.url_name == 'representative-create' or request.resolver_match.url_name == 'representative-update' %} is-active {% endif %}">
-            <a href="{% url 'organization-members' organization_id %}">
+            <a href="{% url 'organization-members' organization.id %}">
                 {% translate "Tvarkytojai" %}
             </a>
         </li>
         {% endif %}
         {% if can_view_contacts %}
         <li class="{%if request.resolver_match.url_name == 'organization-contacts' or request.resolver_match.url_name == 'contacts-create' or request.resolver_match.url_name == 'contacts-update' %} is-active {% endif %}">
-            <a href="{% url 'organization-contacts' organization_id %}">
+            <a href="{% url 'organization-contacts' organization.id %}">
                 {% translate "Kontaktai" %}
             </a>
         </li>
         {% endif %}
         <li class="{%if request.resolver_match.url_name == 'organization-datasets' %} is-active {% endif %}">
-            <a href="{% url 'organization-datasets' organization_id %}?selected_facets=organization_exact:{{organization_id}}">
+            <a href="{% url 'organization-datasets' organization.id %}?selected_facets=organization_exact:{{organization.id}}">
                 {% translate "Duomenų ištekliai" %}
+            </a>
+        </li>
+        <li class="{%if request.resolver_match.url_name == 'organization-projects' %} is-active {% endif %}">
+            <a href="{% url 'organization-projects' organization.id %}">
+                {% translate "Panaudojimo atvejai" %}
             </a>
         </li>
         {% if plan_url %}
@@ -33,12 +38,12 @@
             </li>
         {% endif %}
         <li class="{% if request.resolver_match.url_name == 'agent-list' %} is-active {% endif %}">
-            <a href="{% url 'agent-list' organization_id %}">
+            <a href="{% url 'agent-list' organization.id %}">
                 {% translate "Agentai" %}
             </a>
         </li>
         <li class="{% if request.resolver_match.url_name == 'organization-apikeys' %} is-active {% endif %}">
-            <a href="{% url 'organization-apikeys' organization_id %}">
+            <a href="{% url 'organization-apikeys' organization.id %}">
                 <span class="has-tooltip-right" data-tooltip="{% translate 'Raktas duomenų įkėlimui į saugyklą' %}">
                     {% translate "Raktai" %}
                 </span>

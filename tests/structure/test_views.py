@@ -3489,3 +3489,47 @@ def test_manifest_export_openapi(app: DjangoTestApp):
         f"Paths mismatch. Missing: {expected_paths - actual_paths}, "
         f"Extra: {actual_paths - expected_paths}"
     )
+
+
+def test_props_metadata_rendering(app: DjangoTestApp) -> None:
+    model = ModelFactory()
+    dataset = model.dataset
+
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+    )
+
+    prop_1 = PropertyFactory(model=model)
+    prop_2 = PropertyFactory(model=model)
+
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_1),
+        object_id=prop_1.pk,
+        dataset=dataset,
+        name="prop_1",
+        type="string",
+        eli="https://example.com/prop_1",
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_2),
+        object_id=prop_2.pk,
+        dataset=dataset,
+        name="prop_2",
+        type="integer",
+        eli="https://example.com/prop_2",
+    )
+
+    response = app.get(reverse("model-structure", kwargs={"pk": dataset.pk, "model": model.name}))
+
+    assert response.status_code == 200
+    assert 'href="https://example.com/prop_1"' in response.content.decode()
+    assert 'href="https://example.com/prop_2"' in response.content.decode()

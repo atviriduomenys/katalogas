@@ -74,6 +74,7 @@ from vitrina.tasks.models import Task
 from spinta.manifests.open_api.helpers import create_openapi_manifest
 from spinta.manifests.components import ManifestPath
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
+from django.db.models import OuterRef, Subquery
 
 EXCLUDED_COLS = ["_type", "_revision", "_base"]
 
@@ -165,10 +166,16 @@ class DatasetStructureView(
     can_manage_structure: bool
 
     def dispatch(self, request, *args, **kwargs):
+        version_param = request.GET.get("version", None)
+        self.version = int(version_param) if version_param is not None else None
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        self.models = Model.objects.filter(dataset=self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            if self.version:
+                self.models = collect_full_version(self.version, self.object.id)
+            else:
+                self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -189,6 +196,8 @@ class DatasetStructureView(
         context = super().get_context_data(**kwargs)
         dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         structure = dataset.current_structure
+        context["selected_version"] = self.version
+        context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
         context["errors"] = []
         context["manifest"] = None
         context["structure"] = structure

@@ -65,7 +65,7 @@
         <h4 class="custom-title is-size-4-mobile">{% translate "Modeliai" %}</h4>
         {% endif %}
         {% for model in models %}
-            {% define model.metadata.first as metadata %}
+            {% define model as metadata %}
             <div class="columns no-margin-bottom">
                     <div class="column is-10">
                         {% if metadata.visibility is not None %}

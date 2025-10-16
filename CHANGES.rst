@@ -38,6 +38,9 @@ Change default status in `RequestCommentForm`.
 https://github.com/atviriduomenys/katalogas/issues/1904
 Export Dataset structure to OpenAPI
 
+https://github.com/atviriduomenys/katalogas/issues/1941
+Fix wrong `eli` value in model_structure on properties
+
 v 1.3 (2025-09-30)
 ==================
 

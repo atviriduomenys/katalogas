@@ -79,7 +79,9 @@ EXCLUDED_ACTIONS: set[Action] = {Action.CREATE, Action.ASSIGN, Action.PLAN, Acti
 
 DATASET_IS_PUBLIC = True
 ACL_RULE = tuple[type[Model], Action]
-EXISTING_DATASET_ACL_RULE = tuple[Union[DATASET_RELATED_OBJECTS], bool, str, Action]
+EXISTING_DATASET_ACL_RULE = tuple[
+    Union[Dataset, DatasetDistribution, DatasetStructure, DatasetRelation, Request], bool, str, Action
+]
 ACL = dict[ACL_RULE | EXISTING_DATASET_ACL_RULE, set[Role] | tuple[Role]]
 
 

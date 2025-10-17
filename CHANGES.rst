@@ -11,6 +11,10 @@ Add `OrganizationProjectsView` to show `Organization`s projects.
 Refactor organization views to use `OrganizationBaseViewMixin` for shared properties
 Refine project view permission checks to match updated logic
 
+https://github.com/atviriduomenys/katalogas/pull/1989
+Fixed persistent XSS vulnerability in comments by implementing HTML sanitization with bleach library.
+Added comprehensive security test suite covering XSS attack vectors.
+
 https://github.com/atviriduomenys/katalogas/issues/1929
 Removed content editing language tab from forms.
 Replaced old format scopes with the prefix of `spinta_` with UDTS format scopes.

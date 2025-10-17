@@ -72,6 +72,7 @@ weasyprint = "^62.0"
 pdfminer-six = "^20250506"
 authlib = "^1.6.0"
 spinta = {git = "https://github.com/atviriduomenys/spinta.git", rev = "0.2dev6"}
+bleach = "^6.2.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"

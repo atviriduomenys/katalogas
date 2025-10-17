@@ -1,5 +1,4 @@
 import builtins
-from datetime import date
 
 import pytest
 
@@ -10,7 +9,6 @@ from pytest_django.lazy_django import skip_if_no_django
 
 from pprintpp import pprint as pp
 
-from vitrina.classifiers.models import Concept, ConceptSchema
 from vitrina.datasets.models import DCATResourceSubclass
 
 builtins.pp = pp
@@ -53,6 +51,16 @@ def _haystack_marker(request):
         call_command("clear_index", interactive=False, using=["default"])
 
 
+@pytest.fixture(scope="session", autouse=True)
+def temp_media_root(tmp_path_factory):
+    """Use a temporary directory for MEDIA_ROOT during tests."""
+    from django.conf import settings
+
+    media_dir = tmp_path_factory.mktemp("media")
+    settings.MEDIA_ROOT = str(media_dir)
+    return media_dir
+
+
 @pytest.fixture(autouse=True)
 def ensure_default_subclasses(db):
     obj, _ = DCATResourceSubclass.objects.get_or_create(name="dataset")
@@ -66,3 +74,30 @@ def ensure_default_subclasses(db):
         obj2.set_current_language("lt")
         obj2.title = "Duomenų publikavimo paslauga"
         obj2.save()
+
+
+# Common fixtures for security tests
+@pytest.fixture
+def user(db):
+    """Create test user."""
+    from vitrina.users.models import User
+
+    return User.objects.create_user(
+        email="test@example.com", first_name="Test", last_name="User", password="testpass123"
+    )
+
+
+@pytest.fixture
+def organization(db):
+    """Create test organization."""
+    from vitrina.orgs.models import Organization
+
+    return Organization.add_root(title="Test Organization", company_code="123456")
+
+
+@pytest.fixture
+def dataset(db, organization):
+    """Create test dataset."""
+    from vitrina.datasets.models import Dataset
+
+    return Dataset.objects.create(title="Test Dataset", organization=organization)

@@ -475,8 +475,9 @@ SPINTA_SERVER_URL = env("SPINTA_SERVER_URL", default="https://get-test.data.gov.
 SPINTA_SERVER_CLIENT_ID = env("SPINTA_SERVER_CLIENT_ID", default="")
 SPINTA_SERVER_CLIENT_SECRET = env("SPINTA_SERVER_CLIENT_SECRET", default="")
 
-SECURE_HSTS_SECONDS = 31536000  # The max-age must be at least 31536000 seconds (1 year)
+SECURE_HSTS_SECONDS = 63072000  # 2 years (recommended for HSTS preload list)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
 
 if env("RECAPTCHA_SILENCE_KEY_ERROR", default=False):
     SILENCED_SYSTEM_CHECKS = ["django_recaptcha.recaptcha_test_key_error"]
@@ -525,6 +526,13 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = None
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# Cookie security: SameSite and HttpOnly flags
+SESSION_COOKIE_SAMESITE = 'Lax'  # Prevents CSRF via cross-site requests
+CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access (XSS protection)
+CSRF_COOKIE_HTTPONLY = True
+
 CSRF_TRUSTED_ORIGINS = ["https://*.gov.lt"]
 LANGUAGE_COOKIE_SECURE = True
 

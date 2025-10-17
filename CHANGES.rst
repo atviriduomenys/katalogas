@@ -4,6 +4,13 @@ Changes
 v 1.4 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/1948
+Add optional `organization` field to `Project` model.
+Add `organization_card.html` component to display organization info where needed.
+Add `OrganizationProjectsView` to show `Organization`s projects.
+Refactor organization views to use `OrganizationBaseViewMixin` for shared properties
+Refine project view permission checks to match updated logic
+
 https://github.com/atviriduomenys/katalogas/pull/1989
 Fixed persistent XSS vulnerability in comments by implementing HTML sanitization with bleach library.
 Added comprehensive security test suite covering XSS attack vectors.
@@ -18,6 +25,25 @@ Add checkbox "Can edit data" to organization and dataset representative form
 https://github.com/atviriduomenys/katalogas/issues/1836
 Changed ACL list for Dataset read/update access, introduced `PermittedDatasetManager`
 
+https://github.com/atviriduomenys/katalogas/issues/1967
+Add `_version/` endpoint to see project version.
+
+https://github.com/atviriduomenys/katalogas/issues/1935
+Add different staff groups for Organization, LearningMaterial, DjangoCms and Dataset.
+Add Catalog model to admin.
+
+https://github.com/atviriduomenys/katalogas/issues/720
+Add cronjobs for periodic scripts.
+
+https://github.com/atviriduomenys/katalogas/issues/1968
+Add `receive_request_email` flag to User.
+Change default status in `RequestCommentForm`.
+
+https://github.com/atviriduomenys/katalogas/issues/1904
+Export Dataset structure to OpenAPI
+
+https://github.com/atviriduomenys/katalogas/issues/1941
+Fix wrong `eli` value in model_structure on properties
 
 v 1.3 (2025-09-30)
 ==================

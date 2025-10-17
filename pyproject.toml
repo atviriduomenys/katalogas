@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "vitrina"
-version = "1.3.0"
+version = "1.4.0"
 description = ""
 authors = ["IVPK <atviriduomenys@ivpk.lt>"]
 
@@ -71,6 +71,7 @@ psutil = "^7.0.0"
 weasyprint = "^62.0"
 pdfminer-six = "^20250506"
 authlib = "^1.6.0"
+spinta = {git = "https://github.com/atviriduomenys/spinta.git", rev = "0.2dev6"}
 bleach = "^6.2.0"
 
 [tool.poetry.group.dev.dependencies]

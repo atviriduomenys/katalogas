@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-08-26 19:02+0300\n"
+"POT-Creation-Date: 2025-09-30 13:53+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -279,6 +279,19 @@ msgstr ""
 msgid "Prie mokymo medžiagos pridėti failai"
 msgstr ""
 
+msgid "Įkeltas"
+msgstr ""
+
+msgid "Atsisiųsti failą"
+msgstr ""
+
+msgid "Atsisiųsti"
+msgstr ""
+
+msgid ""
+"Spustelėkite atsisiųsti mygtuką, kad išsaugotumėte failą savo kompiuteryje"
+msgstr ""
+
 msgid "Privatumo politika"
 msgstr ""
 
@@ -529,10 +542,13 @@ msgstr ""
 msgid "Šis laukas yra privalomas."
 msgstr ""
 
-msgid "Failai"
+msgid "Dokumentacija"
 msgstr ""
 
-msgid "Dokumentas apie šį duomenų išteklių. Atitinka foaf:page."
+msgid "Ši savybė nurodo dokumentą apie šį duomenų rinkinį. Atitinka foaf:page."
+msgstr ""
+
+msgid "Ši savybė nurodo puslapį apie šį duomenų rinkinį. Atitinka foaf:page."
 msgstr ""
 
 msgid "Duomenų ištekliaus identifikatorius. Atitinka dct:identifier."
@@ -632,6 +648,18 @@ msgstr ""
 msgid "Surašykite aktualius raktinius žodžius"
 msgstr ""
 
+msgid "Metaduomenų katalogo pavadinimas"
+msgstr ""
+
+msgid "Metaduomenų katalogo kodinis pavadinimas"
+msgstr ""
+
+msgid "Detalus metaduomenų katalogo aprašas"
+msgstr ""
+
+msgid "Užpildykite tik vieną teisių deklaracijų lauką."
+msgstr ""
+
 msgid "Identifikatorius"
 msgstr ""
 
@@ -663,6 +691,10 @@ msgstr ""
 msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
 msgstr ""
 
+#, python-format
+msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
+msgstr ""
+
 msgid "Laikotarpio pradžia"
 msgstr ""
 
@@ -685,13 +717,6 @@ msgid "Pasirinkite pabaigos datą"
 msgstr ""
 
 msgid "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."
-msgstr ""
-
-msgid "Duomenų rinkinio identifikatorius"
-msgstr ""
-
-#, python-format
-msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
 msgstr ""
 
 msgid "Failas"
@@ -820,19 +845,30 @@ msgstr ""
 msgid "Pašalinta iš organizacijos"
 msgstr ""
 
-msgid "Atviri duomenys"
+msgid "Vieši"
 msgstr ""
 
-msgid "Apsaugoti duomenys"
+msgid "Apriboti"
 msgstr ""
 
-msgid "Uždari duomenys"
+msgid "Nevieši"
+msgstr ""
+
+msgid "Konfidencialūs"
 msgstr ""
 
 msgid "Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."
 msgstr ""
 
 msgid "Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."
+msgstr ""
+
+msgid "Teisės - Aprašymas"
+msgstr ""
+
+msgid ""
+"Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka "
+"dct:rights / dct:description."
 msgstr ""
 
 msgid "Katalogas"
@@ -860,7 +896,8 @@ msgstr ""
 
 msgid ""
 "Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos "
-"apribojimai, ar jis nėra viešas. Atitinka dct:accessRights."
+"apribojimai, ar jis nėra viešas, ar jis konfidencialus. Atitinka "
+"dct:accessRights."
 msgstr ""
 
 msgid "Žymės"
@@ -958,6 +995,15 @@ msgstr ""
 
 msgid ""
 "Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."
+msgstr ""
+
+msgid "Teisės - Susijęs dokumentas"
+msgstr ""
+
+msgid "Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."
+msgstr ""
+
+msgid "Paslaugos tipas. Atitinka dct:type"
 msgstr ""
 
 msgid "Dataset"
@@ -1221,14 +1267,6 @@ msgstr ""
 msgid "Kada paskutinį kartą buvo atnaujinti duomenys"
 msgstr ""
 
-msgid "Platinimo sąlygos"
-msgstr ""
-
-msgid ""
-"Ribojimai ar sąlygos, taikomos duomenų naudojimui (pvz., naudojimo "
-"apribojimai, prieigos teisės)"
-msgstr ""
-
 msgid "Naudojimo limitas"
 msgstr ""
 
@@ -1280,9 +1318,6 @@ msgid "pavadinimas nenurodytas"
 msgstr ""
 
 msgid "Peržiūrėti"
-msgstr ""
-
-msgid "Atsisiųsti"
 msgstr ""
 
 msgid "Atidaryti"
@@ -1588,9 +1623,6 @@ msgstr ""
 msgid "Pridėti vaikinių duomenų išteklių"
 msgstr ""
 
-msgid "Organizacijos"
-msgstr ""
-
 msgid "Duomenų išteklius sukurtas sėkmingai"
 msgstr ""
 
@@ -1679,6 +1711,9 @@ msgid "Duomenų rinkinių kiekis metuose"
 msgstr ""
 
 msgid "Termino pašalinimas"
+msgstr ""
+
+msgid "Organizacijos"
 msgstr ""
 
 msgid "vaikiniai duomenų ištekliai"
@@ -1910,6 +1945,79 @@ msgstr ""
 msgid "Komentaro atsako prenumerata"
 msgstr ""
 
+msgid "Laukiama patvirtinimo"
+msgstr ""
+
+msgid "Prenumeruojama"
+msgstr ""
+
+msgid "Prenumeracija nutraukta"
+msgstr ""
+
+msgid "Prenumerata patvirtinta"
+msgstr ""
+
+msgid "Prenumerata sėkmingai patvirtinta!"
+msgstr ""
+
+msgid "Ačiū! Jūsų el. pašto adresas sėkmingai užprenumeravo naujienlaiškį."
+msgstr ""
+
+msgid "Gausite naujienlaiškį kai tik bus paskelbtas naujas turinys."
+msgstr ""
+
+msgid "Grįžti į pagrindinį puslapį"
+msgstr ""
+
+msgid ""
+"Jei kada nors norėsite atšaukti prenumeratą, galėsite tai padaryti "
+"paspausdami nuorodą bet kuriame gautame naujienlaiškio laiške."
+msgstr ""
+
+msgid "Atšaukti prenumeratą"
+msgstr ""
+
+msgid "Atšaukti naujienlaiškio prenumeratą"
+msgstr ""
+
+msgid "Ar tikrai norite atšaukti prenumeratą el. pašto adresui"
+msgstr ""
+
+msgid "Po prenumeratos atšaukimo nebegausite mūsų naujienlaiškių."
+msgstr ""
+
+msgid "Taip, atšaukti prenumeratą"
+msgstr ""
+
+msgid "Ne, grįžti atgal"
+msgstr ""
+
+msgid "Pastaba:"
+msgstr ""
+
+msgid ""
+"Jei pakeisite nuomonę, galėsite bet kada prenumeruoti iš naujo mūsų "
+"svetainėje."
+msgstr ""
+
+msgid "Prenumerata atšaukta"
+msgstr ""
+
+msgid "Prenumerata sėkmingai atšaukta"
+msgstr ""
+
+msgid "Šiuo el. paštu nebegausite naujienlaiškio."
+msgstr ""
+
+msgid "Dėkojame, kad buvote su mumis!"
+msgstr ""
+
+msgid "Norėtumėte vėl prenumeruoti?"
+msgstr ""
+
+msgid "Jei turite klausimų ar pasiūlymų, susisiekite su mumis:"
+msgstr ""
+
 msgid "Jūs neturit teisės sukurti prenumeratos kitam naudotojui."
 msgstr ""
 
@@ -1923,6 +2031,29 @@ msgid "Prenumerata sukurta sėkmingai"
 msgstr ""
 
 msgid "Rasta esama šio objekto prenumerata, ji buvo sėkmingai atnaujinta."
+msgstr ""
+
+msgid "Prašome įvesti el. pašto adresą."
+msgstr ""
+
+msgid "Šis el. pašto adresas jau prenumeruoja naujienlaiškį."
+msgstr ""
+
+msgid "Patvirtinimo nuorodą vis dar galiojanti, patikrinkite el. pašto dežutę."
+msgstr ""
+
+msgid ""
+"Patvirtinimo nuoroda išsiųsta į jūsų el. paštą. Nuoroda galioja 24 valandas."
+msgstr ""
+
+msgid ""
+"Patvirtinimo nuoroda nebegalioja. Prašome užsisakyti prenumeratą iš naujo."
+msgstr ""
+
+msgid "Naujienlaiškio prenumerata sėkmingai patvirtinta!"
+msgstr ""
+
+msgid "Įvyko klaida patvirtinant prenumeratą."
 msgstr ""
 
 msgid "organizacija"
@@ -2223,9 +2354,6 @@ msgid ""
 msgstr ""
 
 msgid "Taip, esu tikras"
-msgstr ""
-
-msgid "Ne, grįžti atgal"
 msgstr ""
 
 msgid "Šablono redagavimas"
@@ -3108,6 +3236,14 @@ msgstr ""
 msgid "Licencija"
 msgstr ""
 
+msgid "Statusas"
+msgstr ""
+
+msgid ""
+"Duomenų distribucija gali būti įgyvendinta - veikianti, kuriama, suplanuota "
+"kūrimui, pasenusi arba atsisakyta."
+msgstr ""
+
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr ""
 
@@ -3866,6 +4002,9 @@ msgstr ""
 msgid "Duomenų rinkinio struktūra"
 msgstr ""
 
+msgid "Eksportuoti OpenAPI"
+msgstr ""
+
 msgid "Importuoti"
 msgstr ""
 
@@ -4582,6 +4721,9 @@ msgstr ""
 msgid "Pridėti Agentą"
 msgstr ""
 
+msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."
+msgstr ""
+
 msgid ""
 "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį "
 "kartą!\n"
@@ -4589,7 +4731,14 @@ msgid ""
 "\"secret\" credentials.cfg failo pavyzdyje"
 msgstr ""
 
-msgid "Įvyko klaida, nepavyko sukurti agento."
+#, python-format
+msgid ""
+"Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento kūrimas "
+"nepavyko."
+msgstr ""
+
+#, python-format
+msgid "Įvyko klaida, nepavyko sukurti agento. Klaida: %(exception)s"
 msgstr ""
 
 msgid "Redaguoti Agentą"
@@ -4761,9 +4910,6 @@ msgstr ""
 msgid "Aktyvus"
 msgstr ""
 
-msgid "Laukiama patvirtinimo"
-msgstr ""
-
 msgid "Suspenduotas"
 msgstr ""
 
@@ -4879,6 +5025,9 @@ msgid "Prisijungė prieš"
 msgstr ""
 
 msgid "Keisti duomenis"
+msgstr ""
+
+msgid "Prenumeruoti naujienlaiškį"
 msgstr ""
 
 msgid "Naudotojo registracija"

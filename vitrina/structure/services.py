@@ -953,6 +953,18 @@ def export_dataset_structure(dataset: Dataset) -> StringIO:
         yield from stream
 
 
+def _export_dataset_structure_to_stringio(dataset: Dataset) -> StringIO:
+    """Wrapper that converts the generator output to StringIO"""
+
+    result = StringIO()
+
+    for chunk in export_dataset_structure(dataset):
+        result.write(chunk)
+
+    result.seek(0)
+    return result
+
+
 def datasets_to_tabular(dataset: Dataset):
     if dataset.current_structure:
         yield from _prefixes_to_tabular(dataset.current_structure, separator=True)

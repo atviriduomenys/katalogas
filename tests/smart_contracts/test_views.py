@@ -12,7 +12,7 @@ from pdfminer.high_level import extract_text
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
@@ -161,7 +161,9 @@ class TestAgreementCreateView:
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
         user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -208,7 +210,9 @@ class TestAgreementCreateView:
             name="datasets/gov/org/dataset",
         )
         user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset1, dataset2, diff_dataset])
+        project = ProjectFactory(user=user, datasets=[dataset1, dataset2, diff_dataset], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -249,7 +253,9 @@ class TestAgreementCreateView:
             dataset=dataset2,
             name="test/dataset2",
         )
-        project = ProjectFactory(user=user, datasets=[dataset, dataset2])
+        project = ProjectFactory(user=user, datasets=[dataset, dataset2], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
         AgreementFactory(project=project, assigner=organization)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -262,7 +268,9 @@ class TestAgreementCreateView:
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
         user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
         app.set_user(user)
 
         data = {
@@ -277,6 +285,38 @@ class TestAgreementCreateView:
 
         assert response.status_code == 200
         assert Agreement.objects.filter(project=project).count() == 0
+
+    def test_create_agreement_for_personal_project(
+        self, app: DjangoTestApp, dataset: Dataset
+    ) -> None:
+        user = UserFactory()
+        project = ProjectFactory(user=user, datasets=[dataset])
+        app.set_user(user)
+
+        response = app.get(reverse("agreement-create", args=[project.pk]), status=403)
+
+        assert response.status_code == 403
+
+    def test_create_for_organization_project_mid_change_to_personal(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+    ) -> None:
+        user = UserFactory(organization=organization)
+        project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
+        ct = ContentType.objects.get_for_model(Organization)
+        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
+        app.set_user(user)
+
+        response = app.get(reverse("agreement-create", args=[project.pk]))
+        form = response.forms["agreement-create"]
+        form["form-0-scopes"] = ["uapi:/test/dataset/:getall"]
+        project.organization = None
+        project.save()
+        response = form.submit()
+
+        assert response.status_code == 302
+        assert response.url == reverse("agreement-list", args=[project.pk])
+
+        assert not Agreement.objects.filter(project=project).exists()
 
 
 class TestAgreementGeneratePdf:

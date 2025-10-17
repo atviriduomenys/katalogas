@@ -1,0 +1,83 @@
+{% load i18n %}
+<div class="card" style="box-shadow: none;">
+    <header class="card-header" style="box-shadow: none;">
+        <p class="card-header-title">
+            {{ header }}
+        </p>
+    </header>
+    <div class="card-content" style="padding-left:1rem; padding-right:1rem;">
+        <div class="media">
+            {% if organization %}
+            {% if organization.image %}
+            <div class="media-left">
+                <figure class="image is-48x48">
+                    <img src="{{ organization.image.url }}" alt="{{ organization.name }}" style="border-radius:4px; border:1px solid  #F1F1F1;">
+                </figure>
+            </div>
+            {% endif %}
+            <div class="media-content">
+                {% if organization.title %}
+                <p class="title is-6">{{ organization.title }}</p>
+                {% endif %}
+                <p class="subtitle is-6">
+                    <a href="{% url 'organization-detail' organization.pk %}" rel="noopener" style="text-decoration: underline;">
+                    {% firstof name organization.name %}
+                    </a>
+                </p>
+                {% if website or organization.website %}
+                <p class="is-flex is-align-items-center">
+                    <span class="icon is-small has-text-primary mr-1"><i class="fas fa-globe"></i></span>
+                    <a href="{% firstof website organization.website %}" target="_blank" rel="noopener" class="has-text-weight-bold">
+                    {% firstof website organization.website %}
+                    </a>
+                </p>
+                {% endif %}
+                {% if email or organization.email %}
+                <p class="is-flex is-align-items-center">
+                    <span class="icon is-small has-text-primary mr-1">
+                    <i class="fas fa-envelope"></i>
+                    </span>
+                    <a href="mailto:{% firstof email organization.email %}" class="has-text-weight-bold">
+                    {% firstof email organization.email %}
+                    </a>
+                </p>
+                {% endif %}
+                {% if phone or organization.phone %}
+                <p class="is-flex is-align-items-center">
+                    <span class="icon is-small has-text-primary mr-1">
+                    <i class="fas fa-phone"></i>
+                    </span>
+                    <a href="tel:{% firstof phone organization.phone %}" class="has-text-weight-bold">
+                    {% firstof phone organization.phone %}
+                    </a>
+                </p>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="media-left">
+                <figure class="image is-48x48">
+                    <span style="
+                        width:48px;
+                        height:48px;
+                        display:flex;
+                        align-items:center;
+                        justify-content:center;
+                        background-color:rgba(0,0,0,0.04);
+                        border-radius:6px;
+                        ">
+                        <svg viewBox="0 0 24 24" width="24" height="24"
+                            xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false">
+                            <path
+                                d="M15.0001 7.1999C15.0001 6.40425 14.684 5.64119 14.1214 5.07858C13.5588 4.51597 12.7957 4.1999 12.0001 4.1999C11.2044 4.1999 10.4414 4.51597 9.87878 5.07858C9.31617 5.64119 9.0001 6.40425 9.0001 7.1999C9.0001 7.99555 9.31617 8.75861 9.87878 9.32122C10.4414 9.88383 11.2044 10.1999 12.0001 10.1999C12.7957 10.1999 13.5588 9.88383 14.1214 9.32122C14.684 8.75861 15.0001 7.99555 15.0001 7.1999ZM7.2001 7.1999C7.2001 5.92686 7.70581 4.70596 8.60598 3.80579C9.50616 2.90562 10.7271 2.3999 12.0001 2.3999C13.2731 2.3999 14.494 2.90562 15.3942 3.80579C16.2944 4.70596 16.8001 5.92686 16.8001 7.1999C16.8001 8.47294 16.2944 9.69384 15.3942 10.594C14.494 11.4942 13.2731 11.9999 12.0001 11.9999C10.7271 11.9999 9.50616 11.4942 8.60598 10.594C7.70581 9.69384 7.2001 8.47294 7.2001 7.1999ZM5.44885 19.7999H18.5551C18.2213 17.4262 16.1813 15.5999 13.7176 15.5999H10.2901C7.82635 15.5999 5.78635 17.4262 5.4526 19.7999H5.44885ZM3.6001 20.4862C3.6001 16.7924 6.5926 13.7999 10.2863 13.7999H13.7138C17.4076 13.7999 20.4001 16.7924 20.4001 20.4862C20.4001 21.1012 19.9013 21.5999 19.2863 21.5999H4.71385C4.09885 21.5999 3.6001 21.1012 3.6001 20.4862Z"
+                                fill="#2F2F2F" fill-opacity=".6"/>
+                        </svg>
+                    </span>
+                </figure>
+            </div>
+            <div class="media-content">
+                <p>{% translate "Fizinis asmuo" %}</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

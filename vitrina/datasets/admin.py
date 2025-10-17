@@ -4,10 +4,9 @@ from datetime import datetime, timedelta
 from urllib.parse import urlparse
 
 import pytz
-import tagulous
 from django.contrib import admin
 from django.contrib.postgres.aggregates import ArrayAgg
-from django.db.models import QuerySet
+from django.db.models import QuerySet, Q
 from django.http import StreamingHttpResponse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -37,6 +36,9 @@ from vitrina.resources.models import FormatName
 from vitrina.structure.services import get_data_from_spinta, to_row
 
 
+TagModel = Dataset.tags.tag_model
+
+
 class AttributionAdmin(admin.ModelAdmin):
     list_display = (
         "name",
@@ -48,6 +50,29 @@ class DatasetAdmin(TranslatableAdmin, VersionAdmin):
     search_fields = ("translations__title",)
     list_display = ("title", "description", "is_public")
     form = DatasetAdminForm
+
+    def has_change_permission(self, request, obj=None):
+        """Control who can edit datasets"""
+        return request.user.has_perm("vitrina_datasets.change_dataset")
+
+    def has_delete_permission(self, request, obj=None):
+        """Control who can delete datasets"""
+        return request.user.has_perm("vitrina_datasets.delete_dataset")
+
+    def has_add_permission(self, request):
+        """Control who can add datasets"""
+        return request.user.has_perm("vitrina_datasets.add_dataset")
+
+    def get_readonly_fields(self, request, obj=None):
+        """Make fields readonly for view-only users"""
+        readonly_fields = list(super().get_readonly_fields(request, obj))
+
+        if request.user.has_perm("vitrina_datasets.view_dataset") and not request.user.has_perm(
+            "vitrina_datasets.change_dataset"
+        ):
+            readonly_fields.extend([field.name for field in self.model._meta.fields])
+
+        return readonly_fields
 
 
 class GroupAdmin(TranslatableAdmin):
@@ -103,6 +128,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
         "title_display",
         "coordinators_display",
         "managers_display",
+        "vda_display",
         "distribution_published_display",
         "frequency_display",
         "spinta_modified_display",
@@ -115,6 +141,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
         "organization__title",
         "creator_text",
         "representative_emails",
+        "vda_representative_emails",
     )
     list_filter = (
         FormatFilter,
@@ -122,6 +149,9 @@ class DatasetReportAdmin(admin.ModelAdmin):
         "organization",
     )
     change_list_template = "vitrina/datasets/admin/dataset_report_change_list.html"
+
+    def has_module_permission(self, request):
+        return request.user.has_perm("vitrina_datasets.view_datasetreport")
 
     def has_add_permission(self, request):
         return False
@@ -142,6 +172,15 @@ class DatasetReportAdmin(admin.ModelAdmin):
             status=Dataset.HAS_DATA,
         ).distinct()
         queryset = queryset.annotate(representative_emails=ArrayAgg("representatives__email"))
+        queryset = queryset.annotate(
+            vda_representative_emails=ArrayAgg(
+                "organization__representatives__email",
+                filter=Q(
+                    Q(tags__name__iexact="vda") & Q(organization__representatives__email__icontains="@stat.gov.lt")
+                ),
+                distinct=True,
+            )
+        )
         return queryset
 
     def organization_display(self, obj):
@@ -210,6 +249,18 @@ class DatasetReportAdmin(admin.ModelAdmin):
 
     managers_display.short_description = _("Tvarkytojai")
     managers_display.allow_tags = True
+
+    def vda_display(self, obj):
+        if obj.tags.filter(name__iexact="vda").exists() and obj.organization:
+            representatives = obj.organization.representatives.filter(email__icontains="@stat.gov.lt").values_list(
+                "email", flat=True
+            )
+            if representatives:
+                return mark_safe("<br/>".join(representatives))
+        return "-"
+
+    vda_display.short_description = _("VDA tvarkytojai")
+    vda_display.allow_tags = True
 
     def distribution_published_display(self, obj):
         if distribution := obj.datasetdistribution_set.order_by("created").first():
@@ -340,6 +391,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
             "dataset_title": _("Duomenų rinkinio pavadinimas"),
             "coordinators": _("Koodinatoriai"),
             "managers": _("Tvarkytojai"),
+            "vda_representatives": _("VDA tvarkytojai"),
             "dataset_url": _("Duomenų rinkinio nuoroda"),
             "created": _("Duomenų šaltinio pirmo publikavimo data saugykloje"),
             "frequency": _("Duomenų atnaujinimo periodiškumas"),
@@ -372,6 +424,14 @@ class DatasetReportAdmin(admin.ModelAdmin):
             else:
                 managers = "-"
 
+            vda_representatives = "-"
+            if item.tags.filter(name__iexact="vda").exists() and item.organization:
+                representatives = item.organization.representatives.filter(email__icontains="@stat.gov.lt").values_list(
+                    "email", flat=True
+                )
+                if representatives:
+                    vda_representatives = "\n".join(representatives)
+
             organization = "-"
             root_organization = "-"
             if item.organization:
@@ -389,6 +449,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
                     "dataset_title": item.title,
                     "coordinators": coordinators,
                     "managers": managers,
+                    "vda_representatives": vda_representatives,
                     "dataset_url": "%s%s" % (get_current_domain(request), item.get_absolute_url()),
                     "created": self.distribution_published_display(item),
                     "frequency": self.frequency_display(item),
@@ -440,6 +501,35 @@ class DatasetRelationAdmin(admin.ModelAdmin):
         return super().get_queryset(request).select_related("dataset", "relation", "part_of")
 
 
+@admin.register(TagModel)
+class DatasetTagAdmin(admin.ModelAdmin):
+    list_display = ("name", "count")
+    search_fields = ("name",)
+
+    def has_add_permission(self, request):
+        return request.user.has_perm("vitrina_datasets.add_tagulous_dataset_tags")
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.has_perm("vitrina_datasets.change_tagulous_dataset_tags")
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.has_perm("vitrina_datasets.delete_tagulous_dataset_tags")
+
+    def get_actions(self, request):
+        actions = super().get_actions(request)
+
+        # Remove merge action for view-only users
+        if not request.user.has_perm("vitrina_datasets.change_tagulous_dataset_tags"):
+            actions.pop("merge_tags", None)
+
+        return actions
+
+    def get_readonly_fields(self, request, obj=None):
+        if not request.user.has_perm("vitrina_datasets.change_tagulous_dataset_tags"):
+            return [field.name for field in self.model._meta.fields]
+        return []
+
+
 admin.site.register(Dataset, DatasetAdmin)
 admin.site.register(DatasetRelation, DatasetRelationAdmin)
 admin.site.register(Attribution, AttributionAdmin)
@@ -449,5 +539,3 @@ admin.site.register(DCATResourceSubclass, DCATResourceSubclassAdmin)
 admin.site.register(Relation, RelationAdmin)
 admin.site.register(DatasetReport, DatasetReportAdmin)
 admin.site.register(Contact, ContactAdmin)
-
-tagulous.admin.register(Dataset.tags)

@@ -3427,3 +3427,109 @@ def test_property_enum_item_create__higher_visibility_then_model_with_error(app:
             "Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų modelio matomumas 'private'."
         ]
     ]
+
+@pytest.mark.django_db
+def test_manifest_export_openapi(app: DjangoTestApp):
+    """Test OpenAPI manifest export returns valid spec with correct metadata, schemas, tags, and paths."""
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+    resp = app.get(reverse('dataset-structure-export-openapi', args=[structure.dataset.pk]))
+
+    assert resp.status_code == 200
+    assert resp.content_type == 'application/json'
+    
+    openapi_spec = resp.json
+    
+    expected_keys = ['openapi', 'info', 'externalDocs', 'servers', 'tags', 'components', 'paths']
+    assert list(openapi_spec.keys()) == expected_keys, "OpenAPI spec missing required top-level fields"
+    
+    info = openapi_spec['info']
+    assert info['summary'] == structure.dataset.title, "Info summary should match dataset title"
+    assert info['description'] == structure.dataset.description, "Info description should match dataset description"
+    assert info['version'] == '1.0.0', "API version should be 1.0.0"
+    
+    schemas = set(openapi_spec['components']['schemas'].keys())
+    expected_schemas = {"Country", "CountryCollection", "CountryChange", "CountryChanges"}
+    assert expected_schemas <= schemas, f"Missing required schemas: {expected_schemas - schemas}"
+    
+    tag_names = {tag["name"] for tag in openapi_spec["tags"]}
+    expected_tags = {"utility", "Country"}
+    assert tag_names == expected_tags, f"Tags mismatch. Expected: {expected_tags}, Got: {tag_names}"
+    
+    utility_paths = {"/version", "/health"}
+    model_paths = {
+        "/datasets/gov/ivpk/adp/Country",
+        "/datasets/gov/ivpk/adp/Country/{id}",
+        "/datasets/gov/ivpk/adp/Country/:changes/{cid}"
+    }
+    expected_paths = utility_paths | model_paths
+    actual_paths = set(openapi_spec["paths"].keys())
+    assert actual_paths == expected_paths, (
+        f"Paths mismatch. Missing: {expected_paths - actual_paths}, "
+        f"Extra: {actual_paths - expected_paths}"
+    )
+
+
+def test_props_metadata_rendering(app: DjangoTestApp) -> None:
+    model = ModelFactory()
+    dataset = model.dataset
+
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+    )
+
+    prop_1 = PropertyFactory(model=model)
+    prop_2 = PropertyFactory(model=model)
+
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_1),
+        object_id=prop_1.pk,
+        dataset=dataset,
+        name="prop_1",
+        type="string",
+        eli="https://example.com/prop_1",
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop_2),
+        object_id=prop_2.pk,
+        dataset=dataset,
+        name="prop_2",
+        type="integer",
+        eli="https://example.com/prop_2",
+    )
+
+    response = app.get(reverse("model-structure", kwargs={"pk": dataset.pk, "model": model.name}))
+
+    assert response.status_code == 200
+    assert 'href="https://example.com/prop_1"' in response.content.decode()
+    assert 'href="https://example.com/prop_2"' in response.content.decode()

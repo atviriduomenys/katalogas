@@ -13,6 +13,9 @@ from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory
 from vitrina.projects.models import Project, UseCaseClient
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+
+from django.contrib.contenttypes.models import ContentType
 
 pytestmark = pytest.mark.django_db
 
@@ -44,6 +47,57 @@ def test_project_create(app: DjangoTestApp):
     assert Version.objects.get_for_object(added_project.first()).first().revision.comment == Project.CREATED
     assert FilerImage.objects.count() == 1
     assert added_project.first().image.original_filename == "example.png"
+    assert not added_project.first().organization
+
+def test_project_create_with_organization(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+        user=user
+    )
+
+    form = app.get(reverse("project-create")).forms['project-form']
+    form['title'] = "Project"
+    form['description'] = "Description"
+    form['organization'] = organization.id
+    form['url'] = "example.com"
+    form['image'] = Upload('example.png', generate_photo_file(), 'image')
+    resp = form.submit()
+
+    added_project = Project.objects.filter(title='Project').first()
+    assert added_project
+    assert resp.status_code == 302
+    assert resp.url == added_project.get_absolute_url()
+    assert Version.objects.get_for_object(added_project).count() == 1
+    assert Version.objects.get_for_object(added_project).first().revision.comment == Project.CREATED
+    assert FilerImage.objects.count() == 1
+    assert added_project.image.original_filename == "example.png"
+    assert added_project.organization == organization
+
+def test_project_create_with_organization_no_representative(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+    organization = OrganizationFactory()
+
+    form = app.get(reverse("project-create")).forms['project-form']
+    form['title'] = "Project"
+    form['description'] = "Description"
+    form['url'] = "example.com"
+    form['image'] = Upload('example.png', generate_photo_file(), 'image')
+    with pytest.raises(ValueError):
+        form['organization'] = organization.id
+    form["organization"].force_value(organization.pk)
+
+    form['url'] = "example.com"
+    resp = form.submit()
+
+    assert resp.status_code == 200
+    assert not Project.objects.filter(title='Project').exists()
+    
 
 
 def test_project_update(app: DjangoTestApp):
@@ -64,6 +118,42 @@ def test_project_update(app: DjangoTestApp):
     assert project.description == "Updated description"
     assert Version.objects.get_for_object(project).count() == 1
     assert Version.objects.get_for_object(project).first().revision.comment == Project.EDITED
+
+def test_project_update_with_organization(app: DjangoTestApp):
+    user = UserFactory()
+    organization = OrganizationFactory()
+    project = ProjectFactory(user=user, organization=organization)
+    ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=ct,
+        object_id=organization.pk,
+        user=user
+    )
+
+    app.set_user(user)
+
+    form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']
+    form['title'] = "Updated title"
+    form['description'] = "Updated description"
+    resp = form.submit()
+
+    project.refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == project.get_absolute_url()
+    assert project.title == "Updated title"
+    assert project.description == "Updated description"
+    assert Version.objects.get_for_object(project).count() == 1
+    assert Version.objects.get_for_object(project).first().revision.comment == Project.EDITED
+
+def test_project_update_with_organization_no_representative(app: DjangoTestApp):
+    user = UserFactory()
+    organization = OrganizationFactory()
+    project = ProjectFactory(user=user, organization=organization)
+
+    app.set_user(user)
+
+    resp = app.get(reverse("project-update", args=[project.pk]),  expect_errors=True)
+    assert resp.status_code == 403
 
 
 def test_project_history_view_without_permission(app: DjangoTestApp):

@@ -1,10 +1,11 @@
 from typing import Type, Any
+from importlib.metadata import version, PackageNotFoundError
 
 from django.core.exceptions import ImproperlyConfigured
 from django.db.models import Model
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms import BaseFormSet
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render, get_object_or_404
 from django.urls import reverse
 from django.views.generic import TemplateView
@@ -280,3 +281,12 @@ class FormsetView(TemplateResponseMixin, ContextMixin, ProcessFormView):
             return self.formset_valid(formset)
         else:
             return self.formset_invalid(formset)
+
+
+def version_view(request):
+    try:
+        app_version = version("vitrina")
+    except PackageNotFoundError:
+        app_version = "unknown"
+
+    return JsonResponse({"version": app_version})

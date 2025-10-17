@@ -1898,6 +1898,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                 or latest_version.base != object_to_none(model.base)
                 or none_to_string(latest_version.ref) != none_to_string(self.object.ref)
                 or latest_version.level_given != self.object.level_given
+                or latest_version.status != self.object.status
             ):
                 self.object.draft = True
             else:

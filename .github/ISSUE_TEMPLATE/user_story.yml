@@ -68,14 +68,14 @@ body:
       description: "Trumpas naudotojo kelio aprašas"
       placeholder: "Naudotojo kelias iki rezultato."
 
-  - type: attachements
+  - type: attachement
     id: userflow
     attributes:
       label: "User Flow (jei taikoma)"
       description: "Trumpas naudotojo kelias arba įkelta diagrama."
       placeholder: "Naudotojo kelias nuo veiksmų iki rezultato."
 
-  - type: attachments
+  - type: attachment
     id: wireframes
     attributes:
       label: "Wireframes"

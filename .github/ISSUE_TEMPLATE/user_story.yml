@@ -65,22 +65,15 @@ body:
     id: userflow
     attributes:
       label: "User Flow (jei taikoma)"
-      description: "Trumpas naudotojo kelio aprašas"
-      placeholder: "Naudotojo kelias iki rezultato."
+      description: "Trumpas naudotojo veiksmų aprašas"
+      placeholder: "Aprašyk naudotojo veiksmus, arba įkelk naudotojo veiksmų diagramą (coy+paste)"
 
-  - type: attachments
-    id: userflow
-    attributes:
-      label: "User Flow (jei taikoma)"
-      description: "Trumpas naudotojo kelias arba įkelta diagrama."
-      multiple: true
-
-  - type: attachments
+  - type: textarea
     id: wireframes
     attributes:
       label: "Wireframes"
       description: "Wireframe schema, geriausia iš screenshot, su atvaizduotais pakeitimais"
-      multiple: true
+      placeholder: "Įkelk Wireframes (coy+paste)"
 
   - type: textarea
     id: acceptance

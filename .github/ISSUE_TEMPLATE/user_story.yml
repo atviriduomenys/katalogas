@@ -73,7 +73,7 @@ body:
     attributes:
       label: "User Flow (jei taikoma)"
       description: "Trumpas naudotojo kelias arba įkelta diagrama."
-      placeholder: "Naudotojo kelias nuo veiksmų iki rezultato."
+      multiple: true
 
   - type: attachments
     id: wireframes

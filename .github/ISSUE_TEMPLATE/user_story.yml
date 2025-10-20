@@ -103,15 +103,15 @@ body:
         - [ ] Techninio įgyvendinimo užduotis (Task tipo) #123
 
   - type: textarea
-  id: definition_of_done
-  attributes:
-    label: 📋 Definition of Done
-    description: "Checklist, kuris visada turi būti pažymėtas prieš uždarant istoriją"
-    value: |
-      - [ ] **Testai** parašyti / atnaujinti
-      - [ ] **Dokumentacija atnaujinta** (jei reikia)
-      - [ ] Padeployinta ir ištestuota **Laikinojoj testinėj** aplinkoj
-      - [ ] Acceptance Criteria įvykdyti
-      - [ ] CHANGES.rst
-      - [ ] Pademonstruota per Sprint Review
-      - [ ] PO (ar atsakingas asmuo) peržiūrėjo ir patvirtino
+    id: definition_of_done
+    attributes:
+      label: 📋 Definition of Done
+      description: "Checklist, kuris visada turi būti pažymėtas prieš uždarant istoriją"
+      value: |
+        - [ ] **Testai** parašyti / atnaujinti
+        - [ ] **Dokumentacija atnaujinta** (jei reikia)
+        - [ ] Padeployinta ir ištestuota **Laikinojoj testinėj** aplinkoj
+        - [ ] Acceptance Criteria įvykdyti
+        - [ ] CHANGES.rst
+        - [ ] Pademonstruota per Sprint Review
+        - [ ] PO (ar atsakingas asmuo) peržiūrėjo ir patvirtino

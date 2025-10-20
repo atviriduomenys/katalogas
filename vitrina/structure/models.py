@@ -12,6 +12,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Status
+from vitrina.models import UUIDBaseModel
 from vitrina.structure.helpers import get_type_repr
 
 
@@ -542,3 +543,20 @@ class MetadataVersion(models.Model):
         if self.type:
             return get_type_repr(self)
         return ""
+
+
+class ValidationStatus(models.TextChoices):
+    PENDING = "pending", _("Pending")
+    VALID = "valid", _("Valid")
+    INVALID = "invalid", _("Invalid")
+
+
+class DsaValidationEntry(UUIDBaseModel):
+    dsa_file = models.FileField(upload_to="dsa_files/", verbose_name="DSA File")
+    validation_status = models.CharField(
+        max_length=10, choices=ValidationStatus.choices, default=ValidationStatus.PENDING
+    )
+    error_message = models.TextField(blank=True, null=True)
+
+    def __str__(self):
+        return f"DSA [{self.pk}] - {self.validation_status}"

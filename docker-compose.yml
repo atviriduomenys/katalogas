@@ -85,11 +85,12 @@ services:
     command: celery -A vitrina worker -l info
     environment:
       - REDIS_URL=redis://redis:6379/
+      - DATABASE_URL=postgres://adp:secret@postgres:5432/adp-dev
       - DJANGO_SETTINGS_MODULE=vitrina.settings
     volumes:
       - .:/app
     depends_on:
       - redis
-      - vitrina
+      - postgres
     restart: always
 

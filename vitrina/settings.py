@@ -501,8 +501,10 @@ CACHES = {
     },
 }
 
+REDIS_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/")
+
 # Celery settings
-CELERY_BROKER_URL = env("REDIS_URL", default="redis://127.0.0.1:6379/") + "3"
+CELERY_BROKER_URL = REDIS_URL + "3"
 CELERY_RESULT_BACKEND = CELERY_BROKER_URL
 CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"

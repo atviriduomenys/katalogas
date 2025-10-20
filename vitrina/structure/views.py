@@ -173,7 +173,7 @@ class DatasetStructureView(
         self.models = Model.objects.filter(dataset=self.object)
         if self.can_manage_structure:
             if self.version:
-                self.models = collect_full_version(self.version, self.object.id)
+                self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
             else:
                 self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
         else:

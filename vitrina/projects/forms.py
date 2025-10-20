@@ -1,6 +1,6 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
-from django.forms import ModelForm, CharField, Textarea, ModelChoiceField
+from django.forms import ModelForm, CharField, Textarea, ModelChoiceField, BooleanField
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import QuerySet
 
@@ -39,10 +39,17 @@ class ProjectForm(ModelForm):
         upload_to=Project.UPLOAD_TO,
         help_text=_("Paveiksliukas susijęs su pasiūlytu panaudojimo atveju."),
     )
+    is_public = BooleanField(
+        label=_("Panaudos atvejis matomas viešai"),
+        required=False,
+        help_text=_(
+            "Pažymėkite, jeigu norite, kad panaudos atvejis būtų matomas viešai visiems. Kitu atveju bus matomas tik gavėjo ir teikėjų organizacijoms."
+        ),
+    )
 
     class Meta:
         model = Project
-        fields = ["title", "description", "organization", "url", "image"]
+        fields = ["title", "description", "organization", "url", "image", "is_public"]
 
     def __init__(self, *args, **kwargs):
         self.user = kwargs.pop("user")
@@ -64,6 +71,7 @@ class ProjectForm(ModelForm):
             Field("organization"),
             Field("url", placeholder=_("Nuoroda į panaudojimo atvejį")),
             Field("image"),
+            Field("is_public"),
             Submit("submit", button, css_class="button is-primary"),
         )
 

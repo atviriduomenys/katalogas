@@ -551,12 +551,12 @@ class ValidationStatus(models.TextChoices):
     INVALID = "invalid", _("Invalid")
 
 
-class DsaValidationEntry(UUIDBaseModel):
-    dsa_file = models.FileField(upload_to="dsa_files/", verbose_name="DSA File")
+class ManifestValidationEntry(UUIDBaseModel):
+    manifest_file = models.FileField(upload_to="manifest_files/", verbose_name="Manifest File")
     validation_status = models.CharField(
         max_length=10, choices=ValidationStatus.choices, default=ValidationStatus.PENDING
     )
     error_message = models.TextField(blank=True, null=True)
 
     def __str__(self):
-        return f"DSA [{self.pk}] - {self.validation_status}"
+        return f"Manifest [{self.pk}] - {self.validation_status}"

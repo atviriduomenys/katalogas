@@ -3,6 +3,8 @@ Changes
 
 v 1.4 (unreleased)
 ==================
+https://github.com/atviriduomenys/katalogas/issues/1934
+Translate `Requests`.
 
 https://github.com/atviriduomenys/katalogas/issues/1948
 Add optional `organization` field to `Project` model.

@@ -18,6 +18,7 @@ def test_success_agent_create_form():
     form = AgentForm(data=form_data)
     assert form.is_valid()
 
+
 def test_success_agent_create_form_open_data_publish_url_is_provided():
     form_data = {
         "title": "Agent",
@@ -83,6 +84,24 @@ def test_agent_form_duplicate_codename_first_agent_is_archived():
             "is_enabled": True,
             "is_open_data_published": False,
             "object_type": AgentType.SPINTA,
+        },
+        organization=organization
+    )
+    assert form.is_valid()
+
+
+@pytest.mark.django_db
+def test_agent_form_with_organization_service():
+    organization = OrganizationFactory()
+    dataset = DatasetFactory(service=True, organization=organization)
+
+    form = AgentForm(
+        data={
+            "title": "Agent with service",
+            "is_enabled": True,
+            "is_open_data_published": False,
+            "object_type": AgentType.SPINTA,
+            "service": dataset.pk,
         },
         organization=organization
     )

@@ -9,17 +9,24 @@ from vitrina.uapi.models import Agent
 class AgentForm(ModelForm):
     class Meta:
         model = Agent
-        fields = ["title", "is_enabled", "is_open_data_published", "open_data_publish_url", "object_type"]
+        fields = ["title", "is_enabled", "is_open_data_published", "open_data_publish_url", "object_type", "service"]
 
     def __init__(self, *args, **kwargs) -> None:
         self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
+
+        self.fields["service"].queryset = self.fields["service"].queryset.filter(
+            organization=self.organization,
+            service=True,
+        )
+        self.fields["service"].required = False
 
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.layout = Layout(
             Field("title"),
             Field("object_type"),
+            Field("service"),
             Field("is_enabled"),
             Field("is_open_data_published"),
             Field("open_data_publish_url"),

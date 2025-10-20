@@ -41,6 +41,7 @@ class Prefix(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "prefix"
@@ -150,6 +151,7 @@ class Base(models.Model):
     metadata = GenericRelation("Metadata")
     property_list = GenericRelation("PropertyList")
     objects = models.Manager()
+    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "base"
@@ -187,6 +189,7 @@ class Model(models.Model):
     property_list = GenericRelation("PropertyList")
     params = GenericRelation("Param")
     requests = GenericRelation("vitrina_requests.RequestObject")
+    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "model"
@@ -340,6 +343,7 @@ class Property(models.Model):
     property_list = GenericRelation("PropertyList")
     enums = GenericRelation("Enum")
     requests = GenericRelation("vitrina_requests.RequestObject")
+    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "property"
@@ -399,6 +403,7 @@ class PropertyList(models.Model):
     object = GenericForeignKey("content_type", "object_id")
 
     objects = models.Manager()
+    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "property_list"
@@ -420,6 +425,7 @@ class Enum(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "enum"
@@ -434,6 +440,7 @@ class EnumItem(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "enum_item"
@@ -457,6 +464,7 @@ class Param(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "param"
@@ -471,6 +479,7 @@ class ParamItem(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "param_item"

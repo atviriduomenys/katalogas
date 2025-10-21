@@ -1,7 +1,5 @@
 """
 Tests for security headers and cookie settings.
-
-Tests WEB-6 (Cookie security flags) and WEB-9 (HSTS configuration).
 """
 import pytest
 from django.conf import settings
@@ -21,6 +19,11 @@ class TestSecuritySettings:
         
         # Should be ready for preload
         assert settings.SECURE_HSTS_PRELOAD is True
+    
+    def test_referrer_policy(self):
+        """Test Referrer-Policy header configuration."""
+        # Prevents leaking full URLs to external sites
+        assert settings.SECURE_REFERRER_POLICY == "strict-origin-when-cross-origin"
 
     def test_cookie_security_flags(self):
         """Test session and CSRF cookie security flags (WEB-6)."""
@@ -34,7 +37,8 @@ class TestSecuritySettings:
         
         # HttpOnly flag (XSS protection)
         assert settings.SESSION_COOKIE_HTTPONLY is True
-        assert settings.CSRF_COOKIE_HTTPONLY is True
+        # Note: CSRF_COOKIE_HTTPONLY is NOT set because jquery.postcsrf.js 
+        # needs to read the CSRF cookie for hitcount tracking
 
 
 class TestProductionSecurityHeaders:
@@ -67,10 +71,11 @@ class TestProductionSecurityHeaders:
         assert settings.SESSION_COOKIE_SAMESITE == 'Lax'
         assert settings.SESSION_COOKIE_HTTPONLY is True
         
-        # CSRF cookies will have: Secure; HttpOnly; SameSite=Lax  
+        # CSRF cookies will have: Secure; SameSite=Lax
+        # Note: CSRF_COOKIE_HTTPONLY is deliberately NOT set because
+        # jquery.postcsrf.js needs JavaScript access to read the token
         assert settings.CSRF_COOKIE_SECURE is True
         assert settings.CSRF_COOKIE_SAMESITE == 'Lax'
-        assert settings.CSRF_COOKIE_HTTPONLY is True
 
 
 class TestSecureDefaults:

@@ -479,6 +479,9 @@ SECURE_HSTS_SECONDS = 63072000  # 2 years (recommended for HSTS preload list)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 
+# Referrer Policy - controls how much information is sent in the Referer header
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
+
 if env("RECAPTCHA_SILENCE_KEY_ERROR", default=False):
     SILENCED_SYSTEM_CHECKS = ["django_recaptcha.recaptcha_test_key_error"]
 
@@ -531,7 +534,7 @@ CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_SAMESITE = 'Lax'  # Prevents CSRF via cross-site requests
 CSRF_COOKIE_SAMESITE = 'Lax'
 SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access (XSS protection)
-CSRF_COOKIE_HTTPONLY = True
+# Note: CSRF_COOKIE_HTTPONLY not set - jquery.postcsrf.js needs to read it for hitcount
 
 CSRF_TRUSTED_ORIGINS = ["https://*.gov.lt"]
 LANGUAGE_COOKIE_SECURE = True

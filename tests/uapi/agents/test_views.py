@@ -84,7 +84,6 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
         "open_data_publish_url": "https://data.gov.lt"
     }
 
-
     with patch(
         "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
         return_value=(mocked_id, "some-secret")
@@ -136,6 +135,7 @@ def test_update_view(app: DjangoTestApp, representative_user: User, organization
         "is_open_data_published": False,
         "object_type": AgentType.OTHER,
         "open_data_publish_url": "https://updated-data.gov.lt",
+        "service": agent.service.pk,
     }
 
     response = app.post(url, data)
@@ -198,6 +198,7 @@ def test_agent_detail_view_request_history(
     assert response.context["agent"] == agent
     assert response.context["dataset"] == data_service
     assert not response.context["secret"]
+
 
 def test_wrong_agent_detail_view_request_history_(
     app: DjangoTestApp,

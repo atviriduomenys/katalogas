@@ -531,8 +531,8 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
 # Cookie security: SameSite and HttpOnly flags
-SESSION_COOKIE_SAMESITE = 'Lax'  # Prevents CSRF via cross-site requests
-CSRF_COOKIE_SAMESITE = 'Lax'
+SESSION_COOKIE_SAMESITE = "Lax"  # Prevents CSRF via cross-site requests
+CSRF_COOKIE_SAMESITE = "Lax"
 SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access (XSS protection)
 # Note: CSRF_COOKIE_HTTPONLY not set - jquery.postcsrf.js needs to read it for hitcount
 

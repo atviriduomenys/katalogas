@@ -1,4 +1,5 @@
 from django.contrib.contenttypes.fields import GenericForeignKey
+from parler.models import TranslatedFields, TranslatableModel
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -26,7 +27,7 @@ REQUEST_HISTORY_STATUSES = {
 }
 
 
-class Request(models.Model):
+class Request(TranslatableModel):
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     CREATED = "CREATED"
     REJECTED = "REJECTED"
@@ -73,7 +74,6 @@ class Request(models.Model):
 
     comment = models.TextField(blank=True, null=True)
     dataset = models.ForeignKey(Dataset, models.SET_NULL, blank=True, null=True, related_name="dataset_request")
-    description = models.TextField(blank=True, null=True)
     format = models.CharField(max_length=255, blank=True, null=True)
     is_existing = models.BooleanField(default=True)
     notes = models.TextField(blank=True, null=True)
@@ -82,7 +82,6 @@ class Request(models.Model):
     purpose = models.CharField(max_length=255, blank=True, null=True)
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
     status = models.CharField(max_length=255, choices=STATUSES, blank=True, null=True)
-    title = models.CharField(max_length=255, blank=True, null=True)
     uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
     user = models.ForeignKey(User, models.PROTECT, blank=True, null=True)
     changes = models.CharField(max_length=255, blank=True, null=True)
@@ -90,6 +89,18 @@ class Request(models.Model):
     structure_data = models.TextField(blank=True, null=True)
     structure_filename = models.CharField(max_length=255, blank=True, null=True)
     organizations = models.ManyToManyField(Organization)
+    translations = TranslatedFields(
+        title=models.TextField(
+            verbose_name=_("Pavadinimas"),
+            blank=True,
+            help_text=_("Poreikiui suteiktas pavadinimas."),
+        ),
+        description=models.TextField(
+            verbose_name=_("Aprašymas"),
+            blank=True,
+            help_text=_("Laisvo teksto aprašas laisvos formos tekstu."),
+        ),
+    )
 
     objects = models.Manager()
     public = PublicRequestManager()
@@ -98,7 +109,7 @@ class Request(models.Model):
         db_table = "request"
 
     def __str__(self):
-        return self.title
+        return self.safe_translation_getter("title", language_code=self.get_current_language())
 
     def get_absolute_url(self):
         return reverse("request-detail", kwargs={"pk": self.pk})

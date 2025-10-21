@@ -668,7 +668,7 @@ class Dataset(Resource):
         return list(item.title for item in Property.objects.filter(model__in=self.model_set.all()))
 
     def get_request_title_list(self):
-        return list(self.dataset_request.all().values_list("title", flat=True))
+        return [request.title for request in self.dataset_request.prefetch_related("translations")]
 
     def get_project_title_list(self):
         return list(self.project_set.all().values_list("title", flat=True))
@@ -683,7 +683,7 @@ class Dataset(Resource):
         return list(item.description for item in Property.objects.filter(model__in=self.model_set.all()))
 
     def get_request_title_description(self):
-        return list(self.dataset_request.all().values_list("description", flat=True))
+        return [request.description for request in self.dataset_request.prefetch_related("translations")]
 
     def get_project_title_description(self):
         return list(self.project_set.all().values_list("description", flat=True))

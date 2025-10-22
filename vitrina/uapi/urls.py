@@ -58,6 +58,7 @@ urlpatterns = [
         DatasetViewSet.as_view(
             {
                 "post": "upload_dataset_structure",
+                "get": "get_dataset_structure",
                 "put": "update_dataset_structure",
             }
         ),

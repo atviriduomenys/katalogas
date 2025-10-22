@@ -8,18 +8,22 @@ from authlib.jose import RSAKey
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from factory.django import FileField
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
 from reversion.models import Version
 
-from tests.uapi.conftest import _generate_test_token
+from tests.conftest import _normalize_csv
+from tests.uapi.conftest import _generate_test_token, _build_reverse_uapi_url
 from vitrina import settings
-from vitrina.datasets.factories import DatasetFactory
+from vitrina.cms.factories import FilerFileFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
-
+from vitrina.structure.services import create_structure_objects
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -517,7 +521,7 @@ def test_list_no_organization_id_inside_token_payload(
     }
 
 
-def test_list_with_query_parameters(
+def test_list_with_name_query_parameter(
     app: DjangoTestApp,
     organization: Organization,
     dataset: Dataset,
@@ -579,6 +583,37 @@ def test_list_with_query_parameters(
             }
         ]
     }
+
+
+def test_list_with_parent_id_query_parameter(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    url_dataset: str,
+    domain: str,
+    valid_token: str,
+):
+    dataset_2 = DatasetFactory(organization=organization)
+    dataset_3 = DatasetFactory(organization=organization)
+    dataset_orphan = DatasetFactory(organization=organization)
+    dataset_other_organization = DatasetFactory(organization=OrganizationFactory())
+
+    # Attach children to the Data Service (saved instances).
+    dataset_2.move(dataset, pos='sorted-child')
+    dataset_3.move(dataset, pos='sorted-child')
+
+    response = app.get(
+        url_dataset,
+        params={"parent_id": dataset.pk},
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    child_dataset_ids = {dataset["_id"] for dataset in response.json["_data"]}
+    assert str(dataset_2.pk) in child_dataset_ids
+    assert str(dataset_3.pk) in child_dataset_ids
+    assert str(dataset_orphan.pk) not in child_dataset_ids
+    assert str(dataset_other_organization.pk) not in child_dataset_ids
 
 
 def test_list_no_datasets_exist(
@@ -924,6 +959,84 @@ def test_action_upload_dataset_structure_transaction_rollback_on_failure(
         "additionalProperties": None,
     }
 
+
+def test_action_get_dataset_structure(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    valid_token: str,
+):
+    structure = DatasetStructureFactory(
+        dataset=dataset,
+        file=FilerFileFactory(
+            file=FileField(filename=f"dataset_{dataset.id}_structure.csv", data=dsa)
+        )
+    )
+    dataset.current_structure = structure
+    dataset.save()
+    create_structure_objects(structure)
+
+    response = app.get(
+        url_dataset_structure,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    assert response.headers["Content-Type"] == "text/csv"
+
+    metadata_to_id_map = dict(Metadata.objects.all().values_list("name", "uuid"))
+    expected_csv = f"""id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description
+{metadata_to_id_map["example70"]},example70,,,,,,,,,,,,,,,,,,Title of the Dataset,Description of the Dataset.
+{metadata_to_id_map["users"]},,users,,,,dask/json,,/path,,,,,,,,,,,users,
+{metadata_to_id_map["example70/User"]},,,,User,,,id,users,,,,,4,completed,package,open,,,Pavadinimas,
+{metadata_to_id_map["id"]},,,,,id,integer,,id,,,,,,,,,,,,
+{metadata_to_id_map["full_name"]},,,,,full_name,string,,name,,,,,,,,,,,,
+{metadata_to_id_map["email_address"]},,,,,email_address,string,,email,,,,,,,,,,,,
+{metadata_to_id_map["active"]},,,,,active,boolean,,isActive,,,,,,,,,,,,
+"""
+    actual_rows = _normalize_csv(response.content.decode("utf-8"))
+    expected_rows = _normalize_csv(expected_csv)
+    assert actual_rows == expected_rows
+
+
+def test_action_get_dataset_structure_no_dataset(
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset_structure: str,
+    valid_token: str
+):
+    response = app.get(
+        _build_reverse_uapi_url("uapi-dataset-structure", dataset_id=1_000_000),
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json == {
+        "code": "not_found",
+        "type": "NotFound",
+        "template": "The requested resource was not found.",
+        "message": "No Dataset matches the given query.",
+        "additionalProperties": None,
+    }
+
+
+def test_action_get_dataset_structure_no_dataset_structure(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    valid_token: str,
+):
+    response = app.get(
+        url_dataset_structure, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json == {"detail": "Dataset structure not found."}
 
 
 def test_action_update_dataset_structure(

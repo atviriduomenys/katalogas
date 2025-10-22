@@ -1,17 +1,22 @@
 import builtins
+import csv
+import io
 
 import pytest
-
 from django.apps import apps
 from django.core.management import call_command
-
 from pytest_django.lazy_django import skip_if_no_django
-
 from pprintpp import pprint as pp
 
 from vitrina.datasets.models import DCATResourceSubclass
 
 builtins.pp = pp
+
+
+def _normalize_csv(csv_string: str) -> list[list[str]]:
+    reader = csv.reader(io.StringIO(csv_string))
+    rows = [row for row in reader if any(col.strip() for col in row)]
+    return rows
 
 
 @pytest.fixture(scope="session", autouse=True)

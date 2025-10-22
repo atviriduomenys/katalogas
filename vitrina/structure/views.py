@@ -2869,7 +2869,6 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                 new_model_instance.pk = None
                 new_model_instance.version = version
                 new_model_instance.save()
-                print(meta.id)
                 if isinstance(new_model_instance, Model):
                     old_new_models[meta.object_id] = new_model_instance.id
                 if isinstance(new_model_instance, Property):
@@ -2877,6 +2876,8 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                     old_new_props[meta.object_id] = new_model_instance.id
                 if isinstance(new_model_instance, EnumItem):
                     all_enums.append(new_model_instance)
+                if isinstance(new_model_instance, ParamItem):
+                    all_param_items.append(meta)
 
                 meta.pk = None
                 meta.draft = False
@@ -2906,7 +2907,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
         return redirect(reverse("dataset-structure", args=[self.dataset.pk]))
 
     @staticmethod
-    def _fix_property_relationship(all_models: dict, all_properties: list, all_enums: list, old_new_props: dict, version: _Version):
+    def _fix_property_relationship(all_models: dict, all_properties: list, all_enum_items: list, old_new_props: dict, version: _Version):
         for _property in all_properties:
             current_model_id = _property.model.pk
             if current_model_id in all_models:
@@ -2915,13 +2916,15 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                 _property.save()
             else:
                 raise Http404("Not possible to include a property without its model.")
+        print(old_new_props)
 
-        for _enum_item in all_enums:
+        for _enum_item in all_enum_items:
             old_enum_id = _enum_item.enum_id
             enum_instance_connected_to_item = Enum.objects.filter(pk=old_enum_id).all()
             for new_enum_instance in enum_instance_connected_to_item:
                 new_enum_instance.pk = None
                 if new_enum_instance.object_id in old_new_props:
+                    print(new_enum_instance.object_id)
                     new_enum_instance.object_id = old_new_props[new_enum_instance.object_id]
                     new_enum_instance.version = version
                     new_enum_instance.save()

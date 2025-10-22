@@ -66,6 +66,11 @@ Adjustments from the Catalog side for spinta changes:
 - Add an explicit message for Agent creation form, when the auth server is unavailable/unreachable
 - Define better error messages for Agent creation form
 
+https://github.com/atviriduomenys/spinta/issues/1488
+Add additional changes required by sinchronization from the Agent side:
+- New API endpoint for getting manifest structure (in csv).
+- Add an additional query parameter `parent_id` for retrieving all child datasets of a single dataset.
+
 v 1.2 (2025-09-10)
 ==================
 

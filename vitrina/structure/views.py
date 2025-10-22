@@ -167,12 +167,12 @@ class DatasetStructureView(
 
     def dispatch(self, request, *args, **kwargs):
         version_param = request.GET.get("version", None)
-        self.version = int(version_param) if version_param is not None else None
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version = _Version.objects.filter(dataset=self.object, version=version_param).first() if version_param else None
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         self.models = Model.objects.filter(dataset=self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version=self.version).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -2857,13 +2857,33 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
         )
 
         metadata = form.cleaned_data.get("metadata", [])
-
+        old_new_models: dict = {}
+        old_new_props: dict = {}
+        all_props: list = []
+        all_enums: list = []
+        all_param_items: list = []
         for meta in metadata:
             if meta := Metadata.objects.filter(pk=meta).first():
+                new_model = meta.content_type.model_class()
+                new_model_instance = new_model.objects.filter(id=meta.object_id).first()
+                new_model_instance.pk = None
+                new_model_instance.version = version
+                new_model_instance.save()
+                print(meta.id)
+                if isinstance(new_model_instance, Model):
+                    old_new_models[meta.object_id] = new_model_instance.id
+                if isinstance(new_model_instance, Property):
+                    all_props.append(new_model_instance)
+                    old_new_props[meta.object_id] = new_model_instance.id
+                if isinstance(new_model_instance, EnumItem):
+                    all_enums.append(new_model_instance)
+
+                meta.pk = None
                 meta.draft = False
                 if meta.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
                     meta.status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
                 meta.metadata_version = version
+                meta.object_id = new_model_instance.pk
                 meta.save()
 
                 MetadataVersion.objects.create(
@@ -2882,7 +2902,31 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                     base=meta.object.base if isinstance(meta.object, Model) else None,
                     status=meta.status if meta.status else None,
                 )
+        self._fix_property_relationship(old_new_models, all_props, all_enums, old_new_props, version)
         return redirect(reverse("dataset-structure", args=[self.dataset.pk]))
+
+    @staticmethod
+    def _fix_property_relationship(all_models: dict, all_properties: list, all_enums: list, old_new_props: dict, version: _Version):
+        for _property in all_properties:
+            current_model_id = _property.model.pk
+            if current_model_id in all_models:
+                _property.model_id = all_models[current_model_id]
+                _property.version = version
+                _property.save()
+            else:
+                raise Http404("Not possible to include a property without its model.")
+
+        for _enum_item in all_enums:
+            old_enum_id = _enum_item.enum_id
+            enum_instance_connected_to_item = Enum.objects.filter(pk=old_enum_id).all()
+            for new_enum_instance in enum_instance_connected_to_item:
+                new_enum_instance.pk = None
+                if new_enum_instance.object_id in old_new_props:
+                    new_enum_instance.object_id = old_new_props[new_enum_instance.object_id]
+                    new_enum_instance.version = version
+                    new_enum_instance.save()
+            _enum_item.enum_id = new_enum_instance.pk
+            _enum_item.save()
 
 
 class VersionListView(

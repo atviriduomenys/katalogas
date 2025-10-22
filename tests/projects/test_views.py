@@ -1,21 +1,33 @@
 import io
+import uuid
+from unittest.mock import patch, Mock
+from urllib.parse import parse_qs
 
 import pytest
+import requests_mock
 from PIL import Image
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from pyasn1.debug import scope
 from reversion.models import Version
+from shapely.speedups import available
 from webtest import Upload
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.comments.models import Comment
+from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory
-from vitrina.projects.models import Project, UseCaseClient
+from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
+from vitrina.smart_contracts import AgreementStatuses
+from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.models import AgreementScope
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 
 from django.contrib.contenttypes.models import ContentType
+
+from vitrina.users.models import User
 
 pytestmark = pytest.mark.django_db
 
@@ -97,8 +109,6 @@ def test_project_create_with_organization_no_representative(app: DjangoTestApp):
 
     assert resp.status_code == 200
     assert not Project.objects.filter(title='Project').exists()
-    
-
 
 def test_project_update(app: DjangoTestApp):
     user = UserFactory()
@@ -324,18 +334,54 @@ def test_client_create_without_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
-def test_client_create(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    project = ProjectFactory()
 
-    form = app.get(reverse("project-clients-create", args=[project.pk])).forms['client-form']
-    form['name'] = "Client"
-    resp = form.submit()
+def test_client_create(app: DjangoTestApp, oauth_settings):
+    new_client_id = str(uuid.uuid4())
 
-    added_client = UseCaseClient.objects.filter(name='Client')
-    assert added_client.exists()
-    assert resp.status_code == 302
+    with requests_mock.Mocker() as m:
+        # Mock OAuth token request
+        m.post(
+            oauth_settings.OAUTH_SERVER_TOKEN_URL,
+            json={"access_token": "token_to_create_clients"},
+            status_code=201,
+        )
+
+        # Mock client creation request
+        def create_client_callback(request, context):
+            context.status_code = 201
+            # Return a JSON that includes client_id
+            return {"client_id": new_client_id}
+
+        m.post(oauth_settings.OAUTH_SERVER_CLIENTS_URL, json=create_client_callback)
+
+        user: User = UserFactory(is_staff=True)
+        app.set_user(user)
+        project: Project = ProjectFactory()
+
+        form = app.get(reverse("project-clients-create", args=[project.pk])).forms["client-form"]
+        form["name"] = "Client"
+        resp = form.submit()
+
+        added_client: UseCaseClient = UseCaseClient.objects.filter(name="Client").first()
+        assert added_client
+        assert added_client.client_id == new_client_id
+        assert resp.status_code == 302
+
+        # --- Assertions for correct OAuth requests ---
+        # Access token POST
+        token_requests = [req for req in m.request_history if req.method == "POST" and req.url == oauth_settings.OAUTH_SERVER_TOKEN_URL]
+        assert token_requests, "No access token request made"
+        token_data = parse_qs(token_requests[0].text)
+        assert token_data.get("grant_type") == ["client_credentials"]
+        assert token_data.get("scope") == [oauth_settings.OAUTH_CLIENTS_MANAGEMENT_SCOPE]
+
+        # Client creation POST
+        client_requests = [req for req in m.request_history if req.method == "POST" and req.url == oauth_settings.OAUTH_SERVER_CLIENTS_URL]
+        assert client_requests, "No client creation request made"
+        client_json = client_requests[0].json()
+        assert "secret" in client_json
+        assert "client_name" in client_json
+        assert "scopes" in client_json
 
 
 def test_client_update_without_permission(app: DjangoTestApp):
@@ -350,18 +396,125 @@ def test_client_update_without_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
-def test_client_update(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    project = ProjectFactory()
-    client = UseCaseClientFactory()
-    form = app.get(reverse("project-clients-update", args=[project.pk, client.uuid])).forms['client-form']
-    form['name'] = "Client"
-    resp = form.submit()
 
-    added_client = UseCaseClient.objects.filter(name='Client')
-    clients = UseCaseClient.objects.all()
-    assert clients.count() == 1
-    assert added_client.exists()
-    assert resp.status_code == 302
+def test_client_update(app: DjangoTestApp, oauth_settings):
+    with requests_mock.Mocker() as m:
+        mock_oauth_endpoints(m, oauth_settings)
 
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        project = ProjectFactory()
+        client = UseCaseClientFactory()
+
+        form = app.get(
+            reverse("project-clients-update", args=[project.pk, client.uuid])
+        ).forms["client-form"]
+        form["name"] = "Client"
+        resp = form.submit()
+
+        added_client = UseCaseClient.objects.filter(name="Client")
+        clients = UseCaseClient.objects.all()
+
+        assert clients.count() == 1
+        assert added_client.exists()
+        assert resp.status_code == 302
+        assert not m.called  # Should not hit remote endpoints
+
+
+def test_client_scope_create(app: DjangoTestApp, oauth_settings, organization):
+    with requests_mock.Mocker() as m:
+        mock_oauth_endpoints(m, oauth_settings)
+
+        user: User = UserFactory(is_staff=True)
+        app.set_user(user)
+        project = ProjectFactory()
+        client: UseCaseClient = UseCaseClientFactory(use_case=project)
+        agreement = AgreementFactory(
+            project=project, assigner=organization, status=AgreementStatuses.ACTIVE
+        )
+        available_scope: AgreementScope = agreement.scopes.create(
+            scope="Test", action="WRITE", resource="dataset"
+        )
+
+        url = reverse("project-clients-scopes-create", args=[project.pk, client.pk])
+        resp = app.get(url)
+        assert resp.status_code == 200
+
+        form = resp.forms["client-scope-form"]
+        form["scope"] = available_scope.pk
+        response = form.submit()
+
+        created_scope = UseCaseClientScope.objects.filter(
+            use_case_client=client
+        ).first()
+
+        assert created_scope
+        assert created_scope.is_active is False
+        assert response.status_code == 302
+        assert not m.called  # No OAuth requests should be made
+
+
+def test_client_scope_toggle(app: DjangoTestApp, oauth_settings):
+    with requests_mock.Mocker() as m:
+        mock_oauth_endpoints(m, oauth_settings)
+
+        user: User = UserFactory(is_staff=True)
+        app.set_user(user)
+        project = ProjectFactory()
+        client: UseCaseClient = UseCaseClientFactory(use_case=project)
+        scope = client.scopes.create(scope="Test", action="WRITE", resource="dataset")
+
+        url = reverse(
+            "project-clients-scopes-detail-toggle", args=[project.pk, client.pk, scope.pk]
+        )
+        resp = app.get(url)
+
+        assert resp.status_code == 302
+
+        updated_scope = UseCaseClientScope.objects.filter(
+            use_case_client=client
+        ).first()
+        assert updated_scope
+        assert updated_scope.is_active is True
+
+        patch_requests = [req for req in m.request_history if req.method == "PATCH"]
+        assert patch_requests, "No PATCH request made"
+        patch_req = patch_requests[0]
+
+        expected_url = f"{oauth_settings.OAUTH_SERVER_CLIENTS_URL}/{client.client_id}"
+        assert patch_req.url == expected_url, f"PATCH called to wrong URL: {patch_req.url}"
+
+        patch_json = patch_req.json()
+        assert "scopes" in patch_json
+        post_requests = [req for req in m.request_history if req.method == "POST"]
+        assert post_requests, "No POST request made"
+        post_req = post_requests[0]
+        assert post_req.url == oauth_settings.OAUTH_SERVER_TOKEN_URL
+
+        data = parse_qs(post_req.text)
+        assert data.get("grant_type") == ["client_credentials"]
+        assert data.get("scope") == [oauth_settings.OAUTH_CLIENTS_MANAGEMENT_SCOPE]
+
+@pytest.fixture
+def oauth_settings(settings):
+    settings.OAUTH_SERVER_TOKEN_URL = "https://oauth.test/token"
+    settings.OAUTH_SERVER_CLIENTS_URL = "https://oauth.test/clients"
+    settings.OAUTH_CLIENT_SECRET_BASE64 = "ZmFrZV9iYXNlNjRfY2xpZW50X3NlY3JldA=="
+    settings.OAUTH_CLIENTS_MANAGEMENT_SCOPE = "auth_clients"
+    return settings
+def mock_oauth_endpoints(m, settings):
+    m.post(
+        settings.OAUTH_SERVER_TOKEN_URL,
+        json={"access_token": "token_to_create_clients"},
+        status_code=201,
+    )
+    m.post(
+        settings.OAUTH_SERVER_CLIENTS_URL,
+        json={"client_id": "mock-client-id"},
+        status_code=201,
+    )
+    m.patch(
+        requests_mock.ANY,
+        json={},
+        status_code=200,
+    )

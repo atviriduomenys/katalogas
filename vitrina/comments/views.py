@@ -63,9 +63,9 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
 
             if form.cleaned_data.get("register_request"):
                 frequency = form.cleaned_data.get("increase_frequency")
-                title = obj.title
-                if not title and hasattr(obj, "name"):
-                    title = obj.name
+                title = form.cleaned_data.get("request_title")
+                if not title and hasattr(obj, "title"):
+                    title = obj.title
                 new_request = Request.objects.create(
                     status=Request.CREATED,
                     user=request.user,

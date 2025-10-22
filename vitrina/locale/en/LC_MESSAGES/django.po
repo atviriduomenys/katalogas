@@ -6000,3 +6000,6 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+msgid "Poreikio pavadinimas"
+msgstr "Request title"

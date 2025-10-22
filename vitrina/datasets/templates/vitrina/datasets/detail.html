@@ -386,6 +386,17 @@
                     sessionStorage.setItem("scrollPosition", window.scrollY);
                 });
             });
+            const checkbox = document.getElementById('register_request');
+            const requestTitleDiv = document.getElementById('div_request_title');
+
+            if (!requestTitleDiv) return;
+
+            function toggleRequestTitleField() {
+                requestTitleDiv.style.display = checkbox.checked ? 'block' : 'none';
+            }
+
+            checkbox.addEventListener('change', toggleRequestTitleField);
+            toggleRequestTitleField();
         });
     </script>
     {% if public_status %}

@@ -39,6 +39,7 @@ class CommentForm(forms.ModelForm):
 
 class RegisterRequestForm(CommentForm):
     register_request = forms.BooleanField(label=_("Registruoti kaip prašymą"), required=False)
+    request_title = forms.CharField(label=_("Poreikio pavadinimas"), required=False, max_length=200)
 
     class Meta(CommentForm.Meta):
         fields = (
@@ -52,6 +53,7 @@ class RegisterRequestForm(CommentForm):
 
         if self.is_opened is False:
             self.fields.pop("register_request")
+            self.fields.pop("title")
 
 
 class DatasetCommentForm(RegisterRequestForm):
@@ -66,6 +68,7 @@ class DatasetCommentForm(RegisterRequestForm):
         fields = (
             "is_public",
             "register_request",
+            "request_title",
             "increase_frequency",
             "body",
         )

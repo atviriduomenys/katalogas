@@ -2,6 +2,7 @@ from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -124,8 +125,9 @@ class Comment(models.Model):
     def body_text(self):
         Dataset = apps.get_model("vitrina_datasets", "Dataset")
         if self.type == self.REQUEST and self.rel_content_object:
+            url = reverse("request-detail", kwargs={"pk": self.rel_content_object.id})
             body_text = _(
-                f"Pateiktas naujas prašymas {self.rel_content_object.title}. {self.rel_content_object.description}"
+                f"Pateiktas naujas prašymas: **[{self.rel_content_object.title}]({url})**. {self.rel_content_object.description}"
             )
         elif self.type == self.PROJECT and self.rel_content_object:
             body_text = _(f"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title()} projektą.")

@@ -111,7 +111,7 @@ class UseCaseClient(UUIDBaseModel):
         on_delete=models.PROTECT,
         verbose_name=_("Panaudojimo atvejis"),
     )
-    name = models.CharField(max_length=255, verbose_name=_("Kliento pavadinimas"))
+    name = models.CharField(max_length=255, verbose_name=_("Kliento pavadinimas"), unique=True)
     client_id = models.CharField(max_length=255, verbose_name=_("Kliento ID"))
 
     class Meta:
@@ -124,13 +124,14 @@ class UseCaseClient(UUIDBaseModel):
 
 
 class UseCaseClientScope(UUIDBaseModel):
-    resource = models.CharField(max_length=255, verbose_name=_("Leidimo resursas"))
-    action = models.CharField(max_length=255, verbose_name=_("Leidimo veiksmas"))
+    resource = models.CharField(max_length=255, verbose_name=_("Leidimo resursas"))  # should be used?
+    action = models.CharField(max_length=255, verbose_name=_("Leidimo veiksmas"))  # should be used?
     scope = models.CharField(max_length=255, verbose_name=_("Leidimas"))
     use_case_client = models.ForeignKey(
         UseCaseClient,
         models.PROTECT,
         verbose_name=_("Klientas"),
+        related_name="scopes",
     )
     is_active = models.BooleanField(blank=True, null=True)
 

@@ -81,7 +81,16 @@ SPINTA_SERVER_NAME = env("SPINTA_SERVER_NAME")
 SPINTA_PATH = BASE_DIR / env("SPINTA_PATH")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG", default=True)
+DEBUG = True
+
+STATIC_URL = "static/"
+STATICFILES_DIRS = [BASE_DIR / "static"]
+
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "var/media/"
+
+SASS_PROCESSOR_ROOT = BASE_DIR / "static"
+STATIC_ROOT = BASE_DIR / "var/static"
 
 IS_DEV_FEATURES_ENABLED = env("IS_DEV_FEATURES_ENABLED", default=False)
 

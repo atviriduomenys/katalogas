@@ -1,21 +1,31 @@
 import io
+import uuid
+from unittest.mock import patch, Mock
 
 import pytest
 from PIL import Image
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from pyasn1.debug import scope
 from reversion.models import Version
+from shapely.speedups import available
 from webtest import Upload
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.comments.models import Comment
+from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory
-from vitrina.projects.models import Project, UseCaseClient
+from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
+from vitrina.smart_contracts import AgreementStatuses
+from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.models import AgreementScope
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 
 from django.contrib.contenttypes.models import ContentType
+
+from vitrina.users.models import User
 
 pytestmark = pytest.mark.django_db
 
@@ -97,8 +107,6 @@ def test_project_create_with_organization_no_representative(app: DjangoTestApp):
 
     assert resp.status_code == 200
     assert not Project.objects.filter(title='Project').exists()
-    
-
 
 def test_project_update(app: DjangoTestApp):
     user = UserFactory()
@@ -324,7 +332,17 @@ def test_client_create_without_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
-def test_client_create(app: DjangoTestApp):
+@patch("requests.post")
+def test_client_create(mock_post: Mock, app: DjangoTestApp) -> None:
+    new_client_id = str(uuid.uuid4())
+    get_access_token_response = {"access_token": "token_to_create_clients"}
+    create_response = {"client_id": new_client_id}
+
+    mock_response = Mock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = create_response | get_access_token_response # Because both are POST requests.
+    mock_post.return_value = mock_response
+
     user = UserFactory(is_staff=True)
     app.set_user(user)
     project = ProjectFactory()
@@ -333,9 +351,11 @@ def test_client_create(app: DjangoTestApp):
     form['name'] = "Client"
     resp = form.submit()
 
-    added_client = UseCaseClient.objects.filter(name='Client')
-    assert added_client.exists()
+    added_client :UseCaseClient = UseCaseClient.objects.filter(name='Client').first()
+    assert added_client
+    assert added_client.client_id == new_client_id
     assert resp.status_code == 302
+    mock_post.assert_called()
 
 
 def test_client_update_without_permission(app: DjangoTestApp):
@@ -350,7 +370,17 @@ def test_client_update_without_permission(app: DjangoTestApp):
     assert resp.status_code == 403
 
 
-def test_client_update(app: DjangoTestApp):
+@patch("requests.post")
+@patch("requests.patch")
+def test_client_update(mock_patch: Mock,mock_post: Mock, app: DjangoTestApp):
+    get_access_token_response = {"access_token": "token_to_create_clients"}
+
+    mock_response = Mock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = get_access_token_response
+    mock_patch.return_value = mock_response
+    mock_post.return_value = mock_response
+
     user = UserFactory(is_staff=True)
     app.set_user(user)
     project = ProjectFactory()
@@ -364,4 +394,70 @@ def test_client_update(app: DjangoTestApp):
     assert clients.count() == 1
     assert added_client.exists()
     assert resp.status_code == 302
+    assert not mock_post.called
+    assert not mock_patch.called
 
+@patch("requests.post")
+@patch("requests.patch")
+def test_client_scope_create(mock_patch: Mock,mock_post: Mock, app: DjangoTestApp, organization:Organization):
+    get_access_token_response = {"access_token": "token_to_create_clients"}
+
+    mock_response = Mock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = get_access_token_response
+    mock_patch.return_value = mock_response
+    mock_post.return_value = mock_response
+
+    user :User= UserFactory(is_staff=True)
+    app.set_user(user)
+    project = ProjectFactory()
+    client:UseCaseClient = UseCaseClientFactory(use_case=project)
+    agreement = AgreementFactory(project=project, assigner=organization, status=AgreementStatuses.ACTIVE)
+    available_scope :AgreementScope= agreement.scopes.create(scope="Test", action="WRITE", resource="dataset")
+    url = reverse("project-clients-scopes-create", args=[project.pk, client.pk])
+    resp = app.get(url)
+
+    assert resp.status_code == 200
+    form = resp.forms['client-scope-form']
+    form["scope"] = available_scope.pk
+    response = form.submit()
+
+    created_scope = UseCaseClientScope.objects.filter(
+        use_case_client=client
+    ).first()
+
+    assert created_scope
+    assert created_scope.is_active is False
+    assert response.status_code == 302
+    assert not mock_post.called
+    assert not mock_patch.called
+
+@patch("requests.post")
+@patch("requests.patch")
+def test_client_scope_toggle(mock_patch: Mock,mock_post: Mock, app: DjangoTestApp):
+    get_access_token_response = {"access_token": "token_to_create_clients"}
+
+    mock_response = Mock()
+    mock_response.status_code = 201
+    mock_response.json.return_value = get_access_token_response
+    mock_patch.return_value = mock_response
+    mock_post.return_value = mock_response
+
+    user :User= UserFactory(is_staff=True)
+    app.set_user(user)
+    project = ProjectFactory()
+    client:UseCaseClient = UseCaseClientFactory(use_case=project)
+    scope = client.scopes.create(scope="Test", action="WRITE", resource="dataset")
+    url = reverse("project-clients-scopes-detail-toggle", args=[project.pk, client.pk, scope.pk])
+    resp = app.get(url)
+
+    assert resp.status_code == 302
+
+    updated_scope = UseCaseClientScope.objects.filter(
+        use_case_client=client
+    ).first()
+
+    assert updated_scope
+    assert updated_scope.is_active is True
+    mock_post.assert_called()
+    mock_patch.assert_called()

@@ -53,7 +53,7 @@ class RegisterRequestForm(CommentForm):
 
         if self.is_opened is False:
             self.fields.pop("register_request")
-            self.fields.pop("title")
+            self.fields.pop("request_title")
 
 
 class DatasetCommentForm(RegisterRequestForm):

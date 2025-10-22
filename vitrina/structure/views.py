@@ -28,6 +28,7 @@ from reversion.models import Version
 from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
+from vitrina.classifiers.models import Status
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.mixins import Crumb, DatasetBreadcrumbsMixin
 from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none, build_page_title_context
@@ -2755,6 +2756,12 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
         for meta in metadata:
             if meta := Metadata.objects.filter(pk=meta).first():
                 meta.draft = False
+
+                latest_meta_version = MetadataVersion.objects.filter(metadata=meta).order_by("-version").first()
+                is_status_changed_by_user = latest_meta_version.status != meta.status if latest_meta_version else False
+                if meta.status == Status.objects.filter(codename="develop").first() and not is_status_changed_by_user:
+                    meta.status = Status.objects.filter(codename="completed").first()
+
                 meta.metadata_version = version
                 meta.save()
 

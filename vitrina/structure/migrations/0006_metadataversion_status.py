@@ -3,10 +3,22 @@
 from django.db import migrations, models
 import django.db.models.deletion
 
-def populate_status(apps, schema_editor):
-    MetadataVersion = apps.get_model('vitrina_structure', 'MetadataVersion')
-    Status = apps.get_model('vitrina_classifiers', 'Status')
-    Metadata = apps.get_model('vitrina_structure', 'Metadata')
+
+def assign_status_based_on_draft(apps, schema_editor):
+    Metadata = apps.get_model("vitrina_structure", "Metadata")
+    Status = apps.get_model("vitrina_classifiers", "Status")
+    for row in Metadata.objects.all():
+        if row.draft:
+            row.status = Status.objects.get(codename="develop")
+        else:
+            row.status = Status.objects.get(codename="completed")
+        row.save()
+
+
+def populate_status_metadata_version(apps, schema_editor):
+    MetadataVersion = apps.get_model("vitrina_structure", "MetadataVersion")
+    Status = apps.get_model("vitrina_classifiers", "Status")
+    Metadata = apps.get_model("vitrina_structure", "Metadata")
 
     for row in MetadataVersion.objects.all():
         metadata_id = row.metadata_id
@@ -19,15 +31,16 @@ def populate_status(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_classifiers', '0015_concepts_with_distribution_status'),
-        ('vitrina_structure', '0005_metadata_count'),
+        ("vitrina_classifiers", "0015_concepts_with_distribution_status"),
+        ("vitrina_structure", "0005_metadata_count"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='metadataversion',
-            name='status',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_classifiers.status', verbose_name='Būsena'),
+            model_name="metadataversion",
+            name="status",
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to="vitrina_classifiers.status", verbose_name="Būsena"),
         ),
-        migrations.RunPython(populate_status, migrations.RunPython.noop),
+        migrations.RunPython(assign_status_based_on_draft, migrations.RunPython.noop),
+        migrations.RunPython(populate_status_metadata_version, migrations.RunPython.noop),
     ]

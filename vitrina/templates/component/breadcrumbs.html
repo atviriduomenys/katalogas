@@ -1,7 +1,23 @@
 {% load i18n %}
+<style>
+    ul.p-t-sm li {
+        flex-basis: auto;
+        min-width: 0;
+    }
 
+    ul.p-t-sm li span {
+        word-break: break-word;
+        white-space: normal !important;
+        display: block;
+    }
+
+    ul.p-t-sm li a {
+        word-break: break-word;
+        white-space: normal !important;
+    }
+</style>
 {% if breadcrumbs %}
-  <ul class="p-t-sm">
+  <ul class="p-t-sm is-flex is-flex-wrap-wrap">
     {% for crumb in breadcrumbs %}
       <li>
         {% if crumb.url %}

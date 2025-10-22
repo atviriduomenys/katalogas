@@ -89,7 +89,7 @@ services:
       - DATABASE_URL=postgres://adp:secret@postgres:5432/adp-dev
       - DJANGO_SETTINGS_MODULE=vitrina.settings
     volumes:
-      - .:/app
+      - ".:/app"
     depends_on:
       - redis
       - postgres

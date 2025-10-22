@@ -13,6 +13,7 @@ services:
       - REDIS_URL=redis://katalogas-${BRANCH}-redis:6379/
       - DATABASE_URL=postgres://admin:admin123@katalogas-${BRANCH}-database:5432/katalogas
       - SEARCH_URL=elasticsearch://katalogas-${BRANCH}-elasticsearch:9200/haystack
+      - CELERY_BROKER_URL=redis://katalogas-${BRANCH}-redis:6379/3
       - DEBUG=true
       - DJANGO_SETTINGS_MODULE=vitrina.settings
       - STATIC_ROOT=/app/static
@@ -63,6 +64,22 @@ services:
     image: nginx:latest
     volumes:
       - /tmp/${BRANCH}-static:/usr/share/nginx/html/static
+    networks:
+      - katalogas
+
+  katalogas-${BRANCH}-celery:
+    image: vitrina-app:latest
+    command: celery -A vitrina worker -l info
+    environment:
+      - REDIS_URL=redis://katalogas-${BRANCH}-redis:6379/
+      - DATABASE_URL=postgres://admin:admin123@katalogas-${BRANCH}-database:5432/katalogas
+      - DJANGO_SETTINGS_MODULE=vitrina.settings
+    volumes:
+      - .:/app
+    depends_on:
+      - katalogas-${BRANCH}-redis
+      - katalogas-${BRANCH}-database
+    restart: always
     networks:
       - katalogas
 

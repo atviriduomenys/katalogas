@@ -48,6 +48,11 @@ https://github.com/atviriduomenys/katalogas/issues/2147
 
 v 1.7 (2025-11-20)
 ==================
+https://github.com/atviriduomenys/katalogas/issues/921
+Fix breadcrumbs and title for dataset detail view.
+Add custom title field for `Request` from comments.
+Add link to `Request` in comments.
+Delete comment functionality for comment author or superuser.
 
 New features:
 
@@ -177,11 +182,6 @@ Adjustments from the Catalog side for spinta changes:
 - Assign subclass to the service
 - Add an explicit message for Agent creation form, when the auth server is unavailable/unreachable
 - Define better error messages for Agent creation form
-
-https://github.com/atviriduomenys/spinta/issues/1488
-Add additional changes required by sinchronization from the Agent side:
-- New API endpoint for getting manifest structure (in csv).
-- Add an additional query parameter `parent_id` for retrieving all child datasets of a single dataset.
 
 v 1.2 (2025-09-10)
 ==================

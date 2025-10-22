@@ -1,12 +1,15 @@
 from datetime import datetime, timezone
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
+from django.views.decorators.http import require_POST
 
 from reversion import set_comment
 from reversion.views import RevisionMixin
@@ -454,3 +457,18 @@ class ExternalReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 )
 
         return self.handle_no_permission()
+
+
+@login_required
+@require_POST
+def delete_comment(request, pk):
+    try:
+        comment = Comment.objects.get(pk=pk)
+
+        if comment.user != request.user and not request.user.is_superuser:
+            return JsonResponse({"error": "Unauthorized"}, status=403)
+
+        comment.delete()
+        return JsonResponse({"success": True})
+    except Comment.DoesNotExist:
+        return JsonResponse({"error": "Not found"}, status=404)

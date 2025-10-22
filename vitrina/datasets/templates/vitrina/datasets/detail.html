@@ -398,6 +398,49 @@
             checkbox.addEventListener('change', toggleRequestTitleField);
             toggleRequestTitleField();
         });
+        document.querySelectorAll('.delete-confirm').forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.preventDefault();
+                const commentId = this.dataset.commentId;
+
+                fetch(`/comments/${commentId}/delete/`, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                    }
+                })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            document.querySelector(`#comment-entry-${commentId}`).remove();
+                            closeDeleteModal(commentId);
+                        } else {
+                            alert('{% translate "Nepavyko ištrinti komentaro" %}');
+                        }
+                    })
+                    .catch(error => {
+                        alert('{% translate "Klaida" %}');
+                        console.error(error);
+                    });
+            });
+        });
+        function openDeleteModal(commentId) {
+            document.getElementById(`delete-modal-${commentId}`).classList.add('is-active');
+        }
+
+        function closeDeleteModal(commentId) {
+            document.getElementById(`delete-modal-${commentId}`).classList.remove('is-active');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.querySelectorAll('.show-delete-form').forEach(button => {
+                button.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const commentId = this.id.replace('delete-', '');
+                    openDeleteModal(commentId);
+                });
+            });
+        })
     </script>
     {% if public_status %}
     <script type="application/ld+json" async>

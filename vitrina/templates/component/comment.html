@@ -9,7 +9,7 @@
         <div class="columns m-t-xs no-margin-bottom">
         <div class="column is-11 is-offset-1">
     {% else %}
-        <div class="comment-entry">
+        <div class="comment-entry" id="comment-entry-{{ comment.id }}">
     {% endif %}
         <article class="media {% if comment.is_error %} error-comment {% endif %}">
             <figure class="media-left">
@@ -43,7 +43,7 @@
         <div class="columns m-t-xs no-margin-bottom">
         <div class="column is-11 is-offset-1">
     {% else %}
-        <div class="comment-entry">
+        <div class="comment-entry" id="comment-entry-{{ comment.id }}">
     {% endif %}
         <article class="media {% if comment.is_error %} error-comment {% endif %}">
             <figure class="media-left">
@@ -74,8 +74,13 @@
                         </div>
                         {% if user.is_authenticated and comment.can_reply %}
                             <div class="column">
-                                <a class="button is-primary is-pulled-right show-reply-form mt-1 mr-1"
-                                   id="{{ comment.id }}">{% translate "Atsakyti" %}</a>
+                                {% if comment.user == user or user.is_superuser %}
+                                    <a class="button is-danger is-pulled-right show-delete-form mt-1 mr-1"
+                                       id="delete-{{ comment.id }}">{% translate "Ištrinti" %}</a>
+                                {% endif %}
+                                <button type="submit" class="button is-primary is-pulled-right m-t-sm reply-button mt-1 mr-1">
+                                    {% translate "Atsakyti" %}
+                                </button>
                             </div>
                         {% endif %}
                     </div>
@@ -102,6 +107,10 @@
                         {% if external %}
                             <input type="hidden" value="{{ dataset.pk }}" name="dataset_id">
                         {% endif %}
+                        {% if comment.user == user or user.is_superuser %}
+                            <a class="button is-danger is-pulled-right show-delete-form mt-1 mr-1"
+                               id="delete-{{ comment.id }}">{% translate "Ištrinti" %}</a>
+                        {% endif %}
                         <button type="submit" class="button is-primary is-pulled-right m-t-sm reply-button mt-1 mr-1">
                             {% translate "Atsakyti" %}
                         </button>
@@ -110,4 +119,20 @@
             </div>
         </div>
     </article>
+    <div class="modal" id="delete-modal-{{ comment.id }}">
+    <div class="modal-background"></div>
+    <div class="modal-card">
+        <header class="modal-card-head">
+            <p class="modal-card-title">{% translate "Ištrinti komentarą?" %}</p>
+        </header>
+        <section class="modal-card-body">
+            {% translate "Šis veiksmas negrąžinamas." %}
+        </section>
+        <footer class="modal-card-foot">
+            <button class="button" onclick="closeDeleteModal('{{ comment.id }}')">{% translate "Atšaukti" %}</button>
+            <button class="button is-danger delete-confirm"
+               data-comment-id="{{ comment.id }}">{% translate "Ištrinti" %}</button>
+        </footer>
+    </div>
+</div>
 {% endif %}

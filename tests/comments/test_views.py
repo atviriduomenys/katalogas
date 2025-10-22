@@ -726,3 +726,69 @@ def test_subscription_about_comment(app: DjangoTestApp):
     assert len(mail.outbox) == 2
     assert mail.outbox[1].to == [representative.email]
     assert "Test comment" in mail.outbox[1].body
+
+
+@pytest.mark.django_db
+def test_delete_comment_without_login(client):
+    comment = CommentFactory()
+    url = reverse('delete-comment', kwargs={'pk': comment.pk})
+
+    resp = client.post(url)
+
+    assert resp.status_code == 302
+    assert 'login' in resp.url
+    assert Comment.objects.filter(pk=comment.pk).exists()
+
+
+@pytest.mark.django_db
+def test_delete_comment_as_non_author(client):
+    comment = CommentFactory()
+    other_user = UserFactory()
+    client.force_login(other_user)
+    url = reverse('delete-comment', kwargs={'pk': comment.pk})
+
+    resp = client.post(url)
+
+    assert resp.status_code == 403
+    assert Comment.objects.filter(pk=comment.pk).exists()
+
+
+@pytest.mark.django_db
+def test_delete_comment_as_author(client):
+    user = UserFactory()
+    comment = CommentFactory(user=user)
+    client.force_login(user)
+    url = reverse('delete-comment', kwargs={'pk': comment.pk})
+
+    resp = client.post(url)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data['success'] is True
+    assert not Comment.objects.filter(pk=comment.pk).exists()
+
+
+@pytest.mark.django_db
+def test_delete_comment_as_superuser(client):
+    comment = CommentFactory()
+    superuser = UserFactory(is_superuser=True)
+    client.force_login(superuser)
+    url = reverse('delete-comment', kwargs={'pk': comment.pk})
+
+    resp = client.post(url)
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data['success'] is True
+    assert not Comment.objects.filter(pk=comment.pk).exists()
+
+
+@pytest.mark.django_db
+def test_delete_nonexistent_comment(client):
+    user = UserFactory()
+    client.force_login(user)
+    url = reverse('delete-comment', kwargs={'pk': 99999})
+
+    resp = client.post(url)
+
+    assert resp.status_code == 404

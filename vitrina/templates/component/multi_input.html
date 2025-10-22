@@ -36,6 +36,8 @@
 
 <script>
 (function(){
+  if (window.__stringListBound) return;
+  window.__stringListBound = true;
   function updateRemoveButtons(container){
     const rows = container.querySelectorAll('.string-list-row');
     rows.forEach(row=>{
@@ -48,12 +50,14 @@
       const root = e.target.closest('.string-list');
       const items = root.querySelector('.string-list-items');
       const name = root.dataset.name;
+      const idx = +(root.dataset.idx || 0) + 1;
+      root.dataset.idx = idx;
       const row = document.createElement('div');
       row.className = 'field string-list-row';
       row.innerHTML = `
         <div class="field has-addons">
           <div class="control is-expanded">
-            <input type="text" name="${name}" class="input" id="id_${name}">
+            <input type="text" name="${name}" class="input" id="id_${name}_${idx}">
           </div>
           <div class="control">
             <button type="button" class="button is-danger string-list-remove">-</button>
@@ -70,12 +74,14 @@
       if (!items.querySelector('.string-list-row')) {
         const root = items.closest('.string-list');
         const name = root.dataset.name;
+        const idx = +(root.dataset.idx || 0) + 1;
+        root.dataset.idx = idx;
         const r = document.createElement('div');
         r.className = 'field string-list-row';
         r.innerHTML = `
           <div class="field has-addons">
             <div class="control is-expanded">
-              <input type="text" name="${name}" class="input" id="id_${name}">
+              <input type="text" name="${name}" class="input" id="id_${name}_${idx}">
             </div>
           </div>
         `;

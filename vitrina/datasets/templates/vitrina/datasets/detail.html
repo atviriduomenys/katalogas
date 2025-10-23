@@ -4,21 +4,17 @@
 {% load hitcount_tags %}
 {% load subscription_tags %}
 {% load comment_tags %}
-
-{% block pageTitle %} | {{ dataset.title }}{% endblock %}
+{% block pageTitle %}| {{ dataset.title }}{% endblock %}
 {% block pageDescription %}{{ dataset.description | escape }}{% endblock %}
 {% block pageAuthor %}{{ organization.title }}{% endblock %}
-{% block pageOgTitle %} | {{ dataset.title }}{% endblock %}
+{% block pageOgTitle %}| {{ dataset.title }}{% endblock %}
 {% block pageOgDescription %}{{ dataset.description | escape }}{% endblock %}
-
 {% block parent_links %}
     {% include "component/breadcrumbs.html" %}
 {% endblock %}
-
 {% block current_title %}
     {% include "component/page_title.html" %}
 {% endblock %}
-
 {% block head %}
     <style>
         .max-128x128 {
@@ -29,12 +25,8 @@
 		}
     </style>
 {% endblock %}
-
-
 {% block content %}
-
     {% include 'vitrina/datasets/tabs.html' %}
-
     <div class="columns no-margin-bottom">
         <div class="column">
             <p>
@@ -44,132 +36,136 @@
             </p>
             {% if can_update_dataset %}
                 <div class="buttons is-right">
-                    <a href="{%url 'dataset-change' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="change_dataset">
-                        {% translate "Redaguoti duomenų išteklių" %}
-                    </a>
+                    <a href="{% url 'dataset-change' pk=dataset.id %}"
+                       class="button is-primary is-normal m-t-md is-size-6-mobile"
+                       id="change_dataset">{% translate "Redaguoti duomenų išteklių" %}</a>
                 </div>
                 <div class="buttons is-right">
-                    <a href="{%url 'dataset-delete' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="delete_dataset">
-                        {% translate "Pašalinti" %}
-                    </a>
+                    <a href="{% url 'dataset-delete' pk=dataset.id %}"
+                       class="button is-primary is-normal m-t-md is-size-6-mobile"
+                       id="delete_dataset">{% translate "Pašalinti" %}</a>
                 </div>
             {% endif %}
             <div class="field has-addons has-addons-right">
-              <p class="control">
-                <a class="button" href="{% url 'dataset-rdf-download' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile" id="downlaod_dataset_rdf">
-                  {% translate "Atsisiųsti" %}
-                </a>
-              </p>
-              <p class="control">
-                <span class="select">
-                  <select aria-label="{% translate 'Atsisiuntimo formatas' %}">
-                      <option value="RDF">RDF</option>
-                  </select>
-                </span>
-              </p>
+                <p class="control">
+                    <a href="{% url 'dataset-rdf-download' pk=dataset.id %}"
+                       class="button is-primary is-normal m-t-md is-size-6-mobile"
+                       id="downlaod_dataset_rdf">{% translate "Atsisiųsti" %}</a>
+                </p>
+                <p class="control">
+                    <span class="select">
+                        <select aria-label="{% translate 'Atsisiuntimo formatas' %}">
+                            <option value="RDF">RDF</option>
+                        </select>
+                    </span>
+                </p>
             </div>
-
             <div class="content">
                 <p class="no-margin-bottom">
                     {% objectlanguage dataset LANGUAGE_CODE %}
-                        {{ dataset.description | linebreaks | urlizetrunc:42 }}
-                    {% endobjectlanguage %}
-                </p>
-
-                {# tags #}
-                {% include "./tags.html" %}
-                {# main info #}
-                {% include "./coretable.html" %}
-            </div>
+                    {{ dataset.description | linebreaks | urlizetrunc:42 }}
+                {% endobjectlanguage %}
+            </p>
+            {# tags #}
+            {% include "./tags.html" %}
+            {# main info #}
+            {% include "./coretable.html" %}
         </div>
-        <div class="column is-one-third">
-            <div>
-                {% with main_contact=dataset.get_main_contact %}
-
-                    {% trans "Duomenis teikianti organizacija" as header_text %}
-                    {% include "component/organization_card.html" with organization=dataset.organization header=header_text %}
-
-                    {% if dataset.publisher %}
-                        {% if main_contact.content_object == dataset.publisher or dataset.publisher != dataset.organization %}
+    </div>
+    <div class="column is-one-third">
+        <div>
+            {% with main_contact=dataset.get_main_contact %}
+                {% trans "Duomenis teikianti organizacija" as header_text %}
+                {% include "component/organization_card.html" with organization=dataset.organization header=header_text %}
+                {% if dataset.publisher %}
+                    {% if main_contact.content_object == dataset.publisher or dataset.publisher != dataset.organization %}
                         <hr class="custom-line-margin">
-
-                            {% trans "Institucija, atsakinga už duomenų atvėrimą" as header_text %}
-                            {% include "component/organization_card.html" with organization=dataset.publisher header=header_text email=main_contact.get_email phone=main_contact.phone %}
-
-                        {% endif %}
+                        {% trans "Institucija, atsakinga už duomenų atvėrimą" as header_text %}
+                        {% include "component/organization_card.html" with organization=dataset.publisher header=header_text email=main_contact.get_email phone=main_contact.phone %}
                     {% endif %}
-
-                    {% if main_contact.content_type.model == 'user' %}
-                        <hr class="custom-line-margin">
-                        <p class="has-text-dark">{% translate "Kontaktinė informacija" %}</p>
-                        <p class="has-text-black">{{ main_contact.content_object.get_full_name }}</p>
-                        {% if main_contact.get_email %}
-                            <p class="has-text-dark">{% translate "El. paštas" %}</p>
-                            <p class="has-text-black">
-                                <a href="mailto:{{ main_contact.get_email }}">{{ main_contact.get_email }}</a>
-                            </p>
-                        {% endif %}
-                        {% if main_contact.phone %}
-                            <p class="has-text-dark">{% translate "Telefonas" %}</p>
-                            <p class="has-text-black">{{ main_contact.phone }}</p>
-                        {% endif %}
+                {% endif %}
+                {% if main_contact.content_type.model == 'user' %}
+                    <hr class="custom-line-margin">
+                    <p class="has-text-dark">{% translate "Kontaktinė informacija" %}</p>
+                    <p class="has-text-black">{{ main_contact.content_object.get_full_name }}</p>
+                    {% if main_contact.get_email %}
+                        <p class="has-text-dark">{% translate "El. paštas" %}</p>
+                        <p class="has-text-black">
+                            <a href="mailto:{{ main_contact.get_email }}">{{ main_contact.get_email }}</a>
+                        </p>
                     {% endif %}
-                {% endwith %}
-
-                {# Social Share Section #}
-                <hr class="custom-line-margin">
-                <p class="has-text-dark m-b-md">{% translate "Dalintis socialiniuose tinkluose" %}</p>
-                <p class="social-icons m-t-md">
-                    <a target="_blank"
-                       href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ dataset.get_absolute_url }}"
-                       title="Facebook"
-                       aria-label="Facebook"
-                       class="is-inline-block">
-                        <img class="image is-32x32" alt="Facebook" src="{% static 'img/facebook-icon.svg' %}"/>
-                    </a>
-                    <a target="_blank"
-                       href="https://www.linkedin.com/sharing/share-offsite/?title={{ dataset.title|urlencode }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
-                       class="is-inline-block"
-                       title="LinkedIn"
-                       aria-label="LinkedIn">
-                        <img class="image is-32x32" alt="LinkedIn" src="{% static 'img/linkedin-icon.svg' %}"/>
-                    </a>
-                    <a target="_blank"
-                       href="http://twitter.com/share?text={{ dataset.title|urlencode }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
-                       class="is-inline-block"
-                       title="Twitter"
-                       aria-label="Twitter">
-                        <img class="image is-32x32" alt="Twitter" src="{% static 'img/twitter-icon.svg' %}"/>
-                    </a>
-                </p>
-
-                <div class="has-text-dark" id="dataset_subscription">
-                    {% translate "Užsiprenumeruokite naujienas, susijusias su duomenų ištekliumi" as description %}
-                    {% subscription obj=dataset user=request.user description=description %}
-                </div>
+                    {% if main_contact.phone %}
+                        <p class="has-text-dark">{% translate "Telefonas" %}</p>
+                        <p class="has-text-black">{{ main_contact.phone }}</p>
+                    {% endif %}
+                {% endif %}
+            {% endwith %}
+            {# Social Share Section #}
+            <hr class="custom-line-margin">
+            <p class="has-text-dark m-b-md">{% translate "Dalintis socialiniuose tinkluose" %}</p>
+            <p class="social-icons m-t-md">
+                <a target="_blank"
+                   href="https://www.facebook.com/sharer/sharer.php?u={{ current_domain_full }}{{ dataset.get_absolute_url }}"
+                   title="Facebook"
+                   aria-label="Facebook"
+                   class="is-inline-block">
+                    <img class="image is-32x32"
+                         height="32"
+                         width="32"
+                         alt="Facebook"
+                         src="{% static 'img/facebook-icon.svg' %}" />
+                </a>
+                <a target="_blank"
+                   href="https://www.linkedin.com/sharing/share-offsite/?title={{ dataset.title|urlencode }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
+                   class="is-inline-block"
+                   title="LinkedIn"
+                   aria-label="LinkedIn">
+                    <img class="image is-32x32"
+                         height="32"
+                         width="32"
+                         alt="LinkedIn"
+                         src="{% static 'img/linkedin-icon.svg' %}" />
+                </a>
+                <a target="_blank"
+                   href="https://twitter.com/share?text={{ dataset.title|urlencode }}&url={{ current_domain_full }}{{ dataset.get_absolute_url }}"
+                   class="is-inline-block"
+                   title="Twitter"
+                   aria-label="Twitter">
+                    <img class="image is-32x32"
+                         height="32"
+                         width="32"
+                         alt="Twitter"
+                         src="{% static 'img/twitter-icon.svg' %}" />
+                </a>
+            </p>
+            <div class="has-text-dark" id="dataset_subscription">
+                {% translate "Užsiprenumeruokite naujienas, susijusias su duomenų ištekliumi" as description %}
+                {% subscription obj=dataset user=request.user description=description %}
             </div>
         </div>
     </div>
-    {% if not dataset.series and not dataset.service %}
-        {% if resources %}
-            <div class="columns no-margin-bottom" id="resources">
-                <div class="column is-full">
-                    <h2 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h2>
-                    {% include 'vitrina/datasets/datatable.html' %}
-                </div>
+</div>
+{% if not dataset.series and not dataset.service %}
+    {% if resources %}
+        <div class="columns no-margin-bottom" id="resources">
+            <div class="column is-full">
+                <h2 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Duomenų šaltiniai" %}</h2>
+                {% include 'vitrina/datasets/datatable.html' %}
             </div>
-        {% else %}
-            {% include 'vitrina/datasets/add_resource.html' %}
-        {% endif %}
+        </div>
+    {% else %}
+        {% include 'vitrina/datasets/add_resource.html' %}
     {% endif %}
-    {% if can_update_dataset %}
-        <div class="buttons is-right">
-        <a href="{%url 'dataset-relation-add' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile is-flex">
+{% endif %}
+{% if can_update_dataset %}
+    <div class="buttons is-right">
+        <a href="{% url 'dataset-relation-add' pk=dataset.id %}"
+           class="button is-primary is-normal m-t-md is-size-6-mobile is-flex">
             {% translate "Susieti su duomenų ištekliumi" %}
         </a>
     </div>
-    {% endif %}
-    {% if part_of %}
+{% endif %}
+{% if part_of %}
     <div class="mb-6">
         {% for relation, dataset_relations in part_of %}
             <div class="columns">
@@ -186,17 +182,18 @@
                         <tbody>
                             {% for dr in dataset_relations %}
                                 <tr>
-                                    <td><a href="{{ dr.part_of.get_absolute_url }}">{{ dr.part_of }}</a></td>
+                                    <td>
+                                        <a href="{{ dr.part_of.get_absolute_url }}">{{ dr.part_of }}</a>
+                                    </td>
                                     <td>
                                         {% if can_update_dataset %}
-                                            <form method="post" action="{% url 'dataset-relation-delete' dataset.pk dr.pk %}">
+                                            <form method="post"
+                                                  action="{% url 'dataset-relation-delete' dataset.pk dr.pk %}">
                                                 {% csrf_token %}
                                                 <button type="submit"
                                                         class="button is-link is-small is-pulled-right"
                                                         onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %})"
-                                                        id="delete_resource">
-                                                    {% translate "Ištrinti" %}
-                                                </button>
+                                                        id="delete_resource">{% translate "Ištrinti" %}</button>
                                             </form>
                                         {% endif %}
                                     </td>
@@ -208,8 +205,8 @@
             </div>
         {% endfor %}
     </div>
-    {% endif %}
-    {% if related_datasets %}
+{% endif %}
+{% if related_datasets %}
     <div class="mb-6">
         {% for relation, dataset_relations in related_datasets %}
             <div class="columns">
@@ -225,47 +222,47 @@
                         </thead>
                         <tbody>
                             {% for dr in page_obj %}
-                            <tr>
-                                <td><a href="{{ dr.dataset.get_absolute_url }}">{{ dr.dataset }}</a></td>
-                                <td>
-                                    {% if can_update_dataset %}
-                                        <form method="post" action="{% url 'dataset-relation-delete' dataset.pk dr.pk %}">
-                                            {% csrf_token %}
-                                            <button type="submit"
-                                                    class="button is-link is-small is-pulled-right"
-                                                    onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %})"
-                                                    id="delete_resource">
-                                                {% translate "Ištrinti" %}
-                                            </button>
-                                        </form>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                        {% endfor %}
+                                <tr>
+                                    <td>
+                                        <a href="{{ dr.dataset.get_absolute_url }}">{{ dr.dataset }}</a>
+                                    </td>
+                                    <td>
+                                        {% if can_update_dataset %}
+                                            <form method="post"
+                                                  action="{% url 'dataset-relation-delete' dataset.pk dr.pk %}">
+                                                {% csrf_token %}
+                                                <button type="submit"
+                                                        class="button is-link is-small is-pulled-right"
+                                                        onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį ryšį?' %})"
+                                                        id="delete_resource">{% translate "Ištrinti" %}</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            {% endfor %}
                         </tbody>
                     </table>
-                    <br/>
-                        {% include "vitrina/common/pagination.html" %}
+                    <br />
+                    {% include "vitrina/common/pagination.html" %}
                 </div>
             </div>
         {% endfor %}
     </div>
-    {% endif %}
-
-    <div class="columns mt-6">
-        <div class="column is-full">
-            <h2 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Priskirtos organizacijos" %}</h2>
-            {% if attributions %}
-                <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding"
-                       id="resource-table">
-                    <thead>
+{% endif %}
+<div class="columns mt-6">
+    <div class="column is-full">
+        <h2 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Priskirtos organizacijos" %}</h2>
+        {% if attributions %}
+            <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding"
+                   id="resource-table">
+                <thead>
                     <tr>
                         <th>{% translate "Priskyrimo rūšis" %}</th>
                         <th>{% translate "Organizacija" %}</th>
                         <td></td>
                     </tr>
-                    </thead>
-                    <tbody>
+                </thead>
+                <tbody>
                     {% for a in attributions %}
                         <tr>
                             <td>{{ a.attribution }}</td>
@@ -283,33 +280,27 @@
                                         <button type="submit"
                                                 class="button is-link is-small is-pulled-right"
                                                 onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti?' %})"
-                                                id="delete_attribution">
-                                            {% translate "Ištrinti" %}
-                                        </button>
+                                                id="delete_attribution">{% translate "Ištrinti" %}</button>
                                     </form>
                                 {% endif %}
                             </td>
                         </tr>
                     {% endfor %}
-                    </tbody>
-                </table>
-            {% endif %}
-            {% if can_update_dataset %}
-                <div class="buttons is-right">
-                    <a href="{%url 'attribution-add' dataset.id %}"
-                       class="button is-primary is-normal m-t-md is-size-6-mobile is-flex"
-                       id="add_attribution">
-                        {% translate "Priskirti organizaciją" %}
-                    </a>
-                </div>
-            {% endif %}
-        </div>
+                </tbody>
+            </table>
+        {% endif %}
+        {% if can_update_dataset %}
+            <div class="buttons is-right">
+                <a href="{% url 'attribution-add' dataset.id %}"
+                   class="button is-primary is-normal m-t-md is-size-6-mobile is-flex"
+                   id="add_attribution">{% translate "Priskirti organizaciją" %}</a>
+            </div>
+        {% endif %}
     </div>
-    <div class="columns no-margin-bottom">
-        <div class="column is-three-quarters">
-            {% comments obj=dataset user=request.user %}
-        </div>
-    </div>
+</div>
+<div class="columns no-margin-bottom">
+    <div class="column is-three-quarters">{% comments obj=dataset user=request.user %}</div>
+</div>
 {% endblock %}
 {% block scripts %}
     {% get_hit_count_js_variables for dataset as hitcount %}
@@ -443,8 +434,6 @@
         })
     </script>
     {% if public_status %}
-    <script type="application/ld+json" async>
-        {{ json_ld|safe }}
-    </script>
+        <script type="application/ld+json" async>{{ json_ld|safe }}</script>
     {% endif %}
 {% endblock %}

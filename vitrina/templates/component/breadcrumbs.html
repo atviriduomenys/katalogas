@@ -17,64 +17,57 @@
     }
 </style>
 {% if breadcrumbs %}
-  <ul class="p-t-sm is-flex is-flex-wrap-wrap">
-    {% for crumb in breadcrumbs %}
-      <li>
-        {% if crumb.url %}
-          <a href="{{ crumb.url }}">
-            {% if crumb.title == "Pradžia" %}
-              <span class="icon"><i class="fas fa-home"></i></span>
-            {% endif %}
-            <span>{{ crumb.title }}</span>
-          </a>
-        {% else %}
-          <span class="pl-3">{{ crumb.title }}</span>
-        {% endif %}
-      </li>
-    {% endfor %}
-  </ul>
-
+    <ul class="p-t-sm is-flex is-flex-wrap-wrap">
+        {% for crumb in breadcrumbs %}
+            <li>
+                {% if crumb.url %}
+                    <a href="{{ crumb.url }}">
+                        {% if crumb.title == "Pradžia" %}<span class="icon"><i class="fas fa-home"></i></span>{% endif %}
+                        <span>{{ crumb.title }}</span>
+                    </a>
+                {% else %}
+                    <span class="pl-3">{{ crumb.title }}</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
 {% elif parent_links %}
-  <ul class="p-t-sm">
-    {% for link, title in parent_links.items %}
-      <li>
-        {% if link %}
-          <a href="{{ link }}">
-            {% if title == "Pradžia" %}
-              <span class="icon"><i class="fas fa-home"></i></span>
-            {% endif %}
-            <span>{{ title }}</span>
-          </a>
-        {% else %}
-          <span class="pl-3">{{ title }}</span>
-        {% endif %}
-      </li>
-    {% endfor %}
-  </ul>
-
+    <ul class="p-t-sm">
+        {% for link, title in parent_links.items %}
+            <li>
+                {% if link %}
+                    <a href="{{ link }}">
+                        {% if title == "Pradžia" %}<span class="icon"><i class="fas fa-home"></i></span>{% endif %}
+                        <span>{{ title }}</span>
+                    </a>
+                {% else %}
+                    <span class="pl-3">{{ title }}</span>
+                {% endif %}
+            </li>
+        {% endfor %}
+    </ul>
 {% elif parent_url and parent_title %}
-  <ul class="p-t-sm">
-    <li>
-      <a href="{{ parent_url }}"><span>{{ parent_title }}</span></a>
-    </li>
-  </ul>
+    <ul class="p-t-sm">
+        <li>
+            <a href="{{ parent_url }}"><span>{{ parent_title }}</span></a>
+        </li>
+    </ul>
 {% else %}
-<ul class="p-t-sm">
-  <li>
-      <a href="{% url 'home' %}">
-          <span class="icon">
-            <i class="fas fa-home"></i>
-          </span>
-          <span>{% translate "Pradžia" %}</span>
-      </a>
-  </li>
-
-  {% if request.resolver_match.url_name == 'organization-datasets' %}
-  <li>
-      <a href="#">
-          <span>{% translate "Organizacija" %}</span>
-      </a>
-  </li>
-  {% endif %}
-</ul>
+    <ul class="p-t-sm">
+        <li>
+            <a href="{% url 'home' %}">
+                <span class="icon">
+                    <i class="fas fa-home"></i>
+                </span>
+                <span>{% translate "Pradžia" %}</span>
+            </a>
+        </li>
+        {% if request.resolver_match.url_name == 'organization-datasets' %}
+            <li>
+                <a href="#">
+                    <span>{% translate "Organizacija" %}</span>
+                </a>
+            </li>
+        {% endif %}
+    </ul>
 {% endif %}

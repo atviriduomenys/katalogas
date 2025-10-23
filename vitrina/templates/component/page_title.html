@@ -82,7 +82,6 @@
         background: #DBDBDB;
     }
 </style>
-
 {% if page_title.title %}
     <div class="page-header">
         <div class="content-wrapper">
@@ -99,9 +98,7 @@
                     <span class="info-text info-label">{{ page_title.root_label }}:</span>
                     <span class="info-text info-value">{{ page_title.root_name }}</span>
                 {% endif %}
-                {% if page_title.root_name and page_title.info_system_name %}
-                    <div class="separator"></div>
-                {% endif %}
+                {% if page_title.root_name and page_title.info_system_name %}<div class="separator"></div>{% endif %}
                 {% if page_title.info_system_name %}
                     <span class="info-text info-label">{{ page_title.info_system_label }}:</span>
                     <span class="info-text info-value">{{ page_title.info_system_name }}</span>

@@ -106,6 +106,10 @@ exclude = [
 line-length = 120
 indent-width = 4
 
+lint.extend-select = [
+    "T201"  # Checks for print statements.
+]
+
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"

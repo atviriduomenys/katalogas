@@ -166,6 +166,7 @@ class Representative(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey("content_type", "object_id")
     can_write = models.BooleanField(default=False, verbose_name=_("Leidžiama keisti duomenis"))
+    can_make_agreements = models.BooleanField(default=False, blank=True, null=True)
 
     objects = models.Manager()
 

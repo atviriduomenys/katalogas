@@ -29,7 +29,7 @@ attributes = (
     "lt-personal-code",
 )
 
-user_information = ("firstName", "lastName", "email", "phoneNumber", "companyName")
+user_information = ("firstName", "lastName", "email", "phoneNumber", "companyName", "proxyType")
 
 callback_url = "/accounts/viisp/complete-login"
 callback_url_token = "/accounts/viisp/complete-login/{}"
@@ -161,13 +161,6 @@ def _parse_ticket_id(xml_string):
 
 def _parse_user_data(xml_string):
     soup = BeautifulSoup(xml_string, features="xml")
-    user_information_to_find = [
-        "firstName",
-        "lastName",
-        "email",
-        "phoneNumber",
-        "companyName",
-    ]
     user_data = {}
     authentication_attributes = soup.find_all("authenticationAttribute")
     for auth_attr in authentication_attributes:
@@ -181,7 +174,7 @@ def _parse_user_data(xml_string):
     user_information_data = soup.find_all("userInformation")
     for u_i_data in user_information_data:
         information = u_i_data.find("information").text
-        if information in user_information_to_find:
+        if information in user_information:
             user_data[snakecase(information)] = u_i_data.find("value").text
     return user_data
 

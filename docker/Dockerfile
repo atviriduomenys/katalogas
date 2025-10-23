@@ -42,7 +42,7 @@ RUN apt-get update && \
 RUN pip install --upgrade pip wheel --no-cache-dir
 RUN pip install gunicorn==20.1.0 poetry --no-cache-dir
 RUN poetry config virtualenvs.create false
-RUN poetry install --no-interaction
+RUN poetry install --no-interaction --only main
 
 WORKDIR /app/webpack
 RUN npm install

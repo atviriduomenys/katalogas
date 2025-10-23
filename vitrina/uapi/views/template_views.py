@@ -23,7 +23,7 @@ from django.views.generic import (
 from django_otp.plugins.otp_email.conf import settings
 from requests.exceptions import ConnectionError as RequestsConnectionError
 
-from vitrina.api.oauth import Secret, OAuthClientManagement
+from vitrina.api.oauth import Secret, get_oauth_client_management
 from vitrina.datasets.models import Dataset, Contact, Type, DCATResourceSubclass
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import (
@@ -168,7 +168,7 @@ class AgentCreateView(CreateView, BaseAgentView):
 
     @staticmethod
     def _create_oauth_client(agent: Agent) -> Secret:
-        client_id, secret = OAuthClientManagement.create_oauth_client(
+        client_id, secret = get_oauth_client_management().create_oauth_client(
             client_name=agent.global_codename, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES
         )
         agent.oauth_client_id = client_id

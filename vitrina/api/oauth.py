@@ -9,6 +9,7 @@ from authlib.jose.errors import BadSignatureError
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
 from django.core.exceptions import ImproperlyConfigured
+from django.utils.module_loading import import_string
 from django.views import View
 from oauthlib.oauth2 import TokenExpiredError
 from rest_framework.authentication import BaseAuthentication
@@ -24,7 +25,9 @@ Secret = str
 ClientId = str
 AccessToken = str
 
-# TODO migrate to Gravitee once its ready.
+
+def get_oauth_client_management() -> "OAuthClientManagement":
+    return import_string(settings.OAUTH_CLIENT_MANAGEMENT_CLASS)
 
 
 class OAuthClientManagement:
@@ -32,27 +35,28 @@ class OAuthClientManagement:
     def _to_urlsafe_base64(value: bytes) -> str:
         return base64.urlsafe_b64encode(value).decode().rstrip("=")
 
-    @staticmethod
-    def generate_secret(size: int = 32):
+    @classmethod
+    def generate_secret(cls, size: int = 32):
         value = math.floor(math.log(64, 256) * size) + 1
-        return OAuthClientManagement._to_urlsafe_base64(os.urandom(value))[:size]
+        return cls._to_urlsafe_base64(os.urandom(value))[:size]
 
-    @staticmethod
+    @classmethod
     def create_oauth_client(
-        client_name: Optional[str] = None, scopes: list[str] = None, secret: Secret = None
+        cls, client_name: Optional[str] = None, scopes: list[str] = None, secret: Secret = None
     ) -> tuple[ClientId, Secret]:
-        secret = secret or OAuthClientManagement.generate_secret()
+        secret = secret or cls.generate_secret()
+        cls.declare_scopes(scopes)
         response = requests.post(
             settings.OAUTH_SERVER_CLIENTS_URL,
-            headers={"Authorization": f"Bearer {OAuthClientManagement.get_management_access_token()}"},
+            headers={"Authorization": f"Bearer {cls.get_management_access_token()}"},
             json={"client_name": client_name, "scopes": scopes or [], "secret": secret},
         )
         response.raise_for_status()
         client_id = response.json()["client_id"]
         return client_id, secret
 
-    @staticmethod
-    def update_oauth_client(client_id: ClientId, new_scopes: list[str] = None, new_name: str = None) -> None:
+    @classmethod
+    def update_oauth_client(cls, client_id: ClientId, new_scopes: list[str] = None, new_name: str = None) -> None:
         update_data: dict = {}
         if new_scopes is not None:
             update_data["scopes"] = new_scopes
@@ -61,9 +65,10 @@ class OAuthClientManagement:
 
         if not update_data:
             return
+        cls.declare_scopes(new_scopes)
         response = requests.patch(
             f"{settings.OAUTH_SERVER_CLIENTS_URL}/{client_id}",
-            headers={"Authorization": f"Bearer {OAuthClientManagement.get_management_access_token()}"},
+            headers={"Authorization": f"Bearer {cls.get_management_access_token()}"},
             json=update_data,
         )
         response.raise_for_status()
@@ -84,6 +89,22 @@ class OAuthClientManagement:
         response.raise_for_status()
         return response.json()["access_token"]
 
+    @classmethod
+    def declare_scopes(cls, scopes: list[str]):
+        """Override in case you need to declare new scopes before assigning them."""
+        pass
+
+
+class GraviteeOAuthClientManagement(OAuthClientManagement):
+    @classmethod
+    def declare_scopes(cls, scopes: list[str]) -> None:
+        response = requests.post(
+            settings.OAUTH_SERVER_CLIENTS_URL + settings.OAUTH_SERVER_SCOPES_PATH,
+            headers={"Authorization": f"Bearer {cls.get_management_access_token()}"},
+            json={"scopes": scopes},
+        )
+        response.raise_for_status()
+
 
 class OAuthClientAuthenticator:
     @staticmethod
@@ -103,9 +124,9 @@ class OAuthClientAuthenticator:
 
         return token_value
 
-    @staticmethod
-    def retrieve_and_verify_token(request: Request) -> JWTClaims | None:
-        access_token = OAuthClientAuthenticator.retrieve_access_token_from_request(request)
+    @classmethod
+    def retrieve_and_verify_token(cls, request: Request) -> JWTClaims | None:
+        access_token = cls.retrieve_access_token_from_request(request)
         if not access_token:
             return None
         key_object = JsonWebKey.import_key(settings.OAUTH_SERVER_PUBLIC_JWK_JSON)
@@ -113,9 +134,9 @@ class OAuthClientAuthenticator:
         decoded_token.validate()
         return decoded_token
 
-    @staticmethod
-    def resolve_organization_from_token(decoded_token: JWTClaims) -> Organization | None:
-        if not (client_id := OAuthClientAuthenticator.resolve_client_id_from_token(decoded_token)):
+    @classmethod
+    def resolve_organization_from_token(cls, decoded_token: JWTClaims) -> Organization | None:
+        if not (client_id := cls.resolve_client_id_from_token(decoded_token)):
             return None
         agent = Agent.objects.filter(oauth_client_id=client_id).select_related("organization").first()
         return agent.organization if agent else None

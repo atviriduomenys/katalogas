@@ -1,6 +1,8 @@
 import secrets
 
+import requests
 from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
 from django.db.models import Q
@@ -8,6 +10,8 @@ from django.forms import BaseForm
 from django.http import HttpResponseRedirect, HttpResponse
 from django.http.response import HttpResponseBase
 from django.shortcuts import get_object_or_404, redirect
+from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     ListView,
     CreateView,
@@ -17,32 +21,26 @@ from django.views.generic import (
     View,
 )
 from django.views.generic.edit import DeleteView
-from django.utils.translation import gettext_lazy as _
-from django.urls import reverse
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.contrib.auth.mixins import PermissionRequiredMixin
-
-import requests
 from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from vitrina.api.models import ApiKey, ApiScope
-from vitrina.api.oauth import OAuthClientManagement
+from vitrina.api.oauth import get_oauth_client_management
 from vitrina.api.services import get_auth_session
 from vitrina.datasets.models import Dataset
+from vitrina.helpers import get_current_domain
 from vitrina.messages.models import Subscription
 from vitrina.orgs.forms import ProjectApiKeyRegenerateForm
 from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.projects.forms import ProjectForm, ClientCreateForm, ClientScopeCreateForm
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
+from vitrina.projects.services import can_update_project, can_view_project, get_projects
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import Agreement, AgreementScope
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
-from vitrina.helpers import get_current_domain
-from vitrina.projects.services import can_update_project, can_view_project, get_projects
 
 
 class ProjectListView(ListView):
@@ -654,7 +652,7 @@ class ClientCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixi
         self.object.user = self.request.user
         self.object.use_case = self.project
         self.object.save()
-        self.object.client_id, secret = OAuthClientManagement.create_oauth_client()
+        self.object.client_id, secret = get_oauth_client_management().create_oauth_client()
         self.object.save(update_fields=["client_id"])
 
         success_message = _('Klientas "{0}" sukurtas sėkmingai.').format(self.object.name)
@@ -863,7 +861,7 @@ class ClientScopeToggleView(PermissionRequiredMixin, View):
     def get(self, request, **kwargs) -> HttpResponse:
         self.scope.is_active = not self.scope.is_active  # Toggle to the opposite status
         self.scope.save(update_fields=["is_active", "updated_at"])
-        OAuthClientManagement.update_oauth_client(
+        get_oauth_client_management().update_oauth_client(
             client_id=self.client.client_id,
             new_scopes=list(self.client.scopes.filter(is_active=True).values_list("scope", flat=True)),
         )

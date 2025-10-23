@@ -86,7 +86,7 @@ def test_create_view(app: DjangoTestApp, representative_user: User, organization
 
 
     with patch(
-        "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
+        "vitrina.api.oauth.OAuthClientManagement.create_oauth_client",
         return_value=(mocked_id, "some-secret")
     ) as mock_create_oauth_client:
         response = app.post(url, data)
@@ -116,7 +116,7 @@ def test_create_agent_transaction_rollback_on_error(app, representative_user, or
     }
 
     with patch(
-        "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
+        "vitrina.api.oauth.OAuthClientManagement.create_oauth_client",
         side_effect=Exception("Simulated error")
     ):
         response = app.post(url, data)

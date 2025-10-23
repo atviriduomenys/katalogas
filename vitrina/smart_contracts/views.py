@@ -284,7 +284,6 @@ class AgreementCreateView(
             agreement_scopes = []
             for scope in form.cleaned_data["scopes"]:
                 resource, action = scope.rsplit("/:", 1)
-                print(f"################ {resource}, {action}")
                 agreement_scopes.append(
                     AgreementScope(
                         agreement=agreement,

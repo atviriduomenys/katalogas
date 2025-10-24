@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-15 10:22+0300\n"
+"POT-Creation-Date: 2025-10-24 15:16+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2849,8 +2849,9 @@ msgid ""
 "Nurodžius organizaciją panaudos atvejis kuriamas organizacijos vardu, "
 "nenurodžius - privataus asmens vardu. Atitinka odrl:asignee"
 msgstr ""
-"If an organization is specified, the use case is created on behalf of the organization; "
-"if not, it’s created on behalf of a private individual. Corresponds to odrl:asignee."
+"If an organization is specified, the use case is created on behalf of the "
+"organization; if not, it’s created on behalf of a private individual. "
+"Corresponds to odrl:asignee."
 
 msgid "Nuoroda į panaudojimo atvejį"
 msgstr "URL to use case"
@@ -2987,9 +2988,14 @@ msgstr "API key will be shown only one time, so you must copy it. Created key:"
 msgid "Kurti klientą"
 msgstr "Create client"
 
-#, python-brace-format
-msgid "Klientas \"{0}\" sukurtas sėkmingai"
+#, fuzzy, python-brace-format
+#| msgid "Klientas \"{0}\" sukurtas sėkmingai"
+msgid "Klientas \"{0}\" sukurtas sėkmingai."
 msgstr "Client \"{0}\" created successfully"
+
+#, python-brace-format
+msgid "Kliento raktas - {0}. Butinai išsisaugokite raktą, jis nebebus rodomas!"
+msgstr "Client key – {0}. Be sure to save this key; it will not be shown again!"
 
 msgid "Kliento registracija"
 msgstr "Client registration"
@@ -3056,6 +3062,17 @@ msgstr "Answered"
 
 msgid "Suplanuotas"
 msgstr "Planned"
+
+#, fuzzy
+#| msgid "Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."
+msgid "Poreikiui suteiktas pavadinimas."
+msgstr "A name given to the record. Corresponds to dct:title."
+
+#, fuzzy
+#| msgid ""
+#| "Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."
+msgid "Laisvo teksto aprašas laisvos formos tekstu."
+msgstr "A free-text account of the record. Corresponds to dct:description."
 
 msgid "Klaidų duomenyse pataisymas"
 msgstr "Data error fix"

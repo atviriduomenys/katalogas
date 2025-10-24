@@ -15,6 +15,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
+from rest_framework.viewsets import GenericViewSet
 
 from vitrina.orgs.models import Organization
 from vitrina.uapi.models import Agent
@@ -38,20 +39,37 @@ class OAuthClientManagement:
 
     @staticmethod
     def create_oauth_client(
-        client_name: str, scopes: list[str], secret: Secret = None, **extra_claims
+        client_name: str | None = None, scopes: list[str] | None = None, secret: Secret = None
     ) -> tuple[ClientId, Secret]:
         secret = secret or OAuthClientManagement.generate_secret()
         response = requests.post(
             settings.OAUTH_SERVER_CLIENTS_URL,
-            headers={"Authorization": f"Bearer {OAuthClientManagement.get_access_token()}"},
-            json={"client_name": client_name, "scopes": scopes, "secret": secret, **extra_claims},
+            headers={"Authorization": f"Bearer {OAuthClientManagement.get_management_access_token()}"},
+            json={"client_name": client_name, "scopes": scopes or [], "secret": secret},
         )
         response.raise_for_status()
         client_id = response.json()["client_id"]
         return client_id, secret
 
     @staticmethod
-    def get_access_token() -> AccessToken:
+    def update_oauth_client(client_id: ClientId, new_scopes: list[str] | None = None, new_name: str = None) -> None:
+        update_data: dict = {}
+        if new_scopes is not None:
+            update_data["scopes"] = new_scopes
+        if new_name is not None:
+            update_data["name"] = new_name
+
+        if not update_data:
+            return
+        response = requests.patch(
+            f"{settings.OAUTH_SERVER_CLIENTS_URL}/{client_id}",
+            headers={"Authorization": f"Bearer {OAuthClientManagement.get_management_access_token()}"},
+            json=update_data,
+        )
+        response.raise_for_status()
+
+    @staticmethod
+    def get_management_access_token() -> AccessToken:
         response = requests.post(
             settings.OAUTH_SERVER_TOKEN_URL,
             headers={
@@ -126,7 +144,7 @@ class IsOAuthTokenValid(BasePermission):
 
 
 class OAuthTokenHasScopes(BasePermission):
-    def has_permission(self, request: Request, view: View) -> bool:
+    def has_permission(self, request: Request, view: GenericViewSet) -> bool:
         if not (token := request.auth):
             return False
 
@@ -140,7 +158,7 @@ class OAuthTokenHasScopes(BasePermission):
         return not bool(missing_scopes)
 
     @staticmethod
-    def get_scopes(request: Request, view: View) -> Iterable[str]:
+    def get_scopes(request: Request, view: GenericViewSet) -> Iterable[str]:
         try:
             scopes = getattr(view, "required_scopes")
         except AttributeError:

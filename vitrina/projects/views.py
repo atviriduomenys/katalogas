@@ -2,6 +2,7 @@ import secrets
 
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
+from django.db import transaction
 from django.db.models import Q
 from django.forms import BaseForm
 from django.http import HttpResponseRedirect, HttpResponse
@@ -26,6 +27,7 @@ from reversion import set_comment
 from reversion.views import RevisionMixin
 
 from vitrina.api.models import ApiKey, ApiScope
+from vitrina.api.oauth import OAuthClientManagement
 from vitrina.api.services import get_auth_session
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription
@@ -643,17 +645,22 @@ class ClientCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixi
         )
 
     def dispatch(self, request, *args, **kwargs) -> HttpResponseBase:
-        self.project = get_object_or_404(Project, Q(deleted=False) | Q(deleted__isnull=True), pk=kwargs["pk"])
+        self.project: Project = get_object_or_404(Project, Q(deleted=False) | Q(deleted__isnull=True), pk=kwargs["pk"])
         return super().dispatch(request, *args, **kwargs)
 
+    @transaction.atomic
     def form_valid(self, form) -> HttpResponse:
-        self.object = form.save(commit=False)
+        self.object: UseCaseClient = form.save(commit=False)
         self.object.user = self.request.user
         self.object.use_case = self.project
         self.object.save()
+        self.object.client_id, secret = OAuthClientManagement.create_oauth_client()
+        self.object.save(update_fields=["client_id"])
 
-        success_message = _('Klientas "{0}" sukurtas sėkmingai').format(self.object.name)
+        success_message = _('Klientas "{0}" sukurtas sėkmingai.').format(self.object.name)
         messages.success(self.request, success_message)
+        secret_message = _("Kliento raktas - {0}. Butinai išsisaugokite raktą, jis nebebus rodomas!").format(secret)
+        messages.error(self.request, secret_message)
         return redirect(reverse("project-clients", args=[self.project.pk]))
 
     def get_context_data(self, **kwargs) -> dict:
@@ -707,12 +714,12 @@ class ClientUpdateView(PermissionRequiredMixin, UpdateView):
         )
         return context_data
 
+    @transaction.atomic
     def form_valid(self, form) -> HttpResponse:
-        self.object = form.save(commit=False)
+        self.object: UseCaseClient = form.save(commit=False)
         self.object.user = self.request.user
         self.object.use_case = self.project
         self.object.save()
-
         success_message = _('Klientas "{0}" atnaujintas sėkmingai').format(self.object.name)
         messages.success(self.request, success_message)
         return redirect(reverse("project-clients", args=[self.project.pk]))
@@ -852,7 +859,12 @@ class ClientScopeToggleView(PermissionRequiredMixin, View):
             self.project,
         )
 
+    @transaction.atomic
     def get(self, request, **kwargs) -> HttpResponse:
         self.scope.is_active = not self.scope.is_active  # Toggle to the opposite status
         self.scope.save(update_fields=["is_active", "updated_at"])
+        OAuthClientManagement.update_oauth_client(
+            client_id=self.client.client_id,
+            new_scopes=list(self.client.scopes.filter(is_active=True).values_list("scope", flat=True)),
+        )
         return redirect(reverse("project-clients-detail", args=[self.project.pk, self.client.uuid]))

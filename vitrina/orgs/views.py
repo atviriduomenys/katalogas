@@ -721,7 +721,7 @@ class OrganizationProjectsView(
             return has_perm(self.request.user, Action.VIEW, self.organization)
 
     def get_queryset(self):
-        return get_projects(self.request.user, organization=self.organization)
+        return get_projects(self.request.user).filter(organization=self.organization)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -916,7 +916,8 @@ class RepresentativeCreateView(
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["object_id"] = self.organization.pk
+        kwargs["object"] = self.organization
+        kwargs["user"] = self.request.user
         return kwargs
 
     def get_success_url(self):
@@ -1032,6 +1033,7 @@ class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Orga
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["object"] = self.organization
+        kwargs["user"] = self.request.user
         return kwargs
 
     def has_permission(self):

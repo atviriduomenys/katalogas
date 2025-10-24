@@ -30,7 +30,7 @@ from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
-from vitrina.datasets.services import get_projects, get_requests
+from vitrina.datasets.services import get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 
 from vitrina.fields import FilerFileField, MultipleFilerField, StringListField
@@ -56,6 +56,7 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
 from vitrina.users.models import User
+from vitrina.projects.services import get_projects_linkable_to_dataset
 
 
 class ResourceSubclassTypeField(ModelChoiceField):
@@ -879,7 +880,7 @@ class AddProjectForm(forms.ModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-add-project-form"
-        self.fields["projects"].queryset = get_projects(self.user, self.dataset, form_query=True)
+        self.fields["projects"].queryset = get_projects_linkable_to_dataset(self.user).exclude(datasets=self.dataset)
         self.helper.layout = Layout(
             Field("projects"),
             Submit("submit", _("Pridėti"), css_class="button is-primary"),

@@ -1,18 +1,9 @@
 from vitrina.users.models import User
 from vitrina.projects.models import Project
-from vitrina.orgs.models import Representative, Organization
-from typing import Iterable
+from vitrina.smart_contracts.models import Agreement
 from django.db.models import Q
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import QuerySet
 from django.contrib.auth.models import AnonymousUser
-
-
-def _represented_org_ids(user: User | AnonymousUser) -> Iterable[int]:
-    return Representative.objects.filter(
-        content_type=ContentType.objects.get_for_model(Organization),
-        user=user,
-    ).values_list("object_id", flat=True)
 
 
 def _q_project(user: User | AnonymousUser) -> Q:
@@ -24,13 +15,16 @@ def _q_project(user: User | AnonymousUser) -> Q:
     if user.is_staff or user.is_superuser:
         return Q()
 
-    represented_org_ids = _represented_org_ids(user)
+    represented_org_ids = user.represented_org_ids
 
     q = (
         public_approved_or_created
-        | Q(organization__isnull=True, user=user)  # Owner can view personal projects
-        | Q(organization_id__in=represented_org_ids)  # All organization representatives can view organization's projects
-        | Q(agreements__assigner_id__in=represented_org_ids)  # All assigners' organizations' representatives can view projects their are part of
+        # Owner can view personal projects
+        | Q(organization__isnull=True, user=user)
+        # All organization representatives can view organization's projects
+        | Q(organization_id__in=represented_org_ids)
+        # All assigners' organizations' representatives can view projects their are part of
+        | Q(agreements__assigner_id__in=represented_org_ids)
     )
 
     return q
@@ -65,4 +59,4 @@ def get_projects_linkable_to_dataset(user: User | AnonymousUser):
     if user.is_staff or user.is_superuser:
         return queryset
 
-    return queryset.filter(Q(organization__isnull=True, user=user) | Q(organization_id__in=_represented_org_ids(user)))
+    return queryset.filter(Q(organization__isnull=True, user=user) | Q(organization_id__in=user.represented_org_ids))

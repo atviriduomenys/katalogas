@@ -116,6 +116,14 @@ class User(AbstractUser):
             return Organization.objects.filter(company_code=self.viisp_company_code).first()
         return None
 
+    @property
+    def org_representatives(self) -> models.QuerySet[Representative]:
+        return self.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))
+
+    @property
+    def represented_org_ids(self) -> models.QuerySet[int]:
+        return self.org_representatives.values_list("object_id", flat=True)
+
     def unlock_user(self):
         if self.status == User.LOCKED or self.status == User.ACTIVE:
             self.failed_login_attempts = 0
@@ -135,13 +143,11 @@ class User(AbstractUser):
         self.save()
 
     def is_representative_of(self, organization: Organization, check_agreement_rights: bool = False) -> bool:
-        queryset = Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(Organization), object_id=organization.pk, user=self
-        )
+        representatives = self.org_representatives.filter(object_id=organization.id)
         if check_agreement_rights:
-            queryset = queryset.filter(can_make_agreements=True)
+            representatives = representatives.filter(can_make_agreements=True)
 
-        return queryset.exists()
+        return representatives.exists()
 
 
 class UserTablePreferences(models.Model):

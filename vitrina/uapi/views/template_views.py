@@ -163,6 +163,14 @@ class AgentCreateView(CreateView, BaseAgentView):
         super().setup(request, *args, **kwargs)
         self.object = None
 
+    def get_form(self, form_class=None) -> ModelForm:
+        form = super().get_form(form_class)
+        form.fields["service"].help_text = _(
+            "Nurodoma su Agentu susieta duomenų paslauga. Jei nenurodyta, duomenų paslauga bus sukurta automatiškai."
+        )
+        form.fields["service"].required = False
+        return form
+
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE, Agent, self.organization)
 
@@ -177,38 +185,43 @@ class AgentCreateView(CreateView, BaseAgentView):
 
     def form_valid(self, form: ModelForm) -> HttpResponse:
         title = form.cleaned_data["title"]
+        service = form.cleaned_data.get("service")
+        form.instance.organization = self.organization
         try:
             with transaction.atomic():
-                form.instance.organization = self.organization
-                service = Dataset.add_root(
-                    title=f'Agento "{title}" Duomenų Paslauga',
-                    description="Ši duomenų paslauga buvo automatiškai sukurta kuriant Agentą.",
-                    access_rights=Dataset.NON_PUBLIC,
-                    organization=self.organization,
-                    service=True,
-                    subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE),
-                    endpoint_url=None,
-                    endpoint_type=Format.objects.filter(extension="UAPI").first(),
-                    endpoint_description="https://ivpk.github.io/uapi",
-                    endpoint_description_type=Format.objects.filter(extension="Open API").first(),
-                    is_public=False,
-                )
-                form.instance.service = service
-                form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
-                form.instance.service.save_translations()
-                self.object = form.save()
+                if not service:
+                    service = Dataset.add_root(
+                        title=f'Agento "{title}" Duomenų Paslauga',
+                        description="Ši duomenų paslauga buvo automatiškai sukurta kuriant Agentą.",
+                        access_rights=Dataset.NON_PUBLIC,
+                        organization=self.organization,
+                        service=True,
+                        subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE),
+                        endpoint_url=None,
+                        endpoint_type=Format.objects.filter(extension="UAPI").first(),
+                        endpoint_description="https://ivpk.github.io/uapi",
+                        endpoint_description_type=Format.objects.filter(extension="Open API").first(),
+                        is_public=False,
+                    )
+                    form.instance.service = service
+                    form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
+                    form.instance.service.save_translations()
+                    self.object = form.save()
 
-                Metadata.objects.create(
-                    uuid=str(uuid.uuid4()),
-                    dataset=service,
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    object_id=service.pk,
-                    name=self.object.codename,
-                    title=title,
-                    description=_("Duomenų paslauga automatiškai sukurta kuriant agentą."),
-                    prepare_ast={},
-                    version=1,
-                )
+                    Metadata.objects.create(
+                        uuid=str(uuid.uuid4()),
+                        dataset=service,
+                        content_type=ContentType.objects.get_for_model(Dataset),
+                        object_id=service.pk,
+                        name=self.object.codename,
+                        title=title,
+                        description=_("Duomenų paslauga automatiškai sukurta kuriant agentą."),
+                        prepare_ast={},
+                        version=1,
+                    )
+
+                if not hasattr(self, "object") or self.object is None:
+                    self.object = form.save()
 
                 self.request.session["secret"] = self._create_oauth_client(agent=self.object)
                 self.request.session["scopes"] = settings.OAUTH_AGENT_DEFAULT_SCOPES

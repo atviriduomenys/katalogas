@@ -5,10 +5,12 @@ from unittest.mock import patch
 import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from django.contrib.contenttypes.models import ContentType
 from vitrina.api.models import ApiKey
 from vitrina.datasets.factories import DatasetFactory, AgentFactory
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.uapi import AgentType
+from vitrina.structure.factories import MetadataFactory
+from vitrina.uapi import AgentType, Environment
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.uapi.models import Agent, RequestHistory
@@ -71,35 +73,80 @@ def test_detail_view_archived_agent(app: DjangoTestApp, representative_user: Use
     assert response.status_code == HTTPStatus.NOT_FOUND
 
 
-def test_create_view(app: DjangoTestApp, representative_user: User, organization: Organization):
+@pytest.mark.parametrize(
+    "service_provided",
+    [
+        False,
+        True,
+    ],
+    ids=["no_service_provided", "service_provided"]
+)
+def test_create_agent_view(
+    app: DjangoTestApp,
+    representative_user: User,
+    organization: Organization,
+    service_provided: bool,
+):
     app.set_user(representative_user)
-
+    
+    organization_service = None
     mocked_id = "some-id"
     url = reverse("agent-create", args=[organization.pk])
     data = {
         "title": "Agent",
         "is_enabled": True,
+        "environment": Environment.DEVELOPMENT,
         "is_open_data_published": True,
         "object_type": AgentType.SPINTA,
-        "open_data_publish_url": "https://data.gov.lt"
+        "open_data_publish_url": "https://data.gov.lt",
+        "auth_server_url": "https://auth.example.com",
+        "api_gate_server_url": "https://api-gate.example.com",
+        "agent_address": "https://agent.example.com",
     }
-
+    
+    if service_provided:
+        organization_service = DatasetFactory(
+            service=True,
+            organization=organization,
+            subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE),
+        )
+        data["service"] = organization_service.pk
+        
+        MetadataFactory.create(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            object_id=organization_service.pk,
+            name=data["title"].lower().replace(" ", "_"),
+        )
+    
     with patch(
         "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
         return_value=(mocked_id, "some-secret")
     ) as mock_create_oauth_client:
         response = app.post(url, data)
-
-
+    
     assert response.status_code == HTTPStatus.FOUND
     assert Agent.objects.count() == 1
+    assert mock_create_oauth_client.called
+    
     agent = Agent.objects.filter(title=data["title"], organization=organization).first()
     agent_service = agent.service
+    
     assert agent.oauth_client_id == mocked_id
+    assert agent.auth_server_url == data["auth_server_url"]
+    assert agent.api_gate_server_url == data["api_gate_server_url"]
+    assert agent.agent_address == data["agent_address"]
+    assert agent.is_enabled is data["is_enabled"]
+    assert agent.environment == data["environment"]
     assert agent_service.service is True
-    assert agent_service.subclass == DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE)
+    assert agent_service.subclass == DCATResourceSubclass.objects.get(
+        name=DCATResourceSubclass.SERVICE
+    )
     assert agent_service.metadata.first().name == Agent().get_codename(data["title"])
-    assert mock_create_oauth_client.called
+    
+    if service_provided:
+        assert agent_service == organization_service
+    else:
+        assert agent_service != organization_service
 
 
 def test_create_agent_transaction_rollback_on_error(app, representative_user, organization):
@@ -132,10 +179,14 @@ def test_update_view(app: DjangoTestApp, representative_user: User, organization
     data = {
         "title": "Updated Agent Title",
         "is_enabled": True,
+        "environment": Environment.TESTING,
         "is_open_data_published": False,
         "object_type": AgentType.OTHER,
         "open_data_publish_url": "https://updated-data.gov.lt",
         "service": agent.service.pk,
+        "agent_address": "https://updated-agent.gov.lt",
+        "auth_server_url": "https://updated-auth.gov.lt",
+        "api_gate_server_url": "https://updated-api-gate.gov.lt",
     }
 
     response = app.post(url, data)
@@ -147,7 +198,11 @@ def test_update_view(app: DjangoTestApp, representative_user: User, organization
     assert agent.is_enabled is data["is_enabled"]
     assert agent.is_open_data_published is data["is_open_data_published"]
     assert agent.object_type == data["object_type"]
+    assert agent.environment == data["environment"]
     assert agent.open_data_publish_url == data["open_data_publish_url"]
+    assert agent.agent_address == data["agent_address"]
+    assert agent.auth_server_url == data["auth_server_url"]
+    assert agent.api_gate_server_url == data["api_gate_server_url"]
 
 
 def test_delete_view(app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):

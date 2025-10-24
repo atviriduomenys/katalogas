@@ -18,6 +18,9 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
+msgid "Organizacija"
+msgstr "Organization"
+
 msgid "kliento id"
 msgstr "client id"
 
@@ -37,9 +40,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -3063,14 +3063,10 @@ msgstr "Answered"
 msgid "Suplanuotas"
 msgstr "Planned"
 
-#, fuzzy
-#| msgid "Duomenų ištekliui suteiktas pavadinimas. Atitinka dct:title."
-msgid "Poreikiui suteiktas pavadinimas."
+
+msgid "Poreikiui suteiktas pavadinimas. Atitinka dct:title."
 msgstr "A name given to the record. Corresponds to dct:title."
 
-#, fuzzy
-#| msgid ""
-#| "Laisvo teksto aprašas laisvos formos tekstu. Atitinka dct:description."
 msgid "Laisvo teksto aprašas laisvos formos tekstu."
 msgstr "A free-text account of the record. Corresponds to dct:description."
 
@@ -4788,6 +4784,16 @@ msgstr "Admin"
 msgid "Atnaujinti"
 msgstr "Update"
 
+msgid "Vystymo"
+msgstr "Development"
+
+
+msgid "Testavimo"
+msgstr "Testing"
+
+msgid "Gamybinė"
+msgstr "Production"
+
 msgid ""
 "Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "
 "publikuojami Saugykloje\"."
@@ -4874,6 +4880,36 @@ msgid ""
 "Jei kliento identifikatorius egzistuoja - agentas gali vykdyti užklausas į "
 "katalogą."
 msgstr "If client identifier exists - agent can do requests to catalog"
+
+
+msgid "Aplinka"
+msgstr "Environment"
+
+msgid "Aplinka, kurioje diegiamas agentas."
+msgstr "The environment in which the agent is deployed."
+
+msgid "Autorizacijos serverio adresas"
+msgstr "Authorization server address"
+
+msgid "Nurodomas autorizacijos serverio adresas."
+msgstr "The authorization server address is specified."
+
+msgid "API vartų serverio adresas"
+msgstr "API gateway server address"
+
+msgid "Nurodomas API vartų serverio adresas."
+msgstr "The API gateway server address is specified."
+
+msgid "Agento adresas"
+msgstr "Agent address"
+
+msgid ""
+"Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, "
+"kurį mato API vartai. Jei API vartai nenurodyti, tada tada yra nurodomas "
+"išorinis agento adresas"
+msgstr ""
+"If a gateway address is specified, then the agent address is an internal address " 
+"that the API gateway sees. If the API gateway is not specified, then an external agent address is specified"
 
 msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
 msgstr "The related data resource must be of type \"service\"."
@@ -5064,6 +5100,13 @@ msgstr "No errors"
 
 msgid "Pridėti Agentą"
 msgstr "Add an Agent"
+
+msgid ""
+"Nurodoma su Agentu susieta duomenų paslauga. Jei nenurodyta, duomenų "
+"paslauga bus sukurta automatiškai."
+msgstr ""
+"The data service associated with the Agent is specified. "
+"If not specified, the data service will be created automatically."
 
 msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."
 msgstr "Data service automatically created with the agent."

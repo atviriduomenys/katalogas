@@ -21,7 +21,6 @@ from django.views.generic import TemplateView, FormView
 
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
-from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.projects.services import can_update_project
 from vitrina.smart_contracts import AgreementStatuses, AGREEMENT_STATUS_DESCRIPTIONS
@@ -40,6 +39,13 @@ from vitrina.smart_contracts.models import (
 from vitrina.users.models import User
 from vitrina.structure.models import Metadata
 from vitrina.views import FormsetView, HistoryMixin
+from vitrina.smart_contracts.services import (
+    get_agreements,
+    can_view_agreements,
+    can_create_agreements,
+    can_view_agreement,
+    can_upload_agreement_file,
+)
 
 
 class BaseProjectMixin:
@@ -86,14 +92,12 @@ class AgreementListView(
 
     def has_permission(self) -> bool:
         self.object = self.get_project(self.kwargs["pk"])
-        return can_update_project(self.request.user, self.object)
+        return can_view_agreements(self.request.user, self.object)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
 
-        project_agreements = Agreement.objects.filter(
-            project=self.object,
-        ).order_by("-created_at")
+        project_agreements = get_agreements(self.request.user).filter(project=self.object)
 
         paginator = Paginator(project_agreements, 10)
         page_number = self.request.GET.get("page")
@@ -107,7 +111,7 @@ class AgreementListView(
                 "page_obj": page,
                 "paginator": paginator,
                 "can_update_project": can_update_project(self.request.user, self.object),
-                "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
+                "can_view_agreements": can_view_agreements(self.request.user, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("project-list"): _("Panaudojimo atvejai"),
@@ -142,7 +146,7 @@ class AgreementDetailView(
         return super().setup(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.VIEW, self.agreement)
+        return can_view_agreement(self.request.user, self.agreement)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -155,7 +159,7 @@ class AgreementDetailView(
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_title": self.agreement.detail_page_title,
                 "can_update_project": can_update_project(self.request.user, self.object),
-                "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
+                "can_view_agreements": can_view_agreements(self.request.user, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("project-list"): _("Panaudojimo atvejai"),
@@ -182,9 +186,7 @@ class AgreementCreateView(
 
     def has_permission(self) -> bool:
         self.object = self.get_project(self.kwargs["pk"])
-        return getattr(self.request.user, "organization_id", None) and (
-            can_update_project(self.request.user, self.object)
-        )
+        return can_create_agreements(self.request.user, self.object)
 
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         if not self.has_permission():
@@ -320,7 +322,7 @@ class AgreementGeneratePdf(
         return super().setup(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.agreement) or self.request.user == self.object.user
+        return can_create_agreements(self.request.user, self.object)
 
     def get_success_url(self) -> str:
         return reverse("agreement-detail", args=[self.object.pk, self.agreement.pk])
@@ -369,7 +371,7 @@ class AgreementGeneratePdf(
             {
                 "tabs": "vitrina/projects/tabs.html",
                 "has_perm": can_update_project(self.request.user, self.object),
-                "can_view_agreements": has_perm(self.request.user, Action.VIEW, Agreement, self.object),
+                "can_view_agreements": can_view_agreements(self.request.user, self.object),
                 "current_title": _("Generuoti sutarties dokumentą"),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
@@ -402,23 +404,31 @@ class AgreementUploadSignedFile(
         return super().setup(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, self.agreement) or self.request.user == self.object.user
+        return can_upload_agreement_file(self.request.user, self.agreement)
 
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         dispatch = super().dispatch(request, *args, **kwargs)
         accepted_statuses = (AgreementStatuses.FORMED, AgreementStatuses.INITIATED)
-        if self.agreement.status in accepted_statuses:
-            return dispatch
-
-        error_msg = _(
-            "Sutarties dokumentas gali būti generuojamas sutarčiai su "
-            "būsenomis {accepted_statuses}. Dabartinė būsena: {current_status}"
-        ).format(
-            accepted_statuses=", ".join(accepted_statuses),
-            current_status=self.agreement.status,
-        )
-        messages.error(request, error_msg)
-        return HttpResponseRedirect(self.get_success_url())
+        error_msg = ""
+        if self.agreement.status not in accepted_statuses:
+            error_msg = _(
+                "Sutarties dokumentas gali būti generuojamas sutarčiai su "
+                "būsenomis {accepted_statuses}. Dabartinė būsena: {current_status}"
+            ).format(
+                accepted_statuses=", ".join(accepted_statuses),
+                current_status=self.agreement.status,
+            )
+        if (
+            self.agreement.status == AgreementStatuses.FORMED
+            and request.user.viisp_organization == self.agreement.assigner
+        ):
+            error_msg = _(
+                "Sutartį pasirašyti duomenų teikėjo vardu galėsite tik po to kai ją pasirašys duomenų gavėjas."
+            )
+        if error_msg:
+            messages.error(request, error_msg)
+            return HttpResponseRedirect(self.get_success_url())
+        return dispatch
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)

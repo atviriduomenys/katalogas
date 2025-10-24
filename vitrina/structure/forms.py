@@ -108,7 +108,11 @@ class EnumForm(forms.ModelForm):
     status = ModelChoiceTypeField(
         label=_("Būsena"),
         required=False,
-        queryset=Status.objects.all().order_by("id"),
+        queryset=(
+            Status.objects
+            .exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True))
+            .order_by("id")
+        ),
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
@@ -455,7 +459,11 @@ class ModelCreateForm(forms.ModelForm):
     status = ModelChoiceTypeField(
         label=_("Būsena"),
         required=False,
-        queryset=Status.objects.all().order_by("id"),
+        queryset=(
+            Status.objects
+            .exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True))
+            .order_by("id")
+        ),
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
@@ -941,7 +949,11 @@ class PropertyForm(forms.ModelForm):
     status = ModelChoiceTypeField(
         label=_("Būsena"),
         required=False,
-        queryset=Status.objects.all().order_by("id"),
+        queryset=(
+            Status.objects
+            .exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True))
+            .order_by("id")
+        ),
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )

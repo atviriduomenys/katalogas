@@ -3,6 +3,9 @@ Changes
 
 v 1.4 (unreleased)
 ==================
+https://github.com/atviriduomenys/katalogas/issues/2032
+Add IN_PROGRESS status to Request.
+
 https://github.com/atviriduomenys/katalogas/issues/1934
 Translate `Requests`.
 

@@ -1,6 +1,5 @@
 from vitrina.users.models import User
 from vitrina.projects.models import Project
-from vitrina.smart_contracts.models import Agreement
 from django.db.models import Q
 from django.db.models import QuerySet
 from django.contrib.auth.models import AnonymousUser
@@ -24,7 +23,7 @@ def _q_project(user: User | AnonymousUser) -> Q:
         # All organization representatives can view organization's projects
         | Q(organization_id__in=represented_org_ids)
         # All assigners' organizations' representatives can view projects their are part of
-        | Q(agreements__assigner_id__in=represented_org_ids)
+        | Q(datasets__organization_id__in=represented_org_ids)
     )
 
     return q

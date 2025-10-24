@@ -1,12 +1,11 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
-from django.forms import ModelForm, CharField, Textarea, ModelChoiceField, BooleanField
-from django.contrib.contenttypes.models import ContentType
-from django.db.models import QuerySet
+from django.forms import ModelForm, CharField, Textarea, ModelChoiceField, BooleanField, RadioSelect, HiddenInput
 
 from vitrina.fields import FilerImageField
 from vitrina.projects.models import Project, UseCaseClientScope, UseCaseClient
 from vitrina.orgs.models import Organization
+from vitrina.users.models import User
 
 from django.utils.translation import gettext_lazy as _
 
@@ -22,10 +21,11 @@ class ProjectForm(ModelForm):
     )
     organization = ModelChoiceField(
         Organization.objects.none(),
-        label=_("Organizacija"),
+        label=_("Panaudos atvejo iniciatorius"),
+        widget=RadioSelect,
         required=False,
         help_text=_(
-            "Nurodžius organizaciją panaudos atvejis kuriamas organizacijos vardu, nenurodžius - privataus asmens vardu. Atitinka odrl:asignee"
+            "Nurodytos organizacijos vardu, bus galimybė sudaryti duomenų gavimo sutartis, sutartyje nurodant panaudojimo atvejį, kaip duomenų gavimo tikslą.(Atitinka odrl:assignee). Pasirinkus fizinį asmenį, sudaryti sutarčių galimybės nėra. Fizinis asmuo nurodomas tik kaip panaudojimo atvejo autorius."
         ),
     )
     url = CharField(
@@ -52,36 +52,30 @@ class ProjectForm(ModelForm):
         fields = ["title", "description", "organization", "url", "image", "is_public"]
 
     def __init__(self, *args, **kwargs):
-        self.user = kwargs.pop("user")
-        organization_id = kwargs.pop("organization_id", None)
+        self.user: User = kwargs.pop("user")
         super().__init__(*args, **kwargs)
         project_instance = self.instance if self.instance and self.instance.pk else None
         button = _("Redaguoti") if project_instance else _("Sukurti")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "project-form"
-        self.fields["organization"].queryset = self._organization_queryset()
-        if not project_instance and organization_id:
-            self.fields["organization"].initial = organization_id
-        if project_instance and project_instance.user != self.user:
-            self.fields["organization"].empty_label = None
+        self.fields["organization"].empty_label = f"{_('Fizinis asmuo')} ({self.user})"
+        if project_instance:
+            self.fields["organization"].disabled = True
+            self.fields["organization"].widget = HiddenInput()
+        elif (organization := self.user.viisp_organization) and self.user.is_representative_of(organization, True):
+            self.fields["organization"].queryset = Organization.objects.filter(pk=organization.pk)
+            self.fields["organization"].label_from_instance = lambda org: _("Organizacija") + f" ({org})"
+            self.fields["organization"].initial = organization
+
         self.helper.layout = Layout(
+            Field("is_public"),
             Field("title", placeholder=_("Pavadinimas")),
             Field("description", placeholder=_("Aprašymas")),
             Field("organization"),
             Field("url", placeholder=_("Nuoroda į panaudojimo atvejį")),
             Field("image"),
-            Field("is_public"),
             Submit("submit", button, css_class="button is-primary"),
-        )
-
-    def _organization_queryset(self) -> QuerySet["Organization"]:
-        if self.user.is_superuser or self.user.is_staff:
-            return Organization.public.all()
-
-        return Organization.public.filter(
-            representatives__content_type=ContentType.objects.get_for_model(Organization),
-            representatives__user=self.user,
         )
 
 

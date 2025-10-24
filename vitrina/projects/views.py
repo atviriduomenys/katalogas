@@ -101,11 +101,6 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
-        organization_id = self.request.GET.get("organization_id")
-        try:
-            kwargs["organization_id"] = int(organization_id) if organization_id is not None else None
-        except ValueError:
-            kwargs["organization_id"] = None
         return kwargs
 
     def has_permission(self):
@@ -153,6 +148,16 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         kwargs = super().get_form_kwargs()
         kwargs["user"] = self.request.user
         return kwargs
+
+    def dispatch(self, request, *args, **kwargs):
+        project = self.get_object()
+        if project.agreements.exists():
+            messages.error(
+                request,
+                _("Negalima redaguoti panaudos atvejo, kuris turi sugeneruotų sutarčių."),
+            )
+            return redirect("project-detail", pk=project.pk)
+        return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
         project = self.get_object()

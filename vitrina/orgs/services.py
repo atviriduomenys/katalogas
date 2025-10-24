@@ -517,9 +517,3 @@ def pre_representative_delete(rep: Representative):
             rep.user.is_active = False
             rep.user.status = User.SUSPENDED
             rep.user.save()
-
-
-def is_representative(user: User, organization: Organization) -> bool:
-    return Representative.objects.filter(
-        content_type=ContentType.objects.get_for_model(Organization), object_id=organization.pk, user=user
-    ).exists()

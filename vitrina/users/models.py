@@ -134,11 +134,11 @@ class User(AbstractUser):
         self.status = User.LOCKED
         self.save()
 
-    def is_representative_of(self, organization: Organization, has_agreement_rights: bool = False) -> bool:
+    def is_representative_of(self, organization: Organization, check_agreement_rights: bool = False) -> bool:
         queryset = Representative.objects.filter(
             content_type=ContentType.objects.get_for_model(Organization), object_id=organization.pk, user=self
         )
-        if has_agreement_rights:
+        if check_agreement_rights:
             queryset = queryset.filter(can_make_agreements=True)
 
         return queryset.exists()

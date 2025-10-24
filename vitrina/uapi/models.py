@@ -3,7 +3,7 @@ from django.db import models
 from vitrina.models import UUIDBaseModel
 from django.utils.text import slugify
 from django.core.exceptions import ValidationError
-from vitrina.uapi import AgentType, ChangedBy, ChangeType, PossibleResults, HTTPMethods
+from vitrina.uapi import AgentType, ChangedBy, ChangeType, PossibleResults, HTTPMethods, Environment
 from django.utils.translation import gettext_lazy as _
 
 
@@ -79,6 +79,33 @@ class Agent(UUIDBaseModel):
         max_length=255,
         blank=True,
         help_text=_("Jei kliento identifikatorius egzistuoja - agentas gali vykdyti užklausas į katalogą."),
+    )
+    environment = models.CharField(
+        verbose_name=_("Aplinka"),
+        max_length=32,
+        choices=Environment.choices,
+        default=Environment.DEVELOPMENT,
+        help_text=_("Aplinka, kurioje diegiamas agentas."),
+    )
+    auth_server_url = models.URLField(
+        verbose_name=_("Autorizacijos serverio adresas"),
+        max_length=255,
+        blank=True,
+        help_text=_("Nurodomas autorizacijos serverio adresas."),
+    )
+    api_gate_server_url = models.URLField(
+        verbose_name=_("API vartų serverio adresas"),
+        max_length=255,
+        blank=True,
+        help_text=_("Nurodomas API vartų serverio adresas."),
+    )
+    agent_address = models.CharField(
+        verbose_name=_("Agento adresas"),
+        max_length=255,
+        blank=True,
+        help_text=_(
+            "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, kurį mato API vartai. Jei API vartai nenurodyti, tada tada yra nurodomas išorinis agento adresas"
+        ),
     )
 
     class Meta:

@@ -67,6 +67,11 @@
         </div>
 
         <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Agento adresas" %}:</div>
+            <div class="column is-7">{{ agent.agent_address }}</div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos rezultatas" %}:</div>
             <div class="column is-7">
                 {% if agent.is_last_sync_successful %}

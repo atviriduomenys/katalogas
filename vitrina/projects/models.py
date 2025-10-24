@@ -131,6 +131,7 @@ class UseCaseClientScope(UUIDBaseModel):
         UseCaseClient,
         models.PROTECT,
         verbose_name=_("Klientas"),
+        related_name="scopes",
     )
     is_active = models.BooleanField(blank=True, null=True)
 

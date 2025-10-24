@@ -35,6 +35,7 @@ class Request(TranslatableModel):
     ANSWERED = "ANSWERED"
     PLANNED = "PLANNED"
     APPROVED = "APPROVED"
+    IN_PROGRESS = "IN_PROGRESS"
     STATUSES = (
         (CREATED, _("Pateiktas")),
         (REJECTED, _("Atmestas")),
@@ -42,6 +43,7 @@ class Request(TranslatableModel):
         (ANSWERED, _("Atsakytas")),
         (PLANNED, _("Suplanuotas")),
         (APPROVED, _("Įvertintas")),
+        (IN_PROGRESS, _("Vertinamas")),
     )
     FILTER_STATUSES = {
         CREATED: _("Pateiktas"),
@@ -50,6 +52,7 @@ class Request(TranslatableModel):
         ANSWERED: _("Atsakytas"),
         PLANNED: _("Suplanuotas"),
         APPROVED: _("Įvertintas"),
+        IN_PROGRESS: _("Vertinamas"),
     }
 
     EDITED = "EDITED"

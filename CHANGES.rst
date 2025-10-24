@@ -4,6 +4,8 @@ Changes
 v 1.6 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/1976
+Add authorization server and API gateway server fields to Agent model.
 
 
 v 1.5 (2025-10-27)

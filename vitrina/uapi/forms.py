@@ -9,7 +9,18 @@ from vitrina.uapi.models import Agent
 class AgentForm(ModelForm):
     class Meta:
         model = Agent
-        fields = ["title", "is_enabled", "is_open_data_published", "open_data_publish_url", "object_type", "service"]
+        fields = [
+            "title",
+            "is_enabled",
+            "is_open_data_published",
+            "open_data_publish_url",
+            "object_type",
+            "service",
+            "environment",
+            "auth_server_url",
+            "api_gate_server_url",
+            "agent_address",
+        ]
 
     def __init__(self, *args, **kwargs) -> None:
         self.organization = kwargs.pop("organization", None)
@@ -19,7 +30,6 @@ class AgentForm(ModelForm):
             organization=self.organization,
             service=True,
         )
-        self.fields["service"].required = False
 
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
@@ -27,6 +37,10 @@ class AgentForm(ModelForm):
             Field("title"),
             Field("object_type"),
             Field("service"),
+            Field("environment"),
+            Field("auth_server_url"),
+            Field("api_gate_server_url"),
+            Field("agent_address"),
             Field("is_enabled"),
             Field("is_open_data_published"),
             Field("open_data_publish_url"),

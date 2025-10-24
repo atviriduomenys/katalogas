@@ -112,6 +112,7 @@ class AgreementListView(
                 "paginator": paginator,
                 "can_update_project": can_update_project(self.request.user, self.object),
                 "can_view_agreements": can_view_agreements(self.request.user, self.object),
+                "can_create_agreements": can_create_agreements(self.request.user, self.object),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("project-list"): _("Panaudojimo atvejai"),

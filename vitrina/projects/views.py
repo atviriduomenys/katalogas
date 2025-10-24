@@ -38,7 +38,7 @@ from vitrina.projects.forms import ProjectForm, ClientCreateForm, ClientScopeCre
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.models import Agreement, AgreementScope
+from vitrina.smart_contracts.models import AgreementScope
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView

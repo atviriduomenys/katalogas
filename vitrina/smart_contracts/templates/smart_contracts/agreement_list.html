@@ -9,7 +9,7 @@
 {% block content %}
 
     {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
-    {% if project.organization %}
+    {% if can_create_agreements %}
     <div class="buttons is-right">
         <a class="button is-primary m-t-xs m-b-lg" href="{% url 'agreement-create' project.pk %}">{% translate "Generuoti sutartis" %}</a>
     </div>

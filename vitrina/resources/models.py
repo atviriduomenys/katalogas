@@ -13,7 +13,8 @@ from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
 from vitrina.datasets.models import Dataset
-from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL
+from vitrina.settings import TRANSLATION_CLIENT_ID
+from vitrina.structure.models import Version
 
 
 def get_default_status() -> uuid.UUID:
@@ -280,6 +281,14 @@ class DatasetDistribution(TranslatableModel):
     params = GenericRelation("vitrina_structure.Param")
 
     objects = TranslatableManager()
+
+    # TODO: remove?
+    connected_version = models.ForeignKey(
+        Version,
+        models.SET_NULL,
+        blank=True,
+        null=True,
+    )
 
     class Meta:
         db_table = "dataset_distribution"

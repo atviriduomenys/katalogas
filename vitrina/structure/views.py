@@ -1567,6 +1567,8 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
                     latest_version.source
                 ) != none_to_string(metadata.source):
                     metadata.draft = True
+                    if latest_version.status == metadata.status or metadata.status is None:
+                        metadata.status = Status.objects.filter(is_default=True).first()
                 else:
                     metadata.draft = False
 
@@ -1902,6 +1904,8 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                 or latest_version.status != self.object.status
             ):
                 self.object.draft = True
+                if latest_version.status == self.object.status or self.object.status is None:
+                    self.object.status = Status.objects.filter(is_default=True).first()
             else:
                 self.object.draft = False
             self.object.save()
@@ -2067,7 +2071,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         prop = self.object.object
-
+        print(self.object.status)
         self.object.version += 1
         self.object.level_given = self.object.level
         if self.object.prepare:
@@ -2094,6 +2098,8 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 or latest_version.status != self.object.status
             ):
                 self.object.draft = True
+                if latest_version.status == self.object.status or self.object.status is None:
+                    self.object.status = Status.objects.filter(is_default=True).first()
             else:
                 self.object.draft = False
 
@@ -2756,12 +2762,10 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
         for meta in metadata:
             if meta := Metadata.objects.filter(pk=meta).first():
                 meta.draft = False
-
                 latest_meta_version = MetadataVersion.objects.filter(metadata=meta).order_by("-version").first()
                 is_status_changed_by_user = latest_meta_version.status != meta.status if latest_meta_version else False
                 if meta.status == Status.objects.filter(codename="develop").first() and not is_status_changed_by_user:
                     meta.status = Status.objects.filter(codename="completed").first()
-
                 meta.metadata_version = version
                 meta.save()
 
@@ -2781,7 +2785,6 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                     base=meta.object.base if isinstance(meta.object, Model) else None,
                     status=meta.status if meta.status else None,
                 )
-
         return redirect(reverse("dataset-structure", args=[self.dataset.pk]))
 
 

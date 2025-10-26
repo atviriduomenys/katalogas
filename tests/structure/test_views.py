@@ -16,6 +16,7 @@ from pygments.lexers.special import TextLexer
 from pygments.styles import get_style_by_name
 from reversion.models import Version
 
+from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -3489,6 +3490,259 @@ def test_manifest_export_openapi(app: DjangoTestApp):
         f"Paths mismatch. Missing: {expected_paths - actual_paths}, "
         f"Extra: {actual_paths - expected_paths}"
     )
+
+@pytest.mark.django_db
+def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,Size,,SMALL,,,,,,,,,\n"
+        ",,,,,,,,,MEDIUM,,,,,,,,,\n"
+        ",,,,,,,,,BIG,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename="file.csv", data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
+    assert list(resp_models.context["props"].values_list("metadata__status__codename", flat=True)) == ["develop", "develop", "develop"]
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]))
+    assert list(resp_props.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
+    assert resp_props.context["prop"].metadata.get().status.codename == "develop"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]))
+    assert list(resp_props.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
+    assert resp_props.context["prop"].metadata.get().status.codename == "develop"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    assert list(resp_props.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
+
+    prop = resp_props.context["prop"]
+    for enum_item in prop.enums.first().enumitem_set.all():
+        assert enum_item.metadata.first().status.codename == "develop"
+
+
+@pytest.mark.django_db
+def test_published_metadata_gets_completed_status(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,Size,,SMALL,,,,,,,,,\n"
+        ",,,,,,,,,MEDIUM,,,,,,,,,\n"
+        ",,,,,,,,,BIG,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename="file.csv", data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    metadata_ids = list(
+        Metadata.objects.filter(
+            dataset=structure.dataset,
+            draft=True,
+        ).values_list('id', flat=True)
+    )
+
+    form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['metadata'] = metadata_ids
+    form.submit()
+
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
+    assert list(resp_models.context["props"].values_list("metadata__status__codename", flat=True)) == ["completed", "completed", "completed"]
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]))
+    assert list(resp_props.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
+    assert resp_props.context["prop"].metadata.get().status.codename == "completed"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]))
+    assert list(resp_props.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
+    assert resp_props.context["prop"].metadata.get().status.codename == "completed"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    assert list(resp_props.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
+
+    prop = resp_props.context["prop"]
+    for enum_item in prop.enums.first().enumitem_set.all():
+        assert enum_item.metadata.first().status.codename == "completed"
+
+
+@pytest.mark.django_db
+def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,Size,,SMALL,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename="file.csv", data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    administration_meta = Metadata.objects.get(
+        dataset=structure.dataset,
+        name="administration"
+    )
+
+    enum = administration_meta.object.enums.first()
+    enum_id = enum.id
+
+    metadata_ids = list(
+        Metadata.objects.filter(
+            dataset=structure.dataset,
+            draft=True,
+        ).values_list('id', flat=True)
+    )
+
+    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
+    model_form['status'] = Status.objects.filter(codename="discont").first().id
+    model_form.submit()
+
+    model_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    model_form['status'] = Status.objects.filter(codename="deprecated").first().id
+    model_form.submit()
+
+    model_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    model_form['status'] = Status.objects.filter(codename="withdrawn").first().id
+    model_form.submit()
+
+    form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['metadata'] = metadata_ids
+    form.submit()
+
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["discont"]
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]))
+    assert resp_props.context["prop"].metadata.get().status.codename == "discont"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]))
+    assert resp_props.context["prop"].metadata.get().status.codename == "completed"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    assert resp_props.context["prop"].metadata.get().status.codename == "deprecated"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    prop = resp_props.context["prop"]
+    for enum_item in prop.enums.first().enumitem_set.all():
+        assert enum_item.metadata.first().status.codename == "withdrawn"
+
+@pytest.mark.django_db
+def test_published_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,,big,,BIG,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename="file.csv", data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    metadata_ids = list(
+        Metadata.objects.filter(
+            dataset=structure.dataset,
+            draft=True,
+        ).values_list('id', flat=True)
+    )
+    publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
+    publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    publish_version_form['metadata'] = metadata_ids
+    publish_version_form.submit()
+
+    administration_meta = Metadata.objects.get(
+        dataset=structure.dataset,
+        name="administration"
+    )
+
+    enum = administration_meta.object.enums.first()
+    enum_id = enum.id
+    new_enum_name = "Largety"
+
+    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
+    model_form['name'] = "Country2"
+    model_form.submit()
+
+    model_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country2", "administration"])).forms['property-form']
+    model_form['access'] = 3
+    model_form.submit()
+
+    model_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country2", "administration", enum_id])).forms['enum-form']
+    model_form['value'] = new_enum_name
+    model_form.submit()
+
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country2"]))
+    assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country2", "title"]))
+    assert resp_props.context["prop"].metadata.get().status.codename == "completed"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country2", "administration"]))
+    assert resp_props.context["prop"].metadata.get().status.codename == "develop"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country2", "administration"]))
+    prop = resp_props.context["prop"]
+    for enum_item in prop.enums.first().enumitem_set.all():
+        enum_metadata = enum_item.metadata.first()
+        if enum_metadata.name == new_enum_name:
+            assert enum_metadata.status.codename == "completed"
+        else:
+            assert enum_metadata.status.codename == "develop"
+
 
 
 def test_props_metadata_rendering(app: DjangoTestApp) -> None:

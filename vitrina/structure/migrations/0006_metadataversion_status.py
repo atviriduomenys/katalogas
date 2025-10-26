@@ -7,11 +7,16 @@ import django.db.models.deletion
 def assign_status_based_on_draft(apps, schema_editor):
     Metadata = apps.get_model("vitrina_structure", "Metadata")
     Status = apps.get_model("vitrina_classifiers", "Status")
+    develop_status = Status.objects.get(codename="develop")
+    completed_status = Status.objects.get(codename="completed")
+    null_status = Status.objects.get(codename__isnull=True)
     for row in Metadata.objects.all():
+        if row.status and row.status not in [develop_status, completed_status, null_status]:
+            continue
         if row.draft:
-            row.status = Status.objects.get(codename="develop")
+            row.status = develop_status
         else:
-            row.status = Status.objects.get(codename="completed")
+            row.status = completed_status
         row.save()
 
 

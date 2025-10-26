@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.db.models import Func, F, Value, TextField, Max
+from django.db.models import Func, F, Value, TextField, Max, Q
 from django.forms import BaseForm
 from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -2763,7 +2763,13 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             if meta := Metadata.objects.filter(pk=meta).first():
                 meta.draft = False
                 latest_meta_version = MetadataVersion.objects.filter(metadata=meta).order_by("-version").first()
-                is_status_changed_by_user = latest_meta_version.status != meta.status if latest_meta_version else False
+                is_status_changed_by_user = True
+
+                if latest_meta_version:
+                    if latest_meta_version.status in Status.objects.filter(Q(codename="develop") | Q(codename="completed")):
+                        is_status_changed_by_user = False
+                    elif latest_meta_version.status != meta.status:
+                        is_status_changed_by_user = False
                 if meta.status == Status.objects.filter(codename="develop").first() and not is_status_changed_by_user:
                     meta.status = Status.objects.filter(codename="completed").first()
                 meta.metadata_version = version

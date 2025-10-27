@@ -981,7 +981,9 @@ class Dataset(Resource):
                             f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
                         )
                     if latest_version.status != metadata.status:
-                        latest_version_status_name = latest_version.status.codename if latest_version.status else latest_version.status
+                        latest_version_status_name = (
+                            latest_version.status.codename if latest_version.status else latest_version.status
+                        )
                         label_str += (
                             f" status: <span class='tag is-danger is-light is-medium'>{latest_version_status_name}</span> ->"
                             f" <span class='tag is-success is-light is-medium'>{metadata.status.codename}</span>"
@@ -1048,7 +1050,9 @@ class Dataset(Resource):
                             )
 
                         if latest_version.status != metadata.status:
-                            latest_version_status_name = latest_version.status.codename if latest_version.status else latest_version.status
+                            latest_version_status_name = (
+                                latest_version.status.codename if latest_version.status else latest_version.status
+                            )
                             label_str += (
                                 f" status: <span class='tag is-danger is-light is-medium'>"
                                 f"{latest_version_status_name}</span> ->"
@@ -1143,9 +1147,8 @@ class Dataset(Resource):
                                 latest_version.source = None if latest_version.source == "" else latest_version.source
                                 metadata.source = None if metadata.source == "" else metadata.source
                                 if latest_version.status != metadata.status:
-                                    latest_version_status_name = latest_version.status.codename if latest_version.status else latest_version.status
                                     label_str += (
-                                        f" status: <span class='tag is-danger is-light is-medium'>{latest_version_status_name}</span> ->"
+                                        f" status: <span class='tag is-danger is-light is-medium'>{latest_version.status.codename}</span> ->"
                                         f" <span class='tag is-success is-light is-medium'>{metadata.status.codename}</span>"
                                     )
                                 if latest_version.source != metadata.source:

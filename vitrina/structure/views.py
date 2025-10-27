@@ -1453,7 +1453,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
         self.object.save()
         value = form.cleaned_data.get("value")
         visibility = form.cleaned_data.get("visibility")
-        status = form.cleaned_data.get("status")
+        status = form.cleaned_data.get("status") or Status.objects.filter(is_default=True).first()
         eli = form.cleaned_data.get("eli")
         if metadata := self.property.metadata.first():
             if metadata.type == "string":
@@ -1565,12 +1565,14 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
                 if none_to_string(latest_version.prepare) != none_to_string(metadata.prepare) or none_to_string(
                     latest_version.source
-                ) != none_to_string(metadata.source):
+                ) != none_to_string(metadata.source) or latest_version.status != metadata.status:
                     metadata.draft = True
                     if latest_version.status == metadata.status or metadata.status is None:
                         metadata.status = Status.objects.filter(is_default=True).first()
                 else:
                     metadata.draft = False
+            else:
+                metadata.status = Status.objects.filter(is_default=True).first()
 
             metadata.save()
 
@@ -1698,6 +1700,8 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
             self.object.prepare_ast = spyna.parse(self.object.prepare)
         else:
             self.object.prepare_ast = ""
+        if not self.object.status:
+            self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 
         if base_model := form.cleaned_data.get("base"):
@@ -1909,6 +1913,8 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
             else:
                 self.object.draft = False
             self.object.save()
+        else:
+            self.object.status = Status.objects.filter(is_default=True).first()
 
         if form.cleaned_data.get("comment"):
             comment = _(f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
@@ -1996,11 +2002,12 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 prop.save()
         else:
             self.object.ref = form.cleaned_data.get("ref_others")
+        if not self.object.status:
+            self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 
         self.model_obj.update_level()
         self.dataset.update_level()
-
         # Save history
         set_comment(_(f'Pridėtas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
@@ -2102,6 +2109,8 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                     self.object.status = Status.objects.filter(is_default=True).first()
             else:
                 self.object.draft = False
+        else:
+            self.object.status = Status.objects.filter(is_default=True).first()
 
         self.object.save()
 
@@ -2763,14 +2772,8 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             if meta := Metadata.objects.filter(pk=meta).first():
                 meta.draft = False
                 latest_meta_version = MetadataVersion.objects.filter(metadata=meta).order_by("-version").first()
-                is_status_changed_by_user = True
 
-                if latest_meta_version:
-                    if latest_meta_version.status in Status.objects.filter(Q(codename="develop") | Q(codename="completed")):
-                        is_status_changed_by_user = False
-                    elif latest_meta_version.status != meta.status:
-                        is_status_changed_by_user = False
-                if meta.status == Status.objects.filter(codename="develop").first() and not is_status_changed_by_user:
+                if meta.status == Status.objects.filter(codename="develop").first():
                     meta.status = Status.objects.filter(codename="completed").first()
                 meta.metadata_version = version
                 meta.save()

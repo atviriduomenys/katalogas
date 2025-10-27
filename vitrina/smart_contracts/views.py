@@ -22,7 +22,6 @@ from django.views.generic import TemplateView, FormView
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization
 from vitrina.projects.models import Project
-from vitrina.projects.services import can_update_project
 from vitrina.smart_contracts import AgreementStatuses, AGREEMENT_STATUS_DESCRIPTIONS
 from vitrina.smart_contracts.forms import (
     SmartContractForm,
@@ -38,7 +37,7 @@ from vitrina.smart_contracts.models import (
 )
 from vitrina.users.models import User
 from vitrina.structure.models import Metadata
-from vitrina.views import FormsetView, HistoryMixin
+from vitrina.views import FormsetView
 from vitrina.smart_contracts.services import (
     get_agreements,
     can_view_agreements,
@@ -46,9 +45,10 @@ from vitrina.smart_contracts.services import (
     can_view_agreement,
     can_upload_agreement_file,
 )
+from vitrina.projects.views import ProjectViewBaseMixin
 
 
-class BaseProjectMixin:
+class BaseProjectMixin(ProjectViewBaseMixin):
     def get_project_queryset(self):
         return Project.public.all().prefetch_related(
             Prefetch(
@@ -68,7 +68,7 @@ class BaseAgreementMixin:
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         self.agreement = get_object_or_404(
             Agreement.objects.all().select_related("assigner").prefetch_related("scopes"),
-            project=self.object,
+            project=self.project,
             pk=kwargs["agreement_id"],
         )
 
@@ -79,7 +79,6 @@ class AgreementListView(
     LoginRequiredMixin,
     BaseProjectMixin,
     PermissionRequiredMixin,
-    HistoryMixin,
     TemplateView,
 ):
     model = Agreement
@@ -88,26 +87,25 @@ class AgreementListView(
     detail_url_name = "project-detail"
     history_url_name = "project-history"
 
-    object: Project
+    project: Project
 
     def has_permission(self) -> bool:
-        self.object = self.get_project(self.kwargs["pk"])
-        return can_view_agreements(self.request.user, self.object)
+        return can_view_agreements(self.request.user, self.project)
 
     def dispatch(self, request, *args, **kwargs):
         dispatch = super().dispatch(request, *args, **kwargs)
-        if not self.object.organization:
+        if not self.project.organization:
             messages.error(
                 self.request,
                 _("Panaudos atvejis registruotas fizinio asmens vardu negali turėti sutarčių."),
             )
-            return HttpResponseRedirect(reverse("project-detail", kwargs={"pk": self.object.pk}))
+            return HttpResponseRedirect(reverse("project-detail", kwargs={"pk": self.project.pk}))
         return dispatch
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
 
-        project_agreements = get_agreements(self.request.user).filter(project=self.object)
+        project_agreements = get_agreements(self.request.user).filter(project=self.project)
 
         paginator = Paginator(project_agreements, 10)
         page_number = self.request.GET.get("page")
@@ -115,23 +113,19 @@ class AgreementListView(
 
         context.update(
             {
-                "project": self.object,
+                "project": self.project,
                 "agreements": page.object_list,
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_obj": page,
                 "paginator": paginator,
-                "can_update_project": can_update_project(self.request.user, self.object),
-                "can_view_agreements": can_view_agreements(self.request.user, self.object),
-                "can_create_agreements": can_create_agreements(self.request.user, self.object),
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("project-list"): _("Panaudojimo atvejai"),
-                    reverse("project-detail", args=[self.object.pk]): self.object,
-                    None: _("Sutartys"),
-                },
+                "can_create_agreements": can_create_agreements(self.request.user, self.project),
             }
         )
-
+        context["parent_links"].update(
+            {
+                None: _("Sutartys"),
+            }
+        )
         return context
 
 
@@ -140,7 +134,6 @@ class AgreementDetailView(
     BaseProjectMixin,
     BaseAgreementMixin,
     PermissionRequiredMixin,
-    HistoryMixin,
     TemplateView,
 ):
     model = Agreement
@@ -149,12 +142,8 @@ class AgreementDetailView(
     detail_url_name = "project-detail"
     history_url_name = "project-history"
 
-    object: Project
+    project: Project
     agreement: Agreement
-
-    def setup(self, request, *args, **kwargs):
-        self.object = self.get_project(kwargs["pk"])
-        return super().setup(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
         return can_view_agreement(self.request.user, self.agreement)
@@ -164,23 +153,19 @@ class AgreementDetailView(
 
         context.update(
             {
-                "project": self.object,
+                "project": self.project,
                 "agreement": self.agreement,
                 "agreement_files": self.agreement.files.all().order_by("-created_at"),
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_title": self.agreement.detail_page_title,
-                "can_update_project": can_update_project(self.request.user, self.object),
-                "can_view_agreements": can_view_agreements(self.request.user, self.object),
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("project-list"): _("Panaudojimo atvejai"),
-                    reverse("project-detail", args=[self.object.pk]): self.object,
-                    reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
-                    None: self.agreement.detail_page_title,
-                },
             }
         )
-
+        context["parent_links"].update(
+            {
+                reverse("agreement-list", args=[self.project.pk]): _("Sutartys"),
+                None: self.agreement.detail_page_title,
+            }
+        )
         return context
 
 
@@ -190,14 +175,14 @@ class AgreementCreateView(
     PermissionRequiredMixin,
     FormsetView,
 ):
-    object: Project
+    project: Project
 
     model = Project
     template_name = "smart_contracts/agreement_create.html"
 
     def has_permission(self) -> bool:
-        self.object = self.get_project(self.kwargs["pk"])
-        return can_create_agreements(self.request.user, self.object)
+        self.project = self.get_project(self.kwargs["pk"])
+        return can_create_agreements(self.request.user, self.project)
 
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         if not self.has_permission():
@@ -210,7 +195,7 @@ class AgreementCreateView(
             )
             return HttpResponseRedirect(self.get_success_url())
 
-        if not self.object.organization:
+        if not self.project.organization:
             messages.error(
                 self.request,
                 _("Privatūs asmenys negali sudaryti sutarčių."),
@@ -221,10 +206,12 @@ class AgreementCreateView(
 
     @cached_property
     def get_dataset_metadata_by_organization(self) -> dict[int, list[Metadata]]:
-        agreement_organization_ids = Agreement.objects.filter(project=self.object).values_list("assigner_id", flat=True)
+        agreement_organization_ids = Agreement.objects.filter(project=self.project).values_list(
+            "assigner_id", flat=True
+        )
         dataset_metadata_query = Metadata.objects.filter(
             content_type=ContentType.objects.get_for_model(Dataset),
-            object_id__in=(d.id for d in self.object.public_datasets),
+            object_id__in=(d.id for d in self.project.public_datasets),
         ).exclude(
             Q(dataset__organization_id__in=agreement_organization_ids) | Q(name="") | Q(name__isnull=True),
         )
@@ -266,13 +253,13 @@ class AgreementCreateView(
 
         context.update(
             {
-                "project": self.object,
+                "project": self.project,
                 "formset_helper": SmartContractFormSetHelper(),
                 "current_title": _("Generuoti sutartis"),
                 "parent_links": {
                     reverse("home"): _("Pradžia"),
                     reverse("project-list"): _("Panaudojimo atvejai"),
-                    reverse("project-detail", args=[self.object.pk]): self.object,
+                    reverse("project-detail", args=[self.project.pk]): self.project,
                     None: _("Generuoti sutartis"),
                 },
             }
@@ -281,18 +268,18 @@ class AgreementCreateView(
         return context
 
     def get_success_url(self) -> str:
-        return reverse("agreement-list", args=[self.object.pk])
+        return reverse("agreement-list", args=[self.project.pk])
 
     @transaction.atomic
     def formset_valid(self, formset: BaseFormSet) -> HttpResponse:
         current_user: User = self.request.user
         for form in formset:
             agreement = Agreement.objects.create(
-                project=self.object,
+                project=self.project,
                 assigner=form.instance,
                 status=AgreementStatuses.CREATED,
                 created_by=current_user,
-                assignee=self.object.organization,
+                assignee=self.project.organization,
             )
             agreement_scopes = []
             for scope in form.cleaned_data["scopes"]:
@@ -320,7 +307,6 @@ class AgreementGeneratePdf(
     BaseProjectMixin,
     BaseAgreementMixin,
     PermissionRequiredMixin,
-    HistoryMixin,
     FormView,
 ):
     form_class = AgreementGeneratePdfForm
@@ -381,19 +367,14 @@ class AgreementGeneratePdf(
         context.update(
             {
                 "tabs": "vitrina/projects/tabs.html",
-                "has_perm": can_update_project(self.request.user, self.object),
-                "can_view_agreements": can_view_agreements(self.request.user, self.object),
                 "current_title": _("Generuoti sutarties dokumentą"),
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("project-list"): _("Panaudojimo atvejai"),
-                    reverse("project-detail", args=[self.object.pk]): self.object,
-                    reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
-                    reverse(
-                        "agreement-detail", args=[self.object.pk, self.agreement.pk]
-                    ): self.agreement.detail_page_title,
-                    None: _("Generuoti sutarties dokumentą"),
-                },
+            }
+        )
+        context["parent_links"].update(
+            {
+                reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
+                reverse("agreement-detail", args=[self.object.pk, self.agreement.pk]): self.agreement.detail_page_title,
+                None: _("Generuoti sutarties dokumentą"),
             }
         )
 
@@ -449,17 +430,13 @@ class AgreementUploadSignedFile(
             if self.agreement.status == AgreementStatuses.FORMED
             else _("Įkelti tiekėjo pasirašytą dokumentą")
         )
-
-        context.update(
+        context["current_title"] = page_title
+        context["tabs"] = "vitrina/projects/tabs.html"
+        context["parent_links"].update(
             {
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("project-list"): _("Panaudojimo atvejai"),
-                    reverse("project-detail", args=[self.object.pk]): self.object,
-                    reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
-                    reverse("agreement-detail", args=[self.object.pk, self.agreement.pk]): agreement_details_title,
-                    None: page_title,
-                },
+                reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
+                reverse("agreement-detail", args=[self.object.pk, self.agreement.pk]): agreement_details_title,
+                None: page_title,
             }
         )
 

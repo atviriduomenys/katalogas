@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
+    {% include 'vitrina/projects/tabs.html' %}
 
     <p>
         <a href="{% url 'agreement-list' project.pk %}">

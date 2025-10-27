@@ -67,3 +67,13 @@ def can_view_clients(user: User, project: Project) -> bool:
 
 def can_manage_clients(user: User, project: Project) -> bool:
     return user.viisp_organization == project.organization and user.is_representative_of(project.organization, True)
+
+
+def can_view_history(user: User, project: Project) -> bool:
+    if user.is_staff or user.is_superuser:
+        return True
+
+    if project.organization:
+        return user.is_representative_of(project.organization)
+
+    return user == project.user

@@ -12,30 +12,30 @@
                 {% translate "Duomenų ištekliai" %}
             </a>
         </li>
-        {% if can_view_agreements and project.organization%}
-            <li class="{%if request.resolver_match.url_name == "agreement-list" %} is-active {% endif %}">
-                <a href="{% url "agreement-list" request.resolver_match.kwargs.pk %}">
+        {% if can_view_agreements and project.organization %}
+            <li class="{%if request.resolver_match.url_name in agreement_subpages %} is-active {% endif %}">
+                <a href="{% url 'agreement-list' request.resolver_match.kwargs.pk %}">
                     {% translate "Sutartys" %}
                 </a>
             </li>
         {% endif %}
-        {% if has_perm %}
+        {% if False %}
             <li class="{%if request.resolver_match.url_name == 'project-permissions' %} is-active {% endif %}">
                 <a href="{% url 'project-permissions' request.resolver_match.kwargs.pk %}">
                     {% translate "Leidimai" %}
                 </a>
             </li>
         {% endif %}
-        {% if has_perm %}
-            <li class="{% if request.resolver_match.url_name == 'project-clients' %} is-active {% endif %}">
+        {% if can_view_clients %}
+            <li class="{% if request.resolver_match.url_name in client_subpages %} is-active {% endif %}">
                 <a href="{% url 'project-clients' request.resolver_match.kwargs.pk %}">
                     {% translate "Klientai" %}
                 </a>
             </li>
         {% endif %}
-        {% if can_manage_history %}
-            <li class="{%if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
-                <a href="{% url history_url_name request.resolver_match.kwargs.pk %}" id="history-tab">
+        {% if can_view_history %}
+            <li class="{%if request.resolver_match.url_name == 'project-history' %} is-active {% endif %}">
+                <a href="{% url 'project-history' request.resolver_match.kwargs.pk %}" id="history-tab">
                     {% translate "Istorija" %}
                 </a>
             </li>

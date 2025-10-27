@@ -15,7 +15,7 @@ class Migration(migrations.Migration):
             name="agent_address",
             field=models.CharField(
                 blank=True,
-                help_text="Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, kurį mato API vartai. Jei API vartai nenurodyti, tada tada yra nurodomas išorinis agento adresas",
+                help_text="Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas išorinis agento adresas",
                 max_length=255,
                 verbose_name="Agento adresas",
             ),

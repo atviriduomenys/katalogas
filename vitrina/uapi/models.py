@@ -104,7 +104,7 @@ class Agent(UUIDBaseModel):
         max_length=255,
         blank=True,
         help_text=_(
-            "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, kurį mato API vartai. Jei API vartai nenurodyti, tada tada yra nurodomas išorinis agento adresas"
+            "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas išorinis agento adresas"
         ),
     )
 

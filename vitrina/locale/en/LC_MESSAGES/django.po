@@ -4905,7 +4905,7 @@ msgstr "Agent address"
 
 msgid ""
 "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, "
-"kurį mato API vartai. Jei API vartai nenurodyti, tada tada yra nurodomas "
+"kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas "
 "išorinis agento adresas"
 msgstr ""
 "If a gateway address is specified, then the agent address is an internal address " 

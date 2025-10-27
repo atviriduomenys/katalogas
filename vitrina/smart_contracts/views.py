@@ -94,6 +94,16 @@ class AgreementListView(
         self.object = self.get_project(self.kwargs["pk"])
         return can_view_agreements(self.request.user, self.object)
 
+    def dispatch(self, request, *args, **kwargs):
+        dispatch = super().dispatch(request, *args, **kwargs)
+        if not self.object.organization:
+            messages.error(
+                self.request,
+                _("Panaudos atvejis registruotas fizinio asmens vardu negali turėti sutarčių."),
+            )
+            return HttpResponseRedirect(reverse("project-detail", kwargs={"pk": self.object.pk}))
+        return dispatch
+
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
 

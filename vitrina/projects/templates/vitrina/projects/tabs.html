@@ -12,7 +12,7 @@
                 {% translate "Duomenų ištekliai" %}
             </a>
         </li>
-        {% if can_view_agreements %}
+        {% if can_view_agreements and project.organization%}
             <li class="{%if request.resolver_match.url_name == "agreement-list" %} is-active {% endif %}">
                 <a href="{% url "agreement-list" request.resolver_match.kwargs.pk %}">
                     {% translate "Sutartys" %}

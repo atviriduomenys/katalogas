@@ -27,6 +27,7 @@ from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
 from reversion.views import RevisionMixin
 from shapely.wkt import loads
+from sympy.codegen.ast import continue_
 
 from vitrina.classifiers.models import Status
 from vitrina.datasets.models import Dataset
@@ -1550,6 +1551,9 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
         if metadata := self.property.metadata.first():
             if metadata.type == "string":
                 value = f'"{value}"'
+
+        old_metadata = self.get_object().metadata.first()
+
         if metadata := self.object.metadata.first():
             metadata.prepare = value
             metadata.prepare_ast = spyna.parse(form.cleaned_data.get("value"))
@@ -1565,16 +1569,19 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
                 if none_to_string(latest_version.prepare) != none_to_string(metadata.prepare) or none_to_string(
                     latest_version.source
-                ) != none_to_string(metadata.source) or latest_version.status != metadata.status:
+                ) != none_to_string(metadata.source):
                     metadata.draft = True
-                    if latest_version.status == metadata.status or metadata.status is None:
-                        metadata.status = Status.objects.filter(is_default=True).first()
                 else:
                     metadata.draft = False
-            else:
-                metadata.status = Status.objects.filter(is_default=True).first()
 
-            metadata.save()
+            if old_metadata:
+                if (
+                    (none_to_string(old_metadata.prepare) != none_to_string(metadata.prepare)
+                    or none_to_string(old_metadata.source) != none_to_string(metadata.source))
+                    and (old_metadata.status == metadata.status or metadata.status is None)
+                ):
+                    metadata.status = Status.objects.filter(is_default=True).first()
+                metadata.save()
 
         # Save history
         self.property.save()
@@ -1805,6 +1812,8 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
 
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
+        old_object = self.get_object()
+
         model = self.object.object
         model.is_parameterized = form.cleaned_data.get("is_parameterized", False)
         model.save()
@@ -1905,16 +1914,19 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                 or latest_version.base != object_to_none(model.base)
                 or none_to_string(latest_version.ref) != none_to_string(self.object.ref)
                 or latest_version.level_given != self.object.level_given
-                or latest_version.status != self.object.status
             ):
                 self.object.draft = True
-                if latest_version.status == self.object.status or self.object.status is None:
-                    self.object.status = Status.objects.filter(is_default=True).first()
             else:
                 self.object.draft = False
-            self.object.save()
-        else:
+        if (
+            (old_object.name != self.object.name
+             or old_object.object.base != form.cleaned_data.get("base")
+             or none_to_string(old_object.ref) != none_to_string(self.object.ref)
+             or old_object.level_given != self.object.level_given)
+            and (old_object.status == self.object.status or self.object.status is None)
+        ):
             self.object.status = Status.objects.filter(is_default=True).first()
+        self.object.save()
 
         if form.cleaned_data.get("comment"):
             comment = _(f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
@@ -2077,6 +2089,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
 
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
+        old_object = self.get_object()
         prop = self.object.object
         self.object.version += 1
         self.object.level_given = self.object.level
@@ -2101,16 +2114,20 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 or none_to_string(latest_version.ref) != none_to_string(self.object.ref)
                 or latest_version.level_given != self.object.level_given
                 or latest_version.access != self.object.access
-                or latest_version.status != self.object.status
             ):
                 self.object.draft = True
-                if latest_version.status == self.object.status or self.object.status is None:
-                    self.object.status = Status.objects.filter(is_default=True).first()
             else:
                 self.object.draft = False
-        else:
-            self.object.status = Status.objects.filter(is_default=True).first()
 
+        if (
+            (old_object.name != self.object.name
+            or old_object.type_repr != self.object.type_repr
+            or none_to_string(old_object.ref) != none_to_string(self.object.ref)
+            or old_object.level_given != self.object.level_given
+            or old_object.access != self.object.access)
+            and (old_object.status == self.object.status or self.object.status is None)
+        ):
+            self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 
         self.model_obj.update_level()

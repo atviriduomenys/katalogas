@@ -2078,7 +2078,6 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         prop = self.object.object
-        print(self.object.status)
         self.object.version += 1
         self.object.level_given = self.object.level
         if self.object.prepare:

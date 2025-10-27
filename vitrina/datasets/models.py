@@ -981,11 +981,8 @@ class Dataset(Resource):
                             f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
                         )
                     if latest_version.status != metadata.status:
-                        latest_version_status_name = (
-                            latest_version.status.codename if latest_version.status else latest_version.status
-                        )
                         label_str += (
-                            f" status: <span class='tag is-danger is-light is-medium'>{latest_version_status_name}</span> ->"
+                            f" status: <span class='tag is-danger is-light is-medium'>{latest_version.status.codename}</span> ->"
                             f" <span class='tag is-success is-light is-medium'>{metadata.status.codename}</span>"
                         )
                     latest_version.ref = None if latest_version.ref == "" else latest_version.ref
@@ -1050,12 +1047,9 @@ class Dataset(Resource):
                             )
 
                         if latest_version.status != metadata.status:
-                            latest_version_status_name = (
-                                latest_version.status.codename if latest_version.status else latest_version.status
-                            )
                             label_str += (
                                 f" status: <span class='tag is-danger is-light is-medium'>"
-                                f"{latest_version_status_name}</span> ->"
+                                f"{latest_version.status.codename}</span> ->"
                                 f" <span class='tag is-success is-light is-medium'>{metadata.status.codename}</span>"
                             )
                         if latest_version.type_repr != metadata.type_repr:

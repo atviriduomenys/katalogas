@@ -1,13 +1,22 @@
 Changes
 #######
 
-v 1.4 (unreleased)
+v 1.6 (unreleased)
 ==================
+
+
+
+v 1.5 (2025-10-27)
+==================
+
 https://github.com/atviriduomenys/katalogas/issues/2032
 Add IN_PROGRESS status to Request.
 
 https://github.com/atviriduomenys/dvms/issues/303
 Clients tab synchronization with authorization server. Client creation now actually provides the access.
+
+v 1.4 (2025-10-23)
+==================
 
 https://github.com/atviriduomenys/katalogas/issues/1934
 Translate `Requests`.

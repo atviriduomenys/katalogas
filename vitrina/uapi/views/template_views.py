@@ -163,7 +163,7 @@ class AgentCreateView(CreateView, BaseAgentView):
         super().setup(request, *args, **kwargs)
         self.object = None
 
-    def get_form(self, form_class=None) -> ModelForm:
+    def get_form(self, form_class: AgentForm | None = None) -> ModelForm:
         form = super().get_form(form_class)
         form.fields["service"].help_text = _(
             "Nurodoma su Agentu susieta duomenų paslauga. Jei nenurodyta, duomenų paslauga bus sukurta automatiškai."
@@ -183,6 +183,7 @@ class AgentCreateView(CreateView, BaseAgentView):
         agent.save()
         return secret
 
+    @transaction.atomic
     def form_valid(self, form: ModelForm) -> HttpResponse:
         title = form.cleaned_data["title"]
         service = form.cleaned_data.get("service")

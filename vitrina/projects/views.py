@@ -41,13 +41,29 @@ from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import AgreementScope
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
-from vitrina.views import HistoryMixin, HistoryView
+from vitrina.views import HistoryView
 from vitrina.helpers import get_current_domain
 from vitrina.projects.services import can_update_project, can_view_project, get_projects
 from vitrina.smart_contracts.services import can_view_agreements
 
 
 logger = logging.getLogger()
+
+
+class ProjectViewBaseMixin:
+    def setup(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Project, pk=kwargs["pk"])
+        return super().setup(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["can_update_project"] = can_update_project(self.request.user, self.object)
+        context["can_view_agreements"] = can_view_agreements(self.request.user, self.object)
+        context["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("project-list"): _("Panaudojimo atvejai"),
+        }
+        return context
 
 
 class ProjectListView(ListView):
@@ -73,25 +89,14 @@ class ProjectListView(ListView):
         return context
 
 
-class ProjectDetailView(PermissionRequiredMixin, HistoryMixin, DetailView):
+class ProjectDetailView(ProjectViewBaseMixin, PermissionRequiredMixin, DetailView):
     model = Project
     template_name = "vitrina/projects/detail.html"
     detail_url_name = "project-detail"
     history_url_name = "project-history"
 
     def has_permission(self):
-        self.project = get_object_or_404(Project, pk=self.kwargs.get("pk"))
-        return can_view_project(self.request.user, self.project)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["can_update_project"] = can_update_project(self.request.user, self.project)
-        context["can_view_agreements"] = can_view_agreements(self.request.user, self.project)
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("project-list"): _("Panaudojimo atvejai"),
-        }
-        return context
+        return can_view_project(self.request.user, self.object)
 
 
 class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
@@ -211,8 +216,8 @@ class ProjectHistoryView(HistoryView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["has_perm"] = can_update_project(self.request.user, self.object)
-        context["can_view_agreements"] = can_view_agreements(self.request.user, self.project)
+        context["can_view_agreements"] = can_view_agreements(self.request.user, self.object)
+        context["project"] = self.object
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("project-list"): _("Panaudojimo atvejai"),
@@ -221,7 +226,7 @@ class ProjectHistoryView(HistoryView):
         return context
 
 
-class ProjectDatasetsView(PermissionRequiredMixin, HistoryMixin, ListView):
+class ProjectDatasetsView(ProjectViewBaseMixin, PermissionRequiredMixin, ListView):
     model = Dataset
     template_name = "vitrina/projects/datasets.html"
     paginate_by = 20
@@ -229,10 +234,6 @@ class ProjectDatasetsView(PermissionRequiredMixin, HistoryMixin, ListView):
     object: Project
     detail_url_name = "project-detail"
     history_url_name = "project-history"
-
-    def dispatch(self, request, *args, **kwargs):
-        self.object = get_object_or_404(Project, pk=kwargs["pk"])
-        return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
         return can_view_project(self.request.user, self.object)
@@ -243,27 +244,20 @@ class ProjectDatasetsView(PermissionRequiredMixin, HistoryMixin, ListView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["project"] = self.object
-        context["can_update_project"] = can_update_project(self.request.user, self.object)
-        context["can_view_agreements"] = can_view_agreements(self.request.user, self.object)
-
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("project-list"): _("Panaudojimo atvejai"),
-            reverse("project-detail", args=[self.object.pk]): self.object,
-        }
+        context["parent_links"].update(
+            {
+                reverse("project-detail", args=[self.object.pk]): self.object,
+            }
+        )
         return context
 
 
-class ProjectPermissionsView(HistoryMixin, PermissionRequiredMixin, TemplateView):
+class ProjectPermissionsView(ProjectViewBaseMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/projects/permissions.html"
 
     object: Project
     detail_url_name = "project-detail"
     history_url_name = "project-history"
-
-    def dispatch(self, request, *args, **kwargs):
-        self.object = get_object_or_404(Project, pk=kwargs["pk"])
-        return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
         return has_perm(self.request.user, Action.MANAGE_PROJECT_KEYS, self.object)
@@ -273,13 +267,11 @@ class ProjectPermissionsView(HistoryMixin, PermissionRequiredMixin, TemplateView
         # todo
         viisp_authorized = True
         context["project"] = self.object
-        context["can_update_project"] = can_update_project(self.request.user, self.object)
-        context["can_view_agreements"] = can_view_agreements(self.request.user, self.object)
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("project-list"): _("Panaudojimo atvejai"),
-            reverse("project-detail", args=[self.object.pk]): self.object,
-        }
+        context["parent_links"].update(
+            {
+                reverse("project-detail", args=[self.object.pk]): self.object,
+            }
+        )
 
         msg = None
         storage = messages.get_messages(self.request)
@@ -584,13 +576,9 @@ class ProjectApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
         return redirect(reverse("project-permissions", args=[self.project.pk]))
 
 
-class RemoveDatasetView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
+class RemoveDatasetView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, DeleteView):
     model = Project
     template_name = "confirm_remove.html"
-
-    def dispatch(self, request, *args, **kwargs):
-        self.object = get_object_or_404(Project, pk=self.kwargs.get("pk"))
-        return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
         return can_update_project(self.request.user, self.object)
@@ -603,16 +591,12 @@ class RemoveDatasetView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return reverse("project-datasets", kwargs={"pk": self.object.pk})
 
 
-class ClientListView(HistoryMixin, PermissionRequiredMixin, TemplateView):
+class ClientListView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/projects/client.html"
 
     object: Project
     detail_url_name = "project-detail"
     history_url_name = "project-history"
-
-    def dispatch(self, request, *args, **kwargs) -> HttpResponseBase:
-        self.object = get_object_or_404(Project, Q(deleted=False) | Q(deleted__isnull=True), pk=kwargs["pk"])
-        return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
         return has_perm(
@@ -624,19 +608,13 @@ class ClientListView(HistoryMixin, PermissionRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         usecases = UseCaseClient.objects.filter(use_case__id=self.object.pk)
-        context.update(
+        context["project"] = self.object
+        context["parent_links"].update(
             {
-                "project": self.object,
-                "can_update_project": can_update_project(self.request.user, self.object),
-                "can_view_agreements": can_view_agreements(self.request.user, self.object),
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("project-list"): _("Panaudojimo atvejai"),
-                    reverse("project-detail", args=[self.object.pk]): self.object,
-                },
-                "usecases": usecases,
+                reverse("project-detail", args=[self.object.pk]): self.object,
             }
         )
+        context["usecases"] = usecases
         return context
 
 
@@ -735,7 +713,7 @@ class ClientUpdateView(PermissionRequiredMixin, UpdateView):
         return redirect(reverse("project-clients", args=[self.project.pk]))
 
 
-class ClientDetailView(HistoryMixin, LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+class ClientDetailView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/projects/client_detail.html"
     pk_url_kwarg = "client_id"
 
@@ -745,7 +723,6 @@ class ClientDetailView(HistoryMixin, LoginRequiredMixin, PermissionRequiredMixin
     object: Project
 
     def dispatch(self, request, *args, **kwargs) -> HttpResponseBase:
-        self.object = get_object_or_404(Project, Q(deleted=False) | Q(deleted__isnull=True), pk=kwargs["pk"])
         self.client = get_object_or_404(UseCaseClient, pk=kwargs["client_id"])
         return super().dispatch(request, *args, **kwargs)
 
@@ -763,15 +740,12 @@ class ClientDetailView(HistoryMixin, LoginRequiredMixin, PermissionRequiredMixin
             {
                 "project": self.object,
                 "client": self.client,
-                "can_update_project": can_update_project(self.request.user, self.object),
-                "can_view_agreements": can_view_agreements(self.request.user, self.object),
                 "scopes": scopes,
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("project-list"): _("Panaudojimo atvejai"),
-                    reverse("project-detail", args=[self.object.pk]): self.object,
-                },
-                "detail_url_name": self.detail_url_name,
+            }
+        )
+        context["parent_links"].update(
+            {
+                reverse("project-detail", args=[self.object.pk]): self.object,
             }
         )
         return context

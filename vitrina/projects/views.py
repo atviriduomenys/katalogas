@@ -43,7 +43,13 @@ from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView
 from vitrina.helpers import get_current_domain
-from vitrina.projects.services import can_update_project, can_view_project, get_projects
+from vitrina.projects.services import (
+    can_update_project,
+    can_view_project,
+    get_projects,
+    can_manage_clients,
+    can_view_clients,
+)
 from vitrina.smart_contracts.services import can_view_agreements
 
 
@@ -599,11 +605,7 @@ class ClientListView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequire
     history_url_name = "project-history"
 
     def has_permission(self) -> bool:
-        return has_perm(
-            self.request.user,
-            Action.MANAGE_PROJECT_KEYS,
-            self.object,
-        )
+        return can_view_clients(self.request.user, self.object)
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
@@ -626,11 +628,7 @@ class ClientCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixi
     project: Project
 
     def has_permission(self) -> bool:
-        return has_perm(
-            self.request.user,
-            Action.MANAGE_PROJECT_KEYS,
-            self.project,
-        )
+        return can_manage_clients(self.request.user, self.project)
 
     def dispatch(self, request, *args, **kwargs) -> HttpResponseBase:
         self.project: Project = get_object_or_404(Project, Q(deleted=False) | Q(deleted__isnull=True), pk=kwargs["pk"])
@@ -681,11 +679,7 @@ class ClientUpdateView(PermissionRequiredMixin, UpdateView):
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
-        return has_perm(
-            self.request.user,
-            Action.MANAGE_PROJECT_KEYS,
-            self.project,
-        )
+        return can_manage_clients(self.request.user, self.project)
 
     def get_context_data(self, **kwargs) -> dict:
         context_data = super().get_context_data(**kwargs)
@@ -727,11 +721,7 @@ class ClientDetailView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequi
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
-        return has_perm(
-            self.request.user,
-            Action.MANAGE_PROJECT_KEYS,
-            self.object,
-        )
+        return can_view_clients(self.request.user, self.object)
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
@@ -757,11 +747,7 @@ class ClientScopeCreateView(LoginRequiredMixin, PermissionRequiredMixin, Revisio
     template_name = "base_form.html"
 
     def has_permission(self) -> bool:
-        return has_perm(
-            self.request.user,
-            Action.MANAGE_PROJECT_KEYS,
-            self.project,
-        )
+        return can_manage_clients(self.request.user, self.project)
 
     def dispatch(self, request, *args, **kwargs) -> HttpResponseBase:
         self.project = get_object_or_404(Project, pk=kwargs["pk"])
@@ -837,11 +823,7 @@ class ClientScopeToggleView(PermissionRequiredMixin, View):
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self) -> bool:
-        return has_perm(
-            self.request.user,
-            Action.MANAGE_PROJECT_KEYS,
-            self.project,
-        )
+        return can_manage_clients(self.request.user, self.project)
 
     @transaction.atomic
     def get(self, request, **kwargs) -> HttpResponse:

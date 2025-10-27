@@ -59,3 +59,11 @@ def get_projects_linkable_to_dataset(user: User | AnonymousUser):
         return queryset
 
     return queryset.filter(Q(organization__isnull=True, user=user) | Q(organization_id__in=user.represented_org_ids))
+
+
+def can_view_clients(user: User, project: Project) -> bool:
+    return project.organization and user.is_representative_of(project.organization)
+
+
+def can_manage_clients(user: User, project: Project) -> bool:
+    return user.viisp_organization == project.organization and user.is_representative_of(project.organization, True)

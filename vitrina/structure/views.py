@@ -1568,19 +1568,20 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.status = form.cleaned_data.get("status") or form.initial.get("status")
 
             if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
-                if none_to_string(latest_version.prepare) != none_to_string(metadata.prepare) or none_to_string(
-                    latest_version.source
-                ) != none_to_string(metadata.source) or latest_version.status != metadata.status:
+                if (
+                    none_to_string(latest_version.prepare) != none_to_string(metadata.prepare)
+                    or none_to_string(latest_version.source) != none_to_string(metadata.source)
+                    or latest_version.status != metadata.status
+                ):
                     metadata.draft = True
                 else:
                     metadata.draft = False
 
             if old_metadata:
                 if (
-                    (none_to_string(old_metadata.prepare) != none_to_string(metadata.prepare)
-                    or none_to_string(old_metadata.source) != none_to_string(metadata.source))
-                    and (old_metadata.status == metadata.status or metadata.status is None)
-                ):
+                    none_to_string(old_metadata.prepare) != none_to_string(metadata.prepare)
+                    or none_to_string(old_metadata.source) != none_to_string(metadata.source)
+                ) and (old_metadata.status == metadata.status or metadata.status is None):
                     metadata.status = Status.objects.filter(is_default=True).first()
                 metadata.save()
 
@@ -1921,12 +1922,11 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
             else:
                 self.object.draft = False
         if (
-            (old_object.name != self.object.name
-             or old_object.object.base != form.cleaned_data.get("base")
-             or none_to_string(old_object.ref) != none_to_string(self.object.ref)
-             or old_object.level_given != self.object.level_given)
-            and (old_object.status == self.object.status or self.object.status is None)
-        ):
+            old_object.name != self.object.name
+            or old_object.object.base != form.cleaned_data.get("base")
+            or none_to_string(old_object.ref) != none_to_string(self.object.ref)
+            or old_object.level_given != self.object.level_given
+        ) and (old_object.status == self.object.status or self.object.status is None):
             self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 
@@ -2124,13 +2124,12 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 self.object.draft = False
 
         if (
-            (old_object.name != self.object.name
+            old_object.name != self.object.name
             or old_object.type_repr != self.object.type_repr
             or none_to_string(old_object.ref) != none_to_string(self.object.ref)
             or old_object.level_given != self.object.level_given
-            or old_object.access != self.object.access)
-            and (old_object.status == self.object.status or self.object.status is None)
-        ):
+            or old_object.access != self.object.access
+        ) and (old_object.status == self.object.status or self.object.status is None):
             self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 

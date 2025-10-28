@@ -109,9 +109,7 @@ class EnumForm(forms.ModelForm):
         label=_("Būsena"),
         required=False,
         queryset=(
-            Status.objects
-            .exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True))
-            .order_by("id")
+            Status.objects.exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True)).order_by("id")
         ),
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
@@ -458,9 +456,7 @@ class ModelCreateForm(forms.ModelForm):
         label=_("Būsena"),
         required=False,
         queryset=(
-            Status.objects
-            .exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True))
-            .order_by("id")
+            Status.objects.exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True)).order_by("id")
         ),
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
@@ -948,9 +944,7 @@ class PropertyForm(forms.ModelForm):
         label=_("Būsena"),
         required=False,
         queryset=(
-            Status.objects
-            .exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True))
-            .order_by("id")
+            Status.objects.exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True)).order_by("id")
         ),
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),

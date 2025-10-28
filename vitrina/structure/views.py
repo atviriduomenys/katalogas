@@ -9,7 +9,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
-from django.db.models import Func, F, Value, TextField, Max, Q
+from django.db.models import Func, F, Value, TextField, Max
 from django.forms import BaseForm
 from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect

@@ -394,6 +394,7 @@ class ServiceResourceForm(BaseResourceForm):
             "landing_page",
             "parent",
             "service_type",
+            "is_hvd",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -426,6 +427,7 @@ class ServiceResourceForm(BaseResourceForm):
             Field("publisher"),
             Field("parent"),
             Field("applicable_legislation"),
+            Field("is_hvd"),
         )
 
 
@@ -619,6 +621,7 @@ class DatasetResourceForm(BaseResourceForm):
             "parent",
             "temporal_resolution",
             "spatial_resolution",
+            "is_hvd",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs) -> None:
@@ -648,6 +651,7 @@ class DatasetResourceForm(BaseResourceForm):
             Field("publisher"),
             Field("parent"),
             Field("applicable_legislation"),
+            Field("is_hvd"),
         )
 
     def clean(self) -> None:
@@ -681,6 +685,7 @@ class ResourceForm(BaseResourceForm):
             "parent",
             "temporal_resolution",
             "spatial_resolution",
+            "is_hvd",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -703,6 +708,7 @@ class ResourceForm(BaseResourceForm):
             Field("publisher"),
             Field("parent"),
             Field("applicable_legislation"),
+            Field("is_hvd"),
         )
 
 
@@ -960,7 +966,9 @@ class DatasetCategoryForm(Form):
         self.fields["category"].choices = category_choices
         self.initial["category"] = self.dataset.category.all()
 
-        self.initial["group"] = DatasetGroup.objects.filter(category__in=self.dataset.category.all()).distinct()
+        self.initial["group"] = DatasetGroup.objects.filter(
+            datasetgroupcategoryuri__category__in=self.dataset.category.all()
+        ).distinct()
 
 
 class PartOfWidget(ModelSelect2Widget):

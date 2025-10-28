@@ -3079,7 +3079,9 @@ class DatasetCategoryView(PermissionRequiredMixin, RevisionMixin, TemplateView):
             set_comment(Dataset.CATEGORY_UPDATED)
 
             DatasetExcludedGroups.objects.filter(dataset=self.dataset).delete()
-            for group in DatasetGroup.objects.filter(category__in=form.cleaned_data.get("category")).distinct():
+            for group in DatasetGroup.objects.filter(
+                datasetgroupcategoryuri__category__in=form.cleaned_data.get("category")
+            ).distinct():
                 if group not in form.cleaned_data.get("group"):
                     DatasetExcludedGroups.objects.create(dataset=self.dataset, group=group)
         else:
@@ -3094,7 +3096,7 @@ class FilterGroupsView(LoginRequiredMixin, View):
         dataset = get_object_or_404(Dataset, pk=dataset_id)
         category_ids = request.GET.get("category_ids", "").split(",") if request.GET.get("category_ids") else []
 
-        groups = DatasetGroup.objects.filter(category__in=category_ids).distinct()
+        groups = DatasetGroup.objects.filter(datasetgroupcategoryuri__category__in=category_ids).distinct()
         excluded_groups = dataset.get_excluded_groups()
         group_data = {group.pk: {"title": group.title, "checked": group.pk not in excluded_groups} for group in groups}
         return JsonResponse({"groups": group_data})

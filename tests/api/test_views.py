@@ -17,7 +17,7 @@ from vitrina.api.models import ApiKey
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import CategoryFactory
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, \
-    DCATResourceSubclassFactory
+    DCATResourceSubclassFactory, DatasetGroupCategoryUriFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
@@ -2310,7 +2310,7 @@ class EdpDcatApPublicRdfTests(TestCase):
 @pytest.mark.django_db
 def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     Dataset.objects.all().delete()
-    hvd_group = DatasetGroupFactory()
+    hvd_group = DatasetGroupFactory(name="hvd")
     hvd_group.set_current_language("lt")
     hvd_group.title = "Didelės vertės rinkiniai"
     hvd_group.save()
@@ -2321,10 +2321,13 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     hvd_category = parent_category.add_child(
         instance=CategoryFactory.build(
             title="Earth observation and environment",
-            uri="http://data.europa.eu/bna/c_dd313021"
         )
     )
-    hvd_category.groups.add(hvd_group)
+    DatasetGroupCategoryUriFactory(
+        group=hvd_group,
+        category=hvd_category,
+        uri="http://data.europa.eu/bna/c_dd313021"
+    )
 
     dataset = DatasetFactory(
         title={
@@ -2343,6 +2346,7 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
             email='data@example.com',
         ),
         access_rights=Dataset.PUBLIC,
+        is_hvd=True,
     )
 
     res = app.get('/edp/dcat-ap.rdf')

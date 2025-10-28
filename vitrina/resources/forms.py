@@ -156,6 +156,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "spatial_resolution",
             "applicable_legislation",
             "status",
+            "is_hvd",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -208,6 +209,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("applicable_legislation"),
             Field("conditions"),
             Field("rights_relation"),
+            Field("is_hvd"),
             Submit("submit", button, css_class="button is-primary"),
         )
 

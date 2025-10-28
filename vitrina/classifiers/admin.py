@@ -21,6 +21,7 @@ from vitrina.classifiers.models import (
 )
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
+from vitrina.datasets.models import DatasetGroupCategoryUri
 from vitrina.orgs.helpers import get_or_create_parent_org
 from vitrina.orgs.models import Organization
 
@@ -43,6 +44,14 @@ class RootCategoryFilter(admin.SimpleListFilter):
             return queryset.filter(path__startswith=cat.path)
 
 
+class DatasetGroupCategoryUriInline(admin.TabularInline):
+    model = DatasetGroupCategoryUri
+    extra = 0
+    fields = ("group", "uri")
+    verbose_name = _("Kategorijos URI specifinei parinktai grupei")
+    verbose_name_plural = _("Kategorijos URI specifinei parinktai grupei")
+
+
 class CategoryAdmin(TreeAdmin):
     form = movenodeform_factory(Category)
     list_display = [
@@ -51,9 +60,10 @@ class CategoryAdmin(TreeAdmin):
     ]
     list_filter = [
         RootCategoryFilter,
-        "groups",
+        "datasetgroupcategoryuri__group",
     ]
     search_fields = ("title",)
+    inlines = [DatasetGroupCategoryUriInline]
 
     def save_model(self, request, obj, form, change):
         super().save_model(request, obj, form, change)

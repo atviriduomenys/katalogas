@@ -47,16 +47,31 @@ def get_default_subclass():
 
 
 class DatasetGroup(TranslatableModel):
+    HVD = "hvd"
+
     translations = TranslatedFields(
         title=models.CharField(_("Title"), unique=True, max_length=255, blank=False),
     )
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
+    name = models.CharField(_("Kodinis pavadinimas"), max_length=255, blank=False)
 
     class Meta:
         ordering = ["created"]
 
     def __str__(self):
         return self.safe_translation_getter("title", language_code=self.get_current_language())
+
+
+class DatasetGroupCategoryUri(models.Model):
+    category = models.ForeignKey("vitrina_classifiers.Category", verbose_name=_("Kategorija"), on_delete=models.CASCADE)
+    group = models.ForeignKey(DatasetGroup, verbose_name=_("Grupė"), on_delete=models.CASCADE)
+    uri = models.CharField(_("Nuoroda į kontroliuojamą žodyną"), max_length=255, null=True, blank=True)
+
+    class Meta:
+        db_table = "dataset_group_category_uri"
+
+    def __str__(self):
+        return ""
 
 
 class DatasetFile(models.Model):
@@ -373,6 +388,7 @@ class Dataset(Resource):
             "Tinklalapis, kuriame galima susipažinti su duomenų ištekliu, jo pateiktimi ir (arba) papildoma informacija. Ji skirta nukreipti į pradinio duomenų paslaugos teikėjo, o ne į trečiosios šalies, pavyzdžiui, agregatoriaus, svetainės puslapį. Atitinka dcat:landingPage."
         ),
     )
+    is_hvd = models.BooleanField(_("Ar duomenų rinkinys yra didelės vertės"), default=False)
 
     # DCAT 3 fields
     part_of = models.ManyToManyField(
@@ -689,19 +705,22 @@ class Dataset(Resource):
         return list(self.project_set.all().values_list("description", flat=True))
 
     def get_all_groups(self):
-        ids = self.category.filter(groups__isnull=False).values_list("groups__pk", flat=True).distinct()
+        ids = self.category.filter(datasetgroupcategoryuri__group__isnull=False).values_list(
+            "datasetgroupcategoryuri__group__pk",
+            flat=True
+        ).distinct()
         return DatasetGroup.objects.filter(pk__in=ids).exclude(pk__in=self.get_excluded_groups())
 
     def get_group_list(self):
         return list(
-            self.category.filter(groups__isnull=False)
-            .values_list("groups__pk", flat=True)
+            self.category.filter(datasetgroupcategoryuri__group__isnull=False)
+            .values_list("datasetgroupcategoryuri__group__pk", flat=True)
             .distinct()
             .exclude(pk__in=self.get_excluded_groups())
         )
 
     def get_excluded_groups(self):
-        return set(DatasetExcludedGroups.objects.filter(dataset=self).values_list("group__pk", flat=True))
+        return DatasetExcludedGroups.objects.filter(dataset=self).values_list("group__pk", flat=True)
 
     def get_parent_organization_title(self):
         if self.organization:

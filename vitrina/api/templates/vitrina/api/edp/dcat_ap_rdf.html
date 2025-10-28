@@ -22,7 +22,7 @@
         <dct:title xml:lang="{{ t.lang }}">{{ t.title }}</dct:title>
         <dct:description xml:lang="{{ t.lang }}">{{ t.description }}</dct:description>
         {% endfor %}
-        {% if dataset.hvd_categories %}
+        {% if dataset.is_hvd %}
         <dcatap:applicableLegislation>
             <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
         </dcatap:applicableLegislation>
@@ -118,7 +118,7 @@
         <dct:title xml:lang="{{ t.lang }}">{{ t.title }}</dct:title>
         <dct:description xml:lang="{{ t.lang }}">{{ t.description }}</dct:description>
         {% endfor %}
-        {% if dataset.hvd_categories %}
+        {% if dataset.is_hvd %}
         <dcatap:applicableLegislation>
             <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
         </dcatap:applicableLegislation>
@@ -198,6 +198,11 @@
         {% for dist in dataset.distributions %}
         <dcat:distribution>
             <dcat:Distribution rdf:about="{{ current_domain_full }}{{ dist.uri|cut:' ' }}">
+                {% if dist.is_hvd %}
+                <dcatap:applicableLegislation>
+                    <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
+                </dcatap:applicableLegislation>
+                {% endif %}
                 {% if dist.type %}
                 <dct:type rdf:resource="{{ dist.type }}"/>
                 {% endif %}

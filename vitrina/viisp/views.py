@@ -149,6 +149,7 @@ class VIISPCompleteLoginView(View):
 
 class FakeVIISPCompleteLoginView(View):
     """Fake VIISP login for debug/testing purposes only."""
+
     form_class = FakeViispForm
     cleaned_data = None
 
@@ -171,9 +172,13 @@ class FakeVIISPCompleteLoginView(View):
             django_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
             return redirect("home")
 
-        return render(request, "vitrina/viisp/fake_viisp_form.html", {
-            "form": form,
-        })
+        return render(
+            request,
+            "vitrina/viisp/fake_viisp_form.html",
+            {
+                "form": form,
+            },
+        )
 
 
 def _confirm_viisp_email(

@@ -49,6 +49,7 @@ from vitrina.projects.services import (
     can_manage_clients,
     can_view_clients,
     can_view_history,
+    can_manage_datasets,
 )
 from vitrina.smart_contracts.services import can_view_agreements
 
@@ -268,6 +269,9 @@ class ProjectDatasetsView(ProjectViewBaseMixin, PermissionRequiredMixin, ListVie
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["can_remove_datasets"] = not self.project.agreements.exists() and can_manage_datasets(
+            self.request.user, self.project
+        )
         context["parent_links"].update(
             {
                 None: _("Duomenų ištekliai"),
@@ -604,9 +608,14 @@ class RemoveDatasetView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequ
     template_name = "confirm_remove.html"
 
     def has_permission(self):
-        return can_update_project(self.request.user, self.project)
+        return can_manage_datasets(self.request.user, self.project)
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
+        if self.project.agreements.exists():
+            messages.error(
+                self.request, _("Negalima pašalinti išteklių iš panaudos atvejo, kuris turi sugeneruotų sutarčių.")
+            )
+            return redirect(reverse("project-detail", args=[self.project.pk]))
         self.project.datasets.remove(self.kwargs.get("dataset_id"))
         return HttpResponseRedirect(self.get_success_url())
 

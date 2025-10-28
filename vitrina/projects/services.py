@@ -5,7 +5,7 @@ from django.db.models import QuerySet
 from django.contrib.auth.models import AnonymousUser
 
 
-def _q_project(user: User | AnonymousUser) -> Q:
+def _q_visible_projects(user: User | AnonymousUser) -> Q:
     public_approved = Q(is_public=True, status=Project.APPROVED)
 
     if not getattr(user, "is_authenticated", False):
@@ -30,11 +30,11 @@ def _q_project(user: User | AnonymousUser) -> Q:
 
 
 def can_view_project(user: User | AnonymousUser, project: Project) -> bool:
-    return Project.objects.filter(_q_project(user), pk=project.pk).exists()
+    return Project.objects.filter(_q_visible_projects(user), pk=project.pk).exists()
 
 
 def get_projects(user: User | AnonymousUser) -> QuerySet["Project"]:
-    queryset = Project.objects.filter(_q_project(user))
+    queryset = Project.objects.filter(_q_visible_projects(user))
 
     return queryset.distinct().order_by("-created")
 
@@ -53,12 +53,25 @@ def get_projects_linkable_to_dataset(user: User | AnonymousUser):
     if not getattr(user, "is_authenticated", False):
         return Project.objects.none()
 
-    queryset = get_projects(user)
+    queryset = get_projects(user).filter(agreements__isnull=True)
 
     if user.is_staff or user.is_superuser:
         return queryset
 
     return queryset.filter(Q(organization__isnull=True, user=user) | Q(organization_id__in=user.represented_org_ids))
+
+
+def can_manage_datasets(user: User | AnonymousUser, project: Project) -> bool:
+    if not user.is_authenticated:
+        return False
+
+    if user.is_staff or user.is_superuser:
+        return True
+
+    if project.organization:
+        return user.is_representative_of(project.organization)
+
+    return project.user == user
 
 
 def can_view_clients(user: User, project: Project) -> bool:

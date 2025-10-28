@@ -138,7 +138,7 @@ from vitrina.structure.services import (
     get_model_name,
 )
 from vitrina.users.models import User
-from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset
+from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset, can_manage_datasets
 
 
 class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
@@ -2147,12 +2147,17 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.project) or self.request.user == self.project.user
+        return can_manage_datasets(self.request.user, self.project)
 
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse("dataset-projects", kwargs={"pk": self.dataset.pk}))
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
+        if self.project.agreements.exists():
+            messages.error(
+                self.request, _("Negalima pašalinti išteklių iš panaudos atvejo, kuris turi sugeneruotų sutarčių.")
+            )
+            return redirect(reverse("dataset-projects", args=[self.dataset.pk]))
         self.project.datasets.remove(self.dataset.pk)
         return HttpResponseRedirect(self.get_success_url())
 

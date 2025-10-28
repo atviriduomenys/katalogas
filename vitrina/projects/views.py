@@ -64,33 +64,40 @@ class ProjectViewBaseMixin:
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["project"] = self.project
-        context["can_update_project"] = can_update_project(self.request.user, self.project)
-        context["can_view_agreements"] = can_view_agreements(self.request.user, self.project)
-        context["can_view_clients"] = can_view_clients(self.request.user, self.project)
-        context["can_view_history"] = can_view_history(self.request.user, self.project)
-        context["agreement_subpages"] = [
-            "agreement-list",
-            "agreement-create",
-            "agreement-detail",
-            "agreement-generate-pdf",
-            "agreement-upload-signed-adoc",
-        ]
-        context["client_subpages"] = [
-            "project-clients",
-            "project-clients-create",
-            "project-clients-update",
-            "project-clients-detail",
-            "project-clients-scopes-create",
-            "project-clients-scopes-detail-toggle",
-        ]
+
         project_detail_path = reverse("project-detail", args=[self.project.pk])
         project_detail_link = None if self.request.path == project_detail_path else project_detail_path
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("project-list"): _("Panaudojimo atvejai"),
-            project_detail_link: self.project.title,
-        }
+
+        context.update(
+            {
+                "project": self.project,
+                "can_update_project": can_update_project(self.request.user, self.project),
+                "can_view_agreements": can_view_agreements(self.request.user, self.project),
+                "can_view_clients": can_view_clients(self.request.user, self.project),
+                "can_view_history": can_view_history(self.request.user, self.project),
+                "agreement_subpages": [
+                    "agreement-list",
+                    "agreement-create",
+                    "agreement-detail",
+                    "agreement-generate-pdf",
+                    "agreement-upload-signed-adoc",
+                ],
+                "client_subpages": [
+                    "project-clients",
+                    "project-clients-create",
+                    "project-clients-update",
+                    "project-clients-detail",
+                    "project-clients-scopes-create",
+                    "project-clients-scopes-detail-toggle",
+                ],
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("project-list"): _("Panaudojimo atvejai"),
+                    project_detail_link: self.project.title,
+                },
+            }
+        )
+
         return context
 
 
@@ -242,7 +249,7 @@ class ProjectHistoryView(ProjectViewBaseMixin, HistoryView):
     history_url_name = "project-history"
     tabs_template_name = "vitrina/projects/tabs.html"
 
-    def has_permission(self):
+    def has_permission(self) -> bool:
         return can_view_history(self.request.user, self.project)
 
     def get_context_data(self, **kwargs):

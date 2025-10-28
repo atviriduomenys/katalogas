@@ -497,12 +497,6 @@ class TestAgreementGeneratePdf:
             "ex:otherAssignerLegislations": other_assigner_legislations,
             "ex:otherAssigneeLegislations": other_assignee_legislations,
         }
-        from pprint import pprint
-
-        print("\n--- DEBUG assigner ---")
-        pprint(odrl["assigner"])
-        pprint(expected_odrl["assigner"])
-        print("--- END DEBUG ---\n")
         assert odrl == expected_odrl
         assert contract.file
         assert contract.file_name

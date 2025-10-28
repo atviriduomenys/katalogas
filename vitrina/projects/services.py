@@ -16,17 +16,17 @@ def _q_visible_projects(user: User | AnonymousUser) -> Q:
 
     represented_org_ids = user.represented_org_ids
 
-    q = (
+    filter = (
         public_approved
         # Owner can view personal projects
         | Q(organization__isnull=True, user=user)
         # All organization representatives can view organization's projects
         | Q(organization_id__in=represented_org_ids)
-        # All assigners' organizations' representatives can view projects their are part of
+        # Representatives can view projects of organizations, they represent
         | Q(datasets__organization_id__in=represented_org_ids)
     )
 
-    return q
+    return filter
 
 
 def can_view_project(user: User | AnonymousUser, project: Project) -> bool:

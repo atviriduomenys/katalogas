@@ -149,6 +149,8 @@ class VIISPCompleteLoginView(View):
 
 class FakeVIISPCompleteLoginView(View):
     """Fake VIISP login for debug/testing purposes only."""
+    form_class = FakeViispForm
+    cleaned_data = None
 
     def get(self, request):
         if not settings.DEBUG:
@@ -159,16 +161,19 @@ class FakeVIISPCompleteLoginView(View):
     def post(self, request):
         if not settings.DEBUG:
             return redirect("home")
-        form = FakeViispForm(request.POST)
-        if not form.is_valid():
-            return render(request, "vitrina/viisp/fake_viisp_form.html", {"form": form})
+        form = self.form_class(request.POST)
 
-        email = form.cleaned_data["email"]
-        user, _ = User.objects.get_or_create(email=email)
-        user.is_viisp_login = True
-        user.save()
-        django_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
-        return redirect("home")
+        if form.is_valid():
+            email = form.cleaned_data["email"]
+            user, _ = User.objects.get_or_create(email=email)
+            user.is_viisp_login = True
+            user.save()
+            django_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            return redirect("home")
+
+        return render(request, "vitrina/viisp/fake_viisp_form.html", {
+            "form": form,
+        })
 
 
 def _confirm_viisp_email(

@@ -15,4 +15,4 @@ def test_fake_viisp_form_invalid_email():
     # Email not in DB
     form = FakeViispForm(data={"email": "not.existing@test.com"})
     assert not form.is_valid()
-    assert "Naudotojas su tokiu el. paštu nerastas." in form.errors["email"][0]
+    assert "Naudotojas su tokiu el. paštu neegzistuoja." in form.errors["email"][0]

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load static %}
+
+{% block current_title %}{% translate "Testinis VIISP Prisijungimas" %}{% endblock %}
+
+{% block content %}
+<div class="columns">
+    <div class="column is-one-quarter"></div>
+    <div class="column is-half">
+        {% include "component/form.html" with form=form %}
+        <br/>
+    </div>
+    <div class="column is-one-quarter"></div>
+</div>
+{% endblock %}

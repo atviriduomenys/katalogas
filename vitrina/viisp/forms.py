@@ -1,0 +1,37 @@
+from django import forms
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Field, Submit
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+
+from vitrina.users.models import User
+
+PROXY_TYPE_CHOICES = [
+
+    ("generic", "Generic"),
+    ("service", "Service"),
+    ("external", "External"),
+    ("legal", "Legal"),
+]
+
+class FakeViispForm(forms.Form):
+    email = forms.EmailField(label="El. paštas", required=True)
+    lt_company_code = forms.CharField(label="Įmonės kodas (LT)", required=False)
+    proxy_type = forms.ChoiceField(label="JA atstovavimo tipas", choices=PROXY_TYPE_CHOICES, required=False)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        self.helper.form_id = "fake-viisp-form"
+        self.helper.layout = Layout(
+            Field("email", placeholder="El. paštas"),
+            Field("lt_company_code", placeholder="Įmonės kodas (LT)"),
+            Field("proxy_type"),
+            Submit("submit", "Prisijungti", css_class="button is-primary"),
+        )
+
+    def clean_email(self):
+        email = self.cleaned_data.get("email")
+        if not User.objects.filter(email=email).exists():
+            raise ValidationError(_("Naudotojas su tokiu el. paštu nerastas."))
+        return email

@@ -2,6 +2,7 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.urls import reverse
 from django.shortcuts import render, redirect
+from django.contrib.auth import login as django_login
 from allauth.socialaccount import providers
 from allauth.socialaccount.providers.oauth2.views import (
     OAuth2LoginView,
@@ -9,7 +10,9 @@ from allauth.socialaccount.providers.oauth2.views import (
 )
 from allauth.socialaccount.helpers import complete_social_login
 
+from vitrina import settings
 from vitrina.orgs.models import Representative
+from vitrina.viisp.forms import FakeViispForm
 from vitrina.viisp.models import ViispKey, ViispTokenKey
 from vitrina.viisp.adapter import VIISPOAuth2Adapter
 from vitrina.viisp.provider import VIISPProvider
@@ -142,6 +145,30 @@ class VIISPCompleteLoginView(View):
             login.user.save()
 
         return response
+
+
+class FakeVIISPCompleteLoginView(View):
+    """Fake VIISP login for debug/testing purposes only."""
+
+    def get(self, request):
+        if not settings.DEBUG:
+            return redirect("home")
+        form = FakeViispForm()
+        return render(request, "vitrina/viisp/fake_viisp_form.html", {"form": form})
+
+    def post(self, request):
+        if not settings.DEBUG:
+            return redirect("home")
+        form = FakeViispForm(request.POST)
+        if not form.is_valid():
+            return render(request, "vitrina/viisp/fake_viisp_form.html", {"form": form})
+
+        email = form.cleaned_data["email"]
+        user, _ = User.objects.get_or_create(email=email)
+        user.is_viisp_login = True
+        user.save()
+        django_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+        return redirect("home")
 
 
 def _confirm_viisp_email(

@@ -70,6 +70,7 @@ class LoginView(BaseLoginView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Prisijungimas")
+        context["debug"] = settings.DEBUG
         return context
 
 

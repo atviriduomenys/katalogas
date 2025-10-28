@@ -37,6 +37,13 @@
                 <a id="viisp-login" href="{% url 'viisp_login' %}" class="button is-small is-primary">{% translate "Prisijungti su VIISP" %}</a>
             </p>
         </div>
+        {% if debug %}
+        <div class="content is-small">
+          <p>
+            <a id="fake-viisp-complete-login" href="{% url 'fake-viisp-complete-login' %}" class="button is-small is-primary">{% translate "Testinis Prisijungimas su VIISP" %}</a>
+          </p>
+        </div>
+        {% endif %}
     </div>
     <div class="column is-half">
         <div class="content">

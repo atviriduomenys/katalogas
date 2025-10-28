@@ -1700,6 +1700,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         self.object.version = 1
         self.object.name = get_model_name(self.dataset, self.object.name)
         self.object.level_given = form.cleaned_data.get("level")
+        self.object.status = form.cleaned_data.get("level") or form.initial.get("status")
         if form.cleaned_data.get("uri"):
             self.object.level = 5
         else:
@@ -1708,8 +1709,6 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
             self.object.prepare_ast = spyna.parse(self.object.prepare)
         else:
             self.object.prepare_ast = ""
-        if not self.object.status:
-            self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 
         if base_model := form.cleaned_data.get("base"):
@@ -2791,7 +2790,6 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
         for meta in metadata:
             if meta := Metadata.objects.filter(pk=meta).first():
                 meta.draft = False
-                latest_meta_version = MetadataVersion.objects.filter(metadata=meta).order_by("-version").first()
 
                 if meta.status == Status.objects.filter(codename="develop").first():
                     meta.status = Status.objects.filter(codename="completed").first()

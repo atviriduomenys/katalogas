@@ -1,7 +1,7 @@
 import json
 import logging
 import pathlib
-from datetime import datetime
+from datetime import datetime, timezone
 from random import randrange
 
 import requests
@@ -621,6 +621,10 @@ class Dataset(Resource):
                 self.information_system_type = default_concept
             if not self.information_system_importance_id:
                 self.information_system_importance = default_concept
+
+        self._update_published_date()
+        self.status = self._determine_status()
+
         super().save(*args, **kwargs)
 
     def lt_title(self):
@@ -810,6 +814,24 @@ class Dataset(Resource):
             .values_list("user_id", flat=True)
             .distinct()
         )
+
+    def _determine_status(self):
+        if not self.is_public:
+            return self.UNASSIGNED
+
+        if self.datasetdistribution_set.exists() or (self.service and self.endpoint_url):
+            return self.HAS_DATA
+
+        if self.plandataset_set.exists():
+            return self.PLANNED
+
+        return self.INVENTORED
+
+    def _update_published_date(self):
+        if self.is_public and not self.published:
+            self.published = timezone.now()
+        elif not self.is_public and self.published:
+            self.published = None
 
     @property
     def resource_managers(self) -> set[int]:

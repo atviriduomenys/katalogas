@@ -1098,21 +1098,6 @@ class DatasetUpdateView(
         tags = form.cleaned_data["tags"]
         self.object.tags.set(tags)
 
-        if ("endpoint_url" in form.changed_data) or (self.object.is_public and not self.object.published):
-            if self.object.is_public and not self.object.published:
-                self.object.published = timezone.now()
-
-            if self.object.datasetdistribution_set.exists() or (self.object.service and self.object.endpoint_url):
-                self.object.status = Dataset.HAS_DATA
-            elif self.object.plandataset_set.exists():
-                self.object.status = Dataset.PLANNED
-            else:
-                self.object.status = Dataset.INVENTORED
-
-        elif not self.object.is_public and self.object.published:
-            self.object.published = None
-            self.object.status = Dataset.UNASSIGNED
-
         if self.object.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (
             identifier := form.cleaned_data.get("identifier")
         ):
@@ -3326,13 +3311,7 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 plan.save()
                 set_comment(_(f'Į terminą "{plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
 
-            if (
-                self.dataset.is_public
-                and self.dataset.status != Dataset.HAS_DATA
-                and self.dataset.status != Dataset.PLANNED
-            ):
-                self.dataset.status = Dataset.PLANNED
-                self.dataset.save(update_fields=["status"])
+            self.dataset.save()
 
             return redirect(reverse("dataset-plans", args=[self.dataset.pk]))
         else:
@@ -3358,9 +3337,8 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         plan.save()
         set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
 
-        if dataset.is_public and dataset.status == Dataset.PLANNED and not dataset.plandataset_set.exists():
-            dataset.status = Dataset.INVENTORED
-            dataset.save(update_fields=["status"])
+        if not dataset.plandataset_set.exists():
+            dataset.save()
 
         return redirect(reverse("dataset-plans", args=[dataset.pk]))
 
@@ -3396,9 +3374,8 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
         plan.save()
         set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
 
-        if dataset.is_public and dataset.status == Dataset.PLANNED and not dataset.plandataset_set.exists():
-            dataset.status = Dataset.INVENTORED
-            dataset.save(update_fields=["status"])
+        if not dataset.plandataset_set.exists():
+            dataset.save()
 
         return redirect(reverse("plan-detail", args=[plan.receiver.pk, plan.pk]))
 

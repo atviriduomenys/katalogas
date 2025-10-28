@@ -16,6 +16,7 @@ def test_success_agent_create_form(organization):
         "object_type": AgentType.SPINTA,
         "open_data_publish_url": "",
         "service": dataset.pk,
+        "agent_address": "http://agent-address.test",
     }
     form = AgentForm(data=form_data, organization=organization)
     assert form.is_valid()
@@ -31,6 +32,7 @@ def test_success_agent_create_form_open_data_publish_url_is_provided(organizatio
         "object_type": AgentType.SPINTA,
         "open_data_publish_url": "https://example.com",
         "service": dataset.pk,
+        "agent_address": "http://agent-address.test",
     }
     form = AgentForm(data=form_data, organization=organization)
     assert form.is_valid()
@@ -47,6 +49,7 @@ def test_failure_agent_create_form_open_data_is_published_but_no_url_is_provided
         "object_type": AgentType.SPINTA,
         "open_data_publish_url": "",
         "service": dataset.pk,
+        "agent_address": "http://agent-address.test",
     }
 
     form = AgentForm(data=form_data, organization=organization)
@@ -95,6 +98,7 @@ def test_agent_form_duplicate_codename_first_agent_is_archived(organization):
             "is_open_data_published": False,
             "object_type": AgentType.SPINTA,
             "service": dataset.pk,
+            "agent_address": "http://agent-address.test",
         },
         organization=organization
     )
@@ -113,6 +117,7 @@ def test_agent_form_with_organization_service(organization):
             "is_open_data_published": False,
             "object_type": AgentType.SPINTA,
             "service": dataset.pk,
+            "agent_address": "http://agent-address.test",
         },
         organization=organization
     )

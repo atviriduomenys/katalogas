@@ -30,6 +30,7 @@ class AgentForm(ModelForm):
             organization=self.organization,
             service=True,
         )
+        self.fields["agent_address"].required = True
 
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
@@ -38,9 +39,9 @@ class AgentForm(ModelForm):
             Field("object_type"),
             Field("service"),
             Field("environment"),
+            Field("agent_address"),
             Field("auth_server_url"),
             Field("api_gate_server_url"),
-            Field("agent_address"),
             Field("is_enabled"),
             Field("is_open_data_published"),
             Field("open_data_publish_url"),

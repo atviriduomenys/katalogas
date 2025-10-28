@@ -1565,11 +1565,12 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.eli = form.cleaned_data.get("eli")
             metadata.status = form.cleaned_data.get("status")
             metadata.version += 1
+            metadata.status = form.cleaned_data.get("status") or form.initial.get("status")
 
             if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
                 if none_to_string(latest_version.prepare) != none_to_string(metadata.prepare) or none_to_string(
                     latest_version.source
-                ) != none_to_string(metadata.source):
+                ) != none_to_string(metadata.source) or latest_version.status != metadata.status:
                     metadata.draft = True
                 else:
                     metadata.draft = False
@@ -1818,7 +1819,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
         model.is_parameterized = form.cleaned_data.get("is_parameterized", False)
         model.save()
         model_ref = form.cleaned_data.get("ref")
-
+        self.object.status = form.cleaned_data.get("status") or form.initial.get("status")
         self.object.version += 1
         self.object.name = get_model_name(self.dataset, self.object.name)
         self.object.level_given = form.cleaned_data.get("level")
@@ -1914,6 +1915,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                 or latest_version.base != object_to_none(model.base)
                 or none_to_string(latest_version.ref) != none_to_string(self.object.ref)
                 or latest_version.level_given != self.object.level_given
+                or latest_version.status != self.object.status
             ):
                 self.object.draft = True
             else:
@@ -2093,6 +2095,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
         prop = self.object.object
         self.object.version += 1
         self.object.level_given = self.object.level
+        self.object.status = form.cleaned_data.get("status") or form.initial.get("status")
         if self.object.prepare:
             self.object.prepare_ast = spyna.parse(self.object.prepare)
         else:
@@ -2114,6 +2117,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 or none_to_string(latest_version.ref) != none_to_string(self.object.ref)
                 or latest_version.level_given != self.object.level_given
                 or latest_version.access != self.object.access
+                or latest_version.status != self.object.status
             ):
                 self.object.draft = True
             else:

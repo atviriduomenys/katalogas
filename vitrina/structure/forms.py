@@ -1056,6 +1056,7 @@ class PropertyForm(forms.ModelForm):
         self.initial["dataset_id"] = self.model.dataset.pk
         self.initial["level"] = "None"
         self.initial["visibility"] = "None"
+        self.initial["status"] = Status.objects.filter(is_default=True).first()
         if instance:
             self.initial["level"] = instance.level_given if instance.level_given is not None else "None"
             self.initial["access"] = instance.access

@@ -61,8 +61,7 @@ class ProjectForm(ModelForm):
         self.helper.form_id = "project-form"
         self.fields["organization"].empty_label = f"{_('Fizinis asmuo')} ({self.user})"
         if project_instance:
-            self.fields["organization"].disabled = True
-            self.fields["organization"].widget = HiddenInput()
+            self.fields.pop("organization", None)
         elif (organization := self.user.viisp_organization) and self.user.is_representative_of(organization, True):
             self.fields["organization"].queryset = Organization.objects.filter(pk=organization.pk)
             self.fields["organization"].label_from_instance = lambda org: _("Organizacija") + f" ({org})"

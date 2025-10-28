@@ -95,3 +95,21 @@ services:
       - postgres
     restart: always
 
+  flower:
+    image: vitrina-app:latest
+    container_name: vitrina-flower
+    working_dir: /app
+    command: celery -A vitrina --broker=redis://redis:6379/3 flower --port=5555 --address=0.0.0.0
+
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/3
+      - DJANGO_SETTINGS_MODULE=vitrina.settings
+      - REDIS_URL=redis://redis:6379/
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery
+    restart: always
+
+

@@ -96,8 +96,8 @@ services:
     ports:
       - "5555:5555"
     depends_on:
-      - redis
-      - celery
+      - katalogas-${BRANCH}-redis
+      - katalogas-${BRANCH}-celery
     restart: always
 
 volumes:

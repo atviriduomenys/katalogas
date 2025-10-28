@@ -49,7 +49,7 @@ from vitrina.datasets.forms import (
 from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.orgs.factories import RepresentativeFactory
+from vitrina.orgs.factories import RepresentativeFactory, ViispRepresentativeFactory
 from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan, PlanDataset
@@ -268,13 +268,14 @@ class TestDatasetDetailView:
         assert resp.request.path == reverse("resource-add", args=[dataset.pk])
 
     def test_click_edit_button(self, app: DjangoTestApp):
-        org = OrganizationFactory()
+        representative = ViispRepresentativeFactory()
+        org = representative.content_object
         dataset = DatasetFactory(
             published=timezone.localize(datetime(2022, 9, 7)),
             slug="test-dataset-slug",
             organization=org,
         )
-        user = UserFactory(is_staff=True)
+        user = representative.user
         app.set_user(user)
         dataset.manager = user
         response = app.get(reverse("dataset-detail", kwargs={"pk": dataset.id}))
@@ -1032,7 +1033,8 @@ class TestDatasetUpdateView:
             organization=org,
         )
         dataset.category.add(category)
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=org)
+        user = representative.user
         app.set_user(user)
         dataset.manager = user
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
@@ -1061,7 +1063,8 @@ class TestDatasetUpdateView:
             description="test description",
         )
         dataset.move(old_parent_dataset)
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
         dataset.manager = user
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
@@ -1081,7 +1084,8 @@ class TestDatasetUpdateView:
             description="test description",
         )
         dataset.move(old_parent_dataset)
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
         dataset.manager = user
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
@@ -1115,7 +1119,8 @@ class TestDatasetUpdateView:
         )
         agency = Agency.objects.filter(name="Registrų ir valstybės informacinių sistemų registras").first()
         IdentifierFactory(resource=dataset, notation="1234", scheme_agency=agency)
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
@@ -1132,7 +1137,8 @@ class TestDatasetUpdateView:
     def test_dataset_update_non_existing_identifier_validation(self, app: DjangoTestApp):
         subclass = DCATResourceSubclassFactory(name="information_system")
         dataset = DatasetFactory(subclass=subclass)
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
@@ -1161,7 +1167,8 @@ class TestDatasetUpdateView:
             information_system_creator=organization,
             information_system_publisher=organization,
         )
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
@@ -1178,7 +1185,8 @@ class TestDatasetUpdateView:
         LicenceFactory(is_default=True)
         FrequencyFactory(is_default=True)
         dataset = DatasetFactory()
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
 
         assert dataset.is_public is True
@@ -1199,7 +1207,8 @@ class TestDatasetUpdateView:
             is_public=False,
             published=None,
         )
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
 
         assert dataset.is_public is False
@@ -1243,7 +1252,8 @@ class TestDatasetUpdateView:
     ) -> None:
         subclass = DCATResourceSubclassFactory(name=subclass_name)
         dataset = DatasetFactory(subclass=subclass)
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
 
         response = app.get(reverse("dataset-change", kwargs={"pk": dataset.id}))
@@ -1266,7 +1276,8 @@ class TestDatasetUpdateView:
         information_system_importance_concept = ConceptFactory(
             concept_schemas=[information_system_importance_concept_schema]
         )
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
 
         url = reverse("dataset-change", kwargs={"pk": dataset.id})
@@ -1306,9 +1317,10 @@ class TestDatasetUpdateView:
         assert dataset.information_system_creator == organization
 
     def test_dataset_with_name_error(self, app: DjangoTestApp):
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
         dataset = DatasetFactory()
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
+        app.set_user(user)
 
         form = app.get(reverse("dataset-change", args=[dataset.pk])).forms["dataset-form"]
         form["name"] = "test/ąčę"
@@ -1319,7 +1331,8 @@ class TestDatasetUpdateView:
 
     def test_edit_non_public_dataset_with_org_representative(self, app: DjangoTestApp):
         dataset = DatasetFactory(is_public=False)
-        user = UserFactory()
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         organization = OrganizationFactory()
         user.organization = organization
         user.save()
@@ -1350,7 +1363,8 @@ class TestDatasetUpdateView:
         dataset.category.add(category)
         dataset.applicable_legislation.set(ApplicableLegislationFactory.create_batch(4))
 
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
         dataset.manager = user
 
@@ -1371,7 +1385,8 @@ class TestDatasetUpdateView:
         dataset.category.add(category)
         dataset.documentation.set(DocumentationFactory.create_batch(4))
 
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
         app.set_user(user)
         dataset.manager = user
 
@@ -1388,7 +1403,11 @@ class TestDatasetUpdateView:
 
     def test_dataset_update_contact(self, app: DjangoTestApp):
         org = OrganizationFactory()
-        user = UserFactory(is_staff=True, organization=org)
+        user = UserFactory(is_staff=True,
+                           organization=org,
+                           is_viisp_login=True,
+                           viisp_company_code=org.company_code)
+        RepresentativeFactory(user=user, content_object=org)
         app.set_user(user)
         ds = DatasetFactory(organization=org)
 
@@ -1416,7 +1435,8 @@ class TestDatasetUpdateView:
         org2 = OrganizationFactory()
         publisher_org = OrganizationFactory(publisher=True)
 
-        user = UserFactory(is_staff=True, organization=org)
+        user = UserFactory(is_staff=True, organization=org, is_viisp_login=True, viisp_company_code=org.company_code)
+        RepresentativeFactory(user=user, content_object=org)
         user2 = UserFactory(is_staff=True, organization=org)
         user3 = UserFactory(is_staff=True)
         publisher_user = UserFactory(is_staff=True, organization=publisher_org)
@@ -1443,7 +1463,8 @@ class TestDatasetUpdateView:
     def test_update_dateset_generates_name(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
         org = OrganizationFactory(name="Test Organization")
-        user = UserFactory(is_staff=True, organization=org)
+        representative = ViispRepresentativeFactory(content_object=org)
+        user = representative.user
         app.set_user(user)
 
         dataset = DatasetFactory(organization=org, title="Test Dataset")
@@ -1464,7 +1485,8 @@ class TestDatasetUpdateView:
     def test_update_dateset_existing_name_cannot_be_removed(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
         org = OrganizationFactory(name="Test Organization")
-        user = UserFactory(is_staff=True, organization=org)
+        representative = ViispRepresentativeFactory(content_object=org)
+        user = representative.user
         app.set_user(user)
 
         dataset = DatasetFactory(organization=org, title="Test Dataset")
@@ -1490,7 +1512,8 @@ class TestDatasetUpdateView:
         frequency = FrequencyFactory(is_default=True)
         org = OrganizationFactory()
         dataset = DatasetFactory(frequency=frequency, organization=org)
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory(content_object=org)
+        user = representative.user
         app.set_user(user)
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
         form["landing_page"] = "https://example.com"
@@ -1501,9 +1524,10 @@ class TestDatasetUpdateView:
         assert dataset.landing_page == "https://example.com"
 
     def test_dataset_update_files(self, app: DjangoTestApp):
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
         dataset = DatasetFactory()
+        representative = ViispRepresentativeFactory(content_object=dataset.organization)
+        user = representative.user
+        app.set_user(user)
         assert not dataset.dataset_files.all().exists()
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
@@ -2971,8 +2995,9 @@ def test_dataset_history_can_view_public(app: DjangoTestApp):
 
 
 def test_dataset_history_view_with_permission(app: DjangoTestApp):
-    user = ManagerFactory(is_staff=True)
-    dataset = DatasetFactory(organization=user.organization)
+    representative = ViispRepresentativeFactory()
+    user = representative.user
+    dataset = DatasetFactory(organization=representative.content_object)
     app.set_user(user)
 
     form = app.get(reverse("dataset-change", args=[dataset.pk])).forms["dataset-form"]

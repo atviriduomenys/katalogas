@@ -23,7 +23,7 @@ from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.smart_contracts.models import AgreementScope
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
-from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
 
 from django.contrib.contenttypes.models import ContentType
 
@@ -62,15 +62,10 @@ def test_project_create(app: DjangoTestApp):
     assert not added_project.first().organization
 
 def test_project_create_with_organization(app: DjangoTestApp):
-    user = UserFactory()
+    representative = ViispRepresentativeFactory(can_make_agreements=True)
+    user = representative.user
     app.set_user(user)
-    organization = OrganizationFactory()
-    ct = ContentType.objects.get_for_model(organization)
-    RepresentativeFactory(
-        content_type=ct,
-        object_id=organization.pk,
-        user=user
-    )
+    organization = representative.content_object
 
     form = app.get(reverse("project-create")).forms['project-form']
     form['title'] = "Project"
@@ -130,15 +125,11 @@ def test_project_update(app: DjangoTestApp):
     assert Version.objects.get_for_object(project).first().revision.comment == Project.EDITED
 
 def test_project_update_with_organization(app: DjangoTestApp):
-    user = UserFactory()
-    organization = OrganizationFactory()
+    representative = ViispRepresentativeFactory(can_make_agreements=True)
+    user = representative.user
+    app.set_user(user)
+    organization = representative.content_object
     project = ProjectFactory(user=user, organization=organization)
-    ct = ContentType.objects.get_for_model(organization)
-    RepresentativeFactory(
-        content_type=ct,
-        object_id=organization.pk,
-        user=user
-    )
 
     app.set_user(user)
 
@@ -354,9 +345,10 @@ def test_client_create(app: DjangoTestApp, oauth_settings):
 
         m.post(oauth_settings.OAUTH_SERVER_CLIENTS_URL, json=create_client_callback)
 
-        user: User = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory()
+        user: representative.user
         app.set_user(user)
-        project: Project = ProjectFactory()
+        project: Project = ProjectFactory(organization=representative.content_object)
 
         form = app.get(reverse("project-clients-create", args=[project.pk])).forms["client-form"]
         form["name"] = "Client"
@@ -401,9 +393,10 @@ def test_client_update(app: DjangoTestApp, oauth_settings):
     with requests_mock.Mocker() as m:
         mock_oauth_endpoints(m, oauth_settings)
 
-        user = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory()
+        user = representative.user
         app.set_user(user)
-        project = ProjectFactory()
+        project = ProjectFactory(organization=representative.content_object)
         client = UseCaseClientFactory()
 
         form = app.get(

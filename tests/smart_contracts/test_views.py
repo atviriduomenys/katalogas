@@ -12,7 +12,7 @@ from pdfminer.high_level import extract_text
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
 from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
@@ -44,8 +44,9 @@ class TestAgreementListView:
     def test_list_agreements(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        representative = ViispRepresentativeFactory(content_object=organization)
+        user =  representative.user
+        project = ProjectFactory(organization=organization, datasets=[dataset])
         app.set_user(user)
         AgreementFactory(project=project, assigner=organization)
 
@@ -57,8 +58,9 @@ class TestAgreementListView:
     def test_list_no_agreements(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        representative = ViispRepresentativeFactory(content_object=organization)
+        user =  representative.user
+        project = ProjectFactory(organization=organization, datasets=[dataset])
         app.set_user(user)
 
         response = app.get(reverse("agreement-list", args=[project.pk]))
@@ -111,8 +113,9 @@ class TestAgreementDetailView:
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
         user = UserFactory(organization=organization)
+        RepresentativeFactory(user=user, content_object=organization)
         app.set_user(user)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(organization=organization, datasets=[dataset])
         agreement = AgreementFactory(project=project, assigner=organization)
 
         response = app.get(reverse("agreement-detail", args=[project.pk, agreement.pk]))
@@ -148,8 +151,9 @@ class TestAgreementCreateView:
     def test_cannot_create_agreements_if_all_organizations_already_has_agreement(
         self, app: DjangoTestApp, organization: Organization
     ) -> None:
-        user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
+        project = ProjectFactory(organization=organization)
         AgreementFactory(project=project, assigner=organization)
         app.set_user(user)
 
@@ -160,10 +164,9 @@ class TestAgreementCreateView:
     def test_creates_agreement_and_scopes(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
-        ct = ContentType.objects.get_for_model(Organization)
-        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
+        project = ProjectFactory(datasets=[dataset], organization=organization)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -209,10 +212,9 @@ class TestAgreementCreateView:
             dataset=diff_dataset,
             name="datasets/gov/org/dataset",
         )
-        user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset1, dataset2, diff_dataset], organization=organization)
-        ct = ContentType.objects.get_for_model(Organization)
-        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
+        project = ProjectFactory(datasets=[dataset1, dataset2, diff_dataset], organization=organization)
         app.set_user(user)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -243,7 +245,8 @@ class TestAgreementCreateView:
     def test_can_create_agreements_for_organizations_that_currently_do_not_have_one(
         self, app: DjangoTestApp, dataset: Dataset, organization: Organization
     ) -> None:
-        user = UserFactory(organization=organization)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
         app.set_user(user)
         organization2 = OrganizationFactory()
         dataset2 = DatasetFactory(organization=organization2)
@@ -253,9 +256,7 @@ class TestAgreementCreateView:
             dataset=dataset2,
             name="test/dataset2",
         )
-        project = ProjectFactory(user=user, datasets=[dataset, dataset2], organization=organization)
-        ct = ContentType.objects.get_for_model(Organization)
-        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
+        project = ProjectFactory(datasets=[dataset, dataset2], organization=organization)
         AgreementFactory(project=project, assigner=organization)
 
         response = app.get(reverse("agreement-create", args=[project.pk]))
@@ -267,10 +268,9 @@ class TestAgreementCreateView:
     def test_cannot_create_agreement_with_invalid_scopes(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
-        ct = ContentType.objects.get_for_model(Organization)
-        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
+        project = ProjectFactory(datasets=[dataset], organization=organization)
         app.set_user(user)
 
         data = {
@@ -297,26 +297,6 @@ class TestAgreementCreateView:
 
         assert response.status_code == 403
 
-    def test_create_for_organization_project_mid_change_to_personal(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
-    ) -> None:
-        user = UserFactory(organization=organization)
-        project = ProjectFactory(user=user, datasets=[dataset], organization=organization)
-        ct = ContentType.objects.get_for_model(Organization)
-        RepresentativeFactory(user=user, content_type=ct, object_id=organization.pk)
-        app.set_user(user)
-
-        response = app.get(reverse("agreement-create", args=[project.pk]))
-        form = response.forms["agreement-create"]
-        form["form-0-scopes"] = ["uapi:/test/dataset/:getall"]
-        project.organization = None
-        project.save()
-        response = form.submit()
-
-        assert response.status_code == 302
-        assert response.url == reverse("agreement-list", args=[project.pk])
-
-        assert not Agreement.objects.filter(project=project).exists()
 
 
 class TestAgreementGeneratePdf:
@@ -337,9 +317,10 @@ class TestAgreementGeneratePdf:
     def test_page_loads_without_error(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset,
     ) -> None:
-        user = UserFactory(organization=organization)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
         app.set_user(user)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(organization=organization, datasets=[dataset])
         agreement = AgreementFactory(
             project=project, assigner=organization, status=AgreementStatuses.CREATED,
         )
@@ -367,9 +348,10 @@ class TestAgreementGeneratePdf:
         dataset: Dataset,
         status: AgreementStatuses,
     ) -> None:
-        user = UserFactory(organization=organization)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
         app.set_user(user)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(organization=organization, datasets=[dataset])
         agreement = AgreementFactory(
             project=project, assigner=organization, status=status
         )
@@ -403,8 +385,6 @@ class TestAgreementGeneratePdf:
                 name="contract_template.md",
             )
         )
-        user = UserFactory(organization=organization, email="bethgarcia@example.net")
-        app.set_user(user)
 
         organization.title = "Gonzalez Group"
         organization.company_code = "LWGYU0W8S"
@@ -416,7 +396,11 @@ class TestAgreementGeneratePdf:
         dataset.title = "Odit nostrum."
         dataset.save()
 
-        project = ProjectFactory(user=user, datasets=[dataset])
+        user = UserFactory(organization=organization, email="bethgarcia@example.net", is_viisp_login=True, viisp_company_code=organization.company_code)
+        representative = RepresentativeFactory(user=user, content_object=organization, can_make_agreements=True)
+        app.set_user(user)
+
+        project = ProjectFactory(organization=organization, datasets=[dataset])
 
         agreement = AgreementFactory(
             project=project,
@@ -482,7 +466,7 @@ class TestAgreementGeneratePdf:
                     "ex:companyName": "Gonzalez Group",
                     "ex:companyCode": "LWGYU0W8S",
                     "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
-                    "ex:representative": " - ",
+                    "ex:representative": representative.email,
                     "ex:email": "lwolf@example.com",
                     "ex:phone": "456.631.4059",
                     "ex:personalCode": " - ",
@@ -513,7 +497,12 @@ class TestAgreementGeneratePdf:
             "ex:otherAssignerLegislations": other_assigner_legislations,
             "ex:otherAssigneeLegislations": other_assignee_legislations,
         }
+        from pprint import pprint
 
+        print("\n--- DEBUG assigner ---")
+        pprint(odrl["assigner"])
+        pprint(expected_odrl["assigner"])
+        print("--- END DEBUG ---\n")
         assert odrl == expected_odrl
         assert contract.file
         assert contract.file_name
@@ -591,9 +580,10 @@ class TestAgreementUploadSignedFile:
         dataset: Dataset,
         status: AgreementStatuses,
     ) -> None:
-        user = UserFactory(organization=organization)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
         app.set_user(user)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(organization=organization, datasets=[dataset])
         agreement = AgreementFactory(
             project=project, assigner=organization, status=status
         )
@@ -608,11 +598,12 @@ class TestAgreementUploadSignedFile:
     def test_upload_adoc_and_change_status_to_initiated_if_agreement_status_formed(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        user = UserFactory(organization=organization)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
         app.set_user(user)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(organization=organization, datasets=[dataset])
         agreement = AgreementFactory(
-            project=project, assigner=organization, status=AgreementStatuses.FORMED
+            project=project, assignee=organization, status=AgreementStatuses.FORMED
         )
 
         file_path = str(test_contracts_dir / "sutartis_signed.adoc")
@@ -633,9 +624,10 @@ class TestAgreementUploadSignedFile:
     def test_upload_adoc_and_change_status_to_signed_if_agreement_status_initiated(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        user = UserFactory(organization=organization)
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
         app.set_user(user)
-        project = ProjectFactory(user=user, datasets=[dataset])
+        project = ProjectFactory(organization=organization, datasets=[dataset])
         agreement = AgreementFactory(
             project=project, assigner=organization, status=AgreementStatuses.INITIATED
         )

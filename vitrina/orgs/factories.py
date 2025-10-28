@@ -56,3 +56,16 @@ class RepresentativeFactory(DjangoModelFactory):
         phone=factory.SelfAttribute("..phone"),
         email=factory.SelfAttribute("..email"),
     )
+
+
+class ViispRepresentativeFactory(RepresentativeFactory):
+    user = factory.SubFactory(
+        UserFactory,
+        first_name=factory.SelfAttribute("..first_name"),
+        last_name=factory.SelfAttribute("..last_name"),
+        phone=factory.SelfAttribute("..phone"),
+        email=factory.SelfAttribute("..email"),
+        is_viisp_login=True,
+        viisp_company_code=factory.SelfAttribute("..content_object.company_code"),
+    )
+    content_object = factory.SubFactory(OrganizationFactory)

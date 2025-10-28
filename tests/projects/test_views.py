@@ -15,7 +15,6 @@ from webtest import Upload
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.comments.models import Comment
-from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.smart_contracts import AgreementStatuses
@@ -23,9 +22,7 @@ from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.smart_contracts.models import AgreementScope
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
-from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
-
-from django.contrib.contenttypes.models import ContentType
+from vitrina.orgs.factories import OrganizationFactory, ViispRepresentativeFactory
 
 from vitrina.users.models import User
 
@@ -346,7 +343,7 @@ def test_client_create(app: DjangoTestApp, oauth_settings):
         m.post(oauth_settings.OAUTH_SERVER_CLIENTS_URL, json=create_client_callback)
 
         representative = ViispRepresentativeFactory()
-        user: representative.user
+        user = representative.user
         app.set_user(user)
         project: Project = ProjectFactory(organization=representative.content_object)
 
@@ -417,10 +414,10 @@ def test_client_update(app: DjangoTestApp, oauth_settings):
 def test_client_scope_create(app: DjangoTestApp, oauth_settings, organization):
     with requests_mock.Mocker() as m:
         mock_oauth_endpoints(m, oauth_settings)
-
-        user: User = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory()
+        user: User = representative.user
         app.set_user(user)
-        project = ProjectFactory()
+        project = ProjectFactory(organization=representative.content_object)
         client: UseCaseClient = UseCaseClientFactory(use_case=project)
         agreement = AgreementFactory(
             project=project, assigner=organization, status=AgreementStatuses.ACTIVE
@@ -451,9 +448,10 @@ def test_client_scope_toggle(app: DjangoTestApp, oauth_settings):
     with requests_mock.Mocker() as m:
         mock_oauth_endpoints(m, oauth_settings)
 
-        user: User = UserFactory(is_staff=True)
+        representative = ViispRepresentativeFactory()
+        user: User = representative.user
         app.set_user(user)
-        project = ProjectFactory()
+        project = ProjectFactory(organization=representative.content_object)
         client: UseCaseClient = UseCaseClientFactory(use_case=project)
         scope = client.scopes.create(scope="Test", action="WRITE", resource="dataset")
 

@@ -3607,7 +3607,7 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,Size,,SMALL,,,,,,,,,\n"
+        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(
@@ -3619,12 +3619,9 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
     structure.dataset.save()
     create_structure_objects(structure)
 
-    administration_meta = Metadata.objects.get(
-        dataset=structure.dataset,
-        name="administration"
-    )
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
 
-    enum = administration_meta.object.enums.first()
+    enum = enum_meta.object
     enum_id = enum.id
 
     metadata_ids = list(
@@ -3638,13 +3635,13 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
     model_form['status'] = Status.objects.filter(codename="discont").first().id
     model_form.submit()
 
-    model_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    model_form['status'] = Status.objects.filter(codename="deprecated").first().id
-    model_form.submit()
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form['status'] = Status.objects.filter(codename="deprecated").first().id
+    property_form.submit()
 
-    model_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    model_form['status'] = Status.objects.filter(codename="withdrawn").first().id
-    model_form.submit()
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form['status'] = Status.objects.filter(codename="withdrawn").first().id
+    enum_form.submit()
 
     form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -3704,12 +3701,9 @@ def test_published_metadata_defaults_to_develop_after_hard_change(app: DjangoTes
     publish_version_form['metadata'] = metadata_ids
     publish_version_form.submit()
 
-    administration_meta = Metadata.objects.get(
-        dataset=structure.dataset,
-        name="administration"
-    )
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
 
-    enum = administration_meta.object.enums.first()
+    enum = enum_meta.object
     enum_id = enum.id
     new_enum_name = "Largety"
 
@@ -3717,13 +3711,13 @@ def test_published_metadata_defaults_to_develop_after_hard_change(app: DjangoTes
     model_form['level'] = 3
     model_form.submit()
 
-    model_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    model_form['access'] = 2
-    model_form.submit()
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form['access'] = 2
+    property_form.submit()
 
-    model_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    model_form['value'] = new_enum_name
-    model_form.submit()
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form['value'] = new_enum_name
+    enum_form.submit()
 
     resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
@@ -3768,12 +3762,9 @@ def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp
     structure.dataset.save()
     create_structure_objects(structure)
 
-    administration_meta = Metadata.objects.get(
-        dataset=structure.dataset,
-        name="administration"
-    )
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
 
-    enum = administration_meta.object.enums.first()
+    enum = enum_meta.object
     enum_id = enum.id
     new_enum_name = "Largety"
 
@@ -3781,13 +3772,13 @@ def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp
     model_form['level'] = 3
     model_form.submit()
 
-    model_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    model_form['access'] = 2
-    model_form.submit()
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form['access'] = 2
+    property_form.submit()
 
-    model_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    model_form['value'] = new_enum_name
-    model_form.submit()
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form['value'] = new_enum_name
+    enum_form.submit()
 
     resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
@@ -3826,12 +3817,9 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
     structure.dataset.save()
     create_structure_objects(structure)
 
-    administration_meta = Metadata.objects.get(
-        dataset=structure.dataset,
-        name="administration"
-    )
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
 
-    enum = administration_meta.object.enums.first()
+    enum = enum_meta.object
     enum_id = enum.id
     new_enum_name = "Largety"
 
@@ -3840,15 +3828,15 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
     model_form["status"] = 5
     model_form.submit()
 
-    model_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    model_form['access'] = 2
-    model_form["status"] = 5
-    model_form.submit()
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form['access'] = 2
+    property_form["status"] = 5
+    property_form.submit()
 
-    model_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    model_form['value'] = new_enum_name
-    model_form["status"] = 5
-    model_form.submit()
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form['value'] = new_enum_name
+    enum_form["status"] = 5
+    enum_form.submit()
 
     resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["deprecated"]
@@ -3901,12 +3889,9 @@ def test_changing_multiple_fields_in_published_structure_respects_status(app: Dj
     publish_version_form['metadata'] = metadata_ids
     publish_version_form.submit()
 
-    administration_meta = Metadata.objects.get(
-        dataset=structure.dataset,
-        name="administration"
-    )
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
 
-    enum = administration_meta.object.enums.first()
+    enum = enum_meta.object
     enum_id = enum.id
     new_enum_name = "Largety"
 
@@ -3915,15 +3900,15 @@ def test_changing_multiple_fields_in_published_structure_respects_status(app: Dj
     model_form["status"] = 5
     model_form.submit()
 
-    model_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    model_form['access'] = 2
-    model_form["status"] = 5
-    model_form.submit()
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form['access'] = 2
+    property_form["status"] = 5
+    property_form.submit()
 
-    model_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    model_form['value'] = new_enum_name
-    model_form["status"] = 5
-    model_form.submit()
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form['value'] = new_enum_name
+    enum_form["status"] = 5
+    enum_form.submit()
 
     resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["deprecated"]
@@ -3965,22 +3950,19 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
     structure.dataset.save()
     create_structure_objects(structure)
 
-    administration_meta = Metadata.objects.get(
-        dataset=structure.dataset,
-        name="administration"
-    )
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
 
-    enum = administration_meta.object.enums.first()
+    enum = enum_meta.object
     enum_id = enum.id
 
     model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
     model_form.submit()
 
-    model_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    model_form.submit()
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form.submit()
 
-    model_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    model_form.submit()
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form.submit()
 
     resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
@@ -4030,22 +4012,19 @@ def test_published_metadata_form_does_not_change_status_is_kept(app: DjangoTestA
     publish_version_form['metadata'] = metadata_ids
     publish_version_form.submit()
 
-    administration_meta = Metadata.objects.get(
-        dataset=structure.dataset,
-        name="administration"
-    )
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
 
-    enum = administration_meta.object.enums.first()
+    enum = enum_meta.object
     enum_id = enum.id
 
     model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
     model_form.submit()
 
-    model_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    model_form.submit()
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form.submit()
 
-    model_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    model_form.submit()
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form.submit()
 
     resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]

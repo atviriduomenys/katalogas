@@ -21,6 +21,7 @@ from vitrina.users.models import User
 from vitrina.smart_contracts.models import Agreement
 from vitrina.projects.models import Project
 from django.db.models import Q, QuerySet
+from django.contrib.auth.models import AnonymousUser
 
 SIGNATURE_FILE_PATH = "META-INF/signatures/signatures0.xml"
 MANIFEST_FILE_PATH = "META-INF/manifest.xml"
@@ -110,7 +111,10 @@ def get_agreements(user: User) -> QuerySet["Project"]:
     return queryset
 
 
-def can_view_agreements(user: User, project: Project) -> bool:
+def can_view_agreements(user: User | AnonymousUser, project: Project) -> bool:
+    if not user.is_authenticated:
+        return False
+
     represented_org_ids = user.represented_org_ids
 
     if user.is_staff or user.is_superuser:

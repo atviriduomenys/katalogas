@@ -483,7 +483,8 @@ class DatasetDetailView(
             # TODO: harvested functionality needs to be implemented
             "harvested": "",
             "can_add_resource": has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),
-            "can_update_dataset": user.viisp_organization == dataset.organization
+            "can_update_dataset": user.is_authenticated
+            and user.viisp_organization == dataset.organization
             and user.is_representative_of(dataset.organization),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
             "resources": dataset.datasetdistribution_set.all().order_by("-period_start"),

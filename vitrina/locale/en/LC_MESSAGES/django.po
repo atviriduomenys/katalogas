@@ -5632,6 +5632,13 @@ msgstr ""
 "The password is too weak. Try using more characters, uppercase letters, "
 "digits, and special characters."
 
+
+msgid "JA atstovavimo tipas"
+msgstr "Type of representation of a legal entity"
+
+msgid "Naudotojas su tokiu el. paštu neegzistuoja."
+msgstr "User with this e-mail does not exist."
+
 msgid "key_content"
 msgstr "key_content"
 
@@ -5668,6 +5675,9 @@ msgid ""
 msgstr ""
 "A confirmation has been sent to your e-mail address. Click a link in the e-"
 "mail."
+
+msgid "Testinis VIISP Prisijungimas"
+msgstr "Test VIISP Login"
 
 msgid ""
 "Viisp autentifikacija pavyko, tačiau el.paštas, grįžtantis iš viisp "

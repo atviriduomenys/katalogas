@@ -7,6 +7,7 @@ services:
     build:
       context: .
       dockerfile: docker/Dockerfile
+    image: katalogas-${BRANCH}:latest
     command:
       - ./auto-entrypoint.sh
     environment:
@@ -68,7 +69,7 @@ services:
       - katalogas
 
   katalogas-${BRANCH}-celery:
-    image: vitrina-app:latest
+    image: katalogas-${BRANCH}:latest
     command: celery -A vitrina worker -l info
     environment:
       - REDIS_URL=redis://katalogas-${BRANCH}-redis:6379/

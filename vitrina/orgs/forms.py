@@ -393,7 +393,7 @@ class RepresentativeUpdateForm(ModelForm):
             if self.user.viisp_organization == self.object:
                 self.fields["can_make_agreements"].disabled = False
         else:
-            self.fields["can_make_agreements"].widget = HiddenInput()
+            self.fields.pop("can_make_agreements")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
@@ -476,7 +476,7 @@ class RepresentativeCreateForm(ModelForm):
             if self.user.viisp_organization == self.object:
                 self.fields["can_make_agreements"].disabled = False
         else:
-            self.fields["can_make_agreements"].widget = HiddenInput()
+            self.fields.pop("can_make_agreements")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"

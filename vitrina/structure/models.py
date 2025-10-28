@@ -546,9 +546,9 @@ class MetadataVersion(models.Model):
 
 
 class ValidationStatus(models.TextChoices):
-    PENDING = "pending", _("Pending")
-    VALID = "valid", _("Valid")
-    INVALID = "invalid", _("Invalid")
+    PENDING = "PENDING", _("Pending")
+    VALID = "VALID", _("Valid")
+    INVALID = "INVALID", _("Invalid")
 
 
 class ManifestValidationEntry(UUIDBaseModel):

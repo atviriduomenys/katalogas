@@ -2,7 +2,7 @@ import contextlib
 import io
 
 from celery import shared_task
-from .models import ManifestValidationEntry
+from .models import ManifestValidationEntry, ValidationStatus
 from spinta.core.context import create_context
 from spinta.cli.config import check
 from spinta.core.enums import Mode
@@ -19,15 +19,15 @@ def validate_manifest_task(manifest_id: UUID) -> None:
     with contextlib.redirect_stdout(buf):
         try:
             check(ctx, manifests=[str(manifest.manifest_file.path)], mode=Mode("internal"))
-            manifest.validation_status = "valid"
+            manifest.validation_status = ValidationStatus.VALID
             manifest.error_message = ""
         except Exception as e:
-            manifest.validation_status = "invalid"
+            manifest.validation_status = ValidationStatus.INVALID
             manifest.error_message = f"Exception: {e}"
 
     logs = buf.getvalue()
     if "Context:" in logs or "Total errors" in logs:
-        manifest.validation_status = "invalid"
+        manifest.validation_status = ValidationStatus.INVALID
         manifest.error_message = logs
 
-    manifest.save()
+    manifest.save(update_fields=["validation_status", "error_message", "updated_at"])

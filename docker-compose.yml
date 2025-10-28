@@ -88,6 +88,10 @@ services:
       - REDIS_URL=redis://redis:6379/
       - DATABASE_URL=postgres://adp:secret@postgres:5432/adp-dev
       - DJANGO_SETTINGS_MODULE=vitrina.settings
+      - SEARCH_URL=elasticsearch7://elasticsearch:9200/haystack
+      - CELERY_BROKER_URL=redis://redis:6379/3
+    env_file:
+      - .env
     volumes:
       - ".:/app"
     depends_on:

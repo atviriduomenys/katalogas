@@ -1,6 +1,6 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
-from django.forms import ModelForm, CharField, Textarea, ModelChoiceField, BooleanField, RadioSelect, HiddenInput
+from django.forms import ModelForm, CharField, Textarea, ModelChoiceField, BooleanField, RadioSelect
 
 from vitrina.fields import FilerImageField
 from vitrina.projects.models import Project, UseCaseClientScope, UseCaseClient

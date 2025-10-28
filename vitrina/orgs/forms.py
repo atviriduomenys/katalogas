@@ -389,8 +389,11 @@ class RepresentativeUpdateForm(ModelForm):
         self.user: User = kwargs.pop("user")
         self.object = kwargs.pop("object", None)
         super().__init__(*args, **kwargs)
-        if self.user.viisp_organization == self.object:
-            self.fields["can_make_agreements"].disabled = False
+        if self.object_model == Organization:
+            if self.user.viisp_organization == self.object:
+                self.fields["can_make_agreements"].disabled = False
+        else:
+            self.fields["can_make_agreements"].widget = HiddenInput()
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
@@ -469,8 +472,11 @@ class RepresentativeCreateForm(ModelForm):
         self.user: User = kwargs.pop("user")
         self.object = kwargs.pop("object")
         super().__init__(*args, **kwargs)
-        if self.user.viisp_organization == self.object:
-            self.fields["can_make_agreements"].disabled = False
+        if self.object_model == Organization:
+            if self.user.viisp_organization == self.object:
+                self.fields["can_make_agreements"].disabled = False
+        else:
+            self.fields["can_make_agreements"].widget = HiddenInput()
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"

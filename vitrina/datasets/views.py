@@ -1584,7 +1584,8 @@ class CreateMemberView(
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["object_id"] = self.dataset.pk
+        kwargs["object"] = self.dataset
+        kwargs["user"] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -1762,6 +1763,7 @@ class UpdateMemberView(
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["object"] = self.dataset
+        kwargs["user"] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):

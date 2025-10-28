@@ -1700,7 +1700,8 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         self.object.version = 1
         self.object.name = get_model_name(self.dataset, self.object.name)
         self.object.level_given = form.cleaned_data.get("level")
-        self.object.status = form.cleaned_data.get("level") or form.initial.get("status")
+        if not self.object.status:
+            self.object.status = Status.objects.filter(is_default=True).first()
         if form.cleaned_data.get("uri"):
             self.object.level = 5
         else:

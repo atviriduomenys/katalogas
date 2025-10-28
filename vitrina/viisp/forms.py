@@ -7,12 +7,12 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.users.models import User
 
 PROXY_TYPE_CHOICES = [
-
     ("generic", "Generic"),
     ("service", "Service"),
     ("external", "External"),
     ("legal", "Legal"),
 ]
+
 
 class FakeViispForm(forms.Form):
     email = forms.EmailField(label="El. paštas", required=True)

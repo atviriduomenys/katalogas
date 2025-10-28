@@ -8,7 +8,8 @@ from vitrina.viisp.views import (
     LoginFirstView,
     VIISPAccountMergeView,
     ConfirmEmailView,
-    AccoutnInactiveView, FakeVIISPCompleteLoginView,
+    AccoutnInactiveView,
+    FakeVIISPCompleteLoginView,
 )
 from vitrina.orgs.views import PartnerRegisterView
 from allauth.socialaccount.views import SignupView, ConnectionsView
@@ -56,8 +57,10 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns.append(path(
-        "fake-viisp/complete-login/",
-        FakeVIISPCompleteLoginView.as_view(),
-        name="fake-viisp-complete-login",
-    ),)
+    urlpatterns.append(
+        path(
+            "fake-viisp/complete-login/",
+            FakeVIISPCompleteLoginView.as_view(),
+            name="fake-viisp-complete-login",
+        ),
+    )

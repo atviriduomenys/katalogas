@@ -89,16 +89,15 @@ services:
     image: katalogas-${BRANCH}:latest
     working_dir: /app
     command: celery -A vitrina --broker=redis://katalogas-${BRANCH}-redis:6379/3 flower --port=5555 --address=0.0.0.0
-
     environment:
       - DJANGO_SETTINGS_MODULE=vitrina.settings
       - REDIS_URL=redis://katalogas-${BRANCH}-redis:6379/
-    ports:
-      - "5555:5555"
     depends_on:
       - katalogas-${BRANCH}-redis
       - katalogas-${BRANCH}-celery
     restart: always
+    networks:
+      - katalogas
 
 volumes:
   ${BRANCH}-postgres:

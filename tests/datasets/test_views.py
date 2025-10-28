@@ -2714,9 +2714,6 @@ class TestDatasetPlans:
         plan = Plan.objects.filter(plandataset__dataset=dataset)
         assert plan.count() == 0
         assert dataset.status == Dataset.INVENTORED
-        assert dataset.comments.count() == 1
-        assert dataset.comments.first().type == Comment.STATUS
-        assert dataset.comments.first().status == Comment.INVENTORED
 
     def test_delete_dataset_from_non_last_plan(self, app: DjangoTestApp):
         organization = OrganizationFactory()

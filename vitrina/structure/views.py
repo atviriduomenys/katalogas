@@ -27,7 +27,6 @@ from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
 from reversion.views import RevisionMixin
 from shapely.wkt import loads
-from sympy.codegen.ast import continue_
 
 from vitrina.classifiers.models import Status
 from vitrina.datasets.models import Dataset

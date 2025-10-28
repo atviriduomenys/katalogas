@@ -705,10 +705,11 @@ class Dataset(Resource):
         return list(self.project_set.all().values_list("description", flat=True))
 
     def get_all_groups(self):
-        ids = self.category.filter(datasetgroupcategoryuri__group__isnull=False).values_list(
-            "datasetgroupcategoryuri__group__pk",
-            flat=True
-        ).distinct()
+        ids = (
+            self.category.filter(datasetgroupcategoryuri__group__isnull=False)
+            .values_list("datasetgroupcategoryuri__group__pk", flat=True)
+            .distinct()
+        )
         return DatasetGroup.objects.filter(pk__in=ids).exclude(pk__in=self.get_excluded_groups())
 
     def get_group_list(self):

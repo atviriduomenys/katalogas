@@ -47,7 +47,9 @@ def get_datasets_for_rdf(qs):
             "hvd_categories": [
                 _get_hvd_category(c)
                 for c in dataset.category.filter(datasetgroupcategoryuri__group__name=DatasetGroup.HVD)
-            ] if dataset.is_hvd else [],
+            ]
+            if dataset.is_hvd
+            else [],
             "keywords": [k.name for k in dataset.tags.all()],
             "published": dataset.published,
             "modified": dataset.modified,

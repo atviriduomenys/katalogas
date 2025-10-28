@@ -20,7 +20,8 @@ from vitrina.datasets.models import (
     Attribution,
     DatasetAttribution,
     Contact,
-    DCATResourceSubclass, DatasetGroupCategoryUri,
+    DCATResourceSubclass,
+    DatasetGroupCategoryUri,
 )
 from vitrina.uapi.models import Agent
 

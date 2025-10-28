@@ -6,7 +6,7 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action, pre_representative_delete, _has_dataset_perm, is_representative
+from vitrina.orgs.services import has_perm, Action, pre_representative_delete, _has_dataset_perm
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.requests.factories import RequestFactory
@@ -870,22 +870,3 @@ class TestHasDatasetPerm:
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, child_dataset, child_dataset)
-
-
-@pytest.mark.django_db
-def test_is_representative():
-    organization = OrganizationFactory()
-    user = UserFactory()
-    user.save()
-    ct=ContentType.objects.get_for_model(Organization)
-    RepresentativeFactory(user=user, content_type=ct, object_id=organization.id)
-
-    assert is_representative(user, organization)
-
-@pytest.mark.django_db
-def test_is_not_representative():
-    organization = OrganizationFactory()
-    user = UserFactory()
-    user.save()
-
-    assert not is_representative(user, organization)

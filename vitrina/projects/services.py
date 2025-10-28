@@ -6,10 +6,10 @@ from django.contrib.auth.models import AnonymousUser
 
 
 def _q_project(user: User | AnonymousUser) -> Q:
-    public_approved_or_created = Q(is_public=True) & Q(status__in=[Project.APPROVED, Project.CREATED])
+    public_approved = Q(is_public=True, status=Project.APPROVED)
 
     if not getattr(user, "is_authenticated", False):
-        return public_approved_or_created
+        return public_approved
 
     if user.is_staff or user.is_superuser:
         return Q()
@@ -17,7 +17,7 @@ def _q_project(user: User | AnonymousUser) -> Q:
     represented_org_ids = user.represented_org_ids
 
     q = (
-        public_approved_or_created
+        public_approved
         # Owner can view personal projects
         | Q(organization__isnull=True, user=user)
         # All organization representatives can view organization's projects
@@ -66,7 +66,9 @@ def can_view_clients(user: User, project: Project) -> bool:
 
 
 def can_manage_clients(user: User, project: Project) -> bool:
-    return user.viisp_organization == project.organization and user.is_representative_of(project.organization, True)
+    if project.organization:
+        return user.viisp_organization == project.organization and user.is_representative_of(project.organization)
+    return False
 
 
 def can_view_history(user: User, project: Project) -> bool:

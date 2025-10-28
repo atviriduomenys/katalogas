@@ -35,7 +35,6 @@ class Category(MP_Node):
         blank=True,
         help_text="Piktogramas rasite https://fontawesome.com/search?ic=free.",
     )
-    groups = models.ManyToManyField(to="vitrina_datasets.DatasetGroup", blank=True)
 
     node_order_by = ["title"]
 

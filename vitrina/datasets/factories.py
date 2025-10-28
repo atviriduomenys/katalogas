@@ -7,7 +7,7 @@ from django.utils import timezone
 from factory.django import DjangoModelFactory, FileField
 
 from vitrina import settings
-from vitrina.classifiers.factories import FrequencyFactory
+from vitrina.classifiers.factories import FrequencyFactory, CategoryFactory
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.datasets.models import (
@@ -21,6 +21,7 @@ from vitrina.datasets.models import (
     DatasetAttribution,
     Contact,
     DCATResourceSubclass,
+    DatasetGroupCategoryUri,
 )
 from vitrina.uapi.models import Agent
 
@@ -173,6 +174,15 @@ class DatasetGroupFactory(DjangoModelFactory):
             group.title = fake.word()
         group.save()
         return group
+
+
+class DatasetGroupCategoryUriFactory(DjangoModelFactory):
+    class Meta:
+        model = DatasetGroupCategoryUri
+
+    group = factory.SubFactory(DatasetGroupFactory)
+    category = factory.SubFactory(CategoryFactory)
+    uri = factory.Faker("word")
 
 
 class TypeFactory(DjangoModelFactory):

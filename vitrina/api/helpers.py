@@ -1,6 +1,6 @@
 from typing import Optional
 
-from vitrina.datasets.models import Dataset, Contact, Relation, DatasetRelation
+from vitrina.datasets.models import Dataset, Contact, Relation, DatasetRelation, DatasetGroup
 from vitrina.datasets.services import DynamicResourceService
 from vitrina.resources.models import DatasetDistribution as Distribution
 from vitrina.resources.models import Format
@@ -45,9 +45,11 @@ def get_datasets_for_rdf(qs):
             ),
             "categories": _get_categories(dataset),
             "hvd_categories": [
-                _get_category(c)
-                for c in dataset.category.filter(groups__translations__title="Didelės vertės rinkiniai")
-            ],
+                _get_hvd_category(c)
+                for c in dataset.category.filter(datasetgroupcategoryuri__group__name=DatasetGroup.HVD)
+            ]
+            if dataset.is_hvd
+            else [],
             "keywords": [k.name for k in dataset.tags.all()],
             "published": dataset.published,
             "modified": dataset.modified,
@@ -67,6 +69,7 @@ def get_datasets_for_rdf(qs):
             ),
             "access_rights": dataset.access_rights,
             "subclass": dataset.subclass,
+            "is_hvd": dataset.is_hvd,
         }
 
 
@@ -102,6 +105,7 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
         "media_type": _get_media_type(dist.format),
         "created": dist.created,
         "modified": dist.modified,
+        "is_hvd": dist.is_hvd,
     }
 
 
@@ -119,6 +123,21 @@ def _get_categories(dataset):
 def _get_category(category: Category):
     return {
         "uri": category.uri,
+        "translations": [
+            {
+                "lang": "lt",
+                "title": category.title,
+            },
+        ],
+    }
+
+
+def _get_hvd_category(category: Category):
+    uri = ""
+    if group_category_uri := category.datasetgroupcategoryuri_set.filter(group__name=DatasetGroup.HVD).first():
+        uri = group_category_uri.uri
+    return {
+        "uri": uri,
         "translations": [
             {
                 "lang": "lt",

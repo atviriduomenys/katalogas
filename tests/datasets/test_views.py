@@ -35,7 +35,7 @@ from vitrina.datasets.factories import (
     RelationFactory,
     DatasetRelationFactory,
     ContactFactory,
-    DCATResourceSubclassFactory,
+    DCATResourceSubclassFactory, DatasetGroupCategoryUriFactory,
 )
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.forms import (
@@ -3038,7 +3038,10 @@ def test_dataset_assign_new_category_without_permission(app: DjangoTestApp):
 
     group = DatasetGroupFactory()
     category = CategoryFactory()
-    category.groups.add(group)
+    DatasetGroupCategoryUriFactory(
+        group=group,
+        category=category,
+    )
 
     dataset = DatasetFactory()
     resp = app.get(reverse("assign-category", args=[dataset.pk]), expect_errors=True)
@@ -3051,11 +3054,20 @@ def test_dataset_assign_new_category(app: DjangoTestApp):
 
     group = DatasetGroupFactory()
     category1 = CategoryFactory()
-    category1.groups.add(group)
+    DatasetGroupCategoryUriFactory(
+        group=group,
+        category=category1,
+    )
     category2 = CategoryFactory()
-    category2.groups.add(group)
+    DatasetGroupCategoryUriFactory(
+        group=group,
+        category=category2,
+    )
     category3 = CategoryFactory()
-    category3.groups.add(group)
+    DatasetGroupCategoryUriFactory(
+        group=group,
+        category=category3,
+    )
 
     dataset = DatasetFactory()
     resp = app.post(
@@ -3073,11 +3085,20 @@ def test_dataset_change_category(app: DjangoTestApp):
 
     group = DatasetGroupFactory()
     category1 = CategoryFactory()
-    category1.groups.add(group)
+    DatasetGroupCategoryUriFactory(
+        group=group,
+        category=category1,
+    )
     category2 = CategoryFactory()
-    category2.groups.add(group)
+    DatasetGroupCategoryUriFactory(
+        group=group,
+        category=category2,
+    )
     category3 = CategoryFactory()
-    category3.groups.add(group)
+    DatasetGroupCategoryUriFactory(
+        group=group,
+        category=category3,
+    )
 
     dataset = DatasetFactory()
     dataset.category.add(category1)

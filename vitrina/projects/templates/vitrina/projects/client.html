@@ -21,7 +21,7 @@
                     </a>
                 </div>
             </div>
-    {% if usecases %}
+    {% if clients %}
         <table class="table is-fullwidth">
             <thead>
                 <tr>
@@ -30,15 +30,15 @@
                 </tr>
             </thead>
             <tbody>
-            {% for usecase in usecases %}
+            {% for client in clients %}
                 <tr>
                     <td>
-                        <a href="{% url 'project-clients-detail' project.pk usecase.uuid %}">
-                            {{ usecase.name }}
+                        <a href="{% url 'project-clients-detail' project.pk client.uuid %}">
+                            {{ client.name }}
                         </a>
                     </td>
                     <td style="width:10%">
-                        <a href="{% url 'project-clients-update' project.pk usecase.uuid %}"
+                        <a href="{% url 'project-clients-update' project.pk client.uuid %}"
                            class="button is-primary is-small">
                             {% translate "Redaguoti" %}
                         </a>

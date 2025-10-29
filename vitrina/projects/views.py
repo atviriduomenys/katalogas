@@ -642,13 +642,13 @@ class ClientListView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequire
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
-        usecases = UseCaseClient.objects.filter(use_case__id=self.project.pk)
+        clients = UseCaseClient.objects.filter(use_case__id=self.project.pk)
         context["parent_links"].update(
             {
                 None: _("Klientai"),
             }
         )
-        context["usecases"] = usecases
+        context["clients"] = clients
         return context
 
 

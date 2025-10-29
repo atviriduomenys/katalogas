@@ -24,7 +24,7 @@ from vitrina.classifiers.models import (
     Category,
     Frequency,
     Concept,
-    ApplicableLegislation,
+    ApplicableLegislation, Status,
 )
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
@@ -981,9 +981,14 @@ class Dataset(Resource):
                             f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
                         )
                     if latest_version.status != metadata.status:
+                        changes_to_message = metadata.status.codename
+                        if metadata.status == Status.objects.filter(codename="develop").first():
+                            completed_status = Status.objects.filter(codename="completed").first()
+                            changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
+
                         label_str += (
                             f" status: <span class='tag is-danger is-light is-medium'>{latest_version.status.codename}</span> ->"
-                            f" <span class='tag is-success is-light is-medium'>{metadata.status.codename}</span>"
+                            f" <span class='tag is-success is-light is-medium'>{changes_to_message}</span>"
                         )
                     latest_version.ref = None if latest_version.ref == "" else latest_version.ref
                     metadata.ref = None if metadata.ref == "" else metadata.ref
@@ -1047,10 +1052,15 @@ class Dataset(Resource):
                             )
 
                         if latest_version.status != metadata.status:
+                            changes_to_message = metadata.status.codename
+                            if metadata.status == Status.objects.filter(codename="develop").first():
+                                completed_status = Status.objects.filter(codename="completed").first()
+                                changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
+
                             label_str += (
                                 f" status: <span class='tag is-danger is-light is-medium'>"
                                 f"{latest_version.status.codename}</span> ->"
-                                f" <span class='tag is-success is-light is-medium'>{metadata.status.codename}</span>"
+                                f" <span class='tag is-success is-light is-medium'>{changes_to_message}</span>"
                             )
                         if latest_version.type_repr != metadata.type_repr:
                             label_str += (
@@ -1141,9 +1151,14 @@ class Dataset(Resource):
                                 latest_version.source = None if latest_version.source == "" else latest_version.source
                                 metadata.source = None if metadata.source == "" else metadata.source
                                 if latest_version.status != metadata.status:
+                                    changes_to_message = metadata.status.codename
+                                    if metadata.status == Status.objects.filter(codename="develop").first():
+                                        completed_status = Status.objects.filter(codename="completed").first()
+                                        changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
+
                                     label_str += (
                                         f" status: <span class='tag is-danger is-light is-medium'>{latest_version.status.codename}</span> ->"
-                                        f" <span class='tag is-success is-light is-medium'>{metadata.status.codename}</span>"
+                                        f" <span class='tag is-success is-light is-medium'>{changes_to_message}</span>"
                                     )
                                 if latest_version.source != metadata.source:
                                     label_str += (

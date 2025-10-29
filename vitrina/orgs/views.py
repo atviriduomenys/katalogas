@@ -1,4 +1,5 @@
 import json
+import logging
 import secrets
 from datetime import datetime
 from json import JSONDecodeError
@@ -100,6 +101,9 @@ from vitrina.tasks.models import Task
 from vitrina.views import PlanMixin, HistoryView
 from allauth.socialaccount.models import SocialAccount
 from django.http import HttpResponse
+
+
+logger = logging.getLogger()
 
 
 class OrganizationBaseViewMixin:
@@ -1442,7 +1446,7 @@ class OrganizationApiKeysView(LoginRequiredMixin, PermissionRequiredMixin, Organ
                 err_message = "Error syncing apikeys"
 
         if error:
-            print(err_message)
+            logger.warning(err_message)
             context_data["api_error"] = _(
                 "Nepavyko susisiekti su Saugyklos API, todėl raktai rodomi lentelėje gali nesutapti"
                 + " su raktais Saugykloje."
@@ -1640,7 +1644,7 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, OrganizationBaseVie
             response = get_auth_session().post(SPINTA_SERVER_URL + "/auth/clients", json=data, headers=headers)
         except requests.exceptions.RequestException as e:
             error = True
-            err_message = f"Error creating apikey: {api_key}, {e}"
+            err_message = f"Error creating apikey: {e}."
         else:
             if response.status_code == 200:
                 if "client_id" in response.json() and "client_name" in response.json():
@@ -1664,7 +1668,7 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, OrganizationBaseVie
                 error = True
                 err_message = "Unable to create scopes for apikey"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(reverse("organization-apikeys", args=[self.organization.pk]))
 
@@ -1744,7 +1748,7 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
                     error = True
                     err_message = f"Unable to create scopes for apikey with client_id {self.api_key.client_id}"
             if error:
-                print(err_message)
+                logger.warning(err_message)
                 messages.error(self.request, _("Saugant API raktą įvyko klaida."))
 
         context["current_title"] = _("Rakto redagavimas")
@@ -1778,7 +1782,7 @@ class OrganizationApiKeysUpdateView(PermissionRequiredMixin, UpdateView):
                 error = True
                 err_message = f"Error updating apikey with client_id: {self.api_key.client_id}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(reverse("organization-apikeys", args=[self.organization.pk]))
 
@@ -1842,7 +1846,7 @@ class OrganizationApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
                 error = True
                 err_message = f"Error regenerating apikey with client_name: {self.apikey.client_name}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(reverse("organization-apikeys", args=[self.organization.pk]))
 
@@ -2043,7 +2047,7 @@ class OrganizationApiKeysScopeCreateView(PermissionRequiredMixin, FormView):
                 error = True
                 err_message = f"Error adding scope for apikey with client_id: {self.api_key.client_id}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(
             reverse(
@@ -2163,7 +2167,7 @@ class OrganizationApiKeysScopeChangeView(PermissionRequiredMixin, FormView):
                     error = True
                     err_message = f"Error updating scopes for apikey with client_id: {self.api_key.client_id}"
             if error:
-                print(err_message)
+                logger.warning(err_message)
                 messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(
             (
@@ -2306,7 +2310,7 @@ class OrganizationApiKeysScopeObjectChangeView(PermissionRequiredMixin, FormView
                 error = True
                 err_message = f"Error updating scope for apikey with client_id: {self.api_key.client_id}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(
             (
@@ -2387,7 +2391,7 @@ class OrganizationApiKeysScopeDeleteView(LoginRequiredMixin, PermissionRequiredM
                 error = True
                 err_message = f"Error updating scopes for apikey with client_id {self.api_key.client_id}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(
             reverse(
@@ -2458,7 +2462,7 @@ class OrganizationApiKeysScopeObjectDeleteView(LoginRequiredMixin, PermissionReq
                 error = True
                 err_message = f"Error updating scopes for apikey with client_id: {self.api_key.client_id}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(
             reverse(
@@ -2536,7 +2540,7 @@ class OrganizationApiKeysScopeToggleView(PermissionRequiredMixin, View):
                 error = True
                 err_message = f"Error toggling scopes for apikey with client_id {self.api_key.client_id}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(
             reverse(
@@ -2620,7 +2624,7 @@ class OrganizationApiKeysScopeObjectToggleView(PermissionRequiredMixin, View):
                 error = True
                 err_message = f"Error toggling scopes for apikey with client_id {self.api_key.client_id}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(
             reverse(

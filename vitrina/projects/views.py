@@ -1,3 +1,4 @@
+import logging
 import secrets
 
 from django.contrib import messages
@@ -43,6 +44,9 @@ from vitrina.tasks.models import Task
 from vitrina.views import HistoryMixin, HistoryView
 from vitrina.helpers import get_current_domain
 from vitrina.projects.services import can_update_project, can_view_project, get_projects
+
+
+logger = logging.getLogger()
 
 
 class ProjectListView(ListView):
@@ -408,7 +412,7 @@ class ProjectPermissionsCreateView(PermissionRequiredMixin, View):
                             ),
                         )
             if error:
-                print(err_message)
+                logger.warning(err_message)
                 messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(reverse("project-permissions", args=[self.project.pk]))
 
@@ -463,7 +467,7 @@ class ProjectPermissionsToggleView(PermissionRequiredMixin, View):
                 error = True
                 err_message = f"Error toggling scopes for apikey with client_id: {self.apikey.client_id}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(reverse("project-apikeys-detail", args=[self.project.pk, self.apikey.pk]))
 
@@ -569,7 +573,7 @@ class ProjectApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
                 error = True
                 err_message = f"Error regenerating apikey for apikey with client_name {self.apikey.client_name}"
         if error:
-            print(err_message)
+            logger.warning(err_message)
             messages.error(self.request, _("Saugant API raktą įvyko klaida."))
         return redirect(reverse("project-permissions", args=[self.project.pk]))
 

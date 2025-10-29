@@ -66,7 +66,7 @@ class Agent(UUIDBaseModel):
         "vitrina_datasets.Dataset",
         verbose_name=_("Duomenų paslauga"),
         on_delete=models.CASCADE,
-        help_text=_("Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService"),
+        help_text=_("Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService."),
     )
     organization = models.ForeignKey(
         "vitrina_orgs.Organization",

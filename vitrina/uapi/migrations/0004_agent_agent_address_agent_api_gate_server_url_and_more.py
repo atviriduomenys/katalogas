@@ -61,7 +61,7 @@ class Migration(migrations.Migration):
             model_name="agent",
             name="service",
             field=models.ForeignKey(
-                help_text="Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService",
+                help_text="Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService.",
                 on_delete=django.db.models.deletion.CASCADE,
                 to="vitrina_datasets.dataset",
                 verbose_name="Duomenų paslauga",

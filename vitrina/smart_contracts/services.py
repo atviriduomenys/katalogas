@@ -123,8 +123,8 @@ def can_view_agreements(user: User | AnonymousUser, project: Project) -> bool:
     if project.organization and project.organization.id in represented_org_ids:
         return True
 
-    for dataset in project.datasets.all():
-        if dataset.organization.id in represented_org_ids:
+    for agreement in project.agreements.all():
+        if agreement.assigner.id in represented_org_ids:
             return True
 
     return False

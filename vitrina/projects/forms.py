@@ -59,13 +59,17 @@ class ProjectForm(ModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "project-form"
-        self.fields["organization"].empty_label = f"{_('Fizinis asmuo')} ({self.user})"
-        if project_instance:
-            self.fields.pop("organization", None)
-        elif (organization := self.user.viisp_organization) and self.user.is_representative_of(organization, True):
+        if (
+            not project_instance
+            and (organization := self.user.viisp_organization)
+            and self.user.is_representative_of(organization, True)
+        ):
+            self.fields["organization"].empty_label = f"{_('Fizinis asmuo')} ({self.user})"
             self.fields["organization"].queryset = Organization.objects.filter(pk=organization.pk)
             self.fields["organization"].label_from_instance = lambda org: _("Organizacija") + f" ({org})"
             self.fields["organization"].initial = organization
+        else:
+            self.fields.pop("organization", None)
 
         self.helper.layout = Layout(
             Field("is_public"),

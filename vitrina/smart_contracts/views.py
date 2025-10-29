@@ -412,7 +412,7 @@ class AgreementUploadSignedFile(
             )
         if (
             self.agreement.status == AgreementStatuses.FORMED
-            and request.user.viisp_organization == self.agreement.assigner
+            and request.user.viisp_organization != self.agreement.assignee
         ):
             error_msg = _(
                 "Sutartį pasirašyti duomenų teikėjo vardu galėsite tik po to kai ją pasirašys duomenų gavėjas."

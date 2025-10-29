@@ -104,7 +104,13 @@ def extract_elements_from_adoc(adoc_path: str, regex: str) -> list[str]:
             os.remove(TEMP_PDF_PATH)
 
 
-def get_agreements(user: User) -> QuerySet["Project"]:
+def get_agreements(user: User) -> QuerySet["Agreement"]:
+    if not user.is_authenticated:
+        return Agreement.objects.none()
+
+    if user.is_staff or user.is_superuser:
+        return Agreement.objects.all()
+
     represented_org_ids = user.represented_org_ids
     queryset = Agreement.objects.filter(Q(assignee_id__in=represented_org_ids) | Q(assigner_id__in=represented_org_ids))
 
@@ -123,11 +129,7 @@ def can_view_agreements(user: User | AnonymousUser, project: Project) -> bool:
     if project.organization and project.organization.id in represented_org_ids:
         return True
 
-    for agreement in project.agreements.all():
-        if agreement.assigner.id in represented_org_ids:
-            return True
-
-    return False
+    return project.agreements.filter(assigner_id__in=represented_org_ids).exists()
 
 
 def can_view_agreement(user: User, agreement: Agreement) -> bool:
@@ -144,8 +146,4 @@ def can_create_agreements(user: User, project: Project) -> bool:
 def can_upload_agreement_file(user: User, agreement: Agreement) -> bool:
     parties = [agreement.assignee, agreement.assigner]
 
-    for party in parties:
-        if user.viisp_organization == party and user.is_representative_of(party, True):
-            return True
-
-    return False
+    return any(user.viisp_organization == party and user.is_representative_of(party, True) for party in parties)

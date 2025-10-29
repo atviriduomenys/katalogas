@@ -1926,7 +1926,7 @@ class DatasetProjectsView(DatasetStructureMixin, PermissionRequiredMixin, Histor
         context["available_projects"] = get_projects_linkable_to_dataset(self.request.user).exclude(
             datasets=self.object
         )
-        context["removable_project_ids"] = (
+        context["removable_project_ids"] = set(
             get_projects_linkable_to_dataset(self.request.user)
             .filter(datasets=self.object)
             .values_list("pk", flat=True)

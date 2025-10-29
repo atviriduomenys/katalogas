@@ -5,7 +5,7 @@ from django.db.models import QuerySet
 from django.contrib.auth.models import AnonymousUser
 
 
-def _q_visible_projects(user: User | AnonymousUser) -> Q:
+def visible_projects_filter(user: User | AnonymousUser) -> Q:
     public_approved = Q(is_public=True, status=Project.APPROVED)
 
     if not getattr(user, "is_authenticated", False):
@@ -16,25 +16,20 @@ def _q_visible_projects(user: User | AnonymousUser) -> Q:
 
     represented_org_ids = user.represented_org_ids
 
-    filter = (
-        public_approved
-        # Owner can view personal projects
-        | Q(organization__isnull=True, user=user)
-        # All organization representatives can view organization's projects
-        | Q(organization_id__in=represented_org_ids)
-        # Representatives can view projects of organizations, they represent
-        | Q(datasets__organization_id__in=represented_org_ids)
-    )
+    is_owner = Q(organization__isnull=True, user=user)
+    is_org_representative = Q(organization_id__in=represented_org_ids)
+    is_dataset_representative = Q(datasets__organization_id__in=represented_org_ids)
+    query_filter = public_approved | is_owner | is_org_representative | is_dataset_representative
 
-    return filter
+    return query_filter
 
 
 def can_view_project(user: User | AnonymousUser, project: Project) -> bool:
-    return Project.objects.filter(_q_visible_projects(user), pk=project.pk).exists()
+    return Project.objects.filter(visible_projects_filter(user), pk=project.pk).exists()
 
 
 def get_projects(user: User | AnonymousUser) -> QuerySet["Project"]:
-    queryset = Project.objects.filter(_q_visible_projects(user))
+    queryset = Project.objects.filter(visible_projects_filter(user))
 
     return queryset.distinct().order_by("-created")
 

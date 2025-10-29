@@ -22,7 +22,8 @@ from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.smart_contracts.models import AgreementScope
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
-from vitrina.orgs.factories import OrganizationFactory, ViispRepresentativeFactory
+from vitrina.orgs.factories import OrganizationFactory, ViispRepresentativeFactory, RepresentativeFactory
+from vitrina.orgs.models import Organization
 
 from vitrina.users.models import User
 
@@ -36,8 +37,13 @@ def generate_photo_file() -> bytes:
     file.name = 'example.png'
     return file.getvalue()
 
-
-def test_project_create(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        'is_public',
+        [
+            True,False
+        ]
+)
+def test_project_create_personal(app: DjangoTestApp, is_public: bool):
     user = UserFactory()
     app.set_user(user)
 
@@ -46,19 +52,22 @@ def test_project_create(app: DjangoTestApp):
     form['description'] = "Description"
     form['url'] = "example.com"
     form['image'] = Upload('example.png', generate_photo_file(), 'image')
+    form['is_public'] = is_public
     resp = form.submit()
 
-    added_project = Project.objects.filter(title='Project')
-    assert added_project.exists()
+    project_qs = Project.objects.filter(title='Project')
+    assert  project_qs.exists()
+    added_project = project_qs.first()
     assert resp.status_code == 302
-    assert resp.url == added_project.first().get_absolute_url()
-    assert Version.objects.get_for_object(added_project.first()).count() == 1
-    assert Version.objects.get_for_object(added_project.first()).first().revision.comment == Project.CREATED
+    assert resp.url == added_project.get_absolute_url()
+    assert Version.objects.get_for_object(added_project).count() == 1
+    assert Version.objects.get_for_object(added_project).first().revision.comment == Project.CREATED
     assert FilerImage.objects.count() == 1
-    assert added_project.first().image.original_filename == "example.png"
-    assert not added_project.first().organization
+    assert added_project.image.original_filename == "example.png"
+    assert not added_project.organization
+    assert added_project.is_public == is_public
 
-def test_project_create_with_organization(app: DjangoTestApp):
+def test_project_create_for_organization(app: DjangoTestApp):
     representative = ViispRepresentativeFactory(can_make_agreements=True)
     user = representative.user
     app.set_user(user)
@@ -81,11 +90,31 @@ def test_project_create_with_organization(app: DjangoTestApp):
     assert FilerImage.objects.count() == 1
     assert added_project.image.original_filename == "example.png"
     assert added_project.organization == organization
+    assert not added_project.is_public
 
-def test_project_create_with_organization_no_representative(app: DjangoTestApp):
-    user = UserFactory()
-    app.set_user(user)
+def test_organization_project_create_viisp_no_representative(app: DjangoTestApp):
     organization = OrganizationFactory()
+    user = UserFactory(is_viisp_login=True, viisp_company_code=organization.company_code)
+    app.set_user(user)
+
+    form = app.get(reverse("project-create")).forms['project-form']
+    form['title'] = "Project"
+    form['description'] = "Description"
+    form['url'] = "example.com"
+    form['image'] = Upload('example.png', generate_photo_file(), 'image')
+    assert 'organization' not in form.fields
+
+    resp = form.submit()
+
+    assert resp.status_code == 302
+    project = Project.objects.filter(title='Project').first()
+    assert not project.organization
+
+def test_organization_project_create_viisp_representative_no_agreements_flag(app: DjangoTestApp):
+    representative = ViispRepresentativeFactory(can_make_agreements=False)
+    user = representative.user
+    organization = representative.content_object
+    app.set_user(user)
 
     form = app.get(reverse("project-create")).forms['project-form']
     form['title'] = "Project"
@@ -94,15 +123,14 @@ def test_project_create_with_organization_no_representative(app: DjangoTestApp):
     form['image'] = Upload('example.png', generate_photo_file(), 'image')
     with pytest.raises(ValueError):
         form['organization'] = organization.id
-    form["organization"].force_value(organization.pk)
 
-    form['url'] = "example.com"
     resp = form.submit()
 
-    assert resp.status_code == 200
-    assert not Project.objects.filter(title='Project').exists()
+    assert resp.status_code == 302
+    project = Project.objects.filter(title='Project').first()
+    assert not project.organization
 
-def test_project_update(app: DjangoTestApp):
+def test_personal_project_update(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory(user=user)
 
@@ -120,6 +148,48 @@ def test_project_update(app: DjangoTestApp):
     assert project.description == "Updated description"
     assert Version.objects.get_for_object(project).count() == 1
     assert Version.objects.get_for_object(project).first().revision.comment == Project.EDITED
+
+def test_organization_project_update_no_permission(app: DjangoTestApp):
+    representative = ViispRepresentativeFactory(can_make_agreements=False)
+    user = representative.user
+    project = ProjectFactory(user=user, organization=representative.content_object)
+
+    app.set_user(user)
+
+    resp = app.get(reverse("project-update", args=[project.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+def test_personal_project_update_no_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory()
+
+    app.set_user(user)
+
+    resp = app.get(reverse("project-update", args=[project.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+def test_project_cannot_update_organization(app: DjangoTestApp):
+    representative = ViispRepresentativeFactory(can_make_agreements=True)
+    user = representative.user
+    project = ProjectFactory(user=user, organization=representative.content_object)
+
+    app.set_user(user)
+
+    form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']
+    assert "organization" not in form.fields
+
+
+def test_project_update_with_agreements(app: DjangoTestApp, organization: Organization):
+    user = UserFactory()
+    RepresentativeFactory(user=user, content_object=organization)
+    project = ProjectFactory(user=user, organization=organization)
+    AgreementFactory(project=project)
+
+    app.set_user(user)
+
+    resp = app.get(reverse("project-update", args=[project.pk]))
+
+    assert resp.status_code == 302
 
 def test_project_update_with_organization(app: DjangoTestApp):
     representative = ViispRepresentativeFactory(can_make_agreements=True)
@@ -292,6 +362,13 @@ def test_not_approved_project_view_without_permission(app: DjangoTestApp):
     resp = app.get(reverse('project-detail', args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
 
+def test_approved_non_public_project_view_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory(status=Project.APPROVED, is_public=False)
+    app.set_user(user)
+    resp = app.get(reverse('project-detail', args=[project.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
 
 def test_not_approved_project_view_with_permission(app: DjangoTestApp):
     user = UserFactory()
@@ -301,19 +378,115 @@ def test_not_approved_project_view_with_permission(app: DjangoTestApp):
     resp = app.get(reverse('project-detail', args=[project.pk]))
     assert resp.context['object'] == project
 
-
-def test_client_view_without_permission(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        'project_status, is_public',
+        [
+            (Project.APPROVED, True),
+            (Project.APPROVED, False),
+            (Project.CREATED, True),
+            (Project.CREATED, False),
+            (Project.REJECTED, True),
+            (Project.REJECTED, False),
+        ]
+)
+def test_representative_can_view_any_organization_projects(app: DjangoTestApp, project_status, is_public: bool):
+    organization = OrganizationFactory()
     user = UserFactory()
-    project = ProjectFactory()
+    RepresentativeFactory(user=user, content_object=organization)
+    project = ProjectFactory(organization=organization, is_public=is_public, status=project_status)
+    app.set_user(user)
+
+    resp = app.get(reverse('project-detail', args=[project.pk]))
+    assert resp.context['object'] == project
+
+@pytest.mark.parametrize(
+        'project_status, is_public',
+        [
+            (Project.APPROVED, False),
+            (Project.CREATED, True),
+            (Project.CREATED, False),
+            (Project.REJECTED, True),
+            (Project.REJECTED, False),
+        ]
+)
+def test_non_representative_cannot_view_non_public_non_approved_organization_projects(app: DjangoTestApp, project_status, is_public: bool):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    project = ProjectFactory(organization=organization, is_public=is_public, status=project_status)
+    app.set_user(user)
+
+    resp = app.get(reverse('project-detail', args=[project.pk]), expect_errors=True)
+    assert resp.status_code == 403
+
+@pytest.mark.parametrize(
+        'project_status, is_public',
+        [
+            (Project.APPROVED, True),
+            (Project.APPROVED, False),
+            (Project.CREATED, True),
+            (Project.CREATED, False),
+            (Project.REJECTED, True),
+            (Project.REJECTED, False),
+        ]
+)
+def test_user_can_view_any_personal_projects(app: DjangoTestApp, project_status, is_public: bool):
+    user = UserFactory()
+    project = ProjectFactory(user=user, is_public=is_public, status=project_status)
+    app.set_user(user)
+
+    resp = app.get(reverse('project-detail', args=[project.pk]))
+    assert resp.context['object'] == project
+
+
+@pytest.mark.parametrize(
+        'project_status, is_public',
+        [
+            (Project.APPROVED, True),
+            (Project.APPROVED, False),
+            (Project.CREATED, True),
+            (Project.CREATED, False),
+            (Project.REJECTED, True),
+            (Project.REJECTED, False),
+        ]
+)
+def test_assigner_can_view_any_projects_it_is_part_of(app: DjangoTestApp, project_status, is_public: bool):
+    organization = OrganizationFactory()
+    dataset = DatasetFactory()
+    user = UserFactory()
+    RepresentativeFactory(user=user, content_object=dataset.organization)
+    project = ProjectFactory(organization=organization, is_public=is_public, status=project_status)
+    project.datasets.add(dataset)
+    app.set_user(user)
+
+    resp = app.get(reverse('project-detail', args=[project.pk]))
+    assert resp.context['object'] == project
+
+def test_clients_view_without_permission(app: DjangoTestApp):
+    user = UserFactory()
+    project = ProjectFactory(user=user)
     app.set_user(user)
     resp = app.get(reverse('project-clients', args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
 
+def test_clients_view(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    RepresentativeFactory(user=user, content_object=organization)
+    project = ProjectFactory(user=user, organization=organization)
+    UseCaseClientFactory.create_batch(2, use_case=project)
+    app.set_user(user)
+    resp = app.get(reverse('project-clients', args=[project.pk]))
+    assert resp.status_code == 200
+    assert project.client_set.count() == 2
+    assert resp.context["clients"].count() == 2
+
 
 def test_client_create_without_permission(app: DjangoTestApp):
+    organization = OrganizationFactory()
     user = UserFactory()
+    RepresentativeFactory(user=user, content_object=organization)
     app.set_user(user)
-    project = ProjectFactory()
+    project = ProjectFactory(user=user, organization=organization)
 
     resp = app.get(
         reverse("project-clients-create", args=[project.pk]),
@@ -374,10 +547,12 @@ def test_client_create(app: DjangoTestApp, oauth_settings):
 
 
 def test_client_update_without_permission(app: DjangoTestApp):
+    organization = OrganizationFactory()
     user = UserFactory()
+    RepresentativeFactory(user=user, content_object=organization)
     app.set_user(user)
-    project = ProjectFactory()
-    client = UseCaseClientFactory()
+    project = ProjectFactory(user=user, organization=organization)
+    client = UseCaseClientFactory(use_case=project)
     resp = app.get(
         reverse("project-clients-update", args=[project.pk, client.uuid]),
         expect_errors=True

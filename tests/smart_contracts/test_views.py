@@ -31,9 +31,9 @@ test_contracts_dir = Path(__file__).parent / "files" / "test_contracts"
 
 
 class TestAgreementListView:
-    def test_cannot_list_without_permission(self, app: DjangoTestApp) -> None:
+    def test_cannot_list_for_personal_project(self, app: DjangoTestApp) -> None:
         user = UserFactory()
-        project = ProjectFactory()
+        project = ProjectFactory(user=user)
         app.set_user(user)
 
         response = app.get(
@@ -41,24 +41,34 @@ class TestAgreementListView:
         )
         assert response.status_code == 403
 
-    def test_list_agreements(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
-    ) -> None:
-        representative = ViispRepresentativeFactory(content_object=organization)
-        user =  representative.user
-        project = ProjectFactory(organization=organization, datasets=[dataset])
+    def test_cannot_list_no_permission(self, app: DjangoTestApp, organization: Organization) -> None:
+        user = UserFactory()
+        project = ProjectFactory(user=user, organization=organization)
         app.set_user(user)
-        AgreementFactory(project=project, assigner=organization)
+
+        response = app.get(
+            reverse("agreement-list", args=[project.pk]), expect_errors=True
+        )
+        assert response.status_code == 403
+
+    def test_list_agreements_as_assignee(
+        self, app: DjangoTestApp, organization: Organization) -> None:
+        user =  UserFactory()
+        RepresentativeFactory(user=user, content_object=organization)
+        project = ProjectFactory(organization=organization)
+        app.set_user(user)
+        AgreementFactory.create_batch(2, project=project, assignee=organization, assigner=OrganizationFactory())
 
         response = app.get(reverse("agreement-list", args=[project.pk]))
 
         assert response.status_code == 200
-        assert response.context["agreements"].count() == 1
+        assert project.agreements.count() == 2
+        assert response.context["agreements"].count() == 2
 
     def test_list_no_agreements(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset
     ) -> None:
-        representative = ViispRepresentativeFactory(content_object=organization)
+        representative = RepresentativeFactory(content_object=organization)
         user =  representative.user
         project = ProjectFactory(organization=organization, datasets=[dataset])
         app.set_user(user)
@@ -67,6 +77,20 @@ class TestAgreementListView:
 
         assert response.status_code == 200
         assert response.context["agreements"].count() == 0
+
+    def test_list_agreements_as_assigner(self, app: DjangoTestApp, organization: Organization) -> None:
+        user =  UserFactory()
+        RepresentativeFactory(user=user, content_object=organization)
+        project = ProjectFactory(organization=OrganizationFactory())
+        app.set_user(user)
+        AgreementFactory(project=project, assigner=organization)
+        AgreementFactory(project=project, assigner=OrganizationFactory())
+
+        response = app.get(reverse("agreement-list", args=[project.pk]))
+
+        assert response.status_code == 200
+        assert project.agreements.count() == 2
+        assert response.context["agreements"].count() == 1
 
 
 class TestAgreementDetailView:
@@ -127,8 +151,9 @@ class TestAgreementCreateView:
     def test_cannot_create_agreement_without_permission(
         self, app: DjangoTestApp
     ) -> None:
-        user = UserFactory()
-        project = ProjectFactory()
+        representative = ViispRepresentativeFactory(can_make_agreements=False)
+        user = representative.user
+        project = ProjectFactory(user=user, organization=representative.content_object)
         app.set_user(user)
 
         response = app.get(
@@ -139,8 +164,9 @@ class TestAgreementCreateView:
     def test_cannot_create_agreement_for_deleted_project(
         self, app: DjangoTestApp
     ) -> None:
-        user = UserFactory()
-        project = ProjectFactory(user=user, deleted=True)
+        representative = ViispRepresentativeFactory(can_make_agreements=True)
+        user = representative.user
+        project = ProjectFactory(user=user, organization=representative.content_object, deleted=True)
         app.set_user(user)
 
         response = app.get(
@@ -300,12 +326,12 @@ class TestAgreementCreateView:
 
 
 class TestAgreementGeneratePdf:
-    def test_cannot_generate_pdf_without_permission(
-        self, app: DjangoTestApp, organization: Organization
-    ) -> None:
-        user = UserFactory()
+    def test_cannot_generate_pdf_without_permission(self, app: DjangoTestApp) -> None:
+        representative = ViispRepresentativeFactory(can_make_agreements=False)
+        user = representative.user
+        organization = representative.content_object
         app.set_user(user)
-        project = ProjectFactory()
+        project = ProjectFactory(organization=organization)
         agreement = AgreementFactory(project=project, assigner=organization)
 
         response = app.get(
@@ -542,10 +568,10 @@ class TestAgreementGeneratePdf:
 
 
 class TestAgreementUploadSignedFile:
-    def test_cannot_upload_adoc_without_permission(
-        self, app: DjangoTestApp, organization: Organization
-    ) -> None:
-        user = UserFactory()
+    def test_cannot_upload_adoc_without_permission(self, app: DjangoTestApp) -> None:
+        representative = ViispRepresentativeFactory(can_make_agreements=False)
+        user = representative.user
+        organization = representative.content_object
         app.set_user(user)
         project = ProjectFactory()
         agreement = AgreementFactory(
@@ -588,6 +614,27 @@ class TestAgreementUploadSignedFile:
         agreement.refresh_from_db()
         assert response.status_code == 302
         assert agreement.status == status
+
+    def test_assigner_cannot_upload_adoc_for_agreement_with_status_formed(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+    ) -> None:
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
+        app.set_user(user)
+        project = ProjectFactory(organization=OrganizationFactory())
+        agreement = AgreementFactory(
+            project=project, assigner=organization, status=AgreementStatuses.FORMED
+        )
+
+        response = app.get(
+            reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk])
+        )
+        agreement.refresh_from_db()
+        assert response.status_code == 302
+        assert agreement.status == AgreementStatuses.FORMED
+    
 
     def test_upload_adoc_and_change_status_to_initiated_if_agreement_status_formed(
         self, app: DjangoTestApp, organization: Organization, dataset: Dataset

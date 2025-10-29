@@ -64,6 +64,7 @@ from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
 from vitrina.identifiers.factories import AgencyFactory, IdentifierFactory
 from vitrina.identifiers.models import Identifier, Agency
+from vitrina.smart_contracts.factories import AgreementFactory
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -2831,6 +2832,31 @@ class TestDatasetProject:
         assert resp.url == reverse("dataset-projects", kwargs={"pk": dataset.pk})
         assert project.datasets.all().first() == dataset
 
+    def test_add_organization_project_with_permission(self, app: DjangoTestApp, organization: Organization):
+        user = UserFactory()
+        RepresentativeFactory(user=user, content_object=organization)
+        project = ProjectFactory(organization=organization)
+        dataset = DatasetFactory()
+        app.set_user(user)
+        resp = app.get(reverse("dataset-project-add", kwargs={"pk": dataset.pk}))
+        form = resp.forms["dataset-add-project-form"]
+        form["projects"] = (project.pk,)
+        resp = form.submit()
+        dataset.refresh_from_db()
+        assert resp.status_code == 302
+        assert resp.url == reverse("dataset-projects", kwargs={"pk": dataset.pk})
+        assert project.datasets.all().first() == dataset
+
+    def test_add_project_with_agreements(self, app: DjangoTestApp, organization: Organization):
+        user = UserFactory(is_staff=True)
+        project = ProjectFactory(organization=organization)
+        AgreementFactory(project=project)
+        dataset = DatasetFactory()
+        app.set_user(user)
+        resp = app.get(reverse("dataset-project-add", kwargs={"pk": dataset.pk}))
+        assert resp.status_code == 302
+        assert resp.url == reverse("dataset-projects", kwargs={"pk": dataset.pk})
+
     def test_project_tab_with_non_public_dataset_without_access(self, app: DjangoTestApp):
         dataset = DatasetFactory(is_public=False)
         user = UserFactory()
@@ -2850,12 +2876,12 @@ class TestDatasetProject:
         response = app.get(reverse("dataset-projects", args=[dataset.pk]))
         assert response.context["dataset"] == dataset
 
-    def test_add_project_with_no_permission(self, app: DjangoTestApp):
+    def test_add_project_with_no_available_projects(self, app: DjangoTestApp):
         user = UserFactory()
         dataset = DatasetFactory()
         app.set_user(user)
         resp = app.get(reverse("dataset-project-add", kwargs={"pk": dataset.pk}), expect_errors=True)
-        assert resp.status_code == 403
+        assert resp.status_code == 302
 
     def test_remove_project_no_permission(self, app: DjangoTestApp):
         user = UserFactory()
@@ -2866,7 +2892,7 @@ class TestDatasetProject:
 
         app.set_user(user)
 
-        resp = app.get(
+        resp = app.post(
             reverse(
                 "dataset-project-remove",
                 kwargs={"pk": dataset.pk, "project_id": project.pk},
@@ -2876,7 +2902,7 @@ class TestDatasetProject:
 
         assert resp.status_code == 302
 
-    def test_remove_dataset_from_project_no_permission(self, app: DjangoTestApp):
+    def test_remove_dataset_from_project(self, app: DjangoTestApp):
         user = UserFactory()
         project = ProjectFactory(user=user)
         dataset = DatasetFactory()
@@ -2897,6 +2923,27 @@ class TestDatasetProject:
         assert Dataset.objects.exists()
         project.refresh_from_db()
         assert not project.datasets.exists()
+
+    def test_remove_dataset_from_project_with_agreements(self, app: DjangoTestApp):
+        user = UserFactory()
+        project = ProjectFactory(user=user)
+        dataset = DatasetFactory()
+        project.datasets.add(dataset)
+        AgreementFactory(project=project)
+        assert project.datasets.all().count() == 1
+
+        app.set_user(user)
+
+        resp = app.post(
+            reverse(
+                "dataset-project-remove",
+                kwargs={"pk": dataset.pk, "project_id": project.pk},
+            ),
+            expect_errors=True,
+        )
+
+        assert resp.status_code == 302
+        assert dataset in project.datasets.all()
 
     def test_remove_project_with_permission(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)

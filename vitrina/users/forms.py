@@ -649,6 +649,12 @@ class UserProfileEditForm(ModelForm):
     email = EmailField(label=_("El. paštas"), required=True)
     organization = ModelChoiceField(label=_("Organizacija"), required=False, queryset=Organization.public.all())
 
+
+    ################## REMOVE BEFORE MERGE ####################
+    is_viisp_login = BooleanField(required=False)
+    viisp_company_code = CharField(required=False)
+    ################## REMOVE BEFORE MERGE ####################
+
     class Meta:
         model = User
         fields = [
@@ -694,6 +700,10 @@ class UserProfileEditForm(ModelForm):
                 css_class="field",
             ),
             Field("organization"),
+            ################## REMOVE BEFORE MERGE ####################
+            Field("is_viisp_login"),
+            Field("viisp_company_code"),
+            ################## REMOVE BEFORE MERGE ####################
             Submit("submit", _("Patvirtinti"), css_class="button is-primary"),
         )
 

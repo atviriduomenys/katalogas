@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-30 13:53+0300\n"
+"POT-Creation-Date: 2025-10-24 13:12+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -483,6 +483,9 @@ msgid "Koordinatoriai"
 msgstr ""
 
 msgid "Tvarkytojai"
+msgstr ""
+
+msgid "VDA tvarkytojai"
 msgstr ""
 
 msgid "Duomenų šaltinio pirmo</br>publikavimo data saugykloje"
@@ -1344,19 +1347,19 @@ msgstr ""
 msgid "Atsisiuntimo formatas"
 msgstr ""
 
-msgid "Institucija, teikianti duomenis"
-msgstr ""
-
-msgid "El. paštas"
-msgstr ""
-
-msgid "Telefonas"
+msgid "Duomenis teikianti organizacija"
 msgstr ""
 
 msgid "Institucija, atsakinga už duomenų atvėrimą"
 msgstr ""
 
 msgid "Kontaktinė informacija"
+msgstr ""
+
+msgid "El. paštas"
+msgstr ""
+
+msgid "Telefonas"
 msgstr ""
 
 msgid "Dalintis socialiniuose tinkluose"
@@ -2267,6 +2270,9 @@ msgstr ""
 msgid "Tvarkytojas"
 msgstr ""
 
+msgid "Leidžiama keisti duomenis"
+msgstr ""
+
 msgid "Ataskaita"
 msgstr ""
 
@@ -2488,6 +2494,9 @@ msgstr ""
 msgid "Naujas terminas"
 msgstr ""
 
+msgid "Registruoti panaudojimo atvejį"
+msgstr ""
+
 msgid "Registracija negalima"
 msgstr ""
 
@@ -2655,6 +2664,11 @@ msgstr ""
 msgid "Išsamus pasiūlymo aprašymas."
 msgstr ""
 
+msgid ""
+"Nurodžius organizaciją panaudos atvejis kuriamas organizacijos vardu, "
+"nenurodžius - privataus asmens vardu. Atitinka odrl:asignee"
+msgstr ""
+
 msgid "Nuoroda į panaudojimo atvejį"
 msgstr ""
 
@@ -2720,34 +2734,13 @@ msgstr ""
 msgid "Duomenų rinkinių sąrašas"
 msgstr ""
 
-msgid "Peržiūrėjo"
+msgid "Panaudojimo atvejo peržiūros"
 msgstr ""
 
-msgid "PATVIRTINTAS"
-msgstr ""
-
-msgid "ATMESTAS"
-msgstr ""
-
-msgid "NAUJAS"
-msgstr ""
-
-msgid "Ar jums patinka šis projektas?"
+msgid "Duomenų gavėjas"
 msgstr ""
 
 msgid "Užsiprenumeruokite naujienas, susijusias su panaudojimo atveju"
-msgstr ""
-
-msgid "Teikiama nauda"
-msgstr ""
-
-msgid "Naudos gavėjų grupė"
-msgstr ""
-
-msgid "Papildoma informacija"
-msgstr ""
-
-msgid "Panaudoti duomenų rinkiniai"
 msgstr ""
 
 msgid ""
@@ -2868,6 +2861,12 @@ msgstr ""
 msgid "Suplanuotas"
 msgstr ""
 
+msgid "Poreikiui suteiktas pavadinimas."
+msgstr ""
+
+msgid "Laisvo teksto aprašas laisvos formos tekstu."
+msgstr ""
+
 msgid "Klaidų duomenyse pataisymas"
 msgstr ""
 
@@ -2959,6 +2958,9 @@ msgid "Pastabos"
 msgstr ""
 
 msgid "Struktūros failas"
+msgstr ""
+
+msgid "Papildoma informacija"
 msgstr ""
 
 msgid "Šis laukas privalomas"
@@ -3361,9 +3363,6 @@ msgstr ""
 msgid "Nurodoma organizacija, kuriai priskirtas šablonas."
 msgstr ""
 
-msgid "Duomenis teikianti organizacija"
-msgstr ""
-
 msgid "Duomenis gaunanti organizacija"
 msgstr ""
 
@@ -3432,6 +3431,9 @@ msgid "Nėra sutarčių."
 msgstr ""
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
+msgstr ""
+
+msgid "Privatūs asmenys negali sudaryti sutarčių."
 msgstr ""
 
 msgid "Sutartys sėkmingai sugeneruotos"
@@ -4335,6 +4337,9 @@ msgstr ""
 msgid "Prisijungti"
 msgstr ""
 
+msgid "Fizinis asmuo"
+msgstr ""
+
 msgid "Duomenų paieška"
 msgstr ""
 
@@ -4396,9 +4401,6 @@ msgid "Registruoti duomenų teikėją"
 msgstr ""
 
 msgid "Duomenų panaudojimo atvejai"
-msgstr ""
-
-msgid "Registruoti panaudojimo atvejį"
 msgstr ""
 
 msgid "Prašymai atverti duomenis"
@@ -4463,6 +4465,15 @@ msgid "Administratorius"
 msgstr ""
 
 msgid "Atnaujinti"
+msgstr ""
+
+msgid "Vystymo"
+msgstr ""
+
+msgid "Testavimo"
+msgstr ""
+
+msgid "Gamybinė"
 msgstr ""
 
 msgid ""
@@ -4540,6 +4551,33 @@ msgstr ""
 msgid ""
 "Jei kliento identifikatorius egzistuoja - agentas gali vykdyti užklausas į "
 "katalogą."
+msgstr ""
+
+msgid "Aplinka"
+msgstr ""
+
+msgid "Aplinka, kurioje diegiamas agentas."
+msgstr ""
+
+msgid "Autorizacijos serverio adresas"
+msgstr ""
+
+msgid "Nurodomas autorizacijos serverio adresas."
+msgstr ""
+
+msgid "API vartų serverio adresas"
+msgstr ""
+
+msgid "Nurodomas API vartų serverio adresas."
+msgstr ""
+
+msgid "Agento adresas"
+msgstr ""
+
+msgid ""
+"Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, "
+"kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas "
+"išorinis agento adresas"
 msgstr ""
 
 msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
@@ -4719,6 +4757,11 @@ msgid "Klaidų nėra"
 msgstr ""
 
 msgid "Pridėti Agentą"
+msgstr ""
+
+msgid ""
+"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei nenurodyta, duomenų "
+"paslauga bus sukurta automatiškai."
 msgstr ""
 
 msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."

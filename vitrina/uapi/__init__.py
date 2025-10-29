@@ -33,3 +33,9 @@ class ChangeType(TextChoices):
     CREATE = "CREATE", _("Sukurti")
     UPDATE = "UPDATE", _("Atnaujinti")
     DELETE = "DELETE", _("Ištrinti")
+
+
+class Environment(TextChoices):
+    DEVELOPMENT = "DEVELOPMENT", _("Vystymo")
+    TESTING = "TESTING", _("Testavimo")
+    PRODUCTION = "PRODUCTION", _("Gamybinė")

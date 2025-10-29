@@ -2108,6 +2108,13 @@ class AddProjectView(
     def has_permission(self):
         return get_projects_linkable_to_dataset(self.request.user).exclude(datasets=self.dataset).exists()
 
+    def handle_no_permission(self):
+        messages.error(
+            self.request,
+            _("Neturite panaudos atvejų, prie kurių galėtumėte pridėti išteklius."),
+        )
+        return redirect(reverse("dataset-projects", kwargs={"pk": self.dataset.pk}))
+
     def get_form_kwargs(self):
         kwargs = super(AddProjectView, self).get_form_kwargs()
         kwargs.update({"user": self.request.user})

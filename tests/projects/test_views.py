@@ -113,7 +113,6 @@ def test_organization_project_create_viisp_no_representative(app: DjangoTestApp)
 def test_organization_project_create_viisp_representative_no_agreements_flag(app: DjangoTestApp):
     representative = ViispRepresentativeFactory(can_make_agreements=False)
     user = representative.user
-    organization = representative.content_object
     app.set_user(user)
 
     form = app.get(reverse("project-create")).forms['project-form']
@@ -121,14 +120,8 @@ def test_organization_project_create_viisp_representative_no_agreements_flag(app
     form['description'] = "Description"
     form['url'] = "example.com"
     form['image'] = Upload('example.png', generate_photo_file(), 'image')
-    with pytest.raises(ValueError):
-        form['organization'] = organization.id
+    assert 'organization' not in form.fields
 
-    resp = form.submit()
-
-    assert resp.status_code == 302
-    project = Project.objects.filter(title='Project').first()
-    assert not project.organization
 
 def test_personal_project_update(app: DjangoTestApp):
     user = UserFactory()

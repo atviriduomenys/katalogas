@@ -370,7 +370,9 @@ class RepresentativeUpdateForm(ModelForm):
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     regenerate_api_key = BooleanField(label=_("Pergeneruoti raktą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
-    can_make_agreements = BooleanField(label=_("Gali sudaryti sutartis"), disabled=True, required=False, initial=False)
+    can_make_agreements = BooleanField(
+        label=_("Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"), disabled=True, required=False, initial=False
+    )
 
     object_model = Organization
 
@@ -459,7 +461,9 @@ class RepresentativeCreateForm(ModelForm):
     )
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False, disabled=True, initial=True)
-    can_make_agreements = BooleanField(label=_("Gali sudaryti sutartis"), disabled=True, required=False, initial=False)
+    can_make_agreements = BooleanField(
+        label=_("Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"), disabled=True, required=False, initial=False
+    )
 
     object_model = Organization
     object_id: int

@@ -4760,7 +4760,7 @@ msgid "Pridėti Agentą"
 msgstr ""
 
 msgid ""
-"Nurodoma su Agentu susieta duomenų paslauga. Jei nenurodyta, duomenų "
+"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei nenurodyta, duomenų "
 "paslauga bus sukurta automatiškai."
 msgstr ""
 

@@ -4867,8 +4867,8 @@ msgstr ""
 "Indicates, whether the Agent is archived. Archived agents are not available "
 "to regular platform users"
 
-msgid "Nurodoma su Agentu susieta duomenų paslauga."
-msgstr "The data service associated with the agent"
+msgid "Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService."
+msgstr "The data service associated with the agent. Corresponds to DCAT:DataService."
 
 msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
 msgstr "The organization to which the agent is assigned"
@@ -5102,10 +5102,10 @@ msgid "Pridėti Agentą"
 msgstr "Add an Agent"
 
 msgid ""
-"Nurodoma su Agentu susieta duomenų paslauga. Jei nenurodyta, duomenų "
+"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei nenurodyta, duomenų "
 "paslauga bus sukurta automatiškai."
 msgstr ""
-"The data service associated with the Agent is specified. "
+"The data service associated with the Agent is specified. Corresponds to DCAT:DataService. "
 "If not specified, the data service will be created automatically."
 
 msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."

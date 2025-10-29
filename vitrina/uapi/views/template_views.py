@@ -166,7 +166,7 @@ class AgentCreateView(CreateView, BaseAgentView):
     def get_form(self, form_class: AgentForm | None = None) -> ModelForm:
         form = super().get_form(form_class)
         form.fields["service"].help_text = _(
-            "Nurodoma su Agentu susieta duomenų paslauga. Jei nenurodyta, duomenų paslauga bus sukurta automatiškai."
+            "Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei nenurodyta, duomenų paslauga bus sukurta automatiškai."
         )
         form.fields["service"].required = False
         return form

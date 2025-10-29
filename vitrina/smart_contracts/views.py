@@ -153,11 +153,12 @@ class AgreementDetailView(
 
         context.update(
             {
-                "project": self.project,
                 "agreement": self.agreement,
                 "agreement_files": self.agreement.files.all().order_by("-created_at"),
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_title": self.agreement.detail_page_title,
+                "can_create_agreements": can_create_agreements(self.request.user, self.project),
+                "can_upload_agreement_file": can_upload_agreement_file(self.request.user, self.agreement),
             }
         )
         context["parent_links"].update(
@@ -253,7 +254,6 @@ class AgreementCreateView(
 
         context.update(
             {
-                "project": self.project,
                 "formset_helper": SmartContractFormSetHelper(),
                 "current_title": _("Generuoti sutartis"),
                 "parent_links": {

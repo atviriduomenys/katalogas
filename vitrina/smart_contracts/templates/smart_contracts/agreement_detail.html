@@ -17,15 +17,15 @@
     <br>
 
     <div class="buttons is-right">
-        {% if agreement.status == "CREATED" %}
+        {% if can_create_agreements and agreement.status == "CREATED" %}
             <a href="{% url "agreement-generate-pdf" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
                 {% translate "Generuoti sutarties dokumentą" %}
             </a>
-        {% elif agreement.status == "FORMED" %}
+        {% elif can_upload_agreement_file and agreement.status == "FORMED" %}
             <a class="button is-primary m-t-xs m-b-lg" href="{% url "agreement-upload-signed-adoc" project.pk agreement.pk %}">
                 {% translate "Įkelti gavėjo pasirašytą dokumentą" %}
             </a>
-        {% elif agreement.status == "INITIATED" %}
+        {% elif can_upload_agreement_file and agreement.status == "INITIATED" %}
             <a class="button is-primary m-t-xs m-b-lg" href="{% url "agreement-upload-signed-adoc" project.pk agreement.pk %}">
                 {% translate "Įkelti tiekėjo pasirašytą dokumentą" %}
             </a>

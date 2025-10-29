@@ -12,6 +12,11 @@ https://github.com/atviriduomenys/katalogas/pull/2034
 - Added a Ruff rule for warning about said `print` statements;
 - Removing an `api_key` logging/printing to avoid sensitive information leaks.
 
+https://github.com/atviriduomenys/katalogas/issues/2011
+-Installed celery as dependency in poetry;
+- Added seperate docker container for celery;
+- Added celery task to run `spinta check` command and save the manifest status to `ManifestValidationEntry`
+
 
 v 1.5 (2025-10-27)
 ==================

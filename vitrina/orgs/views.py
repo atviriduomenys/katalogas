@@ -120,8 +120,9 @@ class OrganizationBaseViewMixin:
             Contact,
             self.organization,
         )
-        context_data["can_update_organization"] = has_perm(
-            self.request.user, Action.UPDATE, Representative, self.organization
+        context_data["can_update_organization"] = (
+            has_perm(self.request.user, Action.UPDATE, Representative, self.organization)
+            and self.request.user.viisp_organization == self.organization
         )
         context_data["organization"] = self.organization
         return context_data
@@ -743,7 +744,7 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Revisi
 
     def has_permission(self):
         org = self.get_object()
-        return has_perm(self.request.user, Action.UPDATE, org)
+        return has_perm(self.request.user, Action.UPDATE, org) and self.request.user.viisp_organization == org
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:

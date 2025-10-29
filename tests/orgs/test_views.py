@@ -791,10 +791,11 @@ def generate_photo_file(height, length) -> bytes:
 
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
-    org = OrganizationFactory()
+    representative = ViispRepresentativeFactory()
+    org = representative.content_object
     jurisdiction = AreaOfManagementFactory(id=30, name_lt="Jurisdiction30", name_en="Jurisdiction30")
 
-    user = UserFactory(is_staff=True)
+    user = representative.user
     app.set_user(user)
 
     form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
@@ -815,8 +816,9 @@ def test_change_form_correct_login(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_click_edit_button(app: DjangoTestApp):
-    org = OrganizationFactory()
-    user = UserFactory(is_staff=True)
+    representative = ViispRepresentativeFactory()
+    org = representative.content_object
+    user = representative.user
     app.set_user(user)
     response = app.get(reverse('organization-detail', kwargs={'pk': org.id}))
     response.click(linkid='change_organization')

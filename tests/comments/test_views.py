@@ -749,7 +749,7 @@ def test_delete_comment_as_non_author(client):
 
     resp = client.post(url)
 
-    assert resp.status_code == 403
+    assert resp.status_code == 404
     assert Comment.objects.filter(pk=comment.pk).exists()
 
 
@@ -792,3 +792,15 @@ def test_delete_nonexistent_comment(client):
     resp = client.post(url)
 
     assert resp.status_code == 404
+
+@pytest.mark.django_db
+def test_delete_comment_wrong_http_method(client):
+    user = UserFactory()
+    comment = CommentFactory(user=user)
+    client.force_login(user)
+    url = reverse('delete-comment', kwargs={'pk': comment.pk})
+
+    resp = client.get(url)
+
+    assert resp.status_code == 405
+    assert Comment.objects.filter(pk=comment.pk).exists()

@@ -1,6 +1,6 @@
 from django.urls import path
 
-from vitrina.comments.views import CommentView, ReplyView, delete_comment
+from vitrina.comments.views import CommentView, ReplyView, CommentDeleteView
 from vitrina.comments.views import ExternalCommentView, ExternalReplyView
 
 urlpatterns = [
@@ -26,7 +26,7 @@ urlpatterns = [
     ),
     path(
         "comments/<int:pk>/delete/",
-        delete_comment,
+        CommentDeleteView.as_view(),
         name="delete-comment",
     ),
 ]

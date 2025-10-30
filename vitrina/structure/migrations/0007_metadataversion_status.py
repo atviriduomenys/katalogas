@@ -2,6 +2,7 @@
 
 from django.db import migrations, models
 import django.db.models.deletion
+from django.db.models import Q
 
 
 def assign_status_based_on_draft(apps, schema_editor):
@@ -9,9 +10,8 @@ def assign_status_based_on_draft(apps, schema_editor):
     Status = apps.get_model("vitrina_classifiers", "Status")
     status_develop, _ = Status.objects.get_or_create(codename="develop")
     status_completed, _ = Status.objects.get_or_create(codename="completed")
-    status_null, _ = Status.objects.get_or_create(codename=None)
-    metadata_instances_with_no_status = Metadata.objects.filter(status__in=[status_develop, status_completed, status_null])
-    for row in metadata_instances_with_no_status:
+    metadata_rows_with_no_status = Metadata.objects.filter(Q(status__isnull=True) | Q(status__codename=None))
+    for row in metadata_rows_with_no_status:
         if row.draft:
             row.status = status_develop
         else:

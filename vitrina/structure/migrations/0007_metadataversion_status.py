@@ -10,7 +10,7 @@ def assign_status_based_on_draft(apps, schema_editor):
     Status = apps.get_model("vitrina_classifiers", "Status")
     status_develop, _ = Status.objects.get_or_create(codename="develop")
     status_completed, _ = Status.objects.get_or_create(codename="completed")
-    metadata_rows_with_no_status = Metadata.objects.filter(Q(status__isnull=True) | Q(status__codename=None))
+    metadata_rows_with_no_status = Metadata.objects.filter(Q(status__isnull=True) | Q(status__codename=None) | Q(status=status_develop) | Q(status=status_completed))
     for row in metadata_rows_with_no_status:
         if row.draft:
             row.status = status_develop

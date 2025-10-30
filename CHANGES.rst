@@ -17,6 +17,10 @@ https://github.com/atviriduomenys/katalogas/issues/2011
 - Added seperate docker container for celery;
 - Added celery task to run `spinta check` command and save the manifest status to `ManifestValidationEntry`
 
+https://github.com/atviriduomenys/katalogas/issues/2028
+- Added a fake VIISP login feature to simulate authentication via VIISP.
+- The login functionality is available only in test mode and will be hidden in production.
+
 
 v 1.5 (2025-10-27)
 ==================

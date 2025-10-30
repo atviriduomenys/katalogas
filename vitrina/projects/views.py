@@ -154,8 +154,8 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         self.object.save()
         set_comment(Project.CREATED)
         Task.objects.create(
-            title=f"Užregistruotas naujas panaudos atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
-            description="Portale užregistruotas naujas panaudos atvejis.",
+            title=f"Užregistruotas naujas panaudojimo atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
+            description="Portale užregistruotas naujas panaudojimo atvejis.",
             content_type=ContentType.objects.get_for_model(self.object),
             object_id=self.object.pk,
             status=Task.CREATED,
@@ -176,7 +176,7 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        context_data["current_title"] = _("Panaudos atvejo registracija")
+        context_data["current_title"] = _("Panaudojimo atvejo registracija")
         return context_data
 
 
@@ -195,7 +195,7 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         if project.agreements.exists():
             messages.error(
                 request,
-                _("Negalima redaguoti panaudos atvejo, kuris turi sugeneruotų sutarčių."),
+                _("Negalima redaguoti panaudojimo atvejo, kuris turi sugeneruotų sutarčių."),
             )
             return redirect("project-detail", pk=project.pk)
         return super().dispatch(request, *args, **kwargs)
@@ -222,8 +222,8 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         sub_email_list = []
         for sub in subs:
             Task.objects.create(
-                title=f"Atnaujintas panaudos atvejis: {self.object}.",
-                description=f"Šis panaudos atvėjis: {self.object}, buvo atnaujintas.",
+                title=f"Atnaujintas panaudojimo atvejis: {self.object}.",
+                description=f"Šis panaudojimo atvėjis: {self.object}, buvo atnaujintas.",
                 content_type=ContentType.objects.get_for_model(self.object),
                 object_id=self.object.pk,
                 status=Task.CREATED,
@@ -239,7 +239,7 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        context_data["current_title"] = _("Panaudos atvejo redagavimas")
+        context_data["current_title"] = _("Panaudojimo atvejo redagavimas")
         return context_data
 
 
@@ -374,7 +374,7 @@ class ProjectPermissionsCreateView(PermissionRequiredMixin, View):
                         )
                     Task.objects.create(
                         title="Naujas duomenų leidimo prašymas rinkiniui: {}".format(m.dataset.title),
-                        description=f"Portale prie duomenų rinkinio prašoma suteikti prieigą panaudos atvejui:"
+                        description=f"Portale prie duomenų rinkinio prašoma suteikti prieigą panaudojimo atvejui:"
                         f" {project.title}." + "<br/><a href=" + url + ">Peržiūrėti leidimus</a>.",
                         organization=m.dataset.organization,
                         status=Task.CREATED,
@@ -415,7 +415,7 @@ class ProjectPermissionsCreateView(PermissionRequiredMixin, View):
                                     scopes_to_post.append(sc)
                                 Task.objects.create(
                                     title="Naujas duomenų leidimo prašymas rinkiniui: {}".format(d.title),
-                                    description=f"Portale prie duomenų rinkinio prašoma suteikti prieigą panaudos"
+                                    description=f"Portale prie duomenų rinkinio prašoma suteikti prieigą panaudojimo"
                                     f" atvejui: {self.project.title}."
                                     f"<br/><a href=" + url + ">Peržiūrėti leidimus</a>.",
                                     organization=d.organization,
@@ -620,7 +620,7 @@ class RemoveDatasetView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequ
     def form_valid(self, form: BaseForm) -> HttpResponse:
         if self.project.agreements.exists():
             messages.error(
-                self.request, _("Negalima pašalinti išteklių iš panaudos atvejo, kuris turi sugeneruotų sutarčių.")
+                self.request, _("Negalima pašalinti išteklių iš panaudojimo atvejo, kuris turi sugeneruotų sutarčių.")
             )
             return redirect(reverse("project-detail", args=[self.project.pk]))
         self.project.datasets.remove(self.kwargs.get("dataset_id"))

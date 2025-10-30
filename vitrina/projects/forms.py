@@ -21,7 +21,7 @@ class ProjectForm(ModelForm):
     )
     organization = ModelChoiceField(
         Organization.objects.none(),
-        label=_("Panaudos atvejo iniciatorius"),
+        label=_("Panaudojimo atvejo iniciatorius"),
         widget=RadioSelect,
         required=False,
         help_text=_(
@@ -40,10 +40,10 @@ class ProjectForm(ModelForm):
         help_text=_("Paveiksliukas susijęs su pasiūlytu panaudojimo atveju."),
     )
     is_public = BooleanField(
-        label=_("Panaudos atvejis matomas viešai"),
+        label=_("Panaudojimo atvejis matomas viešai"),
         required=False,
         help_text=_(
-            "Pažymėkite, jeigu norite, kad panaudos atvejis būtų matomas viešai visiems. Kitu atveju bus matomas tik gavėjo ir teikėjų organizacijoms."
+            "Pažymėkite, jeigu norite, kad panaudojimo atvejis būtų matomas viešai visiems. Kitu atveju bus matomas tik gavėjo ir teikėjų organizacijoms."
         ),
     )
 

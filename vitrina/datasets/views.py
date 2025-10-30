@@ -2107,7 +2107,7 @@ class AddProjectView(
     def handle_no_permission(self):
         messages.error(
             self.request,
-            _("Neturite panaudos atvejų, prie kurių galėtumėte pridėti išteklius."),
+            _("Neturite panaudojimo atvejų, prie kurių galėtumėte pridėti išteklius."),
         )
         return redirect(reverse("dataset-projects", kwargs={"pk": self.dataset.pk}))
 
@@ -2136,7 +2136,7 @@ class AddProjectView(
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
         }
-        context["current_title"] = _("Panaudos atvejų pridėjimas")
+        context["current_title"] = _("Panaudojimo atvejų pridėjimas")
         return context
 
 
@@ -2158,7 +2158,7 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
     def form_valid(self, form: BaseForm) -> HttpResponse:
         if self.project.agreements.exists():
             messages.error(
-                self.request, _("Negalima pašalinti išteklių iš panaudos atvejo, kuris turi sugeneruotų sutarčių.")
+                self.request, _("Negalima pašalinti išteklių iš panaudojimo atvejo, kuris turi sugeneruotų sutarčių.")
             )
             return redirect(reverse("dataset-projects", args=[self.dataset.pk]))
         self.project.datasets.remove(self.dataset.pk)

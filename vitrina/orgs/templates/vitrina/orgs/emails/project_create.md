@@ -1,3 +1,3 @@
 Sveiki {{title}},
 
-Sukurtas naujas panaudos atvejis {{title}}({{link}}).
+Sukurtas naujas panaudojimo atvejis {{title}}({{link}}).

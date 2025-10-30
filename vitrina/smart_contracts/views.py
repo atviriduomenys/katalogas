@@ -96,7 +96,7 @@ class AgreementListView(
         if not self.project.organization:
             messages.error(
                 self.request,
-                _("Panaudos atvejis registruotas fizinio asmens vardu negali turėti sutarčių."),
+                _("Panaudojimo atvejis registruotas fizinio asmens vardu negali turėti sutarčių."),
             )
             return HttpResponseRedirect(reverse("project-detail", kwargs={"pk": self.project.pk}))
         return dispatch

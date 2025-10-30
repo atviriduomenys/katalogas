@@ -1,3 +1,3 @@
 Sveiki {{object}},
 
-Sveiki, portale portale atnaujintas panaudos atvejis.
+Sveiki, portale portale atnaujintas panaudojimo atvejis.

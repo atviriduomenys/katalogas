@@ -431,7 +431,7 @@ class AgreementUploadSignedFile(
         page_title = (
             _("Įkelti gavėjo pasirašytą dokumentą")
             if self.agreement.status == AgreementStatuses.FORMED
-            else _("Įkelti tiekėjo pasirašytą dokumentą")
+            else _("Įkelti teikėjo pasirašytą dokumentą")
         )
         context["current_title"] = page_title
         context["tabs"] = "vitrina/projects/tabs.html"

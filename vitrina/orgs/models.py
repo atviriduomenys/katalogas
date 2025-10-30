@@ -138,8 +138,8 @@ class Organization(MP_Node):
 class PublisherOrganization(Organization):
     class Meta:
         proxy = True
-        verbose_name = _("Duomenų atvėrimo paslaugų tiekėjas")
-        verbose_name_plural = _("Duomenų atvėrimo paslaugų tiekėjai")
+        verbose_name = _("Duomenų atvėrimo paslaugų teikėjas")
+        verbose_name_plural = _("Duomenų atvėrimo paslaugų teikėjai")
 
 
 class Representative(models.Model):

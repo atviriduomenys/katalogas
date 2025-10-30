@@ -82,7 +82,7 @@ class Agreement(UUIDBaseModel):
         verbose_name=_("Sutarties iniciatorius"),
     )
     other_assigner_legislations = models.TextField(
-        default="", blank=True, verbose_name=_("Papildomi tiekėjo teisės aktai")
+        default="", blank=True, verbose_name=_("Papildomi teikėjo teisės aktai")
     )
     other_assignee_legislations = models.TextField(
         default="", blank=True, verbose_name=_("Papildomi gavėjo teisės aktai")

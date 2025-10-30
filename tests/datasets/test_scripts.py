@@ -993,7 +993,7 @@ def test_geoportal_import__not_existing_publisher(app: DjangoTestApp):
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
-    assert 'Nerasta tiekėjo organizacija: "Viešoji įstaiga Statybos sektoriaus vystymo agentūra"' in task.description
+    assert 'Nerasta teikėjo organizacija: "Viešoji įstaiga Statybos sektoriaus vystymo agentūra"' in task.description
 
 
 @pytest.mark.django_db

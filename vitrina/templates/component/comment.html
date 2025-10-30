@@ -93,19 +93,31 @@
                                         </small>
                                     </p>
                                 </div>
-                                {% if user.is_authenticated and comment.can_reply %}
-                                    <div class="column">
-                                        {% if comment.user == user or user.is_superuser %}
-                                            <a class="button is-danger is-pulled-right show-delete-form mt-1 mr-1"
-                                               id="delete-{{ comment.id }}">{% translate "Ištrinti" %}</a>
-                                            <button class="button is-warning is-pulled-right mt-1 mr-1 edit-button"
-                                                    data-comment-id="{{ comment.id }}">
-                                                {% translate "Redaguoti" %}
-                                            </button>
-                                        {% endif %}
-                                        <button class="button is-primary is-pulled-right mt-1 mr-1 reply-toggle-button">{% translate "Atsakyti" %}</button>
-                                    </div>
+                                {% if comment.user == user or user.is_superuser %}
+                                    <a class="button is-danger is-pulled-right show-delete-form mt-1 mr-1"
+                                       id="delete-{{ comment.id }}"
+                                       title="{% translate 'Ištrinti' %}"
+                                       aria-label="{% translate 'Ištrinti komentarą' %}">
+                                        <span class="icon">
+                                            <i class="fas fa-trash"></i>
+                                        </span>
+                                    </a>
+                                    <button class="button is-warning is-pulled-right mt-1 mr-1 edit-button"
+                                            data-comment-id="{{ comment.id }}"
+                                            title="{% translate 'Redaguoti' %}"
+                                            aria-label="{% translate 'Redaguoti komentarą' %}">
+                                        <span class="icon">
+                                            <i class="fas fa-edit"></i>
+                                        </span>
+                                    </button>
                                 {% endif %}
+                                <button class="button is-primary is-pulled-right mt-1 mr-1 reply-toggle-button"
+                                        title="{% translate 'Atsakyti' %}"
+                                        aria-label="{% translate 'Atsakyti į komentarą' %}">
+                                    <span class="icon">
+                                        <i class="fas fa-reply"></i>
+                                    </span>
+                                </button>
                             </div>
                         </div>
                         <!-- Edit mode -->
@@ -120,18 +132,16 @@
                                         <textarea class="textarea" name="body" required>{{ comment.body_text }}</textarea>
                                     </div>
                                 </div>
-                                {% if not comment.parent %}
-                                    <div class="field">
-                                        <div class="control">
-                                            <label class="checkbox">
-                                                <input type="checkbox"
-                                                       name="is_public"
-                                                       {% if comment.is_public %}checked{% endif %}>
-                                                {% translate "Viešas komentaras" %}
-                                            </label>
-                                        </div>
+                                <div class="field">
+                                    <div class="control">
+                                        <label class="checkbox">
+                                            <input type="checkbox"
+                                                   name="is_public"
+                                                   {% if comment.is_public %}checked{% endif %}>
+                                            {% translate "Viešas komentaras" %}
+                                        </label>
                                     </div>
-                                {% endif %}
+                                </div>
                                 <div class="field is-grouped is-grouped-right">
                                     <div class="control">
                                         <button type="button"

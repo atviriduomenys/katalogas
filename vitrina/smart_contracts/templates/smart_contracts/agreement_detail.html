@@ -21,13 +21,9 @@
             <a href="{% url "agreement-generate-pdf" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
                 {% translate "Generuoti sutarties dokumentą" %}
             </a>
-        {% elif can_upload_agreement_file and agreement.status == "FORMED" %}
+        {% elif can_upload_agreement_file and agreement.status == "FORMED" or agreement.status == "INITIATED" %}
             <a class="button is-primary m-t-xs m-b-lg" href="{% url "agreement-upload-signed-adoc" project.pk agreement.pk %}">
-                {% translate "Įkelti gavėjo pasirašytą dokumentą" %}
-            </a>
-        {% elif can_upload_agreement_file and agreement.status == "INITIATED" %}
-            <a class="button is-primary m-t-xs m-b-lg" href="{% url "agreement-upload-signed-adoc" project.pk agreement.pk %}">
-                {% translate "Įkelti tiekėjo pasirašytą dokumentą" %}
+                {% translate "Įkelti pasirašytą dokumentą" %}
             </a>
         {% endif %}
     </div>

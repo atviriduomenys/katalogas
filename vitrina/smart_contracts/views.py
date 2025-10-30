@@ -65,14 +65,13 @@ class BaseProjectMixin(ProjectViewBaseMixin):
 
 
 class BaseAgreementMixin:
-    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
+    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
+        super().setup(request, *args, **kwargs)
         self.agreement = get_object_or_404(
             Agreement.objects.all().select_related("assigner").prefetch_related("scopes"),
             project=self.project,
-            pk=kwargs["agreement_id"],
+            pk=self.kwargs["agreement_id"],
         )
-
-        return super().dispatch(request, *args, **kwargs)
 
 
 class AgreementListView(
@@ -399,7 +398,6 @@ class AgreementUploadSignedFile(
         return can_upload_agreement_file(self.request.user, self.agreement)
 
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
-        dispatch = super().dispatch(request, *args, **kwargs)
         accepted_statuses = (AgreementStatuses.FORMED, AgreementStatuses.INITIATED)
         error_msg = ""
         if self.agreement.status not in accepted_statuses:
@@ -417,10 +415,15 @@ class AgreementUploadSignedFile(
             error_msg = _(
                 "Sutartį pasirašyti duomenų teikėjo vardu galėsite tik po to kai ją pasirašys duomenų gavėjas."
             )
+        elif (
+            self.agreement.status == AgreementStatuses.INITIATED
+            and request.user.viisp_organization != self.agreement.assigner
+        ):
+            error_msg = _("Gavėjo vardu sutartis jau pasirašyta. Laukiama sutarties pasirašymo iš teikėjo pusės.")
         if error_msg:
             messages.error(request, error_msg)
             return HttpResponseRedirect(self.get_success_url())
-        return dispatch
+        return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)

@@ -1,4 +1,5 @@
-from datetime import datetime, timezone
+
+from django.utils import timezone
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
@@ -288,7 +289,7 @@ class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
             comment_task = Task.objects.filter(comment_object=parent_comment).first()
             if comment_task:
                 comment_task.status = Task.COMPLETED
-                comment_task.completed = datetime.now(timezone.utc)
+                comment_task.completed = timezone.now()
                 comment_task.save()
         else:
             messages.error(request, "\n".join([error[0] for error in form.errors.values()]))
@@ -480,7 +481,37 @@ class CommentDeleteView(LoginRequiredMixin, View):
 
         try:
             comment = queryset.get(pk=pk)
-            comment.delete()
+
+            comment.deleted = True
+            comment.deleted_on = timezone.now()
+            comment.save()
+
             return JsonResponse({"success": True})
+        except Comment.DoesNotExist:
+            return JsonResponse({"error": "Not found"}, status=404)
+
+
+class CommentEditView(LoginRequiredMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request, pk):
+        queryset = Comment.objects.all()
+
+        if not request.user.is_superuser:
+            queryset = queryset.filter(user=request.user)
+
+        try:
+            comment = queryset.get(pk=pk)
+
+            body = request.POST.get("body", "").strip()
+            if not body:
+                return JsonResponse({"error": "Body is required"}, status=400)
+
+            comment.body = body
+            comment.is_public = "is_public" in request.POST
+            comment.edited_at = timezone.now()
+            comment.save()
+
+            return JsonResponse({"success": True, "body": comment.body, "is_public": comment.is_public})
         except Comment.DoesNotExist:
             return JsonResponse({"error": "Not found"}, status=404)

@@ -3,136 +3,194 @@
 {% load crispy_forms_tags %}
 {% load markdown_tags %}
 {% load comment_tags %}
-
 {% if comment.deleted %}
     {% if is_child %}
         <div class="columns m-t-xs no-margin-bottom">
-        <div class="column is-11 is-offset-1">
-    {% else %}
-        <div class="comment-entry" id="comment-entry-{{ comment.id }}">
-    {% endif %}
-        <article class="media {% if comment.is_error %} error-comment {% endif %}">
-            <figure class="media-left">
-                <img class="comment-profile-icon image is-64x64"
-                     src="{% static 'img/user_profile_picture.png' %}"
-                     alt="user-icon">
-            </figure>
-            <div class="media-content">
-                <div class="content">
-                    <div class="columns">
-                        <div class="column">
-                            {% if comment.parent %}
-                                <p class="is-italic">
-                                    {% translate "Atsakymas į" %}
-                                    {{ comment.parent.user }}
-                                    {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }}
-                                    {{ comment.parent.body_text|markdown|truncatechars:20 }}
-                                </p>
-                            {% endif %}
-                            <p>
-                                {% translate "Komentaras pašalintas" %}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </article>
-    {% if is_child %}</div></div>{% else %}</div>{% endif %}
-{% else %}
-   {% if is_child %}
-        <div class="columns m-t-xs no-margin-bottom">
-        <div class="column is-11 is-offset-1">
-    {% else %}
-        <div class="comment-entry" id="comment-entry-{{ comment.id }}">
-    {% endif %}
-        <article class="media {% if comment.is_error %} error-comment {% endif %}">
-            <figure class="media-left">
-                <img class="comment-profile-icon image is-64x64" src="{% static 'img/user_profile_picture.png' %}" alt="user-icon">
-            </figure>
-            <div class="media-content">
-                <div class="content">
-                    <div class="columns">
-                        <div class="column {% if user.is_authenticated %}is-10{% endif %}">
-                            {% if comment.parent %}
-                                <p class="is-italic">
-                                    {% translate "Atsakymas į" %}
-                                    {{ comment.parent.user }}
-                                    {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }}
-                                    {{ comment.parent.body_text|markdown|truncatechars:20 }}
-                                </p>
-                            {% endif %}
-                            <p class="no-margin-bottom">
-                                <strong>{% get_author_name comment user %}</strong>
-                                <div>{{ comment.body_text | markdown | safe }}</div>
-                                <small>
-                                    {{ comment.created|date:"SHORT_DATETIME_FORMAT" }}
-                                    {% if not comment.is_public %}
-                                    {% translate "(neviešinamas komentaras)" %}
-                                    {% endif %}
-                                </small>
-                            </p>
-                        </div>
-                        {% if user.is_authenticated and comment.can_reply %}
-                            <div class="column">
-                                {% if comment.user == user or user.is_superuser %}
-                                    <a class="button is-danger is-pulled-right show-delete-form mt-1 mr-1"
-                                       id="delete-{{ comment.id }}">{% translate "Ištrinti" %}</a>
-                                {% endif %}
-                                <button type="submit" class="button is-primary is-pulled-right m-t-sm reply-button mt-1 mr-1">
-                                    {% translate "Atsakyti" %}
-                                </button>
-                            </div>
-                        {% endif %}
-                    </div>
-                </div>
-            </div>
-        </article>
-    {% if is_child %}</div></div>{% else %}</div>{% endif %}
-    <article class="media is-hidden m-t-sm" id="media-{{ comment.id }}">
-        <div class="media-content">
-            <div class="columns no-margin-bottom">
-                <div class="column is-11 is-offset-1">
-                {% if external %}
-                    <form action="{% url 'external-reply' content_type object_id comment.id %}" method="post" id="reply-form">
-                {% else %}
-                    <form action="{% url 'reply' content_type.pk object.pk comment.id %}" method="post" id="reply-form">
+            <div class="column is-11 is-offset-1">
+            {% else %}
+                <div class="comment-entry mb-4" id="comment-entry-{{ comment.id }}">
                 {% endif %}
-                        {% csrf_token %}
-                        {{ reply_form|crispy }}
-                        {% if reply_form.body.errors %}
-                            <div class="alert alert-danger">
-                                {{ reply_form.body.errors }}
+                <article class="media {% if comment.is_error %}error-comment{% endif %} mb-3">
+                    <figure class="media-left">
+                        <img class="comment-profile-icon image is-64x64"
+                             src="{% static 'img/user_profile_picture.png' %}"
+                             alt="user-icon">
+                    </figure>
+                    <div class="media-content">
+                        <div class="content">
+                            <div class="columns">
+                                <div class="column">
+                                    {% if comment.parent %}
+                                        <p class="is-italic">
+                                            {% translate "Atsakymas į" %}
+                                            {{ comment.parent.user }}
+                                            {{ comment.parent.created|date:'SHORT_DATE_FORMAT' }}
+                                        </p>
+                                    {% endif %}
+                                    <p class="no-margin-bottom">
+                                        <strong>{% get_author_name comment user %}</strong>
+                                        <div class="has-text-grey-light is-italic">
+                                            <p>{% translate "Komentaras pašalintas" %}</p>
+                                        </div>
+                                        <small>
+                                            {{ comment.created|date:"SHORT_DATETIME_FORMAT" }}
+                                            {% if comment.deleted_on %}
+                                                <span class="has-text-grey-light">
+                                                    ({% translate "ištrinta" %} {{ comment.deleted_on|date:"SHORT_DATETIME_FORMAT" }})
+                                                </span>
+                                            {% endif %}
+                                        </small>
+                                    </p>
+                                </div>
                             </div>
-                        {% endif %}
-                        {% if external %}
-                            <input type="hidden" value="{{ dataset.pk }}" name="dataset_id">
-                        {% endif %}
-                        {% if comment.user == user or user.is_superuser %}
-                            <a class="button is-danger is-pulled-right show-delete-form mt-1 mr-1"
-                               id="delete-{{ comment.id }}">{% translate "Ištrinti" %}</a>
-                        {% endif %}
-                        <button type="submit" class="button is-primary is-pulled-right m-t-sm reply-button mt-1 mr-1">
-                            {% translate "Atsakyti" %}
-                        </button>
-                    </form>
+                        </div>
+                    </div>
+                </article>
+                {% if is_child %}
                 </div>
             </div>
+        {% else %}
         </div>
-    </article>
-    <div class="modal" id="delete-modal-{{ comment.id }}">
-    <div class="modal-background"></div>
-    <div class="modal-card">
-        <header class="modal-card-head">
-            <p class="modal-card-title">{% translate "Ištrinti komentarą?" %}</p>
-        </header>
-        <section class="modal-card-body">
-            {% translate "Šis veiksmas negrąžinamas." %}
-        </section>
-        <footer class="modal-card-foot">
-            <button class="button" onclick="closeDeleteModal('{{ comment.id }}')">{% translate "Atšaukti" %}</button>
-            <button class="button is-danger delete-confirm"
-               data-comment-id="{{ comment.id }}">{% translate "Ištrinti" %}</button>
-        </footer>
-    </div>
-</div>
-{% endif %}
+    {% endif %}
+{% else %}
+    {% if is_child %}
+        <div class="columns m-t-xs no-margin-bottom">
+            <div class="column is-11 is-offset-1">
+            {% else %}
+                <div class="comment-entry" id="comment-entry-{{ comment.id }}">
+                {% endif %}
+                <article class="media {% if comment.is_error %}error-comment{% endif %}">
+                    <figure class="media-left">
+                        <img class="comment-profile-icon image is-64x64"
+                             src="{% static 'img/user_profile_picture.png' %}"
+                             alt="user-icon">
+                    </figure>
+                    <div class="media-content">
+                        <!-- Display mode -->
+                        <div class="content" id="comment-display-{{ comment.id }}">
+                            <div class="columns">
+                                <div class="column {% if user.is_authenticated %}is-10{% endif %}">
+                                    {% if comment.parent %}
+                                        <p class="is-italic">
+                                            {% translate "Atsakymas į" %}
+                                            {{ comment.parent.user }}
+                                            {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }}
+                                        </p>
+                                    {% endif %}
+                                    <p class="no-margin-bottom">
+                                        <strong>{% get_author_name comment user %}</strong>
+                                        <div>{{ comment.body_text | markdown | safe }}</div>
+                                        <small>
+                                            {{ comment.created|date:"SHORT_DATETIME_FORMAT" }}
+                                            {% if comment.edited_at %}
+                                                <span class="has-text-grey-light">
+                                                    ({% translate "redaguotas" %} {{ comment.edited_at|date:"SHORT_DATETIME_FORMAT" }})
+                                                </span>
+                                            {% endif %}
+                                            {% if not comment.is_public %}
+                                                {% translate "(neviešinamas komentaras)" %}
+                                            {% endif %}
+                                        </small>
+                                    </p>
+                                </div>
+                                {% if user.is_authenticated and comment.can_reply %}
+                                    <div class="column">
+                                        {% if comment.user == user or user.is_superuser %}
+                                            <a class="button is-danger is-pulled-right show-delete-form mt-1 mr-1"
+                                               id="delete-{{ comment.id }}">{% translate "Ištrinti" %}</a>
+                                            <button class="button is-warning is-pulled-right mt-1 mr-1 edit-button"
+                                                    data-comment-id="{{ comment.id }}">
+                                                {% translate "Redaguoti" %}
+                                            </button>
+                                        {% endif %}
+                                        <button class="button is-primary is-pulled-right mt-1 mr-1 reply-toggle-button">{% translate "Atsakyti" %}</button>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <!-- Edit mode -->
+                        <div class="content is-hidden" id="comment-edit-{{ comment.id }}">
+                            <form id="edit-form-{{ comment.id }}"
+                                  class="edit-form"
+                                  data-comment-id="{{ comment.id }}">
+                                {% csrf_token %}
+                                <div class="field">
+                                    <label class="label">{% translate "Komentaras" %}</label>
+                                    <div class="control">
+                                        <textarea class="textarea" name="body" required>{{ comment.body_text }}</textarea>
+                                    </div>
+                                </div>
+                                {% if not comment.parent %}
+                                    <div class="field">
+                                        <div class="control">
+                                            <label class="checkbox">
+                                                <input type="checkbox"
+                                                       name="is_public"
+                                                       {% if comment.is_public %}checked{% endif %}>
+                                                {% translate "Viešas komentaras" %}
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                                <div class="field is-grouped is-grouped-right">
+                                    <div class="control">
+                                        <button type="button"
+                                                class="button cancel-edit"
+                                                data-comment-id="{{ comment.id }}">{% translate "Atšaukti" %}</button>
+                                    </div>
+                                    <div class="control">
+                                        <button type="submit" class="button is-primary">{% translate "Išsaugoti" %}</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </article>
+                <!-- Reply form -->
+                <article class="media is-hidden m-t-sm" id="media-{{ comment.id }}">
+                    <div class="media-content">
+                        <div class="columns no-margin-bottom">
+                            <div class="column is-11 is-offset-1">
+                                {% if external %}
+                                    <form action="{% url 'external-reply' content_type object_id comment.id %}"
+                                          method="post"
+                                          id="reply-form-{{ comment.id }}">
+                                    {% else %}
+                                        <form action="{% url 'reply' content_type.pk object.pk comment.id %}"
+                                              method="post"
+                                              id="reply-form-{{ comment.id }}">
+                                        {% endif %}
+                                        {% csrf_token %}
+                                        {{ reply_form|crispy }}
+                                        {% if reply_form.body.errors %}<div class="alert alert-danger">{{ reply_form.body.errors }}</div>{% endif %}
+                                        {% if external %}<input type="hidden" value="{{ dataset.pk }}" name="dataset_id">{% endif %}
+                                        <button type="submit" class="button is-primary is-pulled-right mt-1 mr-1">{% translate "Atsakyti" %}</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </article>
+                    <!-- Delete modal -->
+                    <div class="modal" id="delete-modal-{{ comment.id }}">
+                        <div class="modal-background"></div>
+                        <div class="modal-card">
+                            <header class="modal-card-head">
+                                <p class="modal-card-title">{% translate "Ištrinti komentarą?" %}</p>
+                            </header>
+                            <section class="modal-card-body">
+                                {% translate "Šis veiksmas negrąžinamas." %}
+                            </section>
+                            <footer class="modal-card-foot">
+                                <button class="button" onclick="closeDeleteModal('{{ comment.id }}')">{% translate "Atšaukti" %}</button>
+                                <button class="button is-danger delete-confirm"
+                                        data-comment-id="{{ comment.id }}">{% translate "Ištrinti" %}</button>
+                            </footer>
+                        </div>
+                    </div>
+                    {% if is_child %}
+                    </div>
+                </div>
+            {% else %}
+            </div>
+        {% endif %}
+    {% endif %}

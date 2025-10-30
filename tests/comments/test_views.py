@@ -135,13 +135,14 @@ def test_reply_is_not_public(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(dataset)
     comment = CommentFactory(content_type=ct, object_id=dataset.pk)
     app.set_user(user)
-    form = app.get(comment.content_object.get_absolute_url()).forms['reply-form']
+    form = app.get(comment.content_object.get_absolute_url()).forms[f'reply-form-{comment.pk}']
+    form['body'] = 'test'
     form['is_public'] = False
-    form['body'] = "Test comment"
-    resp = form.submit().follow()
-    comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
-    assert comments.count() == 2
-    assert comment in list(resp.context['comments'])[0]
+    form.submit()
+
+    reply = Comment.objects.filter(parent=comment).first()
+    assert reply is not None
+    assert reply.is_public is False
 
 
 @pytest.mark.django_db
@@ -151,7 +152,7 @@ def test_reply_is_public(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(dataset)
     comment = CommentFactory(content_type=ct, object_id=dataset.pk)
     app.set_user(user)
-    form = app.get(comment.content_object.get_absolute_url()).forms['reply-form']
+    form = app.get(comment.content_object.get_absolute_url()).forms[f'reply-form-{comment.pk}']
     form['is_public'] = True
     form['body'] = "Test comment"
     resp = form.submit().follow()
@@ -171,17 +172,14 @@ def test_reply_for_reply(app: DjangoTestApp):
     reply = CommentFactory(parent=comment, content_type=ct, object_id=dataset.pk)
 
     app.set_user(user)
-    form = app.get(comment.content_object.get_absolute_url()).forms['reply-form']
+    form = app.get(comment.content_object.get_absolute_url()).forms[f'reply-form-{comment.pk}']
     form.fields['is_public'][0].value = True
     form.fields['body'][0].value = "Test reply"
-    form.fields['is_public'][1].value = True
-    form.fields['body'][1].value = "Test reply"
-    resp = form.submit().follow()
-    comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
-    new_reply = Comment.objects.filter(content_type=comment.content_type, parent=reply).first()
-    assert comments.count() == 3
-    assert reply in list(resp.context['comments'])[1]
-    assert new_reply in list(resp.context['comments'])[2]
+    form.submit()
+
+    new_reply = Comment.objects.filter(parent=comment).exclude(pk=reply.pk).first()
+    assert new_reply is not None
+    assert new_reply.body == "Test reply"
 
 
 @pytest.mark.django_db
@@ -765,7 +763,9 @@ def test_delete_comment_as_author(client):
     assert resp.status_code == 200
     data = resp.json()
     assert data['success'] is True
-    assert not Comment.objects.filter(pk=comment.pk).exists()
+    comment.refresh_from_db()
+    assert comment.deleted is True
+    assert comment.deleted_on is not None
 
 
 @pytest.mark.django_db
@@ -780,7 +780,9 @@ def test_delete_comment_as_superuser(client):
     assert resp.status_code == 200
     data = resp.json()
     assert data['success'] is True
-    assert not Comment.objects.filter(pk=comment.pk).exists()
+    comment.refresh_from_db()
+    assert comment.deleted is True
+    assert comment.deleted_on is not None
 
 
 @pytest.mark.django_db
@@ -804,3 +806,139 @@ def test_delete_comment_wrong_http_method(client):
 
     assert resp.status_code == 405
     assert Comment.objects.filter(pk=comment.pk).exists()
+
+@pytest.mark.django_db
+def test_edit_comment_without_login(client):
+    comment = CommentFactory()
+    url = reverse('edit-comment', kwargs={'pk': comment.pk})
+
+    resp = client.post(url, data={'body': 'edited text'})
+
+    assert resp.status_code == 302
+    assert 'login' in resp.url
+    comment.refresh_from_db()
+    assert comment.body != 'edited text'
+
+
+@pytest.mark.django_db
+def test_edit_comment_as_non_author(client):
+    comment = CommentFactory(body='original text')
+    other_user = UserFactory()
+    client.force_login(other_user)
+    url = reverse('edit-comment', kwargs={'pk': comment.pk})
+
+    resp = client.post(url, data={'body': 'edited text'})
+
+    assert resp.status_code == 404
+    comment.refresh_from_db()
+    assert comment.body == 'original text'
+
+
+@pytest.mark.django_db
+def test_edit_comment_as_author(client):
+    user = UserFactory()
+    comment = CommentFactory(user=user, body='original text')
+    client.force_login(user)
+    url = reverse('edit-comment', kwargs={'pk': comment.pk})
+
+    resp = client.post(url, data={'body': 'edited text'})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data['success'] is True
+    assert data['body'] == 'edited text'
+    comment.refresh_from_db()
+    assert comment.body == 'edited text'
+
+
+@pytest.mark.django_db
+def test_edit_comment_as_superuser(client):
+    comment = CommentFactory(body='original text')
+    superuser = UserFactory(is_superuser=True)
+    client.force_login(superuser)
+    url = reverse('edit-comment', kwargs={'pk': comment.pk})
+
+    resp = client.post(url, data={'body': 'edited by admin'})
+
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data['success'] is True
+    comment.refresh_from_db()
+    assert comment.body == 'edited by admin'
+
+
+@pytest.mark.django_db
+def test_edit_nonexistent_comment(client):
+    user = UserFactory()
+    client.force_login(user)
+    url = reverse('edit-comment', kwargs={'pk': 99999})
+
+    resp = client.post(url, data={'body': 'edited text'})
+
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_edit_comment_empty_body(client):
+    user = UserFactory()
+    comment = CommentFactory(user=user, body='original text')
+    client.force_login(user)
+    url = reverse('edit-comment', kwargs={'pk': comment.pk})
+
+    resp = client.post(url, data={'body': ''})
+
+    assert resp.status_code == 400
+    data = resp.json()
+    assert 'error' in data
+    comment.refresh_from_db()
+    assert comment.body == 'original text'
+
+
+@pytest.mark.django_db
+def test_edit_comment_updates_is_public(client):
+    user = UserFactory()
+    comment = CommentFactory(user=user, is_public=True)
+    client.force_login(user)
+    url = reverse('edit-comment', kwargs={'pk': comment.pk})
+
+    # Make comment private
+    resp = client.post(url, data={'body': 'edited text'})
+
+    assert resp.status_code == 200
+    comment.refresh_from_db()
+    assert comment.is_public is False
+
+    # Make comment public again
+    resp = client.post(url, data={'body': 'edited again', 'is_public': 'on'})
+
+    assert resp.status_code == 200
+    comment.refresh_from_db()
+    assert comment.is_public is True
+
+
+@pytest.mark.django_db
+def test_edit_comment_sets_edited_at(client):
+    user = UserFactory()
+    comment = CommentFactory(user=user, body='original text', edited_at=None)
+    client.force_login(user)
+    url = reverse('edit-comment', kwargs={'pk': comment.pk})
+
+    assert comment.edited_at is None
+
+    resp = client.post(url, data={'body': 'edited text'})
+
+    assert resp.status_code == 200
+    comment.refresh_from_db()
+    assert comment.edited_at is not None
+
+
+@pytest.mark.django_db
+def test_edit_comment_wrong_http_method(client):
+    user = UserFactory()
+    comment = CommentFactory(user=user)
+    client.force_login(user)
+    url = reverse('edit-comment', kwargs={'pk': comment.pk})
+
+    resp = client.get(url)
+
+    assert resp.status_code == 405

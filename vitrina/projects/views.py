@@ -526,7 +526,7 @@ class ProjectApiKeysDetailView(LoginRequiredMixin, PermissionRequiredMixin, Temp
         context_data = super().get_context_data(**kwargs)
         context_data["parent_links"] = {
             reverse("home"): _("Pradžia"),
-            reverse("project-list"): _("Projektai"),
+            reverse("project-list"): _("Panaudojimo atvejai"),
             reverse("project-detail", args=[self.object.pk]): self.object.title,
             reverse("project-permissions", args=[self.object.pk]): _("Leidimai"),
             reverse("project-clients", args=[self.object.pk]): _("Kurti klientą"),

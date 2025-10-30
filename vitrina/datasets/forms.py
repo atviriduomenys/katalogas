@@ -887,11 +887,11 @@ class AddProjectForm(forms.ModelForm):
         )
 
     projects = ModelMultipleChoiceField(
-        label=_("Projektai"),
+        label=_("Panaudojimo atvejai"),
         queryset=None,
         widget=forms.CheckboxSelectMultiple,
         required=True,
-        help_text=_("Pažymėkite projektus, kuriuose yra naudojamas šis duomenų rinkinys."),
+        help_text=_("Pažymėkite panaudojimo atvejus, kuriuose yra naudojamas šis duomenų rinkinys."),
     )
 
 

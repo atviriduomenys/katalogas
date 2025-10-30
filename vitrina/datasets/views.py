@@ -2136,7 +2136,7 @@ class AddProjectView(
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
         }
-        context["current_title"] = _("Projektų pridėjimas")
+        context["current_title"] = _("Panaudos atvejų pridėjimas")
         return context
 
 

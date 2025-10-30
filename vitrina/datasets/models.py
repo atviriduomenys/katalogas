@@ -36,7 +36,7 @@ from vitrina.datasets.managers import (
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
 from vitrina.settings import TRANSLATION_CLIENT_ID
-from vitrina.structure.models import Model, Base, Property, Metadata
+from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode
 from vitrina.users.models import User
 
 logger = logging.getLogger(__name__)
@@ -982,8 +982,8 @@ class Dataset(Resource):
                         )
                     if latest_version.status != metadata.status:
                         changes_to_message = metadata.status.codename
-                        if metadata.status == Status.objects.filter(codename="develop").first():
-                            completed_status = Status.objects.filter(codename="completed").first()
+                        if metadata.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
+                            completed_status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
                             changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
 
                         label_str += (
@@ -1053,8 +1053,8 @@ class Dataset(Resource):
 
                         if latest_version.status != metadata.status:
                             changes_to_message = metadata.status.codename
-                            if metadata.status == Status.objects.filter(codename="develop").first():
-                                completed_status = Status.objects.filter(codename="completed").first()
+                            if metadata.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
+                                completed_status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
                                 changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
 
                             label_str += (
@@ -1152,8 +1152,8 @@ class Dataset(Resource):
                                 metadata.source = None if metadata.source == "" else metadata.source
                                 if latest_version.status != metadata.status:
                                     changes_to_message = metadata.status.codename
-                                    if metadata.status == Status.objects.filter(codename="develop").first():
-                                        completed_status = Status.objects.filter(codename="completed").first()
+                                    if metadata.status == Status.objects.filter(StatusCode.DEVELOP).first():
+                                        completed_status = Status.objects.filter(StatusCode.COMPLETED).first()
                                         changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
 
                                     label_str += (

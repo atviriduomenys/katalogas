@@ -14,6 +14,15 @@ from django.utils.translation import gettext_lazy as _
 from vitrina.classifiers.models import Status
 from vitrina.models import UUIDBaseModel
 from vitrina.structure.helpers import get_type_repr
+from enum import Enum
+
+
+class StatusCode(str, Enum):
+    DEVELOP = "develop"
+    COMPLETED = "completed"
+    DISCONT = "discont"
+    DEPRECATED = "deprecated"
+    WITHDRAWN = "withdrawn"
 
 
 class Prefix(models.Model):
@@ -532,7 +541,7 @@ class MetadataVersion(models.Model):
         null=True,
         verbose_name=_("Bazė"),
     )
-    status = models.ForeignKey(Status, models.SET_NULL, verbose_name=_("Būsena"), null=True, blank=True)
+    status = models.ForeignKey(Status, models.PROTECT, verbose_name=_("Būsena"), null=True, blank=True)
 
     class Meta:
         db_table = "metadata_version"

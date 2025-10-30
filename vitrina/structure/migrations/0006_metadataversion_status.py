@@ -7,30 +7,30 @@ import django.db.models.deletion
 def assign_status_based_on_draft(apps, schema_editor):
     Metadata = apps.get_model("vitrina_structure", "Metadata")
     Status = apps.get_model("vitrina_classifiers", "Status")
-    develop_status = Status.objects.get(codename="develop")
-    completed_status = Status.objects.get(codename="completed")
-    null_status = Status.objects.get(codename__isnull=True)
-    for row in Metadata.objects.all():
-        if row.status and row.status not in [develop_status, completed_status, null_status]:
-            continue
+    status_develop, _ = Status.objects.get_or_create(codename="develop")
+    status_completed, _ = Status.objects.get_or_create(codename="completed")
+    status_null, _ = Status.objects.get_or_create(codename=None)
+    metadata_instances_with_no_status = Metadata.objects.filter(status__in=[status_develop, status_completed, status_null])
+    for row in metadata_instances_with_no_status:
         if row.draft:
-            row.status = develop_status
+            row.status = status_develop
         else:
-            row.status = completed_status
+            row.status = status_completed
         row.save()
 
 
 def populate_status_metadata_version(apps, schema_editor):
     MetadataVersion = apps.get_model("vitrina_structure", "MetadataVersion")
-    Status = apps.get_model("vitrina_classifiers", "Status")
     Metadata = apps.get_model("vitrina_structure", "Metadata")
 
     for row in MetadataVersion.objects.all():
         metadata_id = row.metadata_id
-        metadata_status = Metadata.objects.get(id=metadata_id).status_id
-        if metadata_status:
-            row.status = Status.objects.get(id=metadata_status)
-            row.save()
+        metadata_row = Metadata.objects.filter(id=metadata_id).first()
+        if metadata_row:
+            metadata_status = metadata_row.status
+            if metadata_status:
+                row.status = metadata_status
+                row.save()
 
 
 class Migration(migrations.Migration):
@@ -44,7 +44,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="metadataversion",
             name="status",
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to="vitrina_classifiers.status", verbose_name="Būsena"),
+            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.PROTECT, to='vitrina_classifiers.status', verbose_name='Būsena'),
         ),
         migrations.RunPython(assign_status_based_on_draft, migrations.RunPython.noop),
         migrations.RunPython(populate_status_metadata_version, migrations.RunPython.noop),

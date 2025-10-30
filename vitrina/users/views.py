@@ -308,11 +308,6 @@ class ProfileEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         obj = form.save()
-        ################## REMOVE BEFORE MERGE ####################
-        obj.is_viisp_login = form.cleaned_data["is_viisp_login"]
-        obj.viisp_company_code = form.cleaned_data["viisp_company_code"]
-        obj.save()
-        ################## REMOVE BEFORE MERGE ####################
         if "email" in form.changed_data:
             if existing_email_address := EmailAddress.objects.filter(user=obj):
                 existing_email_address.delete()

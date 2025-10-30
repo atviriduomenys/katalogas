@@ -397,11 +397,10 @@ class AgreementUploadSignedFile(
     def has_permission(self) -> bool:
         return can_upload_agreement_file(self.request.user, self.agreement)
 
-    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
+    def _validate_signing_order(self) -> None | str:
         accepted_statuses = (AgreementStatuses.FORMED, AgreementStatuses.INITIATED)
-        error_msg = ""
         if self.agreement.status not in accepted_statuses:
-            error_msg = _(
+            return _(
                 "Sutarties dokumentas gali būti generuojamas sutarčiai su "
                 "būsenomis {accepted_statuses}. Dabartinė būsena: {current_status}"
             ).format(
@@ -410,20 +409,25 @@ class AgreementUploadSignedFile(
             )
         if (
             self.agreement.status == AgreementStatuses.FORMED
-            and request.user.viisp_organization != self.agreement.assignee
+            and self.request.user.viisp_organization != self.agreement.assignee
         ):
-            error_msg = _(
-                "Sutartį pasirašyti duomenų teikėjo vardu galėsite tik po to kai ją pasirašys duomenų gavėjas."
-            )
-        elif (
+            return _("Sutartį pasirašyti duomenų teikėjo vardu galėsite tik po to kai ją pasirašys duomenų gavėjas.")
+        if (
             self.agreement.status == AgreementStatuses.INITIATED
-            and request.user.viisp_organization != self.agreement.assigner
+            and self.request.user.viisp_organization != self.agreement.assigner
         ):
-            error_msg = _("Gavėjo vardu sutartis jau pasirašyta. Laukiama sutarties pasirašymo iš teikėjo pusės.")
-        if error_msg:
+            return _("Gavėjo vardu sutartis jau pasirašyta. Laukiama sutarties pasirašymo iš teikėjo pusės.")
+
+        return None
+
+    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
+        if not self.has_permission():
+            return self.handle_no_permission()
+
+        if error_msg := self._validate_signing_order():
             messages.error(request, error_msg)
             return HttpResponseRedirect(self.get_success_url())
-        return super().dispatch(request, *args, **kwargs)
+        return super(PermissionRequiredMixin, self).dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)

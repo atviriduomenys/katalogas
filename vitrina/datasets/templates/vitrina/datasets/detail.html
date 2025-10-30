@@ -75,12 +75,12 @@
     <div class="column is-one-third">
         <div>
             {% with main_contact=dataset.get_main_contact %}
-                {% trans "Duomenis teikianti organizacija" as header_text %}
+                {% translate "Duomenis teikianti organizacija" as header_text %}
                 {% include "component/organization_card.html" with organization=dataset.organization header=header_text %}
                 {% if dataset.publisher %}
                     {% if main_contact.content_object == dataset.publisher or dataset.publisher != dataset.organization %}
                         <hr class="custom-line-margin">
-                        {% trans "Institucija, atsakinga už duomenų atvėrimą" as header_text %}
+                        {% translate "Institucija, atsakinga už duomenų atvėrimą" as header_text %}
                         {% include "component/organization_card.html" with organization=dataset.publisher header=header_text email=main_contact.get_email phone=main_contact.phone %}
                     {% endif %}
                 {% endif %}

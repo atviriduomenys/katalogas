@@ -1,3 +1,4 @@
+from django.http import HttpRequest, HttpResponse
 from django.views import View
 from django.views.generic import TemplateView
 from django.urls import reverse
@@ -10,7 +11,6 @@ from allauth.socialaccount.providers.oauth2.views import (
 )
 from allauth.socialaccount.helpers import complete_social_login
 
-from vitrina import settings
 from vitrina.orgs.models import Representative
 from vitrina.viisp.forms import FakeViispForm
 from vitrina.viisp.models import ViispKey, ViispTokenKey
@@ -153,19 +153,15 @@ class FakeVIISPCompleteLoginView(View):
     form_class = FakeViispForm
     cleaned_data = None
 
-    def get(self, request):
-        if not settings.DEBUG:
-            return redirect("home")
+    def get(self, request: HttpRequest) -> HttpResponse:
         form = FakeViispForm()
         return render(request, "vitrina/viisp/fake_viisp_form.html", {"form": form})
 
-    def post(self, request):
-        if not settings.DEBUG:
-            return redirect("home")
-        form = self.form_class(request.POST)
+    def post(self, request: HttpRequest) -> HttpResponse:
+        form: FakeViispForm = self.form_class(request.POST)
 
         if form.is_valid():
-            email = form.cleaned_data["email"]
+            email: str = form.cleaned_data["email"]
             user, _ = User.objects.get_or_create(email=email)
             user.is_viisp_login = True
             user.save()
@@ -175,9 +171,7 @@ class FakeVIISPCompleteLoginView(View):
         return render(
             request,
             "vitrina/viisp/fake_viisp_form.html",
-            {
-                "form": form,
-            },
+            {"form": form},
         )
 
 

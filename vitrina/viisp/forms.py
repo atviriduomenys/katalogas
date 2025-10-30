@@ -16,7 +16,9 @@ PROXY_TYPE_CHOICES = [
 
 class FakeViispForm(forms.Form):
     email = forms.EmailField(label=_("El. paštas"), required=True)
-    lt_company_code = forms.CharField(label=_("Įmonės kodas"), required=False)
+    lt_company_code = forms.CharField(
+        label=_("Įmonės kodas"), help_text=_("Įveskite Lietuvoje registruotos įmonės kodą."), required=False
+    )
     proxy_type = forms.ChoiceField(label=_("JA atstovavimo tipas"), choices=PROXY_TYPE_CHOICES, required=False)
 
     def __init__(self, *args, **kwargs):
@@ -30,7 +32,7 @@ class FakeViispForm(forms.Form):
             Submit("submit", _("Prisijungti"), css_class="button is-primary"),
         )
 
-    def clean_email(self):
+    def clean_email(self) -> str:
         email = self.cleaned_data.get("email")
         if not User.objects.filter(email=email).exists():
             raise ValidationError(_("Naudotojas su tokiu el. paštu neegzistuoja."))

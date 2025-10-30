@@ -5632,6 +5632,8 @@ msgstr ""
 "The password is too weak. Try using more characters, uppercase letters, "
 "digits, and special characters."
 
+msgid "Įveskite Lietuvoje registruotos įmonės kodą."
+msgstr "Enter the code of a company registered in Lithuania."
 
 msgid "JA atstovavimo tipas"
 msgstr "Type of representation of a legal entity"

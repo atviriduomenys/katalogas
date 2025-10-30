@@ -37,7 +37,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ("vitrina_classifiers", "0015_concepts_with_distribution_status"),
-        ("vitrina_structure", "0005_metadata_count"),
+        ("vitrina_structure", "0006_manifestsvalidationentry"),
     ]
 
     operations = [

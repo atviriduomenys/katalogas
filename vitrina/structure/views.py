@@ -56,7 +56,8 @@ from vitrina.structure.models import (
     Base,
     ParamItem,
     Param,
-    MetadataVersion, StatusCode,
+    MetadataVersion,
+    StatusCode,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -1590,10 +1591,9 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
     @staticmethod
     def should_reset_to_default_status(old_object, new_object):
         """Reset status to default if metadata changed but status wasn't explicitly updated."""
-        metadata_changed = (
-                none_to_string(old_object.prepare) != none_to_string(new_object.prepare)
-                or none_to_string(old_object.source) != none_to_string(new_object.source)
-        )
+        metadata_changed = none_to_string(old_object.prepare) != none_to_string(new_object.prepare) or none_to_string(
+            old_object.source
+        ) != none_to_string(new_object.source)
         status_unchanged = old_object.status == new_object.status or new_object.status is None
 
         return metadata_changed and status_unchanged
@@ -1973,18 +1973,16 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
     def should_reset_to_default_status(old_object, new_object, form):
         """Reset status to default if metadata changed but status wasn't explicitly updated."""
         metadata_changed = (
-                old_object.name != new_object.name
-                or old_object.object.base != form.cleaned_data.get("base")
-                or none_to_string(old_object.ref) != none_to_string(new_object.ref)
-                or old_object.level_given != new_object.level_given
+            old_object.name != new_object.name
+            or old_object.object.base != form.cleaned_data.get("base")
+            or none_to_string(old_object.ref) != none_to_string(new_object.ref)
+            or old_object.level_given != new_object.level_given
         )
 
-        status_unchanged = (
-                old_object.status == new_object.status
-                or new_object.status is None
-        )
+        status_unchanged = old_object.status == new_object.status or new_object.status is None
 
         return metadata_changed and status_unchanged
+
 
 class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
     model = Metadata
@@ -2133,7 +2131,6 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 prop.ref_model = None
 
         if latest_version := self.object.metadataversion_set.order_by("-version__created").first():
-
             latest_version_fields_changed = (
                 latest_version.name != self.object.name
                 or latest_version.type_repr != self.object.type_repr
@@ -2205,11 +2202,11 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
     def should_reset_to_default_status(old_object, new_object, form):
         """Reset status to default if metadata changed but status wasn't explicitly updated."""
         metadata_changed = (
-                old_object.name != new_object.name
-                or old_object.type_repr != new_object.type_repr
-                or none_to_string(old_object.ref) != none_to_string(new_object.ref)
-                or old_object.level_given != new_object.level_given
-                or old_object.access != new_object.access
+            old_object.name != new_object.name
+            or old_object.type_repr != new_object.type_repr
+            or none_to_string(old_object.ref) != none_to_string(new_object.ref)
+            or old_object.level_given != new_object.level_given
+            or old_object.access != new_object.access
         )
         status_unchanged = old_object.status == new_object.status or new_object.status is None
 

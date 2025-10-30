@@ -1578,17 +1578,9 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
                 else:
                     metadata.draft = False
 
-            if (
-                old_metadata
-                and (
-                    none_to_string(old_metadata.prepare) != none_to_string(metadata.prepare)
-                    or none_to_string(old_metadata.source) != none_to_string(metadata.source)
-                )
-                and (old_metadata.status == metadata.status or metadata.status is None)
-            ):
+            if self.should_reset_to_default_status(old_metadata, metadata):
                 metadata.status = Status.objects.filter(is_default=True).first()
-                metadata.save()
-
+            metadata.save()
         # Save history
         self.property.save()
         set_comment(_(f'Redaguota duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'))
@@ -1596,14 +1588,11 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
         return redirect(self.property.get_absolute_url())
 
     @staticmethod
-    def should_reset_to_default_status(old_object, new_object, form):
+    def should_reset_to_default_status(old_object, new_object):
         """Reset status to default if metadata changed but status wasn't explicitly updated."""
         metadata_changed = (
-                old_object.name != new_object.name
-                or old_object.type_repr != new_object.type_repr
-                or none_to_string(old_object.ref) != none_to_string(new_object.ref)
-                or old_object.level_given != new_object.level_given
-                or old_object.access != new_object.access
+                none_to_string(old_object.prepare) != none_to_string(new_object.prepare)
+                or none_to_string(old_object.source) != none_to_string(new_object.source)
         )
         status_unchanged = old_object.status == new_object.status or new_object.status is None
 

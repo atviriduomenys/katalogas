@@ -24,7 +24,8 @@ from vitrina.classifiers.models import (
     Category,
     Frequency,
     Concept,
-    ApplicableLegislation, Status,
+    ApplicableLegislation,
+    Status,
 )
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
@@ -1154,7 +1155,9 @@ class Dataset(Resource):
                                     changes_to_message = metadata.status.codename
                                     if metadata.status == Status.objects.filter(StatusCode.DEVELOP).first():
                                         completed_status = Status.objects.filter(StatusCode.COMPLETED).first()
-                                        changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
+                                        changes_to_message = (
+                                            f"{metadata.status.codename} -> {completed_status.codename}"
+                                        )
 
                                     label_str += (
                                         f" status: <span class='tag is-danger is-light is-medium'>{latest_version.status.codename}</span> ->"

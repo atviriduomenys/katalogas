@@ -37,7 +37,7 @@ def get_projects(user: User | AnonymousUser) -> QuerySet["Project"]:
 def can_update_project(user: User | AnonymousUser, project: Project) -> bool:
     if not user.is_authenticated:
         return False
-    
+
     if project.organization:
         return project.organization == user.viisp_organization and user.is_representative_of(project.organization, True)
 
@@ -75,14 +75,14 @@ def can_manage_datasets(user: User | AnonymousUser, project: Project) -> bool:
 def can_view_clients(user: User | AnonymousUser, project: Project) -> bool:
     if not user.is_authenticated:
         return False
-    
+
     return project.organization and user.is_representative_of(project.organization)
 
 
 def can_manage_clients(user: User | AnonymousUser, project: Project) -> bool:
     if not user.is_authenticated:
         return False
-    
+
     if project.organization:
         return user.viisp_organization == project.organization and user.is_representative_of(project.organization)
     return False
@@ -91,7 +91,7 @@ def can_manage_clients(user: User | AnonymousUser, project: Project) -> bool:
 def can_view_history(user: User | AnonymousUser, project: Project) -> bool:
     if not user.is_authenticated:
         return False
-    
+
     if user.is_staff or user.is_superuser:
         return True
 

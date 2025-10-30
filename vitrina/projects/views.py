@@ -643,6 +643,7 @@ class ClientListView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequire
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         clients = UseCaseClient.objects.filter(use_case__id=self.project.pk)
+        context["can_manage_clients"] = can_manage_clients(self.request.user, self.project)
         context["parent_links"].update(
             {
                 None: _("Klientai"),

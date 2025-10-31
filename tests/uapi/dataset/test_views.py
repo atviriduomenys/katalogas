@@ -991,10 +991,10 @@ def test_action_get_dataset_structure(
 {metadata_to_id_map["example70"]},example70,,,,,,,,,,,,,,,,,,Title of the Dataset,Description of the Dataset.
 {metadata_to_id_map["users"]},,users,,,,dask/json,,/path,,,,,,,,,,,users,
 {metadata_to_id_map["example70/User"]},,,,User,,,id,users,,,,,4,completed,package,open,,,Pavadinimas,
-{metadata_to_id_map["id"]},,,,,id,integer,,id,,,,,,,,,,,,
-{metadata_to_id_map["full_name"]},,,,,full_name,string,,name,,,,,,,,,,,,
-{metadata_to_id_map["email_address"]},,,,,email_address,string,,email,,,,,,,,,,,,
-{metadata_to_id_map["active"]},,,,,active,boolean,,isActive,,,,,,,,,,,,
+{metadata_to_id_map["id"]},,,,,id,integer,,id,,,,,,develop,,,,,,
+{metadata_to_id_map["full_name"]},,,,,full_name,string,,name,,,,,,develop,,,,,,
+{metadata_to_id_map["email_address"]},,,,,email_address,string,,email,,,,,,develop,,,,,,
+{metadata_to_id_map["active"]},,,,,active,boolean,,isActive,,,,,,develop,,,,,,
 """
     actual_rows = _normalize_csv(response.content.decode("utf-8"))
     expected_rows = _normalize_csv(expected_csv)

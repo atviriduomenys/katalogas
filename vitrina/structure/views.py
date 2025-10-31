@@ -28,6 +28,7 @@ from reversion.models import Version
 from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
+from vitrina.classifiers.models import Status
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.mixins import Crumb, DatasetBreadcrumbsMixin
 from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none, build_page_title_context
@@ -56,6 +57,7 @@ from vitrina.structure.models import (
     ParamItem,
     Param,
     MetadataVersion,
+    StatusCode,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -1452,7 +1454,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
         self.object.save()
         value = form.cleaned_data.get("value")
         visibility = form.cleaned_data.get("visibility")
-        status = form.cleaned_data.get("status")
+        status = form.cleaned_data.get("status") or Status.objects.filter(is_default=True).first()
         eli = form.cleaned_data.get("eli")
         if metadata := self.property.metadata.first():
             if metadata.type == "string":
@@ -1549,6 +1551,9 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
         if metadata := self.property.metadata.first():
             if metadata.type == "string":
                 value = f'"{value}"'
+
+        old_metadata = self.get_object().metadata.first()
+
         if metadata := self.object.metadata.first():
             metadata.prepare = value
             metadata.prepare_ast = spyna.parse(form.cleaned_data.get("value"))
@@ -1560,22 +1565,40 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.eli = form.cleaned_data.get("eli")
             metadata.status = form.cleaned_data.get("status")
             metadata.version += 1
+            metadata.status = form.cleaned_data.get("status") or form.initial.get("status")
 
             if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
-                if none_to_string(latest_version.prepare) != none_to_string(metadata.prepare) or none_to_string(
-                    latest_version.source
-                ) != none_to_string(metadata.source):
+                latest_version_fields_changed = none_to_string(latest_version.prepare) != none_to_string(
+                    metadata.prepare
+                ) or none_to_string(latest_version.source) != none_to_string(metadata.source)
+
+                latest_version_status_changed = latest_version.status != metadata.status
+
+                if latest_version_fields_changed or latest_version_status_changed:
                     metadata.draft = True
                 else:
                     metadata.draft = False
 
+            if self.should_reset_to_default_status(old_metadata, metadata):
+                metadata.status = Status.objects.filter(is_default=True).first()
             metadata.save()
-
         # Save history
         self.property.save()
         set_comment(_(f'Redaguota duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'))
 
         return redirect(self.property.get_absolute_url())
+
+    @staticmethod
+    def should_reset_to_default_status(old_object, new_object):
+        """Reset status to default if metadata changed but status wasn't explicitly updated."""
+        metadata_changed = (
+            old_object
+            and none_to_string(old_object.prepare) != none_to_string(new_object.prepare)
+            or none_to_string(old_object.source) != none_to_string(new_object.source)
+        )
+        status_unchanged = old_object.status == new_object.status or new_object.status is None
+
+        return metadata_changed and status_unchanged
 
 
 class EnumDeleteView(PermissionRequiredMixin, DeleteView):
@@ -1687,6 +1710,8 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         self.object.version = 1
         self.object.name = get_model_name(self.dataset, self.object.name)
         self.object.level_given = form.cleaned_data.get("level")
+        if not self.object.status:
+            self.object.status = Status.objects.filter(is_default=True).first()
         if form.cleaned_data.get("uri"):
             self.object.level = 5
         else:
@@ -1798,11 +1823,13 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
 
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
+        old_object = self.get_object()
+
         model = self.object.object
         model.is_parameterized = form.cleaned_data.get("is_parameterized", False)
         model.save()
         model_ref = form.cleaned_data.get("ref")
-
+        self.object.status = form.cleaned_data.get("status") or form.initial.get("status")
         self.object.version += 1
         self.object.name = get_model_name(self.dataset, self.object.name)
         self.object.level_given = form.cleaned_data.get("level")
@@ -1893,16 +1920,23 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
         self.dataset.update_level()
 
         if latest_version := self.object.metadataversion_set.order_by("-version__created").first():
-            if (
+            latest_version_fields_changed = (
                 latest_version.name != self.object.name
                 or latest_version.base != object_to_none(model.base)
                 or none_to_string(latest_version.ref) != none_to_string(self.object.ref)
                 or latest_version.level_given != self.object.level_given
-            ):
+            )
+
+            latest_version_status_changed = latest_version.status != self.object.status
+
+            if latest_version_fields_changed or latest_version_status_changed:
                 self.object.draft = True
             else:
                 self.object.draft = False
-            self.object.save()
+
+        if self.should_reset_to_default_status(old_object, self.object, form):
+            self.object.status = Status.objects.filter(is_default=True).first()
+        self.object.save()
 
         if form.cleaned_data.get("comment"):
             comment = _(f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
@@ -1936,6 +1970,20 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
         kwargs = super().get_form_kwargs()
         kwargs["dataset"] = self.dataset
         return kwargs
+
+    @staticmethod
+    def should_reset_to_default_status(old_object, new_object, form):
+        """Reset status to default if metadata changed but status wasn't explicitly updated."""
+        metadata_changed = (
+            old_object.name != new_object.name
+            or old_object.object.base != form.cleaned_data.get("base")
+            or none_to_string(old_object.ref) != none_to_string(new_object.ref)
+            or old_object.level_given != new_object.level_given
+        )
+
+        status_unchanged = old_object.status == new_object.status or new_object.status is None
+
+        return metadata_changed and status_unchanged
 
 
 class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
@@ -1990,11 +2038,12 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 prop.save()
         else:
             self.object.ref = form.cleaned_data.get("ref_others")
+        if not self.object.status:
+            self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 
         self.model_obj.update_level()
         self.dataset.update_level()
-
         # Save history
         set_comment(_(f'Pridėtas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
@@ -2064,10 +2113,11 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
 
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
+        old_object = self.get_object()
         prop = self.object.object
-
         self.object.version += 1
         self.object.level_given = self.object.level
+        self.object.status = form.cleaned_data.get("status") or form.initial.get("status")
         if self.object.prepare:
             self.object.prepare_ast = spyna.parse(self.object.prepare)
         else:
@@ -2083,17 +2133,21 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 prop.ref_model = None
 
         if latest_version := self.object.metadataversion_set.order_by("-version__created").first():
-            if (
+            latest_version_fields_changed = (
                 latest_version.name != self.object.name
                 or latest_version.type_repr != self.object.type_repr
                 or none_to_string(latest_version.ref) != none_to_string(self.object.ref)
                 or latest_version.level_given != self.object.level_given
                 or latest_version.access != self.object.access
-            ):
+            )
+            latest_version_status_unchanged = latest_version.status != self.object.status
+            if latest_version_status_unchanged or latest_version_fields_changed:
                 self.object.draft = True
             else:
                 self.object.draft = False
 
+        if self.should_reset_to_default_status(old_object, self.object, form):
+            self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 
         self.model_obj.update_level()
@@ -2145,6 +2199,20 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
         kwargs = super().get_form_kwargs()
         kwargs["model"] = self.model_obj
         return kwargs
+
+    @staticmethod
+    def should_reset_to_default_status(old_object, new_object, form):
+        """Reset status to default if metadata changed but status wasn't explicitly updated."""
+        metadata_changed = (
+            old_object.name != new_object.name
+            or old_object.type_repr != new_object.type_repr
+            or none_to_string(old_object.ref) != none_to_string(new_object.ref)
+            or old_object.level_given != new_object.level_given
+            or old_object.access != new_object.access
+        )
+        status_unchanged = old_object.status == new_object.status or new_object.status is None
+
+        return metadata_changed and status_unchanged
 
 
 class CreateBasePropertyView(PermissionRequiredMixin, View):
@@ -2753,6 +2821,8 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
         for meta in metadata:
             if meta := Metadata.objects.filter(pk=meta).first():
                 meta.draft = False
+                if meta.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
+                    meta.status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
                 meta.metadata_version = version
                 meta.save()
 
@@ -2770,8 +2840,8 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                     level_given=meta.level_given,
                     access=meta.access,
                     base=meta.object.base if isinstance(meta.object, Model) else None,
+                    status=meta.status if meta.status else None,
                 )
-
         return redirect(reverse("dataset-structure", args=[self.dataset.pk]))
 
 

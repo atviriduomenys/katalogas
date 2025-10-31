@@ -4,6 +4,10 @@ Changes
 v 1.6 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/pull/2050
+- Made the status field of structure versionable.
+- Added automatic handling of status values and hid them from the user.
+
 https://github.com/atviriduomenys/katalogas/issues/1976
 Add authorization server and API gateway server fields to Agent model.
 

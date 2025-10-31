@@ -108,7 +108,9 @@ class EnumForm(forms.ModelForm):
     status = ModelChoiceTypeField(
         label=_("Būsena"),
         required=False,
-        queryset=Status.objects.all().order_by("id"),
+        queryset=(
+            Status.objects.exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True)).order_by("id")
+        ),
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
@@ -179,7 +181,6 @@ class EnumForm(forms.ModelForm):
             ),
         )
 
-        default_status = Status.objects.filter(is_default=True).first()
         if instance and instance.metadata.first():
             metadata = instance.metadata.first()
             if self.prop.metadata.first() and self.prop.metadata.first().type == "string":
@@ -193,10 +194,9 @@ class EnumForm(forms.ModelForm):
             self.initial["description"] = metadata.description
             self.initial["visibility"] = metadata.visibility if metadata.visibility is not None else "None"
             self.initial["eli"] = metadata.eli
-            self.initial["status"] = metadata.status if metadata.status is not None else default_status
+            self.initial["status"] = metadata.status
         else:
             self.initial["visibility"] = "None"
-            self.initial["status"] = default_status
 
     def clean_value(self):
         value = self.cleaned_data.get("value")
@@ -455,7 +455,9 @@ class ModelCreateForm(forms.ModelForm):
     status = ModelChoiceTypeField(
         label=_("Būsena"),
         required=False,
-        queryset=Status.objects.all().order_by("id"),
+        queryset=(
+            Status.objects.exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True)).order_by("id")
+        ),
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
@@ -594,7 +596,7 @@ class ModelCreateForm(forms.ModelForm):
         self.initial["level"] = "None"
         self.initial["base_level"] = "None"
         self.initial["visibility"] = "None"
-        self.initial["status"] = Status.objects.filter(is_default=True).first()
+        self.initial["status"] = self.instance.status
 
     def clean_level(self):
         level = self.cleaned_data.get("level")
@@ -941,7 +943,9 @@ class PropertyForm(forms.ModelForm):
     status = ModelChoiceTypeField(
         label=_("Būsena"),
         required=False,
-        queryset=Status.objects.all().order_by("id"),
+        queryset=(
+            Status.objects.exclude(Q(codename__in=["develop", "completed"]) | Q(codename__isnull=True)).order_by("id")
+        ),
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
@@ -1043,17 +1047,16 @@ class PropertyForm(forms.ModelForm):
             ),
         )
 
-        default_status = Status.objects.filter(is_default=True).first()
-        self.initial["status"] = default_status
         self.initial["dataset_id"] = self.model.dataset.pk
         self.initial["level"] = "None"
         self.initial["visibility"] = "None"
+        self.initial["status"] = Status.objects.filter(is_default=True).first()
         if instance:
             self.initial["level"] = instance.level_given if instance.level_given is not None else "None"
             self.initial["access"] = instance.access
             self.initial["eli"] = instance.eli
             self.initial["visibility"] = instance.visibility if instance.visibility is not None else "None"
-            self.initial["status"] = instance.status if instance.status is not None else default_status
+            self.initial["status"] = instance.status
             if instance.object.ref_model:
                 self.initial["ref"] = instance.object.ref_model
                 self.initial["ref_others"] = None

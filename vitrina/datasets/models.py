@@ -25,6 +25,7 @@ from vitrina.classifiers.models import (
     Frequency,
     Concept,
     ApplicableLegislation,
+    Status,
 )
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
@@ -36,7 +37,7 @@ from vitrina.datasets.managers import (
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
 from vitrina.settings import TRANSLATION_CLIENT_ID
-from vitrina.structure.models import Model, Base, Property, Metadata
+from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode
 from vitrina.users.models import User
 
 logger = logging.getLogger(__name__)
@@ -980,6 +981,16 @@ class Dataset(Resource):
                             f" name: <span class='tag is-danger is-light is-medium'>{latest_version.name}</span> ->"
                             f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
                         )
+                    if latest_version.status != metadata.status:
+                        changes_to_message = metadata.status.codename
+                        if metadata.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
+                            completed_status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
+                            changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
+
+                        label_str += (
+                            f" status: <span class='tag is-danger is-light is-medium'>{latest_version.status.codename}</span> ->"
+                            f" <span class='tag is-success is-light is-medium'>{changes_to_message}</span>"
+                        )
                     latest_version.ref = None if latest_version.ref == "" else latest_version.ref
                     metadata.ref = None if metadata.ref == "" else metadata.ref
                     if latest_version.ref != metadata.ref:
@@ -1039,6 +1050,18 @@ class Dataset(Resource):
                                 f" name: <span class='tag is-danger is-light is-medium'>"
                                 f"{latest_version.name}</span> ->"
                                 f" <span class='tag is-success is-light is-medium'>{metadata.name}</span>"
+                            )
+
+                        if latest_version.status != metadata.status:
+                            changes_to_message = metadata.status.codename
+                            if metadata.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
+                                completed_status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
+                                changes_to_message = f"{metadata.status.codename} -> {completed_status.codename}"
+
+                            label_str += (
+                                f" status: <span class='tag is-danger is-light is-medium'>"
+                                f"{latest_version.status.codename}</span> ->"
+                                f" <span class='tag is-success is-light is-medium'>{changes_to_message}</span>"
                             )
                         if latest_version.type_repr != metadata.type_repr:
                             label_str += (
@@ -1128,6 +1151,18 @@ class Dataset(Resource):
                                     )
                                 latest_version.source = None if latest_version.source == "" else latest_version.source
                                 metadata.source = None if metadata.source == "" else metadata.source
+                                if latest_version.status != metadata.status:
+                                    changes_to_message = metadata.status.codename
+                                    if metadata.status == Status.objects.filter(StatusCode.DEVELOP).first():
+                                        completed_status = Status.objects.filter(StatusCode.COMPLETED).first()
+                                        changes_to_message = (
+                                            f"{metadata.status.codename} -> {completed_status.codename}"
+                                        )
+
+                                    label_str += (
+                                        f" status: <span class='tag is-danger is-light is-medium'>{latest_version.status.codename}</span> ->"
+                                        f" <span class='tag is-success is-light is-medium'>{changes_to_message}</span>"
+                                    )
                                 if latest_version.source != metadata.source:
                                     label_str += (
                                         f" source: <span class='tag is-danger is-light is-medium'>"

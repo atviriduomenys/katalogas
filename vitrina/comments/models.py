@@ -125,9 +125,7 @@ class Comment(models.Model):
     def body_text(self):
         if self.type == self.REQUEST and self.rel_content_object:
             url = reverse("request-detail", kwargs={"pk": self.rel_content_object.id})
-            body_text = _(
-                f"Pateiktas naujas prašymas: **[{self.rel_content_object.title}]({url})**. {self.rel_content_object.description}"
-            )
+            body_text = _(f"Pateiktas naujas prašymas: **[{self.rel_content_object.title}]({url})**.")
         elif self.type == self.PROJECT and self.rel_content_object:
             body_text = _(f"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title()} projektą.")
         elif self.type == self.PLAN and self.rel_content_object:

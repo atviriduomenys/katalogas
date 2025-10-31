@@ -53,6 +53,8 @@ Fix breadcrumbs and title for dataset detail view.
 Add custom title field for `Request` from comments.
 Add link to `Request` in comments.
 Delete comment functionality for comment author or superuser.
+Edit comment functionality for comment author or superuser.
+Remove automated status update comments.
 
 New features:
 

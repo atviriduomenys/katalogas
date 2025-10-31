@@ -194,7 +194,7 @@ class DatasetStructureView(
         context = super().get_context_data(**kwargs)
         dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         structure = dataset.current_structure
-        context["selected_version"] = self.version
+        context["selected_version"] = self.version or "draft"
         context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
         context["errors"] = []
         context["manifest"] = None
@@ -2826,7 +2826,6 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             version.version = latest_version.version + 1
         else:
             version.version = 1
-        version.save()
 
         rel_projects = Project.objects.filter(datasets=version.dataset)
         emails = []
@@ -2869,6 +2868,9 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                 if meta := Metadata.objects.filter(pk=meta).first():
                     new_model = meta.content_type.model_class()
                     new_model_instance = new_model.objects.filter(id=meta.object_id).first()
+                    # TODO: remove?
+                    if isinstance(new_model_instance, Dataset):
+                        continue
                     new_model_instance.pk = None
                     new_model_instance.version = version
                     new_model_instance.save()
@@ -2910,6 +2912,8 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             self._fix_enum_values(all_enum_items, old_new_props, version)
             self._fix_param_values(all_param_items, old_new_props, version)
             self._copy_prefix_db_distribution(self.dataset, version)
+
+        version.save()
 
         return redirect(reverse("dataset-structure", args=[self.dataset.pk]))
 
@@ -3000,17 +3004,17 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             metadata_prefix.object_id = actual_prefix.pk
             metadata_prefix.save()
 
-        for metadata_dataset_distribution in dataset_distributions:
-            actual_dataset_distribution = DatasetDistribution.objects.filter(id=metadata_dataset_distribution.object_id).first()
-            actual_dataset_distribution.pk = None
-            actual_dataset_distribution.connected_version = version
-            actual_dataset_distribution.save()
-
-            metadata_dataset_distribution.pk = None
-            metadata_dataset_distribution.metadata_version = version
-            metadata_dataset_distribution.draft = False
-            metadata_dataset_distribution.object_id = actual_dataset_distribution.pk
-            metadata_dataset_distribution.save()
+        # for metadata_dataset_distribution in dataset_distributions:
+        #     actual_dataset_distribution = DatasetDistribution.objects.filter(id=metadata_dataset_distribution.object_id).first()
+        #     actual_dataset_distribution.pk = None
+        #     actual_dataset_distribution.connected_version = version
+        #     actual_dataset_distribution.save()
+        #
+        #     metadata_dataset_distribution.pk = None
+        #     metadata_dataset_distribution.metadata_version = version
+        #     metadata_dataset_distribution.draft = False
+        #     metadata_dataset_distribution.object_id = actual_dataset_distribution.pk
+        #     metadata_dataset_distribution.save()
 
 
 class VersionListView(

@@ -5,6 +5,7 @@ from django.contrib.auth.hashers import make_password
 
 from vitrina.users.factories import UserFactory
 from vitrina.orgs.factories import OrganizationFactory
+from allauth.socialaccount.models import SocialAccount
 from webtest import Upload
 
 
@@ -25,6 +26,7 @@ def test_logged_in_not_unverified_user_accesses_data_provider_form(app: DjangoTe
 @pytest.mark.haystack
 def test_logged_in_verified_user_accesses_data_provider_form(app: DjangoTestApp):
     user = UserFactory(email="test@test.lt", password="123")
+    SocialAccount.objects.create(user=user)
     app.set_user(user)
     resp = app.get(reverse("partner-register"))
     assert resp.html.find(id="partner-register-form")
@@ -33,6 +35,7 @@ def test_logged_in_verified_user_accesses_data_provider_form(app: DjangoTestApp)
 @pytest.mark.haystack
 def test_logged_in_coordinator_user_accesses_data_provider_form(app: DjangoTestApp):
     user = UserFactory(email="test@test.lt", password="123")
+    SocialAccount.objects.create(user=user, extra_data={"company_code": "1234-5678", "company_name": "test_company"})
     app.set_user(user)
     resp = app.get(reverse("partner-register"))
     assert resp.html.find(id="partner-register-form")
@@ -42,6 +45,9 @@ def test_logged_in_coordinator_user_accesses_data_provider_form(app: DjangoTestA
 def test_form_submit_with_correct_data(app: DjangoTestApp):
     user = UserFactory(email="test@testesttesttest.lt", password=make_password("123"))
     org = OrganizationFactory()
+    SocialAccount.objects.create(
+        user=user, extra_data={"phone_number": "+37000000000", "email": "test@testesttesttest.lt"}
+    )
     app.set_user(user)
     resp = app.get(reverse("partner-register"))
     form = resp.forms["partner-register-form"]
@@ -62,6 +68,6 @@ def test_fake_viisp_logs_in_existing_user(app: DjangoTestApp):
 
     user.refresh_from_db()
     assert user.is_viisp_login is True
-    assert user.viisp_company_code == 12345678
+    assert user.viisp_company_code == "12345678"
     assert resp.status_code == 302
     assert resp.url == reverse("home")

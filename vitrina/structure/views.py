@@ -1591,9 +1591,11 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
     @staticmethod
     def should_reset_to_default_status(old_object, new_object):
         """Reset status to default if metadata changed but status wasn't explicitly updated."""
-        metadata_changed = none_to_string(old_object.prepare) != none_to_string(new_object.prepare) or none_to_string(
-            old_object.source
-        ) != none_to_string(new_object.source)
+        metadata_changed = (
+            old_object
+            and none_to_string(old_object.prepare) != none_to_string(new_object.prepare)
+            or none_to_string(old_object.source) != none_to_string(new_object.source)
+        )
         status_unchanged = old_object.status == new_object.status or new_object.status is None
 
         return metadata_changed and status_unchanged

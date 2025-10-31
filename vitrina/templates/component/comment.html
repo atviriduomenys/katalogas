@@ -68,8 +68,8 @@
                     <div class="media-content">
                         <!-- Display mode -->
                         <div class="content" id="comment-display-{{ comment.id }}">
-                            <div class="columns">
-                                <div class="column {% if user.is_authenticated %}is-10{% endif %}">
+                            <div class="columns is-mobile">
+                                <div class="column">
                                     {% if comment.parent %}
                                         <p class="is-italic">
                                             {% translate "Atsakymas į" %}
@@ -93,31 +93,37 @@
                                         </small>
                                     </p>
                                 </div>
-                                {% if comment.user == user or user.is_superuser %}
-                                    <a class="button is-danger is-pulled-right show-delete-form mt-1 mr-1"
-                                       id="delete-{{ comment.id }}"
-                                       title="{% translate 'Ištrinti' %}"
-                                       aria-label="{% translate 'Ištrinti komentarą' %}">
-                                        <span class="icon">
-                                            <i class="fas fa-trash"></i>
-                                        </span>
-                                    </a>
-                                    <button class="button is-warning is-pulled-right mt-1 mr-1 edit-button"
-                                            data-comment-id="{{ comment.id }}"
-                                            title="{% translate 'Redaguoti' %}"
-                                            aria-label="{% translate 'Redaguoti komentarą' %}">
-                                        <span class="icon">
-                                            <i class="fas fa-edit"></i>
-                                        </span>
-                                    </button>
+                                {% if user.is_authenticated and comment.can_reply %}
+                                    <div class="column is-narrow">
+                                        <div class="buttons are-small">
+                                            <button class="button is-primary is-small reply-toggle-button"
+                                                    title="{% translate 'Atsakyti' %}"
+                                                    aria-label="{% translate 'Atsakyti į komentarą' %}">
+                                                <span class="icon is-small">
+                                                    <i class="fas fa-reply"></i>
+                                                </span>
+                                            </button>
+                                            {% if comment.user == user or user.is_superuser %}
+                                                <button class="button is-warning is-small edit-button"
+                                                        data-comment-id="{{ comment.id }}"
+                                                        title="{% translate 'Redaguoti' %}"
+                                                        aria-label="{% translate 'Redaguoti komentarą' %}">
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-edit"></i>
+                                                    </span>
+                                                </button>
+                                                <a class="button is-danger is-small show-delete-form"
+                                                   id="delete-{{ comment.id }}"
+                                                   title="{% translate 'Ištrinti' %}"
+                                                   aria-label="{% translate 'Ištrinti komentarą' %}">
+                                                    <span class="icon is-small">
+                                                        <i class="fas fa-trash"></i>
+                                                    </span>
+                                                </a>
+                                            {% endif %}
+                                        </div>
+                                    </div>
                                 {% endif %}
-                                <button class="button is-primary is-pulled-right mt-1 mr-1 reply-toggle-button"
-                                        title="{% translate 'Atsakyti' %}"
-                                        aria-label="{% translate 'Atsakyti į komentarą' %}">
-                                    <span class="icon">
-                                        <i class="fas fa-reply"></i>
-                                    </span>
-                                </button>
                             </div>
                         </div>
                         <!-- Edit mode -->

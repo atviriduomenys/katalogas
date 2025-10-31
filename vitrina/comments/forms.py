@@ -58,7 +58,7 @@ class RegisterRequestForm(CommentForm):
 
 class DatasetCommentForm(RegisterRequestForm):
     increase_frequency = forms.ModelChoiceField(
-        label=_("Didinti duomenų atnaujinimo periodiškumą"),
+        label=_("Pageidaujamas duomenų atnaujinimo periodiškumas"),
         required=False,
         queryset=Frequency.objects.all(),
         to_field_name="title",

@@ -162,8 +162,11 @@ class FakeVIISPCompleteLoginView(View):
 
         if form.is_valid():
             email: str = form.cleaned_data["email"]
+            company_code: int = form.cleaned_data.get("lt_company_code")
             user, _ = User.objects.get_or_create(email=email)
             user.is_viisp_login = True
+            if company_code:
+                user.viisp_company_code = company_code
             user.save()
             django_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
             return redirect("home")

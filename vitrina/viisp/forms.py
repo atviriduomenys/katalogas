@@ -16,8 +16,11 @@ PROXY_TYPE_CHOICES = [
 
 class FakeViispForm(forms.Form):
     email = forms.EmailField(label=_("El. paštas"), required=True)
-    lt_company_code = forms.CharField(
-        label=_("Įmonės kodas"), help_text=_("Įveskite Lietuvoje registruotos įmonės kodą."), required=False
+    lt_company_code = forms.IntegerField(
+        label=_("Įmonės kodas"),
+        help_text=_("Įveskite Lietuvoje registruotos įmonės kodą."),
+        required=False,
+        min_value=1,
     )
     proxy_type = forms.ChoiceField(label=_("JA atstovavimo tipas"), choices=PROXY_TYPE_CHOICES, required=False)
 

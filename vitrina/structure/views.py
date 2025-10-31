@@ -10,7 +10,7 @@ from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Func, F, Value, TextField, Max
+from django.db.models import Func, F, Value, TextField, Max, Q
 from django.forms import BaseForm
 from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -267,12 +267,12 @@ class ModelStructureView(
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version__isnull=True).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version__isnull=True)
                 .order_by("metadata__name")
                 .exclude(metadata__visibility=Metadata.PRIVATE)
             )
@@ -508,12 +508,12 @@ class PropertyStructureView(
         self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name)
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version__isnull=True).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version__isnull=True)
                 .exclude(metadata__visibility=Metadata.PRIVATE)
                 .order_by("metadata__name")
             )
@@ -2864,6 +2864,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
         all_param_items: list = []
 
         with transaction.atomic():
+            version.save()
             for meta in metadata:
                 if meta := Metadata.objects.filter(pk=meta).first():
                     new_model = meta.content_type.model_class()
@@ -2913,7 +2914,6 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             self._fix_param_values(all_param_items, old_new_props, version)
             self._copy_prefix_db_distribution(self.dataset, version)
 
-        version.save()
 
         return redirect(reverse("dataset-structure", args=[self.dataset.pk]))
 

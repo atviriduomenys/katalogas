@@ -4328,6 +4328,9 @@ msgstr "Object type"
 msgid "Objekto id"
 msgstr "Object id"
 
+msgid "Versija"
+msgstr "Version"
+
 msgid "Prefiksas"
 msgstr "Prefix"
 
@@ -4372,9 +4375,6 @@ msgstr "Row count"
 
 msgid "Žodyno atitikmuo"
 msgstr "Uri"
-
-msgid "Versija"
-msgstr "Version"
 
 msgid "Rikiavimo tvarka"
 msgstr "Order"
@@ -4477,6 +4477,9 @@ msgstr "Import"
 
 msgid "Publikuoti versiją"
 msgstr "Publish version"
+
+msgid "Juodraštis"
+msgstr "Draft"
 
 msgid "Keitimų žurnalas"
 msgstr "Changes"

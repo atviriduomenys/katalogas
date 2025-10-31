@@ -1,7 +1,9 @@
+from django.http import HttpRequest, HttpResponse
 from django.views import View
 from django.views.generic import TemplateView
 from django.urls import reverse
 from django.shortcuts import render, redirect
+from django.contrib.auth import login as django_login
 from allauth.socialaccount import providers
 from allauth.socialaccount.providers.oauth2.views import (
     OAuth2LoginView,
@@ -10,6 +12,7 @@ from allauth.socialaccount.providers.oauth2.views import (
 from allauth.socialaccount.helpers import complete_social_login
 
 from vitrina.orgs.models import Representative
+from vitrina.viisp.forms import FakeViispForm
 from vitrina.viisp.models import ViispKey, ViispTokenKey
 from vitrina.viisp.adapter import VIISPOAuth2Adapter
 from vitrina.viisp.provider import VIISPProvider
@@ -142,6 +145,39 @@ class VIISPCompleteLoginView(View):
             login.user.save()
 
         return response
+
+
+class FakeVIISPCompleteLoginView(View):
+    """Fake VIISP login for debug/testing purposes only."""
+
+    form_class = FakeViispForm
+    cleaned_data = None
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        form = FakeViispForm()
+        return render(request, "vitrina/viisp/fake_viisp_form.html", {"form": form})
+
+    def post(self, request: HttpRequest) -> HttpResponse:
+        form: FakeViispForm = self.form_class(request.POST)
+
+        if form.is_valid():
+            email: str = form.cleaned_data["email"]
+            company_code: int = form.cleaned_data.get("lt_company_code")
+            user, _ = User.objects.get_or_create(email=email)
+            user.is_viisp_login = True
+            if company_code:
+                user.viisp_company_code = company_code
+            else:
+                user.viisp_company_code = None
+            user.save()
+            django_login(request, user, backend="django.contrib.auth.backends.ModelBackend")
+            return redirect("home")
+
+        return render(
+            request,
+            "vitrina/viisp/fake_viisp_form.html",
+            {"form": form},
+        )
 
 
 def _confirm_viisp_email(

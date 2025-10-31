@@ -5,7 +5,7 @@
 {% block current_title %}{% translate "Klientai" %}{% endblock %}
 
 {% block content %}
-    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
+    {% include 'vitrina/projects/tabs.html' %}
 
     <div class="columns">
         <div class="column">
@@ -14,14 +14,16 @@
                     <h4 class="custom-title is-size-4-mobile">{% translate 'Klientai' %}</h4>
                 </div>
                 <div class="column buttons">
+                    {% if can_manage_clients %}
                     <a href="{% url 'project-clients-create' project.pk %}"
                        class="button is-primary is-normal m-t-md is-size-6-mobile is-pulled-right"
                        id="create_client">
                         {% translate "Naujas klientas" %}
                     </a>
+                    {% endif %}
                 </div>
             </div>
-    {% if usecases %}
+    {% if clients %}
         <table class="table is-fullwidth">
             <thead>
                 <tr>
@@ -30,15 +32,15 @@
                 </tr>
             </thead>
             <tbody>
-            {% for usecase in usecases %}
+            {% for client in clients %}
                 <tr>
                     <td>
-                        <a href="{% url 'project-clients-detail' project.pk usecase.uuid %}">
-                            {{ usecase.name }}
+                        <a href="{% url 'project-clients-detail' project.pk client.uuid %}">
+                            {{ client.name }}
                         </a>
                     </td>
                     <td style="width:10%">
-                        <a href="{% url 'project-clients-update' project.pk usecase.uuid %}"
+                        <a href="{% url 'project-clients-update' project.pk client.uuid %}"
                            class="button is-primary is-small">
                             {% translate "Redaguoti" %}
                         </a>

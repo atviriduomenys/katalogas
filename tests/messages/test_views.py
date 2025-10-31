@@ -15,7 +15,7 @@ from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription, NewsletterSubscriber
-from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
 from vitrina.orgs.models import Organization
 from vitrina.projects.models import Project
 from vitrina.projects.factories import ProjectFactory
@@ -304,9 +304,10 @@ def test_dataset_update_subscription_email(app: DjangoTestApp, subscription_data
 
     assert len(mail.outbox) == 1
 
-    staff_user = UserFactory(is_staff=True)
-    app.set_user(staff_user)
     dataset = subscription_data['dataset']
+    representative = ViispRepresentativeFactory(content_object=dataset.organization)
+    user = representative.user
+    app.set_user(user)
     form = app.get(reverse("dataset-change", args=[dataset.pk])).forms['dataset-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
@@ -330,9 +331,10 @@ def test_dataset_update_global_org_subscription_email(app: DjangoTestApp, subscr
     )
     assert Subscription.objects.count() == 1
 
-    staff_user = UserFactory(is_staff=True)
-    app.set_user(staff_user)
     dataset = subscription_data['dataset']
+    representative = ViispRepresentativeFactory(content_object=dataset.organization)
+    user = representative.user
+    app.set_user(user)
     form = app.get(reverse("dataset-change", args=[dataset.pk])).forms['dataset-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
@@ -521,9 +523,10 @@ def test_dataset_and_org_sub_mail(app: DjangoTestApp, subscription_data):
     assert Subscription.objects.count() == 2
     assert len(mail.outbox) == 2
 
-    staff_user = UserFactory(is_staff=True)
-    app.set_user(staff_user)
     dataset = subscription_data['dataset']
+    representative = ViispRepresentativeFactory(content_object=dataset.organization)
+    user = representative.user
+    app.set_user(user)
 
     form = app.get(reverse("dataset-change", args=[dataset.pk])).forms['dataset-form']
     form['title'] = "Updated title"

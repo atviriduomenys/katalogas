@@ -7,6 +7,7 @@ from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 class ProjectAdmin(VersionAdmin):
     list_filter = ("status",)
     search_fields = ("title",)
+    readonly_fields = ("organization",)
 
 
 @admin.register(UseCaseClient)

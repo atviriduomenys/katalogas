@@ -77,7 +77,6 @@ from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.mixins import DatasetBreadcrumbsMixin, Crumb
 from vitrina.datasets.services import (
     update_facet_data,
-    get_projects,
     get_frequency_and_format,
     get_requests,
     get_datasets_for_user,
@@ -139,6 +138,7 @@ from vitrina.structure.services import (
     get_model_name,
 )
 from vitrina.users.models import User
+from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset, can_manage_datasets
 
 
 class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
@@ -1062,11 +1062,6 @@ class DatasetUpdateView(
                 "service_subclass": str(DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE).pk),
                 "button": _("Redaguoti"),
                 "request_user": (self.request.user if self.request.user.is_authenticated else None),
-                "can_add_projects": has_perm(
-                    self.request.user,
-                    Action.UPDATE,
-                    self.object,
-                ),
                 "can_view_members": has_perm(
                     self.request.user,
                     Action.VIEW,
@@ -1586,7 +1581,8 @@ class CreateMemberView(
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
-        kwargs["object_id"] = self.dataset.pk
+        kwargs["object"] = self.dataset
+        kwargs["user"] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -1764,6 +1760,7 @@ class UpdateMemberView(
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["object"] = self.dataset
+        kwargs["user"] = self.request.user
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -1915,28 +1912,25 @@ class DatasetProjectsView(DatasetStructureMixin, PermissionRequiredMixin, Histor
         return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
-        return get_projects(self.request.user, self.object, order_value="-created")
+        return get_projects(self.request.user).filter(datasets=self.object)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["dataset"] = self.object
-        context["can_add_projects"] = has_perm(
-            self.request.user,
-            Action.UPDATE,
-            self.object,
-        )
         context["can_view_members"] = has_perm(
             self.request.user,
             Action.VIEW,
             Representative,
             self.object,
         )
-        if self.request.user.is_authenticated:
-            context["has_projects"] = get_projects(
-                self.request.user, self.object, check_existence=True, form_query=True
-            )
-        else:
-            context["has_projects"] = False
+        context["available_projects"] = get_projects_linkable_to_dataset(self.request.user).exclude(
+            datasets=self.object
+        )
+        context["removable_project_ids"] = set(
+            get_projects_linkable_to_dataset(self.request.user)
+            .filter(datasets=self.object)
+            .values_list("pk", flat=True)
+        )
         return context
 
 
@@ -2108,7 +2102,14 @@ class AddProjectView(
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return get_projects(self.request.user, self.dataset, check_existence=True, form_query=True)
+        return get_projects_linkable_to_dataset(self.request.user).exclude(datasets=self.dataset).exists()
+
+    def handle_no_permission(self):
+        messages.error(
+            self.request,
+            _("Neturite panaudojimo atvejų, prie kurių galėtumėte pridėti išteklius."),
+        )
+        return redirect(reverse("dataset-projects", kwargs={"pk": self.dataset.pk}))
 
     def get_form_kwargs(self):
         kwargs = super(AddProjectView, self).get_form_kwargs()
@@ -2135,7 +2136,7 @@ class AddProjectView(
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
         }
-        context["current_title"] = _("Projektų pridėjimas")
+        context["current_title"] = _("Panaudojimo atvejų pridėjimas")
         return context
 
 
@@ -2149,12 +2150,17 @@ class RemoveProjectView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE, self.project) or self.request.user == self.project.user
+        return can_manage_datasets(self.request.user, self.project)
 
     def handle_no_permission(self):
         return HttpResponseRedirect(reverse("dataset-projects", kwargs={"pk": self.dataset.pk}))
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
+        if self.project.agreements.exists():
+            messages.error(
+                self.request, _("Negalima pašalinti išteklių iš panaudojimo atvejo, kuris turi sugeneruotų sutarčių.")
+            )
+            return redirect(reverse("dataset-projects", args=[self.dataset.pk]))
         self.project.datasets.remove(self.dataset.pk)
         return HttpResponseRedirect(self.get_success_url())
 

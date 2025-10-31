@@ -1,46 +1,101 @@
 from vitrina.users.models import User
 from vitrina.projects.models import Project
-from vitrina.orgs.services import has_perm, is_representative, Action
-from vitrina.orgs.models import Representative, Organization
 from django.db.models import Q
-from django.contrib.contenttypes.models import ContentType
 from django.db.models import QuerySet
+from django.contrib.auth.models import AnonymousUser
 
 
-def can_update_project(user: User, project: Project) -> bool:
-    if user.is_staff or user.is_superuser:
-        return True
-    if project.organization:
-        return is_representative(user, project.organization)
-    return has_perm(user, Action.UPDATE, project)
-
-
-def can_view_project(user: User, project: Project) -> bool:
-    if user.is_staff or user.is_superuser:
-        return True
-    return can_update_project(user, project) or project.status == Project.APPROVED
-
-
-def get_projects(user: User, organization: Organization = None) -> QuerySet["Project"]:
-    base_queryset = Project.objects.all()
-
-    if organization:
-        base_queryset = base_queryset.filter(organization=organization)
+def visible_projects_filter(user: User | AnonymousUser) -> Q:
+    public_approved = Q(is_public=True, status=Project.APPROVED)
 
     if not getattr(user, "is_authenticated", False):
-        return base_queryset.filter(status=Project.APPROVED)
+        return public_approved
 
     if user.is_staff or user.is_superuser:
-        return base_queryset
+        return Q()
 
-    ct = ContentType.objects.get_for_model(Organization)
-    representative_org_ids = Representative.objects.filter(
-        content_type=ct,
-        user=user,
-    ).values_list("object_id", flat=True)
+    represented_org_ids = user.represented_org_ids
 
-    return base_queryset.filter(
-        Q(status=Project.APPROVED)
-        | Q(organization_id__in=representative_org_ids)
-        | Q(organization__isnull=True, user=user)
-    ).order_by("-created")
+    is_owner = Q(organization__isnull=True, user=user)
+    is_org_representative = Q(organization_id__in=represented_org_ids)
+    is_dataset_representative = Q(datasets__organization_id__in=represented_org_ids)
+    query_filter = public_approved | is_owner | is_org_representative | is_dataset_representative
+
+    return query_filter
+
+
+def can_view_project(user: User | AnonymousUser, project: Project) -> bool:
+    return Project.objects.filter(visible_projects_filter(user), pk=project.pk).exists()
+
+
+def get_projects(user: User | AnonymousUser) -> QuerySet["Project"]:
+    queryset = Project.objects.filter(visible_projects_filter(user))
+
+    return queryset.distinct().order_by("-created")
+
+
+def can_update_project(user: User | AnonymousUser, project: Project) -> bool:
+    if not user.is_authenticated:
+        return False
+
+    if project.organization:
+        return project.organization == user.viisp_organization and user.is_representative_of(project.organization, True)
+
+    if user.is_staff or user.is_superuser:
+        return True
+
+    return user == project.user
+
+
+def get_projects_linkable_to_dataset(user: User | AnonymousUser):
+    if not getattr(user, "is_authenticated", False):
+        return Project.objects.none()
+
+    queryset = get_projects(user).filter(agreements__isnull=True)
+
+    if user.is_staff or user.is_superuser:
+        return queryset
+
+    return queryset.filter(Q(organization__isnull=True, user=user) | Q(organization_id__in=user.represented_org_ids))
+
+
+def can_manage_datasets(user: User | AnonymousUser, project: Project) -> bool:
+    if not user.is_authenticated:
+        return False
+
+    if user.is_staff or user.is_superuser:
+        return True
+
+    if project.organization:
+        return user.is_representative_of(project.organization)
+
+    return project.user == user
+
+
+def can_view_clients(user: User | AnonymousUser, project: Project) -> bool:
+    if not user.is_authenticated:
+        return False
+
+    return project.organization and user.is_representative_of(project.organization)
+
+
+def can_manage_clients(user: User | AnonymousUser, project: Project) -> bool:
+    if not user.is_authenticated:
+        return False
+
+    if project.organization:
+        return user.viisp_organization == project.organization and user.is_representative_of(project.organization)
+    return False
+
+
+def can_view_history(user: User | AnonymousUser, project: Project) -> bool:
+    if not user.is_authenticated:
+        return False
+
+    if user.is_staff or user.is_superuser:
+        return True
+
+    if project.organization:
+        return user.is_representative_of(project.organization)
+
+    return user == project.user

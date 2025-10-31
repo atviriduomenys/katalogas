@@ -56,6 +56,7 @@ class LoginView(BaseLoginView):
         if user := form.get_user():
             user.unlock_user()
             user.is_viisp_login = False
+            user.viisp_company_code = None
             user.save()
         return resp
 

@@ -8,7 +8,7 @@
 {% block parent_title %}{% translate "Panaudojimo atvejai" %}{% endblock %}
 {% block current_title %}{{ project.get_title }}{% endblock %}
 {% block content %}
-{% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
+{% include 'vitrina/projects/tabs.html' %}
 {# templates/projects/detail.html #}
 {% load i18n hitcount_tags %}
 <div class="container">

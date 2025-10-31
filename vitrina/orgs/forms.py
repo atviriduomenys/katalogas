@@ -370,6 +370,9 @@ class RepresentativeUpdateForm(ModelForm):
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     regenerate_api_key = BooleanField(label=_("Pergeneruoti raktą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
+    can_make_agreements = BooleanField(
+        label=_("Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"), disabled=True, required=False, initial=False
+    )
 
     object_model = Organization
 
@@ -381,11 +384,18 @@ class RepresentativeUpdateForm(ModelForm):
             "has_api_access",
             "regenerate_api_key",
             "can_write",
+            "can_make_agreements",
         )
 
     def __init__(self, *args, **kwargs):
+        self.user: User = kwargs.pop("user")
         self.object = kwargs.pop("object", None)
         super().__init__(*args, **kwargs)
+        if self.object_model == Organization:
+            if self.user.viisp_organization == self.object:
+                self.fields["can_make_agreements"].disabled = False
+        else:
+            self.fields.pop("can_make_agreements")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
@@ -396,6 +406,7 @@ class RepresentativeUpdateForm(ModelForm):
             Field("regenerate_api_key"),
             Field("subscribe"),
             Field("can_write"),
+            Field("can_make_agreements"),
             Submit("submit", _("Redaguoti"), css_class="button is-primary"),
         )
         if self.instance.user is None and self.instance.organization is not None:
@@ -450,17 +461,26 @@ class RepresentativeCreateForm(ModelForm):
     )
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False, disabled=True, initial=True)
+    can_make_agreements = BooleanField(
+        label=_("Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"), disabled=True, required=False, initial=False
+    )
 
     object_model = Organization
     object_id: int
 
     class Meta:
         model = Representative
-        fields = ("email", "role", "phone", "has_api_access", "can_write")
+        fields = ("email", "role", "phone", "has_api_access", "can_write", "can_make_agreements")
 
-    def __init__(self, object_id=None, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        self.user: User = kwargs.pop("user")
+        self.object = kwargs.pop("object")
         super().__init__(*args, **kwargs)
-        self.object_id = object_id
+        if self.object_model == Organization:
+            if self.user.viisp_organization == self.object:
+                self.fields["can_make_agreements"].disabled = False
+        else:
+            self.fields.pop("can_make_agreements")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
@@ -471,13 +491,14 @@ class RepresentativeCreateForm(ModelForm):
             Field("has_api_access"),
             Field("subscribe"),
             Field("can_write"),
+            Field("can_make_agreements"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
 
     def clean(self):
         email = self.cleaned_data.get("email")
         content_type = ContentType.objects.get_for_model(self.object_model)
-        if Representative.objects.filter(content_type=content_type, object_id=self.object_id, email=email).exists():
+        if Representative.objects.filter(content_type=content_type, object_id=self.object.id, email=email).exists():
             self.add_error("email", _("Narys su šiuo el. pašto adresu jau egzistuoja."))
         return super().clean()
 

@@ -13,7 +13,6 @@ from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Representative
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.services import generate_contract
 from vitrina.smart_contracts.utils import (
     generate_pdf_checksum,
     format_lithuanian_datetime,
@@ -83,7 +82,7 @@ class Agreement(UUIDBaseModel):
         verbose_name=_("Sutarties iniciatorius"),
     )
     other_assigner_legislations = models.TextField(
-        default="", blank=True, verbose_name=_("Papildomi tiekėjo teisės aktai")
+        default="", blank=True, verbose_name=_("Papildomi teikėjo teisės aktai")
     )
     other_assignee_legislations = models.TextField(
         default="", blank=True, verbose_name=_("Papildomi gavėjo teisės aktai")
@@ -101,6 +100,8 @@ class Agreement(UUIDBaseModel):
         return [self]
 
     def generate_contract_pdf_file(self, template: SmartContractTemplate) -> "AgreementFile":
+        from vitrina.smart_contracts.services import generate_contract
+
         odrl_jsonld = self.generate_odrl_jsonld()
         slugified_name = slugify(f"{self.project}_{self.assigner}_{self.assignee}_{datetime.now().isoformat()}")
         pdf_file_name = slugified_name + ".pdf"

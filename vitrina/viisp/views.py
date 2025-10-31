@@ -27,6 +27,9 @@ from itsdangerous.url_safe import URLSafeSerializer
 import bcrypt
 
 
+ACCEPTED_PROXY_TYPES = ["generic", "legal"]
+
+
 class VIISPLoginView(TemplateView):
     template_name = "allauth/socialaccount/login.html"
 
@@ -79,6 +82,10 @@ class VIISPCompleteLoginView(View):
         user = User.objects.filter(email=user_data.get("email")).first()
         if user:
             user.is_viisp_login = True
+            if user_data.get("proxyType", "").lower() in ACCEPTED_PROXY_TYPES:
+                user.viisp_company_code = user_data.get("lt_company_code")
+            else:
+                user.viisp_company_code = None
             user.save()
             user_social_account = SocialAccount.objects.filter(user__email=user.email).first()
             if token:
@@ -128,6 +135,10 @@ class VIISPCompleteLoginView(View):
             if reps := Representative.objects.filter(email=login.user.email, user__isnull=True):
                 reps.update(user=login.user)
             login.user.is_viisp_login = True
+            if user_data.get("proxyType", "").lower() in ACCEPTED_PROXY_TYPES:
+                user.viisp_company_code = user_data.get("lt_company_code")
+            else:
+                user.viisp_company_code = None
             login.user.save()
 
         return response

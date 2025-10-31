@@ -17,6 +17,11 @@ from vitrina.smart_contracts.utils import (
     get_pdf_path_in_adoc,
     generate_checksum,
 )
+from vitrina.users.models import User
+from vitrina.smart_contracts.models import Agreement
+from vitrina.projects.models import Project
+from django.db.models import Q, QuerySet
+from django.contrib.auth.models import AnonymousUser
 
 SIGNATURE_FILE_PATH = "META-INF/signatures/signatures0.xml"
 MANIFEST_FILE_PATH = "META-INF/manifest.xml"
@@ -97,3 +102,48 @@ def extract_elements_from_adoc(adoc_path: str, regex: str) -> list[str]:
     finally:
         if os.path.exists(TEMP_PDF_PATH):
             os.remove(TEMP_PDF_PATH)
+
+
+def get_agreements(user: User) -> QuerySet["Agreement"]:
+    if not user.is_authenticated:
+        return Agreement.objects.none()
+
+    if user.is_staff or user.is_superuser:
+        return Agreement.objects.all()
+
+    represented_org_ids = user.represented_org_ids
+    queryset = Agreement.objects.filter(Q(assignee_id__in=represented_org_ids) | Q(assigner_id__in=represented_org_ids))
+
+    return queryset
+
+
+def can_view_agreements(user: User | AnonymousUser, project: Project) -> bool:
+    if not user.is_authenticated:
+        return False
+
+    represented_org_ids = user.represented_org_ids
+
+    if user.is_staff or user.is_superuser:
+        return True
+
+    if project.organization and project.organization.id in represented_org_ids:
+        return True
+
+    return project.agreements.filter(assigner_id__in=represented_org_ids).exists()
+
+
+def can_view_agreement(user: User, agreement: Agreement) -> bool:
+    return get_agreements(user).filter(pk=agreement.pk).exists()
+
+
+def can_create_agreements(user: User, project: Project) -> bool:
+    if project.organization:
+        return project.organization == user.viisp_organization and user.is_representative_of(project.organization, True)
+
+    return False
+
+
+def can_upload_agreement_file(user: User, agreement: Agreement) -> bool:
+    parties = [agreement.assignee, agreement.assigner]
+
+    return any(user.viisp_organization == party and user.is_representative_of(party, True) for party in parties)

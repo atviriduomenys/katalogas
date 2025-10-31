@@ -336,7 +336,7 @@ def main():
                             )
                     else:
                         errors.append(
-                            f"Nerasta tiekėjo organizacija: "
+                            f"Nerasta teikėjo organizacija: "
                             f'"Viešoji įstaiga Statybos sektoriaus vystymo agentūra"'
                         )
 

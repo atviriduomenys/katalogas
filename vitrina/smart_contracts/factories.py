@@ -14,4 +14,5 @@ class AgreementFactory(DjangoModelFactory):
 
     status = AgreementStatuses.CREATED
     assignee = SubFactory(OrganizationFactory)
+    assigner = SubFactory(OrganizationFactory)
     created_by = SubFactory(UserFactory)

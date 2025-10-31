@@ -187,11 +187,11 @@ class PublisherAdmin(admin.ModelAdmin):
         queryset.update(publisher=False)
         self.message_user(
             request,
-            _("Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos tiekėjo rolė."),
+            _("Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos teikėjo rolė."),
             messages.SUCCESS,
         )
 
-    remove_publisher_status.short_description = _("Pašalinti duomenų atvėrimo paslaugos tiekėjo rolę")
+    remove_publisher_status.short_description = _("Pašalinti duomenų atvėrimo paslaugos teikėjo rolę")
 
     def get_actions(self, request):
         actions = super().get_actions(request)
@@ -204,13 +204,13 @@ class PublisherAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
-        extra_context["title"] = _("Duomenų atvėrimo paslaugos tiekėjai")
-        extra_context["add_button_label"] = _("Priskirti duomenų atvėrimo paslaugos tiekėjo rolę")
+        extra_context["title"] = _("Duomenų atvėrimo paslaugos teikėjai")
+        extra_context["add_button_label"] = _("Priskirti duomenų atvėrimo paslaugos teikėjo rolę")
         return super().changelist_view(request, extra_context=extra_context)
 
     def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
         extra_context = extra_context or {}
-        extra_context["title"] = _("Redaguoti duomenų atvėrimo paslaugos tiekėją")
+        extra_context["title"] = _("Redaguoti duomenų atvėrimo paslaugos teikėją")
         extra_context["show_save_and_add_another"] = False
         extra_context["show_save_and_continue"] = False
         extra_context["publisher_id"] = object_id
@@ -221,7 +221,7 @@ class PublisherAdmin(admin.ModelAdmin):
         extra_context = extra_context or {}
         extra_context.update(
             {
-                "title": _("Suteikti duomenų atvėrimo paslaugos tiekėjo rolę"),
+                "title": _("Suteikti duomenų atvėrimo paslaugos teikėjo rolę"),
                 "show_save_and_add_another": False,
                 "show_save_and_continue": False,
             }
@@ -261,7 +261,7 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
 
     def changelist_view(self, request, extra_context=None):
         extra_context = {
-            "title": _("Duomenų tiekėjų prašymų sąrašas"),
+            "title": _("Duomenų teikėjų prašymų sąrašas"),
             "template": Template.objects.filter(identifier=Template.REPRESENTATIVE_REQUEST_ID).first(),
         }
         return super().changelist_view(request, extra_context=extra_context)
@@ -335,7 +335,7 @@ class RepresentativeRequestAdmin(admin.ModelAdmin):
     def response_change(self, request, obj):
         msg = mark_safe(
             _(
-                f'Duomenų tiekėjo "'
+                f'Duomenų teikėjo "'
                 f'<a href="{reverse("supervisor_admin:vitrina_orgs_representativerequest_change", args=[obj.pk])}">'
                 f'{str(obj)}</a>" prašymas pakeistas sėkmingai.'
             )

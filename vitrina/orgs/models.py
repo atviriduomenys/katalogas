@@ -138,8 +138,8 @@ class Organization(MP_Node):
 class PublisherOrganization(Organization):
     class Meta:
         proxy = True
-        verbose_name = _("Duomenų atvėrimo paslaugų tiekėjas")
-        verbose_name_plural = _("Duomenų atvėrimo paslaugų tiekėjai")
+        verbose_name = _("Duomenų atvėrimo paslaugų teikėjas")
+        verbose_name_plural = _("Duomenų atvėrimo paslaugų teikėjai")
 
 
 class Representative(models.Model):
@@ -166,6 +166,7 @@ class Representative(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey("content_type", "object_id")
     can_write = models.BooleanField(default=False, verbose_name=_("Leidžiama keisti duomenis"))
+    can_make_agreements = models.BooleanField(default=False, blank=True, null=True)
 
     objects = models.Manager()
 

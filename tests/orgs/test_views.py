@@ -25,7 +25,7 @@ from vitrina.classifiers.models import AreaOfManagement
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Contact
 from vitrina.messages.models import Subscription
-from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
 from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan
@@ -237,6 +237,15 @@ def representative_data():
         phone="869876543"
     )
     organization = OrganizationFactory()
+    viisp_coordinator = User.objects.create_user(
+        email="viispcoordinator@gmail.com",
+        password="coordinator123",
+        first_name="Viisp Coordinator",
+        last_name="User",
+        phone="869876543",
+        is_viisp_login=True,
+        viisp_company_code=organization.company_code
+    )
     content_type = ContentType.objects.get_for_model(Organization)
     representative_manager = RepresentativeFactory(
         role="manager",
@@ -249,12 +258,20 @@ def representative_data():
         object_id=organization.pk,
         user=coordinator
     )
+    representative_viisp_coordinator = RepresentativeFactory(
+        role="coordinator",
+        content_type=content_type,
+        object_id=organization.pk,
+        user=viisp_coordinator
+    )
     return {
         'manager': manager,
         'coordinator': coordinator,
+        'viisp_coordinator': viisp_coordinator,
         'organization': organization,
         'representative_manager': representative_manager,
-        'representative_coordinator': representative_coordinator
+        'representative_coordinator': representative_coordinator,
+        'representative_viisp_coordinator': representative_viisp_coordinator
     }
 
 
@@ -286,6 +303,47 @@ def test_representative_create_with_existing_user(app: DjangoTestApp, representa
         email="manager@gmail.com"
     ).first().user.organization == representative_data['organization']
 
+
+@pytest.mark.django_db
+def test_representative_create_can_make_agreements_disabled(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['coordinator'])
+    form = app.get(reverse('representative-create', kwargs={
+        'pk': representative_data['organization'].pk
+    })).forms['representative-form']
+    assert 'disabled' in form["can_make_agreements"].attrs
+    form['email'] = "manager@gmail.com"
+    form['role'] = "coordinator"
+    form['can_make_agreements'] = True
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    representative_qs = Representative.objects.filter(email="manager@gmail.com")
+    assert representative_qs.count() == 1
+    representative = representative_qs.first()
+    assert representative.content_object == representative_data['organization']
+    assert representative.user == representative_data['manager']
+    assert representative.user.organization == representative_data['organization']
+    assert not representative.can_make_agreements
+
+@pytest.mark.django_db
+def test_representative_create_with_can_make_agreements_rights(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['viisp_coordinator'])
+    form = app.get(reverse('representative-create', kwargs={
+        'pk': representative_data['organization'].pk
+    })).forms['representative-form']
+    form['email'] = "manager@gmail.com"
+    form['role'] = "coordinator"
+    form['can_make_agreements'] = True
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    representative_qs = Representative.objects.filter(email="manager@gmail.com")
+    assert representative_qs.count() == 1
+    representative = representative_qs.first()
+    assert representative.content_object == representative_data['organization']
+    assert representative.user == representative_data['manager']
+    assert representative.user.organization == representative_data['organization']
+    assert representative.can_make_agreements
 
 @pytest.mark.django_db
 def test_representative_create_without_user(app: DjangoTestApp, representative_data):
@@ -479,6 +537,8 @@ def test_representative_update_without_permission(app: DjangoTestApp, representa
 @pytest.mark.django_db
 def test_representative_update_no_coordinators(app: DjangoTestApp, representative_data):
     app.set_user(representative_data['coordinator'])
+    representative_data['representative_viisp_coordinator'].role = 'manager'
+    representative_data['representative_viisp_coordinator'].save()
     form = app.get(reverse('representative-update', kwargs={
         'pk': representative_data['organization'].pk,
         'representative_id': representative_data['representative_coordinator'].pk
@@ -504,6 +564,21 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert representative_data['representative_manager'].role == "coordinator"
     assert representative_data['representative_manager'].user.organization == representative_data['organization']
+
+
+@pytest.mark.django_db
+def test_representative_update_can_make_agreements(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data['viisp_coordinator'])
+    form = app.get(reverse('representative-update', kwargs={
+        'pk': representative_data['organization'].pk,
+        'representative_id': representative_data['representative_manager'].pk
+    })).forms['representative-form']
+    form['can_make_agreements'] = True
+    resp = form.submit()
+    representative_data['representative_manager'].refresh_from_db()
+    assert resp.status_code == 302
+    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert representative_data['representative_manager'].can_make_agreements
 
 
 @pytest.mark.django_db
@@ -716,10 +791,11 @@ def generate_photo_file(height, length) -> bytes:
 
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
-    org = OrganizationFactory()
+    representative = ViispRepresentativeFactory()
+    org = representative.content_object
     jurisdiction = AreaOfManagementFactory(id=30, name_lt="Jurisdiction30", name_en="Jurisdiction30")
 
-    user = UserFactory(is_staff=True)
+    user = representative.user
     app.set_user(user)
 
     form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
@@ -740,8 +816,9 @@ def test_change_form_correct_login(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_click_edit_button(app: DjangoTestApp):
-    org = OrganizationFactory()
-    user = UserFactory(is_staff=True)
+    representative = ViispRepresentativeFactory()
+    org = representative.content_object
+    user = representative.user
     app.set_user(user)
     response = app.get(reverse('organization-detail', kwargs={'pk': org.id}))
     response.click(linkid='change_organization')

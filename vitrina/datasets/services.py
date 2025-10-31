@@ -18,7 +18,6 @@ from vitrina.helpers import email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import has_perm, Action
-from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestObject
 from vitrina.resources.models import Format
 from vitrina.settings import SPINTA_SERVER_URL
@@ -59,26 +58,6 @@ def update_facet_data(
             }
             updated_facet_data.append(data)
     return updated_facet_data
-
-
-def get_projects(user, dataset, check_existence=False, order_value=None, form_query=False):
-    if form_query:
-        if user.is_staff:
-            projects = Project.public.all()
-        else:
-            projects = Project.public.filter(user=user)
-
-        projects = projects.exclude(Q(status=Project.REJECTED) | Q(datasets__pk__in=[dataset.pk]))
-    else:
-        projects = Project.public.filter(datasets=dataset).exclude(status=Project.REJECTED)
-
-    if order_value:
-        projects.order_by(order_value)
-
-    if check_existence:
-        return projects.exists()
-    else:
-        return projects
 
 
 def get_requests(user, dataset):

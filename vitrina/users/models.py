@@ -50,6 +50,12 @@ class User(AbstractUser):
     failed_login_attempts = models.IntegerField(default=0)
     password_last_updated = models.DateTimeField(default=now, null=True)
     is_viisp_login = models.BooleanField(default=False)
+    viisp_company_code = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        editable=False,
+    )
     receive_request_email = models.BooleanField(default=False)
 
     # Deprecated fields bellow
@@ -104,6 +110,20 @@ class User(AbstractUser):
                 if Dataset.objects.filter(organization=org_id):
                     return True
 
+    @property
+    def viisp_organization(self) -> Organization | None:
+        if self.is_viisp_login and self.viisp_company_code:
+            return Organization.objects.filter(company_code=self.viisp_company_code).first()
+        return None
+
+    @property
+    def org_representatives(self) -> models.QuerySet[Representative]:
+        return self.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))
+
+    @property
+    def represented_org_ids(self) -> models.QuerySet[int]:
+        return self.org_representatives.values_list("object_id", flat=True)
+
     def unlock_user(self):
         if self.status == User.LOCKED or self.status == User.ACTIVE:
             self.failed_login_attempts = 0
@@ -121,6 +141,13 @@ class User(AbstractUser):
     def lock_user(self):
         self.status = User.LOCKED
         self.save()
+
+    def is_representative_of(self, organization: Organization, check_agreement_rights: bool = False) -> bool:
+        representatives = self.org_representatives.filter(object_id=organization.id)
+        if check_agreement_rights:
+            representatives = representatives.filter(can_make_agreements=True)
+
+        return representatives.exists()
 
 
 class UserTablePreferences(models.Model):

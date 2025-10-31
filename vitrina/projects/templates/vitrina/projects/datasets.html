@@ -18,7 +18,7 @@
 {% endblock %}
 
 {% block content %}
-    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
+    {% include 'vitrina/projects/tabs.html' %}
         {% for dataset in page_obj %}
             {% get_current_language as LANGUAGE_CODE %}
             <article class="media">
@@ -53,7 +53,7 @@
                     </div>
                 </div>
             </article>
-            {% if can_update_project %}
+            {% if can_remove_datasets %}
                 <div class="buttons is-right">
                     <a id="remove-dataset-{{ dataset.pk }}-btn"  class="button is-link is-small"
                        href="{% url 'project-dataset-remove' pk=project.pk dataset_id=dataset.pk %}">

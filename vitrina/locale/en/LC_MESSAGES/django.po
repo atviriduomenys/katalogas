@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-24 15:16+0300\n"
+"POT-Creation-Date: 2025-10-30 21:35+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,9 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "kliento id"
 msgstr "client id"
@@ -40,6 +37,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -71,6 +71,9 @@ msgstr "Resources"
 
 msgid "kategoriją"
 msgstr "Category"
+
+msgid "Kategorijos URI specifinei parinktai grupei"
+msgstr "Category URI for a specific selected group."
 
 msgid "organizacijos"
 msgstr "organization"
@@ -803,10 +806,11 @@ msgstr "\"Organization\" or \"Agent\" field must be assigned."
 msgid "Pridėti"
 msgstr "Add"
 
-msgid "Projektai"
-msgstr "Projects"
+msgid "Panaudojimo atvejai"
+msgstr "Use cases"
 
-msgid "Pažymėkite projektus, kuriuose yra naudojamas šis duomenų rinkinys."
+msgid ""
+"Pažymėkite panaudojimo atvejus, kuriuose yra naudojamas šis duomenų rinkinys."
 msgstr "Select projects that use this dataset."
 
 msgid "Poreikiai"
@@ -847,6 +851,9 @@ msgstr "The dataset is already added to this plan."
 
 msgid "Title"
 msgstr "Title"
+
+msgid "Grupė"
+msgstr "Group"
 
 msgid "Nepriskirta"
 msgstr "Unassigned"
@@ -1003,6 +1010,9 @@ msgstr ""
 "It is intended to point to a landing page at the original resource provider, "
 "not to a page on a site of a third party, such as an aggregator. Corresponds "
 "to dcat:landingPage."
+
+msgid "Ar duomenų rinkinys yra didelės vertės"
+msgstr "Is the dataset of high value"
 
 msgid "Duomenų rinkinio ryšiai"
 msgstr "Dataset relations"
@@ -1706,17 +1716,11 @@ msgstr "Information"
 msgid "Ištekliai"
 msgstr "Resources"
 
-msgid "Panaudojimo atvejai"
-msgstr "Use cases"
-
 msgid "Istorija"
 msgstr "History"
 
 msgid "Duomenų ištekliaus būsena"
 msgstr "Resource status"
-
-msgid "Grupė"
-msgstr "Group"
 
 msgid "Žymė"
 msgstr "Tag"
@@ -1781,8 +1785,17 @@ msgstr "Edit user"
 msgid "Poreikių pridėjimas"
 msgstr "Add requests"
 
-msgid "Projektų pridėjimas"
-msgstr "Add projects"
+msgid "Neturite panaudojimo atvejų, prie kurių galėtumėte pridėti išteklius."
+msgstr "You don’t have any use cases to which you could add datasets."
+
+msgid "Panaudojimo atvejų pridėjimas"
+msgstr "Adding use cases"
+
+msgid ""
+"Negalima pašalinti išteklių iš panaudojimo atvejo, kuris turi sugeneruotų "
+"sutarčių."
+msgstr ""
+"Datasets cannot be removed from a use case that has generated agreements."
 
 msgid "Atsisiuntimų (užklausų) skaičius"
 msgstr "Download (request) count"
@@ -2216,28 +2229,28 @@ msgstr "organization"
 
 msgid ""
 "Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos "
-"tiekėjo rolė."
+"teikėjo rolė."
 msgstr ""
 "The role of data open service provider has been successfully removed from "
 "the selected organizations."
 
-msgid "Pašalinti duomenų atvėrimo paslaugos tiekėjo rolę"
-msgstr "Data open service provider"
+msgid "Pašalinti duomenų atvėrimo paslaugos teikėjo rolę"
+msgstr "Remove the role of data opening service provider"
 
-msgid "Duomenų atvėrimo paslaugos tiekėjai"
-msgstr "Data open service provider"
+msgid "Duomenų atvėrimo paslaugos teikėjai"
+msgstr "Data open service providers"
 
-msgid "Priskirti duomenų atvėrimo paslaugos tiekėjo rolę"
-msgstr "Data open service provider"
+msgid "Priskirti duomenų atvėrimo paslaugos teikėjo rolę"
+msgstr "Assign the role of data opening service provider"
 
-msgid "Redaguoti duomenų atvėrimo paslaugos tiekėją"
-msgstr "Data open service provider"
+msgid "Redaguoti duomenų atvėrimo paslaugos teikėją"
+msgstr "Edit data opening service provider"
 
-msgid "Suteikti duomenų atvėrimo paslaugos tiekėjo rolę"
-msgstr "Data open service provider"
+msgid "Suteikti duomenų atvėrimo paslaugos teikėjo rolę"
+msgstr "Grant the role of data opening service provider"
 
-msgid "Duomenų tiekėjų prašymų sąrašas"
-msgstr "Dataset list"
+msgid "Duomenų teikėjų prašymų sąrašas"
+msgstr "List of data providers’ requests"
 
 msgid "Pridėtas dokumentas"
 msgstr "Added data"
@@ -2248,7 +2261,7 @@ msgstr "Reject"
 msgid "Veiksmai"
 msgstr "Action"
 
-msgid "Duomenų tiekėjo \""
+msgid "Duomenų teikėjo \""
 msgstr "Data providers"
 
 msgid "Šablonas pakeistas sėkmingai."
@@ -2302,6 +2315,9 @@ msgstr "Regenerate key"
 
 msgid "Prenumeruoti pranešimus"
 msgstr "Subscribe to notifications"
+
+msgid "Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"
+msgstr "Allow to sign data service agreements"
 
 msgid "Formatas 0... arba +370..."
 msgstr "Format 0... or +370..."
@@ -2419,11 +2435,8 @@ msgstr "Role"
 msgid "Alternatyvūs pavadinimai"
 msgstr "Alternative titles"
 
-msgid "Duomenų atvėrimo paslaugų tiekėjas"
-msgstr "Data open service provider"
-
-msgid "Duomenų atvėrimo paslaugų tiekėjai"
-msgstr "Data open service provider"
+msgid "Duomenų atvėrimo paslaugų teikėjai"
+msgstr "Data open service providers"
 
 msgid "Koordinatorius"
 msgstr "Coordinator"
@@ -2507,7 +2520,7 @@ msgstr "Assign the creator of the dataset"
 msgid "Prašymo redagavimas"
 msgstr "Editing the request"
 
-msgid "Redaguoti duomenų tiekėjo prašymą"
+msgid "Redaguoti duomenų teikėjo prašymą"
 msgstr "Edit data provider request"
 
 msgid "Grįžti į sąrašą"
@@ -2521,7 +2534,7 @@ msgstr "Edit template"
 
 #, python-format
 msgid ""
-"Ar tikrai norite pašalinti duomenų tiekėjo \"%(escaped_object)s\" prašymą? "
+"Ar tikrai norite pašalinti duomenų teikėjo \"%(escaped_object)s\" prašymą? "
 msgstr ""
 "Are you sure you want to delete the data provider's \"%(escaped_object)s\" "
 "request?"
@@ -2652,20 +2665,20 @@ msgstr "The form has been submitted. The chief coordinator will review it."
 msgid "Į pradžią"
 msgstr "To start"
 
-msgid "Naujo duomenų tiekėjo registravimas"
+msgid "Naujo duomenų teikėjo registravimas"
 msgstr "Register a new data provider"
 
 msgid "Prašymo sukurti negalima"
 msgstr "Request cannot be created"
 
 msgid ""
-"Jums jau yra suteiktos duomenų tiekėjo teisės prie pasirinktos "
+"Jums jau yra suteiktos duomenų teikėjo teisės prie pasirinktos "
 "organizacijos. Galite naudotis sistema, papildomai teikti prašymo nebereikia."
 msgstr ""
 "You have already been granted data provider rights for the selected "
 "organization. You can use the system, no additional request is needed."
 
-msgid "Jūs jau pateikėte prašymą būti šios organizacijos duomenų tiekėju."
+msgid "Jūs jau pateikėte prašymą būti šios organizacijos duomenų teikėju."
 msgstr ""
 "You have already submitted a request to be the data provider for this "
 "organization."
@@ -2845,13 +2858,20 @@ msgstr "Title of the Proposed use case."
 msgid "Išsamus pasiūlymo aprašymas."
 msgstr "Detailed description of the proposal."
 
+msgid "Panaudojimo atvejo iniciatorius"
+msgstr "Use case initiator"
+
 msgid ""
-"Nurodžius organizaciją panaudos atvejis kuriamas organizacijos vardu, "
-"nenurodžius - privataus asmens vardu. Atitinka odrl:asignee"
+"Nurodytos organizacijos vardu, bus galimybė sudaryti duomenų gavimo "
+"sutartis, sutartyje nurodant panaudojimo atvejį, kaip duomenų gavimo tikslą."
+"(Atitinka odrl:assignee). Pasirinkus fizinį asmenį, sudaryti sutarčių "
+"galimybės nėra. Fizinis asmuo nurodomas tik kaip panaudojimo atvejo autorius."
 msgstr ""
-"If an organization is specified, the use case is created on behalf of the "
-"organization; if not, it’s created on behalf of a private individual. "
-"Corresponds to odrl:asignee."
+"On behalf of the specified organization, it will be possible to conclude "
+"data acquisition agreements, indicating the use case in the agreement as the "
+"purpose of data acquisition. (Corresponds to odrl:assignee). When a natural "
+"person is selected, it is not possible to conclude agreements. A natural "
+"person is indicated only as the author of the use case."
 
 msgid "Nuoroda į panaudojimo atvejį"
 msgstr "URL to use case"
@@ -2864,6 +2884,20 @@ msgstr ""
 
 msgid "Paveiksliukas susijęs su pasiūlytu panaudojimo atveju."
 msgstr "Image related to the proposed use case."
+
+msgid "Panaudojimo atvejis matomas viešai"
+msgstr "Use case is public"
+
+msgid ""
+"Pažymėkite, jeigu norite, kad panaudojimo atvejis būtų matomas viešai "
+"visiems. Kitu atveju bus matomas tik gavėjo ir teikėjų organizacijoms."
+msgstr ""
+"Check this box if you want the use case to be publicly visible to everyone. "
+"Otherwise, it will only be visible to the assignee's and assigner's "
+"organizations."
+
+msgid "Fizinis asmuo"
+msgstr "Individual person"
 
 msgid "Kliento pavadinimas"
 msgstr "Client name"
@@ -2956,8 +2990,8 @@ msgstr "rejected"
 msgid "Nėra panaudojimo atvejo"
 msgstr "No use case"
 
-msgid "Projektas leidimų neturi"
-msgstr "Project doesn't have permissions"
+msgid "Panaudojimo atvejis leidimų neturi"
+msgstr "Currently, there are no clients for this Use case"
 
 msgid "Prašyti leidimų"
 msgstr "Ask for permissions"
@@ -2974,10 +3008,13 @@ msgstr "Currently the key does not have permissions"
 msgid "Sutartys"
 msgstr "Agreements"
 
-msgid "Panaudos atvejo registracija"
+msgid "Panaudojimo atvejo registracija"
 msgstr "Use case registration"
 
-msgid "Panaudos atvejo redagavimas"
+msgid "Negalima redaguoti panaudojimo atvejo, kuris turi sugeneruotų sutarčių."
+msgstr "It is not possible to edit a use case that has generated agreements."
+
+msgid "Panaudojimo atvejo redagavimas"
 msgstr "Use case edit"
 
 msgid ""
@@ -2995,7 +3032,8 @@ msgstr "Client \"{0}\" created successfully"
 
 #, python-brace-format
 msgid "Kliento raktas - {0}. Butinai išsisaugokite raktą, jis nebebus rodomas!"
-msgstr "Client key – {0}. Be sure to save this key; it will not be shown again!"
+msgstr ""
+"Client key – {0}. Be sure to save this key; it will not be shown again!"
 
 msgid "Kliento registracija"
 msgstr "Client registration"
@@ -3063,8 +3101,10 @@ msgstr "Answered"
 msgid "Suplanuotas"
 msgstr "Planned"
 
+msgid "Vertinamas"
+msgstr "Rating"
 
-msgid "Poreikiui suteiktas pavadinimas. Atitinka dct:title."
+msgid "Poreikiui suteiktas pavadinimas."
 msgstr "A name given to the record. Corresponds to dct:title."
 
 msgid "Laisvo teksto aprašas laisvos formos tekstu."
@@ -3477,6 +3517,9 @@ msgstr ""
 "The distribution may be completed, developed, planned, deprecated or "
 "withdrawn."
 
+msgid "Ar duomenų šaltinis yra didelės vertės"
+msgstr "Is the data source of high value"
+
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"
 
@@ -3551,7 +3594,7 @@ msgstr "Agreement document is created, but not signed yet."
 msgid "Sutarties dokumentas pasirašytas duomenų gavėjo."
 msgstr "Agreement document is signed by data receiver."
 
-msgid "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų tiekėjo."
+msgid "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų teikėjo."
 msgstr "Agreement document is signed by data receiver and data provider."
 
 msgid "Sutartis sėkmingai sinchronizuota su agentu."
@@ -3608,9 +3651,6 @@ msgstr "Date of last synchronization"
 msgid "Sutarties iniciatorius"
 msgstr "Creator of an agreement"
 
-msgid "Papildomi tiekėjo teisės aktai"
-msgstr "Other assigner legislations"
-
 msgid "Sutartis"
 msgstr "Agreement"
 
@@ -3645,11 +3685,8 @@ msgstr "Generate agreements"
 msgid "Grįžti į sutartis"
 msgstr "Go back to agreements"
 
-msgid "Įkelti gavėjo pasirašytą dokumentą"
+msgid "Įkelti pasirašytą dokumentą"
 msgstr "Upload document signed by data receiver"
-
-msgid "Įkelti tiekėjo pasirašytą dokumentą"
-msgstr "Upload document signed by data provider"
 
 msgid "Sutarties identifikatorius"
 msgstr "Agreement id"
@@ -3662,6 +3699,11 @@ msgstr "No agreement documents."
 
 msgid "Nėra sutarčių."
 msgstr "No agreements."
+
+msgid ""
+"Panaudojimo atvejis registruotas fizinio asmens vardu negali turėti sutarčių."
+msgstr ""
+"A use case registered under a natural person’s name cannot have agreements."
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
 msgstr "This use case already has existing agreements."
@@ -3693,6 +3735,26 @@ msgid ""
 msgstr ""
 "Agreement document can only be generated for agreement with "
 "statuses{accepted_statuses}. Current status: {current_status}"
+
+msgid ""
+"Sutartį pasirašyti duomenų teikėjo vardu galėsite tik po to kai ją pasirašys "
+"duomenų gavėjas."
+msgstr ""
+"You will be able to sign the agreement on behalf of the data provider "
+"(assigner) only after it has been signed by the data recipient (assignee)."
+
+msgid ""
+"Gavėjo vardu sutartis jau pasirašyta. Laukiama sutarties pasirašymo iš "
+"teikėjo pusės."
+msgstr ""
+"The agreement has already been signed on behalf of the data recipient "
+"(assignee). Waiting for the data provider (assigner) to sign."
+
+msgid "Įkelti gavėjo pasirašytą dokumentą"
+msgstr "Upload document signed by data recipient (assignee)"
+
+msgid "Įkelti teikėjo pasirašytą dokumentą"
+msgstr "Upload document signed by data provider (assigner)"
 
 msgid "Sutarties dokumentas įkeltas sėkmingai"
 msgstr "Agreement document uploaded successfully"
@@ -4307,6 +4369,15 @@ msgstr "Upload to storage date"
 msgid "Metaduomenų versija"
 msgstr "Metadata version"
 
+msgid "Pending"
+msgstr ""
+
+msgid "Valid"
+msgstr ""
+
+msgid "Invalid"
+msgstr ""
+
 msgid "Užklausa"
 msgstr "Request"
 
@@ -4651,9 +4722,6 @@ msgstr "Logout"
 msgid "Prisijungti"
 msgstr "Login"
 
-msgid "Fizinis asmuo"
-msgstr "Individual person"
-
 msgid "Duomenų paieška"
 msgstr "Data search"
 
@@ -4787,7 +4855,6 @@ msgstr "Update"
 msgid "Vystymo"
 msgstr "Development"
 
-
 msgid "Testavimo"
 msgstr "Testing"
 
@@ -4868,7 +4935,8 @@ msgstr ""
 "to regular platform users"
 
 msgid "Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService."
-msgstr "The data service associated with the agent. Corresponds to DCAT:DataService."
+msgstr ""
+"The data service associated with the agent. Corresponds to DCAT:DataService."
 
 msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
 msgstr "The organization to which the agent is assigned"
@@ -4880,7 +4948,6 @@ msgid ""
 "Jei kliento identifikatorius egzistuoja - agentas gali vykdyti užklausas į "
 "katalogą."
 msgstr "If client identifier exists - agent can do requests to catalog"
-
 
 msgid "Aplinka"
 msgstr "Environment"
@@ -4905,11 +4972,12 @@ msgstr "Agent address"
 
 msgid ""
 "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, "
-"kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas "
-"išorinis agento adresas"
+"kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas išorinis "
+"agento adresas"
 msgstr ""
-"If a gateway address is specified, then the agent address is an internal address " 
-"that the API gateway sees. If the API gateway is not specified, then an external agent address is specified"
+"If a gateway address is specified, then the agent address is an internal "
+"address that the API gateway sees. If the API gateway is not specified, then "
+"an external agent address is specified"
 
 msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
 msgstr "The related data resource must be of type \"service\"."
@@ -5102,11 +5170,12 @@ msgid "Pridėti Agentą"
 msgstr "Add an Agent"
 
 msgid ""
-"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei nenurodyta, duomenų "
-"paslauga bus sukurta automatiškai."
+"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei "
+"nenurodyta, duomenų paslauga bus sukurta automatiškai."
 msgstr ""
-"The data service associated with the Agent is specified. Corresponds to DCAT:DataService. "
-"If not specified, the data service will be created automatically."
+"The data service associated with the Agent is specified. Corresponds to "
+"DCAT:DataService. If not specified, the data service will be created "
+"automatically."
 
 msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."
 msgstr "Data service automatically created with the agent."
@@ -5515,6 +5584,9 @@ msgstr "Requests"
 
 msgid "Prašymų komentarai"
 msgstr "Request comments"
+
+msgid "Projektai"
+msgstr "Projects"
 
 msgid "Projektų komentarai"
 msgstr "Project comments"

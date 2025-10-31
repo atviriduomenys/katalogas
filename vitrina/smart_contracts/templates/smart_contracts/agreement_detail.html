@@ -7,7 +7,7 @@
 {% endblock %}
 
 {% block content %}
-    {% include 'vitrina/projects/tabs.html' with has_perm=can_update_project %}
+    {% include 'vitrina/projects/tabs.html' %}
 
     <p>
         <a href="{% url 'agreement-list' project.pk %}">
@@ -17,17 +17,13 @@
     <br>
 
     <div class="buttons is-right">
-        {% if agreement.status == "CREATED" %}
+        {% if can_create_agreements and agreement.status == "CREATED" %}
             <a href="{% url "agreement-generate-pdf" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
                 {% translate "Generuoti sutarties dokumentą" %}
             </a>
-        {% elif agreement.status == "FORMED" %}
+        {% elif can_upload_agreement_file and agreement.status == "FORMED" or agreement.status == "INITIATED" %}
             <a class="button is-primary m-t-xs m-b-lg" href="{% url "agreement-upload-signed-adoc" project.pk agreement.pk %}">
-                {% translate "Įkelti gavėjo pasirašytą dokumentą" %}
-            </a>
-        {% elif agreement.status == "INITIATED" %}
-            <a class="button is-primary m-t-xs m-b-lg" href="{% url "agreement-upload-signed-adoc" project.pk agreement.pk %}">
-                {% translate "Įkelti tiekėjo pasirašytą dokumentą" %}
+                {% translate "Įkelti pasirašytą dokumentą" %}
             </a>
         {% endif %}
     </div>

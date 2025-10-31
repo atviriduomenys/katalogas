@@ -16,6 +16,7 @@ from vitrina.structure.models import Metadata, Prefix, Model, Property, Property
     ParamItem, Base
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
+from vitrina.orgs.factories import ViispRepresentativeFactory
 
 
 @pytest.fixture
@@ -2243,7 +2244,8 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_structure_export_after_changing_dataset_title_and_description(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
+    representative = ViispRepresentativeFactory()
+    user = representative.user
     app.set_user(user)
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,prepare,level,status,visibility,access,uri,eli,title,description\n'
@@ -2256,6 +2258,7 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
     )
 
     structure.dataset.current_structure = structure
+    structure.dataset.organization = representative.content_object
     structure.dataset.save()
     create_structure_objects(structure)
 

@@ -29,7 +29,7 @@ attributes = (
     "lt-personal-code",
 )
 
-user_information = ("firstName", "lastName", "email", "phoneNumber", "companyName")
+USER_INFORMATION = ("firstName", "lastName", "email", "phoneNumber", "companyName", "proxyType")
 
 callback_url = "/accounts/viisp/complete-login"
 callback_url_token = "/accounts/viisp/complete-login/{}"
@@ -118,7 +118,7 @@ def create_signed_authentication_request_xml(key, domain, token=None):
     base, xml = _generate_xml("authentication:authenticationRequest")
     _add_elements(base, xml, providers, element_name="authentication:authenticationProvider")
     _add_elements(base, xml, attributes, element_name="authentication:authenticationAttribute")
-    _add_elements(base, xml, user_information, element_name="authentication:userInformation")
+    _add_elements(base, xml, USER_INFORMATION, element_name="authentication:userInformation")
     if token:
         _add_elements(
             base,
@@ -161,13 +161,6 @@ def _parse_ticket_id(xml_string):
 
 def _parse_user_data(xml_string):
     soup = BeautifulSoup(xml_string, features="xml")
-    user_information_to_find = [
-        "firstName",
-        "lastName",
-        "email",
-        "phoneNumber",
-        "companyName",
-    ]
     user_data = {}
     authentication_attributes = soup.find_all("authenticationAttribute")
     for auth_attr in authentication_attributes:
@@ -181,7 +174,7 @@ def _parse_user_data(xml_string):
     user_information_data = soup.find_all("userInformation")
     for u_i_data in user_information_data:
         information = u_i_data.find("information").text
-        if information in user_information_to_find:
+        if information in USER_INFORMATION:
             user_data[snakecase(information)] = u_i_data.find("value").text
     return user_data
 

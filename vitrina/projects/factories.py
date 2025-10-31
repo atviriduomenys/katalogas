@@ -18,6 +18,7 @@ class ProjectFactory(DjangoModelFactory):
     title = factory.Faker("catch_phrase")
     image = factory.SubFactory(FilerImageFactory)
     status = Project.APPROVED
+    is_public = True
 
     @factory.post_generation
     def datasets(self, create: bool, extracted: Iterable[Dataset], **kwargs) -> None:

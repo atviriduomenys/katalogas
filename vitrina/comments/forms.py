@@ -76,12 +76,15 @@ class DatasetCommentForm(RegisterRequestForm):
     def clean(self):
         request = self.cleaned_data.get("register_request")
         public = self.cleaned_data.get("is_public")
+        request_title = self.cleaned_data.get("request_title")
         if request:
             if not public:
                 self.add_error(
                     "is_public",
                     _("Jei komentaras registruojamas kaip prašymas, jis privalo būti" + " viešas"),
                 )
+            if not request_title:
+                self.add_error("request_title", _("Įrašykite poreikio pavadinimą."))
         return self.cleaned_data
 
 

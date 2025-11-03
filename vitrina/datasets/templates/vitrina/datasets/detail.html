@@ -381,7 +381,21 @@
             if (requestTitleDiv && checkbox) {
                 const toggleRequestTitleField = () => {
                     requestTitleDiv.style.display = checkbox.checked ? 'block' : 'none';
+
+                    const label = requestTitleDiv.querySelector('label[for="request_title"]');
+                    if (label) {
+                        label.innerHTML = label.innerHTML.replace(/ <span class="asteriskField">\*<\/span>/g, '');
+                        if (checkbox.checked && !label.innerHTML.includes('asteriskField')) {
+                            label.innerHTML = label.innerHTML.trim() + ' <span class="asteriskField">*</span>';
+                        }
+                    }
+
+                    const requestTitleField = document.getElementById('request_title');
+                    if (requestTitleField) {
+                        requestTitleField.required = checkbox.checked;
+                    }
                 };
+
                 checkbox.addEventListener('change', toggleRequestTitleField);
                 toggleRequestTitleField();
             }

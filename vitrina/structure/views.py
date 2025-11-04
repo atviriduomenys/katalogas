@@ -247,7 +247,9 @@ class ModelStructureView(
         return has_perm(self.request.user, Action.VIEW, self.object) and self.model in self.models
 
     def dispatch(self, request, *args, **kwargs):
+        version_param = request.GET.get("version", None)
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version = _Version.objects.filter(dataset=self.object, version=version_param).first() if version_param else None
         model_name = kwargs.get("model")
         self.model = (
             Model.objects.annotate(
@@ -259,7 +261,7 @@ class ModelStructureView(
                     output_field=TextField(),
                 )
             )
-            .filter(model_name=model_name, dataset=self.object)
+            .filter(model_name=model_name, dataset=self.object, version=self.version)
             .first()
         )
         if not self.model:
@@ -267,12 +269,12 @@ class ModelStructureView(
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version__isnull=True).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version=self.version).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version__isnull=True)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version=self.version)
                 .order_by("metadata__name")
                 .exclude(metadata__visibility=Metadata.PRIVATE)
             )
@@ -487,7 +489,9 @@ class PropertyStructureView(
         return has_perm(self.request.user, Action.VIEW, self.object) and self.property in self.props
 
     def dispatch(self, request, *args, **kwargs):
+        version_param = request.GET.get("version", None)
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version = _Version.objects.filter(dataset=self.object,version=version_param).first() if version_param else None
         model_name = kwargs.get("model")
         self.model = (
             Model.objects.annotate(
@@ -499,7 +503,7 @@ class PropertyStructureView(
                     output_field=TextField(),
                 )
             )
-            .filter(model_name=model_name, dataset=self.object)
+            .filter(model_name=model_name, dataset=self.object, version=self.version)
             .first()
         )
         if not self.model:
@@ -508,12 +512,12 @@ class PropertyStructureView(
         self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name)
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version__isnull=True).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version=self.version).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version__isnull=True)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version=self.version)
                 .exclude(metadata__visibility=Metadata.PRIVATE)
                 .order_by("metadata__name")
             )
@@ -2950,7 +2954,11 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             if old_pk not in enum_created:
                 new_enum = old_enum
                 new_enum.pk = None
-                new_enum.object_id = old_new_props[old_enum.object_id]
+                if old_enum.object_id in old_new_props:
+                    new_enum.object_id = old_new_props[old_enum.object_id]
+                else:
+                    raise Http404("Not possible to include an enum without its property.")
+
                 new_enum.version = version
                 new_enum.save()
                 enum_created[old_pk] = new_enum

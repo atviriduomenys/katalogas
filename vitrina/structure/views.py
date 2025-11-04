@@ -2914,8 +2914,9 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             self._fix_param_values(all_param_items, old_new_props, version)
             self._copy_prefix_db_distribution(self.dataset, version)
 
-
-        return redirect(reverse("dataset-structure", args=[self.dataset.pk]))
+        base_url = reverse("dataset-structure", args=[self.dataset.pk])
+        query_string = f"?version={version.version}" if version.version else ""
+        return redirect(f"{base_url}{query_string}")
 
     @staticmethod
     def _fix_model_bases(old_new_models: dict, version: _Version):
@@ -3004,17 +3005,17 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             metadata_prefix.object_id = actual_prefix.pk
             metadata_prefix.save()
 
-        # for metadata_dataset_distribution in dataset_distributions:
-        #     actual_dataset_distribution = DatasetDistribution.objects.filter(id=metadata_dataset_distribution.object_id).first()
-        #     actual_dataset_distribution.pk = None
-        #     actual_dataset_distribution.connected_version = version
-        #     actual_dataset_distribution.save()
-        #
-        #     metadata_dataset_distribution.pk = None
-        #     metadata_dataset_distribution.metadata_version = version
-        #     metadata_dataset_distribution.draft = False
-        #     metadata_dataset_distribution.object_id = actual_dataset_distribution.pk
-        #     metadata_dataset_distribution.save()
+        for metadata_dataset_distribution in dataset_distributions:
+            actual_dataset_distribution = DatasetDistribution.objects.filter(id=metadata_dataset_distribution.object_id).first()
+            actual_dataset_distribution.pk = None
+            actual_dataset_distribution.connected_version = version
+            actual_dataset_distribution.save()
+
+            metadata_dataset_distribution.pk = None
+            metadata_dataset_distribution.metadata_version = version
+            metadata_dataset_distribution.draft = False
+            metadata_dataset_distribution.object_id = actual_dataset_distribution.pk
+            metadata_dataset_distribution.save()
 
 
 class VersionListView(

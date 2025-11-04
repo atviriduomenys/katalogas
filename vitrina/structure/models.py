@@ -278,7 +278,7 @@ class Model(models.Model):
         return None
 
     def get_given_props(self):
-        return self.model_properties.filter(given=True).order_by("metadata__order")
+        return self.model_properties.filter(given=True, version__isnull=True).order_by("metadata__order")
 
     def get_props_excluding_base(self):
         base_props = []

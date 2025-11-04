@@ -6,8 +6,14 @@ from vitrina.structure.models import Metadata, Version, Model, Property, EnumIte
 
 def collect_full_version(dataset_id):
     # dataset_ids = Metadata.objects.values_list('dataset_id', flat=True).distinct()
+    global old_new_models, all_new_props, old_new_props, all_enum_items, all_param_items
     dataset_ids = [dataset_id]
     for dataset_id in dataset_ids:
+        old_new_models = {}
+        all_new_props = []
+        old_new_props = {}
+        all_enum_items = []
+        all_param_items = []
         version_ids = Version.objects.filter(dataset_id=dataset_id).values_list('id', flat=True).distinct().order_by('version')
         previous_version = None
         for version_id in version_ids:
@@ -52,11 +58,6 @@ def handle_first_version(metadata_row, version_id):
 
 def create_needed_objects(dataset_id):
     for metadata_rows, version_id, first_version, dataset_id in collect_full_version(dataset_id):
-        old_new_models = {}
-        all_new_props = []
-        old_new_props = {}
-        all_enum_items = []
-        all_param_items = []
         if first_version:
             for metadata_row in metadata_rows:
                 metadata_row.version_id = version_id
@@ -122,9 +123,9 @@ def _fix_model_bases(old_new_models: dict, version_id: Version):
 def _fix_enum_values(all_enum_items: list, old_new_props: dict, version_id: Version):
     enum_created = {}
     for enum_item in all_enum_items:
-        breakpoint()
         old_enum = enum_item.enum
         old_pk = old_enum.pk
+        print(version_id)
         if old_pk not in enum_created:
             new_enum = old_enum
             new_enum.pk = None

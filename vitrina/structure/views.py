@@ -57,7 +57,7 @@ from vitrina.structure.models import (
     ParamItem,
     Param,
     MetadataVersion,
-    StatusCode,
+    StatusCode, VersionStatus,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -1456,6 +1456,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
         visibility = form.cleaned_data.get("visibility")
         status = form.cleaned_data.get("status") or Status.objects.filter(is_default=True).first()
         eli = form.cleaned_data.get("eli")
+        draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
         if metadata := self.property.metadata.first():
             if metadata.type == "string":
                 value = f'"{value}"'
@@ -1476,6 +1477,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
             title=form.cleaned_data.get("title"),
             description=form.cleaned_data.get("description"),
             version=1,
+            metadata_version = draft_version,
         )
 
         # Save history
@@ -1698,12 +1700,12 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
-
         model = Model.objects.create(
             dataset=self.dataset,
             is_parameterized=form.cleaned_data.get("is_parameterized", False),
         )
-
+        draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
+        self.object.metadata_version = draft_version
         self.object.object = model
         self.object.dataset = self.dataset
         self.object.uuid = str(uuid.uuid4())
@@ -2020,7 +2022,8 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         prop = Property.objects.create(model=self.model_obj)
-
+        draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
+        self.object.metadata_version = draft_version
         self.object.uuid = str(uuid.uuid4())
         self.object.object = prop
         self.object.dataset = self.dataset

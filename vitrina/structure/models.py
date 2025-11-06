@@ -25,6 +25,24 @@ class StatusCode(str, Enum):
     WITHDRAWN = "withdrawn"
 
 
+class VersionStatus(models.TextChoices):
+    DRAFT = "DRAFT", _("Draft")
+    PRE_RELEASE = "PRE_RELEASE", _("Pre-release")
+    STABLE = "STABLE", _("Stable")
+    DEPRECATED = "DEPRECATED", _("Deprecated")
+    WITHDRAWN = "WITHDRAWN", _("Withdrawn")
+    DELETED = "DELETED", _("Deleted")
+    DESTROYED = "DESTROYED", _("Destroyed")
+    TESTING = "TESTING", _("Testing")
+    DEPLOYING = "DEPLOYING", _("Deploying")
+
+
+class VersionType(models.TextChoices):
+    MAJOR = "MAJOR", _("Major")
+    MINOR = "MINOR", _("Minor")
+    PATCH = "PATCH", _("Patch")
+
+
 class Prefix(models.Model):
     name = models.CharField(_("Pavadinimas"), max_length=255)
     uri = models.CharField(_("URI"), max_length=255)
@@ -493,6 +511,12 @@ class Version(models.Model):
     released = models.DateField(_("Išleidimo data"), null=True, blank=True)
     description = models.TextField(_("Aprašymas"), null=True, blank=True)
     deployed = models.DateTimeField(_("Įkėlimo į saugyklą data"), null=True, blank=True)
+    status = models.CharField(_("Versijos būsena"), max_length=20, choices=VersionStatus.choices, default=VersionStatus.DRAFT)
+    type = models.CharField(_("Versijos rūšis"), max_length=20, choices=VersionType.choices, null=True, blank=True)
+    external_version = models.CharField(_("Versijos numeris"), max_length=50, null=True, blank=True)
+    major = models.CharField(_("Major versijos numeris"), max_length=50, null=True, blank=True)
+    minor = models.CharField(_("Minor versijos numeris"), max_length=50, null=True, blank=True)
+    patch = models.CharField(_("Patch versijos numeris"), max_length=50, null=True, blank=True)
 
     class Meta:
         db_table = "version"

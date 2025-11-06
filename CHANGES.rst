@@ -1,7 +1,11 @@
 Changes
 #######
 
-v 1.6 (unreleased)
+v 1.7 (unreleased)
+==================
+
+
+v 1.6 (2025-11-06)
 ==================
 
 https://github.com/atviriduomenys/katalogas/pull/2050

@@ -57,7 +57,8 @@ from vitrina.structure.models import (
     ParamItem,
     Param,
     MetadataVersion,
-    StatusCode, VersionStatus,
+    StatusCode,
+    VersionStatus,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -1477,7 +1478,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
             title=form.cleaned_data.get("title"),
             description=form.cleaned_data.get("description"),
             version=1,
-            metadata_version = draft_version,
+            metadata_version=draft_version,
         )
 
         # Save history
@@ -2783,8 +2784,37 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
     def form_valid(self, form):
         version = form.save(commit=False)
         version.dataset = self.dataset
+        version.status = VersionStatus.PRE_RELEASE
 
-        latest_version = self.dataset.dataset_version.order_by("-version").first()
+        based_on_version = form.cleaned_data.get("minor_selected") or form.cleaned_data.get("patch_selected") or None
+        if version.version_type == "MAJOR":
+            version.major = (
+                _Version.objects.filter(dataset=self.dataset).aggregate(Max("major"))["major__max"] or 0
+            ) + 1
+            version.minor = 0
+            version.patch = 0
+        elif version.version_type == "MINOR":
+            version.major = based_on_version.major
+            version.minor = (
+                _Version.objects.filter(dataset=self.dataset, major=based_on_version.major).aggregate(Max("minor"))[
+                    "minor__max"
+                ]
+                or 0
+            ) + 1
+            version.patch = 0
+        elif version.version_type == "PATCH":
+            version.major = based_on_version.major
+            version.minor = based_on_version.minor
+            version.patch = (
+                _Version.objects.filter(dataset=self.dataset, major=based_on_version.major).aggregate(Max("patch"))[
+                    "patch__max"
+                ]
+                or 0
+            ) + 1
+
+        version.external_version = f"{version.major}.{version.minor}.{version.patch}"
+
+        latest_version = self.dataset.dataset_version.exclude(status=VersionStatus.DRAFT).order_by("-version").first()
         if latest_version and latest_version.version:
             version.version = latest_version.version + 1
         else:

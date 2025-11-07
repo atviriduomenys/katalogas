@@ -339,7 +339,6 @@ class AgreementGeneratePdf(
         contract_template: SmartContractTemplate = form.cleaned_data["template"]
         self.agreement.status = AgreementStatuses.FORMED
         self.agreement.other_assigner_legislations = form.cleaned_data["other_assigner_legislations"]
-        self.agreement.other_assignee_legislations = form.cleaned_data["other_assignee_legislations"]
         self.agreement.payment_terms = form.cleaned_data["payment_terms"]
         self.agreement.save()
         self.agreement.generate_contract_pdf_file(template=contract_template)

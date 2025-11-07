@@ -84,9 +84,6 @@ class Agreement(UUIDBaseModel):
     other_assigner_legislations = models.TextField(
         default="", blank=True, verbose_name=_("Papildomi teikėjo teisės aktai")
     )
-    other_assignee_legislations = models.TextField(
-        default="", blank=True, verbose_name=_("Papildomi gavėjo teisės aktai")
-    )
     payment_terms = models.TextField(default="", blank=True, verbose_name=_("Mokėjimo sąlygos"))
 
     class Meta:
@@ -172,7 +169,7 @@ class Agreement(UUIDBaseModel):
             ],
             "ex:paymentTerms": self.payment_terms or NON_VALUE,
             "ex:otherAssignerLegislations": self.other_assigner_legislations or NON_VALUE,
-            "ex:otherAssigneeLegislations": self.other_assignee_legislations or NON_VALUE,
+            "ex:otherAssigneeLegislations": self.project.other_assignee_legislations or NON_VALUE,
         }
 
     @property

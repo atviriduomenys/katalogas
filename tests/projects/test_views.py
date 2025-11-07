@@ -1,6 +1,5 @@
 import io
 import uuid
-from unittest.mock import patch, Mock
 from urllib.parse import parse_qs
 
 import pytest
@@ -8,9 +7,7 @@ import requests_mock
 from PIL import Image
 from django.urls import reverse
 from django_webtest import DjangoTestApp
-from pyasn1.debug import scope
 from reversion.models import Version
-from shapely.speedups import available
 from webtest import Upload
 
 from vitrina.datasets.factories import DatasetFactory

@@ -54,11 +54,14 @@ class ProjectForm(ModelForm):
     def __init__(self, *args, **kwargs):
         self.user: User = kwargs.pop("user")
         super().__init__(*args, **kwargs)
-        project_instance = self.instance if self.instance and self.instance.pk else None
+
+        project_instance = getattr(self.instance, "pk", None)
         button = _("Redaguoti") if project_instance else _("Sukurti")
+
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "project-form"
+
         if (
             not project_instance
             and (organization := self.user.viisp_organization)
@@ -71,13 +74,18 @@ class ProjectForm(ModelForm):
         else:
             self.fields.pop("organization", None)
 
-        self.helper.layout = Layout(
+        layout_fields = [
             Field("is_public"),
             Field("title", placeholder=_("Pavadinimas")),
             Field("description", placeholder=_("Aprašymas")),
-            Field("organization"),
             Field("url", placeholder=_("Nuoroda į panaudojimo atvejį")),
             Field("image"),
+        ]
+        if "organization" in self.fields:
+            layout_fields.insert(3, Field("organization"))
+
+        self.helper.layout = Layout(
+            *layout_fields,
             Submit("submit", button, css_class="button is-primary"),
         )
 

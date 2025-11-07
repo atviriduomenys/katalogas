@@ -26,21 +26,21 @@ class StatusCode(str, Enum):
 
 
 class VersionStatus(models.TextChoices):
-    DRAFT = "DRAFT", _("Draft")
-    PRE_RELEASE = "PRE_RELEASE", _("Pre-release")
-    STABLE = "STABLE", _("Stable")
-    DEPRECATED = "DEPRECATED", _("Deprecated")
-    WITHDRAWN = "WITHDRAWN", _("Withdrawn")
-    DELETED = "DELETED", _("Deleted")
-    DESTROYED = "DESTROYED", _("Destroyed")
-    TESTING = "TESTING", _("Testing")
-    DEPLOYING = "DEPLOYING", _("Deploying")
+    DRAFT = "DRAFT", _("Juodraštis")
+    PRE_RELEASE = "PRE_RELEASE", _("Išankstinis leidimas")
+    STABLE = "STABLE", _("Stabili")
+    DEPRECATED = "DEPRECATED", _("Pasenusi")
+    WITHDRAWN = "WITHDRAWN", _("Atsisakyta")
+    DELETED = "DELETED", _("Ištrinta")
+    DESTROYED = "DESTROYED", _("Sunaikinta")
+    TESTING = "TESTING", _("Tikrinama")
+    DEPLOYING = "DEPLOYING", _("Diegiama")
 
 
 class VersionType(models.TextChoices):
-    MAJOR = "MAJOR", _("Major")
-    MINOR = "MINOR", _("Minor")
-    PATCH = "PATCH", _("Patch")
+    MAJOR = "MAJOR", _("Pagrindinė")
+    MINOR = "MINOR", _("Mažoji")
+    PATCH = "PATCH", _("Pataisa")
 
 
 class Prefix(models.Model):
@@ -514,9 +514,9 @@ class Version(models.Model):
     status = models.CharField(_("Versijos būsena"), max_length=20, choices=VersionStatus.choices, default=VersionStatus.DRAFT)
     version_type = models.CharField(_("Versijos rūšis"), max_length=20, choices=VersionType.choices, null=True, blank=True)
     external_version = models.CharField(_("Versijos numeris"), max_length=50, null=True, blank=True)
-    major = models.IntegerField(_("Major versijos numeris"), max_length=50, null=True, blank=True)
-    minor = models.IntegerField(_("Minor versijos numeris"), max_length=50, null=True, blank=True)
-    patch = models.IntegerField(_("Patch versijos numeris"), max_length=50, null=True, blank=True)
+    major = models.IntegerField(_("Pagrindinis versijos numeris"), max_length=50, null=True, blank=True)
+    minor = models.IntegerField(_("Mažasis versijos numeris"), max_length=50, null=True, blank=True)
+    patch = models.IntegerField(_("Pataisos versijos numeris"), max_length=50, null=True, blank=True)
 
     class Meta:
         db_table = "version"

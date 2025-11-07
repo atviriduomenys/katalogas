@@ -13,6 +13,7 @@ from django.utils.functional import lazy
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _, gettext
 from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
+from django.forms import Select
 from lark import ParseError
 
 from vitrina.classifiers.models import Status
@@ -25,6 +26,8 @@ from vitrina.structure.models import (
     Model,
     Prefix,
     Version,
+    VersionStatus,
+    VersionType,
 )
 
 
@@ -1240,38 +1243,103 @@ class ParamForm(forms.ModelForm):
         return description
 
 
+class VersionSelectWidget(Select):
+    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
+        option = super().create_option(name, value, label, selected, index, subindex, attrs)
+        if value:
+            try:
+                version_id = value.value if hasattr(value, "value") else value
+                version = Version.objects.get(pk=version_id)
+                option["attrs"]["data-version-type"] = version.version_type
+            except (Version.DoesNotExist, AttributeError, ValueError):
+                pass
+        return option
+
+
 class VersionForm(forms.ModelForm):
     released = forms.DateField(label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"}))
     metadata = forms.MultipleChoiceField(label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple)
+    version_type = forms.ChoiceField(
+        label=_("Type"), required=True, choices=VersionType.choices, widget=forms.RadioSelect()
+    )
+    minor_selected = forms.ModelChoiceField(
+        label=_("Remiasi major versija"),
+        required=False,
+        queryset=Version.objects.none(),
+        widget=VersionSelectWidget(attrs={"class": "select"}),
+    )
+    patch_selected = forms.ModelChoiceField(
+        label=_("Remiasi patch versija"),
+        required=False,
+        queryset=Version.objects.none(),
+        widget=VersionSelectWidget(attrs={"class": "select"}),
+    )
 
     class Meta:
         model = Version
         fields = (
             "released",
             "description",
+            "version_type",
         )
 
     def __init__(self, dataset, *args, **kwargs):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
+
+        self.fields["minor_selected"].queryset = Version.objects.filter(
+            dataset=self.dataset, version_type=VersionType.MAJOR
+        ).order_by("-version")
+        self.fields["patch_selected"].queryset = Version.objects.filter(
+            dataset=self.dataset, version_type=VersionType.MINOR
+        ).order_by("-version")
+        self.fields["minor_selected"].label_from_instance = lambda obj: obj.external_version
+        self.fields["patch_selected"].label_from_instance = lambda obj: obj.external_version
+
+        all_choices = list(VersionType.choices)
+        allowed_types = [VersionType.MAJOR]
+
+        if self.fields["minor_selected"].queryset.exists():
+            allowed_types.append(VersionType.MINOR)
+
+        if self.fields["patch_selected"].queryset.exists():
+            allowed_types.append(VersionType.PATCH)
+
+        self.fields["version_type"].choices = [choice for choice in all_choices if choice[0] in allowed_types]
+
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "version-form"
         self.helper.layout = Layout(
             Field("released"),
-            Field(
-                "description",
-            ),
+            Field("description"),
+            Field("version_type"),
+            Field("minor_selected"),
+            Field("patch_selected"),
             Field("metadata"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
         self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version()
 
+    def clean_version_type(self):
+        cleaned_data = super().clean()
+        version_type = cleaned_data.get("version_type")
+        minor_selected = cleaned_data.get("minor_selected")
+        patch_selected = cleaned_data.get("patch_selected")
+
+        if version_type == VersionType.MINOR and not minor_selected:
+            self.add_error("base_version", _("Major version must be selected."))
+
+        if version_type == VersionType.PATCH and not patch_selected:
+            self.add_error("base_version", _("Minor version must be selected."))
+
+        return cleaned_data
+
     def clean_released(self):
         released = self.cleaned_data.get("released")
         if released < (datetime.datetime.today().date() + datetime.timedelta(days=14)):
             raise ValidationError(_("Versija gali įsigalioti ne anksčiau kaip po 2 savaičių."))
-        latest_version = self.dataset.dataset_version.order_by("-created").first()
+        latest_version = self.dataset.dataset_version.exclude(status=VersionStatus.DRAFT).order_by("-created").first()
         if latest_version and released < latest_version.released:
             raise ValidationError(_("Versija negali įsigalioti anksčiau už praėjusią versiją."))
         return released

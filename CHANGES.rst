@@ -8,6 +8,8 @@ v 1.7 (unreleased)
 v 1.6 (2025-11-06)
 ==================
 
+New features:
+
 https://github.com/atviriduomenys/katalogas/pull/2050
 - Made the status field of structure versionable.
 - Added automatic handling of status values and hid them from the user.
@@ -28,6 +30,11 @@ https://github.com/atviriduomenys/katalogas/issues/2011
 https://github.com/atviriduomenys/katalogas/issues/2028
 - Added a fake VIISP login feature to simulate authentication via VIISP.
 - The login functionality is available only in test mode and will be hidden in production.
+
+Bugfixes:
+
+<no ticket>
+- Fix form layout, do not add a field that should be removed from the form itself on specific conditions.
 
 
 v 1.5 (2025-10-27)

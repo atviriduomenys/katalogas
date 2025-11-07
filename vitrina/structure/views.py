@@ -2901,9 +2901,9 @@ class VersionListView(
         status = self.request.GET.get("status", "not_deployed")
         context["dataset"] = self.dataset
         if status == "deployed":
-            context["versions"] = self.dataset.dataset_version.filter(deployed__isnull=False).order_by("version")
+            context["versions"] = self.dataset.dataset_version.filter(deployed__isnull=False).exclude(status=VersionStatus.DRAFT).order_by("version")
         else:
-            context["versions"] = self.dataset.dataset_version.filter(deployed__isnull=True).order_by("version")
+            context["versions"] = self.dataset.dataset_version.filter(deployed__isnull=True).exclude(status=VersionStatus.DRAFT).order_by("version")
         context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
         context["selected_tab"] = status
         return context

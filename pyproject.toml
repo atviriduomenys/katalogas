@@ -7,12 +7,12 @@ authors = ["IVPK <atviriduomenys@ivpk.lt>"]
 [tool.poetry.dependencies]
 python = "^3.11"
 Django = "^4.2.23"
-django-cms = "^3.10.1"
+django-cms = "^4.1.0"
 django-sekizai = "^3.0.1"
-django-filer = "3.2.3"
-djangocms-text-ckeditor = "^5.0.1"
-djangocms-blog = "^1.2.3"
-django-meta = "~2.3.0"  # indirect dependency https://github.com/nephila/djangocms-blog/issues/761
+django-filer = "^3.3.0"
+djangocms-text-ckeditor = "^5.1.0"
+djangocms-blog = "^2.0.0"
+django-meta = "^2.5.0"  # Updated for djangocms-blog 2.x compatibility
 django-environ = "^0.9.0"
 django-hitcount = "^1.3.5"
 psycopg2-binary = "^2.9.3"
@@ -92,6 +92,7 @@ xlsxwriter = "^3.0.3"
 django-browser-reload = "^1.10.0"
 ruff = "^0.12.10"
 djlint = "^1.36.4"
+djangocms-4-migration = "^0.0.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

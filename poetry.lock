@@ -1466,24 +1466,29 @@ django = ">=3.2"
 
 [[package]]
 name = "django-cms"
-version = "3.11.10"
+version = "4.1.9"
 description = "Lean enterprise content management powered by Django."
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "django_cms-3.11.10-py2.py3-none-any.whl", hash = "sha256:868b19d7b74aef16bc05251934aaaf92e151590ecdfe1132989f32a28c42a95d"},
-    {file = "django_cms-3.11.10.tar.gz", hash = "sha256:41fdf1f239c7eaca9283721a9df0198de5b44ef12082cb43f32726cfbb76ec84"},
+    {file = "django_cms-4.1.9-py2.py3-none-any.whl", hash = "sha256:9b032c4ad1914dcb51437540e4a59a1abd26c9b81ed9325bb763a6da614441eb"},
+    {file = "django_cms-4.1.9.tar.gz", hash = "sha256:9a4cb376332b2a4c678df717af7bcdd3bfb71a9ab1a346d81fe14f8bf3091d19"},
 ]
 
 [package.dependencies]
-Django = ">=3.2"
+Django = ">=2.2"
 django-classy-tags = ">=0.7.2"
 django-formtools = ">=2.1"
 django-sekizai = ">=0.7"
-django-treebeard = ">=4.3,<4.5 || >4.5"
+django-treebeard = ">=4.3"
 djangocms-admin-style = ">=1.2"
 packaging = "*"
+setuptools = "*"
+
+[package.extras]
+argon2 = ["argon2-cffi (>=19.1.0)"]
+bcrypt = ["bcrypt"]
 
 [[package]]
 name = "django-compressor"
@@ -1560,14 +1565,14 @@ jsonfield = ">=3.0.0"
 
 [[package]]
 name = "django-filer"
-version = "3.2.3"
+version = "3.3.2"
 description = "A file management application for django that makes handling of files and images a breeze."
 optional = false
 python-versions = ">=3.8"
 groups = ["main"]
 files = [
-    {file = "django_filer-3.2.3-py3-none-any.whl", hash = "sha256:b0501899d2097a5c5e0c263a697071ca64e32b9cbe9172ad41e4d681b5e67377"},
-    {file = "django_filer-3.2.3.tar.gz", hash = "sha256:a7c173484416e5d71f80838b5105213acf119184267e4e17f47ed3f197e3ba1d"},
+    {file = "django_filer-3.3.2-py3-none-any.whl", hash = "sha256:b383646c532848f545ed5cef7ee5cec2fd1999af447612a5efaff604450378f6"},
+    {file = "django_filer-3.3.2.tar.gz", hash = "sha256:ca3b00fd52ec0abf6323e44480a91ae086e698bed7223cdffef2e29f0e4fb1de"},
 ]
 
 [package.dependencies]
@@ -1661,18 +1666,18 @@ libsass = ">=0.7.0,<1"
 
 [[package]]
 name = "django-meta"
-version = "2.3.0"
+version = "2.5.0"
 description = "Pluggable app for handling webpage meta tags and OpenGraph properties"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "django-meta-2.3.0.tar.gz", hash = "sha256:a7011d48dd83046b22671209f1baef236314932b41553fe5eb4f3f2fa682c2f3"},
-    {file = "django_meta-2.3.0-py2.py3-none-any.whl", hash = "sha256:d8f2386b5e475545ae7f2c58c27673ff0b29915af589463d3400828657b5360f"},
+    {file = "django_meta-2.5.0-py2.py3-none-any.whl", hash = "sha256:94674286c8515314a025958af6bbcb44d6134d5a2ea3a61f680a852d334af88d"},
+    {file = "django_meta-2.5.0.tar.gz", hash = "sha256:e30669865bccff6be61765dfc57d97ee0a68ab7625efd081dd9045e17f3500c5"},
 ]
 
 [package.extras]
-docs = ["django (<5.0)"]
+docs = ["django (<6.0)", "sphinx-rtd-theme"]
 
 [[package]]
 name = "django-otp"
@@ -1943,6 +1948,18 @@ files = [
 webtest = ">=1.3.3"
 
 [[package]]
+name = "djangocms-4-migration"
+version = "0.0.2"
+description = "A django CMS 3 to 4 migration package"
+optional = false
+python-versions = "*"
+groups = ["dev"]
+files = [
+    {file = "djangocms-4-migration-0.0.2.tar.gz", hash = "sha256:10c20b0b06a5db6f772f71cf059a5bcc76d5b57da0e42b8a3a4d660d0e8883ea"},
+    {file = "djangocms_4_migration-0.0.2-py3-none-any.whl", hash = "sha256:501bb18e10a2fc80225cfe8c29fbe1a5e8318beb6cb4ef93eb47bb54a8fedd23"},
+]
+
+[[package]]
 name = "djangocms-admin-style"
 version = "3.3.1"
 description = "Adds pretty CSS styles for the django CMS admin interface."
@@ -1959,36 +1976,36 @@ Django = "*"
 
 [[package]]
 name = "djangocms-apphook-setup"
-version = "0.5.1"
+version = "0.5.0"
 description = "Library to auto setup apphooks"
 optional = false
 python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "djangocms-apphook-setup-0.5.1.tar.gz", hash = "sha256:b4173e1335216e8e16b027efcdbf97f1a1139d141c139793285adb4f33f88021"},
-    {file = "djangocms_apphook_setup-0.5.1-py2.py3-none-any.whl", hash = "sha256:0cd01022e5e342751f630900a276d2eb1a680ec6cef371aa206049731ebdc43b"},
+    {file = "djangocms-apphook-setup-0.5.0.tar.gz", hash = "sha256:05f59ce63881ef364b53d4b9a1f325f1661ba5207fa17d09bf657cc9de5c666e"},
+    {file = "djangocms_apphook_setup-0.5.0-py2.py3-none-any.whl", hash = "sha256:a7b97389ff1ed2a90cff22e92b9911b123c8c60297ccfbc6ac1fc8945facb988"},
 ]
 
 [package.dependencies]
-django-cms = ">=3.7,<4.0"
+django-cms = ">=3.7"
 
 [[package]]
 name = "djangocms-blog"
-version = "1.2.3"
+version = "2.0.4"
 description = "The blog application for django CMS"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 groups = ["main"]
 files = [
-    {file = "djangocms-blog-1.2.3.tar.gz", hash = "sha256:6a50fb84d3350f13ca1795bfdd44940d8abadcc9d1a767347aa92fddbb38386f"},
-    {file = "djangocms_blog-1.2.3-py2.py3-none-any.whl", hash = "sha256:682f1b549bf54427d4a1a9e4011d974934d1c5b37003ced311ceccbb44f5f504"},
+    {file = "djangocms-blog-2.0.4.tar.gz", hash = "sha256:67a3486fca4882d8e61390df495cd39b08a6225b46b9b0f727596987a8c1b4ac"},
+    {file = "djangocms_blog-2.0.4-py2.py3-none-any.whl", hash = "sha256:3db90663f9b20fb0861de77dfa05470231f51f9289579248fbdf14b48e5f5985"},
 ]
 
 [package.dependencies]
 aldryn-apphooks-config = ">=0.5"
-django-cms = ">=3.7"
-django-filer = ">=1.4"
-django-meta = ">=2.0"
+django-cms = ">=3.9"
+django-filer = ">=2.0"
+django-meta = ">=2.3"
 django-parler = ">=2.0"
 django-sortedm2m = "*"
 django-taggit = ">=1.0"
@@ -2001,8 +2018,7 @@ lxml = "*"
 pytz = "*"
 
 [package.extras]
-docs = ["django (<3.1)"]
-search = ["aldryn-search"]
+docs = ["django (<5.0)", "sphinx (>2,<5)"]
 taggit-helpers = ["django-taggit-helpers"]
 
 [[package]]
@@ -6753,4 +6769,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "0aa3e65ac12ac938062aa7a583355af3fc9805915adbf43f07e34525a5f3e65d"
+content-hash = "98a7ce1e080d5defc01a2ccd869b0af9b7b88740ee17c329774612a90da6ee52"

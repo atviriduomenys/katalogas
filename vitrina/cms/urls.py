@@ -29,7 +29,8 @@ urlpatterns = [
     # @PostMapping("/opening/addMaterial")
     # @GetMapping("/about")
     path("policy/", PolicyView.as_view(), name="policy"),
-    path("blog/", include(post_detail_urls)),
+    # Blog post detail URLs (handled by CMS BlogApp apphook at /blog/)
+    # Removed path("blog/", include(post_detail_urls)) - was blocking CMS apphook
     path(
         "opening/learningmaterial/<int:pk>/",
         LearningMaterialDetailView.as_view(),

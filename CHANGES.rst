@@ -3,6 +3,15 @@ Changes
 
 v 1.6 (unreleased)
 ==================
+https://github.com/atviriduomenys/katalogas/issues/1824
+Upgrade django-cms from 3.11.10 to 4.1.9 with related dependencies:
+- Updated django-cms to 4.1.9 (latest stable 4.x);
+- Updated djangocms-blog to 2.0.4;
+- Updated django-filer to 3.3.2;
+- Updated django-meta to 2.5.0;
+- Updated navigation_tags.py for CMS 4.x Page API;
+- Added CMS_CONFIRM_VERSION4 setting;
+- Fixed blog URL routing conflict.
 
 https://github.com/atviriduomenys/katalogas/issues/1976
 Add authorization server and API gateway server fields to Agent model.

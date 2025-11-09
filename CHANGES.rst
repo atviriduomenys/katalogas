@@ -43,6 +43,14 @@ https://github.com/atviriduomenys/katalogas/issues/2076
     - Access limited to Public, Package, and Protected-level structure items.
 - Indexes and managers have been updated to reflect the new roles and their respective permissions.
 
+https://github.com/atviriduomenys/dvms/issues/293
+Security: Upgrade cryptography library to address CVE vulnerabilities:
+- Updated cryptography from 38.0.4 to 44.0.3 (fixes CVE-2023-49083, CVE-2024-26130);
+- Updated signxml from 3.0.0 to 4.2.0;
+- Updated lxml from 4.9.4 to 6.0.2;
+- Migrated VIISP authentication signatures from SHA1 to SHA256;
+- Updated test fixtures for new signature algorithm.
+
 v 1.7 (2025-11-20)
 ==================
 

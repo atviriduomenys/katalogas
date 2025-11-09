@@ -150,6 +150,15 @@ v 1.4 (2025-10-23)
 https://github.com/atviriduomenys/katalogas/issues/1934
 Translate `Requests`.
 
+Security improvements:
+- Added HTTP Strict Transport Security (HSTS) with 1-year max-age;
+- Enabled HSTS preload and includeSubDomains;
+- Strengthened cookie security (Secure, HttpOnly, SameSite=Lax);
+- Implemented Referrer-Policy: strict-origin-when-cross-origin;
+- Added Subresource Integrity (SRI) hashes to external scripts;
+- Migrated jQuery from HTTP to HTTPS CDN;
+- Enhanced Content Security Policy (CSP) directives.
+
 https://github.com/atviriduomenys/katalogas/issues/1948
 Add optional `organization` field to `Project` model.
 Add `organization_card.html` component to display organization info where needed.

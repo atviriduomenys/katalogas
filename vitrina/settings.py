@@ -299,6 +299,7 @@ MEDIA_ROOT = env.path("MEDIA_ROOT", default=BASE_DIR / "var/media/")
 
 STATIC_URL = "static/"
 STATIC_ROOT = env.path("STATIC_ROOT", default=BASE_DIR / "var/static/")
+STATICFILES_DIRS = [BASE_DIR / "static"]
 
 SASS_PROCESSOR_ROOT = STATIC_ROOT
 
@@ -329,6 +330,9 @@ CMS_TEMPLATES = [
     ("pages/page.html", _("Puslapis be šoninio meniu")),
     ("pages/page_with_side_menu.html", _("Puslapis su šoniniu meniu")),
 ]
+
+# Django-CMS 4.x confirmation
+CMS_CONFIRM_VERSION4 = True
 
 THUMBNAIL_HIGH_RESOLUTION = True
 THUMBNAIL_PROCESSORS = (

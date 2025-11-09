@@ -1,4 +1,4 @@
-from django.urls import path, include
+from django.urls import path
 from djangocms_blog.settings import get_setting
 
 from vitrina.cms.views import (

@@ -2,6 +2,21 @@
 
 from django.db import migrations, models
 
+from vitrina.structure.models import VersionStatus
+
+
+def populate_version_field_for_metadata(apps, schema_editor):
+    Metadata = apps.get_model("vitrina_structure", "Metadata")
+    Version = apps.get_model("vitrina_structure", "Version")
+
+    datasets_used_by_metadata = Metadata.objects.values_list("dataset_id", flat=True).distinct()
+    for dataset_id in datasets_used_by_metadata:
+        draft_metadata_rows = Metadata.objects.filter(dataset_id=dataset_id, draft=1)
+        draft_version = Version.objects.get_or_create(dataset_id=dataset_id, status=VersionStatus.DRAFT)[0]
+        for row in draft_metadata_rows:
+            row.metadata_version = draft_version
+            row.save()
+
 
 class Migration(migrations.Migration):
 
@@ -33,11 +48,12 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='version',
             name='status',
-            field=models.CharField(choices=[('DRAFT', 'Juodraštis'), ('PRE_RELEASE', 'Išankstinis leidimas'), ('STABLE', 'Stabili'), ('DEPRECATED', 'Pasenusi'), ('WITHDRAWN', 'Atsisakyta'), ('DELETED', 'Ištrinta'), ('DESTROYED', 'Sunaikinta'), ('TESTING', 'Tikrinama'), ('DEPLOYING', 'Diegiama')], default='DRAFT', max_length=20, verbose_name='Versijos būsena'),
+            field=models.CharField(choices=[('DRAFT', 'Juodraštis'), ('PRE_RELEASE', 'Išankstinis leidimas'), ('STABLE', 'Stabili'), ('DEPRECATED', 'Pasenusi'), ('WITHDRAWN', 'Atsisakyta'), ('DELETED', 'Ištrinta'), ('DESTROYED', 'Sunaikinta'), ('TESTING', 'Tikrinama'), ('DEPLOYING', 'Diegiama')], max_length=20, null=True, verbose_name='Versijos būsena'),
         ),
         migrations.AddField(
             model_name='version',
             name='version_type',
             field=models.CharField(blank=True, choices=[('MAJOR', 'Pagrindinė'), ('MINOR', 'Mažoji'), ('PATCH', 'Pataisa')], max_length=20, null=True, verbose_name='Versijos rūšis'),
         ),
+        migrations.RunPython(populate_version_field_for_metadata, migrations.RunPython.noop),
     ]

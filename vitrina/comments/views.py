@@ -26,7 +26,7 @@ from vitrina.comments.services import get_comment_form_class, has_comment_permis
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, email
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Representative
+from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
@@ -127,6 +127,8 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
                         ):
                             sub_email_list.append(sub.user.email)
 
+                    if publisher := Organization.objects.filter(id=obj.publisher_id).first():
+                        sub_email_list.append(publisher.email)
                     if sub_email_list:
                         email(
                             sub_email_list,
@@ -363,6 +365,8 @@ class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionM
                     ):
                         sub_email_list.append(sub.user.email)
 
+                if publisher := Organization.objects.filter(id=self.dataset.publisher_id).first():
+                    sub_email_list.append(publisher.email)
                 if sub_email_list:
                     email(
                         sub_email_list,

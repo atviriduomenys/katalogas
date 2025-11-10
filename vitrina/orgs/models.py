@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -99,6 +100,13 @@ class Organization(MP_Node):
     publisher = models.BooleanField(default=False, verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"))
     name = models.TextField(max_length=255, unique=True, blank=True, null=True)
     alternative_titles = models.TextField(_("Alternatyvūs pavadinimai"), null=True, blank=True)
+    whitelisted_code_names = ArrayField(
+        models.CharField(max_length=255),
+        blank=True,
+        default=list,
+        verbose_name=_("Leistini kodiniai pavadinimai"),
+        help_text=_("Sąrašas kodinių pavadinimų, kuriuos galima naudoti kuriant duomenų išteklius."),
+    )
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)

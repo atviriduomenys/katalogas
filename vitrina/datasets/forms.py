@@ -30,6 +30,7 @@ from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
+from vitrina.datasets.helpers import generate_dataset_prefix
 from vitrina.datasets.services import get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 
@@ -343,6 +344,22 @@ class BaseResourceForm(TranslatableModelForm):
 
             if any(ch.isupper() for ch in name):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
+            organization = dataset_instance.organization
+            expected_prefix = generate_dataset_prefix(dataset_instance.organization)
+            whitelisted = organization.whitelisted_code_names or []
+            if not name.startswith(expected_prefix) and not (
+                whitelisted and any(name.startswith(prefix) for prefix in whitelisted)
+            ):
+                message = (
+                    _(
+                        "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ "
+                        "arba vieno iš organizacijos leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
+                    )
+                    % {"expected": expected_prefix, "whitelisted": ", ".join(whitelisted)}
+                    if whitelisted
+                    else _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": expected_prefix}
+                )
+                raise ValidationError(message)
 
             metadata_qs = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Dataset),

@@ -13,6 +13,21 @@ def is_manager_dataset_list(request: HttpRequest):
     return request.resolver_match.url_name == "manager-dataset-list"
 
 
+def generate_dataset_prefix(organization: Organization) -> str:
+    """
+    Generates the dataset prefix based on the organization's kind and name.
+    Returns a string like:
+        - "datasets/gov/vssa/"
+        - "datasets/org/test_org/"
+    """
+    slugify_ascii_lower = partial(slugify, lowercase=True, allow_unicode=False)
+    organization_part = organization.name or organization.slug or organization.title
+    organization_part = slugify_ascii_lower(organization_part)
+
+    prefix = "datasets/gov" if organization.kind == "GOV" else "datasets/org"
+    return f"{prefix}/{organization_part}/"
+
+
 def generate_dataset_name(organization: Organization, dataset_title: str) -> str:
     """
     Generates a dataset name by combining a slugified organization identifier and a slugified dataset title.
@@ -24,10 +39,9 @@ def generate_dataset_name(organization: Organization, dataset_title: str) -> str
         str: A string in the format "organization_part/dataset_part", where both parts are slugified.
     """
     slugify_ascii_lower = partial(slugify, lowercase=True, allow_unicode=False)
-    organization_part = organization.name or organization.slug or organization.title
-    organization_part = slugify_ascii_lower(organization_part)
     dataset_part = slugify_ascii_lower(dataset_title)
-    return f"datasets/gov/{organization_part}/{dataset_part}"
+    prefix = generate_dataset_prefix(organization)
+    return f"{prefix}{dataset_part}"
 
 
 def generate_unique_dataset_name(organization: Organization, dataset: Dataset) -> str:

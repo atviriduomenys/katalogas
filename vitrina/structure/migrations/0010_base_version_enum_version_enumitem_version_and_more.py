@@ -7,7 +7,9 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_structure', '0008_metadataversion_status'),
+        ('vitrina_structure', '0009_version_external_version_version_major_version_minor_and_more'),
+        ('vitrina_resources', '0011_datasetdistribution_connected_version'),
+
     ]
 
     operations = [

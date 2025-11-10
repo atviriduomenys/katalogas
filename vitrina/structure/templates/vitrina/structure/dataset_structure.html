@@ -39,46 +39,43 @@
             <a class="button is-primary mb-5 ml-2" href="{% url 'model-create' dataset.pk %}">
                 {% translate "Naujas modelis" %}
             </a>
+
+            <div class="dropdown is-hoverable">
+                <div class="dropdown-trigger">
+                    <button class="button is-primary mb-5 ml-2" aria-haspopup="true" aria-controls="dropdown-menu">
+                        {% if selected_version == 'draft' %}
+                            {% translate "Versija" %}: {% translate "Juodraštis" %}
+                        {% else %}
+                            {% translate "Versija" %}: {{ selected_version }}
+                        {% endif %}
+                    </button>
+                </div>
+
+                <div class="dropdown-menu" id="dropdown-menu" role="menu">
+                    <div class="dropdown-content">
+
+                        <a
+                            href="{{ request.path }}"
+                            class="dropdown-item {% if selected_version == 'draft' %}is-active{% endif %}"
+                        >
+                            {% translate "Juodraštis" %}
+                        </a>
+
+                        {% for version in versions %}
+                            <a
+                                href="?version={{ version.version }}"
+                                class="dropdown-item {% if version == selected_version %}is-active{% endif %}"
+                            >
+                                {{ version }}
+                            </a>
+                        {% endfor %}
+
+                    </div>
+                </div>
+            </div>
             <a class="button is-primary mb-5 ml-2" href="{% url 'version-create' dataset.pk %}">
                 {% translate "Publikuoti versiją" %}
             </a>
-
-
-        <div class="dropdown is-hoverable">
-            <div class="dropdown-trigger">
-                <button class="button is-primary mb-5 ml-2" aria-haspopup="true" aria-controls="dropdown-menu">
-                    {% if selected_version == 'draft' %}
-                        {% translate "Versija" %}: {% translate "Juodraštis" %}
-                    {% else %}
-                        {% translate "Versija" %}: {{ selected_version }}
-                    {% endif %}
-                </button>
-            </div>
-
-            <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                <div class="dropdown-content">
-
-                    <a
-                        href="{{ request.path }}"
-                        class="dropdown-item {% if selected_version == 'draft' %}is-active{% endif %}"
-                    >
-                        {% translate "Juodraštis" %}
-                    </a>
-
-                    {% for version in versions %}
-                        <a
-                            href="?version={{ version.version }}"
-                            class="dropdown-item {% if version == selected_version %}is-active{% endif %}"
-                        >
-                            {{ version }}
-                        </a>
-                    {% endfor %}
-
-                </div>
-            </div>
-        </div>
-
-
 
         {% endif %}
 

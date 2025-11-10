@@ -8,10 +8,13 @@ from vitrina.structure.models import VersionStatus
 def populate_version_field_for_metadata(apps, schema_editor):
     Metadata = apps.get_model("vitrina_structure", "Metadata")
     Version = apps.get_model("vitrina_structure", "Version")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+
+    non_versionable_content_types = ContentType.objects.filter(model__in=["comment", "dataset"])
 
     datasets_used_by_metadata = Metadata.objects.values_list("dataset_id", flat=True).distinct()
     for dataset_id in datasets_used_by_metadata:
-        draft_metadata_rows = Metadata.objects.filter(dataset_id=dataset_id, draft=1, metadata_version__isnull=True)
+        draft_metadata_rows = Metadata.objects.filter(dataset_id=dataset_id, draft=1, metadata_version__isnull=True).exclude(content_type__in=non_versionable_content_types)
         draft_version = Version.objects.get_or_create(dataset_id=dataset_id, status=VersionStatus.DRAFT)[0]
         draft_metadata_rows.update(metadata_version=draft_version)
 
@@ -28,17 +31,17 @@ class Migration(migrations.Migration):
             name='external_version',
             field=models.CharField(blank=True, max_length=50, null=True, verbose_name='Versijos numeris'),
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='version',
             name='major',
             field=models.IntegerField(blank=True, null=True, verbose_name='Pagrindinis versijos numeris'),
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='version',
             name='minor',
             field=models.IntegerField(blank=True, null=True, verbose_name='Papildomas versijos numeris'),
         ),
-        migrations.AlterField(
+        migrations.AddField(
             model_name='version',
             name='patch',
             field=models.IntegerField(blank=True, null=True, verbose_name='Pataisos versijos numeris'),

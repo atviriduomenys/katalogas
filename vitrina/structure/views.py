@@ -169,7 +169,7 @@ class DatasetStructureView(
     def dispatch(self, request, *args, **kwargs):
         version_param = request.GET.get("version", None)
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.version = _Version.objects.filter(dataset=self.object, version=version_param).first() if version_param else None
+        self.version = _Version.objects.filter(dataset=self.object, version=version_param).first() if version_param else _Version.objects.filter(dataset=self.object, status=VersionStatus.DRAFT).first()
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         self.models = Model.objects.filter(dataset=self.object)
         if self.can_manage_structure:
@@ -195,7 +195,7 @@ class DatasetStructureView(
         dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         structure = dataset.current_structure
         context["selected_version"] = self.version or "draft"
-        context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
+        context["versions"] = _Version.objects.filter(dataset=dataset).exclude(status=VersionStatus.DRAFT).order_by("version")
         context["errors"] = []
         context["manifest"] = None
         context["structure"] = structure
@@ -249,7 +249,7 @@ class ModelStructureView(
     def dispatch(self, request, *args, **kwargs):
         version_param = request.GET.get("version", None)
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.version = _Version.objects.filter(dataset=self.object, version=version_param).first() if version_param else None
+        self.version = _Version.objects.filter(dataset=self.object, version=version_param).first() if version_param else _Version.objects.filter(dataset=self.object, status=VersionStatus.DRAFT).first()
         model_name = kwargs.get("model")
         self.model = (
             Model.objects.annotate(
@@ -491,7 +491,7 @@ class PropertyStructureView(
     def dispatch(self, request, *args, **kwargs):
         version_param = request.GET.get("version", None)
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.version = _Version.objects.filter(dataset=self.object,version=version_param).first() if version_param else None
+        self.version = _Version.objects.filter(dataset=self.object, version=version_param).first() if version_param else _Version.objects.filter(dataset=self.object, status=VersionStatus.DRAFT).first()
         model_name = kwargs.get("model")
         self.model = (
             Model.objects.annotate(
@@ -2861,6 +2861,8 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
         )
 
         metadata = form.cleaned_data.get("metadata", [])
+        all_param_metadata_rows = Metadata.objects.filter(dataset=self.dataset, content_type=ContentType.objects.get_for_model(ParamItem))
+
         old_new_models: dict = {}
         old_new_props: dict = {}
         all_new_props: list = []
@@ -2869,6 +2871,21 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
 
         with transaction.atomic():
             version.save()
+
+            for param_metadata_row in all_param_metadata_rows:
+                old_model_instance = ParamItem.objects.filter(id=param_metadata_row.object_id).first()
+                new_model_instance = old_model_instance
+                new_model_instance.pk = None
+                new_model_instance.version = version
+                new_model_instance.save()
+                all_param_items.append(new_model_instance)
+
+                param_metadata_row.pk = None
+                param_metadata_row.draft = False
+                param_metadata_row.metadata_version = version
+                param_metadata_row.object_id = new_model_instance.pk
+                param_metadata_row.save()
+
             for meta in metadata:
                 if meta := Metadata.objects.filter(pk=meta).first():
                     new_model = meta.content_type.model_class()
@@ -2888,7 +2905,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                     if isinstance(new_model_instance, EnumItem):
                         all_enum_items.append(new_model_instance)
                     if isinstance(new_model_instance, ParamItem):
-                        all_param_items.append(meta)
+                        all_param_items.append(new_model_instance)
                     meta.pk = None
                     meta.draft = False
                     meta.metadata_version = version
@@ -2936,8 +2953,8 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
 
                 new_model.base = new_base
                 new_model.save()
-
-                metadata_of_the_base = Metadata.objects.filter(object_id=old_base_pk, content_type_id=125).first()
+                content_type_of_model = ContentType.objects.filter(model="model").first().pk
+                metadata_of_the_base = Metadata.objects.filter(object_id=old_base_pk, content_type_id=content_type_of_model).first()
                 new_metadata_of_the_base = metadata_of_the_base
                 new_metadata_of_the_base.pk = None
                 new_metadata_of_the_base.metadata_version = version
@@ -2970,7 +2987,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
     def _fix_param_values(all_param_items: list, old_new_props: dict, version: _Version):
         param_created = {}
         for param_item in all_param_items:
-            old_param = param_item.enum
+            old_param = param_item.param
             old_pk = old_param.pk
 
             if old_pk not in param_created:
@@ -2981,7 +2998,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
                 new_param.save()
                 param_created[old_pk] = new_param
 
-            param_item.enum = param_created[old_pk]
+            param_item.param = param_created[old_pk]
             param_item.save()
 
     @staticmethod
@@ -2998,8 +3015,11 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
     #TODO after UI changes that allow editing prefixes and dataset_distribution are introduced, this should be rewritten to copy only the changed fields
     @staticmethod
     def _copy_prefix_db_distribution(dataset: Dataset, version: _Version):
-        prefixes = Metadata.objects.filter(content_type_id=131, dataset=dataset, draft=True)
-        dataset_distributions = Metadata.objects.filter(content_type_id=148, dataset=dataset, draft=True)
+        content_type_of_prefix = ContentType.objects.filter(model="prefix").first().pk
+        content_type_of_dataset_distribution = ContentType.objects.filter(model="datasetdistribution").first().pk
+
+        prefixes = Metadata.objects.filter(content_type_id=content_type_of_prefix, dataset=dataset, draft=True)
+        dataset_distributions = Metadata.objects.filter(content_type_id=content_type_of_dataset_distribution, dataset=dataset, draft=True)
 
         for metadata_prefix in prefixes:
             actual_prefix = Prefix.objects.filter(id=metadata_prefix.object_id).first()

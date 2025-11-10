@@ -22,10 +22,12 @@ from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
+from vitrina.structure import VersionStatus
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
     PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory, VersionFactory
-from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionType
+from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionType, Prefix, Model, Property
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
@@ -3487,25 +3489,25 @@ def test_manifest_export_openapi(app: DjangoTestApp):
 
     assert resp.status_code == 200
     assert resp.content_type == 'application/json'
-    
+
     openapi_spec = resp.json
-    
+
     expected_keys = ['openapi', 'info', 'externalDocs', 'servers', 'tags', 'components', 'paths']
     assert list(openapi_spec.keys()) == expected_keys, "OpenAPI spec missing required top-level fields"
-    
+
     info = openapi_spec['info']
     assert info['summary'] == structure.dataset.title, "Info summary should match dataset title"
     assert info['description'] == structure.dataset.description, "Info description should match dataset description"
     assert info['version'] == '1.0.0', "API version should be 1.0.0"
-    
+
     schemas = set(openapi_spec['components']['schemas'].keys())
     expected_schemas = {"Country", "CountryCollection", "CountryChange", "CountryChanges"}
     assert expected_schemas <= schemas, f"Missing required schemas: {expected_schemas - schemas}"
-    
+
     tag_names = {tag["name"] for tag in openapi_spec["tags"]}
     expected_tags = {"utility", "Country"}
     assert tag_names == expected_tags, f"Tags mismatch. Expected: {expected_tags}, Got: {tag_names}"
-    
+
     utility_paths = {"/version", "/health"}
     model_paths = {
         "/datasets/gov/ivpk/adp/Country",
@@ -4298,3 +4300,115 @@ def test_multiple_patch_versions_increment_external_version(app: DjangoTestApp):
 
     assert patch_versions[0].external_version == "1.1.1"
     assert patch_versions[1].external_version == "1.1.2"
+
+@pytest.mark.django_db
+def test_releasing_version_duplicates_fields(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,,,http://www.purl.org/dc/terms/,,,,\n'
+        '1,,,,Continent,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n'
+        ',,,,,,,,,,,,,,,,,,\n'
+        '2,,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n'
+        ',,,,,title,string,,,,5,,,open,dct:title,,,,\n'
+        ',,,,,continent,ref,Continent,,,5,,,open,dct:continent,,,,\n'
+        ',,,,,,,,,,,,,,,,,,\n'
+        '3,,,,City,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n'
+        ',,,,,title,string,,,,5,,,open,dct:title,,,,\n'
+        ',,,,,country,ref,Country,,,5,,,open,,,,,,\n'
+        ',,,,,country.id,,,,,5,,,open,,,,,,\n'
+        ',,,,,country.continent.id,,,,,5,,,open,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename="file.csv", data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    metadata_ids = list(
+        Metadata.objects.filter(
+            dataset=structure.dataset,
+            draft=True,
+        ).values_list('id', flat=True)
+    )
+    draft_version = _Version.objects.filter(dataset=structure.dataset, status=VersionStatus.DRAFT).first()
+    old_metadata_fields = Metadata.objects.filter(dataset=structure.dataset, metadata_version=draft_version)
+    prefixes = Prefix.objects.filter(version=draft_version)
+    enums = Enum.objects.filter(version=draft_version)
+    enum_items = EnumItem.objects.filter(version=draft_version)
+    model = Model.objects.filter(version=draft_version)
+    properties = Property.objects.filter(version=draft_version)
+    dataset_distribution = DatasetDistribution.objects.filter(connected_version=draft_version)
+
+    publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
+    publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    publish_version_form['version_type'] = "MAJOR"
+    publish_version_form['metadata'] = metadata_ids
+    publish_version_form.submit()
+
+    new_version = _Version.objects.get(dataset=structure.dataset, version_type=VersionType.MAJOR)
+    new_metadata_fields = Metadata.objects.filter(dataset=structure.dataset, metadata_version=new_version)
+    new_prefixes = Prefix.objects.filter(version=new_version)
+    new_enums = Enum.objects.filter(version=new_version)
+    new_enum_items = EnumItem.objects.filter(version=new_version)
+    new_model = Model.objects.filter(version=new_version)
+    new_properties = Property.objects.filter(version=new_version)
+    new_dataset_distribution = DatasetDistribution.objects.filter(connected_version=new_version)
+
+    assert len(metadata_ids) - 1 == len(new_metadata_fields), f"{list(new_metadata_fields)}{old_metadata_fields}" # Dataset does not get duplicated
+    assert len(prefixes) == len(new_prefixes)
+    assert len(enums) == len(new_enums)
+    assert len(enum_items) == len(new_enum_items)
+    assert len(model) == len(new_model)
+    assert len(properties) == len(new_properties)
+    assert len(dataset_distribution) == len(new_dataset_distribution)
+
+@pytest.mark.django_db
+def test_versioning_duplicates_metadata_and_relations(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename="file.csv", data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    metadata_ids = list(
+        Metadata.objects.filter(
+            dataset=structure.dataset,
+            draft=True,
+        ).values_list('id', flat=True)
+    )
+    draft_version = _Version.objects.filter(dataset=structure.dataset, status=VersionStatus.DRAFT).first()
+    draft_model = Model.objects.filter(dataset=structure.dataset, version=draft_version).first()
+
+    publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
+    publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    publish_version_form['version_type'] = "MAJOR"
+    publish_version_form['metadata'] = metadata_ids
+    publish_version_form.submit()
+
+    new_version = _Version.objects.get(dataset=structure.dataset, version_type=VersionType.MAJOR)
+    new_model = Model.objects.filter(dataset=structure.dataset, version=new_version).first()
+

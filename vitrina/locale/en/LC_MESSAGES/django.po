@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-30 21:35+0200\n"
+"POT-Creation-Date: 2025-11-10 10:25+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2873,6 +2873,16 @@ msgstr ""
 "person is selected, it is not possible to conclude agreements. A natural "
 "person is indicated only as the author of the use case."
 
+msgid "Duomenų gavėjo teisinis pagrindas"
+msgstr "Legal basis of the data assignee"
+
+msgid ""
+"Duomenų gavėjo pateikiamos nuostatos, kuriomis teisiškai remiamasi norint "
+"gauti duomenis."
+msgstr ""
+"The provisions provided by the data assignee that form the legal basis for "
+"obtaining the data."
+
 msgid "Nuoroda į panaudojimo atvejį"
 msgstr "URL to use case"
 
@@ -2955,6 +2965,9 @@ msgstr "Dataset list"
 
 msgid "Panaudojimo atvejo peržiūros"
 msgstr "Use case views"
+
+msgid "Duomenų gavimo teisinis pagrindas"
+msgstr "Legal basis for obtaining data"
 
 msgid "Duomenų gavėjas"
 msgstr "Data assignee"
@@ -3623,9 +3636,6 @@ msgstr "Choose a template (required)"
 
 msgid "Papildomi teikėjo teisės aktai"
 msgstr "Other assigner legislations"
-
-msgid "Papildomi gavėjo teisės aktai"
-msgstr "Other assignee legislations"
 
 msgid "Mokėjimo sąlygos"
 msgstr "Payment terms"
@@ -5474,6 +5484,9 @@ msgstr ""
 "If you want to login with credentials from a different platform, you can do "
 "it here."
 
+msgid "Testinis VIISP Prisijungimas"
+msgstr "Test VIISP Login"
+
 msgid ""
 "Tai puslapis skirtas prisijungti arba užsiregistruoti naujam naudotojui, "
 "kuris nori neribotai, bei laisvai dalintis informacija, kurią vėliau savo "
@@ -5677,9 +5690,6 @@ msgid ""
 msgstr ""
 "A confirmation has been sent to your e-mail address. Click a link in the e-"
 "mail."
-
-msgid "Testinis VIISP Prisijungimas"
-msgstr "Test VIISP Login"
 
 msgid ""
 "Viisp autentifikacija pavyko, tačiau el.paštas, grįžtantis iš viisp "

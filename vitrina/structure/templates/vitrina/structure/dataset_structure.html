@@ -48,7 +48,7 @@
         <div class="mb-5">
             <h4 class="custom-title is-size-4-mobile">{% translate "Keitimų žurnalas" %}</h4>
             {% if version %}
-                <p>{% translate "Publikacija" %}: <span class="tag is-success is-light">{{ version.get_version_type_display }}</span></p>
+                <p>{% translate "Publikacijos tipas" %}: <span class="tag is-success is-light">{{ version.get_version_type_display }}</span></p>
                 <p>{% translate "Versija" %}: <span class="tag is-success is-light">{{ version }}</span></p>
                 <p>{% translate "Įsigaliojimo data" %}: {{ version.released|date:"SHORT_DATE_FORMAT" }}</p>
                 {% if version.description %}

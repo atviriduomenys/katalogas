@@ -1823,6 +1823,13 @@ class DatasetStructureMapping(models.Model):
 
 
 class Contact(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        verbose_name=_("Organizacija"),
+    )
+    contact_name = models.CharField(_("Vardas"), max_length=255, blank=True)
+    position = models.CharField(_("Pareigos"), max_length=255, blank=True)
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
@@ -1833,10 +1840,11 @@ class Contact(models.Model):
         on_delete=models.CASCADE,
         verbose_name=_("Content Type"),
         limit_choices_to={"model__in": ("organization", "user")},
+        null=True,
     )
-    object_id = models.PositiveIntegerField(verbose_name=_("Object ID"))
+    object_id = models.PositiveIntegerField(verbose_name=_("Object ID"), null=True)
     content_object = GenericForeignKey("content_type", "object_id")
-    dataset = ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
+    dataset = ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"), null=True)
     email = models.EmailField(_("Email"), blank=True)
     phone = models.CharField(_("Phone"), max_length=50, blank=True)
 
@@ -1845,9 +1853,11 @@ class Contact(models.Model):
         verbose_name_plural = _("Kontaktai")
 
     def __str__(self):
-        if self.content_type.model == "organization":
-            return self.content_object.title
-        return self.content_object.get_full_name()
+        if self.content_type:
+            if self.content_type.model == "organization":
+                return self.content_object.title
+            return self.content_object.get_full_name()
+        return self.contact_name
 
     def get_email(self):
         if self.email:
@@ -1861,10 +1871,10 @@ class Contact(models.Model):
             return _("Organizacija")
         elif self.content_type == ContentType.objects.get_for_model(User):
             return _("Naudotojas")
-        return ""
+        return _("Neregistruotas naudotojas")
 
     def save(self, *args, **kwargs):
-        Contact.objects.filter(dataset=self.dataset).delete()
+        Contact.objects.filter(dataset=self.dataset, dataset__isnull=False).delete()
         super().save(*args, **kwargs)
 
     def get_acl_parents(self):

@@ -517,7 +517,7 @@ class Version(models.Model):
     )
     external_version = models.CharField(_("Versijos numeris"), max_length=50, null=True, blank=True)
     major = models.IntegerField(_("Pagrindinis versijos numeris"), null=True, blank=True)
-    minor = models.IntegerField(_("Papilodmas versijos numeris"), null=True, blank=True)
+    minor = models.IntegerField(_("Papildomas versijos numeris"), null=True, blank=True)
     patch = models.IntegerField(_("Pataisos versijos numeris"), null=True, blank=True)
 
     class Meta:

@@ -35,7 +35,9 @@ from vitrina.structure.models import (
     PropertyList,
     Param,
     ParamItem,
-    Base, Version, VersionStatus,
+    Base,
+    Version,
+    VersionStatus,
 )
 from vitrina.tasks.models import Task
 from vitrina.users.models import User

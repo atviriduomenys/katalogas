@@ -4442,7 +4442,7 @@ msgstr "Version number"
 msgid "Pagrindinis versijos numeris"
 msgstr "Major version number"
 
-msgid "Papilodmas versijos numeris"
+msgid "Papildomas versijos numeris"
 msgstr "Minor version number"
 
 msgid "Pataisos versijos numeris"

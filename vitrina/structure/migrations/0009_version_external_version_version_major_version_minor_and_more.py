@@ -28,17 +28,17 @@ class Migration(migrations.Migration):
             name='external_version',
             field=models.CharField(blank=True, max_length=50, null=True, verbose_name='Versijos numeris'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='version',
             name='major',
             field=models.IntegerField(blank=True, null=True, verbose_name='Pagrindinis versijos numeris'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='version',
             name='minor',
             field=models.IntegerField(blank=True, null=True, verbose_name='Papildomas versijos numeris'),
         ),
-        migrations.AddField(
+        migrations.AlterField(
             model_name='version',
             name='patch',
             field=models.IntegerField(blank=True, null=True, verbose_name='Pataisos versijos numeris'),

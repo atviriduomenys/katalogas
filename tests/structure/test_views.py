@@ -25,7 +25,7 @@ from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
     PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory, VersionFactory
-from vitrina.structure.models import Metadata, Enum, EnumItem, Param
+from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionType
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
@@ -4082,3 +4082,172 @@ def test_props_metadata_rendering(app: DjangoTestApp) -> None:
     assert response.status_code == 200
     assert 'href="https://example.com/prop_1"' in response.content.decode()
     assert 'href="https://example.com/prop_2"' in response.content.decode()
+
+@pytest.mark.django_db
+def test_only_major_version_allowed_when_new_metadata(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    assert form['version_type'].options[0][0] == "MAJOR"
+
+@pytest.mark.django_db
+def test_minor_version_available_if_major_exists(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form["version_type"] = "MAJOR"
+    form.submit()
+
+    second_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    assert [option[0] for option in second_version_form['version_type'].options] == ["MAJOR", "MINOR"]
+
+@pytest.mark.django_db
+def test_patch_version_available_if_minor_exists(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    major_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    major_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
+
+    minor_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    minor_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form.submit()
+
+    patch_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    assert [option[0] for option in patch_version_form['version_type'].options] == ["MAJOR", "MINOR", "PATCH"]
+
+@pytest.mark.django_db
+def test_form_errors_if_major_not_selected(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    major_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    major_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    minor_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    minor_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+
+    res = minor_version_form.submit(expect_errors=True)
+    assert "Pagrindinė versija turi būti pasirinkta" in res.text
+
+@pytest.mark.django_db
+def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    major_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    major_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
+
+    minor_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    minor_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form.submit()
+
+    patch_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    patch_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    patch_version_form["version_type"] = "PATCH"
+
+    res = patch_version_form.submit(expect_errors=True)
+    assert "Mažoji versija turi būti pasirinkta" in res.text
+
+@pytest.mark.django_db
+def test_multiple_major_versions_increment_external_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    major_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    major_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    major_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_versions = _Version.objects.filter(dataset=dataset, version_type=VersionType.MAJOR).order_by("created")
+    assert major_versions[0].external_version == "1.0.0"
+    assert major_versions[1].external_version == "2.0.0"
+
+@pytest.mark.django_db
+def test_multiple_minor_versions_increment_external_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    major_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    major_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
+
+    minor_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    minor_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form.submit()
+
+    minor_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    minor_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form.submit()
+
+    minor_versions = _Version.objects.filter(dataset=dataset, version_type=VersionType.MINOR).order_by("created")
+
+    assert minor_versions[0].external_version == "1.1.0"
+    assert minor_versions[1].external_version == "1.2.0"
+
+@pytest.mark.django_db
+def test_multiple_patch_versions_increment_external_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+    major_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    major_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
+
+    minor_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    minor_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form.submit()
+
+    minor_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MINOR)
+
+    patch_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    patch_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    patch_version_form["patch_selected"] = minor_version.pk
+    patch_version_form["version_type"] = "PATCH"
+    patch_version_form.submit()
+
+    patch_version_form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    patch_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    patch_version_form["patch_selected"] = minor_version.pk
+    patch_version_form["version_type"] = "PATCH"
+    patch_version_form.submit()
+
+    patch_versions = _Version.objects.filter(dataset=dataset, version_type=VersionType.PATCH).order_by("created")
+
+    assert patch_versions[0].external_version == "1.1.1"
+    assert patch_versions[1].external_version == "1.1.2"

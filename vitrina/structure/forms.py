@@ -6,7 +6,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, HTML
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db.models import Case, When, Q, Count
+from django.db.models import Case, When, Q, Count, Max
 from django.forms import CheckboxSelectMultiple
 from django.forms.models import ModelChoiceIterator
 from django.utils.functional import lazy
@@ -1243,19 +1243,6 @@ class ParamForm(forms.ModelForm):
         return description
 
 
-class VersionSelectWidget(Select):
-    def create_option(self, name, value, label, selected, index, subindex=None, attrs=None):
-        option = super().create_option(name, value, label, selected, index, subindex, attrs)
-        if value:
-            try:
-                version_id = value.value if hasattr(value, "value") else value
-                version = Version.objects.get(pk=version_id)
-                option["attrs"]["data-version-type"] = version.version_type
-            except (Version.DoesNotExist, AttributeError, ValueError):
-                pass
-        return option
-
-
 class VersionForm(forms.ModelForm):
     released = forms.DateField(label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"}))
     metadata = forms.MultipleChoiceField(label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple)
@@ -1266,13 +1253,11 @@ class VersionForm(forms.ModelForm):
         label=_("Priklauso pagrindinei versijai"),
         required=False,
         queryset=Version.objects.none(),
-        widget=VersionSelectWidget(attrs={"class": "select"}),
     )
     patch_selected = forms.ModelChoiceField(
         label=_("Priklauso mažajai versijai"),
         required=False,
         queryset=Version.objects.none(),
-        widget=VersionSelectWidget(attrs={"class": "select"}),
     )
 
     class Meta:
@@ -1289,10 +1274,10 @@ class VersionForm(forms.ModelForm):
 
         self.fields["minor_selected"].queryset = Version.objects.filter(
             dataset=self.dataset, version_type=VersionType.MAJOR
-        ).order_by("-version")
+        ).order_by("major")
         self.fields["patch_selected"].queryset = Version.objects.filter(
             dataset=self.dataset, version_type=VersionType.MINOR
-        ).order_by("-version")
+        ).order_by("minor")
         self.fields["minor_selected"].label_from_instance = lambda obj: obj.external_version
         self.fields["patch_selected"].label_from_instance = lambda obj: obj.external_version
 
@@ -1321,19 +1306,19 @@ class VersionForm(forms.ModelForm):
         )
         self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version()
 
-    def clean_version_type(self):
+    def clean(self):
         cleaned_data = super().clean()
         version_type = cleaned_data.get("version_type")
         minor_selected = cleaned_data.get("minor_selected")
         patch_selected = cleaned_data.get("patch_selected")
 
         if version_type == VersionType.MINOR and not minor_selected:
-            self.add_error("base_version", _("Pagrindinė versija turi būti pasirinkta"))
+            self.add_error("minor_selected", _("Pagrindinė versija turi būti pasirinkta"))
 
         if version_type == VersionType.PATCH and not patch_selected:
-            self.add_error("base_version", _("Mažoji versija turi būti pasirinkta"))
+            self.add_error("patch_selected", _("Mažoji versija turi būti pasirinkta"))
 
-        return version_type
+        return cleaned_data
 
     def clean_released(self):
         released = self.cleaned_data.get("released")

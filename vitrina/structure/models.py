@@ -514,9 +514,9 @@ class Version(models.Model):
     status = models.CharField(_("Versijos būsena"), max_length=20, choices=VersionStatus.choices, null=True)
     version_type = models.CharField(_("Versijos rūšis"), max_length=20, choices=VersionType.choices, null=True, blank=True)
     external_version = models.CharField(_("Versijos numeris"), max_length=50, null=True, blank=True)
-    major = models.IntegerField(_("Pagrindinis versijos numeris"), max_length=50, null=True, blank=True)
-    minor = models.IntegerField(_("Mažasis versijos numeris"), max_length=50, null=True, blank=True)
-    patch = models.IntegerField(_("Pataisos versijos numeris"), max_length=50, null=True, blank=True)
+    major = models.IntegerField(_("Pagrindinis versijos numeris"), null=True, blank=True)
+    minor = models.IntegerField(_("Mažasis versijos numeris"), null=True, blank=True)
+    patch = models.IntegerField(_("Pataisos versijos numeris"), null=True, blank=True)
 
     class Meta:
         db_table = "version"

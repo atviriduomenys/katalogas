@@ -192,12 +192,12 @@
                         {% endif %}
                     </div>
                     <div class="column is-1">
-                        {% if metadata.metadata_version and metadata.draft %}
+                        {% if metadata.metadata_version.status == "DRAFT" %}
+                            <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+                        {% elif metadata.metadata_version and metadata.draft and metadata.metadata_version.status != "DRAFT"%}
                             <span class="tag is-danger is-light">{{ metadata.metadata_version}} ({% translate "rengiama" %})</span>
                         {% elif metadata.metadata_version and not metadata.draft %}
                             <span class="tag is-success is-light">{{ metadata.metadata_version }}</span>
-                        {% elif not metadata.metadata_version and metadata.draft %}
-                            <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
                         {% endif %}
                     </div>
                 </div>

@@ -1333,7 +1333,7 @@ class VersionForm(forms.ModelForm):
         if version_type == VersionType.PATCH and not patch_selected:
             self.add_error("base_version", _("Mažoji versija turi būti pasirinkta"))
 
-        return cleaned_data
+        return version_type
 
     def clean_released(self):
         released = self.cleaned_data.get("released")

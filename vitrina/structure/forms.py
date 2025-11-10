@@ -1246,7 +1246,7 @@ class VersionForm(forms.ModelForm):
     released = forms.DateField(label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"}))
     metadata = forms.MultipleChoiceField(label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple)
     version_type = forms.ChoiceField(
-        label=_("Tipas"), required=True, choices=VersionType.choices, widget=forms.RadioSelect()
+        label=_("Versijos tipas"), required=True, choices=VersionType.choices, widget=forms.RadioSelect()
     )
     minor_selected = forms.ModelChoiceField(
         label=_("Priklauso pagrindinei versijai"),
@@ -1254,7 +1254,7 @@ class VersionForm(forms.ModelForm):
         queryset=Version.objects.none(),
     )
     patch_selected = forms.ModelChoiceField(
-        label=_("Priklauso mažajai versijai"),
+        label=_("Priklauso papildomai versijai"),
         required=False,
         queryset=Version.objects.none(),
     )
@@ -1315,7 +1315,7 @@ class VersionForm(forms.ModelForm):
             self.add_error("minor_selected", _("Pagrindinė versija turi būti pasirinkta"))
 
         if version_type == VersionType.PATCH and not patch_selected:
-            self.add_error("patch_selected", _("Mažoji versija turi būti pasirinkta"))
+            self.add_error("patch_selected", _("Papildoma versija turi būti pasirinkta"))
 
         return cleaned_data
 

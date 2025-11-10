@@ -4262,17 +4262,19 @@ msgstr "Release date"
 msgid "Įtraukiama į versiją"
 msgstr "Add to version"
 
+msgid "Versijos tipas"
+msgstr "Version type"
 
 msgid "Priklauso pagrindinei versijai"
 msgstr "Based on a major version"
 
-msgid "Priklauso mažajai versijai"
+msgid "Priklauso papildomai versijai"
 msgstr "Based on a minor version"
 
 msgid "Pagrindinė versija turi būti pasirinkta"
 msgstr "Major version must be selected"
 
-msgid "Mažoji versija turi būti pasirinkta"
+msgid "Papildoma versija turi būti pasirinkta"
 msgstr "Minor version must be selected"
 
 msgid "Versija gali įsigalioti ne anksčiau kaip po 2 savaičių."
@@ -4440,7 +4442,7 @@ msgstr "Version number"
 msgid "Pagrindinis versijos numeris"
 msgstr "Major version number"
 
-msgid "Mažasis versijos numeris"
+msgid "Papilodmas versijos numeris"
 msgstr "Minor version number"
 
 msgid "Pataisos versijos numeris"
@@ -4475,6 +4477,9 @@ msgstr "Publish version"
 
 msgid "Keitimų žurnalas"
 msgstr "Changes"
+
+msgid "Publikacijos tipas"
+msgstr "Publication type"
 
 msgid "Įsigaliojimo data"
 msgstr "Released date"

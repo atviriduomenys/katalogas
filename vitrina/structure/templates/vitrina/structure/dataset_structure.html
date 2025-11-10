@@ -195,9 +195,9 @@
                         {% if metadata.metadata_version.status == "DRAFT" %}
                             <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
                         {% elif metadata.metadata_version and metadata.draft and metadata.metadata_version.status != "DRAFT"%}
-                            <span class="tag is-danger is-light">{{ metadata.metadata_version}} ({% translate "rengiama" %})</span>
-                        {% elif metadata.metadata_version and not metadata.draft %}
-                            <span class="tag is-success is-light">{{ metadata.metadata_version }}</span>
+                            <span class="tag is-danger is-light">{{ metadata.metadata_version.external_version}} ({% translate "rengiama" %})</span>
+                        {% elif metadata.metadata_version.external_version and not metadata.draft %}
+                            <span class="tag is-success is-light">{{ metadata.metadata_version.external_version }}</span>
                         {% endif %}
                     </div>
                 </div>

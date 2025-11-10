@@ -4165,7 +4165,7 @@ def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
     patch_version_form["version_type"] = "PATCH"
 
     res = patch_version_form.submit(expect_errors=True)
-    assert "Mažoji versija turi būti pasirinkta" in res.text
+    assert "Papildoma versija turi būti pasirinkta" in res.text
 
 @pytest.mark.django_db
 def test_multiple_major_versions_increment_external_version(app: DjangoTestApp):

@@ -36,7 +36,7 @@ from vitrina.datasets.managers import (
 )
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
-from vitrina.settings import TRANSLATION_CLIENT_ID
+from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode
 from vitrina.users.models import User
 
@@ -1200,7 +1200,7 @@ class Dataset(Resource):
 
             if lt_title and not self.en_title():
                 response_title = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    TRANSLATION_URL,
                     json={
                         "appId": "",
                         "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
@@ -1217,7 +1217,7 @@ class Dataset(Resource):
 
             if lt_description and not self.en_description():
                 response_desc = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    TRANSLATION_URL,
                     json={
                         "appId": "",
                         "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",

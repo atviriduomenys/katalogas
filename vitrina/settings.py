@@ -463,6 +463,8 @@ CORS_ALLOWED_ORIGINS = ["https://test.epaslaugos.lt"]
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False
 
 TRANSLATION_CLIENT_ID = env("TRANSLATION_CLIENT_ID", default="")
+TRANSLATION_URL = "https://vertimas.vu.lt/ws/service.svc/json/Translate"
+
 SPINTA_SERVER_URL = env("SPINTA_SERVER_URL", default="https://get-test.data.gov.lt")
 SPINTA_SERVER_CLIENT_ID = env("SPINTA_SERVER_CLIENT_ID", default="")
 SPINTA_SERVER_CLIENT_SECRET = env("SPINTA_SERVER_CLIENT_SECRET", default="")

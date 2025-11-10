@@ -1,6 +1,8 @@
 import os
 import django
 
+from vitrina.settings import TRANSLATION_URL
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
 django.setup()
 
@@ -89,7 +91,7 @@ def _get_condition_descriptions():
             code_space = identifier.get("codeSpace") if identifier is not None else ""
             if description is not None and identifier is not None:
                 lt_description = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    TRANSLATION_URL,
                     json={
                         "appId": "",
                         "systemID": "smt-d01dca4d-e827-46e6-acaa-e5cb1201bc16",

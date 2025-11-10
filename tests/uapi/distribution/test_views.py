@@ -35,7 +35,7 @@ def test_create(
     file_content = b"Sample CSV content"
     data = {
         "dataset": str(dataset.id),
-        "title": "Title of the Distribution",
+        "title": "Title",
     }
 
     response = app.post(
@@ -91,7 +91,7 @@ def test_create_specific_scope(
     file_content = b"Sample CSV content"
     data = {
         "dataset": str(dataset.id),
-        "title": "Title of the Distribution",
+        "title": "Title",
     }
 
     response = app.post(

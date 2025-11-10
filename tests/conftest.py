@@ -1,14 +1,18 @@
+from __future__ import annotations
 import builtins
 import csv
 import io
+from unittest.mock import patch
 
 import pytest
+import requests
 from django.apps import apps
 from django.core.management import call_command
 from pytest_django.lazy_django import skip_if_no_django
 from pprintpp import pprint as pp
 
 from vitrina.datasets.models import DCATResourceSubclass
+from vitrina.settings import TRANSLATION_URL
 
 builtins.pp = pp
 
@@ -106,3 +110,32 @@ def dataset(db, organization):
     from vitrina.datasets.models import Dataset
 
     return Dataset.objects.create(title="Test Dataset", organization=organization)
+
+
+@pytest.fixture(autouse=True)
+def mock_translation_service():
+    TRANSLATION_MAPPING = {
+        "Pavadinimas": "Title",
+        "Aprašymas": "Description",
+        "Būsena": "Status",
+        "copyright": "autorių teisės",
+        "license": "licencija",
+        "restricted": "apribota",
+    }
+
+    class MockTranslationResponse:
+        def __init__(self, text: str) -> None:
+            self.status_code = 200
+            self._text = text
+
+        def json(self) -> str:
+            return TRANSLATION_MAPPING.get(self._text, self._text)
+
+    def mock_post(url: str, *args, **kwargs) -> MockTranslationResponse | None:
+        if url == TRANSLATION_URL:
+            text = (kwargs.get("json") or {}).get("text", "")
+            return MockTranslationResponse(text)
+        return requests.sessions.Session().request("POST", url, *args, **kwargs)
+
+    with patch("requests.post", new=mock_post):
+        yield

@@ -1153,8 +1153,8 @@ class Dataset(Resource):
                                 metadata.source = None if metadata.source == "" else metadata.source
                                 if latest_version.status != metadata.status:
                                     changes_to_message = metadata.status.codename
-                                    if metadata.status == Status.objects.filter(StatusCode.DEVELOP).first():
-                                        completed_status = Status.objects.filter(StatusCode.COMPLETED).first()
+                                    if metadata.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
+                                        completed_status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
                                         changes_to_message = (
                                             f"{metadata.status.codename} -> {completed_status.codename}"
                                         )

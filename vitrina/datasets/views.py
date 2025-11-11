@@ -1275,6 +1275,7 @@ class DatasetUpdateView(
         contact = form.cleaned_data.get("contact")
         if contact:
             Contact.objects.create(
+                organization=self.object.organization,
                 content_type=ContentType.objects.get_for_model(contact),
                 object_id=contact.pk,
                 dataset=self.object,

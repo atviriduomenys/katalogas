@@ -340,6 +340,7 @@ class TestDatasetDetailView:
         user = UserFactory(is_staff=True, organization=org)
         ds = DatasetFactory(organization=org, publisher=publisher_org)
         ContactFactory(
+            organization=org,
             dataset=ds,
             object_id=user.pk,
             content_type=ContentType.objects.get_for_model(user),
@@ -368,6 +369,7 @@ class TestDatasetDetailView:
         user = UserFactory(is_staff=True, organization=org)
         ds = DatasetFactory(organization=org, publisher=publisher_org)
         ContactFactory(
+            organization=org,
             dataset=ds,
             object_id=org.pk,
             content_type=ContentType.objects.get_for_model(org),

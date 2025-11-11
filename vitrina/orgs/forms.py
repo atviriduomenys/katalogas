@@ -1106,6 +1106,8 @@ class BaseContactForm(ModelForm):
     def _get_organization_and_user_contacts(
         self, organization_id: int
     ) -> tuple[QuerySet[Organization], QuerySet[User]]:
+        """Retrieve organizations and users related to the given organization ID."""
+        
         publisher_orgs = Representative.objects.filter(
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=organization_id,

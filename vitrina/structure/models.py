@@ -39,7 +39,7 @@ class VersionStatus(models.TextChoices):
 
 class VersionType(models.TextChoices):
     MAJOR = "MAJOR", _("Pagrindinė")
-    MINOR = "MINOR", _("Mažoji")
+    MINOR = "MINOR", _("Papildoma")
     PATCH = "PATCH", _("Pataisa")
 
 

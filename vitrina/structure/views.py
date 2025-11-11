@@ -2806,9 +2806,9 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
             version.major = based_on_version.major
             version.minor = based_on_version.minor
             version.patch = (
-                _Version.objects.filter(dataset=self.dataset, major=based_on_version.major, minor=based_on_version.minor).aggregate(Max("patch"))[
-                    "patch__max"
-                ]
+                _Version.objects.filter(
+                    dataset=self.dataset, major=based_on_version.major, minor=based_on_version.minor
+                ).aggregate(Max("patch"))["patch__max"]
                 or 0
             ) + 1
 

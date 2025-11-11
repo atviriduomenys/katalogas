@@ -1198,39 +1198,39 @@ class Dataset(Resource):
                 self.create_translation(language_code="en")
             self.set_current_language("en")
 
-            if lt_title and not self.en_title():
-                response_title = requests.post(
-                    TRANSLATION_URL,
-                    json={
-                        "appId": "",
-                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                        "text": lt_title,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                )
-                en_title = response_title.json()
-                self.title = en_title
-
-            if lt_description and not self.en_description():
-                response_desc = requests.post(
-                    TRANSLATION_URL,
-                    json={
-                        "appId": "",
-                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                        "text": lt_description,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                )
-                en_description = response_desc.json()
-                self.description = en_description
+            # if lt_title and not self.en_title():
+            #     response_title = requests.post(
+            #         "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+            #         json={
+            #             "appId": "",
+            #             "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+            #             "text": lt_title,
+            #             "options": "",
+            #         },
+            #         headers={
+            #             "client-id": TRANSLATION_CLIENT_ID,
+            #             "Content-Type": "application/json; charset=utf-8",
+            #         },
+            #     )
+            #     en_title = response_title.json()
+            #     self.title = en_title
+            #
+            # if lt_description and not self.en_description():
+            #     response_desc = requests.post(
+            #         "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+            #         json={
+            #             "appId": "",
+            #             "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+            #             "text": lt_description,
+            #             "options": "",
+            #         },
+            #         headers={
+            #             "client-id": TRANSLATION_CLIENT_ID,
+            #             "Content-Type": "application/json; charset=utf-8",
+            #         },
+            #     )
+            #     en_description = response_desc.json()
+            #     self.description = en_description
 
     def get_main_contact(self):
         contacts = Contact.objects.filter(dataset=self, deleted__isnull=True)

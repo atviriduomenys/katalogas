@@ -8,7 +8,7 @@ import requests
 from tqdm import tqdm
 from typer import run
 from vitrina.datasets.models import Dataset
-from vitrina.settings import TRANSLATION_CLIENT_ID
+from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL
 
 
 def main():
@@ -36,7 +36,7 @@ def main():
 
             if not dataset.en_title():
                 response_title = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    TRANSLATION_URL,
                     json={
                         "appId": "",
                         "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
@@ -53,7 +53,7 @@ def main():
 
             if not dataset.en_description():
                 response_desc = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    TRANSLATION_URL,
                     json={
                         "appId": "",
                         "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",

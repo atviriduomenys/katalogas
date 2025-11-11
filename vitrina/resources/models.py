@@ -13,7 +13,7 @@ from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
 from vitrina.datasets.models import Dataset
-from vitrina.settings import TRANSLATION_CLIENT_ID
+from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL
 
 
 def get_default_status() -> uuid.UUID:
@@ -374,7 +374,7 @@ class DatasetDistribution(TranslatableModel):
 
             if lt_title and not self.en_title():
                 response_title = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    TRANSLATION_URL,
                     json={
                         "appId": "",
                         "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
@@ -391,7 +391,7 @@ class DatasetDistribution(TranslatableModel):
 
             if lt_description and not self.en_description():
                 response_desc = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    TRANSLATION_URL,
                     json={
                         "appId": "",
                         "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
@@ -408,7 +408,7 @@ class DatasetDistribution(TranslatableModel):
 
             if lt_conditions and not self.en_conditions():
                 response_conditions = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                    TRANSLATION_URL,
                     json={
                         "appId": "",
                         "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",

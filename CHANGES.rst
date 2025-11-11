@@ -35,6 +35,7 @@ Bugfixes:
 
 <no ticket>
 - Fix form layout, do not add a field that should be removed from the form itself on specific conditions.
+- Fix an issue where if `vertimas.vu.lt` is down, tests are failing on the pipelines and during local development, by introducing mocks for direct external API calls.
 
 
 v 1.5 (2025-10-27)

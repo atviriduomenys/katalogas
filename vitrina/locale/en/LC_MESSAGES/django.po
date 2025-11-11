@@ -4290,7 +4290,7 @@ msgid "Juodraštis"
 msgstr "Draft"
 
 msgid "Išankstinis leidimas"
-msgstr "Agreement scope"
+msgstr "Pre-release"
 
 msgid "Stabili"
 msgstr "Stable"
@@ -5780,6 +5780,3 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
-
-#~ msgid "Mažoji"
-#~ msgstr "Minor"

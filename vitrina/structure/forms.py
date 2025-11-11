@@ -1280,7 +1280,7 @@ class VersionForm(forms.ModelForm):
         self.fields["minor_selected"].label_from_instance = lambda obj: obj.external_version
         self.fields["patch_selected"].label_from_instance = lambda obj: obj.external_version
 
-        all_choices = list(VersionType.choices)
+        all_choices = set(VersionType.choices)
         allowed_types = [VersionType.MAJOR]
 
         if self.fields["minor_selected"].queryset.exists():
@@ -1305,7 +1305,7 @@ class VersionForm(forms.ModelForm):
         )
         self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version()
 
-    def clean(self):
+    def clean(self) -> dict:
         cleaned_data = super().clean()
         version_type = cleaned_data.get("version_type")
         minor_selected = cleaned_data.get("minor_selected")

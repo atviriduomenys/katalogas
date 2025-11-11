@@ -13,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Status
 from vitrina.models import UUIDBaseModel
+from vitrina.structure import VersionStatus, VersionType
 from vitrina.structure.helpers import get_type_repr
 from enum import Enum
 
@@ -23,24 +24,6 @@ class StatusCode(str, Enum):
     DISCONT = "discont"
     DEPRECATED = "deprecated"
     WITHDRAWN = "withdrawn"
-
-
-class VersionStatus(models.TextChoices):
-    DRAFT = "DRAFT", _("Juodraštis")
-    PRE_RELEASE = "PRE_RELEASE", _("Išankstinis leidimas")
-    STABLE = "STABLE", _("Stabili")
-    DEPRECATED = "DEPRECATED", _("Pasenusi")
-    WITHDRAWN = "WITHDRAWN", _("Atsisakyta")
-    DELETED = "DELETED", _("Ištrinta")
-    DESTROYED = "DESTROYED", _("Sunaikinta")
-    TESTING = "TESTING", _("Tikrinama")
-    DEPLOYING = "DEPLOYING", _("Diegiama")
-
-
-class VersionType(models.TextChoices):
-    MAJOR = "MAJOR", _("Pagrindinė")
-    MINOR = "MINOR", _("Papildoma")
-    PATCH = "PATCH", _("Pataisa")
 
 
 class Prefix(models.Model):

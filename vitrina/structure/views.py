@@ -2786,7 +2786,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
         version.dataset = self.dataset
         version.status = VersionStatus.PRE_RELEASE
 
-        based_on_version = form.cleaned_data.get("minor_selected") or form.cleaned_data.get("patch_selected") or None
+        based_on_version = form.cleaned_data.get("minor_selected") or form.cleaned_data.get("patch_selected")
         if version.version_type == "MAJOR":
             version.major = (
                 _Version.objects.filter(dataset=self.dataset).aggregate(Max("major"))["major__max"] or 0

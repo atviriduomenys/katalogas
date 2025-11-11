@@ -426,7 +426,13 @@ class TestAgreementGeneratePdf:
         representative = RepresentativeFactory(user=user, content_object=organization, can_make_agreements=True)
         app.set_user(user)
 
-        project = ProjectFactory(organization=organization, datasets=[dataset])
+        other_assigner_legislations = "Bought data"
+        other_assignee_legislations = "Sold data"
+        project = ProjectFactory(
+            organization=organization,
+            datasets=[dataset],
+            other_assignee_legislations=other_assignee_legislations
+        )
 
         agreement = AgreementFactory(
             project=project,
@@ -437,15 +443,12 @@ class TestAgreementGeneratePdf:
         )
 
         assert agreement.files.count() == 0
-        other_assigner_legislations = "Bought data"
-        other_assignee_legislations = "Sold data"
         payment_terms = "Cash only"
         response = app.post(
             reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
             {
                 "template": template.pk,
                 "other_assigner_legislations": other_assigner_legislations,
-                "other_assignee_legislations": other_assignee_legislations,
                 "payment_terms": payment_terms,
             },
         )
@@ -532,7 +535,7 @@ class TestAgreementGeneratePdf:
         # Pull specific expected values directly from the odrl JSON
         expected_values = [
             # Dates
-            odrl["issued"],  # Check only date portion to avoid microsecond mismatches
+            odrl["issued"],  # Check only a date portion to avoid microsecond mismatches
             # Assigner
             odrl["assigner"][0]["ex:companyName"],
             odrl["assigner"][0]["ex:companyCode"],
@@ -562,9 +565,7 @@ class TestAgreementGeneratePdf:
         for i, value in enumerate(expected_values):
             value = str(value).strip()
             if value:
-                assert value in pdf_text, (
-                    f"Expected '{value}' (index={i}) not found in PDF"
-                )
+                assert value in pdf_text, f"Expected '{value}' (index={i}) not found in PDF"
 
 
 class TestAgreementUploadSignedFile:

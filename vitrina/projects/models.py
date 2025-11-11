@@ -53,6 +53,7 @@ class Project(models.Model):
     image = FilerImageField(null=True, blank=True, related_name="image_project", on_delete=models.SET_NULL)
     organization = models.ForeignKey(Organization, models.PROTECT, blank=True, null=True)
     is_public = models.BooleanField(default=False)
+    other_assignee_legislations = models.TextField(blank=True, null=True)
 
     comments = GenericRelation("vitrina_comments.Comment")
     datasets = models.ManyToManyField("vitrina_datasets.Dataset")

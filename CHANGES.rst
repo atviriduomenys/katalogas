@@ -31,10 +31,15 @@ https://github.com/atviriduomenys/katalogas/issues/2028
 - Added a fake VIISP login feature to simulate authentication via VIISP.
 - The login functionality is available only in test mode and will be hidden in production.
 
+https://github.com/atviriduomenys/katalogas/issues/2067
+- Part 1: Move field `other_assignee_legislations` from `Agreement` to `Project`.
+
 Bugfixes:
 
 <no ticket>
 - Fix form layout, do not add a field that should be removed from the form itself on specific conditions.
+
+https://github.com/atviriduomenys/katalogas/issues/2094
 - Fix an issue where if `vertimas.vu.lt` is down, tests are failing on the pipelines and during local development, by introducing mocks for direct external API calls.
 
 

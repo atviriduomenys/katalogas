@@ -2,7 +2,7 @@
 {% load static %}
 {% load crispy_forms_tags %}
 
-<h2 id="comments" class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Komentarai" %}</h2>
+<h2 id="comments" class="custom-title is-size-4-mobile">{% translate "Komentarai" %}</h2>
 {% for comment, reply_form, is_child in comments %}
     {% include "component/comment.html" with comment=comment reply_form=reply_form is_child=is_child %}
 {% endfor %}

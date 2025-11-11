@@ -109,11 +109,6 @@ class AgreementGeneratePdfForm(forms.Form):
         required=False,
         widget=forms.Textarea(),
     )
-    other_assignee_legislations = forms.CharField(
-        label=_("Papildomi gavėjo teisės aktai"),
-        required=False,
-        widget=forms.Textarea(),
-    )
     payment_terms = forms.CharField(label=_("Mokėjimo sąlygos"), required=False, widget=forms.Textarea())
 
     def __init__(self, *args, **kwargs):

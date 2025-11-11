@@ -28,6 +28,12 @@ class ProjectForm(ModelForm):
             "Nurodytos organizacijos vardu, bus galimybė sudaryti duomenų gavimo sutartis, sutartyje nurodant panaudojimo atvejį, kaip duomenų gavimo tikslą.(Atitinka odrl:assignee). Pasirinkus fizinį asmenį, sudaryti sutarčių galimybės nėra. Fizinis asmuo nurodomas tik kaip panaudojimo atvejo autorius."
         ),
     )
+    other_assignee_legislations = CharField(
+        label=_("Duomenų gavėjo teisinis pagrindas"),
+        widget=Textarea,
+        required=False,
+        help_text=_("Duomenų gavėjo pateikiamos nuostatos, kuriomis teisiškai remiamasi norint gauti duomenis."),
+    )
     url = CharField(
         label=_("Nuoroda į panaudojimo atvejį"),
         required=False,
@@ -49,7 +55,7 @@ class ProjectForm(ModelForm):
 
     class Meta:
         model = Project
-        fields = ["title", "description", "organization", "url", "image", "is_public"]
+        fields = ["title", "description", "organization", "other_assignee_legislations", "url", "image", "is_public"]
 
     def __init__(self, *args, **kwargs):
         self.user: User = kwargs.pop("user")
@@ -78,11 +84,12 @@ class ProjectForm(ModelForm):
             Field("is_public"),
             Field("title", placeholder=_("Pavadinimas")),
             Field("description", placeholder=_("Aprašymas")),
+            Field("other_assignee_legislations", placeholder=_("Teisinis pagrindas")),
             Field("url", placeholder=_("Nuoroda į panaudojimo atvejį")),
             Field("image"),
         ]
         if "organization" in self.fields:
-            layout_fields.insert(3, Field("organization"))
+            layout_fields.insert(4, Field("organization"))
 
         self.helper.layout = Layout(
             *layout_fields,

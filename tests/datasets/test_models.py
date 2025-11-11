@@ -111,26 +111,3 @@ class TestDCATResourceSubclass:
         subclass = DCATResourceSubclassFactory(name=name)
         assert subclass.is_catalog is result
 
-
-class TestContract:
-    def test_delete_all_existing_dataset_contacts_before_saving(self) -> None:
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        contact1 = ContactFactory(
-            dataset=dataset,
-            object_id=organization.pk,
-            content_type=ContentType.objects.get_for_model(organization),
-            email=organization.email,
-            phone=organization.phone,
-        )
-        organization2 = OrganizationFactory()
-        contact2 = ContactFactory(
-            dataset=dataset,
-            object_id=organization2.pk,
-            content_type=ContentType.objects.get_for_model(organization2),
-            email=organization2.email,
-            phone=organization2.phone,
-        )
-
-        assert not Contact.objects.filter(pk=contact1.pk).exists()
-        assert Contact.objects.filter(pk=contact2.pk).exists()

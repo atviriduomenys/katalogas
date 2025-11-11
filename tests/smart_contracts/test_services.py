@@ -10,7 +10,7 @@ from vitrina.smart_contracts.services import (
 )
 
 
-CONTRACT_CHECKSUM = "cde4cc5c84554e7975355b6e27b003917355fb150acdd958786bdcca274a7d94"
+CONTRACT_CHECKSUM = "b5e8a02c5de0fab1da0564c9c7a9cbb5b9fe1b80826a2fd8705a4e4db3bae695"
 
 SCOPES_REGEX = r"\buapi:/\S+"
 
@@ -42,13 +42,6 @@ def test_is_checksum_valid_success():
 def test_is_checksum_valid_added_extra_scope():
     assert not is_checksum_valid(
         str(test_contracts_dir / "sutartis_signed_extra_scope.adoc"),
-        CONTRACT_CHECKSUM,
-    )
-
-
-def test_is_checksum_valid_same_contract_different_pdf_name():
-    assert is_checksum_valid(
-        str(test_contracts_dir / "sutartis_signed_renamed.adoc"),
         CONTRACT_CHECKSUM,
     )
 

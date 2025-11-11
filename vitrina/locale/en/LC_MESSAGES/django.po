@@ -4313,7 +4313,7 @@ msgstr "Deploying"
 msgid "Pagrindinė"
 msgstr "Major"
 
-msgid "Mažoji"
+msgid "Papildoma"
 msgstr "Minor"
 
 msgid "Pataisa"
@@ -5780,3 +5780,6 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+#~ msgid "Mažoji"
+#~ msgstr "Minor"

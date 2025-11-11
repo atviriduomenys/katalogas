@@ -13,7 +13,6 @@ from weasyprint import HTML
 
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.utils import (
-    generate_pdf_checksum,
     get_pdf_path_in_adoc,
     generate_checksum,
 )
@@ -53,20 +52,17 @@ def has_valid_signature(adoc_path: str) -> bool:
 
 def is_checksum_valid(adoc_path: str, expected_checksum: str) -> bool:
     try:
-        with zipfile.ZipFile(adoc_path, "r") as adoc_archive:
+        with zipfile.ZipFile(adoc_path) as adoc_archive:
             pdf_path = get_pdf_path_in_adoc(adoc_archive)
 
-            with adoc_archive.open(pdf_path) as pdf_file, open(TEMP_PDF_PATH, "wb") as out_file:
-                out_file.write(pdf_file.read())
+            with adoc_archive.open(pdf_path) as pdf_file:
+                pdf_bytes = pdf_file.read()
 
-        actual_checksum = generate_pdf_checksum(TEMP_PDF_PATH)
+            actual_checksum = generate_checksum(pdf_bytes)
         return actual_checksum == expected_checksum.lower()
 
     except (zipfile.BadZipFile, ET.ParseError, KeyError) as error:
         raise InvalidAdocError(f"Invalid ADOC file: {error}") from error
-    finally:
-        if os.path.exists(TEMP_PDF_PATH):
-            os.remove(TEMP_PDF_PATH)
 
 
 def generate_contract(template_path: str, odrl_data: dict, output: str | BytesIO) -> None:

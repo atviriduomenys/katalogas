@@ -13,7 +13,6 @@ from vitrina.models import UUIDBaseModel
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.utils import (
-    generate_pdf_checksum,
     format_lithuanian_datetime,
     generate_checksum,
 )
@@ -265,10 +264,10 @@ class AgreementFile(UUIDBaseModel):
         return self.AllowedFileTypes(self.file_name.split(".")[-1])
 
     def save(self, *args, **kwargs):
+        if self.file and not self.checksum:
+            file_bytes = self.file.read()
+            self.file.seek(0)
+
+            self.checksum = generate_checksum(file_bytes)
+
         super().save(*args, **kwargs)
-        if not self.checksum and self.file:
-            if self.file_type == self.AllowedFileTypes.PDF:
-                self.checksum = generate_pdf_checksum(self.file.path)
-            else:
-                self.checksum = generate_checksum(self.file.read())
-            self.save()

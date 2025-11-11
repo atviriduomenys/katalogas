@@ -6,8 +6,6 @@ import zipfile
 from datetime import datetime
 from typing import Optional
 
-from pdfminer.high_level import extract_text
-
 from vitrina.helpers import Monthly
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 
@@ -28,11 +26,6 @@ def generate_checksum(data: str | bytes, algorithm: str = "sha256") -> str:
         data = data.encode("utf-8")
     hash_func.update(data)
     return hash_func.hexdigest()
-
-
-def generate_pdf_checksum(pdf_path: str, algorithm: str = "sha256") -> str:
-    text = extract_text(pdf_path)
-    return generate_checksum(text, algorithm)
 
 
 def get_pdf_path_in_adoc(adoc_archive: zipfile.ZipFile) -> str:

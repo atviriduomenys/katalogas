@@ -4121,7 +4121,9 @@ def test_only_major_version_allowed_when_new_metadata(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+
     form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+
     assert form["version_type"].options[0][0] == "MAJOR"
 
 @pytest.mark.django_db
@@ -4129,12 +4131,14 @@ def test_minor_version_available_if_major_exists(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+
     form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     form["version_type"] = "MAJOR"
     form.submit()
 
     second_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+
     assert [option[0] for option in second_version_form["version_type"].options] == ["MAJOR", "MINOR"]
 
 @pytest.mark.django_db
@@ -4142,6 +4146,7 @@ def test_patch_version_available_if_minor_exists(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+
     major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
@@ -4156,6 +4161,7 @@ def test_patch_version_available_if_minor_exists(app: DjangoTestApp):
     minor_version_form.submit()
 
     patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+
     assert [option[0] for option in patch_version_form["version_type"].options] == ["MAJOR", "MINOR", "PATCH"]
 
 @pytest.mark.django_db
@@ -4163,6 +4169,7 @@ def test_form_errors_if_major_not_selected(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+
     major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
@@ -4173,6 +4180,7 @@ def test_form_errors_if_major_not_selected(app: DjangoTestApp):
     minor_version_form["version_type"] = "MINOR"
 
     res = minor_version_form.submit(expect_errors=True)
+
     assert "Pagrindinė versija turi būti pasirinkta" in res.text
 
 @pytest.mark.django_db
@@ -4180,6 +4188,7 @@ def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+
     major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
@@ -4198,6 +4207,7 @@ def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
     patch_version_form["version_type"] = "PATCH"
 
     res = patch_version_form.submit(expect_errors=True)
+
     assert "Papildoma versija turi būti pasirinkta" in res.text
 
 @pytest.mark.django_db
@@ -4205,6 +4215,7 @@ def test_multiple_major_versions_increment_external_version(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+
     major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
@@ -4216,6 +4227,7 @@ def test_multiple_major_versions_increment_external_version(app: DjangoTestApp):
     major_version_form.submit()
 
     major_versions = _Version.objects.filter(dataset=dataset, version_type=VersionType.MAJOR).order_by("created")
+
     assert major_versions[0].external_version == "1.0.0"
     assert major_versions[1].external_version == "2.0.0"
 
@@ -4224,6 +4236,7 @@ def test_multiple_minor_versions_increment_external_version(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+
     major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
@@ -4253,6 +4266,7 @@ def test_multiple_patch_versions_increment_external_version(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+
     major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"

@@ -51,7 +51,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='version',
             name='version_type',
-            field=models.CharField(blank=True, choices=[('MAJOR', 'Pagrindinė'), ('MINOR', 'Mažoji'), ('PATCH', 'Pataisa')], max_length=20, null=True, verbose_name='Versijos rūšis'),
+            field=models.CharField(blank=True, choices=[('MAJOR', 'Pagrindinė'), ('MINOR', 'Papildoma'), ('PATCH', 'Pataisa')], max_length=20, null=True, verbose_name='Versijos rūšis'),
         ),
         migrations.RunPython(populate_version_field_for_metadata, migrations.RunPython.noop),
     ]

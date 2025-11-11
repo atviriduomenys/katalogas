@@ -1152,7 +1152,7 @@ class BaseContactForm(ModelForm):
             return User.objects.get(pk=contact_id)
         return None
 
-    def clean(self):
+    def clean(self) -> dict:
         cleaned_data = super().clean()
         contact = cleaned_data.get("contact")
         contact_name = cleaned_data.get("contact_name")

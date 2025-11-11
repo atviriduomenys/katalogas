@@ -100,13 +100,6 @@ class Organization(MP_Node):
     publisher = models.BooleanField(default=False, verbose_name=_("Duomenų atvėrimo paslaugų teikėjas"))
     name = models.TextField(max_length=255, unique=True, blank=True, null=True)
     alternative_titles = models.TextField(_("Alternatyvūs pavadinimai"), null=True, blank=True)
-    whitelisted_code_names = ArrayField(
-        models.CharField(max_length=255),
-        blank=True,
-        default=list,
-        verbose_name=_("Leistini kodiniai pavadinimai"),
-        help_text=_("Sąrašas kodinių pavadinimų, kuriuos galima naudoti kuriant duomenų išteklius."),
-    )
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
@@ -301,3 +294,26 @@ class Template(models.Model):
 
     def __str__(self):
         return self.document.name
+
+
+class WhitelistedCodeName(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="whitelisted_code_names",
+        verbose_name=_("Organizacija"),
+    )
+    code_name = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name=_("Kodinis pavadinimas"),
+        help_text=_("Unikalus kodinis pavadinimas, kurį galima naudoti kuriant duomenų išteklius."),
+    )
+
+    class Meta:
+        verbose_name = _("Leistinas kodinis pavadinimas")
+        verbose_name_plural = _("Leistini kodiniai pavadinimai")
+        ordering = ["code_name"]
+
+    def __str__(self):
+        return self.code_name

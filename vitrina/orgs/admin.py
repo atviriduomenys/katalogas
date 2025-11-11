@@ -20,7 +20,7 @@ from vitrina.orgs.forms import (
     AdminPublisherOrganizationForm,
     AdminPublisherAssignedOrganizationForm,
 )
-from vitrina.orgs.models import Representative, Template
+from vitrina.orgs.models import Representative, Template, WhitelistedCodeName
 
 from vitrina.orgs.models import (
     Organization,
@@ -50,6 +50,14 @@ class RootOrganizationFilter(admin.SimpleListFilter):
             return queryset.filter(path__startswith=org.path)
 
 
+class WhitelistedCodeNameInline(admin.TabularInline):
+    model = WhitelistedCodeName
+    extra = 1
+    fields = ["code_name"]
+    verbose_name = "Leistinas kodinis pavadinimas"
+    verbose_name_plural = "Leistini kodiniai pavadinimai"
+
+
 class OrganizationAdmin(VersionAdmin, TreeAdmin):
     form = movenodeform_factory(Organization)
     list_display = [
@@ -57,6 +65,7 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
         "numchild",
     ]
     list_filter = (RootOrganizationFilter,)
+    inlines = [WhitelistedCodeNameInline]
     search_fields = ("title",)
 
     def has_view_permission(self, request, obj=None):

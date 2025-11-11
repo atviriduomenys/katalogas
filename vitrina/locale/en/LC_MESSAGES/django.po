@@ -4271,6 +4271,9 @@ msgstr "Based on a major version"
 msgid "Priklauso papildomai versijai"
 msgstr "Based on a minor version"
 
+msgid "Publikuoti"
+msgstr "Publish"
+
 msgid "Pagrindinė versija turi būti pasirinkta"
 msgstr "Major version must be selected"
 

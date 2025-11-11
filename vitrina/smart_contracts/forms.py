@@ -7,9 +7,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db.models import Q, QuerySet
-from django.db.models.fields.files import FieldFile
+from django.db.models.fields.files import UploadedFile
 from django.forms import CheckboxSelectMultiple
 from django.utils.translation import gettext_lazy as _
+import zipfile
 
 from vitrina.datasets.models import Contact
 from vitrina.orgs.models import Organization
@@ -18,8 +19,15 @@ from vitrina.smart_contracts.models import (
     AgreementFile,
     SmartContractTemplate,
     Agreement,
+    AgreementStatuses,
 )
-from vitrina.smart_contracts.services import has_valid_signature
+from vitrina.smart_contracts.services import (
+    is_valid_adoc,
+    get_signers_from_adoc,
+    get_pdf_path_in_adoc,
+    generate_checksum,
+    num_of_adoc_root_files,
+)
 from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 
@@ -76,6 +84,8 @@ class AgreementUploadForm(forms.ModelForm):
         fields = ("file",)
 
     def __init__(self, *args, **kwargs):
+        self.agreement_pdf: AgreementFile = kwargs.pop("agreement_pdf")
+        self.agreement: Agreement = kwargs.pop("agreement")
         super().__init__(*args, **kwargs)
         self.fields["file"].validators = [
             FileExtensionValidator(
@@ -87,18 +97,42 @@ class AgreementUploadForm(forms.ModelForm):
         self.helper.form_id = "agreement-upload-form"
         self.helper.add_input(Submit("submit", _("Įkelti dokumentą"), css_class="button is-primary"))
 
-    def clean_file(self) -> FieldFile:
+    def clean_file(self) -> UploadedFile:
         file = self.cleaned_data["file"]
         try:
-            # TODO: check for multiple signatures if AgreementStatuses.INITIATED
-            # TODO: check agreement checksum
-            # TODO: https://github.com/atviriduomenys/katalogas/issues/1706
-            signature_valid = has_valid_signature(file)
-        except InvalidAdocError as error:
-            raise ValidationError(str(error))
+            with zipfile.ZipFile(file) as zip_file:
+                if not is_valid_adoc(zip_file):
+                    raise InvalidAdocError("Neteisingas ADOC formatas.")
+                if num_of_adoc_root_files(zip_file) > 1:
+                    raise InvalidAdocError(_("Rastas daugiau nei vienas pasirašytas dokumentas"))
+                pdf_path = get_pdf_path_in_adoc(zip_file)
+                if not pdf_path:
+                    raise InvalidAdocError(_("Nerastas PDF dokumentas"))
+                with zip_file.open(pdf_path) as pdf_file:
+                    pdf_bytes = pdf_file.read()
+                if generate_checksum(pdf_bytes) != self.agreement_pdf.checksum:
+                    raise InvalidAdocError(_("PDF dokumentas nesutampa su sutartyje esančiu PDF dokumentu."))
+                signers = get_signers_from_adoc(zip_file)
+        except (InvalidAdocError, zipfile.BadZipFile) as error:
+            raise ValidationError(f"ADOC klaida: {str(error)}")
 
-        if not signature_valid:
-            raise ValidationError(_("Įkelta sutartis nepasirašyta."))
+        num_of_signers = len(signers)
+
+        if num_of_signers == 0:
+            raise ValidationError(_("Sutartis nepasirašyta"))
+
+        if self.agreement.status == AgreementStatuses.FORMED:
+            if num_of_signers > 1:
+                raise ValidationError(_("Sutartis pasirašyta daugiau nei 1 parašu."))
+        elif self.agreement.status == AgreementStatuses.INITIATED:
+            if num_of_signers == 1:
+                raise ValidationError(_("Sutartis nepasirašyta teikėjo parašu."))
+            if num_of_signers > 2:
+                raise ValidationError(_("Rasti daugiau nei 2 parašai."))
+        else:
+            raise ValidationError(
+                _("Negalima pasirašyti sutarties su būsena {status}").format(status=self.agreement.status)
+            )
 
         return file
 

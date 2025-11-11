@@ -2,14 +2,21 @@ import json
 import os
 import re
 import xml.etree.ElementTree as ET
+from lxml import etree
 import zipfile
 from io import BytesIO
 from pathlib import Path
+from cryptography import x509
+from cryptography.x509.oid import NameOID
+from base64 import b64decode
+import binascii
+
 
 import markdown
 from jinja2 import Template
 from pdfminer.high_level import extract_text
 from weasyprint import HTML
+from dataclasses import dataclass
 
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.utils import (
@@ -31,6 +38,92 @@ MANIFEST_NAMESPACE = {"manifest": NAMESPACE_URI}
 
 ATTR_FULL_PATH = f"{{{NAMESPACE_URI}}}full-path"
 MANIFEST_FILE_ENTRY_TAG = "manifest:file-entry"
+
+META_DIR = "META-INF/"
+SIGNATURES_DIR = f"{META_DIR}signatures/"
+SIGNATURE_NAMESPACES = {"ds": "http://www.w3.org/2000/09/xmldsig#", "xades": "http://uri.etsi.org/01903/v1.3.2#"}
+SAFE_PARSER = etree.XMLParser(
+    remove_blank_text=True,
+    resolve_entities=False,
+    no_network=True,
+    huge_tree=False,
+)
+
+
+@dataclass
+class Signer:
+    first_name: str
+    last_name: str
+
+
+def is_valid_adoc(zip_file: zipfile.ZipFile) -> bool:
+    names = zip_file.namelist()
+    has_manifest = MANIFEST_FILE_PATH in names
+    has_payload = any(name != "mimetype" and "/" not in name for name in names)
+    return has_payload and has_manifest
+
+
+def extract_signatures_from_adoc(zip_file: zipfile.ZipFile) -> list[etree._Element]:
+    signature_xml_paths = [
+        file_name
+        for file_name in zip_file.namelist()
+        if file_name.startswith(SIGNATURES_DIR) and file_name.lower().endswith(".xml") and not file_name.endswith("/")
+    ]
+
+    signatures = []
+
+    for file_name in signature_xml_paths:
+        with zip_file.open(file_name) as xml_file:
+            try:
+                xml_tree = etree.parse(xml_file, SAFE_PARSER)
+            except etree.XMLSyntaxError:
+                continue
+
+        if (signature := xml_tree.find(".//ds:Signature", namespaces=SIGNATURE_NAMESPACES)) is not None:
+            signatures.append(signature)
+
+    return signatures
+
+
+def extract_signers_certificate(signature: etree._Element) -> x509.Certificate:
+    certificate = signature.find(".//ds:KeyInfo/ds:X509Data/ds:X509Certificate", namespaces=SIGNATURE_NAMESPACES)
+    if certificate is None or not certificate.text:
+        raise InvalidAdocError("Nepavyko rasti parašo sertifikato.")
+    b64 = "".join(certificate.text.split())
+    try:
+        return x509.load_der_x509_certificate(b64decode(b64))
+    except (binascii.Error, ValueError) as error:
+        raise InvalidAdocError("Netinkamas parašo sertifikatas.") from error
+
+
+def get_signer_from_certificate(certificate: x509.Certificate) -> Signer:
+    subject = certificate.subject
+
+    def get_value(oid: NameOID) -> str | None:
+        attributes = subject.get_attributes_for_oid(oid)
+        return " ".join(attribute.value.strip() for attribute in attributes) if attributes else None
+
+    first_name = get_value(NameOID.GIVEN_NAME)
+    last_name = get_value(NameOID.SURNAME)
+
+    if not all([first_name, last_name]):
+        raise InvalidAdocError("Paraše trūksta pasirašiusio asmens vardo ir/ar pavardės")
+
+    return Signer(first_name=first_name, last_name=last_name)
+
+
+def get_signers_from_adoc(zip_file: zipfile.ZipFile) -> list[Signer]:
+    signatures = extract_signatures_from_adoc(zip_file)
+    signers = []
+    for signature in signatures:
+        certificate = extract_signers_certificate(signature)
+        signers.append(get_signer_from_certificate(certificate))
+
+    return signers
+
+
+def num_of_adoc_root_files(zip_file: zipfile.ZipFile):
+    return sum(1 for file in zip_file.filelist if "/" not in file.filename and file.filename != "mimetype")
 
 
 def has_valid_signature(adoc_path: str) -> bool:

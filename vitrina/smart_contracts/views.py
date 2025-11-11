@@ -430,6 +430,14 @@ class AgreementUploadSignedFile(
             return HttpResponseRedirect(self.get_success_url())
         return super(PermissionRequiredMixin, self).dispatch(request, *args, **kwargs)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["agreement_pdf"] = AgreementFile.objects.get(
+            agreement=self.agreement, file__iendswith=AgreementFile.AllowedFileTypes.PDF
+        )
+        kwargs["agreement"] = self.agreement
+        return kwargs
+
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
         agreement_details_title = _("Sutartis: {organization}").format(organization=self.agreement.assigner)

@@ -1301,7 +1301,7 @@ class VersionForm(forms.ModelForm):
             Field("minor_selected"),
             Field("patch_selected"),
             Field("metadata"),
-            Submit("submit", _("Sukurti"), css_class="button is-primary"),
+            Submit("submit", _("Publikuoti"), css_class="button is-primary"),
         )
         self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version()
 

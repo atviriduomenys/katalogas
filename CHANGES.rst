@@ -4,6 +4,9 @@ Changes
 v 1.7 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/1955
+- Improved contact form by adding new contact, position, removed dataset field.
+
 
 v 1.6 (2025-11-06)
 ==================

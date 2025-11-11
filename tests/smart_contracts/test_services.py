@@ -6,7 +6,7 @@ from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.services import (
     extract_elements_from_adoc,
     has_valid_signature,
-    is_checksum_valid,
+    get_pdf_checksum_from_adoc,
 )
 
 
@@ -33,25 +33,15 @@ def test_has_valid_signature_invalid_adoc():
 
 
 def test_is_checksum_valid_success():
-    assert is_checksum_valid(
-        str(test_contracts_dir / "sutartis_signed.adoc"),
-        CONTRACT_CHECKSUM,
-    )
+    assert get_pdf_checksum_from_adoc(str(test_contracts_dir / "sutartis_signed.adoc")) == CONTRACT_CHECKSUM
 
 
 def test_is_checksum_valid_added_extra_scope():
-    assert not is_checksum_valid(
-        str(test_contracts_dir / "sutartis_signed_extra_scope.adoc"),
-        CONTRACT_CHECKSUM,
-    )
-
+    assert not get_pdf_checksum_from_adoc(str(test_contracts_dir / "sutartis_signed_extra_scope.adoc")) == CONTRACT_CHECKSUM
 
 def test_is_checksum_valid_missing_pdf_in_adoc():
     with pytest.raises(InvalidAdocError, match="Invalid ADOC file: no pdf file found"):
-        is_checksum_valid(
-            str(test_contracts_dir / "sutartis_no_pdf_file.adoc"),
-            CONTRACT_CHECKSUM,
-        )
+        get_pdf_checksum_from_adoc(str(test_contracts_dir / "sutartis_no_pdf_file.adoc"))
 
 
 def test_extract_elements_from_adoc():

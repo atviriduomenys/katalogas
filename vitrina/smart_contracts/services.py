@@ -50,7 +50,7 @@ def has_valid_signature(adoc_path: str) -> bool:
         raise InvalidAdocError(f"Invalid ADOC file: {error}") from error
 
 
-def is_checksum_valid(adoc_path: str, expected_checksum: str) -> bool:
+def get_pdf_checksum_from_adoc(adoc_path: str) -> str:
     try:
         with zipfile.ZipFile(adoc_path) as adoc_archive:
             pdf_path = get_pdf_path_in_adoc(adoc_archive)
@@ -58,8 +58,7 @@ def is_checksum_valid(adoc_path: str, expected_checksum: str) -> bool:
             with adoc_archive.open(pdf_path) as pdf_file:
                 pdf_bytes = pdf_file.read()
 
-            actual_checksum = generate_checksum(pdf_bytes)
-        return actual_checksum == expected_checksum.lower()
+            return generate_checksum(pdf_bytes)
 
     except (zipfile.BadZipFile, ET.ParseError, KeyError) as error:
         raise InvalidAdocError(f"Invalid ADOC file: {error}") from error

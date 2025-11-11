@@ -3,7 +3,7 @@ import sys
 from typer import Argument, run
 
 from vitrina.smart_contracts.exceptions import InvalidAdocError
-from vitrina.smart_contracts.services import has_valid_signature, is_checksum_valid
+from vitrina.smart_contracts.services import has_valid_signature, get_pdf_checksum_from_adoc
 
 
 def main(
@@ -15,8 +15,8 @@ def main(
             print("Signature found")
         else:
             print("Signature not found")
-
-        if is_checksum_valid(adoc_file_path, expected_checksum):
+        
+        if get_pdf_checksum_from_adoc(adoc_file_path) == expected_checksum:
             print("Checksum matches")
         else:
             print("Checksum doesn't match")

@@ -11,6 +11,8 @@ https://github.com/atviriduomenys/katalogas/issues/2067
 - Part 2: Add assigner & assignee representatives that are displayed on the contract file.
 - Part 2.1: Remove organizations as juridical entities from the list of possible entities to represent organizations in agreements.
 
+https://github.com/atviriduomenys/katalogas/issues/1955
+- Improved contact form by adding new contact, position, removed dataset field.
 
 Bugfixes:
 

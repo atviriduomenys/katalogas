@@ -44,6 +44,8 @@
                     <td>
                         {% if c.position %}
                             {{ c.position }}
+                        {% else %}
+                            -       
                         {% endif %}
                     </td>
                     <td><a href="mailto:{{ c.get_email }}">{{ c.get_email }}</a></td>

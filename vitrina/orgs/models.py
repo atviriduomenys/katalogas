@@ -1,6 +1,5 @@
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.postgres.fields import ArrayField
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -133,6 +132,10 @@ class Organization(MP_Node):
                 if tag not in tags:
                     tags.append(tag)
         return tags
+
+    @property
+    def whitelisted_names(self):
+        return [whitelisted_code.code_name for whitelisted_code in self.whitelisted_code_names.all()]
 
 
 class PublisherOrganization(Organization):

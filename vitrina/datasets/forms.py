@@ -346,7 +346,7 @@ class BaseResourceForm(TranslatableModelForm):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
             organization = dataset_instance.organization
             expected_prefix = generate_dataset_prefix(dataset_instance.organization)
-            whitelisted = organization.whitelisted_code_names or []
+            whitelisted = organization.whitelisted_names
             if not name.startswith(expected_prefix) and not (
                 whitelisted and any(name.startswith(prefix) for prefix in whitelisted)
             ):

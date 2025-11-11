@@ -10,7 +10,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 from pdfminer.high_level import extract_text
 
-from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.factories import DatasetFactory, ContactFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
 from vitrina.orgs.models import Organization
@@ -375,11 +375,12 @@ class TestAgreementGeneratePdf:
         status: AgreementStatuses,
     ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
-        user = representative.user
-        app.set_user(user)
+        app.set_user(representative.user)
         project = ProjectFactory(organization=organization, datasets=[dataset])
         agreement = AgreementFactory(
-            project=project, assigner=organization, status=status
+            project=project,
+            assigner=organization,
+            status=status
         )
         template = SmartContractTemplate.objects.create(
             file=ContentFile(
@@ -387,12 +388,28 @@ class TestAgreementGeneratePdf:
                 name="contract_template.md",
             )
         )
+        assigner_representative = ContactFactory(
+            dataset=dataset,
+            object_id=organization.pk,
+            content_type=ContentType.objects.get_for_model(organization),
+            email=organization.email,
+            phone=organization.phone,
+        )
+        assignee_representative = ContactFactory(
+            dataset=DatasetFactory(),
+            object_id=agreement.assignee.pk,
+            content_type=ContentType.objects.get_for_model(agreement.assignee),
+            email=agreement.assignee.email,
+            phone=agreement.assignee.phone,
+        )
 
         response = app.post(
             reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
             {
                 "template": template.pk,
+                "assigner_representative": assigner_representative.pk,
                 "other_assigner_legislations": "",
+                "assignee_representative": assignee_representative.pk,
                 "other_assignee_legislations": "",
                 "payment_terms": "",
             },
@@ -434,6 +451,21 @@ class TestAgreementGeneratePdf:
             other_assignee_legislations=other_assignee_legislations
         )
 
+        assigner_representative = ContactFactory(
+            dataset=dataset,
+            object_id=organization.pk,
+            content_type=ContentType.objects.get_for_model(organization),
+            email=organization.email,
+            phone=organization.phone,
+        )
+        assignee_representative = ContactFactory(
+            dataset=DatasetFactory(),
+            object_id=organization.pk,
+            content_type=ContentType.objects.get_for_model(organization),
+            email=organization.email,
+            phone=organization.phone,
+        )
+
         agreement = AgreementFactory(
             project=project,
             assigner=organization,
@@ -448,7 +480,9 @@ class TestAgreementGeneratePdf:
             reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
             {
                 "template": template.pk,
+                "assigner_representative": assigner_representative.pk,
                 "other_assigner_legislations": other_assigner_legislations,
+                "assignee_representative": assignee_representative.pk,
                 "payment_terms": payment_terms,
             },
         )
@@ -495,7 +529,7 @@ class TestAgreementGeneratePdf:
                     "ex:companyName": "Gonzalez Group",
                     "ex:companyCode": "LWGYU0W8S",
                     "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
-                    "ex:representative": representative.email,
+                    "ex:representative": assigner_representative.email,
                     "ex:email": "lwolf@example.com",
                     "ex:phone": "456.631.4059",
                     "ex:personalCode": " - ",
@@ -507,7 +541,7 @@ class TestAgreementGeneratePdf:
                     "ex:companyName": "Gonzalez Group",
                     "ex:companyCode": "LWGYU0W8S",
                     "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
-                    "ex:representative": " - ",
+                    "ex:representative": assignee_representative.email,
                     "ex:email": "lwolf@example.com",
                     "ex:phone": "456.631.4059",
                     "ex:personalCode": " - ",

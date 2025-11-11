@@ -33,6 +33,7 @@ https://github.com/atviriduomenys/katalogas/issues/2028
 
 https://github.com/atviriduomenys/katalogas/issues/2067
 - Part 1: Move field `other_assignee_legislations` from `Agreement` to `Project`.
+- Part 2: Add assigner & assignee representatives that are displayed on the contract file.
 
 Bugfixes:
 

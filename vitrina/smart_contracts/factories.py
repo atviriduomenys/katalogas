@@ -2,6 +2,7 @@ from factory import SubFactory
 from factory.django import DjangoModelFactory
 
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import Agreement
 from vitrina.users.factories import UserFactory
@@ -16,3 +17,4 @@ class AgreementFactory(DjangoModelFactory):
     assignee = SubFactory(OrganizationFactory)
     assigner = SubFactory(OrganizationFactory)
     created_by = SubFactory(UserFactory)
+    project = SubFactory(ProjectFactory)

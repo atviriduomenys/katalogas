@@ -340,6 +340,8 @@ class AgreementGeneratePdf(
         self.agreement.status = AgreementStatuses.FORMED
         self.agreement.other_assigner_legislations = form.cleaned_data["other_assigner_legislations"]
         self.agreement.payment_terms = form.cleaned_data["payment_terms"]
+        self.agreement.assigner_representative = form.cleaned_data["assigner_representative"]
+        self.agreement.assignee_representative = form.cleaned_data["assignee_representative"]
         self.agreement.save()
         self.agreement.generate_contract_pdf_file(template=contract_template)
         name_without_ext, ext = os.path.splitext(os.path.basename(contract_template.file.name))

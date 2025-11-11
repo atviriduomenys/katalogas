@@ -11,11 +11,9 @@ def populate_version_field_for_metadata(apps, schema_editor):
 
     datasets_used_by_metadata = Metadata.objects.values_list("dataset_id", flat=True).distinct()
     for dataset_id in datasets_used_by_metadata:
-        draft_metadata_rows = Metadata.objects.filter(dataset_id=dataset_id, draft=1)
+        draft_metadata_rows = Metadata.objects.filter(dataset_id=dataset_id, draft=1, metadata_version__isnull=True)
         draft_version = Version.objects.get_or_create(dataset_id=dataset_id, status=VersionStatus.DRAFT)[0]
-        for row in draft_metadata_rows:
-            row.metadata_version = draft_version
-            row.save()
+        draft_metadata_rows.update(metadata_version=draft_version)
 
 
 class Migration(migrations.Migration):

@@ -588,7 +588,7 @@ class ContactCreateView(
         context = super().get_context_data(**kwargs)
         context["tabs"] = "vitrina/orgs/tabs.html"
         context["contact_url"] = reverse("organization-contacts", args=[self.organization.pk])
-        context["current_title"] = _("Tvarkytojo pridėjimas")
+        context["current_title"] = _("Kontakto pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),

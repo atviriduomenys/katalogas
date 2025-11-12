@@ -6,12 +6,15 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, Contact
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
+from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts.factories import AgreementFactory
-from vitrina.smart_contracts.forms import SmartContractForm, AgreementUploadForm
+from vitrina.smart_contracts.forms import SmartContractForm, AgreementUploadForm, AgreementGeneratePdfForm
 from vitrina.structure.factories import MetadataFactory
+from vitrina.users.factories import UserFactory
+from vitrina.users.models import User
 
 pytestmark = pytest.mark.django_db
 
@@ -67,6 +70,73 @@ class TestSmartContractForm:
             ("uapi:/test/dataset/:search", "uapi:/test/dataset/:search"),
             ("uapi:/test/dataset/:select", "uapi:/test/dataset/:select"),
         }
+
+    def test_agreement_generate_pdf_form_representative_querysets(self):
+        assigner_organization = OrganizationFactory(title="Assigner Organization", email="assigner@example.com")
+        assignee_organization = OrganizationFactory(title="Assignee Organization", email="assignee@example.com")
+
+        assigner_user = UserFactory(organization=assigner_organization)
+        assignee_user = UserFactory(organization=assignee_organization)
+
+        content_type_organization = ContentType.objects.get_for_model(Organization)
+        content_type_user = ContentType.objects.get_for_model(User)
+
+        dataset_a, dataset_b, dataset_c, dataset_d, dataset_e, dataset_f = [
+            DatasetFactory(organization=assigner_organization) for _ in range(6)
+        ]
+
+        assigner_contact_organization = Contact.objects.create(
+            dataset=dataset_a,
+            content_type=content_type_organization,
+            object_id=assigner_organization.pk,
+            email=assigner_organization.email,
+        )
+        assigner_contact_user = Contact.objects.create(
+            dataset=dataset_b,
+            content_type=content_type_user,
+            object_id=assigner_user.pk,
+            email=assignee_user.email,
+        )
+
+        assignee_contact_organization = Contact.objects.create(
+            dataset=dataset_c,
+            content_type=content_type_organization,
+            object_id=assignee_organization.pk,
+            email=assignee_organization.email,
+        )
+        assignee_contact_user = Contact.objects.create(
+            dataset=dataset_d,
+            content_type=content_type_user,
+            object_id=assignee_user.pk,
+            email=assignee_user.email,
+        )
+
+        random_contact_organization = Contact.objects.create(
+            dataset=dataset_e,
+            content_type=content_type_organization,
+            object_id=UserFactory().pk,
+            email="example@example.com",
+        )
+        random_contact_user = Contact.objects.create(
+            dataset=dataset_f,
+            content_type=content_type_user,
+            object_id=OrganizationFactory().pk,
+            email="example@example.com",
+        )
+
+        project = ProjectFactory(organization=assignee_organization, datasets=[dataset_a, dataset_b, dataset_c, dataset_d])
+        agreement = AgreementFactory(project=project, assigner=assigner_organization, assignee=assignee_organization)
+
+        form = AgreementGeneratePdfForm(agreement=agreement)
+
+        assigner_queryset = list(form.fields["assigner_representative"].queryset)
+        assignee_queryset = list(form.fields["assignee_representative"].queryset)
+
+        assert all(contact in assigner_queryset for contact in [assigner_contact_organization, assigner_contact_user])
+        assert all(contact in assignee_queryset for contact in [assignee_contact_organization, assignee_contact_user])
+
+        assert all(contact not in assigner_queryset for contact in [random_contact_organization, random_contact_user])
+        assert all(contact not in assignee_queryset for contact in [random_contact_organization, random_contact_user])
 
 
 class TestAgreementUploadForm:

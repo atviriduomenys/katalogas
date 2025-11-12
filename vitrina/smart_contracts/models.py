@@ -10,7 +10,6 @@ from django.utils.translation import gettext_lazy as _
 from slugify import slugify
 
 from vitrina.models import UUIDBaseModel
-from vitrina.orgs.models import Representative
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.utils import (
@@ -61,11 +60,27 @@ class Agreement(UUIDBaseModel):
         related_name="agreements_as_assigner",
         verbose_name=_("Duomenis teikianti organizacija"),
     )
+    assigner_representative = models.ForeignKey(
+        "vitrina_datasets.Contact",
+        on_delete=models.PROTECT,
+        related_name="agreements_as_assigner_representative",
+        verbose_name=_("Duomenų teikėjo atstovas"),
+        null=True,
+        blank=True,
+    )
     assignee = models.ForeignKey(
         "vitrina_orgs.Organization",
         on_delete=models.PROTECT,
         related_name="agreements_as_assignee",
         verbose_name=_("Duomenis gaunanti organizacija"),
+    )
+    assignee_representative = models.ForeignKey(
+        "vitrina_datasets.Contact",
+        on_delete=models.PROTECT,
+        related_name="agreements_as_assignee_representative",
+        verbose_name=_("Duomenų gavėjo atstovas"),
+        null=True,
+        blank=True,
     )
     status = models.CharField(
         max_length=255,
@@ -119,11 +134,8 @@ class Agreement(UUIDBaseModel):
 
     def generate_odrl_jsonld(self):
         NON_VALUE = " - "
-
-        assignee_representative: Representative = (
-            (Representative.objects.filter(user=self.created_by).first()) if self.created_by else None
-        )
         scopes = list(self.scopes.values_list("scope", flat=True))
+
         return {
             "@context": {
                 "@vocab": "http://www.w3.org/ns/odrl.jsonld",
@@ -139,7 +151,9 @@ class Agreement(UUIDBaseModel):
                     "ex:companyName": self.assigner.title,
                     "ex:companyCode": self.assigner.company_code,
                     "ex:address": self.assigner.address,
-                    "ex:representative": (assignee_representative.email if assignee_representative else NON_VALUE),
+                    "ex:representative": (
+                        self.assigner_representative.email if self.assigner_representative else NON_VALUE
+                    ),
                     "ex:email": self.assigner.email or NON_VALUE,
                     "ex:phone": self.assigner.phone or NON_VALUE,
                     "ex:personalCode": NON_VALUE,
@@ -151,7 +165,9 @@ class Agreement(UUIDBaseModel):
                     "ex:companyName": self.assignee.title,
                     "ex:companyCode": self.assignee.company_code,
                     "ex:address": self.assignee.address,
-                    "ex:representative": NON_VALUE,
+                    "ex:representative": (
+                        self.assignee_representative.email if self.assignee_representative else NON_VALUE
+                    ),
                     "ex:email": self.assignee.email or NON_VALUE,
                     "ex:phone": self.assignee.phone or NON_VALUE,
                     "ex:personalCode": NON_VALUE,

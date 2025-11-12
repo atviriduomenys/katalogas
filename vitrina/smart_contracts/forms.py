@@ -1,13 +1,15 @@
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.db.models.fields.files import FieldFile
 from django.forms import CheckboxSelectMultiple
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.datasets.models import Contact
 from vitrina.orgs.models import Organization
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.models import (
@@ -17,6 +19,7 @@ from vitrina.smart_contracts.models import (
 )
 from vitrina.smart_contracts.services import has_valid_signature
 from vitrina.structure.models import Metadata
+from vitrina.users.models import User
 
 
 class SmartContractForm(forms.ModelForm):
@@ -110,13 +113,38 @@ class AgreementGeneratePdfForm(forms.Form):
         widget=forms.Textarea(),
     )
     payment_terms = forms.CharField(label=_("Mokėjimo sąlygos"), required=False, widget=forms.Textarea())
+    assigner_representative = forms.ModelChoiceField(
+        label=_("Duomenų teikėjo atstovas"),
+        queryset=Contact.objects.none(),
+        required=True,
+    )
+    assignee_representative = forms.ModelChoiceField(
+        label=_("Duomenų gavėjo atstovas"), queryset=Contact.objects.none(), required=True
+    )
 
     def __init__(self, *args, **kwargs):
         agreement: Agreement = kwargs.pop("agreement")
         super().__init__(*args, **kwargs)
+
         self.fields["template"].queryset = SmartContractTemplate.objects.filter(
             Q(organization__isnull=True) | Q(organization=agreement.assigner)
         ).order_by("organization", "file")
 
+        self.fields["assigner_representative"].queryset = self.get_contact_queryset(agreement.assigner)
+        self.fields["assignee_representative"].queryset = self.get_contact_queryset(agreement.assignee)
+
         self.helper = FormHelper()
         self.helper.add_input(Submit("submit", _("Generuoti sutarties dokumentą"), css_class="button is-primary"))
+
+    def get_contact_queryset(self, organization: Organization) -> QuerySet[Contact]:
+        content_type_user = ContentType.objects.get_for_model(User)
+        content_type_organization = ContentType.objects.get_for_model(Organization)
+
+        user_ids = User.objects.filter(Q(organization=organization.pk), Q(deleted=False) | Q(deleted="")).values_list(
+            "pk", flat=True
+        )
+
+        return Contact.objects.filter(
+            Q(content_type=content_type_organization, object_id=organization.pk)
+            | Q(content_type=content_type_user, object_id__in=user_ids)
+        )

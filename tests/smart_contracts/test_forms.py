@@ -9,8 +9,9 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, Contact
 
 from vitrina.orgs.models import Organization
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.projects.factories import ProjectFactory
-from vitrina.smart_contracts.factories import AgreementFileFactory
+from vitrina.smart_contracts.factories import AgreementFactory, AgreementFileFactory
 from vitrina.smart_contracts.forms import SmartContractForm, AgreementUploadForm, AgreementGeneratePdfForm
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory

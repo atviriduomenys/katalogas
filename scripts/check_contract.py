@@ -1,10 +1,14 @@
 import sys
+import os
+import django
 
 from typer import Argument, run
 
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
+django.setup()
+
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.services import has_valid_signature, get_pdf_checksum_from_adoc
-
 
 def main(
     adoc_file_path: str = Argument(..., help="Path to the ADOC file"),

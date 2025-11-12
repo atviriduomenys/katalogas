@@ -4,6 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
+from webtest import Upload
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.urls import reverse
@@ -16,7 +17,7 @@ from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, V
 from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.factories import AgreementFactory, AgreementFileFactory
 from vitrina.smart_contracts.models import (
     Agreement,
     AgreementScope,
@@ -682,7 +683,7 @@ class TestAgreementUploadSignedFile:
     
 
     def test_upload_adoc_and_change_status_to_initiated_if_agreement_status_formed(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset, agreement_pdf: Path, agreement_one_signer: Path
     ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
@@ -691,15 +692,18 @@ class TestAgreementUploadSignedFile:
         agreement = AgreementFactory(
             project=project, assignee=organization, status=AgreementStatuses.FORMED
         )
-
-        file_path = str(test_contracts_dir / "sutartis_signed.adoc")
+        AgreementFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        uploaded_file = Upload(
+            "agreement.adoc",
+            agreement_one_signer.read_bytes(),
+            content_type="text/plain",
+        )
         response = app.get(
             reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
         )
-        with open(file_path, "rb") as f:
-            form = response.forms["agreement-upload-form"]
-            form["file"] = (file_path, f.read())
-            form.submit()
+        form = response.forms["agreement-upload-form"]
+        form["file"] = uploaded_file
+        form.submit()
 
         agreement.refresh_from_db()
         assert response.status_code == 200
@@ -708,7 +712,7 @@ class TestAgreementUploadSignedFile:
         assert agreement.files.exists()
 
     def test_upload_adoc_and_change_status_to_signed_if_agreement_status_initiated(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset, agreement_pdf: Path, agreement_two_signers: Path
     ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
@@ -718,14 +722,19 @@ class TestAgreementUploadSignedFile:
             project=project, assigner=organization, status=AgreementStatuses.INITIATED
         )
 
-        file_path = str(test_contracts_dir / "sutartis_signed.adoc")
+        AgreementFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        uploaded_file = Upload(
+            "agreement.adoc",
+            agreement_two_signers.read_bytes(),
+            content_type="text/plain",
+        )
         response = app.get(
             reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
         )
-        with open(file_path, "rb") as f:
-            form = response.forms["agreement-upload-form"]
-            form["file"] = (file_path, f.read())
-            form.submit()
+
+        form = response.forms["agreement-upload-form"]
+        form["file"] = uploaded_file
+        form.submit()
 
         agreement.refresh_from_db()
         assert response.status_code == 200

@@ -1246,7 +1246,11 @@ class VersionForm(forms.ModelForm):
     released = forms.DateField(label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"}))
     metadata = forms.MultipleChoiceField(label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple)
     version_type = forms.ChoiceField(
-        label=_("Versijos tipas"), required=True, choices=VersionType.choices, widget=forms.RadioSelect()
+        label=_("Versijos tipas"),
+        required=True,
+        choices=VersionType.choices,
+        widget=forms.RadioSelect(),
+        help_text=_("Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija: https://semver.org/"),
     )
     minor_selected = forms.ModelChoiceField(
         label=_("Priklauso pagrindinei versijai"),
@@ -1275,8 +1279,8 @@ class VersionForm(forms.ModelForm):
             dataset=self.dataset, version_type=VersionType.MAJOR
         ).order_by("major")
         self.fields["patch_selected"].queryset = Version.objects.filter(
-            dataset=self.dataset, version_type=VersionType.MINOR
-        ).order_by("minor")
+            Q(version_type=VersionType.MINOR) | Q(version_type=VersionType.MAJOR), dataset=self.dataset
+        ).order_by("major")
         self.fields["minor_selected"].label_from_instance = lambda obj: obj.external_version
         self.fields["patch_selected"].label_from_instance = lambda obj: obj.external_version
 

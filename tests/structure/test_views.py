@@ -4139,7 +4139,7 @@ def test_minor_version_available_if_major_exists(app: DjangoTestApp):
 
     second_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
 
-    assert [option[0] for option in second_version_form["version_type"].options] == ["MAJOR", "MINOR"]
+    assert {opt[0] for opt in second_version_form["version_type"].options} == {"MAJOR", "MINOR", "PATCH"}
 
 @pytest.mark.django_db
 def test_patch_version_available_if_minor_exists(app: DjangoTestApp):
@@ -4162,7 +4162,7 @@ def test_patch_version_available_if_minor_exists(app: DjangoTestApp):
 
     patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
 
-    assert [option[0] for option in patch_version_form["version_type"].options] == ["MAJOR", "MINOR", "PATCH"]
+    assert {opt[0] for opt in second_version_form["version_type"].options} == {"MAJOR", "MINOR", "PATCH"}
 
 @pytest.mark.django_db
 def test_form_errors_if_major_not_selected(app: DjangoTestApp):

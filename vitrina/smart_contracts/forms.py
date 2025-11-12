@@ -119,16 +119,16 @@ class AgreementUploadForm(forms.ModelForm):
         num_of_signers = len(signers)
 
         if num_of_signers == 0:
-            raise ValidationError(_("Sutartis nepasirašyta"))
+            raise ValidationError(_("Įkelta sutartis nepasirašyta."))
 
         if self.agreement.status == AgreementStatuses.FORMED:
             if num_of_signers > 1:
-                raise ValidationError(_("Sutartis pasirašyta daugiau nei 1 parašu."))
+                raise ValidationError(_("Įkelta sutartis pasirašyta daugiau nei 1 parašu."))
         elif self.agreement.status == AgreementStatuses.INITIATED:
             if num_of_signers == 1:
-                raise ValidationError(_("Sutartis nepasirašyta teikėjo parašu."))
+                raise ValidationError(_("Įkelta sutartis nepasirašyta teikėjo parašu."))
             if num_of_signers > 2:
-                raise ValidationError(_("Rasti daugiau nei 2 parašai."))
+                raise ValidationError(_("Įkeltoje sutartyje rasti daugiau nei 2 parašai."))
         else:
             raise ValidationError(
                 _("Negalima pasirašyti sutarties su būsena {status}").format(status=self.agreement.status)

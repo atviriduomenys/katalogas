@@ -1053,13 +1053,11 @@ def test_contact_create_for_org(app, representative_data):
 def test_contact_create_for_user_valid_data(app, representative_data):
     org = representative_data['organization']
     app.set_user(representative_data['coordinator'])
-    user = UserFactory(organization=org)
-
+    coordinator = representative_data['coordinator']
     form = app.get(reverse('contact-create', kwargs={
         'pk': org.pk
     })).forms['contact-form']
-
-    form['contact'] = f"user-{user.pk}"
+    form['contact'] = f"user-{coordinator.pk}"
     form['email'] = "user@test.com"
     form['phone'] = "+37061234567"
     form['position'] = "Tester"
@@ -1068,8 +1066,8 @@ def test_contact_create_for_user_valid_data(app, representative_data):
     assert resp.status_code == 302
 
     contact = Contact.objects.first()
-    assert contact.content_type == ContentType.objects.get_for_model(user)
-    assert contact.object_id == user.pk
+    assert contact.content_type == ContentType.objects.get_for_model(coordinator)
+    assert contact.object_id == coordinator.pk
     assert contact.email == "user@test.com"
     assert contact.phone == "+37061234567"
 
@@ -1079,7 +1077,7 @@ def test_contact_create_for_user_valid_data(app, representative_data):
     assert resp.status_code == 200
     assert contact.email in resp.text
     assert contact.phone in resp.text
-    assert user.get_full_name() in resp.text
+    assert coordinator.get_full_name() in resp.text
     
     
 @pytest.mark.django_db
@@ -1159,14 +1157,14 @@ def test_contact_update_org(app, representative_data):
 
 @pytest.mark.django_db
 def test_contact_update_user(app, representative_data):
-    app.set_user(representative_data['coordinator'])
+    coordinator = representative_data['coordinator']
+    app.set_user(coordinator)
     org = representative_data['organization']
     ds = DatasetFactory(organization=org)
-    user = UserFactory(organization=org)
     contact = Contact.objects.create(
         organization=org,
-        content_type=ContentType.objects.get_for_model(user),
-        object_id=user.pk,
+        content_type=ContentType.objects.get_for_model(coordinator),
+        object_id=coordinator.pk,
         dataset=ds,
         email="old@test.com",
         phone="+37061234567",

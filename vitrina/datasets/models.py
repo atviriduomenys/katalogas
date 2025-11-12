@@ -1879,10 +1879,12 @@ class Contact(models.Model):
 
     def get_acl_parents(self):
         parents = [self]
+        parents.extend(self.organization.get_acl_parents())
         if isinstance(self.content_object, Organization):
             parents.extend(self.content_object.get_acl_parents())
             return parents
-        parents.extend(self.content_object.organization.get_acl_parents())
+        if isinstance(self.content_object, User) and self.content_object.organization:
+            parents.extend(self.content_object.organization.get_acl_parents())
         return parents
 
 

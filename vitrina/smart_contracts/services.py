@@ -148,12 +148,15 @@ def get_pdf_checksum_from_adoc(adoc_path: str) -> str:
         with zipfile.ZipFile(adoc_path) as adoc_archive:
             pdf_path = get_pdf_path_in_adoc(adoc_archive)
 
+            if not pdf_path:
+                raise InvalidAdocError("No PDF file found")
+
             with adoc_archive.open(pdf_path) as pdf_file:
                 pdf_bytes = pdf_file.read()
 
             return generate_checksum(pdf_bytes)
 
-    except (zipfile.BadZipFile, ET.ParseError, KeyError) as error:
+    except (zipfile.BadZipFile, InvalidAdocError) as error:
         raise InvalidAdocError(f"Invalid ADOC file: {error}") from error
 
 

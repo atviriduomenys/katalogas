@@ -4,6 +4,11 @@ Changes
 v 1.7 (unreleased)
 ==================
 
+New features:
+
+https://github.com/atviriduomenys/katalogas/issues/2092
+- Added Version_type column and handling to Version table. It follows SemVer principles.
+- Added a few more columns which will be needed for further versioning changes.
 
 v 1.6 (2025-11-06)
 ==================

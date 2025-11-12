@@ -6006,3 +6006,21 @@ msgstr "Request title"
 
 msgid "Įrašykite poreikio pavadinimą."
 msgstr "Please input request title."
+
+msgid "Poreikio eskalacija"
+msgstr "Request escalation"
+
+msgid "Poreikių eskalacija"
+msgstr "Requests escalation"
+
+msgid "Nežinoma"
+msgstr "Unknown"
+
+msgid "Atsakymas gautas iš tvarkytojų/koordinatorių."
+msgstr "Response received from data editors/coordinators."
+
+msgid "Sustabdyta rankiniu būdu."
+msgstr "Stopped manually."
+
+msgid "Pasiektas maksimalus eskalacijos lygis."
+msgstr "Reached maximum level of escalation."

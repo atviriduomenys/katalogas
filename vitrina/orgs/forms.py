@@ -1114,7 +1114,7 @@ class BaseContactForm(ModelForm):
             user__isnull=False,
             organization__isnull=True,
         ).values_list("user_id", flat=True)
-        
+
         representative_orgs = Representative.objects.filter(
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=organization_id,
@@ -1123,29 +1123,29 @@ class BaseContactForm(ModelForm):
 
         org_query = Q(id=organization_id)
         user_ids = set(representative_users)
-        
+
         user_org_mapping = {user_id: organization_id for user_id in representative_users}
 
         if representative_orgs:
             org_query |= Q(id__in=representative_orgs)
-            
+
             org_representative_users = Representative.objects.filter(
                 content_type=ContentType.objects.get_for_model(Organization),
                 object_id__in=representative_orgs,
                 user__isnull=False,
                 organization__isnull=True,
             ).values_list("user_id", "object_id")
-            
+
             for user_id, object_id in org_representative_users:
                 user_ids.add(user_id)
                 user_org_mapping[user_id] = object_id
-            
+
         organization_contacts = Organization.objects.filter(org_query)
         user_contacts = User.objects.filter(id__in=user_ids, is_active=True)
-        
+
         for user in user_contacts:
             user.representative_organization_id = user_org_mapping.get(user.id)
-        
+
         return organization_contacts, user_contacts
 
     def _populate_contact_choices(self, organization_id: int) -> None:

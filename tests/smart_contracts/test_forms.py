@@ -78,19 +78,12 @@ class TestSmartContractForm:
         assigner_user = UserFactory(organization=assigner_organization)
         assignee_user = UserFactory(organization=assignee_organization)
 
-        content_type_organization = ContentType.objects.get_for_model(Organization)
         content_type_user = ContentType.objects.get_for_model(User)
 
         dataset_a, dataset_b, dataset_c, dataset_d, dataset_e, dataset_f = [
             DatasetFactory(organization=assigner_organization) for _ in range(6)
         ]
 
-        assigner_contact_organization = Contact.objects.create(
-            dataset=dataset_a,
-            content_type=content_type_organization,
-            object_id=assigner_organization.pk,
-            email=assigner_organization.email,
-        )
         assigner_contact_user = Contact.objects.create(
             dataset=dataset_b,
             content_type=content_type_user,
@@ -98,12 +91,6 @@ class TestSmartContractForm:
             email=assignee_user.email,
         )
 
-        assignee_contact_organization = Contact.objects.create(
-            dataset=dataset_c,
-            content_type=content_type_organization,
-            object_id=assignee_organization.pk,
-            email=assignee_organization.email,
-        )
         assignee_contact_user = Contact.objects.create(
             dataset=dataset_d,
             content_type=content_type_user,
@@ -111,12 +98,6 @@ class TestSmartContractForm:
             email=assignee_user.email,
         )
 
-        random_contact_organization = Contact.objects.create(
-            dataset=dataset_e,
-            content_type=content_type_organization,
-            object_id=UserFactory().pk,
-            email="example@example.com",
-        )
         random_contact_user = Contact.objects.create(
             dataset=dataset_f,
             content_type=content_type_user,
@@ -132,11 +113,11 @@ class TestSmartContractForm:
         assigner_queryset = list(form.fields["assigner_representative"].queryset)
         assignee_queryset = list(form.fields["assignee_representative"].queryset)
 
-        assert all(contact in assigner_queryset for contact in [assigner_contact_organization, assigner_contact_user])
-        assert all(contact in assignee_queryset for contact in [assignee_contact_organization, assignee_contact_user])
+        assert assigner_contact_user in assigner_queryset
+        assert assignee_contact_user in assignee_queryset
 
-        assert all(contact not in assigner_queryset for contact in [random_contact_organization, random_contact_user])
-        assert all(contact not in assignee_queryset for contact in [random_contact_organization, random_contact_user])
+        assert random_contact_user not in assigner_queryset
+        assert random_contact_user not in assignee_queryset
 
 
 class TestAgreementUploadForm:

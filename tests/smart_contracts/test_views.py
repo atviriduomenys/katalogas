@@ -25,6 +25,7 @@ from vitrina.smart_contracts.models import (
 )
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
+from vitrina.users.models import User
 
 pytestmark = pytest.mark.django_db
 test_contracts_dir = Path(__file__).parent / "files" / "test_contracts"
@@ -388,19 +389,21 @@ class TestAgreementGeneratePdf:
                 name="contract_template.md",
             )
         )
+        assigner_user = UserFactory(organization=organization)
+        assignee_user = UserFactory(organization=agreement.assignee)
         assigner_representative = ContactFactory(
             dataset=dataset,
-            object_id=organization.pk,
-            content_type=ContentType.objects.get_for_model(organization),
-            email=organization.email,
-            phone=organization.phone,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone,
         )
         assignee_representative = ContactFactory(
             dataset=DatasetFactory(),
-            object_id=agreement.assignee.pk,
-            content_type=ContentType.objects.get_for_model(agreement.assignee),
-            email=agreement.assignee.email,
-            phone=agreement.assignee.phone,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone,
         )
 
         response = app.post(
@@ -439,9 +442,16 @@ class TestAgreementGeneratePdf:
         dataset.title = "Odit nostrum."
         dataset.save()
 
-        user = UserFactory(organization=organization, email="bethgarcia@example.net", is_viisp_login=True, viisp_company_code=organization.company_code)
-        representative = RepresentativeFactory(user=user, content_object=organization, can_make_agreements=True)
+        user = UserFactory(
+            organization=organization,
+            email="bethgarcia@example.net",
+            is_viisp_login=True,
+            viisp_company_code=organization.company_code
+        )
+        RepresentativeFactory(user=user, content_object=organization, can_make_agreements=True)
+
         app.set_user(user)
+        assigner_user = UserFactory(organization=organization)
 
         other_assigner_legislations = "Bought data"
         other_assignee_legislations = "Sold data"
@@ -453,17 +463,17 @@ class TestAgreementGeneratePdf:
 
         assigner_representative = ContactFactory(
             dataset=dataset,
-            object_id=organization.pk,
-            content_type=ContentType.objects.get_for_model(organization),
-            email=organization.email,
-            phone=organization.phone,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone,
         )
         assignee_representative = ContactFactory(
             dataset=DatasetFactory(),
-            object_id=organization.pk,
-            content_type=ContentType.objects.get_for_model(organization),
-            email=organization.email,
-            phone=organization.phone,
+            object_id=user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=user.email,
+            phone=user.phone,
         )
 
         agreement = AgreementFactory(

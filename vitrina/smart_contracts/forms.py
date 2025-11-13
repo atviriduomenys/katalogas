@@ -1,3 +1,5 @@
+from functools import cached_property
+
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
 from django import forms
@@ -122,6 +124,10 @@ class AgreementGeneratePdfForm(forms.Form):
         label=_("Duomenų gavėjo atstovas"), queryset=Contact.objects.none(), required=True
     )
 
+    @cached_property
+    def content_type_user(self) -> QuerySet[ContentType]:
+        return ContentType.objects.get_for_model(User)
+
     def __init__(self, *args, **kwargs):
         agreement: Agreement = kwargs.pop("agreement")
         super().__init__(*args, **kwargs)
@@ -137,14 +143,8 @@ class AgreementGeneratePdfForm(forms.Form):
         self.helper.add_input(Submit("submit", _("Generuoti sutarties dokumentą"), css_class="button is-primary"))
 
     def get_contact_queryset(self, organization: Organization) -> QuerySet[Contact]:
-        content_type_user = ContentType.objects.get_for_model(User)
-        content_type_organization = ContentType.objects.get_for_model(Organization)
-
         user_ids = User.objects.filter(Q(organization=organization.pk), Q(deleted=False) | Q(deleted="")).values_list(
             "pk", flat=True
         )
 
-        return Contact.objects.filter(
-            Q(content_type=content_type_organization, object_id=organization.pk)
-            | Q(content_type=content_type_user, object_id__in=user_ids)
-        )
+        return Contact.objects.filter(content_type=self.content_type_user, object_id__in=user_ids)

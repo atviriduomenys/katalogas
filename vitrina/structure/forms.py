@@ -1253,12 +1253,12 @@ class VersionForm(forms.ModelForm):
         help_text=_("Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija: https://semver.org/"),
     )
     minor_selected = forms.ModelChoiceField(
-        label=_("Priklauso pagrindinei versijai"),
+        label=_("Priklauso versijai"),
         required=False,
         queryset=Version.objects.none(),
     )
     patch_selected = forms.ModelChoiceField(
-        label=_("Priklauso papildomai versijai"),
+        label=_("Priklauso versijai"),
         required=False,
         queryset=Version.objects.none(),
     )
@@ -1293,7 +1293,7 @@ class VersionForm(forms.ModelForm):
         if self.fields["patch_selected"].queryset.exists():
             allowed_types.append(VersionType.PATCH)
 
-        self.fields["version_type"].choices = [choice for choice in all_choices if choice[0] in allowed_types]
+        self.fields["version_type"].choices = sorted([choice for choice in all_choices if choice[0] in allowed_types])
 
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""

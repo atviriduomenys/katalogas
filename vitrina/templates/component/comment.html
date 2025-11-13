@@ -57,7 +57,7 @@
                                 <p class="is-italic">
                                     {% translate "Atsakymas į" %}
                                     {{ comment.parent.user }}
-                                    {{ comment.parent.created|date:"SHORT_DATE_FORMAT" %}
+                                    {{ comment.parent.created|date:"SHORT_DATE_FORMAT" }}
                                     {{ comment.parent.body_text|markdown|truncatechars:20 }}
                                 </p>
                             {% endif %}

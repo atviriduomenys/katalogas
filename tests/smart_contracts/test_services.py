@@ -1,16 +1,27 @@
 from pathlib import Path
 
 import pytest
+import zipfile
+from lxml import etree
+from cryptography import x509
 
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.services import (
     extract_elements_from_adoc,
     has_valid_signature,
     get_pdf_checksum_from_adoc,
+    extract_signatures_from_adoc,
+    extract_signers_certificate,
+    get_signer_from_certificate,
+    get_signers_from_adoc,
 )
 
 
 CONTRACT_CHECKSUM = "b5e8a02c5de0fab1da0564c9c7a9cbb5b9fe1b80826a2fd8705a4e4db3bae695"
+SIGNER1_FIRST_NAME = "Vardenis"
+SIGNER2_FIRST_NAME = "Vardenis2"
+SIGNER1_LAST_NAME = "Pavardenis"
+SIGNER2_LAST_NAME = "Pavardenis2"
 
 SCOPES_REGEX = r"\buapi:/\S+"
 
@@ -64,3 +75,28 @@ def test_extract_scopes_from_adoc_not_supported_file(agreement_pdf: Path):
         extract_elements_from_adoc(
             str(agreement_pdf), SCOPES_REGEX
         )
+
+def test_extract_sigatures_from_adoc(agreement_two_signers: Path, signature1: etree._Element, signature2: etree._Element):
+    with zipfile.ZipFile(agreement_two_signers) as zip_file:
+        signatures = extract_signatures_from_adoc(zip_file)
+    assert len(signatures) == 2
+    assert etree.tostring(signatures[0], method="c14n") == etree.tostring(signature1, method="c14n")
+    assert etree.tostring(signatures[1], method="c14n") == etree.tostring(signature2, method="c14n")
+
+def test_extract_signers_certificate(signature1: etree._Element, certificate: x509.Certificate):
+    assert extract_signers_certificate(signature1) == certificate
+
+def test_get_signer_from_certificate(certificate: x509.Certificate):
+    signer = get_signer_from_certificate(certificate)
+    assert signer.first_name == SIGNER1_FIRST_NAME
+    assert signer.last_name == SIGNER1_LAST_NAME
+
+def test_get_signers_from_adoc(agreement_two_signers: Path):
+    with zipfile.ZipFile(agreement_two_signers) as zip_file:
+        signers = get_signers_from_adoc(zip_file)
+    
+    assert len(signers) == 2
+    assert signers[0].first_name == SIGNER1_FIRST_NAME
+    assert signers[0].last_name == SIGNER1_LAST_NAME
+    assert signers[1].first_name == SIGNER2_FIRST_NAME
+    assert signers[1].last_name == SIGNER2_LAST_NAME

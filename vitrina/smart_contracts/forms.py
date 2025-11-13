@@ -104,10 +104,10 @@ class AgreementUploadForm(forms.ModelForm):
                 if not is_valid_adoc(zip_file):
                     raise InvalidAdocError("Neteisingas ADOC formatas.")
                 if num_of_adoc_root_files(zip_file) > 1:
-                    raise InvalidAdocError(_("Rastas daugiau nei vienas pasirašytas dokumentas"))
+                    raise InvalidAdocError(_("Rastas daugiau nei vienas pasirašytas dokumentas."))
                 pdf_path = get_pdf_path_in_adoc(zip_file)
                 if not pdf_path:
-                    raise InvalidAdocError(_("Nerastas PDF dokumentas"))
+                    raise InvalidAdocError(_("Nerastas PDF dokumentas."))
                 with zip_file.open(pdf_path) as pdf_file:
                     pdf_bytes = pdf_file.read()
                 if generate_checksum(pdf_bytes) != self.agreement_pdf.checksum:

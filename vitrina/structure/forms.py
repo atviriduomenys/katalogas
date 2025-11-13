@@ -1309,7 +1309,7 @@ class VersionForm(forms.ModelForm):
         version_type = cleaned_data.get("version_type")
         related_version = cleaned_data.get("related_version")
 
-        if (version_type == VersionType.MINOR or version_type == VersionType.MAJOR) and not related_version:
+        if (version_type == VersionType.MINOR or version_type == VersionType.PATCH) and not related_version:
             self.add_error("related_version", _("Tėvinė versija turi būti pasirinkta"))
 
         return cleaned_data

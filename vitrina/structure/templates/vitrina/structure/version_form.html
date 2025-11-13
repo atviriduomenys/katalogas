@@ -29,31 +29,20 @@
 {% block scripts %}
     <script>
         $(document).ready(function() {
-            const $minorField = $('#id_minor_selected').closest('.field, .form-group, .control');
-            const $patchField = $('#id_patch_selected').closest('.field, .form-group, .control');
-            const $minorLabel = $('label[for="id_minor_selected"]');
-            const $patchLabel = $('label[for="id_patch_selected"]');
+            const $related_version = $('#id_related_version').closest('.field, .form-group, .control');
+            const $related_version_label = $('label[for="id_related_version"]');
 
             function updateBaseVersionField() {
                 const selectedType = $('input[name="version_type"]:checked').val();
 
-                $minorField.hide();
-                $minorLabel.hide();
-                $patchField.hide();
-                $patchLabel.hide();
+                $related_version.hide();
+                $related_version_label.hide();
 
-                if (selectedType === 'MINOR') {
-                    $minorLabel.show();
-                    $minorField.show();
-                    $patchField.hide();
-
-                } else if (selectedType === 'PATCH') {
-                    $patchLabel.show();
-                    $patchField.show();
-                    $minorField.hide();
+                if (selectedType === 'MINOR' || selectedType === 'PATCH') {
+                    $related_version.show();
+                    $related_version_label.show();
 
                 }
-
             }
 
             setTimeout(updateBaseVersionField, 20);

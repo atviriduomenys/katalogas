@@ -2788,17 +2788,18 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
 
         based_on_version = form.cleaned_data.get("related_version")
         if version.version_type == "MAJOR":
-            version.major = based_on_version.major + 1 if based_on_version.major else 1
+            max_major = _Version.objects.filter(dataset=self.dataset).aggregate(Max('major'))['major__max']
+            version.major = max_major + 1 if max_major else 1
             version.minor = 0
             version.patch = 0
         elif version.version_type == "MINOR":
             version.major = based_on_version.major
-            version.minor = based_on_version.minor + 1 if based_on_version.minor else 1
+            version.minor = based_on_version.minor + 1
             version.patch = 0
         elif version.version_type == "PATCH":
             version.major = based_on_version.major
             version.minor = based_on_version.minor
-            version.patch = based_on_version.patch + 1 if based_on_version.patch else 1
+            version.patch = based_on_version.patch + 1
 
         version.external_version = f"{version.major}.{version.minor}.{version.patch}"
 

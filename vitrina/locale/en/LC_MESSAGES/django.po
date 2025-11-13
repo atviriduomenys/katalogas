@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-11 16:21+0200\n"
+"POT-Creation-Date: 2025-11-13 20:06+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3787,6 +3787,39 @@ msgstr "Statistics link"
 msgid "Statistikos nuorodos"
 msgstr "Statistics links"
 
+msgid "Juodraštis"
+msgstr "Draft"
+
+msgid "Išankstinis leidimas"
+msgstr "Pre-release"
+
+msgid "Stabili"
+msgstr "Stable"
+
+msgid "Pasenusi"
+msgstr "Deprecated"
+
+msgid "Atsisakyta"
+msgstr "Withdrawn"
+
+msgid "Sunaikinta"
+msgstr "Destroyed"
+
+msgid "Tikrinama"
+msgstr "Testing"
+
+msgid "Diegiama"
+msgstr "Deploying"
+
+msgid "Pagrindinė"
+msgstr "Major"
+
+msgid "Papildoma"
+msgstr "Minor"
+
+msgid "Pataisa"
+msgstr "Patch"
+
 msgid "Nepasirinkta"
 msgstr "Not selected"
 
@@ -4265,59 +4298,27 @@ msgstr "Add to version"
 msgid "Versijos tipas"
 msgstr "Version type"
 
-msgid "Priklauso pagrindinei versijai"
-msgstr "Based on a major version"
+msgid ""
+"Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija: "
+"https://semver.org/"
+msgstr ""
+"According to the Semantic Versioning (SemVer) principle. Documentation: "
+"https://semver.org/"
 
-msgid "Priklauso papildomai versijai"
-msgstr "Based on a minor version"
+msgid "Priklauso versijai"
+msgstr "Depends on version"
 
 msgid "Publikuoti"
 msgstr "Publish"
 
-msgid "Pagrindinė versija turi būti pasirinkta"
-msgstr "Major version must be selected"
-
-msgid "Papildoma versija turi būti pasirinkta"
-msgstr "Minor version must be selected"
+msgid "Tėvinė versija turi būti pasirinkta"
+msgstr "The parent version must be selected"
 
 msgid "Versija gali įsigalioti ne anksčiau kaip po 2 savaičių."
 msgstr "Version can be released not earlier than after 2 weeks."
 
 msgid "Versija negali įsigalioti anksčiau už praėjusią versiją."
 msgstr "Version can be released not earlier than previous version."
-
-msgid "Juodraštis"
-msgstr "Draft"
-
-msgid "Išankstinis leidimas"
-msgstr "Pre-release"
-
-msgid "Stabili"
-msgstr "Stable"
-
-msgid "Pasenusi"
-msgstr "Deprecated"
-
-msgid "Atsisakyta"
-msgstr "Withdrawn"
-
-msgid "Sunaikinta"
-msgstr "Destroyed"
-
-msgid "Tikrinama"
-msgstr "Testing"
-
-msgid "Diegiama"
-msgstr "Deploying"
-
-msgid "Pagrindinė"
-msgstr "Major"
-
-msgid "Papildoma"
-msgstr "Minor"
-
-msgid "Pataisa"
-msgstr "Patch"
 
 msgid "URI"
 msgstr "URI"
@@ -4435,9 +4436,6 @@ msgstr "Upload to storage date"
 
 msgid "Versijos būsena"
 msgstr "Version status"
-
-msgid "Versijos rūšis"
-msgstr "Version type"
 
 msgid "Versijos numeris"
 msgstr "Version number"

@@ -496,7 +496,7 @@ class Version(models.Model):
     deployed = models.DateTimeField(_("Įkėlimo į saugyklą data"), null=True, blank=True)
     status = models.CharField(_("Versijos būsena"), max_length=20, choices=VersionStatus.choices, null=True)
     version_type = models.CharField(
-        _("Versijos rūšis"), max_length=20, choices=VersionType.choices, null=True, blank=True
+        _("Versijos tipas"), max_length=20, choices=VersionType.choices, null=True, blank=True
     )
     external_version = models.CharField(_("Versijos numeris"), max_length=50, null=True, blank=True)
     major = models.IntegerField(_("Pagrindinis versijos numeris"), null=True, blank=True)

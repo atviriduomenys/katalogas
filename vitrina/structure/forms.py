@@ -6,7 +6,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, HTML
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db.models import Case, When, Q, Count
+from django.db.models import Case, When, Q, Count, OuterRef, Subquery
 from django.forms import CheckboxSelectMultiple
 from django.forms.models import ModelChoiceIterator
 from django.utils.functional import lazy
@@ -1278,9 +1278,26 @@ class VersionForm(forms.ModelForm):
         self.fields["minor_selected"].queryset = Version.objects.filter(
             dataset=self.dataset, version_type=VersionType.MAJOR
         ).order_by("major")
-        self.fields["patch_selected"].queryset = Version.objects.filter(
-            Q(version_type=VersionType.MINOR) | Q(version_type=VersionType.MAJOR), dataset=self.dataset
-        ).order_by("major")
+
+        latest_minor_per_major = (
+            Version.objects.filter(
+                dataset=self.dataset,
+                major=OuterRef("major"),
+                version_type__in=[VersionType.MAJOR, VersionType.MINOR],
+            )
+            .order_by("-minor")
+            .values("id")[:1]
+        )
+
+        self.fields["patch_selected"].queryset = (
+            Version.objects.filter(
+                Q(version_type__in=[VersionType.MINOR, VersionType.MAJOR]),
+                dataset=self.dataset,
+            )
+            .filter(id__in=Subquery(latest_minor_per_major))
+            .order_by("major")
+        )
+
         self.fields["minor_selected"].label_from_instance = lambda obj: obj.external_version
         self.fields["patch_selected"].label_from_instance = lambda obj: obj.external_version
 

@@ -6,7 +6,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, HTML
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.db.models import Case, When, Q, Count, OuterRef, Subquery
+from django.db.models import Case, When, Q, Count, OuterRef, Subquery, Max
 from django.forms import CheckboxSelectMultiple
 from django.forms.models import ModelChoiceIterator
 from django.utils.functional import lazy
@@ -1252,12 +1252,7 @@ class VersionForm(forms.ModelForm):
         widget=forms.RadioSelect(),
         help_text=_("Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija: https://semver.org/"),
     )
-    minor_selected = forms.ModelChoiceField(
-        label=_("Priklauso versijai"),
-        required=False,
-        queryset=Version.objects.none(),
-    )
-    patch_selected = forms.ModelChoiceField(
+    related_version = forms.ModelChoiceField(
         label=_("Priklauso versijai"),
         required=False,
         queryset=Version.objects.none(),
@@ -1274,40 +1269,24 @@ class VersionForm(forms.ModelForm):
     def __init__(self, dataset, *args, **kwargs):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
+        latest_versions = []
+        major_versions = Version.objects.filter(dataset=self.dataset, version_type=VersionType.MAJOR).order_by("major")
 
-        self.fields["minor_selected"].queryset = Version.objects.filter(
-            dataset=self.dataset, version_type=VersionType.MAJOR
+        for major_version in major_versions:
+            latest_version_of_major = Version.objects.filter(dataset=self.dataset, major=major_version.major).last()
+            latest_versions.append(latest_version_of_major.id)
+
+        self.fields["related_version"].queryset = Version.objects.filter(
+            id__in=latest_versions
         ).order_by("major")
 
-        latest_minor_per_major = (
-            Version.objects.filter(
-                dataset=self.dataset,
-                major=OuterRef("major"),
-                version_type__in=[VersionType.MAJOR, VersionType.MINOR],
-            )
-            .order_by("-minor")
-            .values("id")[:1]
-        )
-
-        self.fields["patch_selected"].queryset = (
-            Version.objects.filter(
-                Q(version_type__in=[VersionType.MINOR, VersionType.MAJOR]),
-                dataset=self.dataset,
-            )
-            .filter(id__in=Subquery(latest_minor_per_major))
-            .order_by("major")
-        )
-
-        self.fields["minor_selected"].label_from_instance = lambda obj: obj.external_version
-        self.fields["patch_selected"].label_from_instance = lambda obj: obj.external_version
+        self.fields["related_version"].label_from_instance = lambda obj: obj.external_version
 
         all_choices = set(VersionType.choices)
         allowed_types = [VersionType.MAJOR]
 
-        if self.fields["minor_selected"].queryset.exists():
+        if self.fields["related_version"].queryset.exists():
             allowed_types.append(VersionType.MINOR)
-
-        if self.fields["patch_selected"].queryset.exists():
             allowed_types.append(VersionType.PATCH)
 
         self.fields["version_type"].choices = sorted([choice for choice in all_choices if choice[0] in allowed_types])
@@ -1319,8 +1298,7 @@ class VersionForm(forms.ModelForm):
             Field("released"),
             Field("description"),
             Field("version_type"),
-            Field("minor_selected"),
-            Field("patch_selected"),
+            Field("related_version"),
             Field("metadata"),
             Submit("submit", _("Publikuoti"), css_class="button is-primary"),
         )
@@ -1329,14 +1307,10 @@ class VersionForm(forms.ModelForm):
     def clean(self) -> dict:
         cleaned_data = super().clean()
         version_type = cleaned_data.get("version_type")
-        minor_selected = cleaned_data.get("minor_selected")
-        patch_selected = cleaned_data.get("patch_selected")
+        related_version = cleaned_data.get("related_version")
 
-        if version_type == VersionType.MINOR and not minor_selected:
-            self.add_error("minor_selected", _("Pagrindinė versija turi būti pasirinkta"))
-
-        if version_type == VersionType.PATCH and not patch_selected:
-            self.add_error("patch_selected", _("Papildoma versija turi būti pasirinkta"))
+        if (version_type == VersionType.MINOR or version_type == VersionType.MAJOR) and not related_version:
+            self.add_error("related_version", _("Tėvinė versija turi būti pasirinkta"))
 
         return cleaned_data
 

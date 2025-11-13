@@ -15,6 +15,8 @@ def remove_agreements(apps, schema_editor):
 
 
 class Migration(migrations.Migration):
+    atomic = False
+
     dependencies = [
         ('vitrina_datasets', '0031_auto_20251027_0636'),
         ('vitrina_smart_contracts', '0008_remove_agreement_other_assignee_legislations'),

@@ -4157,7 +4157,7 @@ def test_patch_version_available_if_minor_exists(app: DjangoTestApp):
     minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
-    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form["related_version"] = major_version.pk
     minor_version_form.submit()
 
     patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
@@ -4181,7 +4181,7 @@ def test_form_errors_if_major_not_selected(app: DjangoTestApp):
 
     res = minor_version_form.submit(expect_errors=True)
 
-    assert "Pagrindinė versija turi būti pasirinkta" in res.text
+    assert "Tėvinė versija turi būti pasirinkta" in res.text
 
 @pytest.mark.django_db
 def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
@@ -4199,7 +4199,7 @@ def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
     minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
-    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form["related_version"] = major_version.pk
     minor_version_form.submit()
 
     patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
@@ -4208,7 +4208,7 @@ def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
 
     res = patch_version_form.submit(expect_errors=True)
 
-    assert "Papildoma versija turi būti pasirinkta" in res.text
+    assert "Tėvinė versija turi būti pasirinkta" in res.text
 
 @pytest.mark.django_db
 def test_multiple_major_versions_increment_external_version(app: DjangoTestApp):
@@ -4247,13 +4247,15 @@ def test_multiple_minor_versions_increment_external_version(app: DjangoTestApp):
     minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
-    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form["related_version"] = major_version.pk
     minor_version_form.submit()
+
+    latest_version = _Version.objects.last()
 
     minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
-    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form["related_version"] = latest_version.pk
     minor_version_form.submit()
 
     minor_versions = _Version.objects.filter(dataset=dataset, version_type=VersionType.MINOR).order_by("created")
@@ -4277,20 +4279,22 @@ def test_multiple_patch_versions_increment_external_version(app: DjangoTestApp):
     minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
-    minor_version_form["minor_selected"] = major_version.pk
+    minor_version_form["related_version"] = major_version.pk
     minor_version_form.submit()
 
     minor_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MINOR)
 
     patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     patch_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
-    patch_version_form["patch_selected"] = minor_version.pk
+    patch_version_form["related_version"] = minor_version.pk
     patch_version_form["version_type"] = "PATCH"
     patch_version_form.submit()
 
+    latest_version = _Version.objects.last()
+
     patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
     patch_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
-    patch_version_form["patch_selected"] = minor_version.pk
+    patch_version_form["related_version"] = latest_version.pk
     patch_version_form["version_type"] = "PATCH"
     patch_version_form.submit()
 

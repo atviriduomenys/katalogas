@@ -75,8 +75,8 @@ class TestSmartContractForm:
         assigner_organization = OrganizationFactory(title="Assigner Organization", email="assigner@example.com")
         assignee_organization = OrganizationFactory(title="Assignee Organization", email="assignee@example.com")
 
-        assigner_user = UserFactory(organization=assigner_organization)
-        assignee_user = UserFactory(organization=assignee_organization)
+        assigner_user = UserFactory(organization=assigner_organization, email="assigner@test.com")
+        assignee_user = UserFactory(organization=assignee_organization, email="assignee@test.com")
 
         content_type_user = ContentType.objects.get_for_model(User)
 
@@ -85,21 +85,21 @@ class TestSmartContractForm:
         ]
 
         assigner_contact_user = Contact.objects.create(
-            dataset=dataset_b,
+            organization=assigner_organization,
             content_type=content_type_user,
             object_id=assigner_user.pk,
-            email=assignee_user.email,
+            email=assigner_user.email,
         )
 
         assignee_contact_user = Contact.objects.create(
-            dataset=dataset_d,
+            organization=assigner_organization,
             content_type=content_type_user,
             object_id=assignee_user.pk,
             email=assignee_user.email,
         )
 
         random_contact_user = Contact.objects.create(
-            dataset=dataset_f,
+            organization=assigner_organization,
             content_type=content_type_user,
             object_id=OrganizationFactory().pk,
             email="example@example.com",

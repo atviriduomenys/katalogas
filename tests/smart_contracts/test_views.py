@@ -392,14 +392,14 @@ class TestAgreementGeneratePdf:
         assigner_user = UserFactory(organization=organization)
         assignee_user = UserFactory(organization=agreement.assignee)
         assigner_representative = ContactFactory(
-            dataset=dataset,
+            organization=organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
             phone=assigner_user.phone,
         )
         assignee_representative = ContactFactory(
-            dataset=DatasetFactory(),
+            organization=organization,
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
@@ -462,14 +462,14 @@ class TestAgreementGeneratePdf:
         )
 
         assigner_representative = ContactFactory(
-            dataset=dataset,
+            organization=organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
             phone=assigner_user.phone,
         )
         assignee_representative = ContactFactory(
-            dataset=DatasetFactory(),
+            organization=OrganizationFactory(),
             object_id=user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=user.email,

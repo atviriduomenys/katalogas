@@ -1088,8 +1088,16 @@ class AdminPublisherAssignedOrganizationForm(ModelForm):
 class BaseContactForm(ModelForm):
     position = CharField(label=_("Pareigos organizacijoje"), required=False)
     contact = ChoiceField(label=_("Registruotas kontaktinis asmuo ar organizacija"), required=False)
-    contact_name = CharField(label=_("Papildomas kontaktinis asmuo"), required=False, help_text=_("Neregistruoto kontakto Vardas ir Pavardė"))
-    email = EmailField(label=_("El. paštas"), required=False, help_text=_("Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."))
+    contact_name = CharField(
+        label=_("Papildomas kontaktinis asmuo"), required=False, help_text=_("Neregistruoto kontakto Vardas ir Pavardė")
+    )
+    email = EmailField(
+        label=_("El. paštas"),
+        required=False,
+        help_text=_(
+            "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."
+        ),
+    )
     phone = RegexField(
         label=_("Telefono numeris"),
         regex=r"^\+3706\d{7}$|^0\d{8}$",
@@ -1097,7 +1105,9 @@ class BaseContactForm(ModelForm):
             "invalid": _("Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
         },
         required=False,
-        help_text=_("Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia.")
+        help_text=_(
+            "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia."
+        ),
     )
 
     class Meta:
@@ -1155,10 +1165,10 @@ class BaseContactForm(ModelForm):
         self.fields["contact"].choices = [("", "---------")]
 
         contact_query = Contact.objects.exclude(email="")
-        
+
         if self.instance.pk:
             contact_query = contact_query.exclude(pk=self.instance.pk)
-        
+
         existing_contact_emails = set(contact_query.values_list("email", flat=True))
 
         for org in organization_contacts:

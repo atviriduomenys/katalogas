@@ -23,7 +23,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="contact",
             name="contact_name",
-            field=models.CharField(blank=True, max_length=255, verbose_name="Vardas"),
+            field=models.CharField(blank=True, max_length=255, verbose_name="Vardas Pavardė"),
         ),
         migrations.AddField(
             model_name="contact",
@@ -66,5 +66,12 @@ class Migration(migrations.Migration):
             name="object_id",
             field=models.PositiveIntegerField(null=True, verbose_name="Object ID"),
         ),
-        migrations.RunPython(fill_organization_id),
+        migrations.AlterField(
+            model_name="contact",
+            name="email",
+            field=models.EmailField(
+                blank=True, max_length=254, unique=True, verbose_name="Email"
+            ),
+        ),
+        migrations.RunPython(fill_organization_id, reverse_code=migrations.RunPython.noop),
     ]

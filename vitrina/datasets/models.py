@@ -529,6 +529,13 @@ class Dataset(Resource):
         blank=True,
         help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
     )
+    contact = models.ForeignKey(
+        "Contact",
+        on_delete=models.SET_NULL,
+        verbose_name=_("Kontaktinis asmuo ar organizacija"),
+        null=True,
+        related_name="contact_datasets",
+    )
 
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------
@@ -1233,15 +1240,8 @@ class Dataset(Resource):
                 self.description = en_description
 
     def get_main_contact(self):
-        contacts = Contact.objects.filter(dataset=self, deleted__isnull=True)
-
-        user_contact = contacts.filter(content_type__model="user").first()
-        if user_contact:
-            return user_contact
-
-        org_contact = contacts.filter(content_type__model="organization").first()
-        if org_contact:
-            return org_contact
+        if contact := self.contact:
+            return contact
 
         if self.publisher:
             return self._create_virtual_contact(self.publisher)
@@ -1254,7 +1254,6 @@ class Dataset(Resource):
             content_type=content_type,
             object_id=org.id,
             content_object=org,
-            dataset=self,
             phone=org.phone if org.phone else None,
         )
         return contact
@@ -1828,7 +1827,7 @@ class Contact(models.Model):
         on_delete=models.CASCADE,
         verbose_name=_("Organizacija"),
     )
-    contact_name = models.CharField(_("Vardas"), max_length=255, blank=True)
+    contact_name = models.CharField(_("Vardas Pavardė"), max_length=255, blank=True)
     position = models.CharField(_("Pareigos"), max_length=255, blank=True)
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
@@ -1844,8 +1843,7 @@ class Contact(models.Model):
     )
     object_id = models.PositiveIntegerField(verbose_name=_("Object ID"), null=True)
     content_object = GenericForeignKey("content_type", "object_id")
-    dataset = ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"), null=True)
-    email = models.EmailField(_("Email"), blank=True)
+    email = models.EmailField(_("Email"), blank=True, unique=True)
     phone = models.CharField(_("Phone"), max_length=50, blank=True)
 
     class Meta:
@@ -1874,7 +1872,6 @@ class Contact(models.Model):
         return _("Neregistruotas naudotojas")
 
     def save(self, *args, **kwargs):
-        Contact.objects.filter(dataset=self.dataset, dataset__isnull=False).delete()
         super().save(*args, **kwargs)
 
     def get_acl_parents(self):

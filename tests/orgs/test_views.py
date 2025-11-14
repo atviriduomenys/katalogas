@@ -853,13 +853,11 @@ def test_contact_tab_access_denied_for_manager(app, representative_data):
 def test_contact_tab_display_org_contacts(app, representative_data):
     app.set_user(representative_data['coordinator'])
     organization = representative_data['organization']
-    ds = DatasetFactory(organization=organization)
 
     Contact.objects.create(
         organization=organization,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk,
-        dataset=ds,
         email="org@test.com",
         phone="+37061234567"
     )
@@ -878,14 +876,12 @@ def test_contact_tab_display_org_contacts(app, representative_data):
 def test_contact_tab_display_user_contacts(app, representative_data):
     app.set_user(representative_data['coordinator'])
     organization = representative_data['organization']
-    ds = DatasetFactory(organization=organization)
     user = representative_data['manager']
 
     Contact.objects.create(
         organization=organization,
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.pk,
-        dataset=ds,
         email="user@test.com",
         phone="+37061234567"
     )
@@ -904,9 +900,6 @@ def test_contact_tab_display_user_contacts(app, representative_data):
 def test_contact_tab_display_multiple_contacts(app, representative_data):
     app.set_user(representative_data['coordinator'])
     organization = representative_data['organization']
-    ds = DatasetFactory(organization=organization)
-    ds1 = DatasetFactory(organization=organization)
-    ds2 = DatasetFactory(organization=organization)
     user1 =  UserFactory(organization=organization)
     user2 = UserFactory(organization=organization)
 
@@ -915,7 +908,6 @@ def test_contact_tab_display_multiple_contacts(app, representative_data):
             organization=organization,
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
-            dataset=ds,
             email="org@test.com",
             phone="+37061234567"
         ),
@@ -923,7 +915,6 @@ def test_contact_tab_display_multiple_contacts(app, representative_data):
             organization=organization,
             content_type=ContentType.objects.get_for_model(user1),
             object_id=user1.pk,
-            dataset=ds1,
             email="user1@test.com",
             phone="+37067654321"
         ),
@@ -931,7 +922,6 @@ def test_contact_tab_display_multiple_contacts(app, representative_data):
             organization=organization,
             content_type=ContentType.objects.get_for_model(user2),
             object_id=user2.pk,
-            dataset=ds2,
             email="user2@test.com",
             phone="+37061111111"
         )
@@ -963,7 +953,6 @@ def test_contact_tab_pagination(app, representative_data):
             organization=organization,
             content_type=ContentType.objects.get_for_model(user),
             object_id=user.pk,
-            dataset=DatasetFactory(organization=organization),
             email=f"user{i}@test.com"
         )
 
@@ -997,13 +986,11 @@ def test_contact_tab_empty_state(app, representative_data):
 def test_contact_tab_actions_coordinator(app, representative_data):
     app.set_user(representative_data['coordinator'])
     organization = representative_data['organization']
-    ds = DatasetFactory(organization=organization)
 
     contact = Contact.objects.create(
         organization=organization,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk,
-        dataset=ds,
         email="test@test.com"
     )
 
@@ -1037,7 +1024,6 @@ def test_contact_create_for_org(app, representative_data):
     assert contact.object_id == org.pk
     assert contact.email == "org@test.com"
     assert contact.phone == "+37061234567"
-    assert contact.dataset is None
     assert contact.organization == org
 
     resp = app.get(reverse('organization-contacts', kwargs={
@@ -1129,12 +1115,10 @@ def test_contact_create_no_permission(app, representative_data):
 def test_contact_update_org(app, representative_data):
     app.set_user(representative_data['coordinator'])
     org = representative_data['organization']
-    ds = DatasetFactory(organization=org)
     contact = Contact.objects.create(
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
-        dataset=ds,
         email="old@test.com",
         phone="+37061234567"
     )
@@ -1160,12 +1144,10 @@ def test_contact_update_user(app, representative_data):
     coordinator = representative_data['coordinator']
     app.set_user(coordinator)
     org = representative_data['organization']
-    ds = DatasetFactory(organization=org)
     contact = Contact.objects.create(
         organization=org,
         content_type=ContentType.objects.get_for_model(coordinator),
         object_id=coordinator.pk,
-        dataset=ds,
         email="old@test.com",
         phone="+37061234567",
         position="Tester",
@@ -1192,7 +1174,6 @@ def test_contact_delete(app, representative_data):
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
-        dataset=DatasetFactory(organization=org)
     )
     url = reverse('organization-contacts', kwargs={
         'pk': org.pk
@@ -1216,7 +1197,6 @@ def test_contact_delete_no_permission(app, representative_data):
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
-        dataset=DatasetFactory(organization=org)
     )
 
     resp = app.get(reverse('contact-delete', kwargs={

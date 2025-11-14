@@ -338,15 +338,14 @@ class TestDatasetDetailView:
         org = OrganizationFactory(website="https://org.lt")
         publisher_org = OrganizationFactory(publisher=True, website="https://publisher.lt")
         user = UserFactory(is_staff=True, organization=org)
-        ds = DatasetFactory(organization=org, publisher=publisher_org)
-        ContactFactory(
+        contact = ContactFactory(
             organization=org,
-            dataset=ds,
             object_id=user.pk,
             content_type=ContentType.objects.get_for_model(user),
             email=user.email,
             phone=user.phone,
         )
+        ds = DatasetFactory(organization=org, publisher=publisher_org, contact=contact)
 
         app.set_user(user)
 
@@ -370,7 +369,6 @@ class TestDatasetDetailView:
         ds = DatasetFactory(organization=org, publisher=publisher_org)
         ContactFactory(
             organization=org,
-            dataset=ds,
             object_id=org.pk,
             content_type=ContentType.objects.get_for_model(org),
             email=org.email,
@@ -1393,26 +1391,17 @@ class TestDatasetUpdateView:
         org = OrganizationFactory()
         user = UserFactory(is_staff=True, organization=org)
         app.set_user(user)
-        ds = DatasetFactory(organization=org)
-
-        form = app.get(reverse("dataset-change", args=[ds.pk])).forms["dataset-form"]
-        form["contact"] = f"org-{org.pk}"
-        form.submit()
-        assert Contact.objects.filter(
-            dataset=ds,
+        contact = ContactFactory(
+            organization=org,
             content_type=ContentType.objects.get_for_model(org),
             object_id=org.pk,
-        ).exists()
-
+        )
+        ds = DatasetFactory(organization=org)
         form = app.get(reverse("dataset-change", args=[ds.pk])).forms["dataset-form"]
-        form["contact"] = f"user-{user.pk}"
+        form["contact"] = contact.pk
         form.submit()
-        assert Contact.objects.filter(dataset=ds).count() == 1
-        assert Contact.objects.filter(
-            dataset=ds,
-            content_type=ContentType.objects.get_for_model(user),
-            object_id=user.pk,
-        ).exists()
+        ds.refresh_from_db()
+        assert ds.contact == contact
 
     def test_dataset_update_contact_options(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -1426,19 +1415,42 @@ class TestDatasetUpdateView:
         app.set_user(user)
 
         ds = DatasetFactory(organization=org, publisher=publisher_org)
-        form = app.get(reverse("dataset-change", args=[ds.pk])).forms["dataset-form"]
-
-        form_options = sorted([option[2] for option in form.fields["contact"][0].options])
-        correct_options = sorted(
-            [
-                "---------",
-                org.title,
-                publisher_org.title,
-                f"{user.first_name} {user.last_name}",
-                f"{user2.first_name} {user2.last_name}",
-                f"{publisher_user.first_name} {publisher_user.last_name}",
-            ]
+        ContactFactory(
+            organization=org,
+            content_type=ContentType.objects.get_for_model(org),
+            object_id=org.pk,
         )
+        ContactFactory(
+            organization=org,
+            content_type=ContentType.objects.get_for_model(publisher_org),
+            object_id=publisher_org.pk,
+        )
+        ContactFactory(
+            organization=org,
+            content_type=ContentType.objects.get_for_model(user),
+            object_id=user.pk,
+        )
+        ContactFactory(
+            organization=org,
+            content_type=ContentType.objects.get_for_model(user2),
+            object_id=user2.pk,
+        )
+        ContactFactory(
+            organization=org,
+            content_type=ContentType.objects.get_for_model(publisher_user),
+            object_id=publisher_user.pk,
+        )
+        form = app.get(reverse("dataset-change", args=[ds.pk])).forms["dataset-form"]
+        
+        form_options = sorted([option[2] for option in form.fields["contact"][0].options])
+        correct_options = sorted([
+            "---------",
+            org.title,
+            publisher_org.title,
+            f"{user.first_name} {user.last_name}",
+            f"{user2.first_name} {user2.last_name}",
+            f"{publisher_user.first_name} {publisher_user.last_name}",
+        ])
         incorrect_options = sorted(["---------", org2.title, f"{user3.first_name} {user3.last_name}"])
         assert form_options == correct_options
         assert form_options != incorrect_options

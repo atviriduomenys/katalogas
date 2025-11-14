@@ -1276,9 +1276,7 @@ class VersionForm(forms.ModelForm):
             latest_version_of_major = Version.objects.filter(dataset=self.dataset, major=major_version.major).last()
             latest_versions.append(latest_version_of_major.id)
 
-        self.fields["related_version"].queryset = Version.objects.filter(
-            id__in=latest_versions
-        ).order_by("major")
+        self.fields["related_version"].queryset = Version.objects.filter(id__in=latest_versions).order_by("major")
 
         self.fields["related_version"].label_from_instance = lambda obj: obj.external_version
 

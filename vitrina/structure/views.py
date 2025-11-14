@@ -2788,7 +2788,7 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
 
         based_on_version = form.cleaned_data.get("related_version")
         if version.version_type == "MAJOR":
-            max_major = _Version.objects.filter(dataset=self.dataset).aggregate(Max('major'))['major__max']
+            max_major = _Version.objects.filter(dataset=self.dataset).aggregate(Max("major"))["major__max"]
             version.major = max_major + 1 if max_major else 1
             version.minor = 0
             version.patch = 0

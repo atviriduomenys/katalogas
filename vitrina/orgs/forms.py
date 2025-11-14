@@ -1086,10 +1086,10 @@ class AdminPublisherAssignedOrganizationForm(ModelForm):
 
 
 class BaseContactForm(ModelForm):
-    position = CharField(label=_("Pareigos"), required=False)
+    position = CharField(label=_("Pareigos organizacijoje"), required=False)
     contact = ChoiceField(label=_("Registruotas kontaktinis asmuo ar organizacija"), required=False)
-    contact_name = CharField(label=_("Naujas kontaktinis asmuo"), required=False)
-    email = EmailField(label=_("El. paštas"), required=False)
+    contact_name = CharField(label=_("Papildomas kontaktinis asmuo"), required=False, help_text=_("Neregistruoto kontakto Vardas ir Pavardė"))
+    email = EmailField(label=_("El. paštas"), required=False, help_text=_("Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."))
     phone = RegexField(
         label=_("Telefono numeris"),
         regex=r"^\+3706\d{7}$|^0\d{8}$",
@@ -1097,6 +1097,7 @@ class BaseContactForm(ModelForm):
             "invalid": _("Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
         },
         required=False,
+        help_text=_("Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia.")
     )
 
     class Meta:
@@ -1200,7 +1201,7 @@ class BaseContactForm(ModelForm):
             raise ValidationError(
                 _(
                     "Turi būti nurodytas registruotas kontaktinis asmuo arba organizacija, "
-                    "arba įvestas naujas kontaktinis asmuo."
+                    "arba įvestas papildomas kontaktinis asmuo."
                 )
             )
 
@@ -1210,7 +1211,7 @@ class BaseContactForm(ModelForm):
             raise ValidationError(
                 _(
                     "Negali būti nurodytas registruotas kontaktinis asmuo arba organizacija "
-                    "ir įvestas naujas kontaktinis asmuo tuo pačiu metu."
+                    "ir įvestas papildomas kontaktinis asmuo tuo pačiu metu."
                 )
             )
         if contact_name:

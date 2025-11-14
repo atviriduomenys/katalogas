@@ -1154,19 +1154,22 @@ class BaseContactForm(ModelForm):
 
         self.fields["contact"].choices = [("", "---------")]
 
-        # email is unique field: exclude orgs and users already in contacts
-        existing_contact_emails = Contact.objects.filter().values_list("email", flat=True)
+        contact_query = Contact.objects.exclude(email="")
+        
+        if self.instance.pk:
+            contact_query = contact_query.exclude(pk=self.instance.pk)
+        
+        existing_contact_emails = set(contact_query.values_list("email", flat=True))
 
         for org in organization_contacts:
-            if org.email and org.email not in existing_contact_emails:
+            if not existing_contact_emails or (org.email and org.email not in existing_contact_emails):
                 self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
 
             user_choices = [
                 (f"user-{user.id}", f"{user.get_full_name()}")
                 for user in user_contacts
                 if user.representative_organization_id == org.id
-                and user.email
-                and user.email not in existing_contact_emails
+                and (not existing_contact_emails or (user.email and user.email not in existing_contact_emails))
             ]
             if user_choices:
                 self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))

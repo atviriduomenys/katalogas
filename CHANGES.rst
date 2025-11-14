@@ -4,6 +4,23 @@ Changes
 v 1.7 (unreleased)
 ==================
 
+New features:
+
+https://github.com/atviriduomenys/katalogas/issues/2067
+- Part 1: Move field `other_assignee_legislations` from `Agreement` to `Project`.
+- Part 2: Add assigner & assignee representatives that are displayed on the contract file.
+- Part 2.1: Remove organizations as juridical entities from the list of possible entities to represent organizations in agreements.
+
+
+Bugfixes:
+
+<no ticket>
+- Fix form layout, do not add a field that should be removed from the form itself on specific conditions.
+- Fixed a malformed Django template variable by removing an accidental trailing `%` and properly closing the `{{ ... }}` tag.
+
+https://github.com/atviriduomenys/katalogas/issues/2094
+- Fix an issue where if `vertimas.vu.lt` is down, tests are failing on the pipelines and during local development, by introducing mocks for direct external API calls.
+
 
 v 1.6 (2025-11-06)
 ==================
@@ -30,20 +47,6 @@ https://github.com/atviriduomenys/katalogas/issues/2011
 https://github.com/atviriduomenys/katalogas/issues/2028
 - Added a fake VIISP login feature to simulate authentication via VIISP.
 - The login functionality is available only in test mode and will be hidden in production.
-
-https://github.com/atviriduomenys/katalogas/issues/2067
-- Part 1: Move field `other_assignee_legislations` from `Agreement` to `Project`.
-- Part 2: Add assigner & assignee representatives that are displayed on the contract file.
-- Part 2.1: Remove organizations as juridical entities from the list of possible entities to represent organizations in agreements.
-
-Bugfixes:
-
-<no ticket>
-- Fix form layout, do not add a field that should be removed from the form itself on specific conditions.
-
-https://github.com/atviriduomenys/katalogas/issues/2094
-- Fix an issue where if `vertimas.vu.lt` is down, tests are failing on the pipelines and during local development, by introducing mocks for direct external API calls.
-
 
 v 1.5 (2025-10-27)
 ==================

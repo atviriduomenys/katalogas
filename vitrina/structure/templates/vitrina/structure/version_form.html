@@ -1,7 +1,7 @@
 {% extends "base_form.html" %}
 {% load i18n %}
 
-{% block current_title %}{% translate "Nauja versija" %}{% endblock %}
+{% block current_title %}{% translate "Publikuoti versiją" %}{% endblock %}
 
 {% block parent_links %}
     <ul class="p-t-sm">
@@ -15,20 +15,42 @@
 {% block head %}
     <style>
         #div_id_metadata div.control {
-		  	margin-bottom: 0.5rem;
-		}
-		div.control:has(.prop_metadata) {
-		    padding-left: 1.5em;
-		}
-		div.control:has(.enum_metadata) {
-		    padding-left: 3.5em;
-		}
+          margin-bottom: 0.5rem;
+       }
+       div.control:has(.prop_metadata) {
+           padding-left: 1.5em;
+       }
+       div.control:has(.enum_metadata) {
+           padding-left: 3.5em;
+       }
     </style>
 {% endblock %}
 
 {% block scripts %}
     <script>
         $(document).ready(function() {
+            const $related_version = $('#id_related_version').closest('.field, .form-group, .control');
+            const $related_version_label = $('label[for="id_related_version"]');
+
+            function updateBaseVersionField() {
+                const selectedType = $('input[name="version_type"]:checked').val();
+
+                $related_version.hide();
+                $related_version_label.hide();
+
+                if (selectedType === 'MINOR' || selectedType === 'PATCH') {
+                    $related_version.show();
+                    $related_version_label.show();
+
+                }
+            }
+
+            setTimeout(updateBaseVersionField, 20);
+
+            $('input[name="version_type"]').on('change', function() {
+                updateBaseVersionField();
+            });
+
             let select = $(`<input type="checkbox" id="select_all"/> <strong id="select_all_label">${gettext("Pažymėti visus")}</strong>`).insertAfter(
                 '#div_id_metadata label:not(.checkbox)'
             );

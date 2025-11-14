@@ -25,7 +25,7 @@ from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
     PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory, VersionFactory
-from vitrina.structure.models import Metadata, Enum, EnumItem, Param
+from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionType
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
@@ -2013,6 +2013,7 @@ def test_new_version_with_released_date_earlier_than_two_weeks(app: DjangoTestAp
     dataset = DatasetFactory()
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today()
+    form['version_type'] = "MAJOR"
     resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[
         "Versija gali įsigalioti ne anksčiau kaip po 2 savaičių."
@@ -2027,10 +2028,12 @@ def test_new_version_with_released_date_earlier_than_last_version(app: DjangoTes
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form.submit()
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     resp = form.submit()
 
     assert list(resp.context['form'].errors.values()) == [[
@@ -2067,6 +2070,7 @@ def test_new_version_with_new_structure(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2111,6 +2115,7 @@ def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2121,6 +2126,7 @@ def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2166,6 +2172,7 @@ def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2176,6 +2183,7 @@ def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2221,6 +2229,7 @@ def test_new_version_with_updated_structure__property_name(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2231,6 +2240,7 @@ def test_new_version_with_updated_structure__property_name(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2276,6 +2286,7 @@ def test_new_version_with_updated_structure__model_base(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2301,6 +2312,7 @@ def test_new_version_with_updated_structure__model_base(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2346,6 +2358,7 @@ def test_new_version_with_updated_structure__model_ref(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2356,6 +2369,7 @@ def test_new_version_with_updated_structure__model_ref(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2401,6 +2415,7 @@ def test_new_version_with_updated_structure__property_type(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2411,6 +2426,7 @@ def test_new_version_with_updated_structure__property_type(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2456,6 +2472,7 @@ def test_new_version_with_updated_structure__property_ref(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2466,6 +2483,7 @@ def test_new_version_with_updated_structure__property_ref(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2512,6 +2530,7 @@ def test_new_version_with_updated_structure__model_level(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2522,6 +2541,7 @@ def test_new_version_with_updated_structure__model_level(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2568,6 +2588,7 @@ def test_new_version_with_updated_structure__property_level(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2578,6 +2599,7 @@ def test_new_version_with_updated_structure__property_level(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2624,6 +2646,7 @@ def test_new_version_with_updated_structure__property_access(app: DjangoTestApp)
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2634,6 +2657,7 @@ def test_new_version_with_updated_structure__property_access(app: DjangoTestApp)
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2695,6 +2719,7 @@ def test_new_version_with_updated_structure__enum_prepare(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2705,6 +2730,7 @@ def test_new_version_with_updated_structure__enum_prepare(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [enum_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -2766,6 +2792,7 @@ def test_new_version_with_updated_structure__enum_source(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
@@ -2776,6 +2803,7 @@ def test_new_version_with_updated_structure__enum_source(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = [enum_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
@@ -3572,6 +3600,7 @@ def test_published_metadata_gets_completed_status(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = metadata_ids
     form.submit()
 
@@ -3645,6 +3674,7 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
 
     form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
     form['metadata'] = metadata_ids
     form.submit()
 
@@ -3698,6 +3728,7 @@ def test_published_metadata_defaults_to_develop_after_hard_change(app: DjangoTes
     )
     publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
     publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    publish_version_form['version_type'] = "MAJOR"
     publish_version_form['metadata'] = metadata_ids
     publish_version_form.submit()
 
@@ -3886,6 +3917,7 @@ def test_changing_multiple_fields_in_published_structure_respects_status(app: Dj
     )
     publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
     publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    publish_version_form['version_type'] = "MAJOR"
     publish_version_form['metadata'] = metadata_ids
     publish_version_form.submit()
 
@@ -4009,6 +4041,7 @@ def test_published_metadata_form_does_not_change_status_is_kept(app: DjangoTestA
     )
     publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
     publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    publish_version_form['version_type'] = "MAJOR"
     publish_version_form['metadata'] = metadata_ids
     publish_version_form.submit()
 
@@ -4082,3 +4115,190 @@ def test_props_metadata_rendering(app: DjangoTestApp) -> None:
     assert response.status_code == 200
     assert 'href="https://example.com/prop_1"' in response.content.decode()
     assert 'href="https://example.com/prop_2"' in response.content.decode()
+
+@pytest.mark.django_db
+def test_only_major_version_allowed_when_new_metadata(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+
+    assert form["version_type"].options[0][0] == "MAJOR"
+
+@pytest.mark.django_db
+def test_minor_version_available_if_major_exists(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    form["version_type"] = "MAJOR"
+    form.submit()
+
+    second_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+
+    assert [opt[0] for opt in second_version_form["version_type"].options] == ["MAJOR", "MINOR", "PATCH"]
+
+@pytest.mark.django_db
+def test_patch_version_available_if_minor_exists(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
+
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["related_version"] = major_version.pk
+    minor_version_form.submit()
+
+    patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+
+    assert [opt[0] for opt in patch_version_form["version_type"].options] == ["MAJOR", "MINOR", "PATCH"]
+
+@pytest.mark.django_db
+def test_form_errors_if_major_not_selected(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+
+    res = minor_version_form.submit(expect_errors=True)
+
+    assert "Tėvinė versija turi būti pasirinkta" in res.text
+
+@pytest.mark.django_db
+def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
+
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["related_version"] = major_version.pk
+    minor_version_form.submit()
+
+    patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    patch_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    patch_version_form["version_type"] = "PATCH"
+
+    res = patch_version_form.submit(expect_errors=True)
+
+    assert "Tėvinė versija turi būti pasirinkta" in res.text
+
+@pytest.mark.django_db
+def test_multiple_major_versions_increment_external_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_versions = _Version.objects.filter(dataset=dataset, version_type=VersionType.MAJOR).order_by("created")
+
+    assert major_versions[0].external_version == "1.0.0"
+    assert major_versions[1].external_version == "2.0.0"
+
+@pytest.mark.django_db
+def test_multiple_minor_versions_increment_external_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
+
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["related_version"] = major_version.pk
+    minor_version_form.submit()
+
+    latest_version = _Version.objects.last()
+
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["related_version"] = latest_version.pk
+    minor_version_form.submit()
+
+    minor_versions = _Version.objects.filter(dataset=dataset, version_type=VersionType.MINOR).order_by("created")
+
+    assert minor_versions[0].external_version == "1.1.0"
+    assert minor_versions[1].external_version == "1.2.0"
+
+@pytest.mark.django_db
+def test_multiple_patch_versions_increment_external_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    dataset = DatasetFactory()
+
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    major_version_form["version_type"] = "MAJOR"
+    major_version_form.submit()
+
+    major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
+
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    minor_version_form["version_type"] = "MINOR"
+    minor_version_form["related_version"] = major_version.pk
+    minor_version_form.submit()
+
+    minor_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MINOR)
+
+    patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    patch_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    patch_version_form["related_version"] = minor_version.pk
+    patch_version_form["version_type"] = "PATCH"
+    patch_version_form.submit()
+
+    latest_version = _Version.objects.last()
+
+    patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    patch_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
+    patch_version_form["related_version"] = latest_version.pk
+    patch_version_form["version_type"] = "PATCH"
+    patch_version_form.submit()
+
+    patch_versions = _Version.objects.filter(dataset=dataset, version_type=VersionType.PATCH).order_by("created")
+
+    assert patch_versions[0].external_version == "1.1.1"
+    assert patch_versions[1].external_version == "1.1.2"

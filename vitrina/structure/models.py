@@ -13,6 +13,7 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Status
 from vitrina.models import UUIDBaseModel
+from vitrina.structure import VersionStatus, VersionType
 from vitrina.structure.helpers import get_type_repr
 from enum import Enum
 
@@ -493,6 +494,14 @@ class Version(models.Model):
     released = models.DateField(_("Išleidimo data"), null=True, blank=True)
     description = models.TextField(_("Aprašymas"), null=True, blank=True)
     deployed = models.DateTimeField(_("Įkėlimo į saugyklą data"), null=True, blank=True)
+    status = models.CharField(_("Versijos būsena"), max_length=20, choices=VersionStatus.choices, null=True)
+    version_type = models.CharField(
+        _("Versijos tipas"), max_length=20, choices=VersionType.choices, null=True, blank=True
+    )
+    external_version = models.CharField(_("Versijos numeris"), max_length=50, null=True, blank=True)
+    major = models.IntegerField(_("Pagrindinis versijos numeris"), null=True, blank=True)
+    minor = models.IntegerField(_("Papildomas versijos numeris"), null=True, blank=True)
+    patch = models.IntegerField(_("Pataisos versijos numeris"), null=True, blank=True)
 
     class Meta:
         db_table = "version"

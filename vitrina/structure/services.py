@@ -36,6 +36,8 @@ from vitrina.structure.models import (
     Param,
     ParamItem,
     Base,
+    Version,
+    VersionStatus,
 )
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
@@ -507,6 +509,11 @@ def _create_or_update_metadata(
             obj.save()
         if not obj_meta.id:
             obj_meta.id = uuid.uuid4()
+
+        draft_version, _ = Version.objects.get_or_create(
+            dataset=dataset,
+            status=VersionStatus.DRAFT,
+        )
         metadata = Metadata.objects.create(
             dataset=dataset,
             uuid=obj_meta.id,
@@ -533,6 +540,7 @@ def _create_or_update_metadata(
             required=obj_meta.required if hasattr(obj_meta, "required") else None,
             unique=obj_meta.unique if hasattr(obj_meta, "unique") else None,
             type_args=", ".join(obj_meta.type_args) if hasattr(obj_meta, "type_args") and obj_meta.type_args else None,
+            metadata_version=draft_version,
         )
     return obj, metadata
 

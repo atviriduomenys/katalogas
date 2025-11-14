@@ -25,6 +25,8 @@ from vitrina.structure.models import (
     Model,
     Prefix,
     Version,
+    VersionStatus,
+    VersionType,
 )
 
 
@@ -1243,35 +1245,79 @@ class ParamForm(forms.ModelForm):
 class VersionForm(forms.ModelForm):
     released = forms.DateField(label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"}))
     metadata = forms.MultipleChoiceField(label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple)
+    version_type = forms.ChoiceField(
+        label=_("Versijos tipas"),
+        required=True,
+        choices=VersionType.choices,
+        widget=forms.RadioSelect(),
+        help_text=_("Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija:")
+        + " https://atviriduomenys.readthedocs.io/latest/katalogas.html#versijos-tipas",
+    )
+    related_version = forms.ModelChoiceField(
+        label=_("Priklauso versijai"),
+        required=False,
+        queryset=Version.objects.none(),
+    )
 
     class Meta:
         model = Version
         fields = (
             "released",
             "description",
+            "version_type",
         )
 
     def __init__(self, dataset, *args, **kwargs):
         self.dataset = dataset
         super().__init__(*args, **kwargs)
+        latest_versions = []
+        major_versions = Version.objects.filter(dataset=self.dataset, version_type=VersionType.MAJOR).order_by("major")
+
+        for major_version in major_versions:
+            latest_version_of_major = Version.objects.filter(dataset=self.dataset, major=major_version.major).last()
+            latest_versions.append(latest_version_of_major.id)
+
+        self.fields["related_version"].queryset = Version.objects.filter(id__in=latest_versions).order_by("major")
+
+        self.fields["related_version"].label_from_instance = lambda obj: obj.external_version
+
+        all_choices = set(VersionType.choices)
+        allowed_types = [VersionType.MAJOR]
+
+        if self.fields["related_version"].queryset.exists():
+            allowed_types.append(VersionType.MINOR)
+            allowed_types.append(VersionType.PATCH)
+
+        self.fields["version_type"].choices = sorted([choice for choice in all_choices if choice[0] in allowed_types])
+
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "version-form"
         self.helper.layout = Layout(
             Field("released"),
-            Field(
-                "description",
-            ),
+            Field("description"),
+            Field("version_type"),
+            Field("related_version"),
             Field("metadata"),
-            Submit("submit", _("Sukurti"), css_class="button is-primary"),
+            Submit("submit", _("Publikuoti"), css_class="button is-primary"),
         )
         self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version()
+
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+        version_type = cleaned_data.get("version_type")
+        related_version = cleaned_data.get("related_version")
+
+        if (version_type == VersionType.MINOR or version_type == VersionType.PATCH) and not related_version:
+            self.add_error("related_version", _("Tėvinė versija turi būti pasirinkta"))
+
+        return cleaned_data
 
     def clean_released(self):
         released = self.cleaned_data.get("released")
         if released < (datetime.datetime.today().date() + datetime.timedelta(days=14)):
             raise ValidationError(_("Versija gali įsigalioti ne anksčiau kaip po 2 savaičių."))
-        latest_version = self.dataset.dataset_version.order_by("-created").first()
+        latest_version = self.dataset.dataset_version.exclude(status=VersionStatus.DRAFT).order_by("-created").first()
         if latest_version and released < latest_version.released:
             raise ValidationError(_("Versija negali įsigalioti anksčiau už praėjusią versiją."))
         return released

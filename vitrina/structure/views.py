@@ -58,6 +58,7 @@ from vitrina.structure.models import (
     Param,
     MetadataVersion,
     StatusCode,
+    VersionStatus,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -1456,6 +1457,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
         visibility = form.cleaned_data.get("visibility")
         status = form.cleaned_data.get("status") or Status.objects.filter(is_default=True).first()
         eli = form.cleaned_data.get("eli")
+        draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
         if metadata := self.property.metadata.first():
             if metadata.type == "string":
                 value = f'"{value}"'
@@ -1476,6 +1478,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
             title=form.cleaned_data.get("title"),
             description=form.cleaned_data.get("description"),
             version=1,
+            metadata_version=draft_version,
         )
 
         # Save history
@@ -1698,12 +1701,12 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
-
         model = Model.objects.create(
             dataset=self.dataset,
             is_parameterized=form.cleaned_data.get("is_parameterized", False),
         )
-
+        draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
+        self.object.metadata_version = draft_version
         self.object.object = model
         self.object.dataset = self.dataset
         self.object.uuid = str(uuid.uuid4())
@@ -2020,7 +2023,8 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         prop = Property.objects.create(model=self.model_obj)
-
+        draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
+        self.object.metadata_version = draft_version
         self.object.uuid = str(uuid.uuid4())
         self.object.object = prop
         self.object.dataset = self.dataset
@@ -2313,7 +2317,8 @@ class ParamCreateView(PermissionRequiredMixin, CreateView):
             name=form.cleaned_data.get("name"),
         )
         param_item = ParamItem.objects.create(param=param)
-
+        draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
+        self.object.metadata_version = draft_version
         self.object.object = param_item
         self.object.dataset = self.dataset
         self.object.uuid = str(uuid.uuid4())
@@ -2779,8 +2784,26 @@ class VersionCreateView(PermissionRequiredMixin, CreateView):
     def form_valid(self, form):
         version = form.save(commit=False)
         version.dataset = self.dataset
+        version.status = VersionStatus.PRE_RELEASE
 
-        latest_version = self.dataset.dataset_version.order_by("-version").first()
+        based_on_version = form.cleaned_data.get("related_version")
+        if version.version_type == "MAJOR":
+            max_major = _Version.objects.filter(dataset=self.dataset).aggregate(Max("major"))["major__max"]
+            version.major = max_major + 1 if max_major else 1
+            version.minor = 0
+            version.patch = 0
+        elif version.version_type == "MINOR":
+            version.major = based_on_version.major
+            version.minor = based_on_version.minor + 1
+            version.patch = 0
+        elif version.version_type == "PATCH":
+            version.major = based_on_version.major
+            version.minor = based_on_version.minor
+            version.patch = based_on_version.patch + 1
+
+        version.external_version = f"{version.major}.{version.minor}.{version.patch}"
+
+        latest_version = self.dataset.dataset_version.exclude(status=VersionStatus.DRAFT).order_by("-version").first()
         if latest_version and latest_version.version:
             version.version = latest_version.version + 1
         else:
@@ -2867,9 +2890,17 @@ class VersionListView(
         status = self.request.GET.get("status", "not_deployed")
         context["dataset"] = self.dataset
         if status == "deployed":
-            context["versions"] = self.dataset.dataset_version.filter(deployed__isnull=False).order_by("version")
+            context["versions"] = (
+                self.dataset.dataset_version.filter(deployed__isnull=False)
+                .exclude(status=VersionStatus.DRAFT)
+                .order_by("version")
+            )
         else:
-            context["versions"] = self.dataset.dataset_version.filter(deployed__isnull=True).order_by("version")
+            context["versions"] = (
+                self.dataset.dataset_version.filter(deployed__isnull=True)
+                .exclude(status=VersionStatus.DRAFT)
+                .order_by("version")
+            )
         context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
         context["selected_tab"] = status
         return context

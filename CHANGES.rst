@@ -16,6 +16,7 @@ Bugfixes:
 
 <no ticket>
 - Fix form layout, do not add a field that should be removed from the form itself on specific conditions.
+- Fixed a malformed Django template variable by removing an accidental trailing `%` and properly closing the `{{ ... }}` tag.
 
 https://github.com/atviriduomenys/katalogas/issues/2094
 - Fix an issue where if `vertimas.vu.lt` is down, tests are failing on the pipelines and during local development, by introducing mocks for direct external API calls.

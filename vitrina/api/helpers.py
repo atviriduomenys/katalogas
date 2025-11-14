@@ -192,9 +192,7 @@ def _get_media_type(format: Optional[Format]):
 
 
 def _get_contact_email(dataset: Dataset) -> str:
-    dataset_contact = Contact.objects.filter(dataset=dataset).first()
-
-    if dataset_contact and (email := dataset_contact.get_email()):
+    if dataset.contact and (email := dataset.contact.get_email()):
         return email
 
     if dataset.publisher and (email := dataset.publisher.email):

@@ -462,7 +462,6 @@ class DatasetReportAdmin(admin.ModelAdmin):
 
 class ContactAdmin(admin.ModelAdmin):
     list_display = (
-        "dataset",
         "email",
         "phone_display",
         "content_type_display",

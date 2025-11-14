@@ -600,7 +600,6 @@ class ContactCreateView(
         contact = form.cleaned_data.get("contact")
         email = form.cleaned_data.get("email")
         phone = form.cleaned_data.get("phone")
-        dataset = form.cleaned_data.get("dataset")
         contact_name = form.cleaned_data.get("contact_name")
         position = form.cleaned_data.get("position")
 
@@ -609,7 +608,6 @@ class ContactCreateView(
             contact_name=contact_name,
             content_type=ContentType.objects.get_for_model(contact) if contact else None,
             object_id=contact.pk if contact else None,
-            dataset=dataset,
             email=email if email else contact.email,
             phone=phone if phone else contact.phone,
             position=position,
@@ -657,8 +655,8 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Organizatio
         contact_name = form.cleaned_data.get("contact_name")
         position = form.cleaned_data.get("position")
 
-        self.object.email = email if email else contact.email
-        self.object.phone = phone if phone else contact.phone
+        self.object.email = email or contact.email
+        self.object.phone = phone or contact.phone
         self.object.object_id = contact.pk if contact else None
         self.object.contact_name = contact_name
         self.object.position = position

@@ -1153,13 +1153,19 @@ class BaseContactForm(ModelForm):
 
         self.fields["contact"].choices = [("", "---------")]
 
+        # email is unique field: exclude orgs and users already in contacts
+        existing_contact_emails = Contact.objects.filter().values_list("email", flat=True)
+
         for org in organization_contacts:
-            self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
+            if org.email and org.email not in existing_contact_emails:
+                self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
 
             user_choices = [
                 (f"user-{user.id}", f"{user.get_full_name()}")
                 for user in user_contacts
                 if user.representative_organization_id == org.id
+                and user.email
+                and user.email not in existing_contact_emails
             ]
             if user_choices:
                 self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
@@ -1183,6 +1189,10 @@ class BaseContactForm(ModelForm):
         email = cleaned_data.get("email")
         phone = cleaned_data.get("phone")
         position = cleaned_data.get("position")
+
+        if contact and not contact.phone and not phone:
+            self.add_error("contact", _("Pasirinkta organizacija arba naudotojas neturi nurodyto telefono numerio."))
+            self.add_error("phone", _("Telefono numeris yra privalomas."))
 
         if not contact and not contact_name:
             self.add_error("contact", "")

@@ -9,7 +9,7 @@ import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Sum, ForeignKey, QuerySet, Q
+from django.db.models import Sum, QuerySet, Q
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
@@ -528,6 +528,13 @@ class Dataset(Resource):
         null=True,
         blank=True,
         help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
+    )
+    contact = models.ForeignKey(
+        "Contact",
+        on_delete=models.SET_NULL,
+        verbose_name=_("Kontaktinis asmuo ar organizacija"),
+        null=True,
+        related_name="contact_datasets",
     )
 
     # TODO: To be removed:
@@ -1233,15 +1240,8 @@ class Dataset(Resource):
                 self.description = en_description
 
     def get_main_contact(self):
-        contacts = Contact.objects.filter(dataset=self, deleted__isnull=True)
-
-        user_contact = contacts.filter(content_type__model="user").first()
-        if user_contact:
-            return user_contact
-
-        org_contact = contacts.filter(content_type__model="organization").first()
-        if org_contact:
-            return org_contact
+        if contact := self.contact:
+            return contact
 
         if self.publisher:
             return self._create_virtual_contact(self.publisher)
@@ -1254,7 +1254,6 @@ class Dataset(Resource):
             content_type=content_type,
             object_id=org.id,
             content_object=org,
-            dataset=self,
             phone=org.phone if org.phone else None,
         )
         return contact
@@ -1823,6 +1822,13 @@ class DatasetStructureMapping(models.Model):
 
 
 class Contact(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        verbose_name=_("Organizacija"),
+    )
+    contact_name = models.CharField(_("Vardas Pavardė"), max_length=255, blank=True)
+    position = models.CharField(_("Pareigos"), max_length=255, blank=True)
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
@@ -1833,11 +1839,11 @@ class Contact(models.Model):
         on_delete=models.CASCADE,
         verbose_name=_("Content Type"),
         limit_choices_to={"model__in": ("organization", "user")},
+        null=True,
     )
-    object_id = models.PositiveIntegerField(verbose_name=_("Object ID"))
+    object_id = models.PositiveIntegerField(verbose_name=_("Object ID"), null=True)
     content_object = GenericForeignKey("content_type", "object_id")
-    dataset = ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
-    email = models.EmailField(_("Email"), blank=True)
+    email = models.EmailField(_("Email"), blank=True, unique=True)
     phone = models.CharField(_("Phone"), max_length=50, blank=True)
 
     class Meta:
@@ -1845,9 +1851,11 @@ class Contact(models.Model):
         verbose_name_plural = _("Kontaktai")
 
     def __str__(self):
-        if self.content_type.model == "organization":
-            return self.content_object.title
-        return self.content_object.get_full_name()
+        if self.content_type:
+            if self.content_type.model == "organization":
+                return self.content_object.title
+            return self.content_object.get_full_name()
+        return self.contact_name
 
     def get_email(self):
         if self.email:
@@ -1861,18 +1869,19 @@ class Contact(models.Model):
             return _("Organizacija")
         elif self.content_type == ContentType.objects.get_for_model(User):
             return _("Naudotojas")
-        return ""
+        return _("Neregistruotas naudotojas")
 
     def save(self, *args, **kwargs):
-        Contact.objects.filter(dataset=self.dataset).delete()
         super().save(*args, **kwargs)
 
     def get_acl_parents(self):
         parents = [self]
+        parents.extend(self.organization.get_acl_parents())
         if isinstance(self.content_object, Organization):
             parents.extend(self.content_object.get_acl_parents())
             return parents
-        parents.extend(self.content_object.organization.get_acl_parents())
+        if isinstance(self.content_object, User) and self.content_object.organization:
+            parents.extend(self.content_object.organization.get_acl_parents())
         return parents
 
 

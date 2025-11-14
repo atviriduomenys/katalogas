@@ -20,7 +20,7 @@
         <div class="buttons is-right">
             <a class="button is-primary m-t-xs m-b-lg"
                href="{% url 'contact-create' request.resolver_match.kwargs.pk %}">
-                {% translate "Pridėti kontaką" %}
+                {% translate "Pridėti kontaktą" %}
             </a>
         </div>
     {% endif %}
@@ -29,7 +29,7 @@
             <tbody>
             <tr>
                 <th>{% translate "Kontaktas" %}</th>
-                <th>{% translate "Duomenų išteklius" %}</th>
+                <th>{% translate "Pareigos organizacijoje" %}</th>
                 <th>{% translate "El. paštas" %}</th>
                 <th>{% translate "Telefonas" %}</th>
                 <th>{% translate "Tipas" %}</th>
@@ -40,9 +40,14 @@
             </tr>
             {% for c in contacts %}
                 <tr>
-                    {% if c.dataset %}
                     <td>{{ c }}</td>
-                    <td> <strong><a href="{{ c.dataset.get_absolute_url }}" class="dataset-title">{{ c.dataset }}</a></strong></td>
+                    <td>
+                        {% if c.position %}
+                            {{ c.position }}
+                        {% else %}
+                            -       
+                        {% endif %}
+                    </td>
                     <td><a href="mailto:{{ c.get_email }}">{{ c.get_email }}</a></td>
                     <td>
                         {% if c.phone %}
@@ -65,7 +70,6 @@
                         </td>
                     {% endif %}
                 </tr>
-                {% endif %}
             {% endfor %}
             </tbody>
         </table>

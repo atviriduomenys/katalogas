@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-14 15:37+0200\n"
+"POT-Creation-Date: 2025-11-14 16:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "kliento id"
 msgstr "client id"
@@ -37,9 +40,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -658,12 +658,6 @@ msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
 msgstr ""
 "This property specifies a related resource. Corresponds to dct:relation."
 
-msgid "Organizacija:"
-msgstr "Organization:"
-
-msgid "Naudotojai:"
-msgstr "Users:"
-
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr "Code name can only include latin characters."
 
@@ -1169,6 +1163,12 @@ msgstr "Datasets relation"
 msgid "Duomenų rinkinių ryšiai"
 msgstr "Datasets relations"
 
+msgid "Vardas Pavardė"
+msgstr "Full Name"
+
+msgid "Pareigos"
+msgstr "Position"
+
 msgid "Content Type"
 msgstr "Turinio tipas"
 
@@ -1186,6 +1186,9 @@ msgstr "Contact"
 
 msgid "Naudotojas"
 msgstr "User"
+
+msgid "Neregistruotas naudotojas"
+msgstr "Non registered user"
 
 msgid "Geoportalo API formatas"
 msgstr "Geoportal API format"
@@ -2405,6 +2408,83 @@ msgstr "Enter the organization's name or the full company code."
 msgid "Naujos organizacijos koordinatorius"
 msgstr "Coordinator for a new organization"
 
+msgid "Pareigos organizacijoje"
+msgstr "Position in Organization"
+
+msgid "Registruotas kontaktinis asmuo ar organizacija"
+msgstr "Registered contact person or organization"
+
+
+msgid "Papildomas kontaktinis asmuo"
+msgstr "Additional contact person"
+
+msgid "Neregistruoto kontakto Vardas ir Pavardė"
+msgstr "Unregistered contact's Full Name "
+
+msgid ""
+"Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
+"el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."
+msgstr ""
+"If a registered person or organization is selected, their profile email is used. "
+"When editing the contact, the profile email does not change."
+
+msgid ""
+"Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
+"0XXXXXXXX)"
+msgstr ""
+"Incorrect phone number format. Acceptable formats: +3706XXXXXXX, 0XXXXXXXX"
+
+msgid ""
+"Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
+"telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia."
+msgstr ""
+"If a registered person or organization is selected, their profile phone number is used. "
+"When editing the contact, the profile phone number does not change."
+
+msgid "Organizacija:"
+msgstr "Organization:"
+
+msgid "Naudotojai:"
+msgstr "Users:"
+
+msgid ""
+"Pasirinkta organizacija arba naudotojas neturi nurodyto telefono numerio."
+msgstr ""
+"The selected organization or user does not have a phone number specified."
+
+
+msgid "Telefono numeris yra privalomas."
+msgstr "Phone number is required"
+
+msgid ""
+"Turi būti nurodytas registruotas kontaktinis asmuo arba organizacija, arba "
+"įvestas papildomas kontaktinis asmuo."
+msgstr ""
+"A registered contact person or organization must be specified, or an "
+"additional contact person must be entered."
+
+msgid ""
+"Negali būti nurodytas registruotas kontaktinis asmuo arba organizacija ir "
+"įvestas papildomas kontaktinis asmuo tuo pačiu metu."
+msgstr ""
+"A registered contact person or organization and an additional contact person "
+"cannot be specified at the same time."
+
+msgid "Naujam kontaktiniam asmeniui turi būti nurodytas el. paštas."
+msgstr "An email address must be specified for a new contact person."
+
+msgid "Naujam kontaktiniam asmeniui turi būti nurodytas telefono numeris."
+msgstr "A phone number must be specified for a new contact person."
+
+msgid "Naujam kontaktiniam asmeniui turi būti nurodytos pareigos."
+msgstr "A position must be specified for a new contact person."
+
+msgid "Kontaktiniam asmeniui turi būti nurodytos pareigos."
+msgstr "A position must be specified for the contact person."
+
+msgid "Organizacijai negali būti nurodytos pareigos."
+msgstr "A position cannot be specified for an organization"
+
 msgid "Neteisingas objekto tipas. Turi būti AreaOfManagement arba int"
 msgstr "Incorrect object type. It must be AreaOfManagement or int."
 
@@ -2599,7 +2679,7 @@ msgstr "Transferring data"
 msgid "Organizacijos narių sąrašas"
 msgstr "Organization members list"
 
-msgid "Pridėti kontaką"
+msgid "Pridėti kontaktą"
 msgstr "Add contact"
 
 msgid "Redaguoti organizaciją"
@@ -2713,6 +2793,9 @@ msgstr "Coordinator count for management area in time"
 
 msgid "Tvarkytojų skaičius pagal valdymo sritį laike"
 msgstr "Manager count for management area in time"
+
+msgid "Kontakto pridėjimas"
+msgstr "Add contact"
 
 msgid "Kontaktų redagavimas"
 msgstr "Contact editing"
@@ -4299,7 +4382,8 @@ msgid "Versijos tipas"
 msgstr "Version type"
 
 msgid "Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija:"
-msgstr "According to the Semantic Versioning (SemVer) principle. Documentation: "
+msgstr ""
+"According to the Semantic Versioning (SemVer) principle. Documentation: "
 
 msgid "Priklauso versijai"
 msgstr "Depends on version"

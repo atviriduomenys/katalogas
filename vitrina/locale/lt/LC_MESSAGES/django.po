@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-24 13:12+0300\n"
+"POT-Creation-Date: 2025-11-14 16:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -69,6 +69,9 @@ msgid "Duomenų ištekliai"
 msgstr ""
 
 msgid "kategoriją"
+msgstr ""
+
+msgid "Kategorijos URI specifinei parinktai grupei"
 msgstr ""
 
 msgid "organizacijos"
@@ -599,12 +602,6 @@ msgstr ""
 msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
 msgstr ""
 
-msgid "Organizacija:"
-msgstr ""
-
-msgid "Naudotojai:"
-msgstr ""
-
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr ""
 
@@ -737,10 +734,11 @@ msgstr ""
 msgid "Pridėti"
 msgstr ""
 
-msgid "Projektai"
+msgid "Panaudojimo atvejai"
 msgstr ""
 
-msgid "Pažymėkite projektus, kuriuose yra naudojamas šis duomenų rinkinys."
+msgid ""
+"Pažymėkite panaudojimo atvejus, kuriuose yra naudojamas šis duomenų rinkinys."
 msgstr ""
 
 msgid "Poreikiai"
@@ -780,6 +778,9 @@ msgid "Duomenų rinkinys jau priskirtas šiam planui."
 msgstr ""
 
 msgid "Title"
+msgstr ""
+
+msgid "Grupė"
 msgstr ""
 
 msgid "Nepriskirta"
@@ -927,6 +928,9 @@ msgid ""
 "svetainės puslapį. Atitinka dcat:landingPage."
 msgstr ""
 
+msgid "Ar duomenų rinkinys yra didelės vertės"
+msgstr ""
+
 msgid "Duomenų rinkinio ryšiai"
 msgstr ""
 
@@ -1066,6 +1070,12 @@ msgstr ""
 msgid "Duomenų rinkinių ryšiai"
 msgstr ""
 
+msgid "Vardas Pavardė"
+msgstr ""
+
+msgid "Pareigos"
+msgstr ""
+
 msgid "Content Type"
 msgstr ""
 
@@ -1082,6 +1092,9 @@ msgid "Kontaktas"
 msgstr ""
 
 msgid "Naudotojas"
+msgstr ""
+
+msgid "Neregistruotas naudotojas"
 msgstr ""
 
 msgid "Geoportalo API formatas"
@@ -1578,16 +1591,10 @@ msgstr ""
 msgid "Ištekliai"
 msgstr ""
 
-msgid "Panaudojimo atvejai"
-msgstr ""
-
 msgid "Istorija"
 msgstr ""
 
 msgid "Duomenų ištekliaus būsena"
-msgstr ""
-
-msgid "Grupė"
 msgstr ""
 
 msgid "Žymė"
@@ -1653,7 +1660,15 @@ msgstr ""
 msgid "Poreikių pridėjimas"
 msgstr ""
 
-msgid "Projektų pridėjimas"
+msgid "Neturite panaudojimo atvejų, prie kurių galėtumėte pridėti išteklius."
+msgstr ""
+
+msgid "Panaudojimo atvejų pridėjimas"
+msgstr ""
+
+msgid ""
+"Negalima pašalinti išteklių iš panaudojimo atvejo, kuris turi sugeneruotų "
+"sutarčių."
 msgstr ""
 
 msgid "Atsisiuntimų (užklausų) skaičius"
@@ -2064,25 +2079,25 @@ msgstr ""
 
 msgid ""
 "Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos "
-"tiekėjo rolė."
+"teikėjo rolė."
 msgstr ""
 
-msgid "Pašalinti duomenų atvėrimo paslaugos tiekėjo rolę"
+msgid "Pašalinti duomenų atvėrimo paslaugos teikėjo rolę"
 msgstr ""
 
-msgid "Duomenų atvėrimo paslaugos tiekėjai"
+msgid "Duomenų atvėrimo paslaugos teikėjai"
 msgstr ""
 
-msgid "Priskirti duomenų atvėrimo paslaugos tiekėjo rolę"
+msgid "Priskirti duomenų atvėrimo paslaugos teikėjo rolę"
 msgstr ""
 
-msgid "Redaguoti duomenų atvėrimo paslaugos tiekėją"
+msgid "Redaguoti duomenų atvėrimo paslaugos teikėją"
 msgstr ""
 
-msgid "Suteikti duomenų atvėrimo paslaugos tiekėjo rolę"
+msgid "Suteikti duomenų atvėrimo paslaugos teikėjo rolę"
 msgstr ""
 
-msgid "Duomenų tiekėjų prašymų sąrašas"
+msgid "Duomenų teikėjų prašymų sąrašas"
 msgstr ""
 
 msgid "Pridėtas dokumentas"
@@ -2094,7 +2109,7 @@ msgstr ""
 msgid "Veiksmai"
 msgstr ""
 
-msgid "Duomenų tiekėjo \""
+msgid "Duomenų teikėjo \""
 msgstr ""
 
 msgid "Šablonas pakeistas sėkmingai."
@@ -2144,6 +2159,9 @@ msgid "Pergeneruoti raktą"
 msgstr ""
 
 msgid "Prenumeruoti pranešimus"
+msgstr ""
+
+msgid "Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"
 msgstr ""
 
 msgid "Formatas 0... arba +370..."
@@ -2228,6 +2246,71 @@ msgstr ""
 msgid "Naujos organizacijos koordinatorius"
 msgstr ""
 
+msgid "Pareigos organizacijoje"
+msgstr ""
+
+msgid "Registruotas kontaktinis asmuo ar organizacija"
+msgstr ""
+
+msgid "Papildomas kontaktinis asmuo"
+msgstr ""
+
+msgid "Neregistruoto kontakto Vardas ir Pavardė"
+msgstr ""
+
+msgid ""
+"Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
+"el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."
+msgstr ""
+
+msgid ""
+"Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
+"0XXXXXXXX)"
+msgstr ""
+
+msgid ""
+"Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
+"telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia."
+msgstr ""
+
+msgid "Organizacija:"
+msgstr ""
+
+msgid "Naudotojai:"
+msgstr ""
+
+msgid ""
+"Pasirinkta organizacija arba naudotojas neturi nurodyto telefono numerio."
+msgstr ""
+
+msgid "Telefono numeris yra privalomas."
+msgstr ""
+
+msgid ""
+"Turi būti nurodytas registruotas kontaktinis asmuo arba organizacija, arba "
+"įvestas papildomas kontaktinis asmuo."
+msgstr ""
+
+msgid ""
+"Negali būti nurodytas registruotas kontaktinis asmuo arba organizacija ir "
+"įvestas papildomas kontaktinis asmuo tuo pačiu metu."
+msgstr ""
+
+msgid "Naujam kontaktiniam asmeniui turi būti nurodytas el. paštas."
+msgstr ""
+
+msgid "Naujam kontaktiniam asmeniui turi būti nurodytas telefono numeris."
+msgstr ""
+
+msgid "Naujam kontaktiniam asmeniui turi būti nurodytos pareigos."
+msgstr ""
+
+msgid "Kontaktiniam asmeniui turi būti nurodytos pareigos."
+msgstr ""
+
+msgid "Organizacijai negali būti nurodytos pareigos."
+msgstr ""
+
 msgid "Neteisingas objekto tipas. Turi būti AreaOfManagement arba int"
 msgstr ""
 
@@ -2258,10 +2341,7 @@ msgstr ""
 msgid "Alternatyvūs pavadinimai"
 msgstr ""
 
-msgid "Duomenų atvėrimo paslaugų tiekėjas"
-msgstr ""
-
-msgid "Duomenų atvėrimo paslaugų tiekėjai"
+msgid "Duomenų atvėrimo paslaugų teikėjai"
 msgstr ""
 
 msgid "Koordinatorius"
@@ -2342,7 +2422,7 @@ msgstr ""
 msgid "Prašymo redagavimas"
 msgstr ""
 
-msgid "Redaguoti duomenų tiekėjo prašymą"
+msgid "Redaguoti duomenų teikėjo prašymą"
 msgstr ""
 
 msgid "Grįžti į sąrašą"
@@ -2356,7 +2436,7 @@ msgstr ""
 
 #, python-format
 msgid ""
-"Ar tikrai norite pašalinti duomenų tiekėjo \"%(escaped_object)s\" prašymą? "
+"Ar tikrai norite pašalinti duomenų teikėjo \"%(escaped_object)s\" prašymą? "
 msgstr ""
 
 msgid "Taip, esu tikras"
@@ -2419,7 +2499,7 @@ msgstr ""
 msgid "Organizacijos narių sąrašas"
 msgstr ""
 
-msgid "Pridėti kontaką"
+msgid "Pridėti kontaktą"
 msgstr ""
 
 msgid "Redaguoti organizaciją"
@@ -2477,18 +2557,18 @@ msgstr ""
 msgid "Į pradžią"
 msgstr ""
 
-msgid "Naujo duomenų tiekėjo registravimas"
+msgid "Naujo duomenų teikėjo registravimas"
 msgstr ""
 
 msgid "Prašymo sukurti negalima"
 msgstr ""
 
 msgid ""
-"Jums jau yra suteiktos duomenų tiekėjo teisės prie pasirinktos "
+"Jums jau yra suteiktos duomenų teikėjo teisės prie pasirinktos "
 "organizacijos. Galite naudotis sistema, papildomai teikti prašymo nebereikia."
 msgstr ""
 
-msgid "Jūs jau pateikėte prašymą būti šios organizacijos duomenų tiekėju."
+msgid "Jūs jau pateikėte prašymą būti šios organizacijos duomenų teikėju."
 msgstr ""
 
 msgid "Naujas terminas"
@@ -2520,6 +2600,9 @@ msgid "Koordinatorių skaičius pagal valdymo sritį laike"
 msgstr ""
 
 msgid "Tvarkytojų skaičius pagal valdymo sritį laike"
+msgstr ""
+
+msgid "Kontakto pridėjimas"
 msgstr ""
 
 msgid "Kontaktų redagavimas"
@@ -2664,9 +2747,22 @@ msgstr ""
 msgid "Išsamus pasiūlymo aprašymas."
 msgstr ""
 
+msgid "Panaudojimo atvejo iniciatorius"
+msgstr ""
+
 msgid ""
-"Nurodžius organizaciją panaudos atvejis kuriamas organizacijos vardu, "
-"nenurodžius - privataus asmens vardu. Atitinka odrl:asignee"
+"Nurodytos organizacijos vardu, bus galimybė sudaryti duomenų gavimo "
+"sutartis, sutartyje nurodant panaudojimo atvejį, kaip duomenų gavimo tikslą."
+"(Atitinka odrl:assignee). Pasirinkus fizinį asmenį, sudaryti sutarčių "
+"galimybės nėra. Fizinis asmuo nurodomas tik kaip panaudojimo atvejo autorius."
+msgstr ""
+
+msgid "Duomenų gavėjo teisinis pagrindas"
+msgstr ""
+
+msgid ""
+"Duomenų gavėjo pateikiamos nuostatos, kuriomis teisiškai remiamasi norint "
+"gauti duomenis."
 msgstr ""
 
 msgid "Nuoroda į panaudojimo atvejį"
@@ -2678,6 +2774,17 @@ msgid ""
 msgstr ""
 
 msgid "Paveiksliukas susijęs su pasiūlytu panaudojimo atveju."
+msgstr ""
+
+msgid "Panaudojimo atvejis matomas viešai"
+msgstr ""
+
+msgid ""
+"Pažymėkite, jeigu norite, kad panaudojimo atvejis būtų matomas viešai "
+"visiems. Kitu atveju bus matomas tik gavėjo ir teikėjų organizacijoms."
+msgstr ""
+
+msgid "Fizinis asmuo"
 msgstr ""
 
 msgid "Kliento pavadinimas"
@@ -2737,6 +2844,9 @@ msgstr ""
 msgid "Panaudojimo atvejo peržiūros"
 msgstr ""
 
+msgid "Duomenų gavimo teisinis pagrindas"
+msgstr ""
+
 msgid "Duomenų gavėjas"
 msgstr ""
 
@@ -2764,7 +2874,7 @@ msgstr ""
 msgid "Nėra panaudojimo atvejo"
 msgstr ""
 
-msgid "Projektas leidimų neturi"
+msgid "Panaudojimo atvejis leidimų neturi"
 msgstr ""
 
 msgid "Prašyti leidimų"
@@ -2782,10 +2892,13 @@ msgstr ""
 msgid "Sutartys"
 msgstr ""
 
-msgid "Panaudos atvejo registracija"
+msgid "Panaudojimo atvejo registracija"
 msgstr ""
 
-msgid "Panaudos atvejo redagavimas"
+msgid "Negalima redaguoti panaudojimo atvejo, kuris turi sugeneruotų sutarčių."
+msgstr ""
+
+msgid "Panaudojimo atvejo redagavimas"
 msgstr ""
 
 msgid ""
@@ -2797,7 +2910,11 @@ msgid "Kurti klientą"
 msgstr ""
 
 #, python-brace-format
-msgid "Klientas \"{0}\" sukurtas sėkmingai"
+msgid "Klientas \"{0}\" sukurtas sėkmingai."
+msgstr ""
+
+#, python-brace-format
+msgid "Kliento raktas - {0}. Butinai išsisaugokite raktą, jis nebebus rodomas!"
 msgstr ""
 
 msgid "Kliento registracija"
@@ -2859,6 +2976,9 @@ msgid "Atsakytas"
 msgstr ""
 
 msgid "Suplanuotas"
+msgstr ""
+
+msgid "Vertinamas"
 msgstr ""
 
 msgid "Poreikiui suteiktas pavadinimas."
@@ -3246,6 +3366,9 @@ msgid ""
 "kūrimui, pasenusi arba atsisakyta."
 msgstr ""
 
+msgid "Ar duomenų šaltinis yra didelės vertės"
+msgstr ""
+
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr ""
 
@@ -3318,7 +3441,7 @@ msgstr ""
 msgid "Sutarties dokumentas pasirašytas duomenų gavėjo."
 msgstr ""
 
-msgid "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų tiekėjo."
+msgid "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų teikėjo."
 msgstr ""
 
 msgid "Sutartis sėkmingai sinchronizuota su agentu."
@@ -3348,10 +3471,13 @@ msgstr ""
 msgid "Papildomi teikėjo teisės aktai"
 msgstr ""
 
-msgid "Papildomi gavėjo teisės aktai"
+msgid "Mokėjimo sąlygos"
 msgstr ""
 
-msgid "Mokėjimo sąlygos"
+msgid "Duomenų teikėjo atstovas"
+msgstr ""
+
+msgid "Duomenų gavėjo atstovas"
 msgstr ""
 
 msgid "Generuoti sutarties dokumentą"
@@ -3373,9 +3499,6 @@ msgid "Paskutinės sinchronizacijos data"
 msgstr ""
 
 msgid "Sutarties iniciatorius"
-msgstr ""
-
-msgid "Papildomi tiekėjo teisės aktai"
 msgstr ""
 
 msgid "Sutartis"
@@ -3412,10 +3535,7 @@ msgstr ""
 msgid "Grįžti į sutartis"
 msgstr ""
 
-msgid "Įkelti gavėjo pasirašytą dokumentą"
-msgstr ""
-
-msgid "Įkelti tiekėjo pasirašytą dokumentą"
+msgid "Įkelti pasirašytą dokumentą"
 msgstr ""
 
 msgid "Sutarties identifikatorius"
@@ -3428,6 +3548,10 @@ msgid "Nėra sutarčių dokumentų."
 msgstr ""
 
 msgid "Nėra sutarčių."
+msgstr ""
+
+msgid ""
+"Panaudojimo atvejis registruotas fizinio asmens vardu negali turėti sutarčių."
 msgstr ""
 
 msgid "Šis panaudojimo atvejis jau turi egzistuojančias sutartis."
@@ -3457,6 +3581,22 @@ msgid ""
 "{accepted_statuses}. Dabartinė būsena: {current_status}"
 msgstr ""
 
+msgid ""
+"Sutartį pasirašyti duomenų teikėjo vardu galėsite tik po to kai ją pasirašys "
+"duomenų gavėjas."
+msgstr ""
+
+msgid ""
+"Gavėjo vardu sutartis jau pasirašyta. Laukiama sutarties pasirašymo iš "
+"teikėjo pusės."
+msgstr ""
+
+msgid "Įkelti gavėjo pasirašytą dokumentą"
+msgstr ""
+
+msgid "Įkelti teikėjo pasirašytą dokumentą"
+msgstr ""
+
 msgid "Sutarties dokumentas įkeltas sėkmingai"
 msgstr ""
 
@@ -3470,6 +3610,39 @@ msgid "Statistikos nuoroda"
 msgstr ""
 
 msgid "Statistikos nuorodos"
+msgstr ""
+
+msgid "Juodraštis"
+msgstr ""
+
+msgid "Išankstinis leidimas"
+msgstr ""
+
+msgid "Stabili"
+msgstr ""
+
+msgid "Pasenusi"
+msgstr ""
+
+msgid "Atsisakyta"
+msgstr ""
+
+msgid "Sunaikinta"
+msgstr ""
+
+msgid "Tikrinama"
+msgstr ""
+
+msgid "Diegiama"
+msgstr ""
+
+msgid "Pagrindinė"
+msgstr ""
+
+msgid "Papildoma"
+msgstr ""
+
+msgid "Pataisa"
 msgstr ""
 
 msgid "Nepasirinkta"
@@ -3875,6 +4048,21 @@ msgstr ""
 msgid "Įtraukiama į versiją"
 msgstr ""
 
+msgid "Versijos tipas"
+msgstr ""
+
+msgid "Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija:"
+msgstr ""
+
+msgid "Priklauso versijai"
+msgstr ""
+
+msgid "Publikuoti"
+msgstr ""
+
+msgid "Tėvinė versija turi būti pasirinkta"
+msgstr ""
+
 msgid "Versija gali įsigalioti ne anksčiau kaip po 2 savaičių."
 msgstr ""
 
@@ -3995,7 +4183,31 @@ msgstr ""
 msgid "Įkėlimo į saugyklą data"
 msgstr ""
 
+msgid "Versijos būsena"
+msgstr ""
+
+msgid "Versijos numeris"
+msgstr ""
+
+msgid "Pagrindinis versijos numeris"
+msgstr ""
+
+msgid "Papildomas versijos numeris"
+msgstr ""
+
+msgid "Pataisos versijos numeris"
+msgstr ""
+
 msgid "Metaduomenų versija"
+msgstr ""
+
+msgid "Pending"
+msgstr ""
+
+msgid "Valid"
+msgstr ""
+
+msgid "Invalid"
 msgstr ""
 
 msgid "Užklausa"
@@ -4010,10 +4222,13 @@ msgstr ""
 msgid "Importuoti"
 msgstr ""
 
-msgid "Nauja versija"
+msgid "Publikuoti versiją"
 msgstr ""
 
 msgid "Keitimų žurnalas"
+msgstr ""
+
+msgid "Publikacijos tipas"
 msgstr ""
 
 msgid "Įsigaliojimo data"
@@ -4337,9 +4552,6 @@ msgstr ""
 msgid "Prisijungti"
 msgstr ""
 
-msgid "Fizinis asmuo"
-msgstr ""
-
 msgid "Duomenų paieška"
 msgstr ""
 
@@ -4539,7 +4751,7 @@ msgid ""
 "įprastiems platformos vartotojams"
 msgstr ""
 
-msgid "Nurodoma su Agentu susieta duomenų paslauga."
+msgid "Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService."
 msgstr ""
 
 msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
@@ -4576,8 +4788,8 @@ msgstr ""
 
 msgid ""
 "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, "
-"kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas "
-"išorinis agento adresas"
+"kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas išorinis "
+"agento adresas"
 msgstr ""
 
 msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
@@ -4760,8 +4972,8 @@ msgid "Pridėti Agentą"
 msgstr ""
 
 msgid ""
-"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei nenurodyta, duomenų "
-"paslauga bus sukurta automatiškai."
+"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei "
+"nenurodyta, duomenų paslauga bus sukurta automatiškai."
 msgstr ""
 
 msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."
@@ -5028,6 +5240,9 @@ msgid ""
 "padaryti čia."
 msgstr ""
 
+msgid "Testinis VIISP Prisijungimas"
+msgstr ""
+
 msgid ""
 "Tai puslapis skirtas prisijungti arba užsiregistruoti naujam naudotojui, "
 "kuris nori neribotai, bei laisvai dalintis informacija, kurią vėliau savo "
@@ -5123,6 +5338,9 @@ msgstr ""
 msgid "Prašymų komentarai"
 msgstr ""
 
+msgid "Projektai"
+msgstr ""
+
 msgid "Projektų komentarai"
 msgstr ""
 
@@ -5161,6 +5379,15 @@ msgstr ""
 msgid ""
 "Slaptažodis per silpnas. Bandykite naudoti daugiau simbolių, didžiųjų "
 "raidžių, skaitmenų ir specialiųjų simbolių."
+msgstr ""
+
+msgid "Įveskite Lietuvoje registruotos įmonės kodą."
+msgstr ""
+
+msgid "JA atstovavimo tipas"
+msgstr ""
+
+msgid "Naudotojas su tokiu el. paštu neegzistuoja."
 msgstr ""
 
 msgid "key_content"

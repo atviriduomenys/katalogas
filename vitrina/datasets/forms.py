@@ -262,36 +262,62 @@ class BaseResourceForm(TranslatableModelForm):
             self.fields["creator"].widget = HiddenInput()
             self.fields["managed_by_publisher"].widget = HiddenInput()
 
-        organization_contacts = Organization.objects.filter(
-            Q(id=self.instance.organization_id)
-            | (Q(id=self.instance.publisher_id) if self.instance.publisher_id else Q())
-        )
-        user_contacts = User.objects.filter(
-            Q(organization=self.instance.organization)
-            | (Q(organization=self.instance.publisher_id) if self.instance.publisher_id else Q())
-        )
+        self._populate_contact_choices()
 
+    def _populate_contact_choices(self) -> None:
+        """Populate contact choices grouped by organization."""
+
+        organization_id = self.instance.organization_id
         self.fields["contact"].choices = [("", "---------")]
 
-        for org in organization_contacts:
-            self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
-            user_choices = [
-                (f"user-{user.id}", f"{user.get_full_name()}")
-                for user in user_contacts
-                if user.organization_id == org.id
-            ]
-            self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
+        content_type_user = ContentType.objects.get_for_model(User)
+        content_type_organization = ContentType.objects.get_for_model(Organization)
+
+        contacts = Contact.objects.filter(organization_id=organization_id, deleted__isnull=True).select_related(
+            "content_type"
+        )
+
+        org_contacts = []
+        user_contacts = []
+        other_contacts = []
+
+        for contact in contacts:
+            if contact.content_type_id == content_type_organization.id:
+                org_contacts.append(contact)
+            elif contact.content_type_id == content_type_user.id:
+                user_contacts.append(contact)
+            else:
+                other_contacts.append(contact)
+
+        org_ids = [c.object_id for c in org_contacts if c.object_id]
+        user_ids = [c.object_id for c in user_contacts if c.object_id]
+
+        organizations = {org.id: org for org in Organization.objects.filter(id__in=org_ids)}
+        users = {user.id: user for user in User.objects.filter(id__in=user_ids)}
+
+        for contact in org_contacts:
+            org = organizations.get(contact.object_id)
+            if org:
+                self.fields["contact"].choices.append((contact.id, org.title))
+
+        for contact in user_contacts:
+            user = users.get(contact.object_id)
+            if user:
+                display_name = user.get_full_name()
+                self.fields["contact"].choices.append((contact.id, display_name))
+
+        for contact in other_contacts:
+            display_name = contact.contact_name or f"Contact #{contact.id}"
+            self.fields["contact"].choices.append((contact.id, display_name))
 
         if contact := self._get_contact(self.instance):
-            if isinstance(contact, Organization):
-                self.fields["contact"].initial = f"org-{contact.id}"
-            elif isinstance(contact, User):
-                self.fields["contact"].initial = f"user-{contact.id}"
+            self.fields["contact"].initial = contact.id
 
     @staticmethod
     def _get_contact(instance: Dataset):
-        contact = Contact.objects.filter(dataset=instance).first() or None
-        return contact.content_object if contact else None
+        if contact := instance.contact:
+            return contact.content_object
+        return None
 
     def clean_name(self) -> str | None:
         name = self.cleaned_data.get("name")
@@ -325,11 +351,7 @@ class BaseResourceForm(TranslatableModelForm):
 
     def clean_contact(self) -> Organization | User | None:
         if contact := self.cleaned_data.get("contact"):
-            contact_type, contact_id = contact.split("-")
-            if contact_type == "org":
-                return Organization.objects.get(pk=contact_id)
-            elif contact_type == "user":
-                return User.objects.get(pk=contact_id)
+            return Contact.objects.get(pk=contact)
         return None
 
     def clean_applicable_legislation(self) -> list[str]:

@@ -1272,15 +1272,6 @@ class DatasetUpdateView(
                     ),
                 },
             )
-        contact = form.cleaned_data.get("contact")
-        if contact:
-            Contact.objects.create(
-                content_type=ContentType.objects.get_for_model(contact),
-                object_id=contact.pk,
-                dataset=self.object,
-                email=contact.email or "",
-                phone=contact.phone or "",
-            )
 
         if "creator" in form.changed_data and self.request.user.organization:
             creator = form.cleaned_data.get("creator")

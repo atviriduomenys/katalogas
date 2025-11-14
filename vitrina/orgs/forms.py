@@ -9,7 +9,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.forms import (
     ModelForm,
     EmailField,
@@ -1085,157 +1085,211 @@ class AdminPublisherAssignedOrganizationForm(ModelForm):
         self.fields["coordinator"].queryset = User.objects.filter(organization=self.instance).distinct()
 
 
-class ContactCreateForm(ModelForm):
-    contact = ChoiceField(label=_("Kontaktinis asmuo ar organizacija"))
-    email = EmailField(label=_("El. paštas"), required=False)
+class BaseContactForm(ModelForm):
+    position = CharField(label=_("Pareigos organizacijoje"), required=False)
+    contact = ChoiceField(label=_("Registruotas kontaktinis asmuo ar organizacija"), required=False)
+    contact_name = CharField(
+        label=_("Papildomas kontaktinis asmuo"), required=False, help_text=_("Neregistruoto kontakto Vardas ir Pavardė")
+    )
+    email = EmailField(
+        label=_("El. paštas"),
+        required=False,
+        help_text=_(
+            "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."
+        ),
+    )
     phone = RegexField(
         label=_("Telefono numeris"),
         regex=r"^\+3706\d{7}$|^0\d{8}$",
         error_messages={
-            "invalid": _("Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
+            "invalid": _("Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
         },
         required=False,
+        help_text=_(
+            "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia."
+        ),
     )
-    dataset = ModelChoiceField(label=_("Duomenų išteklius"), queryset=Dataset.objects.all())
-
-    object_model = Organization
-    object_id: int
 
     class Meta:
         model = Contact
-        fields = ("contact", "email", "phone", "dataset")
+        fields = ("contact", "contact_name", "email", "phone", "position")
+
+    def _get_organization_and_user_contacts(
+        self, organization_id: int
+    ) -> tuple[QuerySet[Organization], QuerySet[User]]:
+        """Retrieve organizations and users related to the given organization ID."""
+
+        representative_users = Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=organization_id,
+            user__isnull=False,
+            organization__isnull=True,
+        ).values_list("user_id", flat=True)
+
+        representative_orgs = Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=organization_id,
+            organization__isnull=False,
+        ).values_list("organization_id", flat=True)
+
+        org_query = Q(id=organization_id)
+        user_ids = set(representative_users)
+
+        user_org_mapping = {user_id: organization_id for user_id in representative_users}
+
+        if representative_orgs:
+            org_query |= Q(id__in=representative_orgs)
+
+            org_representative_users = Representative.objects.filter(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__in=representative_orgs,
+                user__isnull=False,
+                organization__isnull=True,
+            ).values_list("user_id", "object_id")
+
+            for user_id, object_id in org_representative_users:
+                user_ids.add(user_id)
+                user_org_mapping[user_id] = object_id
+
+        organization_contacts = Organization.objects.filter(org_query)
+        user_contacts = User.objects.filter(id__in=user_ids, is_active=True)
+
+        for user in user_contacts:
+            user.representative_organization_id = user_org_mapping.get(user.id)
+
+        return organization_contacts, user_contacts
+
+    def _populate_contact_choices(self, organization_id: int) -> None:
+        organization_contacts, user_contacts = self._get_organization_and_user_contacts(organization_id)
+
+        self.fields["contact"].choices = [("", "---------")]
+
+        contact_query = Contact.objects.exclude(email="")
+
+        if self.instance.pk:
+            contact_query = contact_query.exclude(pk=self.instance.pk)
+
+        existing_contact_emails = set(contact_query.values_list("email", flat=True))
+
+        for org in organization_contacts:
+            if not existing_contact_emails or (org.email and org.email not in existing_contact_emails):
+                self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
+
+            user_choices = [
+                (f"user-{user.id}", f"{user.get_full_name()}")
+                for user in user_contacts
+                if user.representative_organization_id == org.id
+                and (not existing_contact_emails or (user.email and user.email not in existing_contact_emails))
+            ]
+            if user_choices:
+                self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
+
+    def clean_contact(self):
+        contact = self.cleaned_data.get("contact")
+        if not contact:
+            return None
+
+        contact_type, contact_id = contact.split("-")
+        if contact_type == "org":
+            return Organization.objects.get(pk=contact_id)
+        elif contact_type == "user":
+            return User.objects.get(pk=contact_id)
+        return None
+
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+        contact = cleaned_data.get("contact")
+        contact_name = cleaned_data.get("contact_name")
+        email = cleaned_data.get("email")
+        phone = cleaned_data.get("phone")
+        position = cleaned_data.get("position")
+
+        if contact and not contact.phone and not phone:
+            self.add_error("contact", _("Pasirinkta organizacija arba naudotojas neturi nurodyto telefono numerio."))
+            self.add_error("phone", _("Telefono numeris yra privalomas."))
+
+        if not contact and not contact_name:
+            self.add_error("contact", "")
+            self.add_error("contact_name", "")
+            raise ValidationError(
+                _(
+                    "Turi būti nurodytas registruotas kontaktinis asmuo arba organizacija, "
+                    "arba įvestas papildomas kontaktinis asmuo."
+                )
+            )
+
+        if contact and contact_name:
+            self.add_error("contact", "")
+            self.add_error("contact_name", "")
+            raise ValidationError(
+                _(
+                    "Negali būti nurodytas registruotas kontaktinis asmuo arba organizacija "
+                    "ir įvestas papildomas kontaktinis asmuo tuo pačiu metu."
+                )
+            )
+        if contact_name:
+            if not email:
+                self.add_error("email", _("Naujam kontaktiniam asmeniui turi būti nurodytas el. paštas."))
+            if not phone:
+                self.add_error("phone", _("Naujam kontaktiniam asmeniui turi būti nurodytas telefono numeris."))
+            if not position:
+                self.add_error("position", _("Naujam kontaktiniam asmeniui turi būti nurodytos pareigos."))
+
+        if contact and isinstance(contact, User) and not position:
+            self.add_error("position", _("Kontaktiniam asmeniui turi būti nurodytos pareigos."))
+
+        if contact and isinstance(contact, Organization) and position:
+            self.add_error("position", _("Organizacijai negali būti nurodytos pareigos."))
+
+        return cleaned_data
+
+
+class ContactCreateForm(BaseContactForm):
+    object_id: int
 
     def __init__(self, object_id=None, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.object_id = object_id
+
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "contact-form"
         self.helper.layout = Layout(
             Field("contact"),
+            Field("contact_name"),
+            Field("position"),
             Field("email"),
             Field("phone", placeholder=_("Formatas 0... arba +370...")),
-            Field("dataset"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
 
-        publisher_org = Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=self.object_id,
-            organization__isnull=False,
-        )
-        if publisher_org:
-            publisher_org = publisher_org.first().organization
-
-        organization_contacts = Organization.objects.filter(
-            Q(id=self.object_id) | (Q(id=publisher_org.id) if publisher_org else Q())
-        )
-        user_contacts = User.objects.filter(
-            Q(organization=self.object_id) | (Q(organization=publisher_org) if publisher_org else Q())
-        )
-
-        self.fields["contact"].choices = [
-            ("", "---------"),
-        ]
-
-        for org in organization_contacts:
-            self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
-            user_choices = [
-                (f"user-{user.id}", f"{user.get_full_name()}")
-                for user in user_contacts
-                if user.organization_id == org.id
-            ]
-            self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
-
-        self.fields["dataset"].queryset = Dataset.objects.filter(organization_id=self.object_id)
-
-    def clean_contact(self):
-        contact = self.cleaned_data.get("contact")
-        if contact:
-            contact_type, contact_id = contact.split("-")
-            if contact_type == "org":
-                return Organization.objects.get(pk=contact_id)
-            elif contact_type == "user":
-                return User.objects.get(pk=contact_id)
-        return None
+        self._populate_contact_choices(self.object_id)
 
 
-class ContactUpdateForm(ModelForm):
-    contact = ChoiceField(label=_("Kontaktinis asmuo ar organizacija"))
-    email = EmailField(label=_("El. paštas"), required=False)
-    phone = RegexField(
-        label=_("Telefono numeris"),
-        regex=r"^\+3706\d{7}$|^0\d{8}$",
-        error_messages={
-            "invalid": _("Neteisingas telefono numerio formatas. Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)")
-        },
-        required=False,
-    )
-    dataset = ModelChoiceField(label=_("Duomenų išteklius"), queryset=Dataset.objects.all())
-
-    object_model = Organization
-
-    class Meta:
-        model = Contact
-        fields = ("contact", "email", "phone", "dataset")
-
+class ContactUpdateForm(BaseContactForm):
     def __init__(self, *args, **kwargs):
         self.object = kwargs.pop("object", None)
         super().__init__(*args, **kwargs)
+
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "contact-form"
         self.helper.layout = Layout(
             Field("contact"),
+            Field("contact_name"),
+            Field("position"),
             Field("email"),
             Field("phone", placeholder=_("Formatas 0... arba +370...")),
-            Field("dataset"),
             Submit("submit", _("Redaguoti"), css_class="button is-primary"),
         )
 
-        publisher_org = Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=self.object.id,
-            organization__isnull=False,
-        )
-        if publisher_org:
-            publisher_org = publisher_org.first().organization
+        self._populate_contact_choices(self.object.id)
+        self._set_initial_contact()
 
-        organization_contacts = Organization.objects.filter(
-            Q(id=self.object.id) | (Q(id=publisher_org.id) if publisher_org else Q())
-        )
-        user_contacts = User.objects.filter(
-            Q(organization=self.object.id) | (Q(organization=publisher_org) if publisher_org else Q())
-        )
-
-        self.fields["contact"].choices = [
-            ("", "---------"),
-        ]
-
-        for org in organization_contacts:
-            self.fields["contact"].choices.append((_("Organizacija:"), [(f"org-{org.id}", f"{org.title}")]))
-            user_choices = [
-                (f"user-{user.id}", f"{user.get_full_name()}")
-                for user in user_contacts
-                if user.organization_id == org.id
-            ]
-            self.fields["contact"].choices.append((_("Naudotojai:"), user_choices))
-
-        self.fields["dataset"].queryset = Dataset.objects.filter(organization_id=self.object.id)
-
+    def _set_initial_contact(self):
         if self.instance.object_id:
             contact_id = self.instance.object_id
             if self.instance.content_type == ContentType.objects.get_for_model(User):
                 self.initial["contact"] = f"user-{contact_id}"
-            else:
+            elif self.instance.content_type == ContentType.objects.get_for_model(Organization):
                 self.initial["contact"] = f"org-{contact_id}"
-
-    def clean_contact(self):
-        contact = self.cleaned_data.get("contact")
-        if contact:
-            contact_type, contact_id = contact.split("-")
-            if contact_type == "org":
-                return Organization.objects.get(pk=contact_id)
-            elif contact_type == "user":
-                return User.objects.get(pk=contact_id)
-        return None

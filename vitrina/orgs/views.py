@@ -547,30 +547,7 @@ class OrganizationContactsView(
         )
 
     def get_queryset(self):
-        org_content_type = ContentType.objects.get_for_model(Organization)
-        publisher_org = (
-            Representative.objects.filter(
-                content_type=org_content_type,
-                object_id=self.organization.id,
-                organization__isnull=False,
-            )
-            .values_list("organization_id", flat=True)
-            .first()
-        )
-
-        queryset = Contact.objects.filter(
-            Q(content_type=org_content_type, object_id=self.organization.pk)
-            | Q(content_type=org_content_type, object_id=publisher_org)
-            | Q(
-                content_type=ContentType.objects.get_for_model(User),
-                object_id__in=User.objects.filter(organization=self.organization.pk).values_list("id", flat=True),
-            )
-            | Q(
-                content_type=ContentType.objects.get_for_model(User),
-                object_id__in=User.objects.filter(organization=publisher_org).values_list("id", flat=True),
-            )
-        ).order_by("content_type", "email")
-        return queryset
+        return Contact.objects.filter(organization=self.organization).order_by("email")
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -611,7 +588,7 @@ class ContactCreateView(
         context = super().get_context_data(**kwargs)
         context["tabs"] = "vitrina/orgs/tabs.html"
         context["contact_url"] = reverse("organization-contacts", args=[self.organization.pk])
-        context["current_title"] = _("Tvarkytojo pridėjimas")
+        context["current_title"] = _("Kontakto pridėjimas")
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("organization-list"): _("Organizacijos"),
@@ -623,15 +600,18 @@ class ContactCreateView(
         contact = form.cleaned_data.get("contact")
         email = form.cleaned_data.get("email")
         phone = form.cleaned_data.get("phone")
-        dataset = form.cleaned_data.get("dataset")
-        if contact:
-            Contact.objects.create(
-                content_type=ContentType.objects.get_for_model(contact),
-                object_id=contact.pk,
-                dataset=dataset,
-                email=email if email else contact.email,
-                phone=phone if phone else contact.phone,
-            )
+        contact_name = form.cleaned_data.get("contact_name")
+        position = form.cleaned_data.get("position")
+
+        Contact.objects.create(
+            organization=self.organization,
+            contact_name=contact_name,
+            content_type=ContentType.objects.get_for_model(contact) if contact else None,
+            object_id=contact.pk if contact else None,
+            email=email if email else contact.email,
+            phone=phone if phone else contact.phone,
+            position=position,
+        )
 
         return HttpResponseRedirect(self.get_success_url())
 
@@ -672,13 +652,15 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Organizatio
         contact = form.cleaned_data.get("contact")
         email = form.cleaned_data.get("email")
         phone = form.cleaned_data.get("phone")
-        dataset = form.cleaned_data.get("dataset")
+        contact_name = form.cleaned_data.get("contact_name")
+        position = form.cleaned_data.get("position")
 
-        self.object.dataset = dataset
-        self.object.email = email if email else contact.email
-        self.object.phone = phone if phone else contact.phone
-        self.object.object_id = contact.pk
-        self.object.content_type = ContentType.objects.get_for_model(contact)
+        self.object.email = email or contact.email
+        self.object.phone = phone or contact.phone
+        self.object.object_id = contact.pk if contact else None
+        self.object.contact_name = contact_name
+        self.object.position = position
+        self.object.content_type = ContentType.objects.get_for_model(contact) if contact else None
         self.object.save()
 
         return HttpResponseRedirect(self.get_success_url())

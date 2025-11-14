@@ -853,12 +853,11 @@ def test_contact_tab_access_denied_for_manager(app, representative_data):
 def test_contact_tab_display_org_contacts(app, representative_data):
     app.set_user(representative_data['coordinator'])
     organization = representative_data['organization']
-    ds = DatasetFactory(organization=organization)
 
     Contact.objects.create(
+        organization=organization,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk,
-        dataset=ds,
         email="org@test.com",
         phone="+37061234567"
     )
@@ -877,13 +876,12 @@ def test_contact_tab_display_org_contacts(app, representative_data):
 def test_contact_tab_display_user_contacts(app, representative_data):
     app.set_user(representative_data['coordinator'])
     organization = representative_data['organization']
-    ds = DatasetFactory(organization=organization)
     user = representative_data['manager']
 
     Contact.objects.create(
+        organization=organization,
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.pk,
-        dataset=ds,
         email="user@test.com",
         phone="+37061234567"
     )
@@ -902,31 +900,28 @@ def test_contact_tab_display_user_contacts(app, representative_data):
 def test_contact_tab_display_multiple_contacts(app, representative_data):
     app.set_user(representative_data['coordinator'])
     organization = representative_data['organization']
-    ds = DatasetFactory(organization=organization)
-    ds1 = DatasetFactory(organization=organization)
-    ds2 = DatasetFactory(organization=organization)
     user1 =  UserFactory(organization=organization)
     user2 = UserFactory(organization=organization)
 
     contacts = [
         Contact.objects.create(
+            organization=organization,
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
-            dataset=ds,
             email="org@test.com",
             phone="+37061234567"
         ),
         Contact.objects.create(
+            organization=organization,
             content_type=ContentType.objects.get_for_model(user1),
             object_id=user1.pk,
-            dataset=ds1,
             email="user1@test.com",
             phone="+37067654321"
         ),
         Contact.objects.create(
+            organization=organization,
             content_type=ContentType.objects.get_for_model(user2),
             object_id=user2.pk,
-            dataset=ds2,
             email="user2@test.com",
             phone="+37061111111"
         )
@@ -955,9 +950,9 @@ def test_contact_tab_pagination(app, representative_data):
     for i in range(15):
         user = UserFactory(organization=organization)
         Contact.objects.create(
+            organization=organization,
             content_type=ContentType.objects.get_for_model(user),
             object_id=user.pk,
-            dataset=DatasetFactory(organization=organization),
             email=f"user{i}@test.com"
         )
 
@@ -991,12 +986,11 @@ def test_contact_tab_empty_state(app, representative_data):
 def test_contact_tab_actions_coordinator(app, representative_data):
     app.set_user(representative_data['coordinator'])
     organization = representative_data['organization']
-    ds = DatasetFactory(organization=organization)
 
     contact = Contact.objects.create(
+        organization=organization,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk,
-        dataset=ds,
         email="test@test.com"
     )
 
@@ -1012,7 +1006,6 @@ def test_contact_tab_actions_coordinator(app, representative_data):
 @pytest.mark.django_db
 def test_contact_create_for_org(app, representative_data):
     org = representative_data['organization']
-    ds = DatasetFactory(organization=org)
     app.set_user(representative_data['coordinator'])
     form = app.get(reverse('contact-create', kwargs={
         'pk': org.pk
@@ -1021,7 +1014,6 @@ def test_contact_create_for_org(app, representative_data):
     form['contact'] = f"org-{org.pk}"
     form['email'] = "org@test.com"
     form['phone'] = "+37061234567"
-    form['dataset'] = ds.pk
 
     resp = form.submit()
     assert resp.status_code == 302
@@ -1032,7 +1024,7 @@ def test_contact_create_for_org(app, representative_data):
     assert contact.object_id == org.pk
     assert contact.email == "org@test.com"
     assert contact.phone == "+37061234567"
-    assert contact.dataset == ds
+    assert contact.organization == org
 
     resp = app.get(reverse('organization-contacts', kwargs={
         'pk': org.pk
@@ -1041,31 +1033,27 @@ def test_contact_create_for_org(app, representative_data):
     assert contact.email in resp.text
     assert contact.phone in resp.text
     assert org.title in resp.text
-    assert str(ds) in resp.text
 
 
 @pytest.mark.django_db
 def test_contact_create_for_user_valid_data(app, representative_data):
     org = representative_data['organization']
     app.set_user(representative_data['coordinator'])
-    user = UserFactory(organization=org)
-    ds = DatasetFactory(organization=org)
-
+    coordinator = representative_data['coordinator']
     form = app.get(reverse('contact-create', kwargs={
         'pk': org.pk
     })).forms['contact-form']
-
-    form['contact'] = f"user-{user.pk}"
+    form['contact'] = f"user-{coordinator.pk}"
     form['email'] = "user@test.com"
     form['phone'] = "+37061234567"
-    form['dataset'] = ds.pk
+    form['position'] = "Tester"
 
     resp = form.submit()
     assert resp.status_code == 302
 
     contact = Contact.objects.first()
-    assert contact.content_type == ContentType.objects.get_for_model(user)
-    assert contact.object_id == user.pk
+    assert contact.content_type == ContentType.objects.get_for_model(coordinator)
+    assert contact.object_id == coordinator.pk
     assert contact.email == "user@test.com"
     assert contact.phone == "+37061234567"
 
@@ -1075,8 +1063,43 @@ def test_contact_create_for_user_valid_data(app, representative_data):
     assert resp.status_code == 200
     assert contact.email in resp.text
     assert contact.phone in resp.text
-    assert user.get_full_name() in resp.text
-    assert str(ds) in resp.text
+    assert coordinator.get_full_name() in resp.text
+    
+    
+@pytest.mark.django_db
+def test_contact_create_for_non_registered_contact(app, representative_data):
+    org = representative_data['organization']
+    app.set_user(representative_data['coordinator'])
+
+    form = app.get(reverse('contact-create', kwargs={
+        'pk': org.pk
+    })).forms['contact-form']
+
+    form["contact_name"] = "Test Testeron"
+    form['email'] = "user@test.com"
+    form['phone'] = "+37061234567"
+    form['position'] = "Tester"
+
+    resp = form.submit()
+    assert resp.status_code == 302
+
+    contact = Contact.objects.first()
+    assert contact.content_type == None
+    assert contact.object_id == None
+    assert contact.organization == org
+    assert contact.contact_name == "Test Testeron"
+    assert contact.position == "Tester"
+    assert contact.email == "user@test.com"
+    assert contact.phone == "+37061234567"
+
+    resp = app.get(reverse('organization-contacts', kwargs={
+        'pk': org.pk
+    }))
+    assert resp.status_code == 200
+    assert contact.contact_name in resp.text
+    assert contact.position in resp.text
+    assert contact.email in resp.text
+    assert contact.phone in resp.text
 
 
 @pytest.mark.django_db
@@ -1092,11 +1115,10 @@ def test_contact_create_no_permission(app, representative_data):
 def test_contact_update_org(app, representative_data):
     app.set_user(representative_data['coordinator'])
     org = representative_data['organization']
-    ds = DatasetFactory(organization=org)
     contact = Contact.objects.create(
+        organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
-        dataset=ds,
         email="old@test.com",
         phone="+37061234567"
     )
@@ -1119,16 +1141,16 @@ def test_contact_update_org(app, representative_data):
 
 @pytest.mark.django_db
 def test_contact_update_user(app, representative_data):
-    app.set_user(representative_data['coordinator'])
+    coordinator = representative_data['coordinator']
+    app.set_user(coordinator)
     org = representative_data['organization']
-    ds = DatasetFactory(organization=org)
-    user = UserFactory(organization=org)
     contact = Contact.objects.create(
-        content_type=ContentType.objects.get_for_model(user),
-        object_id=user.pk,
-        dataset=ds,
+        organization=org,
+        content_type=ContentType.objects.get_for_model(coordinator),
+        object_id=coordinator.pk,
         email="old@test.com",
-        phone="+37061234567"
+        phone="+37061234567",
+        position="Tester",
     )
     form = app.get(reverse('contact-update', kwargs={
         'pk': org.pk,
@@ -1149,9 +1171,9 @@ def test_contact_delete(app, representative_data):
     app.set_user(representative_data['coordinator'])
     org = representative_data['organization']
     contact = Contact.objects.create(
+        organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
-        dataset=DatasetFactory(organization=org)
     )
     url = reverse('organization-contacts', kwargs={
         'pk': org.pk
@@ -1172,9 +1194,9 @@ def test_contact_delete_no_permission(app, representative_data):
     app.set_user(representative_data['manager'])  # Manager shouldn't have permission
     org = representative_data['organization']
     contact = Contact.objects.create(
+        organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
-        dataset=DatasetFactory(organization=org)
     )
 
     resp = app.get(reverse('contact-delete', kwargs={

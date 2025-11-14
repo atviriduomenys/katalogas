@@ -2473,7 +2473,7 @@ msgstr ""
 msgid "Organizacijos narių sąrašas"
 msgstr ""
 
-msgid "Pridėti kontaką"
+msgid "Pridėti kontaktą"
 msgstr ""
 
 msgid "Redaguoti organizaciją"

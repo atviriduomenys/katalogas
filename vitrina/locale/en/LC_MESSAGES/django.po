@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-14 15:37+0200\n"
+"POT-Creation-Date: 2025-11-14 16:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -658,12 +658,6 @@ msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
 msgstr ""
 "This property specifies a related resource. Corresponds to dct:relation."
 
-msgid "Organizacija:"
-msgstr "Organization:"
-
-msgid "Naudotojai:"
-msgstr "Users:"
-
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr "Code name can only include latin characters."
 
@@ -1169,8 +1163,8 @@ msgstr "Datasets relation"
 msgid "Duomenų rinkinių ryšiai"
 msgstr "Datasets relations"
 
-msgid "Vardas"
-msgstr "Name"
+msgid "Vardas Pavardė"
+msgstr "Full Name"
 
 msgid "Pareigos"
 msgstr "Position"
@@ -1579,6 +1573,9 @@ msgstr "Dataset members"
 
 msgid "Pridėti narį"
 msgstr "Add member"
+
+msgid "Vardas"
+msgstr "Name"
 
 msgid "Rolė"
 msgstr "Role"
@@ -2411,11 +2408,25 @@ msgstr "Enter the organization's name or the full company code."
 msgid "Naujos organizacijos koordinatorius"
 msgstr "Coordinator for a new organization"
 
+msgid "Pareigos organizacijoje"
+msgstr "Position in Organization"
+
 msgid "Registruotas kontaktinis asmuo ar organizacija"
 msgstr "Registered contact person or organization"
 
-msgid "Naujas kontaktinis asmuo"
-msgstr "New contact person"
+
+msgid "Papildomas kontaktinis asmuo"
+msgstr "Additional contact person"
+
+msgid "Neregistruoto kontakto Vardas ir Pavardė"
+msgstr "Unregistered contact's Full Name "
+
+msgid ""
+"Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
+"el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."
+msgstr ""
+"If a registered person or organization is selected, their profile email is used. "
+"When editing the contact, the profile email does not change."
 
 msgid ""
 "Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
@@ -2424,18 +2435,40 @@ msgstr ""
 "Incorrect phone number format. Acceptable formats: +3706XXXXXXX, 0XXXXXXXX"
 
 msgid ""
-"Turi būti nurodytas registruotas kontaktinis asmuo arba organizacija, arba "
-"įvestas naujas kontaktinis asmuo."
+"Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
+"telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia."
 msgstr ""
-"A registered contact person or organization must be specified, or a new "
-"contact person must be entered."
+"If a registered person or organization is selected, their profile phone number is used. "
+"When editing the contact, the profile phone number does not change."
+
+msgid "Organizacija:"
+msgstr "Organization:"
+
+msgid "Naudotojai:"
+msgstr "Users:"
+
+msgid ""
+"Pasirinkta organizacija arba naudotojas neturi nurodyto telefono numerio."
+msgstr ""
+"The selected organization or user does not have a phone number specified."
+
+
+msgid "Telefono numeris yra privalomas."
+msgstr "Phone number is required"
+
+msgid ""
+"Turi būti nurodytas registruotas kontaktinis asmuo arba organizacija, arba "
+"įvestas papildomas kontaktinis asmuo."
+msgstr ""
+"A registered contact person or organization must be specified, or an "
+"additional contact person must be entered."
 
 msgid ""
 "Negali būti nurodytas registruotas kontaktinis asmuo arba organizacija ir "
-"įvestas naujas kontaktinis asmuo tuo pačiu metu."
+"įvestas papildomas kontaktinis asmuo tuo pačiu metu."
 msgstr ""
-"A registered contact person or organization and a new contact person cannot "
-"be specified at the same time."
+"A registered contact person or organization and an additional contact person "
+"cannot be specified at the same time."
 
 msgid "Naujam kontaktiniam asmeniui turi būti nurodytas el. paštas."
 msgstr "An email address must be specified for a new contact person."
@@ -4349,7 +4382,8 @@ msgid "Versijos tipas"
 msgstr "Version type"
 
 msgid "Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija:"
-msgstr "According to the Semantic Versioning (SemVer) principle. Documentation: "
+msgstr ""
+"According to the Semantic Versioning (SemVer) principle. Documentation: "
 
 msgid "Priklauso versijai"
 msgstr "Depends on version"

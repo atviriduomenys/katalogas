@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-11 11:04+0200\n"
+"POT-Creation-Date: 2025-11-14 16:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -602,12 +602,6 @@ msgstr ""
 msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
 msgstr ""
 
-msgid "Organizacija:"
-msgstr ""
-
-msgid "Naudotojai:"
-msgstr ""
-
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr ""
 
@@ -1076,7 +1070,7 @@ msgstr ""
 msgid "Duomenų rinkinių ryšiai"
 msgstr ""
 
-msgid "Vardas"
+msgid "Vardas Pavardė"
 msgstr ""
 
 msgid "Pareigos"
@@ -1454,6 +1448,9 @@ msgid "Duomenų rinkinio narių sąrašas"
 msgstr ""
 
 msgid "Pridėti narį"
+msgstr ""
+
+msgid "Vardas"
 msgstr ""
 
 msgid "Rolė"
@@ -2249,10 +2246,21 @@ msgstr ""
 msgid "Naujos organizacijos koordinatorius"
 msgstr ""
 
+msgid "Pareigos organizacijoje"
+msgstr ""
+
 msgid "Registruotas kontaktinis asmuo ar organizacija"
 msgstr ""
 
-msgid "Naujas kontaktinis asmuo"
+msgid "Papildomas kontaktinis asmuo"
+msgstr ""
+
+msgid "Neregistruoto kontakto Vardas ir Pavardė"
+msgstr ""
+
+msgid ""
+"Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
+"el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."
 msgstr ""
 
 msgid ""
@@ -2261,13 +2269,31 @@ msgid ""
 msgstr ""
 
 msgid ""
+"Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
+"telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia."
+msgstr ""
+
+msgid "Organizacija:"
+msgstr ""
+
+msgid "Naudotojai:"
+msgstr ""
+
+msgid ""
+"Pasirinkta organizacija arba naudotojas neturi nurodyto telefono numerio."
+msgstr ""
+
+msgid "Telefono numeris yra privalomas."
+msgstr ""
+
+msgid ""
 "Turi būti nurodytas registruotas kontaktinis asmuo arba organizacija, arba "
-"įvestas naujas kontaktinis asmuo."
+"įvestas papildomas kontaktinis asmuo."
 msgstr ""
 
 msgid ""
 "Negali būti nurodytas registruotas kontaktinis asmuo arba organizacija ir "
-"įvestas naujas kontaktinis asmuo tuo pačiu metu."
+"įvestas papildomas kontaktinis asmuo tuo pačiu metu."
 msgstr ""
 
 msgid "Naujam kontaktiniam asmeniui turi būti nurodytas el. paštas."
@@ -2731,6 +2757,14 @@ msgid ""
 "galimybės nėra. Fizinis asmuo nurodomas tik kaip panaudojimo atvejo autorius."
 msgstr ""
 
+msgid "Duomenų gavėjo teisinis pagrindas"
+msgstr ""
+
+msgid ""
+"Duomenų gavėjo pateikiamos nuostatos, kuriomis teisiškai remiamasi norint "
+"gauti duomenis."
+msgstr ""
+
 msgid "Nuoroda į panaudojimo atvejį"
 msgstr ""
 
@@ -2808,6 +2842,9 @@ msgid "Duomenų rinkinių sąrašas"
 msgstr ""
 
 msgid "Panaudojimo atvejo peržiūros"
+msgstr ""
+
+msgid "Duomenų gavimo teisinis pagrindas"
 msgstr ""
 
 msgid "Duomenų gavėjas"
@@ -3434,10 +3471,13 @@ msgstr ""
 msgid "Papildomi teikėjo teisės aktai"
 msgstr ""
 
-msgid "Papildomi gavėjo teisės aktai"
+msgid "Mokėjimo sąlygos"
 msgstr ""
 
-msgid "Mokėjimo sąlygos"
+msgid "Duomenų teikėjo atstovas"
+msgstr ""
+
+msgid "Duomenų gavėjo atstovas"
 msgstr ""
 
 msgid "Generuoti sutarties dokumentą"
@@ -3570,6 +3610,39 @@ msgid "Statistikos nuoroda"
 msgstr ""
 
 msgid "Statistikos nuorodos"
+msgstr ""
+
+msgid "Juodraštis"
+msgstr ""
+
+msgid "Išankstinis leidimas"
+msgstr ""
+
+msgid "Stabili"
+msgstr ""
+
+msgid "Pasenusi"
+msgstr ""
+
+msgid "Atsisakyta"
+msgstr ""
+
+msgid "Sunaikinta"
+msgstr ""
+
+msgid "Tikrinama"
+msgstr ""
+
+msgid "Diegiama"
+msgstr ""
+
+msgid "Pagrindinė"
+msgstr ""
+
+msgid "Papildoma"
+msgstr ""
+
+msgid "Pataisa"
 msgstr ""
 
 msgid "Nepasirinkta"
@@ -3975,6 +4048,21 @@ msgstr ""
 msgid "Įtraukiama į versiją"
 msgstr ""
 
+msgid "Versijos tipas"
+msgstr ""
+
+msgid "Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija:"
+msgstr ""
+
+msgid "Priklauso versijai"
+msgstr ""
+
+msgid "Publikuoti"
+msgstr ""
+
+msgid "Tėvinė versija turi būti pasirinkta"
+msgstr ""
+
 msgid "Versija gali įsigalioti ne anksčiau kaip po 2 savaičių."
 msgstr ""
 
@@ -4095,6 +4183,21 @@ msgstr ""
 msgid "Įkėlimo į saugyklą data"
 msgstr ""
 
+msgid "Versijos būsena"
+msgstr ""
+
+msgid "Versijos numeris"
+msgstr ""
+
+msgid "Pagrindinis versijos numeris"
+msgstr ""
+
+msgid "Papildomas versijos numeris"
+msgstr ""
+
+msgid "Pataisos versijos numeris"
+msgstr ""
+
 msgid "Metaduomenų versija"
 msgstr ""
 
@@ -4119,10 +4222,13 @@ msgstr ""
 msgid "Importuoti"
 msgstr ""
 
-msgid "Nauja versija"
+msgid "Publikuoti versiją"
 msgstr ""
 
 msgid "Keitimų žurnalas"
+msgstr ""
+
+msgid "Publikacijos tipas"
 msgstr ""
 
 msgid "Įsigaliojimo data"

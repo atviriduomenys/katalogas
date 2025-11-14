@@ -1,6 +1,6 @@
 from typing import Optional
 
-from vitrina.datasets.models import Dataset, Contact, Relation, DatasetRelation, DatasetGroup
+from vitrina.datasets.models import Dataset, Relation, DatasetRelation, DatasetGroup
 from vitrina.datasets.services import DynamicResourceService
 from vitrina.resources.models import DatasetDistribution as Distribution
 from vitrina.resources.models import Format

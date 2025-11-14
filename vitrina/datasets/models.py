@@ -9,7 +9,7 @@ import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.db.models import Sum, ForeignKey, QuerySet, Q
+from django.db.models import Sum, QuerySet, Q
 from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware

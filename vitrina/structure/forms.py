@@ -1250,7 +1250,9 @@ class VersionForm(forms.ModelForm):
         required=True,
         choices=VersionType.choices,
         widget=forms.RadioSelect(),
-        help_text=_("Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija: https://semver.org/"),
+        help_text=_(
+            "Pagal semantinio versijų numeravimo (SemVer) principą. Dokumentacija:"
+        ) + " https://atviriduomenys.readthedocs.io/latest/katalogas.html#versijos-tipas",
     )
     related_version = forms.ModelChoiceField(
         label=_("Priklauso versijai"),

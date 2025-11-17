@@ -15,13 +15,10 @@ from vitrina.smart_contracts.services import (
     get_signer_from_certificate,
     get_signers_from_adoc,
 )
+from tests.smart_contracts.constants import SIGNER1_FULL_NAME, SIGNER2_FULL_NAME
 
 
 CONTRACT_CHECKSUM = "b5e8a02c5de0fab1da0564c9c7a9cbb5b9fe1b80826a2fd8705a4e4db3bae695"
-SIGNER1_FIRST_NAME = "Vardenis"
-SIGNER2_FIRST_NAME = "Vardenis2"
-SIGNER1_LAST_NAME = "Pavardenis"
-SIGNER2_LAST_NAME = "Pavardenis2"
 
 SCOPES_REGEX = r"\buapi:/\S+"
 
@@ -88,15 +85,12 @@ def test_extract_signers_certificate(signature1: etree._Element, certificate: x5
 
 def test_get_signer_from_certificate(certificate: x509.Certificate):
     signer = get_signer_from_certificate(certificate)
-    assert signer.first_name == SIGNER1_FIRST_NAME
-    assert signer.last_name == SIGNER1_LAST_NAME
+    assert signer.full_name == SIGNER1_FULL_NAME
 
-def test_get_signers_from_adoc(agreement_two_signers: Path):
+def test_get_signers_from_adoc(agreement_two_signers: Path,):
     with zipfile.ZipFile(agreement_two_signers) as zip_file:
         signers = get_signers_from_adoc(zip_file)
     
     assert len(signers) == 2
-    assert signers[0].first_name == SIGNER1_FIRST_NAME
-    assert signers[0].last_name == SIGNER1_LAST_NAME
-    assert signers[1].first_name == SIGNER2_FIRST_NAME
-    assert signers[1].last_name == SIGNER2_LAST_NAME
+    assert signers[0].full_name == SIGNER1_FULL_NAME
+    assert signers[1].full_name == SIGNER2_FULL_NAME

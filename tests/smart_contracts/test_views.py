@@ -27,6 +27,7 @@ from vitrina.smart_contracts.models import (
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
+from tests.smart_contracts.constants import SIGNER1_FULL_NAME, SIGNER2_FULL_NAME
 
 pytestmark = pytest.mark.django_db
 test_contracts_dir = Path(__file__).parent / "files" / "test_contracts"
@@ -540,7 +541,7 @@ class TestAgreementGeneratePdf:
                     "ex:companyName": "Gonzalez Group",
                     "ex:companyCode": "LWGYU0W8S",
                     "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
-                    "ex:representative": assigner_representative.email,
+                    "ex:representative": agreement.assigner_representative_full_name,
                     "ex:email": "lwolf@example.com",
                     "ex:phone": "456.631.4059",
                     "ex:personalCode": " - ",
@@ -552,7 +553,7 @@ class TestAgreementGeneratePdf:
                     "ex:companyName": "Gonzalez Group",
                     "ex:companyCode": "LWGYU0W8S",
                     "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
-                    "ex:representative": assignee_representative.email,
+                    "ex:representative": agreement.assignee_representative_full_name,
                     "ex:email": "lwolf@example.com",
                     "ex:phone": "456.631.4059",
                     "ex:personalCode": " - ",
@@ -683,14 +684,20 @@ class TestAgreementUploadSignedFile:
     
 
     def test_upload_adoc_and_change_status_to_initiated_if_agreement_status_formed(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset, agreement_pdf: Path, agreement_one_signer: Path
-    ) -> None:
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_one_signer: Path,
+        ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
         app.set_user(user)
         project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact = ContactFactory(contact_name=SIGNER1_FULL_NAME, content_type=None, object_id=None)
         agreement = AgreementFactory(
-            project=project, assignee=organization, status=AgreementStatuses.FORMED
+            project=project, assignee=organization, status=AgreementStatuses.FORMED, assignee_representative=contact
         )
         AgreementFileFactory(agreement=agreement, pdf_path=agreement_pdf)
         uploaded_file = Upload(
@@ -712,14 +719,25 @@ class TestAgreementUploadSignedFile:
         assert agreement.files.exists()
 
     def test_upload_adoc_and_change_status_to_signed_if_agreement_status_initiated(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset, agreement_pdf: Path, agreement_two_signers: Path
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_two_signers: Path,
     ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
         app.set_user(user)
         project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact1 = ContactFactory(contact_name=SIGNER1_FULL_NAME, content_type=None, object_id=None)
+        contact2 = ContactFactory(contact_name=SIGNER2_FULL_NAME, content_type=None, object_id=None)
         agreement = AgreementFactory(
-            project=project, assigner=organization, status=AgreementStatuses.INITIATED
+            project=project,
+            assigner=organization,
+            status=AgreementStatuses.INITIATED,
+            assignee_representative=contact1,
+            assigner_representative=contact2
         )
 
         AgreementFileFactory(agreement=agreement, pdf_path=agreement_pdf)
@@ -753,6 +771,7 @@ class TestAgreementUploadSignedFile:
             ("agreement_two_files", "ADOC klaida: Rastas daugiau nei vienas pasirašytas dokumentas."),
             ("agreement_two_signers", "Įkelta sutartis pasirašyta daugiau nei 1 parašu."),
             ("agreement_pdf", "Dokumentas turi būti adoc formato."),
+            ("agreement_one_signer", "Nesutampa pasirašiusių asmenų vardai ir pavardės. Reikalingi parašai: ['Jonas Jonaitis'], ADOC rasti parašai: ['Vardenis Pavardenis'].")
         ],
         indirect=["agreement_choice"]
     )
@@ -763,8 +782,9 @@ class TestAgreementUploadSignedFile:
         user = representative.user
         app.set_user(user)
         project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact = ContactFactory(contact_name="Jonas Jonaitis", content_type=None, object_id=None)
         agreement = AgreementFactory(
-            project=project, assignee=organization, status=AgreementStatuses.FORMED
+            project=project, assignee=organization, status=AgreementStatuses.FORMED, assignee_representative=contact
         )
 
         AgreementFileFactory(agreement=agreement, pdf_path=agreement_pdf)

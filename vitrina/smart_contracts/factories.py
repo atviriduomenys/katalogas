@@ -8,6 +8,7 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import Agreement, AgreementFile
 from vitrina.users.factories import UserFactory
+from vitrina.datasets.factories import ContactFactory
 
 
 class AgreementFactory(DjangoModelFactory):
@@ -20,6 +21,8 @@ class AgreementFactory(DjangoModelFactory):
     assigner = SubFactory(OrganizationFactory)
     created_by = SubFactory(UserFactory)
     project = SubFactory(ProjectFactory, organization=SubFactory(OrganizationFactory))
+    assigner_representative = SubFactory(ContactFactory)
+    assignee_representative = SubFactory(ContactFactory)
 
 
 class AgreementFileFactory(DjangoModelFactory):

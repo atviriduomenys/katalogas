@@ -5,6 +5,7 @@ from rest_framework.request import Request
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.orgs.models import Organization
+from vitrina.users.models import User
 
 
 def is_org_dataset_list(request: Request):
@@ -30,3 +31,13 @@ def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
         )
         parent_org.save()
     return parent_org
+
+
+def get_kind_choices(user: User, organization: Organization | None = None) -> tuple[tuple[str, str]]:
+    if user.is_staff or user.is_superuser:
+        return Organization.ORGANIZATION_KINDS
+
+    if organization and organization.kind == Organization.GOV:
+        return tuple(kind for kind in Organization.ORGANIZATION_KINDS if kind[0] == Organization.GOV)
+
+    return tuple(kind for kind in Organization.ORGANIZATION_KINDS if kind[0] != Organization.GOV)

@@ -47,6 +47,7 @@ from vitrina.orgs.models import (
     Template,
 )
 from vitrina.orgs.services import get_coordinators_count
+from vitrina.orgs.helpers import get_kind_choices
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
 from vitrina.structure.models import Metadata
@@ -191,6 +192,7 @@ class OrganizationBaseForm(ModelForm):
         )
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
 
         parent = getattr(self.instance, "get_parent", lambda: None)()
@@ -200,6 +202,9 @@ class OrganizationBaseForm(ModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "organization-form"
+        self.fields["kind"].choices = get_kind_choices(
+            user, self.instance if getattr(self.instance, "pk", None) else None
+        )
         self.helper.layout = Layout(
             Field("company_code", placeholder=_("Registracijos numeris")),
             Field("title", placeholder=_("Pavadinimas")),

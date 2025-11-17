@@ -744,6 +744,7 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Revisi
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         organization = self.get_object()
+        kwargs["user"] = self.request.user
         if organization.jurisdiction_id:
             kwargs["initial"] = {"jurisdiction": organization.jurisdiction_id}
         return kwargs
@@ -840,6 +841,7 @@ class OrganizationCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
                 "address": self.data[0].get("pilnas_adresas"),
             }
             kwargs["initial"] = initial_dict
+        kwargs["user"] = self.request.user
         return kwargs
 
     def form_valid(self, form):
@@ -854,6 +856,7 @@ class OrganizationCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
                 email=form.cleaned_data.get("email"),
                 phone=form.cleaned_data.get("phone"),
                 description=form.cleaned_data.get("description"),
+                kind=form.cleaned_data.get("kind"),
                 publisher=False,
                 is_public=True,
                 jurisdiction=jurisdiction,
@@ -871,6 +874,7 @@ class OrganizationCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
                 email=form.cleaned_data.get("email"),
                 phone=form.cleaned_data.get("phone"),
                 description=form.cleaned_data.get("description"),
+                kind=form.cleaned_data.get("kind"),
                 publisher=False,
                 is_public=True,
             )

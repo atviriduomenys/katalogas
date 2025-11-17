@@ -158,7 +158,7 @@ class OrganizationWidget(ModelSelect2Widget):
         return groups
 
 
-class OrganizationUpdateForm(ModelForm):
+class OrganizationBaseForm(ModelForm):
     company_code = CharField(label=_("Registracijos numeris"), required=True)
     title = CharField(label=_("Pavadinimas"), required=True)
     name = CharField(label=_("Kodinis pavadinimas"), required=True)
@@ -171,7 +171,7 @@ class OrganizationUpdateForm(ModelForm):
     email = CharField(label=_("Elektroninis paštas"), required=True)
     phone = CharField(label=_("Telefono numeris"), required=True)
     address = CharField(label=_("Adresas"), required=True)
-    description = CharField(label=_("Aprašymas"), widget=Textarea, required=False)
+    description = CharField(label=_("Aprašymas"), widget=Textarea(), required=False)
 
     class Meta:
         model = Organization
@@ -192,11 +192,11 @@ class OrganizationUpdateForm(ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        org_instance = self.instance if self.instance and self.instance.pk else None
-        button = _("Redaguoti") if org_instance else _("Sukurti")
-        parent = self.instance.get_parent()
+
+        parent = getattr(self.instance, "get_parent", lambda: None)()
         if parent:
             self.fields["jurisdiction"].initial = parent
+
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "organization-form"
@@ -213,7 +213,7 @@ class OrganizationUpdateForm(ModelForm):
             Field("address", placeholder=_("Adresas")),
             Field("publisher", placeholder=_("Duomenų atvėrimo paslaugų teikėjas")),
             Field("description", placeholder=_("Aprašymas")),
-            Submit("submit", button, css_class="button is-primary"),
+            Submit("submit", self.get_submit_label(), css_class="button is-primary"),
         )
 
     def clean_name(self):
@@ -221,7 +221,7 @@ class OrganizationUpdateForm(ModelForm):
         if name:
             if not name.islower():
                 raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
-            elif any((not c.isalnum() and c != "_") for c in name):
+            if any((not c.isalnum() and c != "_") for c in name):
                 raise ValidationError(
                     _(
                         "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
@@ -229,103 +229,33 @@ class OrganizationUpdateForm(ModelForm):
                         "jokie kiti simboliai negalimi."
                     )
                 )
-            elif not name.isascii():
+            if not name.isascii():
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
         return name
 
     def clean_image(self):
         image = self.cleaned_data.get("image")
-        if image:
-            if image.width < 256 or image.height < 256:
-                raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
+        if image and (image.width < 256 or image.height < 256):
+            raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
         return image
 
 
-class OrganizationCreateForm(ModelForm):
-    title = CharField(label=_("Pavadinimas"), required=True)
-    company_code = CharField(label=_("Registracijos numeris"), required=True)
-    name = CharField(label=_("Kodinis pavadinimas"), required=True)
-    jurisdiction = ModelChoiceField(
-        queryset=AreaOfManagement.objects.all(),
-        label=_("Valdymo sritis"),
-        required=True,
-    )
-    image = FilerImageField(label=_("Paveiksliukas"), upload_to=Organization.UPLOAD_TO, required=False)
-    email = CharField(label=_("Elektroninis paštas"), required=True)
-    phone = CharField(label=_("Telefono numeris"), required=True)
-    address = CharField(label=_("Adresas"), required=True)
-    description = CharField(label=_("Aprašymas"), widget=Textarea, required=False)
+class OrganizationUpdateForm(OrganizationBaseForm):
+    def get_submit_label(self) -> str:
+        return _("Redaguoti")
 
-    class Meta:
-        model = Organization
-        fields = (
-            "company_code",
-            "title",
-            "name",
-            "kind",
-            "jurisdiction",
-            "image",
-            "website",
-            "email",
-            "phone",
-            "address",
-            "publisher",
-            "description",
-        )
 
+class OrganizationCreateForm(OrganizationBaseForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         initial = kwargs.get("initial")
-        button = "Sukurti"
-        parent = self.instance.get_parent()
-        if parent:
-            self.fields["jurisdiction"].initial = parent
-        self.helper = FormHelper()
-        self.helper.attrs["novalidate"] = ""
-        self.helper.form_id = "organization-form"
-        self.helper.layout = Layout(
-            Field("title", placeholder=_("Pavadinimas")),
-            Field("company_code", placeholder=_("Registracijos numeris")),
-            Field("name", placeholder=_("Kodinis pavadinimas")),
-            Field("kind", placeholder=_("Tipas")),
-            Field("jurisdiction", placeholder=_("Jurisdikcija")),
-            Field("image", placeholder=_("Logotipas")),
-            Field("website", placeholder=_("Tinklalapis")),
-            Field("email", placeholder=_("Elektroninis paštas")),
-            Field("phone", placeholder=_("Telefono numeris")),
-            Field("address", placeholder=_("Adresas")),
-            Field("publisher", placeholder=_("Duomenų atvėrimo paslaugų teikėjas")),
-            Field("description", placeholder=_("Aprašymas")),
-            Submit("submit", button, css_class="button is-primary"),
-        )
         if initial:
             self.fields["title"].widget.attrs["readonly"] = True
             self.fields["company_code"].widget.attrs["readonly"] = True
             self.fields["address"].widget.attrs["readonly"] = True
 
-    def clean_name(self):
-        name = self.cleaned_data.get("name")
-        if name:
-            if not name.islower():
-                raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
-            elif any((not c.isalnum() and c != "_") for c in name):
-                raise ValidationError(
-                    _(
-                        "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "
-                        "žodžiai gali būti atskirti _ simboliu,"
-                        "jokie kiti simboliai negalimi."
-                    )
-                )
-            elif not name.isascii():
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
-        return name
-
-    def clean_image(self):
-        image = self.cleaned_data.get("image")
-        if image:
-            if image.width < 256 or image.height < 256:
-                raise ValidationError(_("Nuotraukos dydis turi būti ne mažesnis už 256x256."))
-        return image
+    def get_submit_label(self) -> str:
+        return _("Sukurti")
 
 
 class OrganizationSearchForm(FacetedSearchForm):

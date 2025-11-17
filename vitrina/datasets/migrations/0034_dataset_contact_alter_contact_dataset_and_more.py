@@ -45,8 +45,5 @@ class Migration(migrations.Migration):
             ),
         ),
         migrations.RunPython(fill_dataset_contacts, reverse_code=migrations.RunPython.noop),
-        migrations.RemoveField(
-            model_name="contact",
-            name="dataset",
-        ),
+       
     ]

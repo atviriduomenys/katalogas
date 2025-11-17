@@ -4,6 +4,7 @@ from datetime import datetime
 from io import BytesIO
 
 from django.core.files.base import ContentFile
+from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -159,7 +160,7 @@ class Agreement(UUIDBaseModel):
                     "ex:companyCode": self.assigner.company_code,
                     "ex:address": self.assigner.address,
                     "ex:representative": (
-                        self.assigner_representative.email if self.assigner_representative else NON_VALUE
+                        self.assigner_representative_full_name if self.assigner_representative else NON_VALUE
                     ),
                     "ex:email": self.assigner.email or NON_VALUE,
                     "ex:phone": self.assigner.phone or NON_VALUE,
@@ -173,7 +174,7 @@ class Agreement(UUIDBaseModel):
                     "ex:companyCode": self.assignee.company_code,
                     "ex:address": self.assignee.address,
                     "ex:representative": (
-                        self.assignee_representative.email if self.assignee_representative else NON_VALUE
+                        self.assignee_representative_full_name if self.assignee_representative else NON_VALUE
                     ),
                     "ex:email": self.assignee.email or NON_VALUE,
                     "ex:phone": self.assignee.phone or NON_VALUE,
@@ -198,6 +199,18 @@ class Agreement(UUIDBaseModel):
     @property
     def detail_page_title(self) -> str:
         return _("Sutartis: {organization}").format(organization=self.assigner)
+
+    @property
+    def assignee_representative_full_name(self) -> str:
+        if self.assignee_representative.content_type == ContentType.objects.get_for_model(User):
+            return self.assignee_representative.content_object.get_full_name()
+        return self.assignee_representative.contact_name.strip()
+
+    @property
+    def assigner_representative_full_name(self) -> str:
+        if self.assignee_representative.content_type == ContentType.objects.get_for_model(User):
+            return self.assignee_representative.content_object.get_full_name()
+        return self.assignee_representative.contact_name.strip()
 
 
 class AgreementScope(UUIDBaseModel):

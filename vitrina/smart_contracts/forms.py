@@ -112,11 +112,12 @@ class AgreementUploadForm(forms.ModelForm):
                     pdf_bytes = pdf_file.read()
                 if generate_checksum(pdf_bytes) != self.agreement_pdf.checksum:
                     raise InvalidAdocError(_("PDF dokumentas nesutampa su sutartyje esančiu PDF dokumentu."))
-                signers = get_signers_from_adoc(zip_file)
+                signers_in_adoc = [signer.full_name for signer in get_signers_from_adoc(zip_file)]
         except (InvalidAdocError, zipfile.BadZipFile) as error:
             raise ValidationError(f"ADOC klaida: {str(error)}")
 
-        num_of_signers = len(signers)
+        num_of_signers = len(signers_in_adoc)
+        signers_to_find = [self.agreement.assignee_representative_full_name]
 
         if num_of_signers == 0:
             raise ValidationError(_("Įkelta sutartis nepasirašyta."))
@@ -129,11 +130,21 @@ class AgreementUploadForm(forms.ModelForm):
                 raise ValidationError(_("Įkelta sutartis nepasirašyta teikėjo parašu."))
             if num_of_signers > 2:
                 raise ValidationError(_("Įkeltoje sutartyje rasti daugiau nei 2 parašai."))
+            signers_to_find.append(self.agreement.assigner_representative_full_name)
         else:
             raise ValidationError(
                 _("Negalima pasirašyti sutarties su būsena {status}").format(status=self.agreement.status)
             )
-
+        if not all(signer in signers_in_adoc for signer in signers_to_find):
+            raise ValidationError(
+                _(
+                    "Nesutampa pasirašiusių asmenų vardai ir pavardės. "
+                    "Reikalingi parašai: {expected}, ADOC rasti parašai: {found}."
+                ).format(
+                    expected=signers_to_find,
+                    found=signers_in_adoc,
+                )
+            )
         return file
 
 

@@ -20,6 +20,12 @@ class Migration(migrations.Migration):
         ),
         migrations.AlterUniqueTogether(
             name="contact",
-            unique_together={("email", "organization")},
+            unique_together=set(),
+        ),
+        migrations.AddConstraint(
+            model_name="contact",
+            constraint=models.UniqueConstraint(
+                fields=("email", "organization"), name="unique_email_per_organization"
+            ),
         ),
     ]

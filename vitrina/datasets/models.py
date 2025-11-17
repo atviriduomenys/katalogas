@@ -1850,10 +1850,7 @@ class Contact(models.Model):
     class Meta:
         verbose_name = _("Kontaktas")
         verbose_name_plural = _("Kontaktai")
-        unique_together = (
-            "email",
-            "organization",
-        )
+        constraints = [models.UniqueConstraint(fields=["email", "organization"], name="unique_email_per_organization")]
 
     def __str__(self):
         if self.content_type:

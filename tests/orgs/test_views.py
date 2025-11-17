@@ -1208,6 +1208,71 @@ def test_contact_delete_no_permission(app, representative_data):
     assert Contact.objects.count() == 1
 
 
+@pytest.mark.django_db
+def test_non_gov_organizaton_no_gov_kind(app: DjangoTestApp):
+    representative = ViispRepresentativeFactory()
+    org = representative.content_object
+
+    user = representative.user
+    app.set_user(user)
+
+    form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
+
+    kind_values = [value for value, _, _ in form['kind'].options]
+    
+    assert len(kind_values) == 2
+    assert Organization.GOV not in kind_values
+
+@pytest.mark.django_db
+def test_gov_organizaton_cannot_select_different_kind(app: DjangoTestApp):
+    representative = ViispRepresentativeFactory()
+    org = representative.content_object
+    org.kind = Organization.GOV
+    org.save()
+
+    user = representative.user
+    app.set_user(user)
+
+    form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
+
+    kind_values = [value for value, _, _ in form['kind'].options]
+    
+    assert len(kind_values) == 1
+    assert kind_values[0] == Organization.GOV
+
+
+@pytest.mark.django_db
+def test_create_organization(app: DjangoTestApp):
+    user = UserFactory(is_superuser = True)
+    app.set_user(user)
+
+    form = app.get(reverse('organization-create')).forms['organization-form']
+
+    form["company_code"] = "123456789"
+    form["title"] = "Imone"
+    form["name"] = "kodinis_pavadinimas"
+    jurisdiction = AreaOfManagement.objects.first()
+    form["jurisdiction"] = jurisdiction.pk
+    form["email"] = "example@example.com"
+    form["phone"] = "061234567"
+    form["address"] = "Gatve 1"
+    form["description"] = "aprasymas"
+    form["kind"] = Organization.GOV
+
+    response = form.submit()
+
+    assert response.status_code == 302
+
+    organization = Organization.objects.get(company_code = "123456789")
+    assert organization.title == "Imone"
+    assert organization.name == "kodinis_pavadinimas"
+    assert organization.jurisdiction == jurisdiction
+    assert organization.email == "example@example.com"
+    assert organization.phone == "061234567"
+    assert organization.address == "Gatve 1"
+    assert organization.description == "aprasymas"
+    assert organization.kind == Organization.GOV
+
 class TestRepresentativeDeleteView:
     @pytest.mark.django_db
     def test_delete_representative(self, app: DjangoTestApp) -> None:

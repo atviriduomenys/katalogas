@@ -989,10 +989,15 @@ class Dataset(Resource):
             content_type_id = metadata_instance.content_type.id
             metadata_model = ContentType.objects.get_for_id(content_type_id).model
             if metadata_model == "prefix":
+                prefix_text = (
+                    f"<a href='{metadata_instance.uri_link}'>Prefix</a>"
+                    if metadata_instance.uri_link else "Prefix"
+                )
                 label = mark_safe(
-                    f"<a href={metadata_instance.uri_link}>Prefix</a> name: "
+                    f"{prefix_text} name: "
                     f"<span class='tag is-success is-light is-medium'>{metadata_instance.name}</span>"
                 )
+
                 meta_objects.append((metadata_instance.pk, label))
 
             if metadata_model == "paramitem":
@@ -1001,8 +1006,12 @@ class Dataset(Resource):
                 if param.content_type_id == ContentType.objects.filter(model="dataset").first().pk and metadata_instance.metadata_version.status == VersionStatus.DRAFT:
                     if metadata_instance.ref:
                         dataset_param_item_metadata_ref = metadata_instance.ref
+                    param_text = (
+                        f"<a href='{metadata_instance.uri_link}'>Param</a>: {dataset_param_item_metadata_ref}"
+                        if metadata_instance.uri_link else f"Param: {dataset_param_item_metadata_ref}"
+                    )
                     label = mark_safe(
-                        f"Param: {dataset_param_item_metadata_ref} "
+                        f"{param_text} "
                         f"<span class='tag is-success is-light is-medium'>{metadata_instance.prepare}</span>"
                     )
                     meta_objects.append((metadata_instance.pk, label))
@@ -1020,25 +1029,12 @@ class Dataset(Resource):
                     meta_objects.append((metadata_instance.pk, label))
 
         for model in self.model_set.all():
-            if param := model.params.first():
-                for param_item in param.paramitem_set.all():
-                    metadata = param_item.metadata.first()
-                    if metadata and metadata.metadata_version.status == VersionStatus.DRAFT:
-                        if metadata.ref:
-                            model_param_item_metadata_ref = metadata.ref
-
-                        label = mark_safe(
-                            f"Param: <span class='prop_metadata'>{model_param_item_metadata_ref}</span> "
-                            f"<span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
-                        )
-                        meta_objects.append((metadata.pk, label))
-
             if dataset_distribution_for_model := model.distribution:
                 if dataset_distribution_metadata := dataset_distribution_for_model.metadata.first():
                     if dataset_distribution_metadata.metadata_version.status == VersionStatus.DRAFT:
                         label = mark_safe(
-                            f"<a href={dataset_distribution_for_model.get_absolute_url()}>{dataset_distribution_for_model.title}</a> name: "
-                            f"<span class='tag is-success is-light is-medium'>{dataset_distribution_for_model.title}</span>"
+                            f"<a href={dataset_distribution_for_model.get_absolute_url()}>{dataset_distribution_metadata.name}</a> name: "
+                            f"<span class='tag is-success is-light is-medium'>{dataset_distribution_metadata.name}</span>"
                         )
 
                         if dataset_distribution_metadata.pk not in dataset_distributions:
@@ -1102,6 +1098,25 @@ class Dataset(Resource):
                         )
                     label = mark_safe(label_str)
                     meta_objects.append((metadata.pk, label))
+
+                if param := model.params.first():
+                    for param_item in param.paramitem_set.all():
+                        metadata = param_item.metadata.first()
+                        if metadata and metadata.metadata_version.status == VersionStatus.DRAFT:
+                            if metadata.ref:
+                                model_param_item_metadata_ref = metadata.ref
+
+                            param_text = (
+                                f"<a href='{metadata.uri_link}'>Param</a>: "
+                                f"<span class='prop_metadata'>{model_param_item_metadata_ref}</span>"
+                                if metadata.uri_link else
+                                f"Param: <span class='prop_metadata'>{model_param_item_metadata_ref}</span>"
+                            )
+                            label = mark_safe(
+                                f"{param_text} "
+                                f"<span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
+                            )
+                            meta_objects.append((metadata.pk, label))
 
             for prop in model.model_properties.all():
                 metadata = prop.metadata.first()

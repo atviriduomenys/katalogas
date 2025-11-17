@@ -35,7 +35,7 @@ class AgreementFileFactory(DjangoModelFactory):
     agreement = SubFactory(AgreementFactory)
 
     @lazy_attribute
-    def file(self):
+    def file(self) -> SimpleUploadedFile:
         if self.pdf_path:
             file_path = Path(self.pdf_path)
             return SimpleUploadedFile(file_path.name, file_path.read_bytes(), content_type="application/pdf")

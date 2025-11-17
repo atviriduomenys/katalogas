@@ -14,7 +14,7 @@ from vitrina.smart_contracts.services import SAFE_PARSER, SIGNATURE_NAMESPACES
 
 AGREEMENT_ONE_SIGNER = "agreement_one_signer.adoc"
 AGREEMENT_TWO_SIGNERS = "agreement_two_signers.adoc"
-AGREEMENT_INVALID = "agreement_no_manifest.adoc"
+AGREEMENT_NO_MANIFEST = "agreement_no_manifest.adoc"
 AGREEMENT_BAD_CERTIFICATE = "agreement_bad_certificate.adoc"
 AGREEMENT_MODIFIED = "agreement_modified.adoc"
 AGREEMENT_NO_PDF = "agreement_no_pdf.adoc"
@@ -64,8 +64,8 @@ def agreement_two_signers(agreements_dir: Path) -> Path:
 
 
 @pytest.fixture
-def agreement_invalid(agreements_dir: Path) -> Path:
-    return agreements_dir / AGREEMENT_INVALID
+def agreement_no_manifest(agreements_dir: Path) -> Path:
+    return agreements_dir / AGREEMENT_NO_MANIFEST
 
 
 @pytest.fixture

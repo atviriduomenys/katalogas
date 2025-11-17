@@ -10,6 +10,7 @@ from cryptography import x509
 from cryptography.x509.oid import NameOID
 from base64 import b64decode
 import binascii
+import logging
 
 
 import markdown
@@ -28,6 +29,9 @@ from vitrina.smart_contracts.models import Agreement
 from vitrina.projects.models import Project
 from django.db.models import Q, QuerySet
 from django.contrib.auth.models import AnonymousUser
+from django.utils.translation import gettext_lazy as _
+
+logger = logging.getLogger()
 
 SIGNATURE_FILE_PATH = "META-INF/signatures/signatures0.xml"
 MANIFEST_FILE_PATH = "META-INF/manifest.xml"
@@ -39,8 +43,7 @@ MANIFEST_NAMESPACE = {"manifest": NAMESPACE_URI}
 ATTR_FULL_PATH = f"{{{NAMESPACE_URI}}}full-path"
 MANIFEST_FILE_ENTRY_TAG = "manifest:file-entry"
 
-META_DIR = "META-INF/"
-SIGNATURES_DIR = f"{META_DIR}signatures/"
+SIGNATURES_DIR = "META-INF/signatures/"
 SIGNATURE_NAMESPACES = {"ds": "http://www.w3.org/2000/09/xmldsig#", "xades": "http://uri.etsi.org/01903/v1.3.2#"}
 SAFE_PARSER = etree.XMLParser(
     remove_blank_text=True,
@@ -48,6 +51,7 @@ SAFE_PARSER = etree.XMLParser(
     no_network=True,
     huge_tree=False,
 )
+X509_CERTIFICATE_XPATH = ".//ds:KeyInfo/ds:X509Data/ds:X509Certificate"
 
 
 @dataclass
@@ -81,6 +85,7 @@ def extract_signatures_from_adoc(zip_file: zipfile.ZipFile) -> list[etree._Eleme
             try:
                 xml_tree = etree.parse(xml_file, SAFE_PARSER)
             except etree.XMLSyntaxError:
+                logger.info(f"Error while parsing XML file {xml_file}")
                 continue
 
         if (signature := xml_tree.find(".//ds:Signature", namespaces=SIGNATURE_NAMESPACES)) is not None:
@@ -90,14 +95,14 @@ def extract_signatures_from_adoc(zip_file: zipfile.ZipFile) -> list[etree._Eleme
 
 
 def extract_signers_certificate(signature: etree._Element) -> x509.Certificate:
-    certificate = signature.find(".//ds:KeyInfo/ds:X509Data/ds:X509Certificate", namespaces=SIGNATURE_NAMESPACES)
+    certificate = signature.find(X509_CERTIFICATE_XPATH, namespaces=SIGNATURE_NAMESPACES)
     if certificate is None or not certificate.text:
-        raise InvalidAdocError("Nepavyko rasti parašo sertifikato.")
+        raise InvalidAdocError(_("Nepavyko rasti parašo sertifikato."))
     b64 = "".join(certificate.text.split())
     try:
         return x509.load_der_x509_certificate(b64decode(b64))
     except (binascii.Error, ValueError) as error:
-        raise InvalidAdocError("Netinkamas parašo sertifikatas.") from error
+        raise InvalidAdocError(_("Netinkamas parašo sertifikatas.")) from error
 
 
 def get_signer_from_certificate(certificate: x509.Certificate) -> Signer:
@@ -111,23 +116,22 @@ def get_signer_from_certificate(certificate: x509.Certificate) -> Signer:
     last_name = get_value(NameOID.SURNAME)
 
     if not all([first_name, last_name]):
-        raise InvalidAdocError("Paraše trūksta pasirašiusio asmens vardo ir/ar pavardės")
+        raise InvalidAdocError(_("Paraše trūksta pasirašiusio asmens vardo ir/ar pavardės."))
 
     return Signer(first_name=first_name, last_name=last_name)
 
 
 def get_signers_from_adoc(zip_file: zipfile.ZipFile) -> list[Signer]:
-    signatures = extract_signatures_from_adoc(zip_file)
     signers = []
-    for signature in signatures:
+    for signature in extract_signatures_from_adoc(zip_file):
         certificate = extract_signers_certificate(signature)
         signers.append(get_signer_from_certificate(certificate))
 
     return signers
 
 
-def num_of_adoc_root_files(zip_file: zipfile.ZipFile):
-    return sum(1 for file in zip_file.filelist if "/" not in file.filename and file.filename != "mimetype")
+def num_of_adoc_root_files(zip_file: zipfile.ZipFile) -> int:
+    return len([file for file in zip_file.filelist if "/" not in file.filename and file.filename != "mimetype"])
 
 
 def has_valid_signature(adoc_path: str) -> bool:
@@ -153,7 +157,7 @@ def get_pdf_checksum_from_adoc(adoc_path: str) -> str:
             pdf_path = get_pdf_path_in_adoc(adoc_archive)
 
             if not pdf_path:
-                raise InvalidAdocError("No PDF file found")
+                raise InvalidAdocError(_("Nerastas PDF failas."))
 
             with adoc_archive.open(pdf_path) as pdf_file:
                 pdf_bytes = pdf_file.read()
@@ -161,7 +165,7 @@ def get_pdf_checksum_from_adoc(adoc_path: str) -> str:
             return generate_checksum(pdf_bytes)
 
     except (zipfile.BadZipFile, InvalidAdocError) as error:
-        raise InvalidAdocError(f"Invalid ADOC file: {error}") from error
+        raise InvalidAdocError(_("Blogas ADOC failas: {error}").format(error=error)) from error
 
 
 def generate_contract(template_path: str, odrl_data: dict, output: str | BytesIO) -> None:

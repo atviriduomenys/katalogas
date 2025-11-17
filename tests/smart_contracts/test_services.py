@@ -33,11 +33,11 @@ def test_has_valid_signature_not_signed_adoc(agreement_not_signed: Path):
     assert not has_valid_signature(str(agreement_not_signed))
 
 
-def test_has_valid_signature_invalid_adoc(agreement_invalid: Path):
+def test_has_valid_signature_invalid_adoc(agreement_no_manifest: Path):
     with pytest.raises(
         InvalidAdocError, match=r"Invalid ADOC file:.*META-INF/manifest\.xml"
     ):
-        has_valid_signature(str(agreement_invalid))
+        has_valid_signature(str(agreement_no_manifest))
 
 
 def test_is_checksum_valid_success(agreement_one_signer: Path):
@@ -48,7 +48,7 @@ def test_is_checksum_valid_added_extra_scope():
     assert not get_pdf_checksum_from_adoc(str(test_contracts_dir / "sutartis_signed_extra_scope.adoc")) == CONTRACT_CHECKSUM
 
 def test_is_checksum_valid_missing_pdf_in_adoc(agreement_no_pdf: Path):
-    with pytest.raises(InvalidAdocError, match="Invalid ADOC file: No PDF file found"):
+    with pytest.raises(InvalidAdocError, match="Blogas ADOC failas: Nerastas PDF failas."):
         get_pdf_checksum_from_adoc(str(agreement_no_pdf))
 
 

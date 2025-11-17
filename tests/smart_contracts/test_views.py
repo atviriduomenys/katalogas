@@ -765,11 +765,11 @@ class TestAgreementUploadSignedFile:
         [
             ("agreement_bad_certificate", "ADOC klaida: Netinkamas parašo sertifikatas."),
             ("agreement_modified", "ADOC klaida: PDF dokumentas nesutampa su sutartyje esančiu PDF dokumentu."),
-            ("agreement_invalid", "ADOC klaida: Neteisingas ADOC formatas."),
+            ("agreement_no_manifest", "ADOC klaida: Neteisingas ADOC formatas."),
             ("agreement_no_pdf", "ADOC klaida: Nerastas PDF dokumentas."),
             ("agreement_not_signed", "Įkelta sutartis nepasirašyta."),
             ("agreement_two_files", "ADOC klaida: Rastas daugiau nei vienas pasirašytas dokumentas."),
-            ("agreement_two_signers", "Įkelta sutartis pasirašyta daugiau nei 1 parašu."),
+            ("agreement_two_signers", "Įkelta sutartis pasirašyta daugiau nei 1 parašu. Gavėjas turėtų pasirašyti tik vienu parašu."),
             ("agreement_pdf", "Dokumentas turi būti adoc formato."),
             ("agreement_one_signer", "Nesutampa pasirašiusių asmenų vardai ir pavardės. Reikalingi parašai: ['Jonas Jonaitis'], ADOC rasti parašai: ['Vardenis Pavardenis'].")
         ],

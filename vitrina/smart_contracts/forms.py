@@ -105,8 +105,7 @@ class AgreementUploadForm(forms.ModelForm):
                     raise InvalidAdocError("Neteisingas ADOC formatas.")
                 if num_of_adoc_root_files(zip_file) > 1:
                     raise InvalidAdocError(_("Rastas daugiau nei vienas pasirašytas dokumentas."))
-                pdf_path = get_pdf_path_in_adoc(zip_file)
-                if not pdf_path:
+                if not (pdf_path := get_pdf_path_in_adoc(zip_file)):
                     raise InvalidAdocError(_("Nerastas PDF dokumentas."))
                 with zip_file.open(pdf_path) as pdf_file:
                     pdf_bytes = pdf_file.read()
@@ -124,7 +123,9 @@ class AgreementUploadForm(forms.ModelForm):
 
         if self.agreement.status == AgreementStatuses.FORMED:
             if num_of_signers > 1:
-                raise ValidationError(_("Įkelta sutartis pasirašyta daugiau nei 1 parašu."))
+                raise ValidationError(
+                    _("Įkelta sutartis pasirašyta daugiau nei 1 parašu. Gavėjas turėtų pasirašyti tik vienu parašu.")
+                )
         elif self.agreement.status == AgreementStatuses.INITIATED:
             if num_of_signers == 1:
                 raise ValidationError(_("Įkelta sutartis nepasirašyta teikėjo parašu."))
@@ -133,7 +134,9 @@ class AgreementUploadForm(forms.ModelForm):
             signers_to_find.append(self.agreement.assigner_representative_full_name)
         else:
             raise ValidationError(
-                _("Negalima pasirašyti sutarties su būsena {status}").format(status=self.agreement.status)
+                _("Pasirašyti galima tik sutartis su būsenomis `{formed}` arba `{initiated}`.").format(
+                    formed=AgreementStatuses.FORMED, initiated=AgreementStatuses.INITIATED
+                )
             )
         if not all(signer in signers_in_adoc for signer in signers_to_find):
             raise ValidationError(

@@ -1840,15 +1840,17 @@ class Contact(models.Model):
         verbose_name=_("Content Type"),
         limit_choices_to={"model__in": ("organization", "user")},
         null=True,
+        blank=True,
     )
-    object_id = models.PositiveIntegerField(verbose_name=_("Object ID"), null=True)
+    object_id = models.PositiveIntegerField(verbose_name=_("Object ID"), null=True, blank=True)
     content_object = GenericForeignKey("content_type", "object_id")
-    email = models.EmailField(_("Email"), blank=True, unique=True)
+    email = models.EmailField(_("Email"), blank=True)
     phone = models.CharField(_("Phone"), max_length=50, blank=True)
 
     class Meta:
         verbose_name = _("Kontaktas")
         verbose_name_plural = _("Kontaktai")
+        constraints = [models.UniqueConstraint(fields=["email", "organization"], name="unique_email_per_organization")]
 
     def __str__(self):
         if self.content_type:

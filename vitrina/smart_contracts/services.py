@@ -153,7 +153,7 @@ def validate_signers(signers: list[str], agreement: Agreement) -> tuple[bool, st
             formed=AgreementStatuses.FORMED, initiated=AgreementStatuses.INITIATED
         )
 
-    if not all(signer in signers for signer in signers_to_find):
+    if set(signers) != set(signers_to_find):
         return False, _(
             "Nesutampa pasirašiusių asmenų vardai ir pavardės. "
             "Reikalingi parašai: {expected}, ADOC rasti parašai: {found}."

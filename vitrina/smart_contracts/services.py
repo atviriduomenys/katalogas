@@ -32,15 +32,8 @@ from django.utils.translation import gettext_lazy as _
 
 logger = logging.getLogger()
 
-SIGNATURE_FILE_PATH = "META-INF/signatures/signatures0.xml"
 MANIFEST_FILE_PATH = "META-INF/manifest.xml"
 TEMP_PDF_PATH = "/tmp/_extracted_temp.pdf"
-
-NAMESPACE_URI = "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"
-MANIFEST_NAMESPACE = {"manifest": NAMESPACE_URI}
-
-ATTR_FULL_PATH = f"{{{NAMESPACE_URI}}}full-path"
-MANIFEST_FILE_ENTRY_TAG = "manifest:file-entry"
 
 SIGNATURES_DIR = "META-INF/signatures/"
 SIGNATURE_NAMESPACES = {"ds": "http://www.w3.org/2000/09/xmldsig#", "xades": "http://uri.etsi.org/01903/v1.3.2#"}
@@ -169,23 +162,6 @@ def validate_signers(signers: list[str], agreement: Agreement) -> tuple[bool, st
             found=signers,
         )
     return True, None
-
-
-def has_valid_signature(adoc_path: str) -> bool:
-    try:
-        with zipfile.ZipFile(adoc_path, "r") as adoc_archive:
-            with adoc_archive.open(MANIFEST_FILE_PATH) as manifest_file:
-                tree = ET.parse(manifest_file)
-                root = tree.getroot()
-                file_entries = root.findall(MANIFEST_FILE_ENTRY_TAG, MANIFEST_NAMESPACE)
-
-                for entry in file_entries:
-                    full_path = entry.attrib.get(ATTR_FULL_PATH)
-                    if full_path == SIGNATURE_FILE_PATH:
-                        return True
-        return False
-    except (zipfile.BadZipFile, KeyError, ET.ParseError) as error:
-        raise InvalidAdocError(f"Invalid ADOC file: {error}") from error
 
 
 def get_pdf_checksum_from_adoc(adoc_path: str) -> str:

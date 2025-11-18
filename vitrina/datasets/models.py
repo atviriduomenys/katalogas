@@ -990,8 +990,7 @@ class Dataset(Resource):
             metadata_model = ContentType.objects.get_for_id(content_type_id).model
             if metadata_model == "prefix":
                 prefix_text = (
-                    f"<a href='{metadata_instance.uri_link}'>Prefix</a>"
-                    if metadata_instance.uri_link else "Prefix"
+                    f"<a href='{metadata_instance.uri_link}'>Prefix</a>" if metadata_instance.uri_link else "Prefix"
                 )
                 label = mark_safe(
                     f"{prefix_text} name: "
@@ -1003,12 +1002,16 @@ class Dataset(Resource):
             if metadata_model == "paramitem":
                 paramitem_instance = ParamItem.objects.filter(metadata=metadata_instance).first()
                 param = paramitem_instance.param
-                if param.content_type_id == ContentType.objects.filter(model="dataset").first().pk and metadata_instance.metadata_version.status == VersionStatus.DRAFT:
+                if (
+                    param.content_type_id == ContentType.objects.filter(model="dataset").first().pk
+                    and metadata_instance.metadata_version.status == VersionStatus.DRAFT
+                ):
                     if metadata_instance.ref:
                         dataset_param_item_metadata_ref = metadata_instance.ref
                     param_text = (
                         f"<a href='{metadata_instance.uri_link}'>Param</a>: {dataset_param_item_metadata_ref}"
-                        if metadata_instance.uri_link else f"Param: {dataset_param_item_metadata_ref}"
+                        if metadata_instance.uri_link
+                        else f"Param: {dataset_param_item_metadata_ref}"
                     )
                     label = mark_safe(
                         f"{param_text} "
@@ -1019,7 +1022,10 @@ class Dataset(Resource):
             if metadata_model == "enumitem":
                 enumitem_instance = EnumItem.objects.filter(metadata=metadata_instance).first()
                 enum = enumitem_instance.enum
-                if enum.content_type_id == ContentType.objects.filter(model="dataset").first().pk and metadata_instance.metadata_version.status == VersionStatus.DRAFT:
+                if (
+                    enum.content_type_id == ContentType.objects.filter(model="dataset").first().pk
+                    and metadata_instance.metadata_version.status == VersionStatus.DRAFT
+                ):
                     if metadata_instance.ref:
                         dataset_enum_item_metadata_ref = metadata_instance.ref
                     label = mark_safe(
@@ -1109,8 +1115,8 @@ class Dataset(Resource):
                             param_text = (
                                 f"<a href='{metadata.uri_link}'>Param</a>: "
                                 f"<span class='prop_metadata'>{model_param_item_metadata_ref}</span>"
-                                if metadata.uri_link else
-                                f"Param: <span class='prop_metadata'>{model_param_item_metadata_ref}</span>"
+                                if metadata.uri_link
+                                else f"Param: <span class='prop_metadata'>{model_param_item_metadata_ref}</span>"
                             )
                             label = mark_safe(
                                 f"{param_text} "

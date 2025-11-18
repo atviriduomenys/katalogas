@@ -18,7 +18,7 @@ from rest_framework.response import Response
 from reversion import create_revision
 
 from vitrina.api.oauth import (
-    OAuth2AuthenticationWithLocalJWK,
+    OAuth2Authentication,
     IsOAuthTokenValid,
     OAuthTokenHasScopes,
     OAuthTokenHasValidOrganizationClaim,
@@ -44,7 +44,7 @@ from vitrina.uapi.utils.views import UAPIExceptionHandlerMixin
 
 
 class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
-    authentication_classes = [OAuth2AuthenticationWithLocalJWK]
+    authentication_classes = [OAuth2Authentication]
     permission_classes = [
         IsOAuthTokenValid,
         OAuthTokenHasScopes,
@@ -251,7 +251,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
 
 class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
-    authentication_classes = [OAuth2AuthenticationWithLocalJWK]
+    authentication_classes = [OAuth2Authentication]
     permission_classes = [
         IsOAuthTokenValid,
         OAuthTokenHasScopes,
@@ -342,7 +342,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
 
 class AgentSyncDoneViewSet(viewsets.ModelViewSet):
-    authentication_classes = [OAuth2AuthenticationWithLocalJWK]
+    authentication_classes = [OAuth2Authentication]
     permission_classes = [
         IsOAuthTokenValid,
         OAuthTokenHasScopes,

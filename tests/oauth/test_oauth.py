@@ -11,7 +11,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.test import APIRequestFactory
 
 from vitrina.api.oauth import (
-    OAuth2AuthenticationWithLocalJWK,
+    OAuth2Authentication,
     IsOAuthTokenValid,
     OAuthTokenHasScopes,
     OAuthTokenHasValidOrganizationClaim,
@@ -63,12 +63,15 @@ def decoded_jwt() -> JWTClaims:
 
     return decoded
 
+def test_authentication_with_remote_jwk_authenticate_success(encoded_decoded_jwt:Tuple[str, JWTClaims]):
+    token_string, decoded = encoded_decoded_jwt
+    assert OAuthClientAuthenticator.verify_token(token_string) # TODO update
 
 def test_authentication_with_local_jwk_authenticate_success(request_factory: APIRequestFactory, decoded_jwt: JWTClaims):
     request = request_factory.get("/", HTTP_AUTHORIZATION="Bearer <token>")
 
     with patch.object(OAuthClientAuthenticator, "retrieve_and_verify_token", return_value=decoded_jwt):
-        user, token = OAuth2AuthenticationWithLocalJWK().authenticate(request)
+        user, token = OAuth2Authentication().authenticate(request)
 
     assert user.is_anonymous is True
     assert token == decoded_jwt
@@ -96,7 +99,7 @@ def test_authentication_with_local_jwk_authenticate_exception_raised(
         ),
         pytest.raises(AuthenticationFailed) as exc_info
     ):
-        OAuth2AuthenticationWithLocalJWK().authenticate(request)
+        OAuth2Authentication().authenticate(request)
 
     assert str(exc_info.value) == exception_message
 
@@ -134,7 +137,7 @@ def test_authentication_with_local_jwk_authenticate_token_not_verified(request_f
         ),
         pytest.raises(AuthenticationFailed) as exc_info
     ):
-        OAuth2AuthenticationWithLocalJWK().authenticate(request)
+        OAuth2Authentication().authenticate(request)
 
     assert str(exc_info.value) == "Token not supplied"
 

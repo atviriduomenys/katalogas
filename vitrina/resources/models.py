@@ -357,7 +357,7 @@ class DatasetDistribution(TranslatableModel):
 
     def save_translations(self, *args, **kwargs):
         super(DatasetDistribution, self).save_translations(*args, **kwargs)
-
+        return  # DO NOT COMMIT
         if (
             not self.has_translation(language_code="en")
             or not self.en_title()

@@ -4449,3 +4449,33 @@ def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTest
     assert len(form.fields["metadata"]) == 9 # If multiple resources uploaded, only the last gets saved. Might be a bug.
     assert len(dataset_distributions) == 1
     assert dataset_distributions.first().metadata.first().name == "resource"
+
+def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        '1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        '2,,,,City,,,,,,,,,,,,,,\n'
+        '3,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n'
+        '4,,,,,title,string,,,,5,,,open,dct:title,,,,\n'
+        '5,,,,,country,ref,Country,,,5,,,open,,,,,,\n'
+        '6,,,,,country.id,,,,,5,,,open,,,,,,\n'
+        '7,,,,,country.continent.id,,,,,5,,,open,,,,,,\n'
+        '8,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
+        '9,,,,Country,,,,,,4,,,,,,,,,\n'
+        '10,,,,,id,integer,,,,3,,,,,,,,,\n'
+        '11,,,,,title,string,,,,2,,,,,,,,,\n'
+    )
+
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    assert len(form.fields["metadata"]) == 12 # Denorm props create an additional property country.continent

@@ -28,8 +28,9 @@ from vitrina.helpers import get_current_domain, email
 from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.models import Plan
-from vitrina.requests.models import Request, RequestObject, RequestAssignment
+from vitrina.requests.models import Request, RequestObject, RequestAssignment, RequestEscalation
 from vitrina.resources.models import DatasetDistribution
+from vitrina.requests.tasks.escalation import start_escalation_for_request
 from vitrina.structure.models import Property, Model
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
@@ -99,11 +100,12 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
         comment.rel_object_id = new_request.pk
         comment.save()
 
-        email_recipients = self._collect_request_email_recipients(new_request)
-        if email_recipients:
+        if email_recipients := self._collect_request_email_recipients(new_request):
             self._send_request_creation_emails(email_recipients, new_request, request)
 
-        self._finalize_comment(comment, request, excluded_emails=email_recipients)  # ✅ Pass them here
+        start_escalation_for_request(new_request)
+
+        self._finalize_comment(comment, request, excluded_emails=email_recipients)
         return redirect(self.obj.get_absolute_url())
 
     def _collect_request_email_recipients(self, new_request):
@@ -319,6 +321,21 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
             excluded_emails=excluded_emails,
             text=comment.body,
         )
+
+        if isinstance(self.obj, Request):
+            self._check_and_stop_escalation(request.user)
+
+    def _check_and_stop_escalation(self, user):
+        try:
+            escalation = self.obj.escalation
+        except RequestEscalation.DoesNotExist:
+            return
+
+        if not escalation.is_active:
+            return
+
+        if user.email in escalation.recipients_at_current_level:
+            escalation.stop_escalation(RequestEscalation.STOP_REASON_RESPONDED)
 
     def _get_object_link(self):
         return "%s%s" % (get_current_domain(self.request), self.obj.get_absolute_url())

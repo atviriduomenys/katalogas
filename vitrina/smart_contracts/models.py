@@ -208,9 +208,9 @@ class Agreement(UUIDBaseModel):
 
     @property
     def assigner_representative_full_name(self) -> str:
-        if self.assignee_representative.content_type == ContentType.objects.get_for_model(User):
-            return self.assignee_representative.content_object.get_full_name()
-        return self.assignee_representative.contact_name.strip()
+        if self.assigner_representative.content_type == ContentType.objects.get_for_model(User):
+            return self.assigner_representative.content_object.get_full_name()
+        return self.assigner_representative.contact_name.strip()
 
 
 class AgreementScope(UUIDBaseModel):

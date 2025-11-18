@@ -17,7 +17,6 @@ import markdown
 from jinja2 import Template
 from pdfminer.high_level import extract_text
 from weasyprint import HTML
-from dataclasses import dataclass
 
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.utils import (
@@ -25,7 +24,7 @@ from vitrina.smart_contracts.utils import (
     generate_checksum,
 )
 from vitrina.users.models import User
-from vitrina.smart_contracts.models import Agreement
+from vitrina.smart_contracts.models import Agreement, AgreementStatuses
 from vitrina.projects.models import Project
 from django.db.models import Q, QuerySet
 from django.contrib.auth.models import AnonymousUser
@@ -54,17 +53,7 @@ SAFE_PARSER = etree.XMLParser(
 X509_CERTIFICATE_XPATH = ".//ds:KeyInfo/ds:X509Data/ds:X509Certificate"
 
 
-@dataclass
-class Signer:
-    first_name: str
-    last_name: str
-
-    @property
-    def full_name(self) -> str:
-        return f"{self.first_name} {self.last_name}"
-
-
-def is_valid_adoc(zip_file: zipfile.ZipFile) -> bool:
+def is_valid_adoc_structure(zip_file: zipfile.ZipFile) -> bool:
     names = zip_file.namelist()
     has_manifest = MANIFEST_FILE_PATH in names
     has_payload = any(name != "mimetype" and "/" not in name for name in names)
@@ -105,7 +94,7 @@ def extract_signers_certificate(signature: etree._Element) -> x509.Certificate:
         raise InvalidAdocError(_("Netinkamas parašo sertifikatas.")) from error
 
 
-def get_signer_from_certificate(certificate: x509.Certificate) -> Signer:
+def get_signer_full_name_from_certificate(certificate: x509.Certificate) -> str:
     subject = certificate.subject
 
     def get_value(oid: NameOID) -> str | None:
@@ -118,20 +107,68 @@ def get_signer_from_certificate(certificate: x509.Certificate) -> Signer:
     if not all([first_name, last_name]):
         raise InvalidAdocError(_("Paraše trūksta pasirašiusio asmens vardo ir/ar pavardės."))
 
-    return Signer(first_name=first_name, last_name=last_name)
+    return f"{first_name} {last_name}"
 
 
-def get_signers_from_adoc(zip_file: zipfile.ZipFile) -> list[Signer]:
+def get_signers_from_adoc(zip_file: zipfile.ZipFile) -> list[str]:
     signers = []
     for signature in extract_signatures_from_adoc(zip_file):
         certificate = extract_signers_certificate(signature)
-        signers.append(get_signer_from_certificate(certificate))
+        signers.append(get_signer_full_name_from_certificate(certificate))
 
     return signers
 
 
 def num_of_adoc_root_files(zip_file: zipfile.ZipFile) -> int:
     return len([file for file in zip_file.filelist if "/" not in file.filename and file.filename != "mimetype"])
+
+
+def validate_adoc(zip_file: zipfile.ZipFile, checksum: str) -> tuple[bool, str]:
+    if not is_valid_adoc_structure(zip_file):
+        raise InvalidAdocError("Neteisingas ADOC formatas.")
+    if num_of_adoc_root_files(zip_file) > 1:
+        raise InvalidAdocError(_("Rastas daugiau nei vienas pasirašytas dokumentas."))
+    if not (pdf_path := get_pdf_path_in_adoc(zip_file)):
+        raise InvalidAdocError(_("Nerastas PDF dokumentas."))
+    with zip_file.open(pdf_path) as pdf_file:
+        pdf_bytes = pdf_file.read()
+    if generate_checksum(pdf_bytes) != checksum:
+        raise InvalidAdocError(_("PDF dokumentas nesutampa su sutartyje esančiu PDF dokumentu."))
+
+
+def validate_signers(signers: list[str], agreement: Agreement) -> tuple[bool, str | None]:
+    num_of_signers = len(signers)
+    signers_to_find = [agreement.assignee_representative_full_name]
+
+    if num_of_signers == 0:
+        return False, _("Įkelta sutartis nepasirašyta.")
+
+    if agreement.status == AgreementStatuses.FORMED:
+        if num_of_signers > 1:
+            return False, _(
+                "Įkelta sutartis pasirašyta daugiau nei 1 parašu. Gavėjas turėtų pasirašyti tik vienu parašu."
+            )
+
+    elif agreement.status == AgreementStatuses.INITIATED:
+        if num_of_signers == 1:
+            return False, _("Įkelta sutartis nepasirašyta teikėjo parašu.")
+        if num_of_signers > 2:
+            return False, _("Įkeltoje sutartyje rasti daugiau nei 2 parašai.")
+        signers_to_find.append(agreement.assigner_representative_full_name)
+    else:
+        return False, _("Pasirašyti galima tik sutartis su būsenomis `{formed}` arba `{initiated}`.").format(
+            formed=AgreementStatuses.FORMED, initiated=AgreementStatuses.INITIATED
+        )
+
+    if not all(signer in signers for signer in signers_to_find):
+        return False, _(
+            "Nesutampa pasirašiusių asmenų vardai ir pavardės. "
+            "Reikalingi parašai: {expected}, ADOC rasti parašai: {found}."
+        ).format(
+            expected=signers_to_find,
+            found=signers,
+        )
+    return True, None
 
 
 def has_valid_signature(adoc_path: str) -> bool:

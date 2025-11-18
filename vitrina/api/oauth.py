@@ -1,16 +1,19 @@
 import base64
+import json
+import logging
 import math
 import os
-from typing import Iterable
+from typing import Iterable, Any, Literal
 
 import requests
-from authlib.jose import jwt, JsonWebKey, JWTClaims
-from authlib.jose.errors import BadSignatureError
+from authlib.jose import jwt, JsonWebKey, JWTClaims, Key
+from authlib.jose.errors import BadSignatureError, DecodeError, JoseError
 from django.conf import settings
 from django.contrib.auth.models import AnonymousUser
+from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from django.views import View
-from oauthlib.oauth2 import TokenExpiredError
+from oauthlib.oauth2 import OAuth2Error
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.permissions import BasePermission
@@ -23,6 +26,8 @@ from vitrina.uapi.models import Agent
 Secret = str
 ClientId = str
 AccessToken = str
+
+logger = logging.getLogger(__name__)
 
 # TODO migrate to Gravitee once its ready.
 
@@ -86,6 +91,10 @@ class OAuthClientManagement:
 
 
 class OAuthClientAuthenticator:
+    JWK_KEY = dict[str, str]
+    JWK_VERIFICATION_KEYS_CACHE_KEY = ".well-known/jwks.json"
+    BACKUP_JWK_VERIFICATION_KEYS_CACHE_KEY = "backup/.well-known/jwks.json"
+
     @staticmethod
     def retrieve_access_token_from_request(request: Request) -> str | None:
         auth_header = request.META.get("HTTP_AUTHORIZATION")
@@ -104,14 +113,113 @@ class OAuthClientAuthenticator:
         return token_value
 
     @staticmethod
-    def retrieve_and_verify_token(request: Request) -> JWTClaims | None:
-        access_token = OAuthClientAuthenticator.retrieve_access_token_from_request(request)
-        if not access_token:
+    def download_jwk_verification_keys() -> JWK_KEY | dict[str, JWK_KEY]:
+        if not settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH:
+            logger.error(
+                "Cannot download public JWK verification keys, OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH is not set."
+            )
+            return {}
+        try:
+            response = requests.get(settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL)
+            if not response.ok:
+                logger.error(
+                    f"Failed to download public JWK verification keys from {settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL=} - {response.status_code=} {response.text=}"
+                )
+                return {}
+            return response.json()
+        except Exception as e:
+            logger.error(
+                f"Failed to download public JWK verification keys from {settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL=} - {e}"
+            )
+            return {}
+
+    @classmethod
+    def get_jwk_verification_keys(cls, check_cache: bool = True) -> list[Key]:
+        if settings.OAUTH_SERVER_PUBLIC_JWK_JSON:
+            verification_keys = settings.OAUTH_SERVER_PUBLIC_JWK_JSON.get("keys") or [
+                settings.OAUTH_SERVER_PUBLIC_JWK_JSON
+            ]
+            return [JsonWebKey.import_key(verification_key) for verification_key in verification_keys]
+        elif settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH:
+            if check_cache and (cached_verification_keys := cache.get(cls.JWK_VERIFICATION_KEYS_CACHE_KEY)):
+                return cached_verification_keys
+            verification_keys = cls.download_jwk_verification_keys()
+            if verification_keys:
+                verification_keys = verification_keys.get("keys") or [verification_keys]
+                verification_keys = [JsonWebKey.import_key(verification_key) for verification_key in verification_keys]
+                cache.set(
+                    cls.JWK_VERIFICATION_KEYS_CACHE_KEY,
+                    verification_keys,
+                    timeout=settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_CACHE_TIMEOUT,
+                )
+                cache.set(cls.BACKUP_JWK_VERIFICATION_KEYS_CACHE_KEY, verification_keys)
+                return verification_keys
+            else:
+                logger.warning("Could not retrieve public JWK verification keys, using backup cached ones.")
+                return cache.get(cls.BACKUP_JWK_VERIFICATION_KEYS_CACHE_KEY) or []
+        raise ImproperlyConfigured(
+            "No public JWK verification keys configured (OAUTH_SERVER_PUBLIC_JWK_JSON/OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH)."
+        )
+
+    @staticmethod
+    def decode_unverified_header(token: str | bytes) -> dict[str, Any]:
+        try:
+            if isinstance(token, bytes):
+                token = token.decode("utf-8")
+
+            header_b64 = token.split(".")[0]
+
+            # Add padding if missing
+            header_b64 += "=" * (-len(header_b64) % 4)
+            header_bytes = base64.urlsafe_b64decode(header_b64)
+
+            return json.loads(header_bytes)
+        except (UnicodeDecodeError, DecodeError, json.JSONDecodeError, ValueError, IndexError) as e:
+            raise AuthenticationFailed("Invalid token header.") from e
+
+    @staticmethod
+    def decode_kty_from_alg(alg: str) -> Literal["RSA", "EC", None]:
+        """Get Key Type from Token Algorithm."""
+        if alg.startswith("RS"):
+            return "RSA"
+        if alg.startswith("ES"):
+            return "EC"
+        return None
+
+    @classmethod
+    def verify_token(cls, token_string: str, check_cache: bool = True) -> JWTClaims:
+        verification_keys = cls.get_jwk_verification_keys(check_cache=check_cache)
+        token_header = cls.decode_unverified_header(token_string)
+        if kid := token_header.get("kid"):
+            for key in verification_keys:
+                if key.kid and str(key.kid) == str(kid):
+                    decoded_token = jwt.decode(token_string, key)
+                    decoded_token.validate()
+                    return decoded_token
+
+        token_kty = cls.decode_kty_from_alg(token_header["alg"])
+        for key in verification_keys:
+            is_not_encryption_key = key.tokens.get("use") != "enc"
+            key_algorithm = key.tokens.get("alg")
+            is_same_algorithm = key_algorithm and token_header["alg"] == key_algorithm
+            is_same_algorithm_type = key.kty and key.kty == token_kty
+            if is_not_encryption_key and (is_same_algorithm or is_same_algorithm_type):
+                try:
+                    decoded_token = jwt.decode(token_string, key)
+                    decoded_token.validate()
+                    return decoded_token
+                except BadSignatureError:
+                    continue
+        if check_cache:
+            return cls.verify_token(token_string, check_cache=False)
+        raise AuthenticationFailed(f"No public key found for token {token_header=}")
+
+    @classmethod
+    def retrieve_and_verify_token(cls, request: Request) -> JWTClaims | None:
+        token_string = OAuthClientAuthenticator.retrieve_access_token_from_request(request)
+        if not token_string:
             return None
-        key_object = JsonWebKey.import_key(settings.OAUTH_SERVER_PUBLIC_JWK_JSON)
-        decoded_token = jwt.decode(access_token, key_object)
-        decoded_token.validate()
-        return decoded_token
+        return cls.verify_token(token_string)
 
     @staticmethod
     def resolve_organization_from_token(decoded_token: JWTClaims) -> Organization | None:
@@ -125,11 +233,11 @@ class OAuthClientAuthenticator:
         return decoded_token["sub"]
 
 
-class OAuth2AuthenticationWithLocalJWK(BaseAuthentication):
+class OAuth2Authentication(BaseAuthentication):
     def authenticate(self, request: Request) -> tuple[AnonymousUser, JWTClaims]:
         try:
             verified_token = OAuthClientAuthenticator.retrieve_and_verify_token(request)
-        except (BadSignatureError, TokenExpiredError) as e:
+        except (JoseError, OAuth2Error) as e:
             raise AuthenticationFailed(e.error)
         if not verified_token:
             raise AuthenticationFailed("Token not supplied")

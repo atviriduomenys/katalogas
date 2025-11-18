@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import builtins
 import csv
 import io
@@ -8,8 +9,8 @@ import pytest
 import requests
 from django.apps import apps
 from django.core.management import call_command
-from pytest_django.lazy_django import skip_if_no_django
 from pprintpp import pprint as pp
+from pytest_django.lazy_django import skip_if_no_django
 
 from vitrina.datasets.models import DCATResourceSubclass
 from vitrina.settings import TRANSLATION_URL
@@ -111,6 +112,13 @@ def dataset(db, organization):
 
     return Dataset.objects.create(title="Test Dataset", organization=organization)
 
+@pytest.fixture(autouse=True)
+def clear_cache():
+    from django.core.cache import cache
+
+    cache.clear()
+    yield
+    cache.clear()
 
 @pytest.fixture(autouse=True)
 def mock_translation_service():

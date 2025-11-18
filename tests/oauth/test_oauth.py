@@ -1,17 +1,18 @@
 import time
-from typing import Any, Tuple, Optional, List
+from typing import Any, Optional, List
 from unittest.mock import patch, MagicMock, Mock
 
 import pytest
 from authlib.jose import JWTClaims, JsonWebKey, jwt
 from authlib.jose.errors import BadSignatureError
+from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 from oauthlib.oauth2 import TokenExpiredError
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.test import APIRequestFactory
 
 from vitrina.api.oauth import (
-    OAuth2AuthenticationWithLocalJWK,
+    OAuth2Authentication,
     IsOAuthTokenValid,
     OAuthTokenHasScopes,
     OAuthTokenHasValidOrganizationClaim,
@@ -32,20 +33,31 @@ def request_factory():
     return APIRequestFactory()
 
 
-@pytest.fixture
-def encoded_decoded_jwt() -> Tuple[str, JWTClaims]:
-    key = JsonWebKey.generate_key(kty="oct", crv_or_size=256, is_private=True)
-    claims = {
-        "iss": "issuer",
-        "sub": "client",
-        "scope": "test_scope",
-        "iat": int(time.time()),
-        "exp": int(time.time()) + 300
-    }
-    encoded = jwt.encode({"alg": "HS256"}, claims, key).decode()
-    decoded = jwt.decode(encoded, key)
 
-    return encoded, decoded
+@pytest.fixture
+def rsa_keypair():
+    private = JsonWebKey.generate_key("RSA", 2048, is_private=True)
+    public = JsonWebKey.import_key(private.as_dict(is_private=False))
+    return private.as_dict(), public.as_dict()
+
+@pytest.fixture
+def download_only_oauth_settings(settings):
+    settings.OAUTH_SERVER_PUBLIC_JWK_JSON = None
+    settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH = "/tmp/jwks"
+    settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL = "https://example.com/jwks"
+    settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_CACHE_TIMEOUT = 300
+    return settings
+
+
+@pytest.fixture
+def mock_endpoints(requests_mock, rsa_keypair, download_only_oauth_settings):
+    _, public = rsa_keypair
+    requests_mock.get(
+        download_only_oauth_settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL,
+        json={"keys": [public]},
+        status_code=200,
+    )
+    return requests_mock
 
 
 @pytest.fixture
@@ -63,12 +75,11 @@ def decoded_jwt() -> JWTClaims:
 
     return decoded
 
-
 def test_authentication_with_local_jwk_authenticate_success(request_factory: APIRequestFactory, decoded_jwt: JWTClaims):
     request = request_factory.get("/", HTTP_AUTHORIZATION="Bearer <token>")
 
     with patch.object(OAuthClientAuthenticator, "retrieve_and_verify_token", return_value=decoded_jwt):
-        user, token = OAuth2AuthenticationWithLocalJWK().authenticate(request)
+        user, token = OAuth2Authentication().authenticate(request)
 
     assert user.is_anonymous is True
     assert token == decoded_jwt
@@ -96,7 +107,7 @@ def test_authentication_with_local_jwk_authenticate_exception_raised(
         ),
         pytest.raises(AuthenticationFailed) as exc_info
     ):
-        OAuth2AuthenticationWithLocalJWK().authenticate(request)
+        OAuth2Authentication().authenticate(request)
 
     assert str(exc_info.value) == exception_message
 
@@ -134,7 +145,7 @@ def test_authentication_with_local_jwk_authenticate_token_not_verified(request_f
         ),
         pytest.raises(AuthenticationFailed) as exc_info
     ):
-        OAuth2AuthenticationWithLocalJWK().authenticate(request)
+        OAuth2Authentication().authenticate(request)
 
     assert str(exc_info.value) == "Token not supplied"
 
@@ -266,3 +277,50 @@ def test_token_has_valid_organization_claim_has_permission_success(
     result = OAuthTokenHasValidOrganizationClaim().has_permission(request, view)
     assert result is True
     assert request.organization == organization
+
+
+def test_download_jwk_success(mock_endpoints, download_only_oauth_settings):
+    keys = OAuthClientAuthenticator.get_jwk_verification_keys(check_cache=False)
+    assert len(keys) == 1
+    assert keys[0].kty == "RSA"
+
+
+def test_download_failure_uses_backup(requests_mock, download_only_oauth_settings, rsa_keypair):
+    _, public = rsa_keypair
+    cache.set(
+        OAuthClientAuthenticator.BACKUP_JWK_VERIFICATION_KEYS_CACHE_KEY,
+        [JsonWebKey.import_key(public)],
+    )
+    requests_mock.get(
+        download_only_oauth_settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL,
+        status_code=500,
+    )
+    keys = OAuthClientAuthenticator.get_jwk_verification_keys(check_cache=True)
+    assert len(keys) == 1
+
+
+def test_download_failure_no_backup(requests_mock, download_only_oauth_settings):
+    cache.delete(OAuthClientAuthenticator.BACKUP_JWK_VERIFICATION_KEYS_CACHE_KEY)
+    requests_mock.get(
+        download_only_oauth_settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL,
+        status_code=500,
+    )
+    keys = OAuthClientAuthenticator.get_jwk_verification_keys(check_cache=True)
+    assert keys == []
+
+
+def test_cache_hit(requests_mock, download_only_oauth_settings, rsa_keypair):
+    _, public = rsa_keypair
+    cached = [JsonWebKey.import_key(public)]
+    cache.set(OAuthClientAuthenticator.JWK_VERIFICATION_KEYS_CACHE_KEY, cached)
+    keys = OAuthClientAuthenticator.get_jwk_verification_keys(check_cache=True)
+    assert keys[0].kid == cached[0].kid
+    assert requests_mock.call_count == 0
+
+
+def test_missing_download_url(settings):
+    settings.OAUTH_SERVER_PUBLIC_JWK_JSON = None
+    settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH = "/tmp/jwks"
+    settings.OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_URL = None
+    keys = OAuthClientAuthenticator.get_jwk_verification_keys(check_cache=True)
+    assert keys == []

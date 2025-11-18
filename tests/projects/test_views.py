@@ -658,6 +658,7 @@ def oauth_settings(settings):
     settings.OAUTH_CLIENT_SECRET_BASE64 = "ZmFrZV9iYXNlNjRfY2xpZW50X3NlY3JldA=="
     settings.OAUTH_CLIENTS_MANAGEMENT_SCOPE = "auth_clients"
     return settings
+
 def mock_oauth_endpoints(m, settings):
     m.post(
         settings.OAUTH_SERVER_TOKEN_URL,

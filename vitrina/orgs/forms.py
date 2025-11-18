@@ -228,7 +228,7 @@ class OrganizationBaseForm(ModelForm):
         if name:
             if not name.islower():
                 raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
-            if any((not c.isalnum() and c != "_") for c in name):
+            if any((not character.isalnum() and character != "_") for character in name):
                 raise ValidationError(
                     _(
                         "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, "

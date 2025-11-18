@@ -1243,7 +1243,7 @@ def test_gov_organizaton_cannot_select_different_kind(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_create_organization(app: DjangoTestApp):
-    user = UserFactory(is_superuser = True)
+    user = UserFactory(is_superuser=True)
     app.set_user(user)
 
     form = app.get(reverse('organization-create')).forms['organization-form']
@@ -1263,7 +1263,7 @@ def test_create_organization(app: DjangoTestApp):
 
     assert response.status_code == 302
 
-    organization = Organization.objects.get(company_code = "123456789")
+    organization = Organization.objects.get(company_code="123456789")
     assert organization.title == "Imone"
     assert organization.name == "kodinis_pavadinimas"
     assert organization.jurisdiction == jurisdiction

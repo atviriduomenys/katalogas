@@ -174,6 +174,8 @@ class OrganizationBaseForm(ModelForm):
     address = CharField(label=_("Adresas"), required=True)
     description = CharField(label=_("Aprašymas"), widget=Textarea(), required=False)
 
+    submit_label = _("Saugoti")
+
     class Meta:
         model = Organization
         fields = (
@@ -195,7 +197,7 @@ class OrganizationBaseForm(ModelForm):
         user = kwargs.pop("user")
         super().__init__(*args, **kwargs)
 
-        parent = getattr(self.instance, "get_parent", lambda: None)()
+        parent = self.instance.get_parent() if hasattr(self.instance, "get_parent") else None
         if parent:
             self.fields["jurisdiction"].initial = parent
 
@@ -203,7 +205,7 @@ class OrganizationBaseForm(ModelForm):
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "organization-form"
         self.fields["kind"].choices = get_kind_choices(
-            user, self.instance if getattr(self.instance, "pk", None) else None
+            user=user, organization=self.instance if getattr(self.instance, "pk", None) else None
         )
         self.helper.layout = Layout(
             Field("company_code", placeholder=_("Registracijos numeris")),
@@ -218,7 +220,7 @@ class OrganizationBaseForm(ModelForm):
             Field("address", placeholder=_("Adresas")),
             Field("publisher", placeholder=_("Duomenų atvėrimo paslaugų teikėjas")),
             Field("description", placeholder=_("Aprašymas")),
-            Submit("submit", self.get_submit_label(), css_class="button is-primary"),
+            Submit("submit", self.submit_label, css_class="button is-primary"),
         )
 
     def clean_name(self):
@@ -246,11 +248,12 @@ class OrganizationBaseForm(ModelForm):
 
 
 class OrganizationUpdateForm(OrganizationBaseForm):
-    def get_submit_label(self) -> str:
-        return _("Redaguoti")
+    submit_label = _("Redaguoti")
 
 
 class OrganizationCreateForm(OrganizationBaseForm):
+    submit_label = _("Sukurti")
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         initial = kwargs.get("initial")
@@ -258,9 +261,6 @@ class OrganizationCreateForm(OrganizationBaseForm):
             self.fields["title"].widget.attrs["readonly"] = True
             self.fields["company_code"].widget.attrs["readonly"] = True
             self.fields["address"].widget.attrs["readonly"] = True
-
-    def get_submit_label(self) -> str:
-        return _("Sukurti")
 
 
 class OrganizationSearchForm(FacetedSearchForm):

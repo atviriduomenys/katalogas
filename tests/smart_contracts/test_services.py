@@ -8,11 +8,10 @@ from cryptography import x509
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.services import (
     extract_elements_from_adoc,
-    has_valid_signature,
     get_pdf_checksum_from_adoc,
     extract_signatures_from_adoc,
     extract_signers_certificate,
-    get_signer_from_certificate,
+    get_signer_full_name_from_certificate,
     get_signers_from_adoc,
 )
 from tests.smart_contracts.constants import SIGNER1_FULL_NAME, SIGNER2_FULL_NAME
@@ -23,21 +22,6 @@ CONTRACT_CHECKSUM = "b5e8a02c5de0fab1da0564c9c7a9cbb5b9fe1b80826a2fd8705a4e4db3b
 SCOPES_REGEX = r"\buapi:/\S+"
 
 test_contracts_dir = Path(__file__).parent / "files" / "test_contracts"
-
-
-def test_has_valid_signature_success(agreement_one_signer: Path):
-    assert has_valid_signature(str(agreement_one_signer))
-
-
-def test_has_valid_signature_not_signed_adoc(agreement_not_signed: Path):
-    assert not has_valid_signature(str(agreement_not_signed))
-
-
-def test_has_valid_signature_invalid_adoc(agreement_no_manifest: Path):
-    with pytest.raises(
-        InvalidAdocError, match=r"Invalid ADOC file:.*META-INF/manifest\.xml"
-    ):
-        has_valid_signature(str(agreement_no_manifest))
 
 
 def test_is_checksum_valid_success(agreement_one_signer: Path):
@@ -84,13 +68,13 @@ def test_extract_signers_certificate(signature1: etree._Element, certificate: x5
     assert extract_signers_certificate(signature1) == certificate
 
 def test_get_signer_from_certificate(certificate: x509.Certificate):
-    signer = get_signer_from_certificate(certificate)
-    assert signer.full_name == SIGNER1_FULL_NAME
+    signer = get_signer_full_name_from_certificate(certificate)
+    assert signer == SIGNER1_FULL_NAME
 
-def test_get_signers_from_adoc(agreement_two_signers: Path,):
+def test_get_signers_from_adoc(agreement_two_signers: Path):
     with zipfile.ZipFile(agreement_two_signers) as zip_file:
         signers = get_signers_from_adoc(zip_file)
     
     assert len(signers) == 2
-    assert signers[0].full_name == SIGNER1_FULL_NAME
-    assert signers[1].full_name == SIGNER2_FULL_NAME
+    assert signers[0] == SIGNER1_FULL_NAME
+    assert signers[1] == SIGNER2_FULL_NAME

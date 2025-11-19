@@ -13,7 +13,7 @@
       "ex:companyName": "Teikėjas",
       "ex:companyCode": "123",
       "ex:address": "Teikėjo g. 1-2, Vilnius, Lietuvos Respublika",
-      "ex:representative": "Teikėjo Atstovas",
+      "ex:representative": "Petras Petraitis",
       "ex:email": "teikejo@email.com",
       "ex:phone": "011111111",
       "ex:personalCode": "30000000000"
@@ -25,7 +25,7 @@
       "ex:companyName": "Gavėjas",
       "ex:companyCode": "456",
       "ex:address": "Gavėjo g. 3-4, Kaunas, Lietuvos Respublika",
-      "ex:representative": "Gavėjo Atstovas",
+      "ex:representative": "Jonas Jonaitis",
       "ex:email": "gavejo@email.com",
       "ex:phone": "022222222",
       "ex:personalCode": "30000000001"

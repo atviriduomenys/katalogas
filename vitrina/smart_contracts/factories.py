@@ -25,7 +25,7 @@ class AgreementFactory(DjangoModelFactory):
     assignee_representative = SubFactory(ContactFactory)
 
 
-class AgreementFileFactory(DjangoModelFactory):
+class AgreementPDFFileFactory(DjangoModelFactory):
     class Meta:
         model = AgreementFile
 
@@ -40,3 +40,20 @@ class AgreementFileFactory(DjangoModelFactory):
             file_path = Path(self.pdf_path)
             return SimpleUploadedFile(file_path.name, file_path.read_bytes(), content_type="application/pdf")
         return SimpleUploadedFile("dummy.pdf", b"%PDF-1.4\n", content_type="application/pdf")
+
+
+class AgreementJSONFileFactory(DjangoModelFactory):
+    class Meta:
+        model = AgreementFile
+
+    class Params:
+        json_path = None
+
+    agreement = SubFactory(AgreementFactory)
+
+    @lazy_attribute
+    def file(self) -> SimpleUploadedFile:
+        if self.json_path:
+            file_path = Path(self.json_path)
+            return SimpleUploadedFile(file_path.name, file_path.read_bytes(), content_type="application/json")
+        return SimpleUploadedFile("dummy.json", b"{}", content_type="application/json")

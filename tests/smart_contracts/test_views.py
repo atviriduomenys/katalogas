@@ -17,7 +17,7 @@ from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, V
 from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.factories import AgreementFactory, AgreementFileFactory
+from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
 from vitrina.smart_contracts.models import (
     Agreement,
     AgreementScope,
@@ -690,6 +690,7 @@ class TestAgreementUploadSignedFile:
         dataset: Dataset,
         agreement_pdf: Path,
         agreement_one_signer: Path,
+        odrl_json: Path
         ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
@@ -699,7 +700,8 @@ class TestAgreementUploadSignedFile:
         agreement = AgreementFactory(
             project=project, assignee=organization, status=AgreementStatuses.FORMED, assignee_representative=contact
         )
-        AgreementFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
         uploaded_file = Upload(
             "agreement.adoc",
             agreement_one_signer.read_bytes(),
@@ -725,6 +727,7 @@ class TestAgreementUploadSignedFile:
         dataset: Dataset,
         agreement_pdf: Path,
         agreement_two_signers: Path,
+        odrl_json: Path
     ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
@@ -739,8 +742,8 @@ class TestAgreementUploadSignedFile:
             assignee_representative=contact1,
             assigner_representative=contact2
         )
-
-        AgreementFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
         uploaded_file = Upload(
             "agreement.adoc",
             agreement_two_signers.read_bytes(),
@@ -776,7 +779,14 @@ class TestAgreementUploadSignedFile:
         indirect=["agreement_choice"]
     )
     def test_upload_agreement_with_errors(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset, agreement_pdf: Path, agreement_choice: Path, expected_error: str
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_choice: Path,
+        odrl_json_wrong_representatives: Path,
+        expected_error: str
     ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
@@ -786,8 +796,8 @@ class TestAgreementUploadSignedFile:
         agreement = AgreementFactory(
             project=project, assignee=organization, status=AgreementStatuses.FORMED, assignee_representative=contact
         )
-
-        AgreementFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json_wrong_representatives)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
         adoc_to_upload = Upload(
             agreement_choice.name,
             agreement_choice.read_bytes(),

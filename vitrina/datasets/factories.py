@@ -237,6 +237,7 @@ class ContactFactory(DjangoModelFactory):
     email = factory.Faker("email")
     content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.organization))
     object_id = factory.SelfAttribute("organization.id")
+    organization = factory.SubFactory(OrganizationFactory)
 
 
 class AgentFactory(DjangoModelFactory):

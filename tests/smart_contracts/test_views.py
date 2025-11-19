@@ -4,6 +4,7 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
+from webtest import Upload
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.urls import reverse
@@ -16,7 +17,7 @@ from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, V
 from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
 from vitrina.smart_contracts.models import (
     Agreement,
     AgreementScope,
@@ -26,6 +27,7 @@ from vitrina.smart_contracts.models import (
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
+from tests.smart_contracts.constants import SIGNER1_FULL_NAME, SIGNER2_FULL_NAME
 
 pytestmark = pytest.mark.django_db
 test_contracts_dir = Path(__file__).parent / "files" / "test_contracts"
@@ -539,7 +541,7 @@ class TestAgreementGeneratePdf:
                     "ex:companyName": "Gonzalez Group",
                     "ex:companyCode": "LWGYU0W8S",
                     "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
-                    "ex:representative": assigner_representative.email,
+                    "ex:representative": agreement.assigner_representative_full_name,
                     "ex:email": "lwolf@example.com",
                     "ex:phone": "456.631.4059",
                     "ex:personalCode": " - ",
@@ -551,7 +553,7 @@ class TestAgreementGeneratePdf:
                     "ex:companyName": "Gonzalez Group",
                     "ex:companyCode": "LWGYU0W8S",
                     "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
-                    "ex:representative": assignee_representative.email,
+                    "ex:representative": agreement.assignee_representative_full_name,
                     "ex:email": "lwolf@example.com",
                     "ex:phone": "456.631.4059",
                     "ex:personalCode": " - ",
@@ -682,24 +684,35 @@ class TestAgreementUploadSignedFile:
     
 
     def test_upload_adoc_and_change_status_to_initiated_if_agreement_status_formed(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
-    ) -> None:
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_one_signer: Path,
+        odrl_json: Path
+        ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
         app.set_user(user)
         project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact = ContactFactory(contact_name=SIGNER1_FULL_NAME, content_type=None, object_id=None)
         agreement = AgreementFactory(
-            project=project, assignee=organization, status=AgreementStatuses.FORMED
+            project=project, assignee=organization, status=AgreementStatuses.FORMED, assignee_representative=contact
         )
-
-        file_path = str(test_contracts_dir / "sutartis_signed.adoc")
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        uploaded_file = Upload(
+            "agreement.adoc",
+            agreement_one_signer.read_bytes(),
+            content_type="text/plain",
+        )
         response = app.get(
             reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
         )
-        with open(file_path, "rb") as f:
-            form = response.forms["agreement-upload-form"]
-            form["file"] = (file_path, f.read())
-            form.submit()
+        form = response.forms["agreement-upload-form"]
+        form["file"] = uploaded_file
+        form.submit()
 
         agreement.refresh_from_db()
         assert response.status_code == 200
@@ -708,27 +721,99 @@ class TestAgreementUploadSignedFile:
         assert agreement.files.exists()
 
     def test_upload_adoc_and_change_status_to_signed_if_agreement_status_initiated(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_two_signers: Path,
+        odrl_json: Path
     ) -> None:
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
         app.set_user(user)
         project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact1 = ContactFactory(contact_name=SIGNER1_FULL_NAME, content_type=None, object_id=None)
+        contact2 = ContactFactory(contact_name=SIGNER2_FULL_NAME, content_type=None, object_id=None)
         agreement = AgreementFactory(
-            project=project, assigner=organization, status=AgreementStatuses.INITIATED
+            project=project,
+            assigner=organization,
+            status=AgreementStatuses.INITIATED,
+            assignee_representative=contact1,
+            assigner_representative=contact2
         )
-
-        file_path = str(test_contracts_dir / "sutartis_signed.adoc")
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        uploaded_file = Upload(
+            "agreement.adoc",
+            agreement_two_signers.read_bytes(),
+            content_type="text/plain",
+        )
         response = app.get(
             reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
         )
-        with open(file_path, "rb") as f:
-            form = response.forms["agreement-upload-form"]
-            form["file"] = (file_path, f.read())
-            form.submit()
+
+        form = response.forms["agreement-upload-form"]
+        form["file"] = uploaded_file
+        form.submit()
 
         agreement.refresh_from_db()
         assert response.status_code == 200
         assert agreement.status == AgreementStatuses.SIGNED
         assert agreement.is_agent_sync_enabled
         assert agreement.files.exists()
+
+    @pytest.mark.parametrize(
+        "agreement_choice,expected_error",
+        [
+            ("agreement_bad_certificate", "ADOC klaida: Netinkamas parašo sertifikatas."),
+            ("agreement_modified", "ADOC klaida: PDF dokumentas nesutampa su sutartyje esančiu PDF dokumentu."),
+            ("agreement_no_manifest", "ADOC klaida: Neteisingas ADOC formatas."),
+            ("agreement_no_pdf", "ADOC klaida: Nerastas PDF dokumentas."),
+            ("agreement_not_signed", "Įkelta sutartis nepasirašyta."),
+            ("agreement_two_files", "ADOC klaida: Rastas daugiau nei vienas pasirašytas dokumentas."),
+            ("agreement_two_signers", "Įkelta sutartis pasirašyta daugiau nei 1 parašu. Gavėjas turėtų pasirašyti tik vienu parašu."),
+            ("agreement_pdf", "Dokumentas turi būti adoc formato."),
+            ("agreement_non_zip", "Prisegtas failas nėra ZIP archyvas."),
+            ("agreement_one_signer", "Nesutampa pasirašiusių asmenų vardai ir pavardės. Reikalingi parašai: ['Jonas Jonaitis'], ADOC rasti parašai: ['Vardenis Pavardenis'].")
+        ],
+        indirect=["agreement_choice"]
+    )
+    def test_upload_agreement_with_errors(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_choice: Path,
+        odrl_json_wrong_representatives: Path,
+        expected_error: str
+    ) -> None:
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        user = representative.user
+        app.set_user(user)
+        project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact = ContactFactory(contact_name="Jonas Jonaitis", content_type=None, object_id=None)
+        agreement = AgreementFactory(
+            project=project, assignee=organization, status=AgreementStatuses.FORMED, assignee_representative=contact
+        )
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json_wrong_representatives)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        adoc_to_upload = Upload(
+            agreement_choice.name,
+            agreement_choice.read_bytes(),
+            content_type="text/plain",
+        )
+        response = app.get(
+            reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
+        )
+
+        form = response.forms["agreement-upload-form"]
+        form["file"] = adoc_to_upload
+        response = form.submit()
+
+        assert response.status_code == 200
+        errors = response.context["form"].errors
+
+        assert "file" in errors
+        assert errors["file"][0] == expected_error 

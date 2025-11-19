@@ -7,9 +7,10 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
 from django.db.models import Q, QuerySet
-from django.db.models.fields.files import FieldFile
+from django.core.files.uploadedfile import UploadedFile
 from django.forms import CheckboxSelectMultiple
 from django.utils.translation import gettext_lazy as _
+import zipfile
 
 from vitrina.datasets.models import Contact
 from vitrina.orgs.models import Organization
@@ -19,7 +20,7 @@ from vitrina.smart_contracts.models import (
     SmartContractTemplate,
     Agreement,
 )
-from vitrina.smart_contracts.services import has_valid_signature
+from vitrina.smart_contracts.services import get_signers_from_adoc, validate_adoc, validate_signers
 from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 
@@ -76,6 +77,8 @@ class AgreementUploadForm(forms.ModelForm):
         fields = ("file",)
 
     def __init__(self, *args, **kwargs):
+        self.agreement_pdf: AgreementFile = kwargs.pop("agreement_pdf")
+        self.agreement: Agreement = kwargs.pop("agreement")
         super().__init__(*args, **kwargs)
         self.fields["file"].validators = [
             FileExtensionValidator(
@@ -87,18 +90,20 @@ class AgreementUploadForm(forms.ModelForm):
         self.helper.form_id = "agreement-upload-form"
         self.helper.add_input(Submit("submit", _("Įkelti dokumentą"), css_class="button is-primary"))
 
-    def clean_file(self) -> FieldFile:
+    def clean_file(self) -> UploadedFile:
         file = self.cleaned_data["file"]
         try:
-            # TODO: check for multiple signatures if AgreementStatuses.INITIATED
-            # TODO: check agreement checksum
-            # TODO: https://github.com/atviriduomenys/katalogas/issues/1706
-            signature_valid = has_valid_signature(file)
+            with zipfile.ZipFile(file) as zip_file:
+                validate_adoc(zip_file, checksum=self.agreement_pdf.checksum)
+                signers_in_adoc = get_signers_from_adoc(zip_file)
         except InvalidAdocError as error:
-            raise ValidationError(str(error))
+            raise ValidationError(_("ADOC klaida: {error}").format(error=error))
+        except zipfile.BadZipFile:
+            raise ValidationError(_("Prisegtas failas nėra ZIP archyvas."))
 
-        if not signature_valid:
-            raise ValidationError(_("Įkelta sutartis nepasirašyta."))
+        signers_valid, error = validate_signers(signers_in_adoc, self.agreement)
+        if not signers_valid:
+            raise ValidationError(error)
 
         return file
 

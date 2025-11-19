@@ -398,7 +398,7 @@ class AgreementUploadSignedFile(
     def has_permission(self) -> bool:
         return can_upload_agreement_file(self.request.user, self.agreement)
 
-    def _validate_signing_order(self) -> None | str:
+    def _check_for_errors(self) -> None | str:
         accepted_statuses = (AgreementStatuses.FORMED, AgreementStatuses.INITIATED)
         if self.agreement.status not in accepted_statuses:
             return _(
@@ -419,16 +419,32 @@ class AgreementUploadSignedFile(
         ):
             return _("Gavėjo vardu sutartis jau pasirašyta. Laukiama sutarties pasirašymo iš teikėjo pusės.")
 
+        try:
+            self.agreement_pdf = AgreementFile.objects.get(
+                agreement=self.agreement,
+                file__iendswith=AgreementFile.AllowedFileTypes.PDF,
+            )
+        except AgreementFile.DoesNotExist:
+            return _("Nesukurtas PDF failas šiai sutarčiai.")
+        except AgreementFile.MultipleObjectsReturned:
+            return _("Rasti keli PDF failai. Susisiekite su administratoriumi.")
+
         return None
 
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         if not self.has_permission():
             return self.handle_no_permission()
 
-        if error_msg := self._validate_signing_order():
+        if error_msg := self._check_for_errors():
             messages.error(request, error_msg)
             return HttpResponseRedirect(self.get_success_url())
         return super(PermissionRequiredMixin, self).dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["agreement_pdf"] = self.agreement_pdf
+        kwargs["agreement"] = self.agreement
+        return kwargs
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)

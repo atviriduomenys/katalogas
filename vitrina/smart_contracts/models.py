@@ -4,7 +4,9 @@ from datetime import datetime
 from io import BytesIO
 
 from django.core.files.base import ContentFile
+from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from slugify import slugify
@@ -13,7 +15,6 @@ from vitrina.models import UUIDBaseModel
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.utils import (
-    generate_pdf_checksum,
     format_lithuanian_datetime,
     generate_checksum,
 )
@@ -160,7 +161,7 @@ class Agreement(UUIDBaseModel):
                     "ex:companyCode": self.assigner.company_code,
                     "ex:address": self.assigner.address,
                     "ex:representative": (
-                        self.assigner_representative.email if self.assigner_representative else NON_VALUE
+                        self.assigner_representative_full_name if self.assigner_representative else NON_VALUE
                     ),
                     "ex:email": self.assigner.email or NON_VALUE,
                     "ex:phone": self.assigner.phone or NON_VALUE,
@@ -174,7 +175,7 @@ class Agreement(UUIDBaseModel):
                     "ex:companyCode": self.assignee.company_code,
                     "ex:address": self.assignee.address,
                     "ex:representative": (
-                        self.assignee_representative.email if self.assignee_representative else NON_VALUE
+                        self.assignee_representative_full_name if self.assignee_representative else NON_VALUE
                     ),
                     "ex:email": self.assignee.email or NON_VALUE,
                     "ex:phone": self.assignee.phone or NON_VALUE,
@@ -199,6 +200,51 @@ class Agreement(UUIDBaseModel):
     @property
     def detail_page_title(self) -> str:
         return _("Sutartis: {organization}").format(organization=self.assigner)
+
+    @property
+    def assignee_representative_full_name(self) -> str:
+        if self.assignee_representative.content_type == ContentType.objects.get_for_model(User):
+            return self.assignee_representative.content_object.get_full_name()
+        return self.assignee_representative.contact_name.strip()
+
+    @property
+    def assigner_representative_full_name(self) -> str:
+        if self.assigner_representative.content_type == ContentType.objects.get_for_model(User):
+            return self.assigner_representative.content_object.get_full_name()
+        return self.assigner_representative.contact_name.strip()
+
+    def get_odrl_assignee_representative(self) -> str:
+        if not (data := self.get_odrl_json()):
+            raise ValueError(_("Sutartis neturi sugeneruoto ODRL JSON failo."))
+        try:
+            return data["assignee"][0]["ex:representative"]
+        except KeyError as error:
+            raise ValueError(
+                _("Nepavyko rasti 'assignee.ex:representative' sutarties '{0}' ODRL JSON faile. Klaida: {1}").format(
+                    self.pk, error
+                )
+            )
+
+    def get_odrl_assigner_representative(self) -> str:
+        if not (data := self.get_odrl_json()):
+            raise ValueError(_("Sutartis neturi sugeneruoto ODRL JSON failo."))
+        try:
+            return data["assigner"][0]["ex:representative"]
+        except KeyError as error:
+            raise ValueError(
+                _("Nepavyko rasti 'assigner.ex:representative' sutarties '{0}' ODRL JSON faile. Klaida: {1}").format(
+                    self.pk, error
+                )
+            )
+
+    def get_odrl_json(self) -> dict | None:
+        try:
+            json_file = self.files.get(file__iendswith=AgreementFile.AllowedFileTypes.JSON)
+        except ObjectDoesNotExist:
+            return None
+
+        json_file.file.seek(0)
+        return json.loads(json_file.file.read())
 
 
 class AgreementScope(UUIDBaseModel):
@@ -265,10 +311,10 @@ class AgreementFile(UUIDBaseModel):
         return self.AllowedFileTypes(self.file_name.split(".")[-1])
 
     def save(self, *args, **kwargs):
+        if self.file and not self.checksum:
+            file_bytes = self.file.read()
+            self.file.seek(0)
+
+            self.checksum = generate_checksum(file_bytes)
+
         super().save(*args, **kwargs)
-        if not self.checksum and self.file:
-            if self.file_type == self.AllowedFileTypes.PDF:
-                self.checksum = generate_pdf_checksum(self.file.path)
-            else:
-                self.checksum = generate_checksum(self.file.read())
-            self.save()

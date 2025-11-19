@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-14 16:53+0200\n"
+"POT-Creation-Date: 2025-11-19 12:59+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,9 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "kliento id"
 msgstr "client id"
@@ -40,6 +37,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -2414,7 +2414,6 @@ msgstr "Position in Organization"
 msgid "Registruotas kontaktinis asmuo ar organizacija"
 msgstr "Registered contact person or organization"
 
-
 msgid "Papildomas kontaktinis asmuo"
 msgstr "Additional contact person"
 
@@ -2425,8 +2424,8 @@ msgid ""
 "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
 "el. paštas. Redaguojant kontaktą, profilio el. paštas nesikeičia."
 msgstr ""
-"If a registered person or organization is selected, their profile email is used. "
-"When editing the contact, the profile email does not change."
+"If a registered person or organization is selected, their profile email is "
+"used. When editing the contact, the profile email does not change."
 
 msgid ""
 "Neteisingas telefono numerio formatas. Priimtini formatai: +3706XXXXXXX, "
@@ -2438,8 +2437,9 @@ msgid ""
 "Jei pasirinktas registruotas asmuo ar organizacija, naudojamas jų profilio "
 "telefono numeris. Redaguojant kontaktą, profilio telefono numeris nesikeičia."
 msgstr ""
-"If a registered person or organization is selected, their profile phone number is used. "
-"When editing the contact, the profile phone number does not change."
+"If a registered person or organization is selected, their profile phone "
+"number is used. When editing the contact, the profile phone number does not "
+"change."
 
 msgid "Organizacija:"
 msgstr "Organization:"
@@ -2451,7 +2451,6 @@ msgid ""
 "Pasirinkta organizacija arba naudotojas neturi nurodyto telefono numerio."
 msgstr ""
 "The selected organization or user does not have a phone number specified."
-
 
 msgid "Telefono numeris yra privalomas."
 msgstr "Phone number is required"
@@ -3684,6 +3683,15 @@ msgstr "Terminated"
 msgid "Sutartis sukurta. Sutarties dokumentas dar nesukurtas."
 msgstr "Agreement is created. Agreement document is not created yet."
 
+msgid "Pateiktas pasiūlymas iš duomenų gavėjo pusės."
+msgstr "Agreement document is signed by data receiver."
+
+#, fuzzy
+#| msgid "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų teikėjo."
+msgid ""
+"Duomenų gavėjo pasiūlymas duomenims gauti yra patvirtintas duomenų teikėjo."
+msgstr "Agreement document is signed by data receiver and data provider."
+
 msgid "Sutarties dokumentas sukurtas, bet nepasirašytas."
 msgstr "Agreement document is created, but not signed yet."
 
@@ -3711,8 +3719,12 @@ msgstr "The document must be in adoc format."
 msgid "Įkelti dokumentą"
 msgstr "Upload document"
 
-msgid "Įkelta sutartis nepasirašyta."
-msgstr "Uploaded document is not signed."
+#, python-brace-format
+msgid "ADOC klaida: {error}"
+msgstr "ADOC error: {error}"
+
+msgid "Prisegtas failas nėra ZIP archyvas."
+msgstr "The attached file is not a ZIP archive."
 
 msgid "Pasirinkite šabloną (privaloma)"
 msgstr "Choose a template (required)"
@@ -3741,6 +3753,9 @@ msgstr "Specifies the organization to which the template is assigned."
 msgid "Duomenis gaunanti organizacija"
 msgstr "Data receiver organization"
 
+msgid "Sutarties šablonas"
+msgstr "Agreement template"
+
 msgid "Agento sinchronizacija įjungta"
 msgstr "Agent synchronization is enabled"
 
@@ -3757,6 +3772,25 @@ msgstr "Agreement"
 msgid "Sutartis: {organization}"
 msgstr "Agreement: {organization}"
 
+msgid "Sutartis neturi sugeneruoto ODRL JSON failo."
+msgstr "The agreement does not have a generated ODRL JSON file."
+
+#, python-brace-format
+msgid ""
+"Nepavyko rasti 'assignee.ex:representative' sutarties '{0}' ODRL JSON faile. "
+"Klaida: {1}"
+msgstr ""
+"Failed to find 'assignee.ex:representative' in the ODRL JSON file of "
+"agreement '{0}'. Error: {1}"
+
+#, python-brace-format
+msgid ""
+"Nepavyko rasti 'assigner.ex:representative' sutarties '{0}' ODRL JSON faile. "
+"Klaida: {1}"
+msgstr ""
+"Failed to find 'assigner.ex:representative' for agreement '{0}' in the ODRL "
+"JSON file. Error: {1}"
+
 msgid "Sutarties leidimas"
 msgstr "Agreement scope"
 
@@ -3769,14 +3803,66 @@ msgstr "Agreement document"
 msgid "Dokumentas gali būti md, pdf arba adoc formato."
 msgstr "The document must be in md, pdf or adoc format."
 
-msgid "Sutarties šablonas"
-msgstr "Agreement template"
-
 msgid "Failo turinio kontrolinė suma."
 msgstr "File content checksum."
 
 msgid "Sutarties dokumentai"
 msgstr "Agreement documents"
+
+msgid "Nepavyko rasti parašo sertifikato."
+msgstr "Failed to find the signature certificate."
+
+msgid "Netinkamas parašo sertifikatas."
+msgstr "Invalid signature certificate."
+
+msgid "Paraše trūksta pasirašiusio asmens vardo ir/ar pavardės."
+msgstr "The signature is missing the signer's first name and/or last name."
+
+msgid "Rastas daugiau nei vienas pasirašytas dokumentas."
+msgstr "More than one signed document was found."
+
+msgid "Nerastas PDF dokumentas."
+msgstr "No PDF document was found."
+
+msgid "PDF dokumentas nesutampa su sutartyje esančiu PDF dokumentu."
+msgstr "The PDF document does not match the PDF document in the agreement."
+
+msgid "Įkelta sutartis nepasirašyta."
+msgstr "The uploaded agreement is not signed."
+
+msgid ""
+"Įkelta sutartis pasirašyta daugiau nei 1 parašu. Gavėjas turėtų pasirašyti "
+"tik vienu parašu."
+msgstr ""
+"The uploaded agreement is signed with more than one signature. The assignee "
+"should sign with only one signature."
+
+msgid "Įkelta sutartis nepasirašyta teikėjo parašu."
+msgstr "The uploaded agreement is not signed with the assigner's signature."
+
+msgid "Įkeltoje sutartyje rasti daugiau nei 2 parašai."
+msgstr "More than two signatures were found in the uploaded agreement."
+
+#, python-brace-format
+msgid ""
+"Pasirašyti galima tik sutartis su būsenomis `{formed}` arba `{initiated}`."
+msgstr ""
+"Only agreements with the statuses `{formed}` or `{initiated}` can be signed."
+
+#, python-brace-format
+msgid ""
+"Nesutampa pasirašiusių asmenų vardai ir pavardės. Reikalingi parašai: "
+"{expected}, ADOC rasti parašai: {found}."
+msgstr ""
+"The names and surnames of the signers do not match. Required signatures: "
+"{expected}, signatures found in ADOC: {found}."
+
+msgid "Nerastas PDF failas."
+msgstr "PDF file not found."
+
+#, python-brace-format
+msgid "Blogas ADOC failas: {error}"
+msgstr "Invalid ADOC file: {error}"
 
 msgid "Generuoti sutartis"
 msgstr "Generate agreements"
@@ -3848,6 +3934,12 @@ msgid ""
 msgstr ""
 "The agreement has already been signed on behalf of the data recipient "
 "(assignee). Waiting for the data provider (assigner) to sign."
+
+msgid "Nesukurtas PDF failas šiai sutarčiai."
+msgstr "No PDF file has been generated for this agreement."
+
+msgid "Rasti keli PDF failai. Susisiekite su administratoriumi."
+msgstr "Multiple PDF files were found. Please contact the administrator."
 
 msgid "Įkelti gavėjo pasirašytą dokumentą"
 msgstr "Upload document signed by data recipient (assignee)"

@@ -1,7 +1,7 @@
 from typer import Option, run
 
 from vitrina.smart_contracts.services import generate_contract
-from vitrina.smart_contracts.utils import generate_pdf_checksum
+from vitrina.smart_contracts.utils import generate_checksum
 
 
 def main(
@@ -10,7 +10,8 @@ def main(
     output: str = Option("contract.pdf", "--output", "-o", help="Output PDF file name"),
 ) -> None:
     generate_contract(template, json, output)
-    checksum = generate_pdf_checksum(output)
+    with open(output, "rb") as pdf_file:
+        checksum = generate_checksum(pdf_file.read())
     print(f"SHA256 checksum of '{output}': {checksum}")
 
 

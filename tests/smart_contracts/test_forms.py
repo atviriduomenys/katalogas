@@ -7,10 +7,11 @@ from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, Contact
-from vitrina.orgs.factories import OrganizationFactory
+
 from vitrina.orgs.models import Organization
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.projects.factories import ProjectFactory
-from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
 from vitrina.smart_contracts.forms import SmartContractForm, AgreementUploadForm, AgreementGeneratePdfForm
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
@@ -123,21 +124,17 @@ class TestSmartContractForm:
 class TestAgreementUploadForm:
     def test_not_valid_when_uploading_file_other_than_adoc(self) -> None:
         uploaded_file = SimpleUploadedFile("bad_file.md", b"md file content")
-        form = AgreementUploadForm(files={"file": uploaded_file})
+        agreement_pdf = AgreementPDFFileFactory()
+        form = AgreementUploadForm(files={"file": uploaded_file}, agreement_pdf=agreement_pdf, agreement=agreement_pdf.agreement)
 
         assert form.is_valid() is False
         assert form.errors == {"file": ["Dokumentas turi būti adoc formato."]}
 
-    def test_not_valid_when_uploading_unsigned_adoc(self) -> None:
-        file_path = str(
-            Path(__file__).parent
-            / "files"
-            / "test_contracts"
-            / "sutartis_not_signed.adoc"
-        )
-        with open(file_path, "rb") as f:
+    def test_not_valid_when_uploading_unsigned_adoc(self, agreement_pdf: Path, agreement_not_signed: Path) -> None:
+        agreement_pdf = AgreementPDFFileFactory(pdf_path = agreement_pdf)
+        with open(agreement_not_signed, "rb") as f:
             uploaded_file = SimpleUploadedFile("sutartis_not_signed.adoc", f.read())
 
-        form = AgreementUploadForm(files={"file": uploaded_file})
+        form = AgreementUploadForm(files={"file": uploaded_file}, agreement_pdf=agreement_pdf, agreement=agreement_pdf.agreement)
         assert form.is_valid() is False
         assert form.errors == {"file": ["Įkelta sutartis nepasirašyta."]}

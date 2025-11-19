@@ -96,8 +96,10 @@ class AgreementUploadForm(forms.ModelForm):
             with zipfile.ZipFile(file) as zip_file:
                 validate_adoc(zip_file, checksum=self.agreement_pdf.checksum)
                 signers_in_adoc = get_signers_from_adoc(zip_file)
-        except (InvalidAdocError, zipfile.BadZipFile) as error:
-            raise ValidationError(f"ADOC klaida: {str(error)}")
+        except InvalidAdocError as error:
+            raise ValidationError(_("ADOC klaida: {error}").format(error=error))
+        except zipfile.BadZipFile:
+            raise ValidationError(_("Prisegtas failas nėra ZIP archyvas."))
 
         signers_valid, error = validate_signers(signers_in_adoc, self.agreement)
         if not signers_valid:

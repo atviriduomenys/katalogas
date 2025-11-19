@@ -131,11 +131,11 @@ def validate_adoc(zip_file: zipfile.ZipFile, checksum: str) -> tuple[bool, str]:
 
 def validate_signers(signers: list[str], agreement: Agreement) -> tuple[bool, str | None]:
     num_of_signers = len(signers)
-    signers_to_find = [agreement.assignee_representative_full_name]
 
     if num_of_signers == 0:
         return False, _("Įkelta sutartis nepasirašyta.")
 
+    signers_to_find = [agreement.get_odrl_assignee_representative()]
     if agreement.status == AgreementStatuses.FORMED:
         if num_of_signers > 1:
             return False, _(
@@ -147,7 +147,7 @@ def validate_signers(signers: list[str], agreement: Agreement) -> tuple[bool, st
             return False, _("Įkelta sutartis nepasirašyta teikėjo parašu.")
         if num_of_signers > 2:
             return False, _("Įkeltoje sutartyje rasti daugiau nei 2 parašai.")
-        signers_to_find.append(agreement.assigner_representative_full_name)
+        signers_to_find.append(agreement.get_odrl_assigner_representative())
     else:
         return False, _("Pasirašyti galima tik sutartis su būsenomis `{formed}` arba `{initiated}`.").format(
             formed=AgreementStatuses.FORMED, initiated=AgreementStatuses.INITIATED

@@ -6,6 +6,7 @@ from io import BytesIO
 from django.core.files.base import ContentFile
 from django.contrib.contenttypes.models import ContentType
 from django.core.validators import FileExtensionValidator
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from slugify import slugify
@@ -211,6 +212,39 @@ class Agreement(UUIDBaseModel):
         if self.assigner_representative.content_type == ContentType.objects.get_for_model(User):
             return self.assigner_representative.content_object.get_full_name()
         return self.assigner_representative.contact_name.strip()
+
+    def get_odrl_assignee_representative(self) -> str:
+        if not (data := self.get_odrl_json()):
+            raise ValueError(_("Sutartis neturi sugeneruoto ODRL JSON failo."))
+        try:
+            return data["assignee"][0]["ex:representative"]
+        except KeyError as error:
+            raise ValueError(
+                _("Nepavyko rasti 'assignee.ex:representative' sutarties '{0}' ODRL JSON faile. Klaida: {1}").format(
+                    self.pk, error
+                )
+            )
+
+    def get_odrl_assigner_representative(self) -> str:
+        if not (data := self.get_odrl_json()):
+            raise ValueError(_("Sutartis neturi sugeneruoto ODRL JSON failo."))
+        try:
+            return data["assigner"][0]["ex:representative"]
+        except KeyError as error:
+            raise ValueError(
+                _("Nepavyko rasti 'assigner.ex:representative' sutarties '{0}' ODRL JSON faile. Klaida: {1}").format(
+                    self.pk, error
+                )
+            )
+
+    def get_odrl_json(self) -> dict | None:
+        try:
+            json_file = self.files.get(file__iendswith=AgreementFile.AllowedFileTypes.JSON)
+        except ObjectDoesNotExist:
+            return None
+
+        json_file.file.seek(0)
+        return json.loads(json_file.file.read())
 
 
 class AgreementScope(UUIDBaseModel):

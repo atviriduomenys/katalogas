@@ -57,6 +57,7 @@ def test_extract_scopes_from_adoc_not_supported_file(agreement_pdf: Path):
             str(agreement_pdf), SCOPES_REGEX
         )
 
+
 def test_extract_sigatures_from_adoc(agreement_two_signers: Path, signature1: etree._Element, signature2: etree._Element):
     with zipfile.ZipFile(agreement_two_signers) as zip_file:
         signatures = extract_signatures_from_adoc(zip_file)
@@ -64,12 +65,27 @@ def test_extract_sigatures_from_adoc(agreement_two_signers: Path, signature1: et
     assert etree.tostring(signatures[0], method="c14n") == etree.tostring(signature1, method="c14n")
     assert etree.tostring(signatures[1], method="c14n") == etree.tostring(signature2, method="c14n")
 
+
 def test_extract_signers_certificate(signature1: etree._Element, certificate: x509.Certificate):
     assert extract_signers_certificate(signature1) == certificate
+
+
+def test_extract_signers_certificate_bad_certificate(agreement_bad_certificate: Path):
+    with zipfile.ZipFile(agreement_bad_certificate) as zip_file:
+        signatures = extract_signatures_from_adoc(zip_file)
+        with pytest.raises(InvalidAdocError, match="Netinkamas parašo sertifikatas"):
+            extract_signers_certificate(signatures[0])
+
 
 def test_get_signer_from_certificate(certificate: x509.Certificate):
     signer = get_signer_full_name_from_certificate(certificate)
     assert signer == SIGNER1_FULL_NAME
+
+
+def test_get_signer_from_certificate_no_first_name(certificate_no_first_name: x509.Certificate):
+    with pytest.raises(InvalidAdocError, match="Paraše trūksta pasirašiusio asmens vardo ir/ar pavardės."):
+        get_signer_full_name_from_certificate(certificate_no_first_name)
+
 
 def test_get_signers_from_adoc(agreement_two_signers: Path):
     with zipfile.ZipFile(agreement_two_signers) as zip_file:

@@ -424,9 +424,8 @@ class TestAgreementGeneratePdf:
         assert response.status_code == 302
         assert agreement.status == status
 
-    def test_generate_pdf_changes_agreement_status_to_formed(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
-    ) -> None:
+    @pytest.mark.parametrize("_", range(100))  # TODO: Remove before merge
+    def test_generate_pdf_changes_agreement_status_to_formed(self, _, app: DjangoTestApp, dataset: Dataset) -> None:
         template = SmartContractTemplate.objects.create(
             file=ContentFile(
                 open(Path(__file__).parent / "files" / "contract_template.md").read(),
@@ -434,12 +433,13 @@ class TestAgreementGeneratePdf:
             )
         )
 
-        organization.title = "Gonzalez Group"
-        organization.company_code = "LWGYU0W8S"
-        organization.address = "206 Weaver Trace\nNorth Danny, VA 96120"
-        organization.email = "lwolf@example.com"
-        organization.phone = "456.631.4059"
-        organization.save()
+        organization = OrganizationFactory(
+            title="Gonzalez Group",
+            company_code="LWGYU0W8S",
+            address="206 Weaver Trace\nNorth Danny, VA 96120",
+            email="lwolf@example.com",
+            phone="456.631.4059",
+        )
 
         dataset.title = "Odit nostrum."
         dataset.save()

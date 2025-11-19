@@ -21,6 +21,7 @@ AGREEMENT_NO_PDF = "agreement_no_pdf.adoc"
 AGREEMENT_TWO_FILES = "agreement_two_files.adoc"
 AGREEMENT_NOT_SIGNED = "agreement_not_signed.adoc"
 AGREEMENT_PDF = "agreement.pdf"
+AGREEMENT_NON_ZIP = "agreement_non_zip.adoc"
 SIGNATURE1_XML = "signature1.xml"
 SIGNATURE2_XML = "signature2.xml"
 ODRL_JSON = "odrl_json.json"
@@ -102,6 +103,11 @@ def agreement_not_signed(agreements_dir: Path) -> Path:
 @pytest.fixture
 def agreement_pdf(agreements_dir: Path) -> Path:
     return agreements_dir / AGREEMENT_PDF
+
+
+@pytest.fixture
+def agreement_non_zip(agreements_dir: Path) -> Path:
+    return agreements_dir / AGREEMENT_NON_ZIP
 
 
 @pytest.fixture

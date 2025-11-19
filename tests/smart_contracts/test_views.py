@@ -774,6 +774,7 @@ class TestAgreementUploadSignedFile:
             ("agreement_two_files", "ADOC klaida: Rastas daugiau nei vienas pasirašytas dokumentas."),
             ("agreement_two_signers", "Įkelta sutartis pasirašyta daugiau nei 1 parašu. Gavėjas turėtų pasirašyti tik vienu parašu."),
             ("agreement_pdf", "Dokumentas turi būti adoc formato."),
+            ("agreement_non_zip", "Prisegtas failas nėra ZIP archyvas."),
             ("agreement_one_signer", "Nesutampa pasirašiusių asmenų vardai ir pavardės. Reikalingi parašai: ['Jonas Jonaitis'], ADOC rasti parašai: ['Vardenis Pavardenis'].")
         ],
         indirect=["agreement_choice"]

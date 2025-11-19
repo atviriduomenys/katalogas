@@ -11,6 +11,7 @@ https://github.com/atviriduomenys/katalogas/issues/2067
 - Part 2: Add assigner & assignee representatives that are displayed on the contract file.
 - Part 2.1: Remove organizations as juridical entities from the list of possible entities to represent organizations in agreements.
 - Part 2.2: Add new field `template` and new statuses for `Agreement`. Adding a few adjustments for field displays & formatting.
+- Part 2.3: Move permissions to dedicated `permisions.py` file.
 
 https://github.com/atviriduomenys/katalogas/issues/1955
 - Improved contact form by adding new contact, position, removed dataset field.

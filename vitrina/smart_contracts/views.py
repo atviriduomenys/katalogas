@@ -38,8 +38,8 @@ from vitrina.smart_contracts.models import (
 from vitrina.users.models import User
 from vitrina.structure.models import Metadata
 from vitrina.views import FormsetView
-from vitrina.smart_contracts.services import (
-    get_agreements,
+from vitrina.smart_contracts.services import get_agreements
+from vitrina.smart_contracts.permissions import (
     can_view_agreements,
     can_create_agreements,
     can_view_agreement,

@@ -51,7 +51,7 @@ from vitrina.projects.services import (
     can_view_history,
     can_manage_datasets,
 )
-from vitrina.smart_contracts.services import can_view_agreements
+from vitrina.smart_contracts.permissions import can_view_agreements
 
 
 logger = logging.getLogger()

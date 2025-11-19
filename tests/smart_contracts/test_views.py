@@ -471,7 +471,7 @@ class TestAgreementGeneratePdf:
             phone=assigner_user.phone,
         )
         assignee_representative = ContactFactory(
-            organization=OrganizationFactory(),
+            organization=organization,
             object_id=user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=user.email,

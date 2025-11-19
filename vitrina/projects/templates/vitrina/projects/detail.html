@@ -4,6 +4,7 @@
 {% load hitcount_tags %}
 {% load subscription_tags %}
 {% load like_tags %}
+{% load markdown_tags %}
 {% load comment_tags %}
 {% block parent_title %}
     {% translate "Panaudojimo atvejai" %}
@@ -44,7 +45,7 @@
                 {% if project.other_assignee_legislations %}
                     <div class="content">
                         <h5 class="has-text-weight-bold">{% translate "Duomenų gavimo teisinis pagrindas" %}</h5>
-                        <p>{{ project.other_assignee_legislations|linebreaksbr }}</p>
+                        <p>{{ project.other_assignee_legislations|markdown|safe }}</p>
                     </div>
                 {% endif %}
                 {% if project.url %}

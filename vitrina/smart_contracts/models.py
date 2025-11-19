@@ -82,6 +82,14 @@ class Agreement(UUIDBaseModel):
         null=True,
         blank=True,
     )
+    template = models.ForeignKey(
+        "vitrina_smart_contracts.SmartContractTemplate",
+        on_delete=models.SET_NULL,
+        related_name="agreements",
+        verbose_name=_("Sutarties šablonas"),
+        null=True,
+        blank=True,
+    )
     status = models.CharField(
         max_length=255,
         choices=AgreementStatuses.choices,

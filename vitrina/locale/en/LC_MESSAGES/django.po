@@ -2285,6 +2285,9 @@ msgstr "E-mail address"
 msgid "Adresas"
 msgstr "Address"
 
+msgid "Saugoti"
+msgstr "Save"
+
 msgid "Jurisdikcija"
 msgstr "Jurisdiction"
 
@@ -2377,9 +2380,6 @@ msgstr ""
 
 msgid "Naujas slaptažodis"
 msgstr "New password"
-
-msgid "Saugoti"
-msgstr "Save"
 
 msgid "Objektas"
 msgstr "Object"

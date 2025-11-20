@@ -377,44 +377,64 @@ class TestAgreementGeneratePdf:
         dataset: Dataset,
         status: AgreementStatuses,
     ) -> None:
-        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
-        app.set_user(representative.user)
-        project = ProjectFactory(organization=organization, datasets=[dataset])
-        agreement = AgreementFactory(
-            project=project,
-            assigner=organization,
-            status=status
-        )
         template = SmartContractTemplate.objects.create(
             file=ContentFile(
                 open(Path(__file__).parent / "files" / "contract_template.md").read(),
                 name="contract_template.md",
             )
         )
-        assigner_user = UserFactory(organization=organization)
-        assignee_user = UserFactory(organization=agreement.assignee)
-        assigner_representative = ContactFactory(
-            organization=organization,
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        app.set_user(assignee_user)
+
+        RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone,
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
             phone=assigner_user.phone,
         )
-        assignee_representative = ContactFactory(
-            organization=organization,
-            object_id=assignee_user.pk,
-            content_type=ContentType.objects.get_for_model(User),
-            email=assignee_user.email,
-            phone=assignee_user.phone,
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test"
+        )
+
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assigner=assigner_organization,
+            created_by=assignee_user,
+            status=status,
         )
 
         response = app.post(
             reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
             {
                 "template": template.pk,
-                "assigner_representative": assigner_representative.pk,
+                "assigner_representative": assigner_contact.pk,
                 "other_assigner_legislations": "",
-                "assignee_representative": assignee_representative.pk,
+                "assignee_representative": assignee_contact.pk,
                 "other_assignee_legislations": "",
                 "payment_terms": "",
             },

@@ -48,12 +48,27 @@ def test_form_submit_with_correct_data(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_fake_viisp_logs_in_existing_user(app: DjangoTestApp):
     user = UserFactory(email="existing@test.com", is_viisp_login=False)
+    user.set_password("abc")
+    user.save()
     url = reverse("fake-viisp-complete-login")
-    data = {"email": user.email, "lt_company_code": 12345678, "proxy_type": ""}
-    resp = app.post(url, params=data, expect_errors=True)
+    data = {"username": user.email, "password": "abc", "lt_company_code": 12345678, "proxy_type": ""}
+    resp = app.post(url, params=data)
 
     user.refresh_from_db()
     assert user.is_viisp_login is True
     assert user.viisp_company_code == "12345678"
     assert resp.status_code == 302
     assert resp.url == reverse("home")
+
+
+@pytest.mark.django_db
+def test_fake_viisp_logs_in_wrong_password(app: DjangoTestApp):
+    user = UserFactory(email="existing@test.com", is_viisp_login=False)
+    user.set_password("abc")
+    user.save()
+    url = reverse("fake-viisp-complete-login")
+    data = {"username": user.email, "password": "test", "lt_company_code": 12345678, "proxy_type": ""}
+    resp = app.post(url, params=data)
+
+    errors = resp.context["form"].errors
+    assert "Įveskite teisingą Elektroninis paštas ir slaptažodį. Abiejuose laukuose didžiosios mažosios raidės skiriasi." in errors["__all__"]

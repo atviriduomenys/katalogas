@@ -14,12 +14,6 @@ PROXY_TYPE_CHOICES = [
 
 
 class FakeViispForm(AuthenticationForm):
-    username = forms.EmailField(label=_("El. paštas"), required=True)
-    password = forms.CharField(
-        label=_("Slaptažodis"),
-        required=True,
-        widget=forms.PasswordInput,
-    )
     lt_company_code = forms.CharField(
         label=_("Įmonės kodas"),
         help_text=_("Įveskite Lietuvoje registruotos įmonės kodą."),

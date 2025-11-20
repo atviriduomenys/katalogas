@@ -91,12 +91,24 @@ class TestSmartContractForm:
             object_id=assigner_user.pk,
             email=assigner_user.email,
         )
+        assigner_contact = Contact.objects.create(
+            organization=assigner_organization,
+            content_type=None,
+            object_id=None,
+            email=assigner_organization.email,
+        )
 
         assignee_contact_user = Contact.objects.create(
-            organization=assigner_organization,
+            organization=assignee_organization,
             content_type=content_type_user,
             object_id=assignee_user.pk,
             email=assignee_user.email,
+        )
+        assignee_contact = Contact.objects.create(
+            organization=assignee_organization,
+            content_type=None,
+            object_id=None,
+            email=assignee_organization.email,
         )
 
         random_contact_user = Contact.objects.create(
@@ -115,7 +127,9 @@ class TestSmartContractForm:
         assignee_queryset = list(form.fields["assignee_representative"].queryset)
 
         assert assigner_contact_user in assigner_queryset
+        assert assigner_contact in assigner_queryset
         assert assignee_contact_user in assignee_queryset
+        assert assignee_contact in assignee_queryset
 
         assert random_contact_user not in assigner_queryset
         assert random_contact_user not in assignee_queryset

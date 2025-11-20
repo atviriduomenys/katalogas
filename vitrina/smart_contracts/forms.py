@@ -152,4 +152,10 @@ class AgreementGeneratePdfForm(forms.Form):
             "pk", flat=True
         )
 
-        return Contact.objects.filter(content_type=self.content_type_user, object_id__in=user_ids)
+        return Contact.objects.filter(
+            Q(organization=organization),
+            (
+                Q(content_type=self.content_type_user, object_id__in=user_ids)
+                | Q(content_type__isnull=True, object_id__isnull=True)
+            ),
+        )

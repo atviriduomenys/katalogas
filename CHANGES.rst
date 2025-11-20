@@ -1,7 +1,11 @@
 Changes
 #######
 
-v 1.7 (unreleased)
+v 1.8 (unreleased)
+==================
+
+
+v 1.7 (2025-11-20)
 ==================
 
 New features:

@@ -156,7 +156,7 @@ class Agreement(UUIDBaseModel):
             "issued": format_lithuanian_datetime(),
             "assigner": [
                 {
-                    "uid": f"{self.assigner.pk}",
+                    "uid": str(self.assigner.pk),
                     "ex:companyName": self.assigner.title,
                     "ex:companyCode": self.assigner.company_code,
                     "ex:address": self.assigner.address,

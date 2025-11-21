@@ -2,17 +2,25 @@ from pathlib import Path
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django_webtest import DjangoTestApp
 
-from vitrina.datasets.factories import DatasetFactory
-from vitrina.datasets.models import Dataset, Contact
-
-from vitrina.orgs.models import Organization
+from tests.conftest import organization
+from vitrina.datasets.factories import DatasetFactory, ContactFactory
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
-from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
-from vitrina.smart_contracts.forms import SmartContractForm, AgreementUploadForm, AgreementGeneratePdfForm
+from vitrina.smart_contracts.factories import AgreementPDFFileFactory, AgreementFactory
+from vitrina.smart_contracts.forms import (
+    SmartContractForm,
+    AgreementUploadForm,
+    AgreementSubmitForm,
+    AgreementApproveForm,
+    AgreementFormForm,
+)
+from vitrina.smart_contracts.models import SmartContractTemplate
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
@@ -72,67 +80,244 @@ class TestSmartContractForm:
             ("uapi:/test/dataset/:select", "uapi:/test/dataset/:select"),
         }
 
-    def test_agreement_generate_pdf_form_representative_querysets(self):
-        assigner_organization = OrganizationFactory(title="Assigner Organization", email="assigner@example.com")
-        assignee_organization = OrganizationFactory(title="Assignee Organization", email="assignee@example.com")
 
-        assigner_user = UserFactory(organization=assigner_organization, email="assigner@test.com")
-        assignee_user = UserFactory(organization=assignee_organization, email="assignee@test.com")
-
-        content_type_user = ContentType.objects.get_for_model(User)
-
-        dataset_a, dataset_b, dataset_c, dataset_d, dataset_e, dataset_f = [
-            DatasetFactory(organization=assigner_organization) for _ in range(6)
-        ]
-
-        assigner_contact_user = Contact.objects.create(
-            organization=assigner_organization,
-            content_type=content_type_user,
-            object_id=assigner_user.pk,
-            email=assigner_user.email,
+class TestAgreementSubmitForm:
+    def test_success(self, organization: Organization):
+        # Arrange
+        agreement = AgreementFactory(
+            assignee=organization,
+            project=ProjectFactory(organization=organization),
         )
-        assigner_contact = Contact.objects.create(
-            organization=assigner_organization,
-            content_type=None,
+        contact = ContactFactory(
+            contact_name="Vardenis Pavardenis",
+            organization=organization,
             object_id=None,
-            email=assigner_organization.email,
-        )
-
-        assignee_contact_user = Contact.objects.create(
-            organization=assignee_organization,
-            content_type=content_type_user,
-            object_id=assignee_user.pk,
-            email=assignee_user.email,
-        )
-        assignee_contact = Contact.objects.create(
-            organization=assignee_organization,
             content_type=None,
-            object_id=None,
-            email=assignee_organization.email,
-        )
-
-        random_contact_user = Contact.objects.create(
-            organization=assigner_organization,
-            content_type=content_type_user,
-            object_id=OrganizationFactory().pk,
             email="example@example.com",
+            phone="+37060000000"
         )
 
-        project = ProjectFactory(organization=assignee_organization, datasets=[dataset_a, dataset_b, dataset_c, dataset_d])
-        agreement = AgreementFactory(project=project, assigner=assigner_organization, assignee=assignee_organization)
+        # Act
+        form = AgreementSubmitForm(
+            data={"assignee_representative": contact.pk},
+            agreement=agreement
+        )
 
-        form = AgreementGeneratePdfForm(agreement=agreement)
+        # Assert
+        assert form.is_valid(), form.errors
 
-        assigner_queryset = list(form.fields["assigner_representative"].queryset)
-        assignee_queryset = list(form.fields["assignee_representative"].queryset)
+    def test_assignee_representative_queryset(self, organization: Organization):
+        # Arrange
+        unrelated_organization = OrganizationFactory()
+        agreement = AgreementFactory(
+            assignee=organization,
+            project=ProjectFactory(organization=organization)
+        )
 
-        assert assigner_contact_user in assigner_queryset
-        assert assigner_contact in assigner_queryset
-        assert assignee_contact_user in assignee_queryset
-        assert assignee_contact in assignee_queryset
+        user = UserFactory(
+            organization=organization,
+            is_viisp_login=True,
+            viisp_company_code=organization.company_code,
+        )
+        contact_with_user = ContactFactory(
+            contact_name="Vardenis Pavardenis",
+            organization=organization,
+            object_id=user.id,
+            content_type=ContentType.objects.get_for_model(User),
+            email="example@example.com",
+            phone="+37060000000"
+        )
+        contact_no_user = ContactFactory(
+            contact_name="Petras Petrauskas",
+            organization=organization,
+            content_object=user,
+            email="example2@example.com",
+            phone="+37060000000"
+        )
+        contact_unrelated_organization = ContactFactory(
+            contact_name="Jonas Jonauskas",
+            organization=unrelated_organization,
+            object_id=None,
+            content_type=None,
+            email="example3@example.com",
+            phone="+37060000000"
+        )
 
-        assert random_contact_user not in assigner_queryset
-        assert random_contact_user not in assignee_queryset
+        # Act
+        form = AgreementSubmitForm(agreement=agreement)
+
+        # Assert
+        contacts_selectable_in_form = list(form.fields["assignee_representative"].queryset)
+        assert contact_unrelated_organization not in contacts_selectable_in_form
+        assert all(contact in contacts_selectable_in_form for contact in {contact_with_user, contact_no_user})
+
+    def test_failure_required_fields_unfilled(self, organization: Organization):
+        agreement = AgreementFactory(
+            assignee=organization,
+            project=ProjectFactory(organization=organization)
+        )
+        form = AgreementSubmitForm(data={}, agreement=agreement)
+
+        assert not form.is_valid()
+        assert form.errors == {"assignee_representative": ["Šis laukas yra privalomas."]}
+
+
+class TestAgreementApproveForm:
+    def test_success(self, organization: Organization):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+        organization = OrganizationFactory()
+        agreement = AgreementFactory(
+            assigner=organization,
+            project=ProjectFactory(organization=organization),
+        )
+
+        contact = ContactFactory(
+            contact_name="Vardenis Pavardenis",
+            organization=organization,
+            object_id=None,
+            content_type=None,
+            email="example@example.com",
+            phone="+37060000000"
+        )
+
+        # Act
+        form = AgreementApproveForm(
+            data={
+                "template": template.pk,
+                "assigner_representative": contact.pk,
+                "other_assigner_legislations": "Legislation A; Legislation B; Legislation C."
+            },
+            agreement=agreement
+        )
+
+        # Assert
+        assert form.is_valid(), form.errors
+
+    def test_assigner_representative_queryset(self, organization: Organization):
+        # Arrange
+        unrelated_organization = OrganizationFactory()
+        agreement = AgreementFactory(
+            assigner=organization,
+            project=ProjectFactory(organization=organization),
+        )
+
+        user = UserFactory(
+            organization=organization,
+            is_viisp_login=True,
+            viisp_company_code=organization.company_code,
+        )
+        contact_with_user = ContactFactory(
+            contact_name="Vardenis Pavardenis",
+            organization=organization,
+            object_id=user.id,
+            content_type=ContentType.objects.get_for_model(User),
+            email="example@example.com",
+            phone="+37060000000"
+        )
+        contact_no_user = ContactFactory(
+            contact_name="Petras Petrauskas",
+            organization=organization,
+            content_object=user,
+            email="example2@example.com",
+            phone="+37060000000"
+        )
+        contact_unrelated_organization = ContactFactory(
+            contact_name="Jonas Jonauskas",
+            organization=unrelated_organization,
+            object_id=None,
+            content_type=None,
+            email="example3@example.com",
+            phone="+37060000000"
+        )
+
+        # Act
+        form = AgreementApproveForm(agreement=agreement)
+
+        # Assert
+        contacts_selectable_in_form = list(form.fields["assigner_representative"].queryset)
+        assert contact_unrelated_organization not in contacts_selectable_in_form
+        assert all(contact in contacts_selectable_in_form for contact in (contact_with_user, contact_no_user))
+
+    def test_template_queryset(self, organization: Organization):
+        # Arrange
+        unrelated_organization = OrganizationFactory()
+        agreement = AgreementFactory(
+            assigner=organization,
+            project=ProjectFactory(organization=organization),
+        )
+
+        template_no_organization = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+        template_current_organization = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            ),
+            organization=organization,
+        )
+        template_unrelated_organization = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            ),
+            organization=unrelated_organization,
+        )
+
+        # Act
+        form = AgreementApproveForm(agreement=agreement)
+
+        # Assert
+        agreements_selectable_in_form = list(form.fields["template"].queryset)
+        assert template_unrelated_organization not in agreements_selectable_in_form
+        assert all(
+            template in agreements_selectable_in_form for template in (
+                template_no_organization,
+                template_current_organization,
+            )
+        )
+
+    def test_failure_required_fields_unfilled(self, organization: Organization):
+        # Arrange
+        agreement = AgreementFactory(
+            assignee=organization,
+            project=ProjectFactory(organization=organization)
+        )
+
+        # Act
+        form = AgreementApproveForm(data={}, agreement=agreement)
+
+        # Assert
+        assert not form.is_valid()
+        assert form.errors == {
+            "template": ["Šis laukas yra privalomas."],
+            "assigner_representative": ["Šis laukas yra privalomas."],
+            "other_assigner_legislations": ["Šis laukas yra privalomas."],
+        }
+
+
+class TestAgreementFormForm:
+    def test_success(self, organization: Organization):
+        # Arrange
+        agreement = AgreementFactory(
+            assignee=organization,
+            project=ProjectFactory(organization=organization)
+        )
+
+        # Act
+        form = AgreementFormForm(data={}, agreement=agreement)
+
+        # Assert
+        assert form.is_valid(), form.errors
 
 
 class TestAgreementUploadForm:

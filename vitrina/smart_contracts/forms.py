@@ -1,4 +1,4 @@
-from functools import cached_property
+from typing import Any
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Submit
@@ -6,9 +6,10 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from django.db.models import Q, QuerySet
+from django.db.models import Q, QuerySet, Subquery
 from django.core.files.uploadedfile import UploadedFile
 from django.forms import CheckboxSelectMultiple
+from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
 import zipfile
 
@@ -65,6 +66,78 @@ class SmartContractForm(forms.ModelForm):
         return choices
 
 
+class BaseAgreementForm(forms.ModelForm):
+    label = _("Pateikti")
+
+    def __init__(self, *args, **kwargs):
+        self.agreement = kwargs.pop("agreement")
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.add_input(Submit("submit", self.label, css_class="button is-primary"))
+
+    @cached_property
+    def content_type_user(self) -> ContentType:
+        return ContentType.objects.get_for_model(User)
+
+    @staticmethod
+    def get_smart_contract_templates_by_organization(organization_id: int) -> QuerySet:
+        return SmartContractTemplate.objects.filter(
+            Q(organization__isnull=True) | Q(organization=organization_id),
+        ).order_by(
+            "organization",
+            "file",
+        )
+
+    def get_contacts_by_organization(self, organization_id: int) -> QuerySet:
+        user_ids = User.objects.filter(organization=organization_id).exclude(deleted=True).values("pk")
+
+        return Contact.objects.filter(
+            Q(organization=organization_id),
+            Q(content_type=self.content_type_user, object_id__in=Subquery(user_ids))
+            | Q(content_type__isnull=True, object_id__isnull=True),
+        )
+
+
+class AgreementSubmitForm(BaseAgreementForm):
+    label = _("Pateikti pasiūlymą")
+
+    class Meta:
+        model = Agreement
+        fields = ("assignee_representative",)
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        self.fields["assignee_representative"].required = True
+        self.fields["assignee_representative"].queryset = self.get_contacts_by_organization(self.agreement.assignee_id)
+
+
+class AgreementApproveForm(BaseAgreementForm):
+    label = _("Patvirtinti pasiūlymą")
+
+    class Meta:
+        model = Agreement
+        fields = ("template", "assigner_representative", "other_assigner_legislations")
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+
+        for field in self.Meta.fields:
+            self.fields[field].required = True
+
+        self.fields["template"].queryset = self.get_smart_contract_templates_by_organization(self.agreement.assigner_id)
+        self.fields["assigner_representative"].queryset = self.get_contacts_by_organization(self.agreement.assigner_id)
+
+
+class AgreementFormForm(BaseAgreementForm):
+    label = _("Formuoti sutartį")
+
+    class Meta:
+        model = Agreement
+        fields = tuple()
+
+
 class SmartContractFormSetHelper(FormHelper):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -106,56 +179,3 @@ class AgreementUploadForm(forms.ModelForm):
             raise ValidationError(error)
 
         return file
-
-
-class AgreementGeneratePdfForm(forms.Form):
-    template = forms.ModelChoiceField(
-        label=_("Pasirinkite šabloną (privaloma)"),
-        queryset=SmartContractTemplate.objects.none(),  # will be dynamically set in __init__
-        required=True,
-    )
-    other_assigner_legislations = forms.CharField(
-        label=_("Papildomi teikėjo teisės aktai"),
-        required=False,
-        widget=forms.Textarea(),
-    )
-    payment_terms = forms.CharField(label=_("Mokėjimo sąlygos"), required=False, widget=forms.Textarea())
-    assigner_representative = forms.ModelChoiceField(
-        label=_("Duomenų teikėjo atstovas"),
-        queryset=Contact.objects.none(),
-        required=True,
-    )
-    assignee_representative = forms.ModelChoiceField(
-        label=_("Duomenų gavėjo atstovas"), queryset=Contact.objects.none(), required=True
-    )
-
-    @cached_property
-    def content_type_user(self) -> QuerySet[ContentType]:
-        return ContentType.objects.get_for_model(User)
-
-    def __init__(self, *args, **kwargs):
-        agreement: Agreement = kwargs.pop("agreement")
-        super().__init__(*args, **kwargs)
-
-        self.fields["template"].queryset = SmartContractTemplate.objects.filter(
-            Q(organization__isnull=True) | Q(organization=agreement.assigner)
-        ).order_by("organization", "file")
-
-        self.fields["assigner_representative"].queryset = self.get_contact_queryset(agreement.assigner)
-        self.fields["assignee_representative"].queryset = self.get_contact_queryset(agreement.assignee)
-
-        self.helper = FormHelper()
-        self.helper.add_input(Submit("submit", _("Generuoti sutarties dokumentą"), css_class="button is-primary"))
-
-    def get_contact_queryset(self, organization: Organization) -> QuerySet[Contact]:
-        user_ids = User.objects.filter(Q(organization=organization.pk), Q(deleted=False) | Q(deleted="")).values_list(
-            "pk", flat=True
-        )
-
-        return Contact.objects.filter(
-            Q(organization=organization),
-            (
-                Q(content_type=self.content_type_user, object_id__in=user_ids)
-                | Q(content_type__isnull=True, object_id__isnull=True)
-            ),
-        )

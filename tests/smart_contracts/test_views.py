@@ -21,7 +21,6 @@ from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFile
 from vitrina.smart_contracts.models import (
     Agreement,
     AgreementScope,
-    AgreementFile,
     SmartContractTemplate,
 )
 from vitrina.structure.factories import MetadataFactory
@@ -327,63 +326,1051 @@ class TestAgreementCreateView:
         assert response.status_code == 403
 
 
-
-class TestAgreementGeneratePdf:
-    def test_cannot_generate_pdf_without_permission(self, app: DjangoTestApp) -> None:
-        representative = ViispRepresentativeFactory(can_make_agreements=False)
-        user = representative.user
-        organization = representative.content_object
+class TestAgreementSubmit:
+    def test_success(self, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
         app.set_user(user)
-        project = ProjectFactory(organization=organization)
-        agreement = AgreementFactory(project=project, assigner=organization)
+        RepresentativeFactory(user=user, content_object=assignee_organization, can_make_agreements=True)
+        contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=user.email,
+            phone=user.phone
+        )
 
-        response = app.get(
-            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=None,
+            assigner=assigner_organization,
+            created_by=user,
+            status=AgreementStatuses.CREATED
+        )
+
+        # Act
+        response = app.post(
+            reverse("agreement-submit", args=[project.pk, agreement.pk]),
+            {
+                "assignee_representative": contact.pk
+            }
+        )
+
+        # Assert
+        assert response.status_code == 302
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.SUBMITTED
+        assert agreement.assignee_representative == contact
+
+    def test_unauthorized_not_representative(self, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        app.set_user(user)
+        contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=user.email,
+            phone=user.phone
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=None,
+            assigner=assigner_organization,
+            created_by=user,
+            status=AgreementStatuses.CREATED
+        )
+
+        # Act
+        response = app.post(
+            reverse("agreement-submit", args=[project.pk, agreement.pk]),
+            {
+                "assignee_representative": contact.pk,
+            },
             expect_errors=True,
         )
+
+        # Assert
         assert response.status_code == 403
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.CREATED
+        assert not agreement.assignee_representative
 
-    def test_page_loads_without_error(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset,
-    ) -> None:
-        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
-        user = representative.user
+    def test_unauthorized_not_viisp_authorized(self, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=False,
+            viisp_company_code="invalid_company_code",
+        )
         app.set_user(user)
-        project = ProjectFactory(organization=organization, datasets=[dataset])
+        RepresentativeFactory(user=user, content_object=assignee_organization, can_make_agreements=True)
+        contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=user.email,
+            phone=user.phone
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
         agreement = AgreementFactory(
-            project=project, assigner=organization, status=AgreementStatuses.CREATED,
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=None,
+            assigner=assigner_organization,
+            created_by=user,
+            status=AgreementStatuses.CREATED
         )
 
-        response = app.get(
-            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
+        # Act
+        response = app.post(
+            reverse("agreement-submit", args=[project.pk, agreement.pk]),
+            {
+                "assignee_representative": contact.pk
+            },
+            expect_errors=True,
         )
 
-        assert response.status_code == 200
+        # Assert
+        assert response.status_code == 403
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.CREATED
+        assert not agreement.assignee_representative
 
-    @pytest.mark.parametrize(
-        "status",
-        [
-            AgreementStatuses.FORMED,
-            AgreementStatuses.INITIATED,
-            AgreementStatuses.SIGNED,
-            AgreementStatuses.ACTIVE,
-            AgreementStatuses.TERMINATED,
-        ],
-    )
-    def test_cannot_generate_pdf_for_agreement_with_status_other_than_created(
+    def test_unauthorized_not_granted_agreement_signing_rights(self, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        app.set_user(user)
+        RepresentativeFactory(user=user, content_object=assignee_organization, can_make_agreements=False)
+        contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=user.email,
+            phone=user.phone
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=None,
+            assigner=assigner_organization,
+            created_by=user,
+            status=AgreementStatuses.CREATED
+        )
+
+        # Act
+        response = app.post(
+            reverse("agreement-submit", args=[project.pk, agreement.pk]),
+            {
+                "assignee_representative": contact.pk
+            },
+            expect_errors=True,
+        )
+
+        # Assert
+        assert response.status_code == 403
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.CREATED
+        assert not agreement.assignee_representative
+
+    @pytest.mark.parametrize("initial_agreement_status", [
+        AgreementStatuses.SUBMITTED,
+        AgreementStatuses.APPROVED,
+        AgreementStatuses.FORMED,
+        AgreementStatuses.INITIATED,
+        AgreementStatuses.SIGNED,
+        AgreementStatuses.ACTIVE,
+        AgreementStatuses.TERMINATED,
+    ])
+    def test_incorrect_agreement_status(
         self,
+        initial_agreement_status: AgreementStatuses,
         app: DjangoTestApp,
-        organization: Organization,
         dataset: Dataset,
-        status: AgreementStatuses,
-    ) -> None:
+    ):
+        # Arrange
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        app.set_user(user)
+        RepresentativeFactory(user=user, content_object=assignee_organization, can_make_agreements=True)
+        contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=user.email,
+            phone=user.phone
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=None,
+            assigner=assigner_organization,
+            created_by=user,
+            status=initial_agreement_status
+        )
+
+        # Act
+        response = app.post(
+            reverse("agreement-submit", args=[project.pk, agreement.pk]),
+            {
+                "assignee_representative": contact.pk
+            }
+        )
+
+        # Assert
+        assert response.status_code == 302  # Still redirects to the success page, just with an error message.
+        agreement.refresh_from_db()
+        assert not agreement.assignee_representative
+        assert agreement.status == initial_agreement_status
+
+
+class TestAgreementApprove:
+    def test_success(self, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
         template = SmartContractTemplate.objects.create(
             file=ContentFile(
                 open(Path(__file__).parent / "files" / "contract_template.md").read(),
                 name="contract_template.md",
             )
         )
+
         assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        app.set_user(assigner_user)
+
+        RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner_representative=None,
+            assigner=assigner_organization,
+            created_by=assignee_user,
+            status=AgreementStatuses.SUBMITTED
+        )
+        other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
+
+        # Act
+        response = app.post(
+            reverse("agreement-approve", args=[project.pk, agreement.pk]),
+            {
+                "template": template.pk,
+                "assigner_representative": assigner_contact.pk,
+                "other_assigner_legislations": other_assigner_legislations
+            }
+        )
+
+        # Assert
+        assert response.status_code == 302
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.APPROVED
+        assert agreement.template == template
+        assert agreement.assigner_representative == assigner_contact
+        assert agreement.other_assigner_legislations == other_assigner_legislations
+
+
+    def test_unauthorized_not_representative(self, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        app.set_user(assigner_user)
+
+        RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner_representative=None,
+            assigner=assigner_organization,
+            created_by=assignee_user,
+            status=AgreementStatuses.SUBMITTED
+        )
+        other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
+
+        # Act
+        response = app.post(
+            reverse("agreement-approve", args=[project.pk, agreement.pk]),
+            {
+                "template": template.pk,
+                "assigner_representative": assigner_contact.pk,
+                "other_assigner_legislations": other_assigner_legislations
+            },
+            expect_errors=True,
+        )
+
+        # Assert
+        assert response.status_code == 403
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.SUBMITTED
+        assert not agreement.template
+        assert not agreement.assigner_representative
+        assert not agreement.other_assigner_legislations
+
+    def test_unauthorized_not_viisp_authorized(self, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=False,
+            viisp_company_code="invalid_company_code",
+        )
+        app.set_user(assigner_user)
+
+        RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner_representative=None,
+            assigner=assigner_organization,
+            created_by=assignee_user,
+            status=AgreementStatuses.SUBMITTED
+        )
+        other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
+
+        # Act
+        response = app.post(
+            reverse("agreement-approve", args=[project.pk, agreement.pk]),
+            {
+                "template": template.pk,
+                "assigner_representative": assigner_contact.pk,
+                "other_assigner_legislations": other_assigner_legislations
+            },
+            expect_errors=True,
+        )
+
+        # Assert
+        assert response.status_code == 403
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.SUBMITTED
+        assert not agreement.template
+        assert not agreement.assigner_representative
+        assert not agreement.other_assigner_legislations
+
+    def test_unauthorized_not_granted_agreement_signing_rights(self, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        app.set_user(assigner_user)
+
+        RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=False)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner_representative=None,
+            assigner=assigner_organization,
+            created_by=assignee_user,
+            status=AgreementStatuses.SUBMITTED
+        )
+        other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
+
+        # Act
+        response = app.post(
+            reverse("agreement-approve", args=[project.pk, agreement.pk]),
+            {
+                "template": template.pk,
+                "assigner_representative": assigner_contact.pk,
+                "other_assigner_legislations": other_assigner_legislations
+            },
+            expect_errors=True,
+        )
+
+        # Assert
+        assert response.status_code == 403
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.SUBMITTED
+        assert not agreement.template
+        assert not agreement.assigner_representative
+        assert not agreement.other_assigner_legislations
+
+    @pytest.mark.parametrize("initial_agreement_status", [
+        AgreementStatuses.CREATED,
+        AgreementStatuses.APPROVED,
+        AgreementStatuses.FORMED,
+        AgreementStatuses.INITIATED,
+        AgreementStatuses.SIGNED,
+        AgreementStatuses.ACTIVE,
+        AgreementStatuses.TERMINATED,
+    ])
+    def test_incorrect_agreement_status(
+        self,
+        initial_agreement_status: AgreementStatuses,
+        app: DjangoTestApp,
+        dataset: Dataset
+    ):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        app.set_user(assigner_user)
+
+        RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner_representative=None,
+            assigner=assigner_organization,
+            created_by=assignee_user,
+            status=initial_agreement_status
+        )
+        other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
+
+        # Act
+        response = app.post(
+            reverse("agreement-approve", args=[project.pk, agreement.pk]),
+            {
+                "template": template.pk,
+                "assigner_representative": assigner_contact.pk,
+                "other_assigner_legislations": other_assigner_legislations
+            }
+        )
+
+        # Assert
+        assert response.status_code == 302  # Still redirects to the success page, just with an error message.
+        agreement.refresh_from_db()
+        assert agreement.status == initial_agreement_status
+        assert not agreement.template
+        assert not agreement.assigner_representative
+        assert not agreement.other_assigner_legislations
+
+
+class TestAgreementForm:
+    @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
+    def test_success(self, is_acting_user_assignee: bool, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        dataset.organization = assigner_organization
+        dataset.save()
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        app.set_user(assignee_user if is_acting_user_assignee else assigner_user)
+
+        RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone,
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+
+        agreement = AgreementFactory(
+            template=template,
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner=assigner_organization,
+            assigner_representative=assigner_contact,
+            other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
+            payment_terms="Payment term A; Payment term B.",
+            created_by=assignee_user,
+            status=AgreementStatuses.APPROVED,
+        )
+
+        # Act
+        response = app.post(
+            reverse("agreement-form", args=[project.pk, agreement.pk]),
+            {}
+        )
+
+        # Assert
+        assert response.status_code == 302
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.FORMED
+
+        odrl_file, contract, template_copy = list(agreement.files.order_by("is_template", "created_at"))
+
+        assert odrl_file.file_name.endswith(".json")
+        odrl_content = json.loads(odrl_file.file.read())
+        assert odrl_content == {
+            "@context": {
+                "@vocab": "http://www.w3.org/ns/odrl.jsonld",
+                "ex": "http://example.org/vocab#",
+            },
+            "uid": f"https://data.gov.lt/ID/datasets/gov/vssa/isris/dcat/Agreement/{agreement.pk}",
+            "type": "Agreement",
+            "profile": "http://www.w3.org/ns/odrl/profile/core",
+            "issued": odrl_content["issued"],
+            "assigner": [
+                {
+                    "uid": str(assigner_organization.pk),
+                    "ex:companyName": assigner_organization.title,
+                    "ex:companyCode": assigner_organization.company_code,
+                    "ex:address": assigner_organization.address,
+                    "ex:representative": agreement.assigner_representative_full_name,
+                    "ex:email": assigner_organization.email,
+                    "ex:phone": assigner_organization.phone,
+                    "ex:personalCode": " - ",
+                }
+            ],
+            "assignee": [
+                {
+                    "uid": str(assignee_organization.pk),
+                    "ex:companyName": assignee_organization.title,
+                    "ex:companyCode": assignee_organization.company_code,
+                    "ex:address": assignee_organization.address,
+                    "ex:representative": agreement.assignee_representative_full_name,
+                    "ex:email": assignee_organization.email,
+                    "ex:phone": assignee_organization.phone,
+                    "ex:personalCode": " - ",
+                }
+            ],
+            "permission": [
+                {
+                    "target": {
+                        "uid": dataset.pk,
+                        "ex:name": dataset.title,
+                        "ex:scopes": [],
+                    }
+                }
+            ],
+            "ex:paymentTerms": agreement.payment_terms,
+            "ex:otherAssignerLegislations": agreement.other_assigner_legislations,
+            "ex:otherAssigneeLegislations": project.other_assignee_legislations,
+        }
+
+        assert not contract.is_template
+        assert contract.checksum
+        contract.file.seek(0)
+        contract_content = extract_text(BytesIO(contract.file.read()))
+        expected_contract_values = [
+            odrl_content["issued"],
+            odrl_content["assigner"][0]["ex:companyName"],
+            odrl_content["assigner"][0]["ex:companyCode"],
+            odrl_content["assigner"][0]["ex:address"].split("\n")[0],
+            odrl_content["assigner"][0]["ex:email"],
+            odrl_content["assigner"][0]["ex:phone"],
+            odrl_content["assigner"][0]["ex:representative"],
+            odrl_content["assigner"][0]["ex:personalCode"],
+            odrl_content["assignee"][0]["ex:companyName"],
+            odrl_content["assignee"][0]["ex:companyCode"],
+            odrl_content["assignee"][0]["ex:address"].split("\n")[0],
+            odrl_content["assignee"][0]["ex:email"],
+            odrl_content["assignee"][0]["ex:phone"],
+            odrl_content["assignee"][0]["ex:representative"],
+            odrl_content["assignee"][0]["ex:personalCode"],
+            odrl_content["permission"][0]["target"]["ex:name"],
+            *odrl_content["permission"][0]["target"].get("ex:scopes", []),
+            odrl_content["ex:paymentTerms"],
+            odrl_content["ex:otherAssignerLegislations"],
+            odrl_content["ex:otherAssigneeLegislations"],
+        ]
+        # Ensure all required values from odrl were transferred to the contract.
+        for index, value in enumerate(expected_contract_values):
+            if value := str(value).strip():
+                assert value in contract_content, f"Expected '{value}' (index={index}) not found in PDF."
+
+        assert template_copy.is_template
+        assert template_copy.file.path != template.file.path
+        assert template_copy.file.read() == template.file.read()
+        assert template_copy.checksum
+
+    @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
+    def test_unauthorized_not_representative(self, is_acting_user_assignee: bool, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        dataset.organization = assigner_organization
+        dataset.save()
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        app.set_user(assignee_user if is_acting_user_assignee else assigner_user)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone,
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+
+        agreement = AgreementFactory(
+            template=template,
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner=assigner_organization,
+            assigner_representative=assigner_contact,
+            other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
+            payment_terms="Payment term A; Payment term B.",
+            created_by=assignee_user,
+            status=AgreementStatuses.APPROVED,
+        )
+
+        # Act
+        response = app.post(
+            reverse("agreement-form", args=[project.pk, agreement.pk]),
+            {},
+            expect_errors=True,
+        )
+
+        # Assert
+        assert response.status_code == 403
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.APPROVED  # Unchanged.
+        assert not agreement.files.exists()
+
+    @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
+    def test_unauthorized_not_viisp_authorized(self, is_acting_user_assignee: bool, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        dataset.organization = assigner_organization
+        dataset.save()
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=False,
+            viisp_company_code="invalid_company_code",
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=False,
+            viisp_company_code="invalid_company_code",
+        )
+        app.set_user(assignee_user if is_acting_user_assignee else assigner_user)
+
+        RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone,
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+
+        agreement = AgreementFactory(
+            template=template,
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner=assigner_organization,
+            assigner_representative=assigner_contact,
+            other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
+            payment_terms="Payment term A; Payment term B.",
+            created_by=assignee_user,
+            status=AgreementStatuses.APPROVED,
+        )
+
+        # Act
+        response = app.post(
+            reverse("agreement-form", args=[project.pk, agreement.pk]),
+            {},
+            expect_errors=True,
+        )
+
+        # Assert
+        assert response.status_code == 403
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.APPROVED  # Unchanged.
+        assert not agreement.files.exists()
+
+    @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
+    def test_unauthorized_not_granted_agreement_signing_rights(self, is_acting_user_assignee: bool, app: DjangoTestApp, dataset: Dataset):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        dataset.organization = assigner_organization
+        dataset.save()
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        app.set_user(assignee_user if is_acting_user_assignee else assigner_user)
+
+        RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=False)
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=False)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.phone
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.phone,
+        )
+
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+
+        agreement = AgreementFactory(
+            template=template,
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner=assigner_organization,
+            assigner_representative=assigner_contact,
+            other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
+            payment_terms="Payment term A; Payment term B.",
+            created_by=assignee_user,
+            status=AgreementStatuses.APPROVED,
+        )
+
+        # Act
+        response = app.post(
+            reverse("agreement-form", args=[project.pk, agreement.pk]),
+            {},
+            expect_errors=True,
+        )
+
+        # Assert
+        assert response.status_code == 403
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.APPROVED  # Unchanged.
+        assert not agreement.files.exists()
+
+    @pytest.mark.parametrize("initial_agreement_status", [
+        AgreementStatuses.CREATED,
+        AgreementStatuses.SUBMITTED,
+        AgreementStatuses.FORMED,
+        AgreementStatuses.INITIATED,
+        AgreementStatuses.SIGNED,
+        AgreementStatuses.ACTIVE,
+        AgreementStatuses.TERMINATED,
+    ])
+    def test_incorrect_agreement_status(self, initial_agreement_status: AgreementStatuses, app: DjangoTestApp, dataset: Dataset):
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        dataset.organization = assigner_organization
+        dataset.save()
         assignee_user = UserFactory(
             organization=assignee_organization,
             is_viisp_login=True,
@@ -404,7 +1391,7 @@ class TestAgreementGeneratePdf:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone,
+            phone=assignee_user.phone
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
@@ -417,221 +1404,34 @@ class TestAgreementGeneratePdf:
         project = ProjectFactory(
             organization=assignee_organization,
             datasets=[dataset],
-            other_assignee_legislations="Test"
+            other_assignee_legislations="Test",
         )
 
         agreement = AgreementFactory(
+            template=template,
             project=project,
             assignee=assignee_organization,
+            assignee_representative=assignee_contact,
             assigner=assigner_organization,
+            assigner_representative=assigner_contact,
+            other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
+            payment_terms="Payment term A; Payment term B.",
             created_by=assignee_user,
-            status=status,
+            status=initial_agreement_status,
         )
 
+        # Act
         response = app.post(
-            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
-            {
-                "template": template.pk,
-                "assigner_representative": assigner_contact.pk,
-                "other_assigner_legislations": "",
-                "assignee_representative": assignee_contact.pk,
-                "other_assignee_legislations": "",
-                "payment_terms": "",
-            },
+            reverse("agreement-form", args=[project.pk, agreement.pk]),
+            {},
+            expect_errors=True,
         )
 
+        # Assert
+        assert response.status_code == 302  # Still redirects to the success page, just with an error message.
         agreement.refresh_from_db()
-        assert response.status_code == 302
-        assert agreement.status == status
-
-    def test_generate_pdf_changes_agreement_status_to_formed(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
-    ) -> None:
-        template = SmartContractTemplate.objects.create(
-            file=ContentFile(
-                open(Path(__file__).parent / "files" / "contract_template.md").read(),
-                name="contract_template.md",
-            )
-        )
-
-        organization.title = "Gonzalez Group"
-        organization.company_code = "LWGYU0W8S"
-        organization.address = "206 Weaver Trace\nNorth Danny, VA 96120"
-        organization.email = "lwolf@example.com"
-        organization.phone = "456.631.4059"
-        organization.save()
-
-        dataset.title = "Odit nostrum."
-        dataset.save()
-
-        user = UserFactory(
-            organization=organization,
-            email="bethgarcia@example.net",
-            is_viisp_login=True,
-            viisp_company_code=organization.company_code
-        )
-        RepresentativeFactory(user=user, content_object=organization, can_make_agreements=True)
-
-        app.set_user(user)
-        assigner_user = UserFactory(organization=organization)
-
-        other_assigner_legislations = "Bought data"
-        other_assignee_legislations = "Sold data"
-        project = ProjectFactory(
-            organization=organization,
-            datasets=[dataset],
-            other_assignee_legislations=other_assignee_legislations
-        )
-
-        assigner_representative = ContactFactory(
-            organization=organization,
-            object_id=assigner_user.pk,
-            content_type=ContentType.objects.get_for_model(User),
-            email=assigner_user.email,
-            phone=assigner_user.phone,
-        )
-        assignee_representative = ContactFactory(
-            organization=organization,
-            object_id=user.pk,
-            content_type=ContentType.objects.get_for_model(User),
-            email=user.email,
-            phone=user.phone,
-        )
-
-        agreement = AgreementFactory(
-            project=project,
-            assigner=organization,
-            assignee=organization,
-            created_by=user,
-            status=AgreementStatuses.CREATED,
-        )
-
-        assert agreement.files.count() == 0
-        payment_terms = "Cash only"
-        response = app.post(
-            reverse("agreement-generate-pdf", args=[project.pk, agreement.pk]),
-            {
-                "template": template.pk,
-                "assigner_representative": assigner_representative.pk,
-                "other_assigner_legislations": other_assigner_legislations,
-                "assignee_representative": assignee_representative.pk,
-                "payment_terms": payment_terms,
-            },
-        )
-        agreement.refresh_from_db()
-        assert response.status_code == 302
-        assert agreement.status == AgreementStatuses.FORMED
-        agreement_files = list(agreement.files.order_by("is_template", "created_at"))
-        assert len(agreement_files) == 3
-        contract: AgreementFile = agreement_files[1]
-        template_copy: AgreementFile = agreement_files[2]
-        odlr_file: AgreementFile = agreement_files[0]
-
-
-        assert template_copy.is_template
-        assert template_copy.file_name
-        for name_part in ("_copy.md", "contract_template"):
-            assert name_part in template_copy.file_name
-        assert "/" not in template_copy.file_name
-        assert template_copy.file.path != template.file.path  # check if is an hard copy
-        assert template_copy.file.read() == template.file.read()
-        assert template_copy.checksum
-
-        assert odlr_file.file_name.endswith(".json")
-
-        assert not contract.is_template
-        assert contract.checksum
-
-        odrl :dict= json.loads(odlr_file.file.read())
-
-        expected_odrl = {
-            "@context": {
-                "@vocab": "http://www.w3.org/ns/odrl.jsonld",
-                "ex": "http://example.org/vocab#",
-            },
-            "uid": f"https://data.gov.lt/ID/datasets/gov/vssa/isris/dcat/Agreement/{agreement.pk}",
-            "type": "Agreement",
-            "profile": "http://www.w3.org/ns/odrl/profile/core",
-            "issued": odrl[
-                "issued"
-            ],  # Use actual value from file to avoid time mismatch
-            "assigner": [
-                {
-                    "uid": str(organization.pk),
-                    "ex:companyName": "Gonzalez Group",
-                    "ex:companyCode": "LWGYU0W8S",
-                    "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
-                    "ex:representative": agreement.assigner_representative_full_name,
-                    "ex:email": "lwolf@example.com",
-                    "ex:phone": "456.631.4059",
-                    "ex:personalCode": " - ",
-                }
-            ],
-            "assignee": [
-                {
-                    "uid": str(organization.pk),
-                    "ex:companyName": "Gonzalez Group",
-                    "ex:companyCode": "LWGYU0W8S",
-                    "ex:address": "206 Weaver Trace\nNorth Danny, VA 96120",
-                    "ex:representative": agreement.assignee_representative_full_name,
-                    "ex:email": "lwolf@example.com",
-                    "ex:phone": "456.631.4059",
-                    "ex:personalCode": " - ",
-                }
-            ],
-            "permission": [
-                {
-                    "target": {
-                        "uid": dataset.pk,
-                        "ex:name": "Odit nostrum.",
-                        "ex:scopes": [],
-                    }
-                }
-            ],
-            "ex:paymentTerms": payment_terms,
-            "ex:otherAssignerLegislations": other_assigner_legislations,
-            "ex:otherAssigneeLegislations": other_assignee_legislations,
-        }
-        assert odrl == expected_odrl
-        assert contract.file
-        assert contract.file_name
-        contract.file.seek(0)
-        pdf_text = extract_text(BytesIO(contract.file.read()))
-
-        # Pull specific expected values directly from the odrl JSON
-        expected_values = [
-            # Dates
-            odrl["issued"],  # Check only a date portion to avoid microsecond mismatches
-            # Assigner
-            odrl["assigner"][0]["ex:companyName"],
-            odrl["assigner"][0]["ex:companyCode"],
-            odrl["assigner"][0]["ex:address"].split("\n")[0],  # Just street line
-            odrl["assigner"][0]["ex:email"],
-            odrl["assigner"][0]["ex:phone"],
-            odrl["assigner"][0]["ex:representative"],
-            odrl["assigner"][0]["ex:personalCode"],
-            # Assignee
-            odrl["assignee"][0]["ex:companyName"],
-            odrl["assignee"][0]["ex:companyCode"],
-            odrl["assignee"][0]["ex:address"].split("\n")[0],
-            odrl["assignee"][0]["ex:email"],
-            odrl["assignee"][0]["ex:phone"],
-            odrl["assignee"][0]["ex:representative"],
-            odrl["assignee"][0]["ex:personalCode"],
-            # Permission target
-            odrl["permission"][0]["target"]["ex:name"],
-            *odrl["permission"][0]["target"].get("ex:scopes", []),
-            # Misc fields
-            odrl["ex:paymentTerms"],
-            odrl["ex:otherAssignerLegislations"],
-            odrl["ex:otherAssigneeLegislations"],
-        ]
-
-        # Validate that each expected value appears in the PDF text
-        for i, value in enumerate(expected_values):
-            value = str(value).strip()
-            if value:
-                assert value in pdf_text, f"Expected '{value}' (index={i}) not found in PDF"
+        assert agreement.status == initial_agreement_status  # Unchanged.
+        assert not agreement.files.exists()
 
 
 class TestAgreementUploadSignedFile:

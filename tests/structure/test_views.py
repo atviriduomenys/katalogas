@@ -4428,7 +4428,7 @@ def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTest
         '4,,,,,id,integer,,,,5,,,,,,,,,\n'
         '5,,,,,title,string,,,,5,,,,,,,,,\n'
         '6,,,,,country,ref,Country,,,4,,,,,,,,,\n'
-        '7,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
+        '7,,resource,,,,,,http://www.example2.com,,,,,,,,,Title,Description\n'
         '8,,,,Country,,,,,,4,,,,,,,,,\n'
         '9,,,,,id,integer,,,,3,,,,,,,,,\n'
         '10,,,,,title,string,,,,2,,,,,,,,,\n'
@@ -4446,9 +4446,10 @@ def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTest
     dataset_distributions = DatasetDistribution.objects.filter(dataset=structure.dataset)
 
     form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
-    assert len(form.fields["metadata"]) == 9 # If multiple resources uploaded, only the last gets saved. Might be a bug.
-    assert len(dataset_distributions) == 1
-    assert dataset_distributions.first().metadata.first().name == "resource"
+    assert len(form.fields["metadata"]) == 10
+    assert len(dataset_distributions) == 2
+    assert dataset_distributions.first().metadata.first().name == "resource1"
+    assert dataset_distributions.last().metadata.first().name == "resource"
 
 def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
     user = UserFactory(is_staff=True)

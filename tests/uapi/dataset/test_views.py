@@ -1021,6 +1021,28 @@ def test_action_get_dataset_structure_no_dataset(
         "message": "No Dataset matches the given query.",
         "additionalProperties": None,
     }
+def test_action_cant_get_dataset_invalid_token(
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset_structure: str,
+    valid_token: str
+):
+    token_parts = valid_token.split(".")
+    invalid_token = f"{token_parts[0]}.{token_parts[1]}"
+    response = app.get(
+        _build_reverse_uapi_url("uapi-dataset-structure", dataset_id=1_000_000),
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {invalid_token}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_401_UNAUTHORIZED
+    assert response.json == {
+        "additionalProperties": None,
+        "code": "authentication_failed",
+        "message": "Invalid input segments length",
+        "template": "Invalid input segments length",
+        "type": "system",
+    }
 
 
 def test_action_get_dataset_structure_no_dataset_structure(

@@ -50,6 +50,25 @@ def test_login_with_correct_credentials(app: DjangoTestApp, user: User):
 
 
 @pytest.mark.django_db
+def test_viisp_flag_reset_on_email_login(app: DjangoTestApp, user: User):
+    user.is_viisp_login = True
+    user.viisp_company_code = "123"
+    user.save()
+    form = app.get(reverse('login')).forms['login-form']
+    form['username'] = "test@test.com"
+    form['password'] = "test123"
+    resp = form.submit(name="otp_challenge")
+    form = resp.forms['login-form']
+    form['otp_token'] = UserEmailDevice.objects.filter(user=user).first().token
+    resp = form.submit()
+    assert resp.status_code == 302
+    assert resp.url == reverse('home')
+    user.refresh_from_db()
+    assert not user.is_viisp_login
+    assert not user.viisp_company_code
+
+
+@pytest.mark.django_db
 def test_register_with_short_name(app: DjangoTestApp):
     with patch('django_recaptcha.fields.client.submit') as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)

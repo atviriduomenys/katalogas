@@ -62,6 +62,22 @@ def test_fake_viisp_logs_in_existing_user(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_fake_viisp_logs_in_existing_user_no_company_code(app: DjangoTestApp):
+    user = UserFactory(email="existing@test.com", is_viisp_login=False, viisp_company_code="123")
+    user.set_password("abc")
+    user.save()
+    url = reverse("fake-viisp-complete-login")
+    data = {"username": user.email, "password": "abc"}
+    resp = app.post(url, params=data)
+
+    user.refresh_from_db()
+    assert user.is_viisp_login is True
+    assert user.viisp_company_code is None
+    assert resp.status_code == 302
+    assert resp.url == reverse("home")
+
+
+@pytest.mark.django_db
 def test_fake_viisp_logs_in_wrong_password(app: DjangoTestApp):
     user = UserFactory(email="existing@test.com", is_viisp_login=False)
     user.set_password("abc")

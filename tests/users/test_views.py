@@ -64,8 +64,8 @@ def test_viisp_flag_reset_on_email_login(app: DjangoTestApp, user: User):
     assert resp.status_code == 302
     assert resp.url == reverse('home')
     user.refresh_from_db()
-    assert not user.is_viisp_login
-    assert not user.viisp_company_code
+    assert user.is_viisp_login is False
+    assert user.viisp_company_code is None
 
 
 @pytest.mark.django_db

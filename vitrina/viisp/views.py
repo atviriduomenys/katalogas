@@ -1,3 +1,4 @@
+from django.http import HttpResponse
 from django.views import View
 from django.views.generic import TemplateView
 from django.urls import reverse
@@ -153,7 +154,7 @@ class FakeVIISPCompleteLoginView(LoginView):
     form_class = FakeViispForm
     redirect_authenticated_user = True
 
-    def form_valid(self, form):
+    def form_valid(self, form) -> HttpResponse:
         user: User = form.get_user()
         user.is_viisp_login = True
         if company_code := form.cleaned_data.get("lt_company_code"):

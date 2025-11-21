@@ -473,6 +473,11 @@ class DatasetDetailView(
         paginator = Paginator(related_datasets, 10)  # Show 10 relations per page
         page_number = self.request.GET.get("page")
         page_obj = paginator.get_page(page_number)
+        subclass_enum = DCATResourceSubclass(dataset.subclass)
+        if subclass_enum == DCATResourceSubclass.INFORMATION_SYSTEM:
+            permissions = has_perm(self.request.user, Action.INFORMATION_SYSTEM_UPDATE, dataset)
+        else:
+            permissions = has_perm(self.request.user, Action.UPDATE, dataset)
 
         extra_context_data = {
             "tags": dataset.get_tag_object_list(),
@@ -482,7 +487,7 @@ class DatasetDetailView(
             # TODO: harvested functionality needs to be implemented
             "harvested": "",
             "can_add_resource": has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),
-            "can_update_dataset": has_perm(self.request.user, Action.UPDATE, dataset),
+            "can_update_dataset": permissions,
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
             "resources": dataset.datasetdistribution_set.all().order_by("-period_start"),
             "org_logo": organization.image if organization else None,
@@ -1042,6 +1047,8 @@ class DatasetUpdateView(
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
+        if dataset.subclass == DCATResourceSubclass.INFORMATION_SYSTEM:
+            return has_perm(self.request.user, Action.INFORMATION_SYSTEM_UPDATE, dataset)
         return has_perm(self.request.user, Action.UPDATE, dataset)
 
     def get_context_data(self, **kwargs):

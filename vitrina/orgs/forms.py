@@ -305,6 +305,10 @@ class RepresentativeUpdateForm(ModelForm):
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     regenerate_api_key = BooleanField(label=_("Pergeneruoti raktą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
+    information_system_representative = BooleanField(
+        label=_("Informacinės sistemos tvarkytojas"), required=False, initial=False
+    )
+    open_data_representative = BooleanField(label=_("Atvirų duomenų tvarkytojas"), required=False, initial=False)
     can_make_agreements = BooleanField(
         label=_("Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"), disabled=True, required=False, initial=False
     )
@@ -320,6 +324,8 @@ class RepresentativeUpdateForm(ModelForm):
             "regenerate_api_key",
             "can_write",
             "can_make_agreements",
+            "information_system_representative",
+            "open_data_representative",
         )
 
     def __init__(self, *args, **kwargs):
@@ -327,10 +333,15 @@ class RepresentativeUpdateForm(ModelForm):
         self.object = kwargs.pop("object", None)
         super().__init__(*args, **kwargs)
         if self.object_model == Organization:
+            if self.object.kind != Organization.GOV:
+                self.fields.pop("information_system_representative")
+                self.fields.pop("open_data_representative")
             if self.user.viisp_organization == self.object:
                 self.fields["can_make_agreements"].disabled = False
         else:
             self.fields.pop("can_make_agreements")
+            self.fields.pop("information_system_representative")
+            self.fields.pop("open_data_representative")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
@@ -340,6 +351,8 @@ class RepresentativeUpdateForm(ModelForm):
             Field("has_api_access"),
             Field("regenerate_api_key"),
             Field("subscribe"),
+            Field("information_system_representative"),
+            Field("open_data_representative"),
             Field("can_write"),
             Field("can_make_agreements"),
             Submit("submit", _("Redaguoti"), css_class="button is-primary"),
@@ -396,6 +409,10 @@ class RepresentativeCreateForm(ModelForm):
     )
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False, disabled=True, initial=True)
+    information_system_representative = BooleanField(
+        label=_("Informacinės sistemos tvarkytojas"), required=False, initial=False
+    )
+    open_data_representative = BooleanField(label=_("Atvirų duomenų tvarkytojas"), required=False, initial=False)
     can_make_agreements = BooleanField(
         label=_("Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"), disabled=True, required=False, initial=False
     )
@@ -405,17 +422,31 @@ class RepresentativeCreateForm(ModelForm):
 
     class Meta:
         model = Representative
-        fields = ("email", "role", "phone", "has_api_access", "can_write", "can_make_agreements")
+        fields = (
+            "email",
+            "role",
+            "phone",
+            "has_api_access",
+            "can_write",
+            "can_make_agreements",
+            "information_system_representative",
+            "open_data_representative",
+        )
 
     def __init__(self, *args, **kwargs):
         self.user: User = kwargs.pop("user")
         self.object = kwargs.pop("object")
         super().__init__(*args, **kwargs)
         if self.object_model == Organization:
+            if self.object.kind != Organization.GOV:
+                self.fields.pop("information_system_representative")
+                self.fields.pop("open_data_representative")
             if self.user.viisp_organization == self.object:
                 self.fields["can_make_agreements"].disabled = False
         else:
             self.fields.pop("can_make_agreements")
+            self.fields.pop("information_system_representative")
+            self.fields.pop("open_data_representative")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
@@ -425,6 +456,8 @@ class RepresentativeCreateForm(ModelForm):
             Field("phone", placeholder=_("Formatas 0... arba +370...")),
             Field("has_api_access"),
             Field("subscribe"),
+            Field("information_system_representative"),
+            Field("open_data_representative"),
             Field("can_write"),
             Field("can_make_agreements"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),

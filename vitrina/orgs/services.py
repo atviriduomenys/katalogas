@@ -35,6 +35,7 @@ class Action(Enum):
     UPDATE = "update"
     DELETE = "delete"
     REQUEST_UPDATE = "request_update"
+    INFORMATION_SYSTEM_UPDATE = "information_system_update"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
@@ -54,6 +55,7 @@ class Role(Enum):
     GLOBAL_MANAGER = "global_manager"  # Global Manager (is staff)
     AUTHENTICATED = "all"  # All authenticated users
     VISITOR = "visitor"  # All unauthenticated users
+    INFORMATION_SYSTEM_REPRESENTATIVE = "information_system_representative"
 
 
 WRITE_ACTIONS: set[Action] = {
@@ -75,7 +77,13 @@ DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     DatasetRelation,
     Request,
 }
-EXCLUDED_ACTIONS: set[Action] = {Action.CREATE, Action.ASSIGN, Action.PLAN, Action.REQUEST_UPDATE}
+EXCLUDED_ACTIONS: set[Action] = {
+    Action.CREATE,
+    Action.ASSIGN,
+    Action.PLAN,
+    Action.REQUEST_UPDATE,
+    Action.INFORMATION_SYSTEM_UPDATE,
+}
 
 DATASET_IS_PUBLIC = True
 ACL_RULE = tuple[type[Model], Action]
@@ -155,6 +163,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
@@ -163,17 +172,25 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
         Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
 }
 
 _dataset_create_acl: ACL = {(Dataset, Action.CREATE): (Role.COORDINATOR, Role.MANAGER, Role.GLOBAL_MANAGER)}
-
+_information_system_update_acl: ACL = {
+    (Dataset, Action.INFORMATION_SYSTEM_UPDATE): (
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+    )
+}
 _dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.COMMENT)
 _dataset_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.DELETE)
 _dataset_history_view_acl: ACL = inherit_acl(_dataset_view_acl, new_action=Action.HISTORY_VIEW)
@@ -209,6 +226,7 @@ _dataset_structure_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_
 acl: ACL = (
     _dataset_view_acl
     | _dataset_create_acl
+    | _information_system_update_acl
     | _dataset_update_acl
     | _dataset_comment_acl
     | _dataset_delete_acl
@@ -308,6 +326,10 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
     if user.is_staff:
         return Role.GLOBAL_MANAGER
     if resource.get_resource_managers_queryset().filter(user=user).exists():
+        if resource.subclass.is_information_system:
+            if user.is_information_system_representative_for(resource.organization):
+                return Role.INFORMATION_SYSTEM_REPRESENTATIVE
+            return Role.AUTHENTICATED
         return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
     if user.is_gov_organization_manager:
         return Role.MANAGER

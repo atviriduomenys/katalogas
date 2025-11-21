@@ -167,6 +167,12 @@ class Representative(models.Model):
     content_object = GenericForeignKey("content_type", "object_id")
     can_write = models.BooleanField(default=False, verbose_name=_("Leidžiama keisti duomenis"))
     can_make_agreements = models.BooleanField(default=False, blank=True, null=True)
+    information_system_representative = models.BooleanField(
+        default=False, blank=True, null=True, verbose_name=_("Informacinės sistemos tvarkytojas")
+    )
+    open_data_representative = models.BooleanField(
+        default=False, blank=True, null=True, verbose_name=_("Atvirų duomenų tvarkytojas")
+    )
 
     objects = models.Manager()
 

@@ -99,7 +99,6 @@ from vitrina.users.models import User
 from vitrina.users.views import RegisterView
 from vitrina.tasks.models import Task
 from vitrina.views import PlanMixin, HistoryView
-from allauth.socialaccount.models import SocialAccount
 from django.http import HttpResponse
 
 
@@ -1229,12 +1228,10 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
     """
     email_identifier = "coordinator-request-created"
 
-    def get(self, request, *args, **kwargs):
-        user = self.request.user
-        user_social_account = SocialAccount.objects.filter(user_id=user.id).first()
-        if not user_social_account:
-            return redirect("viisp_login")
-        return super(PartnerRegisterView, self).get(request, *args, **kwargs)
+    def dispatch(self, request, *args, **kwargs):
+        if not request.user.is_viisp_login:
+            return redirect("viisp-login")
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
         org = form.cleaned_data.get("organization")

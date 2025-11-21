@@ -23,7 +23,7 @@ class SignupViewViisp(SignupView):
 
 
 urlpatterns = [
-    path("viisp/login", VIISPLoginView.as_view(), name="viisp_login"),
+    path("viisp/login", VIISPLoginView.as_view(), name="viisp-login"),
     path(
         "viisp/complete-login",
         VIISPCompleteLoginView.as_view(),

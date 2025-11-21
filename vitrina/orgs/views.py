@@ -1217,7 +1217,7 @@ class PartnerRegisterInfoView(TemplateView):
     template_name = "vitrina/orgs/partners/register.html"
 
 
-class PartnerRegisterView(LoginRequiredMixin, CreateView):
+class PartnerRegisterView(CreateView):
     form_class = PartnerRegisterForm
     template_name = "vitrina/orgs/partners/register_form.html"
     jar_model_uri = "datasets/gov/rc/jar/iregistruoti/JuridinisAsmuo"
@@ -1229,7 +1229,7 @@ class PartnerRegisterView(LoginRequiredMixin, CreateView):
     email_identifier = "coordinator-request-created"
 
     def dispatch(self, request, *args, **kwargs):
-        if not request.user.is_viisp_login:
+        if not request.user.is_authenticated or not request.user.is_viisp_login:
             return redirect("viisp-login")
         return super().dispatch(request, *args, **kwargs)
 

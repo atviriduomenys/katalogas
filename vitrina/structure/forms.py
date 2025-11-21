@@ -1242,7 +1242,7 @@ class ParamForm(forms.ModelForm):
         return description
 
 
-class VersionForm(forms.ModelForm):
+class PublishForm(forms.ModelForm):
     released = forms.DateField(label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"}))
     metadata = forms.MultipleChoiceField(label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple)
     version_type = forms.ChoiceField(

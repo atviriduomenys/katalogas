@@ -1,7 +1,7 @@
 from django.urls import path
 
 from vitrina.api_example.views import YamlFileImportView
-from vitrina.structure.views import DatasetStructureView, VersionCreateView
+from vitrina.structure.views import DatasetStructureView, PublishVersionView
 from vitrina.structure.views import DatasetStructureExportView
 from vitrina.structure.views import DatasetStructureExportOpenAPIView
 from vitrina.structure.views import ModelStructureView
@@ -198,7 +198,7 @@ urlpatterns = [
     path("datasets/<int:pk>/version/", VersionListView.as_view(), name="version-list"),
     path(
         "datasets/<int:pk>/version/add/",
-        VersionCreateView.as_view(),
+        PublishVersionView.as_view(),
         name="version-create",
     ),
     path(

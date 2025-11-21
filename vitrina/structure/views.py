@@ -44,7 +44,7 @@ from vitrina.structure.forms import (
     ModelUpdateForm,
     PropertyForm,
     ParamForm,
-    VersionForm,
+    PublishForm,
 )
 from vitrina.structure.models import (
     Model,
@@ -2757,10 +2757,10 @@ async def get_updated_summary(request, *args, **kwargs):
     return JsonResponse({"data": transformed_data})
 
 
-class VersionCreateView(PermissionRequiredMixin, CreateView):
+class PublishVersionView(PermissionRequiredMixin, CreateView):
     model = _Version
-    form_class = VersionForm
-    template_name = "vitrina/structure/version_form.html"
+    form_class = PublishForm
+    template_name = "vitrina/structure/publish_form.html"
 
     dataset: Dataset
 

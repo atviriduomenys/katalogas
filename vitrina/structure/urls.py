@@ -85,7 +85,7 @@ urlpatterns = [
     path(
         "datasets/<int:pk>/models/<str:model>/<str:prop>/data/",
         get_property_data,
-        name="property-data",
+        name="property-data", # not used
     ),
     path(
         "datasets/<int:pk>/models/<str:model>/<str:prop>/graph/",
@@ -110,7 +110,7 @@ urlpatterns = [
     path(
         "datasets/<int:pk>/data/<str:model>/count/",
         get_model_data_count,
-        name="model-data-count",
+        name="model-data-count", # not used
     ),
     path(
         "datasets/<int:pk>/data/<str:model>/table/",
@@ -120,7 +120,7 @@ urlpatterns = [
     path(
         "datasets/<int:pk>/data/<str:model>/table-data/",
         get_model_data,
-        name="model-data-table-data",
+        name="model-data-table-data", # not used
     ),
     path(
         "datasets/<int:pk>/data/<str:model>/<str:uuid>/",
@@ -135,22 +135,22 @@ urlpatterns = [
     path(
         "datasets/<int:pk>/data/<str:model>/<str:uuid>/table-data/",
         get_object_data,
-        name="object-data-table-data",
+        name="object-data-table-data", # not used
     ),
     path(
         "datasets/<int:pk>/params/<int:content_type_id>/<int:object_id>/add/",
         ParamCreateView.as_view(),
-        name="param-create",
+        name="param-create", # no way to navigate to
     ),
     path(
         "datasets/<int:pk>/params/<int:param_id>/change/",
         ParamUpdateView.as_view(),
-        name="param-update",
+        name="param-update", # no way to navigate to
     ),
     path(
         "datasets/<int:pk>/params/<int:param_id>/delete/",
         ParamDeleteView.as_view(),
-        name="param-delete",
+        name="param-delete", # no way to navigate to
     ),
     path(
         "datasets/<int:pk>/<int:model_id>/add_prop/<int:prop_id>/",

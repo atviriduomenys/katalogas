@@ -63,9 +63,22 @@ def create_structure_objects(structure: DatasetStructure, version: Version = Non
                 if state.errors:
                     errors = state.errors
                 else:
+
+                    if not version or version.status != VersionStatus.DRAFT:
+                        max_version = (
+                                Version.objects
+                                .filter(dataset=structure.dataset)
+                                .aggregate(max_version=Max('version'))['max_version'] or 0
+                        )
+
+                        version = Version.objects.create(
+                            dataset=structure.dataset,
+                            status=VersionStatus.DRAFT,
+                            version=max_version + 1,
+                        )
                     _load_comments(structure.dataset, state.manifest.comments, structure)
-                    version = _load_datasets(state, structure.dataset, version)
                     _load_prefixes(structure.dataset, state.manifest.prefixes, structure, version)
+                    version = _load_datasets(state, structure.dataset, version)
                     structure.dataset.update_level()
 
         for error in errors:
@@ -108,29 +121,19 @@ def _load_datasets(state: struct.State, dataset: Dataset, version: Version):
         if metadata := Metadata.objects.filter(content_type=ct, name=meta.name).exclude(dataset=dataset).first():
             meta.errors.append(_(f'Duomenų išteklius "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
+            version.delete()
         elif not meta.name.isascii():
             meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės.'))
             loaded_metadata.append(metadata)
+            version.delete()
         elif any([ch.isupper() for ch in meta.name]):
             meta.errors.append(_(f'"{meta.name}" kodiniame pavadinime gali būti naudojamos tik mažosios raidės.'))
             loaded_metadata.append(metadata)
+            version.delete()
         else:
             if md := dataset.metadata.filter(name=meta.name).first():
                 if not meta.id:
                     meta.id = md.uuid
-
-            if not version or version.status != VersionStatus.DRAFT:
-                max_version = (
-                        Version.objects
-                        .filter(dataset=dataset)
-                        .aggregate(max_version=Max('version'))['max_version'] or 0
-                )
-
-                version = Version.objects.create(
-                    dataset=dataset,
-                    status=VersionStatus.DRAFT,
-                    version=max_version + 1,
-                )
 
             dataset, metadata = _create_or_update_metadata(dataset, meta, dataset, i)
             _load_prefixes(dataset, meta.prefixes, dataset, version)

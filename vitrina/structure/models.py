@@ -257,6 +257,7 @@ class Model(models.Model):
                 kwargs={
                     "pk": self.dataset.pk,
                     "model": self.name,
+                    "version_id": self.version.pk
                 },
             )
         return None
@@ -362,6 +363,7 @@ class Property(models.Model):
                     "pk": self.model.dataset.pk,
                     "model": self.model.name,
                     "prop": self.name,
+                    "version_id": self.version.pk
                 },
             )
         return None

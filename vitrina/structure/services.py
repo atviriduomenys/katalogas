@@ -43,19 +43,9 @@ from vitrina.tasks.models import Task
 from vitrina.users.models import User
 
 
-def create_structure_objects(structure: DatasetStructure) -> None:
+def create_structure_objects(structure: DatasetStructure, version: Version) -> Version:
     sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
     ct = ContentType.objects.get_for_model(DatasetStructure)
-    max_version = (
-            Version.objects
-            .filter(dataset=structure.dataset)
-            .aggregate(max_version=Max('version'))['max_version'] or 0
-    )
-    draft_version, _ = Version.objects.get_or_create(
-        dataset=structure.dataset,
-        status=VersionStatus.DRAFT,
-        version=max_version + 1,
-    )
     if structure.file:
         Comment.objects.filter(content_type=ct, object_id=structure.pk, type=Comment.STRUCTURE_ERROR).delete()
 
@@ -74,8 +64,8 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                     errors = state.errors
                 else:
                     _load_comments(structure.dataset, state.manifest.comments, structure)
-                    _load_prefixes(structure.dataset, state.manifest.prefixes, structure, draft_version)
-                    _load_datasets(state, structure.dataset, draft_version)
+                    # _load_prefixes(structure.dataset, state.manifest.prefixes, structure)
+                    version = _load_datasets(state, structure.dataset, version)
                     structure.dataset.update_level()
 
         for error in errors:
@@ -95,6 +85,8 @@ def create_structure_objects(structure: DatasetStructure) -> None:
                 user=sys_user,
             )
 
+    return version
+
 
 def create_or_get_uapi_format():
     format_obj, created = Format.objects.get_or_create(extension="UAPI")
@@ -106,13 +98,12 @@ def create_or_get_uapi_format():
     return format_obj
 
 
-def _load_datasets(state: struct.State, dataset: Dataset, draft_version: Version):
+def _load_datasets(state: struct.State, dataset: Dataset, version: Version):
     ct = ContentType.objects.get_for_model(dataset)
     existing_metadata = Metadata.objects.filter(content_type=ct, object_id=dataset.pk)
     loaded_metadata = []
 
     _clean_errors(dataset.current_structure)
-
     for i, meta in enumerate(state.manifest.datasets.values(), 1):
         if metadata := Metadata.objects.filter(content_type=ct, name=meta.name).exclude(dataset=dataset).first():
             meta.errors.append(_(f'Duomenų išteklius "{meta.name}" jau egzistuoja.'))
@@ -127,14 +118,28 @@ def _load_datasets(state: struct.State, dataset: Dataset, draft_version: Version
             if md := dataset.metadata.filter(name=meta.name).first():
                 if not meta.id:
                     meta.id = md.uuid
+
+            if not version or version.status != VersionStatus.DRAFT:
+                max_version = (
+                        Version.objects
+                        .filter(dataset=dataset)
+                        .aggregate(max_version=Max('version'))['max_version'] or 0
+                )
+
+                version = Version.objects.create(
+                    dataset=dataset,
+                    status=VersionStatus.DRAFT,
+                    version=max_version + 1,
+                )
+
             dataset, metadata = _create_or_update_metadata(dataset, meta, dataset, i)
-            _load_prefixes(dataset, meta.prefixes, dataset, draft_version)
-            _load_enums(dataset, meta.enums, dataset, draft_version)
-            _load_params(dataset, meta.params, dataset, draft_version)
+            _load_prefixes(dataset, meta.prefixes, dataset, version)
+            _load_enums(dataset, meta.enums, dataset, version)
+            _load_params(dataset, meta.params, dataset, version)
             _load_comments(dataset, meta.comments, dataset)
-            _load_models(meta, dataset, draft_version)
-            _link_distributions(meta, dataset, draft_version)
-            _link_models(dataset, meta, draft_version)
+            _load_models(meta, dataset, version)
+            _link_distributions(meta, dataset, version)
+            _link_models(dataset, meta, version)
             loaded_metadata.append(metadata)
 
         if errors := meta.errors:
@@ -143,6 +148,8 @@ def _load_datasets(state: struct.State, dataset: Dataset, draft_version: Version
     removed_metadata = list(set(existing_metadata) - set(loaded_metadata))
     for meta in removed_metadata:
         meta.delete()
+
+    return version
 
 
 def _load_prefixes(

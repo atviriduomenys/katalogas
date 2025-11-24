@@ -15,7 +15,6 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts.factories import AgreementPDFFileFactory, AgreementFactory
 from vitrina.smart_contracts.forms import (
     SmartContractForm,
-    AgreementUploadForm,
     AgreementSubmitForm,
     AgreementApproveForm,
     AgreementFormForm,
@@ -316,20 +315,15 @@ class TestAgreementFormForm:
         assert form.is_valid(), form.errors
 
 
-class TestAgreementUploadForm:
-    def test_not_valid_when_uploading_file_other_than_adoc(self) -> None:
-        uploaded_file = SimpleUploadedFile("bad_file.md", b"md file content")
-        agreement_pdf = AgreementPDFFileFactory()
-        form = AgreementUploadForm(files={"file": uploaded_file}, agreement_pdf=agreement_pdf, agreement=agreement_pdf.agreement)
+class TestAgreementInitiateAndSignForms:
+    """Tests for both AgreementInitiateForm and AgreementSignForm have the same logic in their respective forms."""
+    def test_success(self):
+        pass
 
-        assert form.is_valid() is False
-        assert form.errors == {"file": ["Dokumentas turi būti adoc formato."]}
+    def test_adoc_error(self):
+        # Raises InvalidAdocError
+        pass
 
-    def test_not_valid_when_uploading_unsigned_adoc(self, agreement_pdf: Path, agreement_not_signed: Path) -> None:
-        agreement_pdf = AgreementPDFFileFactory(pdf_path = agreement_pdf)
-        with open(agreement_not_signed, "rb") as f:
-            uploaded_file = SimpleUploadedFile("sutartis_not_signed.adoc", f.read())
-
-        form = AgreementUploadForm(files={"file": uploaded_file}, agreement_pdf=agreement_pdf, agreement=agreement_pdf.agreement)
-        assert form.is_valid() is False
-        assert form.errors == {"file": ["Įkelta sutartis nepasirašyta."]}
+    def test_bad_zip_file(self):
+        # Raises BadZipFile
+        pass

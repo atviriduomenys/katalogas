@@ -21,7 +21,7 @@ from vitrina.smart_contracts.models import (
     SmartContractTemplate,
     Agreement,
 )
-from vitrina.smart_contracts.services import get_signers_from_adoc, validate_adoc, validate_signers
+from vitrina.smart_contracts.services import get_signers_from_adoc, validate_adoc, validate_signatures
 from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 
@@ -142,30 +142,20 @@ class AgreementFormForm(BaseAgreementForm):
         fields = tuple()
 
 
-class SmartContractFormSetHelper(FormHelper):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.form_tag = False
-
-
-class AgreementUploadForm(forms.ModelForm):
+class BaseAgreementInitiateSignForm(BaseAgreementForm):
     class Meta:
         model = AgreementFile
         fields = ("file",)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.agreement_pdf: AgreementFile = kwargs.pop("agreement_pdf")
-        self.agreement: Agreement = kwargs.pop("agreement")
         super().__init__(*args, **kwargs)
+
         self.fields["file"].validators = [
-            FileExtensionValidator(
-                allowed_extensions=["adoc"],
-                message=_("Dokumentas turi būti adoc formato."),
-            )
+            FileExtensionValidator(allowed_extensions=["adoc"], message=_("Dokumentas turi būti adoc formato."))
         ]
-        self.helper = FormHelper()
-        self.helper.form_id = "agreement-upload-form"
-        self.helper.add_input(Submit("submit", _("Įkelti dokumentą"), css_class="button is-primary"))
+
+        self.helper.form_id = "agreement-initiate-form"
 
     def clean_file(self) -> UploadedFile:
         file = self.cleaned_data["file"]
@@ -178,8 +168,22 @@ class AgreementUploadForm(forms.ModelForm):
         except zipfile.BadZipFile:
             raise ValidationError(_("Prisegtas failas nėra ZIP archyvas."))
 
-        signers_valid, error = validate_signers(signers_in_adoc, self.agreement)
-        if not signers_valid:
+        are_signatures_valid, error = validate_signatures(signers_in_adoc, self.agreement)
+        if not are_signatures_valid:
             raise ValidationError(error)
 
         return file
+
+
+class AgreementInitiateForm(BaseAgreementInitiateSignForm):
+    title = _("Įkelti pasirašytą dokumentą (Gavėjo)")
+
+
+class AgreementSignForm(BaseAgreementInitiateSignForm):
+    title = _("Įkelti pasirašytą dokumentą (Teikėjo)")
+
+
+class SmartContractFormSetHelper(FormHelper):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.form_tag = False

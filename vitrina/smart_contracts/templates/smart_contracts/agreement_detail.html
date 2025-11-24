@@ -17,22 +17,50 @@
     <br>
 
     <div class="buttons is-right">
-        {% if can_submit_agreements and agreement.status == "CREATED" %}
-            <a href="{% url "agreement-submit" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
-                {% translate "Pateikti pasiūlymą" %}
-            </a>
-        {% elif can_approve_agreements and agreement.status == "SUBMITTED" %}
-            <a href="{% url "agreement-approve" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
-                {% translate "Peržiūrėti pateiktą pasiūlymą" %}
-            </a>
+        {% if agreement.status == "CREATED" %}
+            {% if can_submit_agreements %}
+                <a href="{% url "agreement-submit" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                    {% translate "Pateikti pasiūlymą" %}
+                </a>
+            {% else %}
+                <button class="button is-primary m-t-xs m-b-lg" disabled>
+                    {% translate "Laukiama gavėjo veiksmų" %}
+                </button>
+            {% endif %}
+        {% elif agreement.status == "SUBMITTED" %}
+            {% if can_approve_agreements %}
+                <a href="{% url "agreement-approve" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                    {% translate "Peržiūrėti pateiktą pasiūlymą" %}
+                </a>
+            {% else %}
+                <button class="button is-primary m-t-xs m-b-lg" disabled>
+                    {% translate "Laukiama teikėjo patvirtinimo" %}
+                </button>
+            {% endif %}
         {% elif can_form_agreements and agreement.status == "APPROVED" %}
             <a href="{% url "agreement-form" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
                 {% translate "Formuoti sutartį" %}
             </a>
-        {% elif can_upload_agreement_file and agreement.status == "FORMED" or agreement.status == "INITIATED" %}
-            <a class="button is-primary m-t-xs m-b-lg" href="{% url "agreement-upload-signed-adoc" project.pk agreement.pk %}">
-                {% translate "Įkelti pasirašytą dokumentą" %}
-            </a>
+        {% elif agreement.status == "FORMED" %}
+            {% if can_initiate_agreements %}
+                <a href="{% url "agreement-initiate" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                    {% translate "Įkelti pasirašytą dokumentą (Gavėjo)" %}
+                </a>
+            {% else %}
+                <button class="button is-primary m-t-xs m-b-lg" disabled>
+                    {% translate "Laukiama kol gavėjas įkels pasirašytą dokumentą" %}
+                </button>
+            {% endif %}
+        {% elif agreement.status == "INITIATED" %}
+            {% if can_sign_agreements %}
+                <a href="{% url "agreement-sign" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                    {% translate "Įkelti pasirašytą dokumentą (Teikėjo)" %}
+                </a>
+            {% else %}
+                <button class="button is-primary m-t-xs m-b-lg" disabled>
+                    {% translate "Laukiama kol teikėjas įkels pasirašytą dokumentą" %}
+                </button>
+            {% endif %}
         {% endif %}
     </div>
 

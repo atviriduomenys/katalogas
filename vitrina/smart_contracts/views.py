@@ -6,6 +6,7 @@ from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.files.base import ContentFile
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import UploadedFile
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
 from django.db import transaction
@@ -27,10 +28,11 @@ from vitrina.smart_contracts import AgreementStatuses, AGREEMENT_STATUS_DESCRIPT
 from vitrina.smart_contracts.forms import (
     SmartContractForm,
     SmartContractFormSetHelper,
-    AgreementUploadForm,
     AgreementSubmitForm,
     AgreementApproveForm,
     AgreementFormForm,
+    AgreementInitiateForm,
+    AgreementSignForm,
 )
 from vitrina.smart_contracts.models import (
     Agreement,
@@ -49,6 +51,8 @@ from vitrina.smart_contracts.permissions import (
     can_submit_agreements,
     can_approve_agreements,
     can_form_agreements,
+    can_initiate_agreements,
+    can_sign_agreements,
 )
 from vitrina.projects.views import ProjectViewBaseMixin
 
@@ -165,6 +169,8 @@ class AgreementDetailView(
                 "can_submit_agreements": can_submit_agreements(self.request.user, self.agreement),
                 "can_approve_agreements": can_approve_agreements(self.request.user, self.agreement),
                 "can_form_agreements": can_form_agreements(self.request.user, self.agreement),
+                "can_initiate_agreements": can_initiate_agreements(self.request.user, self.agreement),
+                "can_sign_agreements": can_sign_agreements(self.request.user, self.agreement),
                 "can_upload_agreement_file": can_upload_agreement_file(self.request.user, self.agreement),
             }
         )
@@ -327,7 +333,7 @@ class BaseAgreementNegotiateView(
     def has_permission(self) -> None:
         raise NotImplementedError
 
-    def get_form_kwargs(self) -> Any:
+    def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
         kwargs["agreement"] = self.agreement
         return kwargs
@@ -444,53 +450,24 @@ class AgreementFormView(BaseAgreementNegotiateView):
         return HttpResponseRedirect(self.get_success_url())
 
 
-class AgreementUploadSignedFile(
-    LoginRequiredMixin,
-    BaseProjectMixin,
-    BaseAgreementMixin,
-    PermissionRequiredMixin,
-    FormView,
-):
-    form_class = AgreementUploadForm
-    template_name = "base_form.html"
+class BaseAgreementInitiateSignView(BaseAgreementNegotiateView):
+    expected_agreement_status = None
 
-    def setup(self, request, *args, **kwargs):
-        self.object = self.get_project(kwargs["pk"])
-        return super().setup(request, *args, **kwargs)
+    def get_form_kwargs(self) -> dict:
+        kwargs = super().get_form_kwargs()
+        kwargs["agreement_pdf"] = get_object_or_404(
+            AgreementFile, agreement=self.agreement, file__iendswith=AgreementFile.AllowedFileTypes.PDF
+        )
+        return kwargs
 
-    def has_permission(self) -> bool:
-        return can_upload_agreement_file(self.request.user, self.agreement)
-
-    def _check_for_errors(self) -> None | str:
-        accepted_statuses = (AgreementStatuses.FORMED, AgreementStatuses.INITIATED)
-        if self.agreement.status not in accepted_statuses:
-            return _(
-                "Sutarties dokumentas gali būti generuojamas sutarčiai su "
-                "būsenomis {accepted_statuses}. Dabartinė būsena: {current_status}"
-            ).format(
-                accepted_statuses=", ".join(accepted_statuses),
-                current_status=self.agreement.status,
-            )
-        if (
-            self.agreement.status == AgreementStatuses.FORMED
-            and self.request.user.viisp_organization != self.agreement.assignee
-        ):
-            return _("Sutartį pasirašyti duomenų teikėjo vardu galėsite tik po to kai ją pasirašys duomenų gavėjas.")
-        if (
-            self.agreement.status == AgreementStatuses.INITIATED
-            and self.request.user.viisp_organization != self.agreement.assigner
-        ):
-            return _("Gavėjo vardu sutartis jau pasirašyta. Laukiama sutarties pasirašymo iš teikėjo pusės.")
-
-        try:
-            self.agreement_pdf = AgreementFile.objects.get(
-                agreement=self.agreement,
-                file__iendswith=AgreementFile.AllowedFileTypes.PDF,
-            )
-        except AgreementFile.DoesNotExist:
-            return _("Nesukurtas PDF failas šiai sutarčiai.")
-        except AgreementFile.MultipleObjectsReturned:
-            return _("Rasti keli PDF failai. Susisiekite su administratoriumi.")
+    def _validate_agreement(self) -> str | None:
+        agreement_pdf_file_count = AgreementFile.objects.filter(
+            agreement=self.agreement, file__iendswith=AgreementFile.AllowedFileTypes.PDF
+        ).count()
+        if not agreement_pdf_file_count:
+            return _("PDF failas sutarčiai nėra sukurtas.")
+        if agreement_pdf_file_count > 1:
+            return _("Rasti keli PDF failai susieti su sutartimi. Susisiekite su administratoriumi.")
 
         return None
 
@@ -498,53 +475,75 @@ class AgreementUploadSignedFile(
         if not self.has_permission():
             return self.handle_no_permission()
 
-        if error_msg := self._check_for_errors():
-            messages.error(request, error_msg)
+        if error_message := self._validate_agreement():
+            messages.error(request, error_message)
             return HttpResponseRedirect(self.get_success_url())
-        return super(PermissionRequiredMixin, self).dispatch(request, *args, **kwargs)
 
-    def get_form_kwargs(self):
-        kwargs = super().get_form_kwargs()
-        kwargs["agreement_pdf"] = self.agreement_pdf
-        kwargs["agreement"] = self.agreement
-        return kwargs
+        return super().dispatch(request, *args, **kwargs)
 
-    def get_context_data(self, **kwargs: Any) -> dict:
-        context = super().get_context_data(**kwargs)
-        agreement_details_title = _("Sutartis: {organization}").format(organization=self.agreement.assigner)
-        page_title = (
-            _("Įkelti gavėjo pasirašytą dokumentą")
-            if self.agreement.status == AgreementStatuses.FORMED
-            else _("Įkelti teikėjo pasirašytą dokumentą")
-        )
-        context["current_title"] = page_title
-        context["tabs"] = "vitrina/projects/tabs.html"
-        context["parent_links"].update(
-            {
-                reverse("agreement-list", args=[self.object.pk]): _("Sutartys"),
-                reverse("agreement-detail", args=[self.object.pk, self.agreement.pk]): agreement_details_title,
-                None: page_title,
-            }
-        )
+    def _perform_action(self, form: ModelForm) -> None:
+        raise NotImplementedError
 
-        return context
+    @transaction.atomic
+    def form_valid(self, form: ModelForm) -> HttpResponseRedirect:
+        if not self.validate_status(self.expected_agreement_status):
+            return HttpResponseRedirect(self.get_success_url())
 
-    def get_success_url(self) -> str:
-        return reverse("agreement-detail", args=[self.object.pk, self.agreement.pk])
+        self._perform_action(form)
 
-    def form_valid(self, form: AgreementUploadForm) -> HttpResponse:
-        if self.agreement.status == AgreementStatuses.FORMED:
-            self.agreement.status = AgreementStatuses.INITIATED
-        else:
-            self.agreement.status = AgreementStatuses.SIGNED
-            self.agreement.is_agent_sync_enabled = True
+        return HttpResponseRedirect(self.get_success_url())
+
+
+class AgreementInitiateView(BaseAgreementInitiateSignView):
+    form_class = AgreementInitiateForm
+    title = _("Įkelti pasirašytą sutartį")
+    expected_agreement_status = AgreementStatuses.FORMED
+
+    def has_permission(self) -> bool:
+        return can_initiate_agreements(self.request.user, self.agreement)
+
+    def _validate_agreement(self) -> str | None:
+        if error := super()._validate_agreement():
+            return error
+
+        is_signer_assignee = self.request.user.viisp_organization == self.agreement.assignee
+        if self.agreement.status == AgreementStatuses.FORMED and not is_signer_assignee:
+            return _("Šią sutartį šiuo metu turi pasirašyti duomenų gavėjo atstovas")
+
+        return None
+
+    def _perform_action(self, form: ModelForm) -> None:
+        file: UploadedFile = form.cleaned_data["file"]
+
+        self.agreement.status = AgreementStatuses.INITIATED
         self.agreement.save()
-
-        AgreementFile.objects.create(
-            agreement=self.agreement,
-            file_name=form.cleaned_data["file"].name,
-            file=form.cleaned_data["file"],
-        )
+        AgreementFile.objects.create(agreement=self.agreement, file_name=file.name, file=file)
 
         messages.success(self.request, _("Sutarties dokumentas įkeltas sėkmingai"))
-        return HttpResponseRedirect(self.get_success_url())
+
+
+class AgreementSignView(BaseAgreementInitiateSignView):
+    form_class = AgreementSignForm
+    title = _("Įkelti pasirašytą sutartį")
+    expected_agreement_status = AgreementStatuses.INITIATED
+
+    def has_permission(self) -> bool:
+        return can_sign_agreements(self.request.user, self.agreement)
+
+    def _validate_agreement(self) -> str | None:
+        if error := super()._validate_agreement():
+            return error
+
+        is_signer_assigner = self.request.user.viisp_organization == self.agreement.assigner
+        if self.agreement.status == AgreementStatuses.INITIATED and not is_signer_assigner:
+            return _("Šią sutartį šiuo metu turi pasirašyti duomenų teikėjo atstovas.")
+
+    def _perform_action(self, form: ModelForm) -> None:
+        file: UploadedFile = form.cleaned_data["file"]
+
+        self.agreement.status = AgreementStatuses.SIGNED
+        self.agreement.is_agent_sync_enabled = True
+        self.agreement.save()
+        AgreementFile.objects.create(agreement=self.agreement, file_name=file.name, file=file)
+
+        messages.success(self.request, _("Sutarties dokumentas įkeltas sėkmingai"))

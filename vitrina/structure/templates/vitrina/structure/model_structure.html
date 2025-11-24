@@ -136,7 +136,7 @@
         </div>
         {% if can_manage_structure and model.name %}
         <div class="buttons is-right">
-            <a href="{% url 'model-update' dataset.pk model.name %}" class="button is-primary">
+            <a href="{% url 'model-update' dataset.pk version_id model.name %}" class="button is-primary">
                 {% translate "Redaguoti" %}
             </a>
         </div>
@@ -318,7 +318,7 @@
         </div>
         {% if can_manage_structure and model.name %}
         <div class="buttons is-right mt-5">
-            <a href="{% url 'property-create' dataset.pk model.name %}" class="button is-primary">
+            <a href="{% url 'property-create' dataset.pk version_id model.name %}" class="button is-primary">
                 {% translate "Naujas duomenų laukas" %}
             </a>
         </div>

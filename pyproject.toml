@@ -104,6 +104,7 @@ include = [
 exclude = [
     "**/migrations/*.py",
 ]
+ignore = ["E722"]
 line-length = 120
 indent-width = 4
 

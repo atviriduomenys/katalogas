@@ -39,28 +39,36 @@ from vitrina.structure.views import PropertyGraphView
 
 urlpatterns = [
     path(
-        "datasets/<int:pk>/models/",
+        "datasets/<int:pk>/version/<int:version_id>/models/",
         DatasetStructureView.as_view(),
         name="dataset-structure",
+    ),
+    path(
+        "datasets/<int:pk>/models/",
+        DatasetStructureView.as_view(),
+        name="dataset-structure-no-version",
     ),
     path(
         "datasets/<int:pk>/models/history/",
         DatasetStructureHistoryView.as_view(),
         name="dataset-structure-history",
     ),
-    path("datasets/<int:pk>/models/add/", ModelCreateView.as_view(), name="model-create"),
+    path("datasets/<int:pk>/version/<int:version_id>/models/add/", ModelCreateView.as_view(), name="model-create"),
+
+    path("datasets/<int:pk>/models/add/", ModelCreateView.as_view(), name="model-create-no-version"),
+
     path(
-        "datasets/<int:pk>/models/<str:model>/change/",
+        "datasets/<int:pk>/version/<int:version_id>/models/<str:model>/change/",
         ModelUpdateView.as_view(),
         name="model-update",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/add/",
+        "datasets/<int:pk>/version/<int:version_id>/models/<str:model>/add/",
         PropertyCreateView.as_view(),
         name="property-create",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/",
+        "datasets/<int:pk>/version/<int:version_id>/models/<str:model>/",
         ModelStructureView.as_view(),
         name="model-structure",
     ),
@@ -70,7 +78,7 @@ urlpatterns = [
         name="model-history",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/<str:prop>/",
+        "datasets/<int:pk>/version/<int:version_id>/models/<str:model>/<str:prop>/",
         PropertyStructureView.as_view(),
         name="property-structure",
     ),
@@ -90,7 +98,7 @@ urlpatterns = [
         name="property-history",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/<str:prop>/change/",
+        "datasets/<int:pk>/version/<int:version_id>/models/<str:model>/<str:prop>/change/",
         PropertyUpdateView.as_view(),
         name="property-update",
     ),
@@ -180,24 +188,24 @@ urlpatterns = [
         name="dataset-structure-export-openapi",
     ),
     path(
-        "datasets/<int:pk>/<str:model>/<str:prop>/enum/add/",
+        "datasets/<int:pk>/version/<int:version_id>/<str:model>/<str:prop>/enum/add/",
         EnumCreateView.as_view(),
         name="enum-create",
     ),
     path(
-        "datasets/<int:pk>/<str:model>/<str:prop>/enum/<int:enum_id>/change/",
+        "datasets/<int:pk>/version/<int:version_id>/<str:model>/<str:prop>/enum/<int:enum_id>/change/",
         EnumUpdateView.as_view(),
         name="enum-update",
     ),
     path(
-        "datasets/<int:pk>/<str:model>/<str:prop>/enum/<int:enum_id>/delete/",
+        "datasets/<int:pk>/version/<int:version_id>/<str:model>/<str:prop>/enum/<int:enum_id>/delete/",
         EnumDeleteView.as_view(),
         name="enum-delete",
     ),
     path("get_updated_summary/", get_updated_summary, name="get_updated_summary"),
     path("datasets/<int:pk>/version/", VersionListView.as_view(), name="version-list"),
     path(
-        "datasets/<int:pk>/version/add/",
+        "datasets/<int:pk>/version/<int:version_id>/add/",
         PublishVersionView.as_view(),
         name="version-create",
     ),

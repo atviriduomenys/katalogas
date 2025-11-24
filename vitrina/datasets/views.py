@@ -473,12 +473,11 @@ class DatasetDetailView(
         paginator = Paginator(related_datasets, 10)  # Show 10 relations per page
         page_number = self.request.GET.get("page")
         page_obj = paginator.get_page(page_number)
-        subclass_enum = DCATResourceSubclass(dataset.subclass)
-        if subclass_enum == DCATResourceSubclass.INFORMATION_SYSTEM:
+        subclass = dataset.subclass
+        if subclass.is_information_system:
             permissions = has_perm(self.request.user, Action.INFORMATION_SYSTEM_UPDATE, dataset)
         else:
             permissions = has_perm(self.request.user, Action.UPDATE, dataset)
-
         extra_context_data = {
             "tags": dataset.get_tag_object_list(),
             "subscription": [],

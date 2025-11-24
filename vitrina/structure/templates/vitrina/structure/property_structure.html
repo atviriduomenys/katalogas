@@ -193,15 +193,15 @@
         {% if metadata.type == 'string' or metadata.type == 'integer' %}
         <div>
             <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Reikšmių sąrašas" %}</h4>
-            {% if prop.enums.first %}
-                {% for enum_item in prop.enums.first.enumitem_set.all %}
+            {% if prop.filtered_enums %}
+                {% for enum in prop.filtered_enums %}
+                    {% for enum_item in enum.filtered_items %}
                     {% define enum_item.metadata.first as enum_meta %}
-                    {% if enum_meta.visibility != 0 or can_manage_structure %}
                     <div class="columns no-margin-bottom">
                         <div class="column is-6">
                             {% if enum_meta.visibility is not None %}
                                 {% if enum_meta.visibility == 0 %}
-                                    <span class="mr-1 tag is-light is-light is-rounded">
+                                    <span class="mr-1 tag is-light is-rounded">
                                         <span class="icon is-small has-tooltip-right has-text-grey"
                                               data-tooltip="{% translate 'Metaduomenys nepublikuojami' %}">
                                             <i class="fas fa-eye-slash"></i>
@@ -231,15 +231,15 @@
                                 {% endif %}
                             {% endif %}
                             {% if enum_meta.prepare %}
-                            <span class="pr-5 has-text-weight-semibold">{{ enum_meta.prepare }}</span>
+                                <span class="pr-5 has-text-weight-semibold">{{ enum_meta.prepare }}</span>
                             {% endif %}
                             {% if enum_meta.title %}
-                            <span class="has-text-weight-semibold">{{ enum_meta.title }}</span>
+                                <span class="has-text-weight-semibold">{{ enum_meta.title }}</span>
                             {% endif %}
-                             <div class="ml-4">
+                            <div class="ml-4">
                                 {% if enum_meta.source %}
-                                <span>source: </span>
-                                <span class="has-text-weight-semibold">{{ enum_meta.source }}</span>
+                                    <span>source: </span>
+                                    <span class="has-text-weight-semibold">{{ enum_meta.source }}</span>
                                 {% endif %}
                             </div>
                             {% if enum_meta.description %}
@@ -247,7 +247,7 @@
                             {% endif %}
                         </div>
                         <div class="column is-2">
-                            {% if enum_meta.status.codename is not None %}
+                            {% if enum_meta.status.codename %}
                                 {% if enum_meta.status.codename == "develop" %}
                                     <span class="tag has-tooltip"
                                           data-tooltip="{% translate 'Būsena' %}" style="background-color: #eaedfa; color: #304cd3;">
@@ -259,10 +259,10 @@
                                         {{ enum_meta.status.name }}
                                     </span>
                                 {% elif enum_meta.status.codename == "discont" %}
-                                   <span class="tag has-tooltip"
-                                         data-tooltip="{% translate 'Būsena' %}" style="background-color: #fff5e5; color: #ffa525;">
+                                    <span class="tag has-tooltip"
+                                          data-tooltip="{% translate 'Būsena' %}" style="background-color: #fff5e5; color: #ffa525;">
                                         {{ enum_meta.status.name }}
-                                   </span>
+                                    </span>
                                 {% elif enum_meta.status.codename == "deprecated" %}
                                     <span class="tag has-tooltip is-warning is-light"
                                           data-tooltip="{% translate 'Būsena' %}">
@@ -278,21 +278,19 @@
                         </div>
                         <div class="column is-1">
                             {% if enum_meta.eli %}
-                               <a href="{{ enum_meta.eli }}"
+                                <a href="{{ enum_meta.eli }}"
                                    class="tag is-white has-tooltip"
                                    data-tooltip="{% translate 'ELI nuoroda' %}"
                                    target="_blank" rel="noopener noreferrer">
-                                  <span class="ml-3 icon is-small has-text-grey">
-                                    <i class="fas fa-link mr-1"></i>
-                                    <span>ELI</span>
-                                  </span>
-                               </a>
+                                    <span class="ml-3 icon is-small has-text-grey">
+                                        <i class="fas fa-link mr-1"></i>
+                                        <span>ELI</span>
+                                    </span>
+                                </a>
                             {% endif %}
                         </div>
                         <div class="column is-1">
-
                         {% if enum_meta.metadata_version %}
-
                             {% if enum_meta.metadata_version.status == "DRAFT" %}
                                 <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
                             {% elif enum_meta.draft and enum_meta.metadata_version.status != "DRAFT"%}
@@ -300,9 +298,7 @@
                             {% elif enum_meta.metadata_version.external_version and not enum_meta.draft %}
                                 <span class="tag is-success is-light">{{ enum_meta.metadata_version.external_version }}</span>
                             {% endif %}
-
                         {% endif %}
-
                         </div>
                         <div class="column is-2">
                             {% if enum_meta.prepare or enum_meta.title %}
@@ -321,8 +317,8 @@
                             {% endif %}
                         </div>
                     </div>
-                {% endif %}
                 {% endfor %}
+            {% endfor %}
             {% else %}
                 <p>
                     {% translate "Galimos reikšmės neapibrėžtos." %}

@@ -21,6 +21,13 @@ from vitrina.comments.models import Comment
 from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.helpers import none_to_string, get_encoding
+from vitrina.orgs.services import (
+    determine_user_role,
+    MODEL_VISIBILITY_ACL,
+    Action,
+    PROPERTY_VISIBILITY_ACL,
+    ENUM_VISIBILITY_ACL,
+)
 from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import spyna
@@ -1331,3 +1338,23 @@ def get_srid(type_args):
 def transform_coordinates(point_x, point_y, source_srid, target_srid):
     transformer = Transformer.from_crs(f"EPSG:{source_srid}", f"EPSG:{target_srid}")
     return transformer.transform(point_x, point_y)
+
+
+def get_allowed_visibilities(
+    user: User, dataset: Dataset, model_action: Action, model_class: type[Model | Property | Enum] = Model
+) -> set[int]:
+    user_role = determine_user_role(user, dataset)
+    allowed: set[int] = set()
+
+    if model_class == Model:
+        acl = MODEL_VISIBILITY_ACL
+    elif model_class == Property:
+        acl = PROPERTY_VISIBILITY_ACL
+    else:
+        acl = ENUM_VISIBILITY_ACL
+
+    for (cls, visibility, action), roles in acl.items():
+        if cls == model_class and user_role in roles and action == model_action:
+            allowed.add(visibility)
+
+    return allowed

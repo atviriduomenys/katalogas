@@ -164,6 +164,15 @@ class User(AbstractUser):
             information_system_representative=True,
         ).exists()
 
+    def is_open_data_representative_for(self, organization: Organization) -> bool:
+        org_type = ContentType.objects.get_for_model(Organization)
+        return Representative.objects.filter(
+            user=self,
+            content_type=org_type,
+            object_id=organization.pk,
+            open_data_representative=True,
+        ).exists()
+
 
 class UserTablePreferences(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

@@ -7,7 +7,7 @@ from typing import Type, cast, Union
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.hashers import PBKDF2PasswordHasher
 from django.contrib.contenttypes.models import ContentType
-from django.db.models import Model, Q
+from django.db.models import Q
 
 from vitrina import settings
 from vitrina.api_example.models import ApiExample
@@ -25,6 +25,7 @@ from vitrina.projects.models import Project
 from vitrina.requests.models import Request, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
 from vitrina.smart_contracts.models import Agreement
+from vitrina.structure.models import Metadata, Model, Property, Enum as StructureEnum
 from vitrina.tasks.models import Task
 from vitrina.uapi.models import Agent
 from vitrina.users.models import User
@@ -56,6 +57,7 @@ class Role(Enum):
     AUTHENTICATED = "all"  # All authenticated users
     VISITOR = "visitor"  # All unauthenticated users
     INFORMATION_SYSTEM_REPRESENTATIVE = "information_system_representative"
+    OPEN_DATA_REPRESENTATIVE = "open_data_representative"
 
 
 WRITE_ACTIONS: set[Action] = {
@@ -68,6 +70,7 @@ WRITE_ACTIONS: set[Action] = {
     Action.MANAGE_KEYS,
     Action.MANAGE_PROJECT_KEYS,
     Action.ASSIGN,
+    Action.INFORMATION_SYSTEM_UPDATE,
 }
 DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
@@ -82,7 +85,6 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.PLAN,
     Action.REQUEST_UPDATE,
-    Action.INFORMATION_SYSTEM_UPDATE,
 }
 
 DATASET_IS_PUBLIC = True
@@ -110,6 +112,14 @@ def inherit_acl(
             new_rule[model_class_position_in_rule] = new_model_class
         new_rule = cast(ACL_RULE, tuple(new_rule))
         new_acl[new_rule] = new_roles or roles
+    return new_acl
+
+
+def inherit_structure_acl(base_acl, new_model_class):
+    new_acl = {}
+    for (cls, visibility, action), roles in base_acl.items():
+        new_cls = new_model_class if cls is Model else cls
+        new_acl[(new_cls, visibility, action)] = roles.copy()
     return new_acl
 
 
@@ -164,6 +174,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.AUTHENTICATED,
         Role.VISITOR,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
@@ -173,6 +184,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.AUTHENTICATED,
         Role.VISITOR,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,
@@ -183,19 +195,75 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
     },
 }
 
-_dataset_create_acl: ACL = {(Dataset, Action.CREATE): (Role.COORDINATOR, Role.MANAGER, Role.GLOBAL_MANAGER)}
-_information_system_update_acl: ACL = {
-    (Dataset, Action.INFORMATION_SYSTEM_UPDATE): (
+_dataset_create_acl: ACL = {
+    (Dataset, Action.CREATE): (
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.GLOBAL_MANAGER,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
+    )
+}
+_information_system_update_acl: ACL = {
+    (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
-    )
+        Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.INFORMATION_SYSTEM_UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Dataset, DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.INFORMATION_SYSTEM_UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.INFORMATION_SYSTEM_UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.INFORMATION_SYSTEM_UPDATE): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
 }
 _dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.COMMENT)
 _dataset_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.DELETE)
 _dataset_history_view_acl: ACL = inherit_acl(_dataset_view_acl, new_action=Action.HISTORY_VIEW)
-_dataset_structure_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.STRUCTURE) | inherit_acl(
-    _dataset_view_acl, new_model_class=DatasetStructure, new_action=Action.STRUCTURE
+_dataset_structure_acl: ACL = inherit_acl(
+    _dataset_update_acl, new_action=Action.STRUCTURE, new_roles={Role.INFORMATION_SYSTEM_REPRESENTATIVE}
+) | inherit_acl(
+    _dataset_view_acl,
+    new_model_class=DatasetStructure,
+    new_action=Action.STRUCTURE,
+    new_roles={Role.INFORMATION_SYSTEM_REPRESENTATIVE},
 )
 
 _dataset_distribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetDistribution)
@@ -221,6 +289,73 @@ _dataset_request_history_view_acl: ACL = inherit_acl(
     _dataset_history_view_acl, new_model_class=Request, new_roles={Role.GLOBAL_MANAGER}
 )
 _dataset_structure_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetStructure)
+
+MODEL_VISIBILITY_ACL = {
+    (Model, Metadata.VISIBILITY_PUBLIC, Action.VIEW): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.AUTHENTICATED,
+        Role.VISITOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
+    },
+    (Model, Metadata.PACKAGE, Action.VIEW): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.AUTHENTICATED,
+        Role.VISITOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
+    },
+    (Model, Metadata.PROTECTED, Action.VIEW): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Model, Metadata.PRIVATE, Action.VIEW): {
+        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Model, Metadata.VISIBILITY_PUBLIC, Action.STRUCTURE): {
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Model, Metadata.PACKAGE, Action.STRUCTURE): {
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Model, Metadata.PROTECTED, Action.STRUCTURE): {
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+    (Model, Metadata.PRIVATE, Action.STRUCTURE): {
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.COORDINATOR,
+        Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    },
+}
+PROPERTY_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, Property)
+ENUM_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, StructureEnum)
 
 
 acl: ACL = (
@@ -326,10 +461,12 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
     if user.is_staff:
         return Role.GLOBAL_MANAGER
     if resource.get_resource_managers_queryset().filter(user=user).exists():
-        if resource.subclass.is_information_system:
-            if user.is_information_system_representative_for(resource.organization):
-                return Role.INFORMATION_SYSTEM_REPRESENTATIVE
-            return Role.AUTHENTICATED
+        if resource.organization.kind == Organization.GOV:
+            if resource.subclass.is_information_system:
+                if user.is_information_system_representative_for(resource.organization):
+                    return Role.INFORMATION_SYSTEM_REPRESENTATIVE
+            if user.is_open_data_representative_for(resource.organization):
+                return Role.OPEN_DATA_REPRESENTATIVE
         return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
     if user.is_gov_organization_manager:
         return Role.MANAGER

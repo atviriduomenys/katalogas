@@ -1470,7 +1470,7 @@ class DatasetStructureImportView(
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
         set_comment(_(f'Added Structure file "{self.object.file}".'))
-        create_structure_objects(self.object)
+        self.version = create_structure_objects(self.object, self.version)
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
@@ -1482,6 +1482,14 @@ class DatasetStructureImportView(
 
     def get_history_object(self):
         return self.dataset
+
+    def get_success_url(self):
+        if self.version:
+            return reverse(
+                "dataset-structure",
+                kwargs={"pk": self.dataset.pk, "version_id": self.version.pk},
+            )
+        return reverse("dataset-structure-no-version", kwargs={"pk": self.dataset.pk})
 
 
 class DatasetMembersView(

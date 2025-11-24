@@ -1976,7 +1976,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                 if model.base:
                     model.base.delete()
 
-                base = Base.objects.create(model=base_model)
+                base = Base.objects.create(model=base_model, version_id=self.version_id)
                 model.base = base
                 model.save()
 
@@ -1990,6 +1990,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                     level=base_level,
                     level_given=form.cleaned_data.get("base_level"),
                     prepare_ast="",
+                    metadata_version_id=self.version_id,
                 )
 
             base_ref = form.cleaned_data.get("base_ref")
@@ -2337,16 +2338,17 @@ class CreateBasePropertyView(PermissionRequiredMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version_id = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.dataset).pk
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
         return has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
 
     def get(self, request, *args, **kwargs):
-        model = get_object_or_404(Model, pk=kwargs.get("model_id"))
+        model = get_object_or_404(Model, pk=kwargs.get("model_id"), version_id=self.version_id)
         base_prop = get_object_or_404(Property, pk=kwargs.get("prop_id"))
 
-        prop = Property.objects.create(model=model)
+        prop = Property.objects.create(model=model, version_id=self.version_id)
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
             dataset=self.dataset,
@@ -2356,6 +2358,7 @@ class CreateBasePropertyView(PermissionRequiredMixin, View):
             type="inherit",
             name=base_prop.name,
             prepare_ast="",
+            metadata_version_id=self.version_id,
         )
 
         model.update_level()
@@ -2374,14 +2377,15 @@ class DeleteBasePropertyView(PermissionRequiredMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version_id = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.dataset).pk
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
         return has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
 
     def get(self, request, *args, **kwargs):
-        prop = get_object_or_404(Property, pk=kwargs.get("prop_id"))
-        model = get_object_or_404(Model, pk=kwargs.get("model_id"))
+        prop = get_object_or_404(Property, pk=kwargs.get("prop_id"), version_id=self.version_id)
+        model = get_object_or_404(Model, pk=kwargs.get("model_id"), version_id=self.version_id)
         prop_name = prop.name
         prop.delete()
         model.update_level()

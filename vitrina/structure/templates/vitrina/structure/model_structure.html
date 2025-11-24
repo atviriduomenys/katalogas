@@ -432,15 +432,15 @@
                                     {% if can_manage_structure %}
                                         <span class="mr-1 ml-3 no-margin-bottom is-pulled-right">
                                         {% if prop.model != model %}
-                                            <a href="{% url 'base-property-create' dataset.pk model.pk prop.pk %}" class="button is-primary is-small">
+                                            <a href="{% url 'base-property-create' dataset.pk version_id model.pk prop.pk %}" class="button is-primary is-small">
                                                 {% translate "Pridėti" %}
                                             </a>
                                         {% else %}
-                                            <a href="{% url 'property-update' dataset.pk model.name prop.name %}" class="button is-primary is-small">
+                                            <a href="{% url 'property-update' dataset.pk version_id model.name prop.name %}" class="button is-primary is-small">
                                                 {% translate "Keisti" %}
                                             </a>
                                             <a
-                                                href="{% url 'base-property-delete' dataset.pk model.pk prop.pk %}"
+                                                href="{% url 'base-property-delete' dataset.pk version_id model.pk prop.pk %}"
                                                 class="button is-link is-small"
                                                 onclick="return confirm({% translate 'Ar tikrai norite ištrinti?' %})"
                                             >

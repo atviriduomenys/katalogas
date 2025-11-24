@@ -153,12 +153,12 @@ urlpatterns = [
         name="param-delete", # no way to navigate to
     ),
     path(
-        "datasets/<int:pk>/<int:model_id>/add_prop/<int:prop_id>/",
+        "datasets/<int:pk>/version/<int:version_id>/<int:model_id>/add_prop/<int:prop_id>/",
         CreateBasePropertyView.as_view(),
         name="base-property-create",
     ),
     path(
-        "datasets/<int:pk>/<int:model_id>/delete_prop/<int:prop_id>/",
+        "datasets/<int:pk>/version/<int:version_id>/<int:model_id>/delete_prop/<int:prop_id>/",
         DeleteBasePropertyView.as_view(),
         name="base-property-delete",
     ),

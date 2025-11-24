@@ -188,24 +188,24 @@ class DatasetStructureView(
 
         version_id = kwargs.get("version_id")
         if version_id is not None:
-            self.version_id = get_object_or_404(
+            self.version = get_object_or_404(
                 _Version,
                 pk=version_id,
                 dataset=self.object,
-            ).id
+            )
         else:
-            self.version_id = None
+            self.version = None
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         self.models = Model.objects.filter(dataset=self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version=self.version).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(
                     dataset=self.object,
                     access__gte=Metadata.PUBLIC,
-                    version_id=self.version_id,
+                    version=self.version,
                 )
                 .exclude(metadata__visibility=Metadata.PRIVATE)
                 .order_by("metadata__name")
@@ -220,7 +220,7 @@ class DatasetStructureView(
         context = super().get_context_data(**kwargs)
         dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         structure = dataset.current_structure
-        context["selected_version"] = self.version_id
+        context["selected_version"] = self.version
         context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
         context["errors"] = []
         context["manifest"] = None
@@ -238,12 +238,12 @@ class DatasetStructureView(
         return context
 
     def get_structure_url(self):
-        if self.version_id:
+        if self.version:
             return reverse(
                 "dataset-structure",
                 kwargs={
                     "pk": self.object.pk,
-                    "version_id": self.version_id
+                    "version_id": self.version.pk
                 },
             )
         else:

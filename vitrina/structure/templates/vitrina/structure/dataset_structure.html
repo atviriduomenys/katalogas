@@ -34,7 +34,7 @@
                 </a>
             {% endif %}
             {% if selected_version %}
-                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk selected_version %}">
+                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk selected_version.pk %}">
                     {% translate "Importuoti" %}
                 </a>
             {% else %}
@@ -43,7 +43,7 @@
                 </a>
             {% endif %}
             {% if selected_version %}
-                <a class="button is-primary mb-5 ml-2" href="{% url 'model-create' dataset.pk selected_version %}">
+                <a class="button is-primary mb-5 ml-2" href="{% url 'model-create' dataset.pk selected_version.pk %}">
                     {% translate "Naujas modelis" %}
                 </a>
             {% else %}
@@ -52,35 +52,36 @@
                 </a>
             {% endif %}
 
-            <div class="dropdown is-right mb-5 ml-2 {% if versions %}is-hoverable{% endif %}">
+            <div class="dropdown is-hoverable">
                 <div class="dropdown-trigger">
-                    <button class="button is-primary" aria-haspopup="true" aria-controls="dropdown-menu">
-                        {% if selected_version %}
-                            {% translate "Versija:" %} {{ selected_version.version }}
-                        {% else %}
-                            {% translate "Pasirinkti versiją" %}
-                        {% endif %}
+                    <button class="button is-primary mb-5 ml-2" aria-haspopup="true" aria-controls="dropdown-menu">
+                        <span>
+                            {% if not selected_version %}
+                                {% translate "Pasirinkite versiją" %}
+                            {% else %}
+                                {% translate "Versija" %}: {{ selected_version.version }}
+                            {% endif %}
+                        </span>
                         <span class="icon is-small">
                             <i class="fas fa-angle-down" aria-hidden="true"></i>
                         </span>
                     </button>
                 </div>
-                {% if versions %}
+
                 <div class="dropdown-menu" id="dropdown-menu" role="menu">
                     <div class="dropdown-content">
                         {% for version in versions %}
-                            <a href="{% url 'dataset-structure' dataset.pk version.id %}" class="dropdown-item">
+                            <a href="{% url 'dataset-structure' dataset.pk version.pk %}" class="dropdown-item">
                                 {{ version.version }}
                             </a>
                         {% endfor %}
                     </div>
                 </div>
-                {% endif %}
             </div>
 
             {% if selected_version %}
                 <a class="button is-primary mb-5 ml-2"
-                   href="{% url 'version-create' dataset.pk selected_version %}">
+                   href="{% url 'version-create' dataset.pk selected_version.pk %}">
                     {% translate "Publikuoti versiją" %}
                 </a>
             {% else %}

@@ -43,7 +43,7 @@ from vitrina.tasks.models import Task
 from vitrina.users.models import User
 
 
-def create_structure_objects(structure: DatasetStructure, version: Version) -> Version:
+def create_structure_objects(structure: DatasetStructure, version: Version = None) -> Version:
     sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
     ct = ContentType.objects.get_for_model(DatasetStructure)
     if structure.file:

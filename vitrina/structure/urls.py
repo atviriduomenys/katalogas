@@ -73,7 +73,7 @@ urlpatterns = [
         name="model-structure",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/history/",
+        "datasets/<int:pk>/version/<int:version_id>/models/<str:model>/history/",
         ModelHistoryView.as_view(),
         name="model-history",
     ),
@@ -93,7 +93,7 @@ urlpatterns = [
         name="property-graph",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/<str:prop>/history/",
+        "datasets/<int:pk>/version/<int:version_id>/models/<str:model>/<str:prop>/history/",
         PropertyHistoryView.as_view(),
         name="property-history",
     ),

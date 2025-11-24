@@ -396,6 +396,7 @@ class ModelStructureView(
                 self.history_url_name,
                 kwargs={
                     "pk": self.object.pk,
+                    "version_id": self.version_id,
                     "model": self.model.name,
                 },
             )
@@ -653,6 +654,7 @@ class PropertyStructureView(
                     "pk": self.object.pk,
                     "model": self.model.name,
                     "prop": self.property.name,
+                    "version_id": self.version_id,
                 },
             )
         return None
@@ -2582,12 +2584,12 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
-            reverse("dataset-structure", args=[self.object.pk]): _("Struktūra"),
+            reverse("dataset-structure-no-version", args=[self.object.pk]): _("Struktūra"),
         }
         return context
 
     def get_structure_url(self):
-        return reverse("dataset-structure", kwargs={"pk": self.kwargs.get("pk")})
+        return reverse("dataset-structure-no-version", kwargs={"pk": self.kwargs.get("pk")})
 
     def get_data_url(self):
         if self.models and self.models[0].name:
@@ -2639,6 +2641,7 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version_id = get_object_or_404(_Version, pk=kwargs.get("version_id")).pk
         model_name = kwargs.get("model")
         self.model_obj = (
             Model.objects.annotate(
@@ -2650,7 +2653,7 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
                     output_field=TextField(),
                 )
             )
-            .filter(model_name=model_name, dataset=self.object)
+            .filter(model_name=model_name, dataset=self.object, version_id=self.version_id)
             .first()
         )
         if not self.model_obj:
@@ -2658,12 +2661,12 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
             self.props = self.model_obj.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
                 .order_by("metadata__name")
             )
             self.props = self.model_obj.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
@@ -2682,14 +2685,14 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
-            reverse("dataset-structure", args=[self.object.pk]): _("Struktūra"),
+            reverse("dataset-structure", args=[self.object.pk, self.version_id]): _("Struktūra"),
         }
         if self.model_obj.name:
             context["parent_links"].update(
                 {
                     reverse(
                         "model-structure",
-                        args=[self.kwargs.get("pk"), self.model_obj.name],
+                        args=[self.kwargs.get("pk"), self.version_id, self.model_obj.name],
                     ): self.model_obj.title or self.model_obj.name
                 }
             )
@@ -2699,7 +2702,7 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         if self.model_obj.name:
             return reverse(
                 "model-structure",
-                kwargs={"pk": self.kwargs.get("pk"), "model": self.model_obj.name},
+                kwargs={"pk": self.kwargs.get("pk"), "version_id":self.version_id, "model": self.model_obj.name},
             )
         return None
 
@@ -2745,6 +2748,7 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version_id = get_object_or_404(_Version, pk=kwargs.get("version_id")).pk
         model_name = kwargs.get("model")
         self.model_obj = (
             Model.objects.annotate(
@@ -2756,22 +2760,22 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
                     output_field=TextField(),
                 )
             )
-            .filter(model_name=model_name, dataset=self.object)
+            .filter(model_name=model_name, dataset=self.object, version_id=self.version_id)
             .first()
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
+        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id)
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
             self.props = self.model_obj.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
                 .order_by("metadata__name")
             )
             self.props = self.model_obj.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
@@ -2790,19 +2794,20 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
-            reverse("dataset-structure", args=[self.object.pk]): _("Struktūra"),
+            reverse("dataset-structure", args=[self.object.pk, self.version_id]): _("Struktūra"),
         }
         if self.model_obj.name and self.property.name:
             context["parent_links"].update(
                 {
                     reverse(
                         "model-structure",
-                        args=[self.kwargs.get("pk"), self.model_obj.name],
+                        args=[self.kwargs.get("pk"), self.version_id, self.model_obj.name],
                     ): self.model_obj.title or self.model_obj.name,
                     reverse(
                         "property-structure",
                         kwargs={
                             "pk": self.kwargs.get("pk"),
+                            "version_id": self.version_id,
                             "model": self.model_obj.name,
                             "prop": self.property.name,
                         },
@@ -2817,6 +2822,7 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
                 "property-structure",
                 kwargs={
                     "pk": self.kwargs.get("pk"),
+                    "version_id": self.version_id,
                     "model": self.model_obj.name,
                     "prop": self.property.name,
                 },

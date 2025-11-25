@@ -1,6 +1,7 @@
 import logging
 import secrets
 
+import reversion
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -622,12 +623,22 @@ class RemoveDatasetBaseView(LoginRequiredMixin, PermissionRequiredMixin, DeleteV
                 self.request, _("Negalima pašalinti išteklių iš panaudojimo atvejo, kuris turi sugeneruotų sutarčių.")
             )
         else:
-            self.project.datasets.remove(self.kwargs.get("dataset_id"))
+            self.project.datasets.remove(self.dataset)
+            reversion.set_comment(
+                _("Išteklius '{dataset}' pašalintas iš panaudojimo atvejo").format(
+                    dataset=self.dataset,
+                    project=self.project,
+                )
+            )
         return HttpResponseRedirect(self.get_success_url())
 
 
 class RemoveDatasetView(ProjectViewBaseMixin, RemoveDatasetBaseView):
     model = Project
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs.get("dataset_id"))
+        return super().dispatch(request, *args, **kwargs)
 
     def get_success_url(self):
         return reverse("project-datasets", kwargs={"pk": self.project.pk})

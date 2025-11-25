@@ -598,9 +598,7 @@ def get_coordinators_count(model: Type[Model], object_id: int) -> int:
 
 def can_manage_information_system(object: Dataset, user: User) -> bool:
     subclass = object.subclass
-    if subclass.is_information_system and user.is_information_system_representative_for(object.organization):
-        return True
-    return False
+    return subclass.is_information_system and user.is_information_system_representative_for(object.organization)
 
 
 def hash_api_key(api_key: str) -> str:

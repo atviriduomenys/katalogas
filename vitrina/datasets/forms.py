@@ -86,7 +86,9 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
         user = request.user
 
         if self.organization.kind == Organization.GOV and user.is_open_data_representative_for(self.organization):
-            self.fields["subclass"].queryset = DCATResourceSubclass.objects.exclude(name="information_system")
+            self.fields["subclass"].queryset = DCATResourceSubclass.objects.exclude(
+                name=DCATResourceSubclass.INFORMATION_SYSTEM
+            )
 
     def clean_subclass(self):
         subclass = self.cleaned_data.get("subclass")

@@ -3803,7 +3803,7 @@ class DatasetChildResourceListView(
         if subclass and subclass.is_information_system:
             can_create_dataset = has_perm(
                 self.request.user,
-                Action.INFORMATION_SYSTEM_UPDATE,
+                Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
                 Dataset,
                 dataset.organization,
             )

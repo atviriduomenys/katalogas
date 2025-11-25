@@ -37,6 +37,7 @@ class Action(Enum):
     DELETE = "delete"
     REQUEST_UPDATE = "request_update"
     INFORMATION_SYSTEM_UPDATE = "information_system_update"
+    INFORMATION_SYSTEM_REPRESENTATIVE_CREATE = "information_system_representative_create"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
@@ -71,6 +72,7 @@ WRITE_ACTIONS: set[Action] = {
     Action.MANAGE_PROJECT_KEYS,
     Action.ASSIGN,
     Action.INFORMATION_SYSTEM_UPDATE,
+    Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
 }
 DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
@@ -85,6 +87,7 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.PLAN,
     Action.REQUEST_UPDATE,
+    Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
 }
 
 DATASET_IS_PUBLIC = True
@@ -198,6 +201,15 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
 _dataset_create_acl: ACL = {
     (Dataset, Action.CREATE): (Role.COORDINATOR, Role.RESOURCE_MANAGER, Role.GLOBAL_MANAGER, Role.MANAGER)
 }
+_dataset_information_system_representative_create_acl: ACL = {
+    (Dataset, Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE): (
+        Role.COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+    )
+}
 _information_system_update_acl: ACL = {
     (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
@@ -233,16 +245,19 @@ _information_system_update_acl: ACL = {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
 }
 _dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.COMMENT)
@@ -339,6 +354,7 @@ ENUM_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, StructureEnum)
 acl: ACL = (
     _dataset_view_acl
     | _dataset_create_acl
+    | _dataset_information_system_representative_create_acl
     | _information_system_update_acl
     | _dataset_update_acl
     | _dataset_comment_acl
@@ -568,11 +584,21 @@ def has_perm(
                     )
         if where:
             where = functools.reduce(operator.or_, where)
-            if Representative.objects.filter(where, user=user).exists():
+            if Representative.objects.filter(
+                where, user=user, information_system_representative=False, open_data_representative=False
+            ).exists():
                 return True
 
             user_org = getattr(user, "organization", None)
-            if user_org and Representative.objects.filter(where, organization=user_org).exists():
+            if (
+                user_org
+                and Representative.objects.filter(
+                    where,
+                    organization=user_org,
+                    information_system_representative=False,
+                    open_data_representative=False,
+                ).exists()
+            ):
                 return True
         return False
 

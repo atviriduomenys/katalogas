@@ -1353,6 +1353,15 @@ def get_allowed_visibilities(
     else:
         acl = ENUM_VISIBILITY_ACL
 
+    if (
+        dataset.subclass
+        and dataset.subclass.is_information_system
+        and user.is_information_system_representative_for(dataset.organization)
+    ):
+        for (cls, visibility, action), roles in acl.items():
+            allowed.add(visibility)
+        return allowed
+
     for (cls, visibility, action), roles in acl.items():
         if cls == model_class and user_role in roles and action == model_action:
             allowed.add(visibility)

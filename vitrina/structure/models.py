@@ -368,25 +368,25 @@ class Property(models.Model):
             )
         return None
 
-    @builtins.property
+    @property
     def name(self):
         if metadata := self.metadata.first():
             return metadata.name
         return ""
 
-    @builtins.property
+    @property
     def title(self):
         if metadata := self.metadata.first():
             return metadata.title
         return ""
 
-    @builtins.property
+    @property
     def description(self):
         if metadata := self.metadata.first():
             return metadata.description
         return ""
 
-    @builtins.property
+    @property
     def visibility(self) -> int | None:
         if metadata := self.metadata.first():
             return metadata.visibility

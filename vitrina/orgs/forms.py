@@ -305,10 +305,6 @@ class RepresentativeUpdateForm(ModelForm):
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     regenerate_api_key = BooleanField(label=_("Pergeneruoti raktą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False)
-    information_system_representative = BooleanField(
-        label=_("Informacinės sistemos tvarkytojas"), required=False, initial=False
-    )
-    open_data_representative = BooleanField(label=_("Atvirų duomenų tvarkytojas"), required=False, initial=False)
     can_make_agreements = BooleanField(
         label=_("Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"), disabled=True, required=False, initial=False
     )
@@ -409,10 +405,6 @@ class RepresentativeCreateForm(ModelForm):
     )
     has_api_access = BooleanField(label=_("Suteikti API prieigą"), required=False)
     subscribe = BooleanField(label=_("Prenumeruoti pranešimus"), required=False, disabled=True, initial=True)
-    information_system_representative = BooleanField(
-        label=_("Informacinės sistemos tvarkytojas"), required=False, initial=False
-    )
-    open_data_representative = BooleanField(label=_("Atvirų duomenų tvarkytojas"), required=False, initial=False)
     can_make_agreements = BooleanField(
         label=_("Leidžiama pasirašyti duomenų teikimo ir gavimo sutartis"), disabled=True, required=False, initial=False
     )

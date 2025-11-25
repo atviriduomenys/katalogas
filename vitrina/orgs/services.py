@@ -115,7 +115,7 @@ def inherit_acl(
     return new_acl
 
 
-def inherit_structure_acl(base_acl, new_model_class):
+def inherit_structure_acl(base_acl: ACL, new_model_class: type[Model]) -> ACL:
     new_acl = {}
     for (cls, visibility, action), roles in base_acl.items():
         new_cls = new_model_class if cls is Model else cls
@@ -588,8 +588,11 @@ def get_coordinators_count(model: Type[Model], object_id: int) -> int:
 
 
 def can_manage_information_system(object: Dataset, user: User) -> bool:
-    subclass = object.subclass
-    return subclass.is_information_system and user.is_information_system_representative_for(object.organization)
+    return (
+        object.subclass is not None
+        and object.subclass.is_information_system
+        and user.is_information_system_representative_for(object.organization)
+    )
 
 
 def hash_api_key(api_key: str) -> str:

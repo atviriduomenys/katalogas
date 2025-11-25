@@ -13,11 +13,11 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='representative',
             name='information_system_representative',
-            field=models.BooleanField(blank=True, default=False, null=True, verbose_name='Informacinės sistemos tvarkytojas'),
+            field=models.BooleanField(default=False, verbose_name='Informacinės sistemos tvarkytojas'),
         ),
         migrations.AddField(
             model_name='representative',
             name='open_data_representative',
-            field=models.BooleanField(blank=True, default=False, null=True, verbose_name='Atvirų duomenų tvarkytojas'),
+            field=models.BooleanField(default=False, verbose_name='Atvirų duomenų tvarkytojas'),
         ),
     ]

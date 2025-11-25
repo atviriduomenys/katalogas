@@ -1436,65 +1436,9 @@ class TestAgreementForm:
 
 class TestAgreementInitiate:
     def test_success(self):
-        pass
+        pass  # TODO
 
 
 class TestAgreementSign:
     def test_success(self):
-        pass
-
-
-# @pytest.mark.parametrize(
-#         "agreement_choice,expected_error",
-#         [
-#             ("agreement_bad_certificate", "ADOC klaida: Netinkamas parašo sertifikatas."),
-#             ("agreement_modified", "ADOC klaida: PDF dokumentas nesutampa su sutartyje esančiu PDF dokumentu."),
-#             ("agreement_no_manifest", "ADOC klaida: Neteisingas ADOC formatas."),
-#             ("agreement_no_pdf", "ADOC klaida: Nerastas PDF dokumentas."),
-#             ("agreement_not_signed", "Įkelta sutartis nepasirašyta."),
-#             ("agreement_two_files", "ADOC klaida: Rastas daugiau nei vienas pasirašytas dokumentas."),
-#             ("agreement_two_signers", "Įkelta sutartis pasirašyta daugiau nei 1 parašu. Gavėjas turėtų pasirašyti tik vienu parašu."),
-#             ("agreement_pdf", "Dokumentas turi būti adoc formato."),
-#             ("agreement_non_zip", "Prisegtas failas nėra ZIP archyvas."),
-#             ("agreement_one_signer", "Nesutampa pasirašiusių asmenų vardai ir pavardės. Reikalingi parašai: ['Jonas Jonaitis'], ADOC rasti parašai: ['Vardenis Pavardenis'].")
-#         ],
-#         indirect=["agreement_choice"]
-#     )
-#     def test_upload_agreement_with_errors(
-#         self,
-#         app: DjangoTestApp,
-#         organization: Organization,
-#         dataset: Dataset,
-#         agreement_pdf: Path,
-#         agreement_choice: Path,
-#         odrl_json_wrong_representatives: Path,
-#         expected_error: str
-#     ) -> None:
-#         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
-#         user = representative.user
-#         app.set_user(user)
-#         project = ProjectFactory(organization=organization, datasets=[dataset])
-#         contact = ContactFactory(contact_name="Jonas Jonaitis", content_type=None, object_id=None)
-#         agreement = AgreementFactory(
-#             project=project, assignee=organization, status=AgreementStatuses.FORMED, assignee_representative=contact
-#         )
-#         AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json_wrong_representatives)
-#         AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
-#         adoc_to_upload = Upload(
-#             agreement_choice.name,
-#             agreement_choice.read_bytes(),
-#             content_type="text/plain",
-#         )
-#         response = app.get(
-#             reverse("agreement-upload-signed-adoc", args=[project.pk, agreement.pk]),
-#         )
-#
-#         form = response.forms["agreement-upload-form"]
-#         form["file"] = adoc_to_upload
-#         response = form.submit()
-#
-#         assert response.status_code == 200
-#         errors = response.context["form"].errors
-#
-#         assert "file" in errors
-#         assert errors["file"][0] == expected_error
+        pass  # TODO

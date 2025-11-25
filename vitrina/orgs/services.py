@@ -305,36 +305,32 @@ MODEL_VISIBILITY_ACL = {
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
         Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.PRIVATE, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.MANAGER,
     },
     (Model, Metadata.VISIBILITY_PUBLIC, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
-        Role.MANAGER,
     },
     (Model, Metadata.PACKAGE, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
-        Role.MANAGER,
     },
     (Model, Metadata.PROTECTED, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
-        Role.MANAGER,
     },
     (Model, Metadata.PRIVATE, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
-        Role.MANAGER,
     },
 }
 PROPERTY_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, Property)
@@ -444,16 +440,11 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
     if user.is_staff:
         return Role.GLOBAL_MANAGER
     if resource.get_resource_managers_queryset().filter(user=user).exists():
-        if resource.organization.kind == Organization.GOV:
-            if resource.subclass.is_information_system and user.is_information_system_representative_for(
-                resource.organization
-            ):
-                return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
-            elif user.is_information_system_representative_for(resource.organization):
-                return Role.INFORMATION_SYSTEM_REPRESENTATIVE
-            else:
-                return Role.OPEN_DATA_REPRESENTATIVE
         return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
+    if user.id in resource.get_organization_special_representatives_queryset():
+        if user.is_information_system_representative_for(resource.organization):
+            return Role.INFORMATION_SYSTEM_REPRESENTATIVE
+        return Role.OPEN_DATA_REPRESENTATIVE
     if user.is_gov_organization_manager:
         return Role.MANAGER
     return Role.AUTHENTICATED

@@ -130,7 +130,6 @@ _dataset_update_acl: ACL = {
         Role.COORDINATOR,
         Role.OPEN_DATA_REPRESENTATIVE,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,

@@ -1484,7 +1484,7 @@ class DatasetStructureImportView(
         return self.dataset
 
     def get_success_url(self):
-        if self.version:
+        if self.version.pk:
             return reverse(
                 "dataset-structure",
                 kwargs={"pk": self.dataset.pk, "version_id": self.version.pk},

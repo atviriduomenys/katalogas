@@ -103,7 +103,7 @@ urlpatterns = [
         name="property-update",
     ),
     path(
-        "datasets/<int:pk>/data/<str:model>/",
+        "datasets/<int:pk>/version/<int:version_id>/data/<str:model>/",
         ModelDataView.as_view(),
         name="model-data",
     ),

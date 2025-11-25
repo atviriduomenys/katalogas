@@ -261,6 +261,7 @@ class DatasetStructureView(
                 kwargs={
                     "pk": self.kwargs.get("pk"),
                     "model": self.models[0].name,
+                    "version_id": self.models[0].version.pk,
                 },
             )
         return None
@@ -383,6 +384,7 @@ class ModelStructureView(
                 kwargs={
                     "pk": self.object.pk,
                     "model": self.model.name,
+                    "version_id": self.version_id,
                 },
             )
         return None
@@ -640,7 +642,7 @@ class PropertyStructureView(
 
     def get_data_url(self):
         if self.model.name:
-            return reverse("model-data", kwargs={"pk": self.object.pk, "model": self.model.name})
+            return reverse("model-data", kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name})
         return None
 
     def get_api_url(self):
@@ -842,6 +844,7 @@ class ModelDataView(
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version_id = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.object).pk
         model_name = kwargs.get("model")
         self.model = (
             Model.objects.annotate(
@@ -853,7 +856,7 @@ class ModelDataView(
                     output_field=TextField(),
                 )
             )
-            .filter(model_name=model_name, dataset=self.object)
+            .filter(model_name=model_name, dataset=self.object, version=self.version_id)
             .first()
         )
         if not self.model:
@@ -861,12 +864,12 @@ class ModelDataView(
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version=self.version_id).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version=self.version_id)
                 .order_by("metadata__name")
             )
             self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
@@ -893,7 +896,7 @@ class ModelDataView(
                 title=self.model.title,
                 url=reverse(
                     "model-structure",
-                    kwargs={"pk": self.object.pk, "model": self.model.name},
+                    kwargs={"pk": self.object.pk, "version_id": self.version_id ,"model": self.model.name},
                 ),
             )
         )
@@ -921,13 +924,14 @@ class ModelDataView(
                 kwargs={
                     "pk": self.object.pk,
                     "model": self.model.name,
+                    "version_id": self.version_id,
                 },
             )
         return None
 
     def get_data_url(self):
         if self.model.name:
-            return reverse("model-data", kwargs={"pk": self.object.pk, "model": self.model.name})
+            return reverse("model-data", kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name})
         return None
 
     def get_api_url(self):
@@ -948,7 +952,7 @@ class ModelDataView(
         if self.model.name:
             return reverse(
                 self.history_url_name,
-                kwargs={"pk": self.object.pk, "model": self.model.name},
+                kwargs={"pk": self.object.pk, "version_id": self.version_id , "model": self.model.name},
             )
         return None
 

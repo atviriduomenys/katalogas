@@ -269,6 +269,7 @@ class Model(models.Model):
                 kwargs={
                     "pk": self.dataset.pk,
                     "model": self.name,
+                    "version_id": self.version.pk
                 },
             )
         return None

@@ -570,8 +570,12 @@ def has_perm(
                 return True
             for node in nodes:
                 if (role == Role.AUTHOR and is_author(user, node)) or (
-                    role == Role.SUPERVISOR and is_supervisor(user, node)
-                    or (role == Role.INFORMATION_SYSTEM_REPRESENTATIVE and user.is_information_system_representative_for(user_org))
+                    role == Role.SUPERVISOR
+                    and is_supervisor(user, node)
+                    or (
+                        role == Role.INFORMATION_SYSTEM_REPRESENTATIVE
+                        and user.is_information_system_representative_for(user_org)
+                    )
                 ):
                     return True
                 if role not in {Role.AUTHOR, Role.SUPERVISOR}:

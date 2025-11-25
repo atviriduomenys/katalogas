@@ -296,7 +296,6 @@ class TestAgreementApproveForm:
         assert form.errors == {
             "template": ["Šis laukas yra privalomas."],
             "assigner_representative": ["Šis laukas yra privalomas."],
-            "other_assigner_legislations": ["Šis laukas yra privalomas."],
         }
 
 

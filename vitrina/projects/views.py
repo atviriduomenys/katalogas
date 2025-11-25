@@ -610,8 +610,7 @@ class ProjectApiKeysRegenerateView(PermissionRequiredMixin, UpdateView):
         return redirect(reverse("project-permissions", args=[self.project.pk]))
 
 
-class RemoveDatasetView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, DeleteView):
-    model = Project
+class RemoveDatasetBaseView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     template_name = "confirm_remove.html"
 
     def has_permission(self):
@@ -622,9 +621,13 @@ class RemoveDatasetView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequ
             messages.error(
                 self.request, _("Negalima pašalinti išteklių iš panaudojimo atvejo, kuris turi sugeneruotų sutarčių.")
             )
-            return redirect(reverse("project-detail", args=[self.project.pk]))
-        self.project.datasets.remove(self.kwargs.get("dataset_id"))
+        else:
+            self.project.datasets.remove(self.kwargs.get("dataset_id"))
         return HttpResponseRedirect(self.get_success_url())
+
+
+class RemoveDatasetView(ProjectViewBaseMixin, RemoveDatasetBaseView):
+    model = Project
 
     def get_success_url(self):
         return reverse("project-datasets", kwargs={"pk": self.project.pk})

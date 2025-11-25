@@ -113,7 +113,7 @@ urlpatterns = [
         name="model-data-count", # not used
     ),
     path(
-        "datasets/<int:pk>/data/<str:model>/table/",
+        "datasets/<int:pk>/version/<int:version_id>/data/<str:model>/table/",
         ModelDataTableView.as_view(),
         name="model-data-table",
     ),
@@ -123,12 +123,12 @@ urlpatterns = [
         name="model-data-table-data", # not used
     ),
     path(
-        "datasets/<int:pk>/data/<str:model>/<str:uuid>/",
+        "datasets/<int:pk>/version/<int:version_id>/data/<str:model>/<str:uuid>/",
         ObjectDataView.as_view(),
         name="object-data",
     ),
     path(
-        "datasets/<int:pk>/data/<str:model>/<str:uuid>/table/",
+        "datasets/<int:pk>/version/<int:version_id>/data/<str:model>/<str:uuid>/table/",
         ObjectDataTableView.as_view(),
         name="object-data-table",
     ),
@@ -163,17 +163,17 @@ urlpatterns = [
         name="base-property-delete",
     ),
     path(
-        "datasets/<int:pk>/api/getall/<str:model>/",
+        "datasets/<int:pk>/version/<int:version_id>/api/getall/<str:model>/",
         GetAllApiView.as_view(),
         name="getall-api",
     ),
     path(
-        "datasets/<int:pk>/api/getone/<str:model>/<str:uuid>/",
+        "datasets/<int:pk>/version/<int:version_id>/api/getone/<str:model>/<str:uuid>/",
         GetOneApiView.as_view(),
         name="getone-api",
     ),
     path(
-        "datasets/<int:pk>/api/changes/<str:model>/",
+        "datasets/<int:pk>/version/<int:version_id>/api/changes/<str:model>/",
         ChangesApiView.as_view(),
         name="changes-api",
     ),

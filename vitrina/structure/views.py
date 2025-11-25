@@ -162,6 +162,7 @@ class DatasetStructureMixin(StructureMixin):
                 kwargs={
                     "pk": self.dataset.pk,
                     "model": self.models[0].name,
+                    "version_id": self.models[0].version.id,
                 },
             )
         return None
@@ -695,6 +696,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version_id = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.object).pk
         model_name = kwargs.get("model")
         self.model = (
             Model.objects.annotate(
@@ -706,7 +708,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
                     output_field=TextField(),
                 )
             )
-            .filter(model_name=model_name, dataset=self.object)
+            .filter(model_name=model_name, dataset=self.object, version_id=self.version_id)
             .first()
         )
         if not self.model:
@@ -714,12 +716,12 @@ class ModelDataTableView(PermissionRequiredMixin, View):
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
                 .order_by("metadata__name")
             )
             self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
@@ -727,7 +729,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
         return super().dispatch(request, *args, **kwargs)
 
     def post(self, request, *args, **kwargs):
-        context = {"dataset": self.object, "model": self.model}
+        context = {"dataset": self.object, "model": self.model, "version_id": self.version_id}
         tags = []
         select = "select(*)"
         selected_cols = []
@@ -978,6 +980,7 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version_id = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.object).pk
         model_name = kwargs.get("model")
         self.model = (
             Model.objects.annotate(
@@ -989,7 +992,7 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
                     output_field=TextField(),
                 )
             )
-            .filter(model_name=model_name, dataset=self.object)
+            .filter(model_name=model_name, dataset=self.object, version_id=self.version_id)
             .first()
         )
         if not self.model:
@@ -997,12 +1000,12 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
                 .order_by("metadata__name")
             )
             self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
@@ -1014,6 +1017,7 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
             "request": request,
             "dataset": self.object,
             "model": self.model,
+            "version_id": self.version_id,
         }
         data = json.loads(request.POST.get("data", ""))
         if data.get("errors"):
@@ -1052,6 +1056,7 @@ class ObjectDataView(
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version_id = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.object).pk
         model_name = kwargs.get("model")
         self.model = (
             Model.objects.annotate(
@@ -1063,7 +1068,7 @@ class ObjectDataView(
                     output_field=TextField(),
                 )
             )
-            .filter(model_name=model_name, dataset=self.object)
+            .filter(model_name=model_name, dataset=self.object, version_id=self.version_id)
             .first()
         )
         if not self.model:
@@ -1071,12 +1076,12 @@ class ObjectDataView(
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
             self.props = self.model.get_given_props()
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
                 .order_by("metadata__name")
             )
             self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
@@ -1105,6 +1110,7 @@ class ObjectDataView(
                 kwargs={
                     "pk": self.object.pk,
                     "model": self.model.name,
+                    "version_id": self.version_id,
                 },
             )
         return None
@@ -1116,6 +1122,7 @@ class ObjectDataView(
                 kwargs={
                     "pk": self.object.pk,
                     "model": self.model.name,
+                    "version_id": self.version_id,
                 },
             )
         return None
@@ -1128,6 +1135,7 @@ class ObjectDataView(
                     "pk": self.object.pk,
                     "model": self.model.name,
                     "uuid": self.kwargs.get("uuid"),
+                    "version_id": self.version_id,
                 },
             )
         return None
@@ -1136,7 +1144,7 @@ class ObjectDataView(
         if self.model.name:
             return reverse(
                 self.history_url_name,
-                kwargs={"pk": self.object.pk, "model": self.model.name},
+                kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name},
             )
         return None
 
@@ -1157,6 +1165,7 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        self.version_id = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.object).pk
         model_name = kwargs.get("model")
         self.model = (
             Model.objects.annotate(
@@ -1168,7 +1177,7 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
                     output_field=TextField(),
                 )
             )
-            .filter(model_name=model_name, dataset=self.object)
+            .filter(model_name=model_name, dataset=self.object, version_id=self.version_id)
             .first()
         )
         if not self.model:
@@ -1176,11 +1185,11 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
                 .order_by("metadata__name")
             )
 
@@ -1242,6 +1251,7 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
                 kwargs={
                     "pk": self.object.pk,
                     "model": self.model.name,
+                    "version_id": self.version_id,
                 },
             )
         return None
@@ -1262,6 +1272,7 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
                     kwargs={
                         "pk": self.object.pk,
                         "model": self.model.name,
+                        "version_id": self.version_id,
                     },
                 ),
                 f"?{query_params}" if query_params else "",
@@ -1275,7 +1286,7 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
         if self.model.name:
             return reverse(
                 self.history_url_name,
-                kwargs={"pk": self.object.pk, "model": self.model.name},
+                kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name},
             )
         return None
 
@@ -1311,11 +1322,11 @@ class GetAllApiView(ApiView):
             context["actions"] = {
                 "getall": "%s%s"
                 % (
-                    reverse("getall-api", args=[self.object.pk, self.model.name]),
+                    reverse("getall-api", args=[self.object.pk, self.version_id, self.model.name]),
                     f"?{context['query_params']}" if context["query_params"] else "",
                 ),
-                "getone": reverse("getone-api", args=[self.object.pk, self.model.name, uuid]),
-                "changes": reverse("changes-api", args=[self.object.pk, self.model.name]),
+                "getone": reverse("getone-api", args=[self.object.pk, self.version_id, self.model.name, uuid]),
+                "changes": reverse("changes-api", args=[self.object.pk, self.version_id, self.model.name]),
             }
 
         return context
@@ -1327,7 +1338,7 @@ class GetAllApiView(ApiView):
                 title=self.model.title,
                 url=reverse(
                     "model-structure",
-                    kwargs={"pk": self.object.pk, "model": self.model.name},
+                    kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name},
                 ),
             )
         )
@@ -1354,12 +1365,12 @@ class GetOneApiView(ApiView):
 
         if self.model.name:
             context["actions"] = {
-                "getall": reverse("getall-api", args=[self.object.pk, self.model.name]),
+                "getall": reverse("getall-api", args=[self.object.pk, self.version_id, self.model.name]),
                 "getone": reverse(
                     "getone-api",
-                    args=[self.object.pk, self.model.name, self.kwargs.get("uuid")],
+                    args=[self.object.pk, self.version_id, self.model.name, self.kwargs.get("uuid")],
                 ),
-                "changes": reverse("changes-api", args=[self.object.pk, self.model.name]),
+                "changes": reverse("changes-api", args=[self.object.pk, self.version_id, self.model.name]),
             }
 
         return context
@@ -1375,6 +1386,7 @@ class GetOneApiView(ApiView):
                     "pk": self.object.pk,
                     "model": self.model.name,
                     "uuid": self.kwargs.get("uuid"),
+                    "version_id": self.version_id,
                 },
             )
         return None
@@ -1406,9 +1418,9 @@ class ChangesApiView(ApiView):
                     uuid = data.get("_data")[0].get("_id")
 
             context["actions"] = {
-                "getall": reverse("getall-api", args=[self.object.pk, self.model.name]),
-                "getone": reverse("getone-api", args=[self.object.pk, self.model.name, uuid]),
-                "changes": reverse("changes-api", args=[self.object.pk, self.model.name]),
+                "getall": reverse("getall-api", args=[self.object.pk, self.version_id, self.model.name]),
+                "getone": reverse("getone-api", args=[self.object.pk, self.version_id, self.model.name, uuid]),
+                "changes": reverse("changes-api", args=[self.object.pk, self.version_id, self.model.name]),
             }
 
         return context

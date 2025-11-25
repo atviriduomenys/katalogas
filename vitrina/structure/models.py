@@ -276,7 +276,7 @@ class Model(models.Model):
 
     def get_api_url(self):
         if self.name:
-            return reverse("getall-api", kwargs={"pk": self.dataset.pk, "model": self.name})
+            return reverse("getall-api", kwargs={"pk": self.dataset.pk, "version_id": self.version_id , "model": self.name})
         return None
 
     def get_given_props(self):

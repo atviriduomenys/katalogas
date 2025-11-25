@@ -130,6 +130,7 @@ _dataset_update_acl: ACL = {
         Role.COORDINATOR,
         Role.OPEN_DATA_REPRESENTATIVE,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.MANAGER
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
@@ -260,12 +261,11 @@ _dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.C
 _dataset_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.DELETE)
 _dataset_history_view_acl: ACL = inherit_acl(_dataset_view_acl, new_action=Action.HISTORY_VIEW)
 _dataset_structure_acl: ACL = inherit_acl(
-    _dataset_update_acl, new_action=Action.STRUCTURE, new_roles={Role.INFORMATION_SYSTEM_REPRESENTATIVE}
+    _dataset_update_acl, new_action=Action.STRUCTURE
 ) | inherit_acl(
     _dataset_view_acl,
     new_model_class=DatasetStructure,
     new_action=Action.STRUCTURE,
-    new_roles={Role.INFORMATION_SYSTEM_REPRESENTATIVE},
 )
 
 _dataset_distribution_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetDistribution)

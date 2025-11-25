@@ -195,6 +195,9 @@ class Representative(models.Model):
         return False
 
     def save(self, *args, **kwargs):
+        if self.information_system_representative or self.open_data_representative:
+            if self.role == self.COORDINATOR:
+                self.role = self.MANAGER
         super().save(*args, **kwargs)
 
         # save related datasets to update search index

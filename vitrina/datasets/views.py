@@ -119,7 +119,7 @@ from vitrina.helpers import (
 from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action, hash_api_key
+from vitrina.orgs.services import has_perm, Action, hash_api_key, can_manage_information_system
 from vitrina.orgs.views import (
     ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
     DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
@@ -1530,12 +1530,21 @@ class DatasetMembersView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["dataset"] = self.object
-        context["has_permission"] = has_perm(
+        subclass = self.object.subclass
+        has_permission = has_perm(
             self.request.user,
             Action.CREATE,
             Representative,
             self.object,
         )
+        if subclass.is_information_system:
+            has_permission = can_manage_information_system(self.object, self.request.user) or has_perm(
+                self.request.user,
+                Action.CREATE,
+                Representative,
+                self.object,
+            )
+        context["has_permission"] = has_permission
         context["can_view_members"] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -1561,12 +1570,21 @@ class CreateMemberView(
     history_url_name = "dataset-history"
 
     def has_permission(self):
-        return has_perm(
+        subclass = self.dataset.subclass
+        has_permission = has_perm(
             self.request.user,
             Action.CREATE,
             Representative,
             self.dataset,
         )
+        if subclass.is_information_system:
+            has_permission = can_manage_information_system(self.dataset, self.request.user) or has_perm(
+                self.request.user,
+                Action.CREATE,
+                Representative,
+                self.dataset,
+            )
+        return has_permission
 
     def get_success_url(self):
         return reverse(
@@ -1744,7 +1762,20 @@ class UpdateMemberView(
             Representative,
             pk=self.kwargs.get("representative_id"),
         )
-        return has_perm(self.request.user, Action.UPDATE, representative)
+        subclass = self.dataset.subclass
+        has_permission = has_perm(
+            self.request.user,
+            Action.UPDATE,
+            representative,
+        )
+        if subclass.is_information_system:
+            has_permission = can_manage_information_system(self.dataset, self.request.user) or has_perm(
+                self.request.user,
+                Action.UPDATE,
+                representative,
+                self.dataset,
+            )
+        return has_permission
 
     def get_success_url(self):
         return reverse(
@@ -1846,11 +1877,20 @@ class DeleteMemberView(
     template_name = "confirm_delete.html"
 
     def has_permission(self):
+        dataset = Dataset.objects.filter(id=self.kwargs.get("dataset_id")).first()
         representative = get_object_or_404(
             Representative,
             pk=self.kwargs.get("pk"),
         )
-        return has_perm(self.request.user, Action.DELETE, representative)
+        subclass = dataset.subclass
+        has_permission = has_perm(self.request.user, Action.DELETE, representative)
+        if subclass.is_information_system:
+            has_permission = can_manage_information_system(dataset, self.request.user) or has_perm(
+                self.request.user,
+                Action.DELETE,
+                representative,
+            )
+        return has_permission
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

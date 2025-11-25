@@ -128,6 +128,8 @@ _dataset_update_acl: ACL = {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.OPEN_DATA_REPRESENTATIVE,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
@@ -418,7 +420,7 @@ acl: ACL = (
         (Representative, Action.CREATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
         (Representative, Action.UPDATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
         (Representative, Action.DELETE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
-        (Representative, Action.VIEW): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.VIEW): (Role.COORDINATOR, Role.GLOBAL_MANAGER, Role.MANAGER),
     }
 )
 
@@ -608,6 +610,13 @@ def get_coordinators_count(model: Type[Model], object_id: int) -> int:
         object_id=object_id,
         role=Representative.COORDINATOR,
     ).count()
+
+
+def can_manage_information_system(object: Dataset, user: User) -> bool:
+    subclass = object.subclass
+    if subclass.is_information_system and user.is_information_system_representative_for(object.organization):
+        return True
+    return False
 
 
 def hash_api_key(api_key: str) -> str:

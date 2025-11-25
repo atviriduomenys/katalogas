@@ -128,8 +128,6 @@ _dataset_update_acl: ACL = {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.OPEN_DATA_REPRESENTATIVE,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
@@ -211,49 +209,41 @@ _information_system_update_acl: ACL = {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.INFORMATION_SYSTEM_UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
 }
 _dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.COMMENT)
@@ -315,42 +305,36 @@ MODEL_VISIBILITY_ACL = {
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
         Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.PRIVATE, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
         Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.VISIBILITY_PUBLIC, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
         Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.PACKAGE, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
         Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.PROTECTED, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
         Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.PRIVATE, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
         Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
 }
 PROPERTY_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, Property)
@@ -461,10 +445,13 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.GLOBAL_MANAGER
     if resource.get_resource_managers_queryset().filter(user=user).exists():
         if resource.organization.kind == Organization.GOV:
-            if resource.subclass.is_information_system:
-                if user.is_information_system_representative_for(resource.organization):
-                    return Role.INFORMATION_SYSTEM_REPRESENTATIVE
-            if user.is_open_data_representative_for(resource.organization):
+            if resource.subclass.is_information_system and user.is_information_system_representative_for(
+                resource.organization
+            ):
+                return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
+            elif user.is_information_system_representative_for(resource.organization):
+                return Role.INFORMATION_SYSTEM_REPRESENTATIVE
+            else:
                 return Role.OPEN_DATA_REPRESENTATIVE
         return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
     if user.is_gov_organization_manager:

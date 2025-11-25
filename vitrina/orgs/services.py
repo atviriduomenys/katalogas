@@ -196,13 +196,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
 }
 
 _dataset_create_acl: ACL = {
-    (Dataset, Action.CREATE): (
-        Role.COORDINATOR,
-        Role.MANAGER,
-        Role.GLOBAL_MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
-    )
+    (Dataset, Action.CREATE): (Role.COORDINATOR, Role.RESOURCE_MANAGER, Role.GLOBAL_MANAGER, Role.MANAGER)
 }
 _information_system_update_acl: ACL = {
     (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {

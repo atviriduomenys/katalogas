@@ -1936,7 +1936,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
             return False
         if self.request.user.is_superuser:
             return True
-        allowed_vis = get_allowed_visibilities(self.request.user, self.dataset)
+        allowed_vis = get_allowed_visibilities(self.request.user, self.dataset, Action.STRUCTURE)
         metadata = self.model_obj.metadata.first()
         if not metadata:
             return False
@@ -2236,7 +2236,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
             return False
         if self.request.user.is_superuser:
             return True
-        allowed_vis = get_allowed_visibilities(self.request.user, self.dataset)
+        allowed_vis = get_allowed_visibilities(self.request.user, self.dataset, Action.STRUCTURE)
         metadata = self.model_obj.metadata.first()
         if not metadata:
             return False
@@ -2576,7 +2576,7 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        allowed_visibilities = get_allowed_visibilities(self.request.user, self.object)
+        allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
 
         if self.can_manage_structure:
@@ -2626,7 +2626,7 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def get_history_objects(self):
         model_ids = self.models.values_list("pk", flat=True)
-        allowed_visibilities = get_allowed_visibilities(self.request.user, self.object)
+        allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
         if self.can_manage_structure:
             property_ids = (
@@ -2800,7 +2800,7 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
 
-        allowed_visibilities = get_allowed_visibilities(self.request.user, self.object)
+        allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
 
         if self.can_manage_structure:

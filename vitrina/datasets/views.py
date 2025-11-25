@@ -474,7 +474,7 @@ class DatasetDetailView(
         page_number = self.request.GET.get("page")
         page_obj = paginator.get_page(page_number)
         subclass = dataset.subclass
-        if subclass.is_information_system:
+        if subclass and subclass.is_information_system:
             permissions = has_perm(self.request.user, Action.INFORMATION_SYSTEM_UPDATE, dataset)
         else:
             permissions = has_perm(self.request.user, Action.UPDATE, dataset)
@@ -1046,7 +1046,7 @@ class DatasetUpdateView(
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.subclass.is_information_system:
+        if dataset.subclass and dataset.subclass.is_information_system:
             return has_perm(self.request.user, Action.INFORMATION_SYSTEM_UPDATE, dataset)
         return has_perm(self.request.user, Action.UPDATE, dataset)
 
@@ -1537,7 +1537,7 @@ class DatasetMembersView(
             Representative,
             self.object,
         )
-        if subclass.is_information_system:
+        if subclass and subclass.is_information_system:
             has_permission = can_manage_information_system(self.object, self.request.user) or has_perm(
                 self.request.user,
                 Action.CREATE,
@@ -1577,7 +1577,7 @@ class CreateMemberView(
             Representative,
             self.dataset,
         )
-        if subclass.is_information_system:
+        if subclass and subclass.is_information_system:
             has_permission = can_manage_information_system(self.dataset, self.request.user) or has_perm(
                 self.request.user,
                 Action.CREATE,
@@ -1768,7 +1768,7 @@ class UpdateMemberView(
             Action.UPDATE,
             representative,
         )
-        if subclass.is_information_system:
+        if subclass and subclass.is_information_system:
             has_permission = can_manage_information_system(self.dataset, self.request.user) or has_perm(
                 self.request.user,
                 Action.UPDATE,
@@ -1884,7 +1884,7 @@ class DeleteMemberView(
         )
         subclass = dataset.subclass
         has_permission = has_perm(self.request.user, Action.DELETE, representative)
-        if subclass.is_information_system:
+        if subclass and subclass.is_information_system:
             has_permission = can_manage_information_system(dataset, self.request.user) or has_perm(
                 self.request.user,
                 Action.DELETE,
@@ -3792,13 +3792,23 @@ class DatasetChildResourceListView(
         return super(DatasetChildResourceListView, self).get_queryset().filter(django_id__in=list(descendants))
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
-        return super().get_context_data(**kwargs) | {
-            "can_create_dataset": has_perm(
+        dataset = self.object
+        subclass = dataset.subclass
+        can_create_dataset = has_perm(
+            self.request.user,
+            Action.CREATE,
+            Dataset,
+            dataset.organization,
+        )
+        if subclass and subclass.is_information_system:
+            can_create_dataset = has_perm(
                 self.request.user,
-                Action.CREATE,
+                Action.INFORMATION_SYSTEM_CREATE,
                 Dataset,
-                self.object.organization,
-            ),
+                dataset.organization,
+            )
+        return super().get_context_data(**kwargs) | {
+            "can_create_dataset": can_create_dataset,
             "parent_dataset_id": self.parent_dataset_id,
             "organization_id": self.object.organization_id,
         }

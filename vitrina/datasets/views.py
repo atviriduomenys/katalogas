@@ -1046,7 +1046,7 @@ class DatasetUpdateView(
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.subclass == DCATResourceSubclass.INFORMATION_SYSTEM:
+        if dataset.subclass.is_information_system:
             return has_perm(self.request.user, Action.INFORMATION_SYSTEM_UPDATE, dataset)
         return has_perm(self.request.user, Action.UPDATE, dataset)
 

@@ -11,7 +11,7 @@ from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.datasets.models import Dataset
-from vitrina.settings import TRANSLATION_CLIENT_ID
+from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_REQUEST_TIMEOUT
 
 
 class FormatName(StrEnum):
@@ -272,35 +272,43 @@ class DatasetDistribution(TranslatableModel):
             self.set_current_language("en")
 
             if lt_title and not self.en_title():
-                response_title = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
-                    json={
-                        "appId": "",
-                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                        "text": lt_title,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                )
-                en_title = response_title.json()
-                self.title = en_title
+                try:
+                    response_title = requests.post(
+                        "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                        json={
+                            "appId": "",
+                            "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                            "text": lt_title,
+                            "options": "",
+                        },
+                        headers={
+                            "client-id": TRANSLATION_CLIENT_ID,
+                            "Content-Type": "application/json; charset=utf-8",
+                        },
+                        timeout=TRANSLATION_REQUEST_TIMEOUT,
+                    )
+                    en_title = response_title.json()
+                    self.title = en_title
+                except Exception as e:
+                    pass
 
             if lt_description and not self.en_description():
-                response_desc = requests.post(
-                    "https://vertimas.vu.lt/ws/service.svc/json/Translate",
-                    json={
-                        "appId": "",
-                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                        "text": lt_description,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                )
-                en_description = response_desc.json()
-                self.description = en_description
+                try:
+                    response_desc = requests.post(
+                        "https://vertimas.vu.lt/ws/service.svc/json/Translate",
+                        json={
+                            "appId": "",
+                            "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                            "text": lt_description,
+                            "options": "",
+                        },
+                        headers={
+                            "client-id": TRANSLATION_CLIENT_ID,
+                            "Content-Type": "application/json; charset=utf-8",
+                        },
+                        timeout=TRANSLATION_REQUEST_TIMEOUT,
+                    )
+                    en_description = response_desc.json()
+                    self.description = en_description
+                except Exception as e:
+                    pass

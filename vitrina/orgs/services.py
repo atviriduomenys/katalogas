@@ -412,7 +412,7 @@ acl: ACL = (
         (Representative, Action.CREATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
         (Representative, Action.UPDATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
         (Representative, Action.DELETE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
-        (Representative, Action.VIEW): (Role.COORDINATOR, Role.GLOBAL_MANAGER, Role.MANAGER),
+        (Representative, Action.VIEW): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
     }
 )
 
@@ -564,13 +564,14 @@ def has_perm(
         roles = acl.get((model, action))
         if not roles:
             return False
-
+        user_org = getattr(user, "organization", None)
         for role in roles:
             if role == Role.AUTHENTICATED:
                 return True
             for node in nodes:
                 if (role == Role.AUTHOR and is_author(user, node)) or (
                     role == Role.SUPERVISOR and is_supervisor(user, node)
+                    or (role == Role.INFORMATION_SYSTEM_REPRESENTATIVE and user.is_information_system_representative_for(user_org))
                 ):
                     return True
                 if role not in {Role.AUTHOR, Role.SUPERVISOR}:
@@ -589,7 +590,6 @@ def has_perm(
             ).exists():
                 return True
 
-            user_org = getattr(user, "organization", None)
             if (
                 user_org
                 and Representative.objects.filter(

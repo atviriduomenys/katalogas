@@ -3714,10 +3714,10 @@ msgid "Išmaniųjų sutarčių numatytieji šablonai"
 msgstr "Smart contracts default templates"
 
 msgid "Pateikti"
-msgstr "Propose"
+msgstr "Submit"
 
 msgid "Pateikti pasiūlymą"
-msgstr "Propose"
+msgstr "Submit proposal"
 
 msgid "Patvirtinti pasiūlymą"
 msgstr "Confirm proposal"

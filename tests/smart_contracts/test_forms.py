@@ -114,11 +114,7 @@ class TestAgreementSubmitForm:
             project=ProjectFactory(organization=organization)
         )
 
-        user = UserFactory(
-            organization=organization,
-            is_viisp_login=True,
-            viisp_company_code=organization.company_code,
-        )
+        user = UserFactory(organization=organization)
         contact_with_user = ContactFactory(
             contact_name="Vardenis Pavardenis",
             organization=organization,

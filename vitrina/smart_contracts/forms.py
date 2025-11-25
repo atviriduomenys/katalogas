@@ -82,11 +82,15 @@ class BaseAgreementForm(forms.ModelForm):
 
     @staticmethod
     def get_smart_contract_templates_by_organization(organization_id: int) -> QuerySet:
-        return SmartContractTemplate.objects.filter(
-            Q(organization__isnull=True) | Q(organization=organization_id),
-        ).order_by(
-            "organization",
-            "file",
+        return (
+            SmartContractTemplate.objects.filter(
+                Q(organization__isnull=True) | Q(organization_id=organization_id),
+            )
+            .select_related("organization")
+            .order_by(
+                "organization",
+                "file",
+            )
         )
 
     def get_contacts_by_organization(self, organization_id: int) -> QuerySet:

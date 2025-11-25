@@ -12,9 +12,7 @@ def _is_viisp_authenticated_and_representative(user: User, organization: Organiz
         return False
 
     is_viisp_authenticated = organization == user.viisp_organization
-    is_representative = user.is_representative_of(organization, True)
-
-    return is_viisp_authenticated and is_representative
+    return is_viisp_authenticated and user.is_representative_of(organization, True)
 
 
 def can_view_agreements(user: User | AnonymousUser, project: Project) -> bool:

@@ -1,3 +1,4 @@
+import builtins
 import functools
 import operator
 
@@ -367,25 +368,25 @@ class Property(models.Model):
             )
         return None
 
-    @property
+    @builtins.property
     def name(self):
         if metadata := self.metadata.first():
             return metadata.name
         return ""
 
-    @property
+    @builtins.property
     def title(self):
         if metadata := self.metadata.first():
             return metadata.title
         return ""
 
-    @property
+    @builtins.property
     def description(self):
         if metadata := self.metadata.first():
             return metadata.description
         return ""
 
-    @property
+    @builtins.property
     def visibility(self) -> int | None:
         if metadata := self.metadata.first():
             return metadata.visibility

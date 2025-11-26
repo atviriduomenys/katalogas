@@ -6,6 +6,12 @@ v 1.8 (unreleased)
 
 New features:
 
+https://github.com/atviriduomenys/dvms/issues/336
+- new OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH setting for .well-known/jwks.json (and env variable) which if specified will automatically jwks from specified endpoint and store it inside of a cache.
+- add support for multiple public keys picked dynamically for each access token by kid value. If not found, then by
+  algorithm (`alg` & `kty`).
+- these features unlock using auth servers with public key rotation, like gravitee.
+
 https://github.com/atviriduomenys/katalogas/issues/2123
 - Update partner registration permissions: validate that user is in active VIISP session.
 - Update fake VIISP login to work with new partner registration.

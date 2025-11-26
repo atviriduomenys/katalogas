@@ -1,7 +1,7 @@
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
 from rest_framework import status
-from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied as RestPermissionDenied
+from rest_framework.exceptions import NotFound, ValidationError, PermissionDenied as RestPermissionDenied, APIException
 from rest_framework.response import Response
 
 from vitrina.exceptions import UAPIException
@@ -60,7 +60,18 @@ class UAPIExceptionHandlerMixin:
             )
             serializer.is_valid(raise_exception=True)
             return Response(serializer.data, status=status.HTTP_403_FORBIDDEN)
-
+        if isinstance(exc, APIException):
+            serializer = BaseErrorSerializer(
+                data={
+                    "code": exc.default_code,
+                    "type": "system",
+                    "template": exc.detail,
+                    "message": str(exc),
+                    "additional_properties": None,
+                }
+            )
+            serializer.is_valid(raise_exception=True)
+            return Response(serializer.data, status=exc.status_code)
         error_data = BaseErrorSerializer.from_exception(exc)
         serializer = BaseErrorSerializer(data=error_data)
         serializer.is_valid(raise_exception=True)

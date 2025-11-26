@@ -14,9 +14,9 @@
                 {% trans "Duomenų ištekliai" %}:
             </h3>
             <div class="ml-5 mb-4">
-                {% if project.datasets.all %}
+                {% if datasets %}
                     <ul>
-                        {% for dataset in project.datasets.all %}
+                        {% for dataset in datasets %}
                             <li class="mb-2">
                                 <a href="{% url 'dataset-detail' dataset.pk %}" target="_blank" class="has-text-link is-inline-flex is-align-items-center">
                                     <span>{{ dataset.title }}</span>

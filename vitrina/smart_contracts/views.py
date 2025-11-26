@@ -349,6 +349,7 @@ class BaseAgreementNegotiateView(
                 "parent_links": self.get_parent_links(self.title),
                 "agreement": self.agreement,
                 "project": self.agreement.project,
+                "datasets": self.object.datasets.filter(organization=self.agreement.assigner).all(),
             }
         )
         return context

@@ -1230,7 +1230,9 @@ class PartnerRegisterView(CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         if not request.user.is_authenticated or not request.user.is_viisp_login:
-            messages.error(self.request, _("Norėdami registruoti naują duomenų teikėją, privalote prisijungti su VIISP."))
+            messages.error(
+                self.request, _("Norėdami registruoti naują duomenų teikėją, privalote prisijungti su VIISP.")
+            )
             return redirect("viisp-login")
         return super().dispatch(request, *args, **kwargs)
 

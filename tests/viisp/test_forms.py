@@ -15,5 +15,11 @@ def test_fake_viisp_form_valid_email():
 @pytest.mark.django_db
 def test_fake_viisp_form_invalid_email():
     form = FakeViispForm(data={"username": "not.existing@test.com", "password": "abc"})
+
     assert not form.is_valid()
-    assert "Įveskite teisingą Elektroninis paštas ir slaptažodį. Abiejuose laukuose didžiosios mažosios raidės skiriasi." in form.errors["__all__"]
+    assert form.errors["__all__"] == [
+        (
+            "Elektroninis paštas ir/arba slaptažodis yra neteisingas. "
+            "Atkreipkite dėmesį, kad abu laukai yra jautrūs raidžių dydžiui (mažosios ir didžiosios raidės)."
+        )
+    ]

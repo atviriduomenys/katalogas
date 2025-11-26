@@ -139,7 +139,6 @@ def validate_signatures(signers: list[str], agreement: Agreement) -> tuple[bool,
             return False, _(
                 "Įkelta sutartis pasirašyta daugiau nei 1 parašu. Gavėjas turėtų pasirašyti tik vienu parašu."
             )
-
     elif agreement.status == AgreementStatuses.INITIATED:
         if num_of_signers == 1:
             return False, _("Įkelta sutartis nepasirašyta teikėjo parašu.")

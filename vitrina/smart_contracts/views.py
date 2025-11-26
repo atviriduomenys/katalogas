@@ -507,7 +507,7 @@ class AgreementInitiateView(BaseAgreementInitiateSignView):
             return error
 
         is_signer_assignee = self.request.user.viisp_organization == self.agreement.assignee
-        if self.agreement.status == AgreementStatuses.FORMED and not is_signer_assignee:
+        if self.agreement.status == self.expected_agreement_status and not is_signer_assignee:
             return _("Šią sutartį šiuo metu turi pasirašyti duomenų gavėjo atstovas")
 
         return None
@@ -535,7 +535,7 @@ class AgreementSignView(BaseAgreementInitiateSignView):
             return error
 
         is_signer_assigner = self.request.user.viisp_organization == self.agreement.assigner
-        if self.agreement.status == AgreementStatuses.INITIATED and not is_signer_assigner:
+        if self.agreement.status == self.expected_agreement_status and not is_signer_assigner:
             return _("Šią sutartį šiuo metu turi pasirašyti duomenų teikėjo atstovas.")
 
     def _perform_action(self, form: ModelForm) -> None:

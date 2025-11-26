@@ -1435,10 +1435,563 @@ class TestAgreementForm:
 
 
 class TestAgreementInitiate:
-    def test_success(self):
-        pass  # TODO
+    def test_success(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_one_signer: str,
+        odrl_json: Path,
+    ):
+        # Arrange
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        app.set_user(representative.user)
+
+        project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact = ContactFactory(
+            contact_name=SIGNER1_FULL_NAME,
+            content_type=None,
+            object_id=None,
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=organization,
+            status=AgreementStatuses.FORMED,
+            assignee_representative=contact,
+        )
+
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+
+        # Act
+        response = app.post(
+            reverse("agreement-initiate", args=[project.pk, agreement.pk]),
+            upload_files=[
+                (
+                    "file",
+                    "agreement.adoc",
+                    agreement_one_signer.read_bytes(),
+                    "text/plain",
+                )
+            ]
+        )
+
+        # Assert
+        assert response.status_code == 302
+
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.INITIATED
+
+    def test_pdf_file_is_not_created(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_one_signer: str,
+        odrl_json: Path,
+    ):
+        # Arrange
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        app.set_user(representative.user)
+
+        project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact = ContactFactory(
+            contact_name=SIGNER1_FULL_NAME,
+            content_type=None,
+            object_id=None,
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=organization,
+            status=AgreementStatuses.FORMED,
+            assignee_representative=contact,
+        )
+
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+
+        # Act
+        response = app.post(
+            reverse("agreement-initiate", args=[project.pk, agreement.pk]),
+            upload_files=[
+                (
+                    "file",
+                    "agreement.adoc",
+                    agreement_one_signer.read_bytes(),
+                    "text/plain",
+                )
+            ]
+        )
+
+        # Assert
+        assert response.status_code == 302
+
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.FORMED
+
+    @pytest.mark.parametrize("initial_agreement_status", [
+        AgreementStatuses.CREATED,
+        AgreementStatuses.SUBMITTED,
+        AgreementStatuses.APPROVED,
+        AgreementStatuses.INITIATED,
+        AgreementStatuses.SIGNED,
+        AgreementStatuses.ACTIVE,
+        AgreementStatuses.TERMINATED,
+    ])
+    def test_incorrect_agreement_status(
+        self,
+        initial_agreement_status: AgreementStatuses,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_one_signer: str,
+        odrl_json: Path,
+    ):
+        # Arrange
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        app.set_user(representative.user)
+
+        project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact = ContactFactory(
+            contact_name=SIGNER1_FULL_NAME,
+            content_type=None,
+            object_id=None,
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=organization,
+            status=initial_agreement_status,
+            assignee_representative=contact,
+        )
+
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+
+        # Act
+        response = app.post(
+            reverse("agreement-initiate", args=[project.pk, agreement.pk]),
+            upload_files=[
+                (
+                    "file",
+                    "agreement.adoc",
+                    agreement_one_signer.read_bytes(),
+                    "text/plain",
+                )
+            ],
+            expect_errors=True,
+        )
+
+        # Assert
+        assert response.status_code == 200
+        assert response.context["form"].errors == {
+            "file": ["Pasirašyti galima tik sutartis su būsenomis `FORMED` arba `INITIATED`."]
+        }
+
+        agreement.refresh_from_db()
+        assert agreement.status == initial_agreement_status  # Unchanged.
+
+    def test_multiple_pdf_files_found(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_one_signer: str,
+        odrl_json: Path,
+    ):
+        # Arrange
+        representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
+        app.set_user(representative.user)
+
+        project = ProjectFactory(organization=organization, datasets=[dataset])
+        contact = ContactFactory(
+            contact_name=SIGNER1_FULL_NAME,
+            content_type=None,
+            object_id=None,
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=organization,
+            status=AgreementStatuses.FORMED,
+            assignee_representative=contact,
+        )
+
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+
+        # Act
+        response = app.post(
+            reverse("agreement-initiate", args=[project.pk, agreement.pk]),
+            upload_files=[
+                (
+                    "file",
+                    "agreement.adoc",
+                    agreement_one_signer.read_bytes(),
+                    "text/plain",
+                )
+            ]
+        )
+
+        # Assert
+        assert response.status_code == 302
+
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.FORMED
 
 
 class TestAgreementSign:
-    def test_success(self):
-        pass  # TODO
+    def test_success(
+        self,
+        app: DjangoTestApp,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_two_signers: str,
+        odrl_json: Path,
+    ):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        dataset.organization = assigner_organization
+        dataset.save()
+
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+        app.set_user(assigner_user)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.email
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.email
+        )
+
+        project = ProjectFactory(organization=assignee_organization, datasets=[dataset])
+
+        agreement = AgreementFactory(
+            template=template,
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner=assigner_organization,
+            assigner_representative=assigner_contact,
+            other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
+            payment_terms="Payment term A; Payment term B.",
+            created_by=assignee_user,
+            status=AgreementStatuses.INITIATED
+        )
+
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+
+        # Act
+        response = app.post(
+            reverse("agreement-sign", args=[project.pk, agreement.pk]),
+            upload_files=[
+                (
+                    "file",
+                    "agreement.adoc",
+                    agreement_two_signers.read_bytes(),
+                    "text/plain",
+                )
+            ]
+        )
+
+        # Assert
+        assert response.status_code == 302
+
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.SIGNED
+        assert agreement.is_agent_sync_enabled
+
+    @pytest.mark.parametrize("initial_agreement_status", [
+        AgreementStatuses.CREATED,
+        AgreementStatuses.SUBMITTED,
+        AgreementStatuses.APPROVED,
+        AgreementStatuses.SIGNED,
+        AgreementStatuses.ACTIVE,
+        AgreementStatuses.TERMINATED,
+    ])
+    def test_incorrect_agreement_status(
+        self,
+        initial_agreement_status: AgreementStatuses,
+        app: DjangoTestApp,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_two_signers: str,
+        odrl_json: Path,
+    ):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        dataset.organization = assigner_organization
+        dataset.save()
+
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+        app.set_user(assigner_user)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.email
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.email
+        )
+
+        project = ProjectFactory(organization=assignee_organization, datasets=[dataset])
+
+        agreement = AgreementFactory(
+            template=template,
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner=assigner_organization,
+            assigner_representative=assigner_contact,
+            other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
+            payment_terms="Payment term A; Payment term B.",
+            created_by=assignee_user,
+            status=initial_agreement_status
+        )
+
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+
+        # Act
+        response = app.post(
+            reverse("agreement-sign", args=[project.pk, agreement.pk]),
+            upload_files=[
+                (
+                    "file",
+                    "agreement.adoc",
+                    agreement_two_signers.read_bytes(),
+                    "text/plain",
+                )
+            ],
+            expect_errors = True,
+        )
+
+        # Assert
+        assert response.status_code == 200
+        assert response.context["form"].errors == {
+            "file": ["Pasirašyti galima tik sutartis su būsenomis `FORMED` arba `INITIATED`."]
+        }
+
+        agreement.refresh_from_db()
+        assert agreement.status == initial_agreement_status
+
+    def test_pdf_file_is_not_created(
+        self,
+        app: DjangoTestApp,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_two_signers: str,
+        odrl_json: Path,
+    ):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        dataset.organization = assigner_organization
+        dataset.save()
+
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+        app.set_user(assigner_user)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.email
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.email
+        )
+
+        project = ProjectFactory(organization=assignee_organization, datasets=[dataset])
+
+        agreement = AgreementFactory(
+            template=template,
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner=assigner_organization,
+            assigner_representative=assigner_contact,
+            other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
+            payment_terms="Payment term A; Payment term B.",
+            created_by=assignee_user,
+            status=AgreementStatuses.INITIATED
+        )
+
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+
+        # Act
+        response = app.post(
+            reverse("agreement-sign", args=[project.pk, agreement.pk]),
+            upload_files=[
+                (
+                    "file",
+                    "agreement.adoc",
+                    agreement_two_signers.read_bytes(),
+                    "text/plain",
+                )
+            ]
+        )
+
+        # Assert
+        assert response.status_code == 302
+
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.INITIATED
+
+    def test_multiple_pdf_files_found(
+        self,
+        app: DjangoTestApp,
+        dataset: Dataset,
+        agreement_pdf: Path,
+        agreement_two_signers: str,
+        odrl_json: Path,
+    ):
+        # Arrange
+        template = SmartContractTemplate.objects.create(
+            file=ContentFile(
+                open(Path(__file__).parent / "files" / "contract_template.md").read(),
+                name="contract_template.md",
+            )
+        )
+
+        assignee_organization, assigner_organization = OrganizationFactory.create_batch(2)
+        dataset.organization = assigner_organization
+        dataset.save()
+
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
+        app.set_user(assigner_user)
+
+        assignee_contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=assignee_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assignee_user.email,
+            phone=assignee_user.email
+        )
+        assigner_contact = ContactFactory(
+            organization=assigner_organization,
+            object_id=assigner_user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=assigner_user.email,
+            phone=assigner_user.email
+        )
+
+        project = ProjectFactory(organization=assignee_organization, datasets=[dataset])
+
+        agreement = AgreementFactory(
+            template=template,
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=assignee_contact,
+            assigner=assigner_organization,
+            assigner_representative=assigner_contact,
+            other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
+            payment_terms="Payment term A; Payment term B.",
+            created_by=assignee_user,
+            status=AgreementStatuses.INITIATED
+        )
+
+        AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+
+        # Act
+        response = app.post(
+            reverse("agreement-sign", args=[project.pk, agreement.pk]),
+            upload_files=[
+                (
+                    "file",
+                    "agreement.adoc",
+                    agreement_two_signers.read_bytes(),
+                    "text/plain",
+                )
+            ]
+        )
+
+        # Assert
+        assert response.status_code == 302
+
+        agreement.refresh_from_db()
+        assert agreement.status == AgreementStatuses.INITIATED

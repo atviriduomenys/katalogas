@@ -33,7 +33,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.datasets.mixins import Crumb, DatasetBreadcrumbsMixin
 from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none, build_page_title_context
 from vitrina.orgs.models import Representative
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.services import has_perm, Action, can_manage_information_system
 from vitrina.projects.models import Project
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
@@ -118,13 +118,9 @@ class DatasetStructureMixin(StructureMixin):
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
-        if (
-            self.dataset.subclass
-            and self.dataset.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.dataset.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.dataset
+        ) or can_manage_information_system(self.dataset, self.request.user)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.dataset, Action.VIEW)
         if self.can_manage_structure:
             self.models = (
@@ -179,13 +175,9 @@ class DatasetStructureView(
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         if self.can_manage_structure:
             self.models = (
@@ -280,13 +272,9 @@ class ModelStructureView(
         )
         if not self.model:
             raise Http404("No Model matches the given query.")
-        dataset_perm = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            dataset_perm = True
+        dataset_perm = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         allowed_model_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         allowed_prop_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property
@@ -444,13 +432,9 @@ class PropertyGraphView(PermissionRequiredMixin, View):
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name)
 
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
         if self.can_manage_structure:
@@ -560,13 +544,9 @@ class PropertyStructureView(
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name)
-        dataset_perm = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            dataset_perm = True
+        dataset_perm = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         allowed_structure_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.STRUCTURE)
         model_visibility = self.model.visibility
         self.can_manage_structure = dataset_perm and (
@@ -741,13 +721,9 @@ class ModelDataTableView(PermissionRequiredMixin, View):
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
 
@@ -905,13 +881,9 @@ class ModelDataView(
             raise Http404("No Model matches the given query.")
 
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
 
         if self.can_manage_structure:
@@ -1048,13 +1020,10 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
         )
         if not self.model:
             raise Http404("No Model matches the given query.")
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
+
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
 
@@ -1134,13 +1103,9 @@ class ObjectDataView(
         )
         if not self.model:
             raise Http404("No Model matches the given query.")
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
 
@@ -1251,13 +1216,9 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
         )
         if not self.model:
             raise Http404("No Model matches the given query.")
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
 
@@ -2647,13 +2608,9 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
 
@@ -2765,13 +2722,9 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
-        if (
-            self.object.subclass
-            and self.object.subclass.is_information_system
-            and self.request.user.is_information_system_representative_for(self.object.organization)
-        ):
-            self.can_manage_structure = True
+        self.can_manage_structure = has_perm(
+            self.request.user, Action.STRUCTURE, Dataset, self.object
+        ) or can_manage_information_system(self.object, self.request.user)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
         if self.can_manage_structure:

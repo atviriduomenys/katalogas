@@ -4,7 +4,6 @@ import pathlib
 from datetime import datetime
 from random import randrange
 
-import requests
 import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -27,6 +26,7 @@ from vitrina.classifiers.models import (
     ApplicableLegislation,
     Status,
 )
+from vitrina.utils import translate_text
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
     EdpRestrictedDatasetManager,
@@ -36,7 +36,6 @@ from vitrina.datasets.managers import (
 )
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
-from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode
 from vitrina.users.models import User
 
@@ -1206,38 +1205,10 @@ class Dataset(Resource):
             self.set_current_language("en")
 
             if lt_title and not self.en_title():
-                response_title = requests.post(
-                    TRANSLATION_URL,
-                    json={
-                        "appId": "",
-                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                        "text": lt_title,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                )
-                en_title = response_title.json()
-                self.title = en_title
+                self.title = translate_text(lt_title, f"dataset {self.id} title")
 
             if lt_description and not self.en_description():
-                response_desc = requests.post(
-                    TRANSLATION_URL,
-                    json={
-                        "appId": "",
-                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                        "text": lt_description,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                )
-                en_description = response_desc.json()
-                self.description = en_description
+                self.description = translate_text(lt_description, f"dataset {self.id} description")
 
     def get_main_contact(self):
         if contact := self.contact:

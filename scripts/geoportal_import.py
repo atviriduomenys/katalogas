@@ -2,6 +2,7 @@ import os
 import django
 
 from vitrina.settings import TRANSLATION_URL
+from vitrina.utils import translate_text
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")
 django.setup()
@@ -90,23 +91,13 @@ def _get_condition_descriptions():
             identifier = _get_elem(".//{%s}identifier" % gml, code)
             code_space = identifier.get("codeSpace") if identifier is not None else ""
             if description is not None and identifier is not None:
-                lt_description = requests.post(
-                    TRANSLATION_URL,
-                    json={
-                        "appId": "",
-                        "systemID": "smt-d01dca4d-e827-46e6-acaa-e5cb1201bc16",
-                        "text": description.text,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": settings.TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
+                translated_description = translate_text(
+                    description.text,
+                    field_name=f"geoportal condition {identifier.text}"
                 )
-                description = lt_description.json()
-
+                
                 condition_info[identifier.text] = {
-                    "description": description,
+                    "description": translated_description,
                     "code_space": code_space,
                 }
 

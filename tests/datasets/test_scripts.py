@@ -183,8 +183,8 @@ def test_geoportal_import__title_and_description_create_without_translation(app:
     assert dataset.title == "Pavadinimas"
     assert dataset.description == "Aprašymas"
     dataset.set_current_language("en")
-    assert dataset.title == "Title"
-    assert dataset.description == "Description"
+    assert dataset.title == "Pavadinimas"
+    assert dataset.description == "Aprašymas"
 
 
 @pytest.mark.django_db
@@ -778,9 +778,9 @@ def test_geoportal_import__distribution_conditions_create(app: DjangoTestApp):
     distribution = dataset.datasetdistribution_set.first()
     assert distribution.download_url == "https://example.com/file.csv"
     assert distribution.conditions == \
-           'Prieigos apribojimai: autorių teisės (copyright). Code space - ISOTC211/19115.\n' \
-           'Naudojimo apribojimai: licencija (license). Code space - ISOTC211/19115.\n'\
-           'Kiti apribojimai: apribota (restricted). Code space - ISOTC211/19115.\n'\
+           'Prieigos apribojimai: copyright (copyright). Code space - ISOTC211/19115.\n' \
+           'Naudojimo apribojimai: license (license). Code space - ISOTC211/19115.\n'\
+           'Kiti apribojimai: restricted (restricted). Code space - ISOTC211/19115.\n'\
            'Naudojimo ribotumas: limitations'
 
 
@@ -874,9 +874,9 @@ def test_geoportal_import__distribution_conditions_update(app: DjangoTestApp):
 
     distribution.refresh_from_db()
     assert distribution.conditions == \
-           'Prieigos apribojimai: autorių teisės (copyright). Code space - ISOTC211/19115.\n' \
-           'Naudojimo apribojimai: licencija (license). Code space - ISOTC211/19115.\n'\
-           'Kiti apribojimai: apribota (restricted). Code space - ISOTC211/19115.\n'\
+           'Prieigos apribojimai: copyright (copyright). Code space - ISOTC211/19115.\n' \
+           'Naudojimo apribojimai: license (license). Code space - ISOTC211/19115.\n'\
+           'Kiti apribojimai: restricted (restricted). Code space - ISOTC211/19115.\n'\
            'Naudojimo ribotumas: limitations'
 
 

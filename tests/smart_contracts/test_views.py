@@ -1534,7 +1534,6 @@ class TestAgreementInitiate:
         AgreementStatuses.CREATED,
         AgreementStatuses.SUBMITTED,
         AgreementStatuses.APPROVED,
-        AgreementStatuses.INITIATED,
         AgreementStatuses.SIGNED,
         AgreementStatuses.ACTIVE,
         AgreementStatuses.TERMINATED,

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-26 11:07+0200\n"
+"POT-Creation-Date: 2025-11-26 15:11+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2959,8 +2959,8 @@ msgstr ""
 "person is selected, it is not possible to conclude agreements. A natural "
 "person is indicated only as the author of the use case."
 
-msgid "Duomenų gavėjo teisinis pagrindas"
-msgstr "Legal basis of the data assignee"
+msgid "Duomenų gavimo teisinis pagrindas"
+msgstr "Legal basis for obtaining data"
 
 msgid ""
 "Duomenų gavėjo pateikiamos nuostatos, kuriomis teisiškai remiamasi norint "
@@ -3051,9 +3051,6 @@ msgstr "Dataset list"
 
 msgid "Panaudojimo atvejo peržiūros"
 msgstr "Use case views"
-
-msgid "Duomenų gavimo teisinis pagrindas"
-msgstr "Legal basis for obtaining data"
 
 msgid "Duomenų gavėjas"
 msgstr "Data assignee"
@@ -3732,15 +3729,18 @@ msgstr "Form agreement"
 msgid "Dokumentas turi būti adoc formato."
 msgstr "The document must be in adoc format."
 
-msgid "Įkelti dokumentą"
-msgstr "Upload document"
-
 #, python-brace-format
 msgid "ADOC klaida: {error}"
 msgstr "ADOC error: {error}"
 
 msgid "Prisegtas failas nėra ZIP archyvas."
 msgstr "The attached file is not a ZIP archive."
+
+msgid "Įkelti pasirašytą dokumentą (Gavėjo)"
+msgstr "Upload document signed by data receiver"
+
+msgid "Įkelti pasirašytą dokumentą (Teikėjo)"
+msgstr "Upload document signed by data receiver"
 
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr "File must be in Markdown format (.md)."
@@ -3769,8 +3769,8 @@ msgstr "Date of last synchronization"
 msgid "Sutarties iniciatorius"
 msgstr "Creator of an agreement"
 
-msgid "Papildomi teikėjo teisės aktai"
-msgstr "Other assigner legislations"
+msgid "Duomenų teikimo teisinis pagrindas (prievolė)"
+msgstr "Legal basis for data provision (obligation)"
 
 msgid "Mokėjimo sąlygos"
 msgstr "Payment terms"
@@ -3880,11 +3880,20 @@ msgstr "Generate agreements"
 msgid "Grįžti į sutartis"
 msgstr "Go back to agreements"
 
+msgid "Laukiama gavėjo veiksmų"
+msgstr "Awaiting for the recipient's actions"
+
 msgid "Peržiūrėti pateiktą pasiūlymą"
 msgstr "Review proposal"
 
-msgid "Įkelti pasirašytą dokumentą"
-msgstr "Upload document signed by data receiver"
+msgid "Laukiama teikėjo patvirtinimo"
+msgstr "Waiting for confirmation from the provider"
+
+msgid "Laukiama kol gavėjas įkels pasirašytą dokumentą"
+msgstr "Awaiting for signed document upload by data recipient (assignee)"
+
+msgid "Laukiama kol teikėjas įkels pasirašytą dokumentą"
+msgstr "Awaiting for signed document upload by data provider (assigner)"
 
 msgid "Sutarties identifikatorius"
 msgstr "Agreement id"
@@ -3912,9 +3921,6 @@ msgstr "Data receiver representative is not selected."
 
 msgid "Nėra pasirinktas duomenų teikėjo atstovas."
 msgstr "Data provider representative is not selected."
-
-msgid "Duomenų teikimo teisinis pagrindas (prievolė)"
-msgstr "Legal basis for data provision (obligation)"
 
 msgid "Šablono failas nepridėtas."
 msgstr "Template file is not added."
@@ -3953,42 +3959,25 @@ msgstr "Proposal was successfully confirmed."
 msgid "Sutarties dokumentas sukurtas"
 msgstr "Agreement document is created"
 
-#, python-brace-format
-msgid ""
-"Sutarties dokumentas gali būti generuojamas sutarčiai su būsenomis "
-"{accepted_statuses}. Dabartinė būsena: {current_status}"
-msgstr ""
-"Agreement document can only be generated for agreement with "
-"statuses{accepted_statuses}. Current status: {current_status}"
+msgid "PDF failas sutarčiai nėra sukurtas."
+msgstr "PDF file for the agreement is not created."
+
 
 msgid ""
-"Sutartį pasirašyti duomenų teikėjo vardu galėsite tik po to kai ją pasirašys "
-"duomenų gavėjas."
-msgstr ""
-"You will be able to sign the agreement on behalf of the data provider "
-"(assigner) only after it has been signed by the data recipient (assignee)."
+"Rasti keli PDF failai susieti su sutartimi. Susisiekite su administratoriumi."
+msgstr "Multiple PDF files were found related to the agreement. Please contact the administrator."
 
-msgid ""
-"Gavėjo vardu sutartis jau pasirašyta. Laukiama sutarties pasirašymo iš "
-"teikėjo pusės."
-msgstr ""
-"The agreement has already been signed on behalf of the data recipient "
-"(assignee). Waiting for the data provider (assigner) to sign."
+msgid "Įkelti pasirašytą sutartį"
+msgstr "Upload signed document"
 
-msgid "Nesukurtas PDF failas šiai sutarčiai."
-msgstr "No PDF file has been generated for this agreement."
-
-msgid "Rasti keli PDF failai. Susisiekite su administratoriumi."
-msgstr "Multiple PDF files were found. Please contact the administrator."
-
-msgid "Įkelti gavėjo pasirašytą dokumentą"
-msgstr "Upload document signed by data recipient (assignee)"
-
-msgid "Įkelti teikėjo pasirašytą dokumentą"
-msgstr "Upload document signed by data provider (assigner)"
+msgid "Šią sutartį šiuo metu turi pasirašyti duomenų gavėjo atstovas"
+msgstr "Agreement document needs to be signed by data recipient first."
 
 msgid "Sutarties dokumentas įkeltas sėkmingai"
 msgstr "Agreement document uploaded successfully"
+
+msgid "Šią sutartį šiuo metu turi pasirašyti duomenų teikėjo atstovas."
+msgstr "Agreement document needs to be signed by data provider."
 
 msgid "Rodoma tituliniame puslapyje"
 msgstr "Shown in home page"
@@ -5693,6 +5682,21 @@ msgstr "Deleted"
 msgid "Užrakintas"
 msgstr "Locked"
 
+msgid "Vartotojas prisijungęs per VIISP"
+msgstr "User authorized via VIISP"
+
+msgid "Indikuoja, ar vartotojas yra prisijungęs per VIISP."
+msgstr "Indicates if the user is authorized via VIISP"
+
+msgid "Vartotojo atstovaujama organizacija (VIISP)"
+msgstr "Organization the user represents (VIISP)"
+
+msgid ""
+"Nurodomas įmonės kodas organizacijos, kurios vardu vartotojas yra "
+"prisijungęs per VIISP."
+msgstr ""
+"The company code of the organization the user is logged in on behalf of via VIISP."
+
 msgid "Visi naudotojai"
 msgstr "All users"
 
@@ -5938,9 +5942,6 @@ msgstr "Enter the code of a company registered in Lithuania."
 
 msgid "JA atstovavimo tipas"
 msgstr "Type of representation of a legal entity"
-
-msgid "Naudotojas su tokiu el. paštu neegzistuoja."
-msgstr "User with this e-mail does not exist."
 
 msgid "key_content"
 msgstr "key_content"

@@ -123,11 +123,12 @@ class AgreementApproveForm(BaseAgreementForm):
     class Meta:
         model = Agreement
         fields = ("template", "assigner_representative", "other_assigner_legislations")
+        required_fields = ("template", "assigner_representative")
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
-        for field in ("template", "assigner_representative"):
+        for field in self.Meta.required_fields:
             self.fields[field].required = True
 
         self.fields["template"].queryset = self.get_smart_contract_templates_by_organization(self.agreement.assigner_id)

@@ -17,9 +17,17 @@
     <br>
 
     <div class="buttons is-right">
-        {% if can_create_agreements and agreement.status == "CREATED" %}
-            <a href="{% url "agreement-generate-pdf" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
-                {% translate "Generuoti sutarties dokumentą" %}
+        {% if can_submit_agreements and agreement.status == "CREATED" %}
+            <a href="{% url "agreement-submit" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                {% translate "Pateikti pasiūlymą" %}
+            </a>
+        {% elif can_approve_agreements and agreement.status == "SUBMITTED" %}
+            <a href="{% url "agreement-approve" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                {% translate "Peržiūrėti pateiktą pasiūlymą" %}
+            </a>
+        {% elif can_form_agreements and agreement.status == "APPROVED" %}
+            <a href="{% url "agreement-form" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                {% translate "Formuoti sutartį" %}
             </a>
         {% elif can_upload_agreement_file and agreement.status == "FORMED" or agreement.status == "INITIATED" %}
             <a class="button is-primary m-t-xs m-b-lg" href="{% url "agreement-upload-signed-adoc" project.pk agreement.pk %}">

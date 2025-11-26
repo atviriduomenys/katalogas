@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-19 12:59+0200\n"
+"POT-Creation-Date: 2025-11-19 15:10+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3713,6 +3713,18 @@ msgstr "Smart contracts default template"
 msgid "Išmaniųjų sutarčių numatytieji šablonai"
 msgstr "Smart contracts default templates"
 
+msgid "Pateikti"
+msgstr "Submit"
+
+msgid "Pateikti pasiūlymą"
+msgstr "Submit proposal"
+
+msgid "Patvirtinti pasiūlymą"
+msgstr "Confirm proposal"
+
+msgid "Formuoti sutartį"
+msgstr "Form agreement"
+
 msgid "Dokumentas turi būti adoc formato."
 msgstr "The document must be in adoc format."
 
@@ -3870,6 +3882,9 @@ msgstr "Generate agreements"
 msgid "Grįžti į sutartis"
 msgstr "Go back to agreements"
 
+msgid "Peržiūrėti pateiktą pasiūlymą"
+msgstr "Review proposal"
+
 msgid "Įkelti pasirašytą dokumentą"
 msgstr "Upload document signed by data receiver"
 
@@ -3884,6 +3899,27 @@ msgstr "No agreement documents."
 
 msgid "Nėra sutarčių."
 msgstr "No agreements."
+
+msgid "Sutarties derinimo informacija"
+msgstr "Agreement negotation information"
+
+msgid "Nėra susietų duomenų išteklių."
+msgstr "No related datasets found."
+
+msgid "Duomenų gavimo tikslas"
+msgstr "Purpose of data acquisition"
+
+msgid "Nėra pasirinktas duomenų gavėjo atstovas."
+msgstr "Data receiver representative is not selected."
+
+msgid "Nėra pasirinktas duomenų teikėjo atstovas."
+msgstr "Data provider representative is not selected."
+
+msgid "Duomenų teikimo teisinis pagrindas (prievolė)"
+msgstr "Legal basis for data provision (obligation)"
+
+msgid "Šablono failas nepridėtas."
+msgstr "Template file is not added."
 
 msgid ""
 "Panaudojimo atvejis registruotas fizinio asmens vardu negali turėti sutarčių."
@@ -3902,6 +3938,22 @@ msgstr "Agreements generated successfully"
 msgid "Sutarčių generavime kilo klaidų"
 msgstr "Errors occurred while generating agreements"
 
+msgid ""
+"Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
+"{expected_status}.Dabartinė būsena: {current_status}."
+msgstr ""
+"The action can only be executed when the agreement has the status "
+"{expected_status}. Current status: {current_status}"
+
+msgid "Pasiūlymas sėkmingai pateiktas duomenų teikėjui."
+msgstr "The proposal has been successfully submitted to the data provider."
+
+msgid "Pasiūlymas sėkmingai patvirtintas."
+msgstr "Proposal was successfully confirmed."
+
+msgid "Sutarties dokumentas sukurtas"
+msgstr "Agreement document is created"
+
 #, python-brace-format
 msgid ""
 "Sutarties dokumentas gali būti generuojamas sutarčiai su būsena "
@@ -3909,9 +3961,6 @@ msgid ""
 msgstr ""
 "Agreement document can only be generated for agreement with "
 "status{accepted_status}. Current status: {current_status}"
-
-msgid "Sutarties dokumentas sukurtas"
-msgstr "Agreement document is created"
 
 #, python-brace-format
 msgid ""

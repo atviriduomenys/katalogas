@@ -4,8 +4,10 @@ from vitrina.smart_contracts.views import (
     AgreementCreateView,
     AgreementListView,
     AgreementDetailView,
-    AgreementGeneratePdf,
     AgreementUploadSignedFile,
+    AgreementSubmitView,
+    AgreementApproveView,
+    AgreementFormView,
 )
 
 urlpatterns = [
@@ -25,9 +27,19 @@ urlpatterns = [
         name="agreement-detail",
     ),
     path(
-        "projects/<int:pk>/agreement/<uuid:agreement_id>/generate-pdf/",
-        AgreementGeneratePdf.as_view(),
-        name="agreement-generate-pdf",
+        "projects/<int:pk>/agreement/<uuid:agreement_id>/submit/",
+        AgreementSubmitView.as_view(),
+        name="agreement-submit",
+    ),
+    path(
+        "projects/<int:pk>/agreement/<uuid:agreement_id>/approve/",
+        AgreementApproveView.as_view(),
+        name="agreement-approve",
+    ),
+    path(
+        "projects/<int:pk>/agreement/<uuid:agreement_id>/form",
+        AgreementFormView.as_view(),
+        name="agreement-form",
     ),
     path(
         "projects/<int:pk>/agreement/<uuid:agreement_id>/upload-signed/",

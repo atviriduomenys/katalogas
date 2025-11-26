@@ -1857,7 +1857,7 @@ class Contact(models.Model):
             if self.content_type.model == "organization":
                 return self.content_object.title
             return self.content_object.get_full_name()
-        return self.contact_name
+        return f"{self.contact_name} ({self.position})"
 
     def get_email(self):
         if self.email:

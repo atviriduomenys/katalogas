@@ -1619,6 +1619,7 @@ class TestAgreementInitiate:
 
         AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
         AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
 
         # Act
         response = app.post(

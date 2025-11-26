@@ -373,67 +373,55 @@ class DatasetDistribution(TranslatableModel):
             self.set_current_language("en")
 
             if lt_title and not self.en_title():
-                try:
-                    response_title = requests.post(
-                        TRANSLATION_URL,
-                        json={
-                            "appId": "",
-                            "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                            "text": lt_title,
-                            "options": "",
-                        },
-                        headers={
-                            "client-id": TRANSLATION_CLIENT_ID,
-                            "Content-Type": "application/json; charset=utf-8",
-                        },
-                        timeout=1,
-                    )
-                    en_title = response_title.json()
-                    self.title = en_title
-                except:
-                    pass
+                response_title = requests.post(
+                    TRANSLATION_URL,
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_title,
+                        "options": "",
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8",
+                    },
+                )
+                en_title = response_title.json()
+                self.title = en_title
 
             if lt_description and not self.en_description():
-                try:
-                    response_desc = requests.post(
-                        TRANSLATION_URL,
-                        json={
-                            "appId": "",
-                            "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                            "text": lt_description,
-                            "options": "",
-                        },
-                        headers={
-                            "client-id": TRANSLATION_CLIENT_ID,
-                            "Content-Type": "application/json; charset=utf-8",
-                        },
-                        timeout=1,
-                    )
-                    en_description = response_desc.json()
-                    self.description = en_description
-                except:
-                    pass
+                response_desc = requests.post(
+                    TRANSLATION_URL,
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_description,
+                        "options": "",
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8",
+                    },
+                )
+                en_description = response_desc.json()
+                self.description = en_description
 
             if lt_conditions and not self.en_conditions():
-                try:
-                    response_conditions = requests.post(
-                        TRANSLATION_URL,
-                        json={
-                            "appId": "",
-                            "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                            "text": lt_conditions,
-                            "options": "",
-                        },
-                        headers={
-                            "client-id": TRANSLATION_CLIENT_ID,
-                            "Content-Type": "application/json; charset=utf-8",
-                        },
-                        timeout=1,
-                    )
-                    en_conditions = response_conditions.json()
-                    self.conditions = en_conditions
-                except:
-                    pass
+                response_conditions = requests.post(
+                    TRANSLATION_URL,
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_conditions,
+                        "options": "",
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8",
+                    },
+                )
+                en_conditions = response_conditions.json()
+                self.conditions = en_conditions
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
         existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))

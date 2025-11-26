@@ -590,6 +590,7 @@ def has_perm(
                         role == Role.INFORMATION_SYSTEM_REPRESENTATIVE
                         and user.is_information_system_representative_for(user_org)
                     )
+                    or (role == Role.OPEN_DATA_REPRESENTATIVE and user.is_open_data_representative_for(user_org))
                 ):
                     return True
                 if role not in {Role.AUTHOR, Role.SUPERVISOR}:

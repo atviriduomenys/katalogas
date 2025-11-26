@@ -38,6 +38,7 @@ class Action(Enum):
     REQUEST_UPDATE = "request_update"
     INFORMATION_SYSTEM_UPDATE = "information_system_update"
     INFORMATION_SYSTEM_REPRESENTATIVE_CREATE = "information_system_representative_create"
+    ORGANIZATION_GOV_REPRESENTATIVE_CREATE = "organization_gov_representative_create"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
@@ -73,6 +74,7 @@ WRITE_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.INFORMATION_SYSTEM_UPDATE,
     Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
+    Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
 }
 DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
@@ -88,6 +90,7 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.PLAN,
     Action.REQUEST_UPDATE,
     Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
+    Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
 }
 
 DATASET_IS_PUBLIC = True
@@ -200,6 +203,16 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
 
 _dataset_create_acl: ACL = {
     (Dataset, Action.CREATE): (Role.COORDINATOR, Role.RESOURCE_MANAGER, Role.GLOBAL_MANAGER, Role.MANAGER)
+}
+_dataset_gov_organization_create_acl: ACL = {
+    (Dataset, Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE): (
+        Role.COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
+    )
 }
 _dataset_information_system_representative_create_acl: ACL = {
     (Dataset, Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE): (
@@ -355,6 +368,7 @@ acl: ACL = (
     _dataset_view_acl
     | _dataset_create_acl
     | _dataset_information_system_representative_create_acl
+    | _dataset_gov_organization_create_acl
     | _information_system_update_acl
     | _dataset_update_acl
     | _dataset_comment_acl

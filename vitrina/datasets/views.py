@@ -370,12 +370,20 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 Contact,
                 self.organization,
             )
-            extra_context["can_create_dataset"] = has_perm(
+            has_permission = has_perm(
                 self.request.user,
                 Action.CREATE,
                 Dataset,
                 self.organization,
             )
+            if self.organization.kind == Organization.GOV:
+                has_permission = has_perm(
+                    self.request.user,
+                    Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
+                    Dataset,
+                    self.organization,
+                )
+            extra_context["can_create_dataset"] = has_permission
             context["organization_id"] = self.organization.pk
             if not form.selected_facets:
                 form.selected_facets.append("organization_exact:{0}".format(self.organization.id))
@@ -561,7 +569,15 @@ class DatasetDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        return has_perm(self.request.user, Action.DELETE, dataset)
+        subclass = dataset.subclass
+        has_permission = has_perm(self.request.user, Action.DELETE, dataset)
+        if subclass and subclass.is_information_system:
+            has_permission = can_manage_information_system(dataset, self.request.user) or has_perm(
+                self.request.user,
+                Action.DELETE,
+                dataset,
+            )
+        return has_permission
 
 
 class DatasetRDFDownloadView(PermissionRequiredMixin, View):
@@ -673,7 +689,20 @@ class DatasetCreateView(
                 if request_id := match.kwargs.get("pk"):
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
-        return has_perm(self.request.user, Action.CREATE, Dataset, self.organization)
+        has_permission = has_perm(
+            self.request.user,
+            Action.CREATE,
+            Dataset,
+            self.organization,
+        )
+        if self.organization.kind == Organization.GOV:
+            has_permission = has_perm(
+                self.request.user,
+                Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
+                Dataset,
+                self.organization,
+            )
+        return has_permission
 
     def get_breadcrumbs(self) -> list[Crumb]:
         """Generate hierarchical breadcrumbs for the dataset"""
@@ -957,7 +986,20 @@ class ResourceSubclassCreateView(
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
-        return has_perm(self.request.user, Action.CREATE, Dataset, organization)
+        has_permission = has_perm(
+            self.request.user,
+            Action.CREATE,
+            Dataset,
+            organization,
+        )
+        if organization.kind == Organization.GOV:
+            has_permission = has_perm(
+                self.request.user,
+                Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
+                Dataset,
+                organization,
+            )
+        return has_permission
 
     def get_breadcrumbs(self) -> list[Crumb]:
         if parent_id := self.kwargs.get("parent_id"):
@@ -1442,12 +1484,21 @@ class DatasetStructureImportView(
     plan_url_name = "dataset-plans"
 
     def has_permission(self):
-        return has_perm(
+        subclass = self.dataset.subclass
+        has_permission = has_perm(
             self.request.user,
             Action.CREATE,
             DatasetStructure,
             self.dataset,
         )
+        if subclass and subclass.is_information_system:
+            has_permission = can_manage_information_system(self.dataset, self.request.user) or has_perm(
+                self.request.user,
+                Action.CREATE,
+                DatasetStructure,
+                self.dataset,
+            )
+        return has_permission
 
     def get_context_data(self, **kwargs):
         return {
@@ -3801,9 +3852,9 @@ class DatasetChildResourceListView(
             dataset.organization,
         )
         if subclass and subclass.is_information_system:
-            can_create_dataset = has_perm(
+            can_create_dataset = can_manage_information_system(self.dataset, self.request.user) or has_perm(
                 self.request.user,
-                Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
+                Action.CREATE,
                 Dataset,
                 dataset.organization,
             )

@@ -4,6 +4,11 @@ Changes
 v 1.8 (unreleased)
 ==================
 
+New features:
+
+https://github.com/atviriduomenys/katalogas/issues/2123
+- Update partner registration permissions: validate that user is in active VIISP session.
+- Update fake VIISP login to work with new partner registration.
 
 v 1.7 (2025-11-20)
 ==================

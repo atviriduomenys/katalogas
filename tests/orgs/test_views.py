@@ -1273,6 +1273,26 @@ def test_create_organization(app: DjangoTestApp):
     assert organization.description == "aprasymas"
     assert organization.kind == Organization.GOV
 
+
+@pytest.mark.django_db
+def test_partner_register_no_permission(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+
+    response = app.get(reverse('partner-register'))
+
+    assert response.status_code == 302
+    assert response.url == reverse("viisp-login")
+
+@pytest.mark.django_db
+def test_partner_register_access_with_permission(app: DjangoTestApp):
+    user = UserFactory(is_viisp_login=True)
+    app.set_user(user)
+
+    response = app.get(reverse('partner-register'))
+
+    assert response.status_code == 200
+
 class TestRepresentativeDeleteView:
     @pytest.mark.django_db
     def test_delete_representative(self, app: DjangoTestApp) -> None:

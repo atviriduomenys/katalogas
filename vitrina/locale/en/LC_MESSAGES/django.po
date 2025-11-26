@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-19 15:10+0200\n"
+"POT-Creation-Date: 2025-11-26 11:07+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2806,6 +2806,10 @@ msgid "Nepavyko atnaujinti duomenų iš JAR:"
 msgstr "Couldn't update data from JAR"
 
 msgid ""
+"Norėdami registruoti naują duomenų teikėją, privalote prisijungti su VIISP."
+msgstr "To register a new partner, you must log in with VIISP."
+
+msgid ""
 "Nepavyko susisiekti su Saugyklos API, todėl raktai rodomi lentelėje gali "
 "nesutapti su raktais Saugykloje."
 msgstr ""
@@ -3738,32 +3742,20 @@ msgstr "ADOC error: {error}"
 msgid "Prisegtas failas nėra ZIP archyvas."
 msgstr "The attached file is not a ZIP archive."
 
-msgid "Pasirinkite šabloną (privaloma)"
-msgstr "Choose a template (required)"
-
-msgid "Papildomi teikėjo teisės aktai"
-msgstr "Other assigner legislations"
-
-msgid "Mokėjimo sąlygos"
-msgstr "Payment terms"
-
-msgid "Duomenų teikėjo atstovas"
-msgstr "Data provider representative"
-
-msgid "Duomenų gavėjo atstovas"
-msgstr "Data receiver representative"
-
-msgid "Generuoti sutarties dokumentą"
-msgstr "Generate agreement document"
-
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr "File must be in Markdown format (.md)."
 
 msgid "Nurodoma organizacija, kuriai priskirtas šablonas."
 msgstr "Specifies the organization to which the template is assigned."
 
+msgid "Duomenų teikėjo atstovas"
+msgstr "Data provider representative"
+
 msgid "Duomenis gaunanti organizacija"
 msgstr "Data receiver organization"
+
+msgid "Duomenų gavėjo atstovas"
+msgstr "Data receiver representative"
 
 msgid "Sutarties šablonas"
 msgstr "Agreement template"
@@ -3776,6 +3768,12 @@ msgstr "Date of last synchronization"
 
 msgid "Sutarties iniciatorius"
 msgstr "Creator of an agreement"
+
+msgid "Papildomi teikėjo teisės aktai"
+msgstr "Other assigner legislations"
+
+msgid "Mokėjimo sąlygos"
+msgstr "Payment terms"
 
 msgid "Sutartis"
 msgstr "Agreement"
@@ -3938,6 +3936,7 @@ msgstr "Agreements generated successfully"
 msgid "Sutarčių generavime kilo klaidų"
 msgstr "Errors occurred while generating agreements"
 
+#, python-brace-format
 msgid ""
 "Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
 "{expected_status}.Dabartinė būsena: {current_status}."
@@ -3953,14 +3952,6 @@ msgstr "Proposal was successfully confirmed."
 
 msgid "Sutarties dokumentas sukurtas"
 msgstr "Agreement document is created"
-
-#, python-brace-format
-msgid ""
-"Sutarties dokumentas gali būti generuojamas sutarčiai su būsena "
-"{accepted_status}. Dabartinė būsena: {current_status}"
-msgstr ""
-"Agreement document can only be generated for agreement with "
-"status{accepted_status}. Current status: {current_status}"
 
 #, python-brace-format
 msgid ""

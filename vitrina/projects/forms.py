@@ -29,7 +29,7 @@ class ProjectForm(ModelForm):
         ),
     )
     other_assignee_legislations = CharField(
-        label=_("Duomenų gavėjo teisinis pagrindas"),
+        label=_("Duomenų gavimo teisinis pagrindas"),
         widget=Textarea,
         required=False,
         help_text=_("Duomenų gavėjo pateikiamos nuostatos, kuriomis teisiškai remiamasi norint gauti duomenis."),

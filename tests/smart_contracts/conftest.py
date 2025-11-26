@@ -12,6 +12,7 @@ from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.smart_contracts.services import SAFE_PARSER, SIGNATURE_NAMESPACES
 
+
 AGREEMENT_ONE_SIGNER = "agreement_one_signer.adoc"
 AGREEMENT_TWO_SIGNERS = "agreement_two_signers.adoc"
 AGREEMENT_NO_MANIFEST = "agreement_no_manifest.adoc"

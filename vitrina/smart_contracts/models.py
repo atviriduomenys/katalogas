@@ -106,7 +106,9 @@ class Agreement(UUIDBaseModel):
         verbose_name=_("Sutarties iniciatorius"),
     )
     other_assigner_legislations = models.TextField(
-        default="", blank=True, verbose_name=_("Papildomi teikėjo teisės aktai")
+        verbose_name=_("Duomenų teikimo teisinis pagrindas (prievolė)"),
+        blank=True,
+        null=True,
     )
     payment_terms = models.TextField(default="", blank=True, verbose_name=_("Mokėjimo sąlygos"))
 

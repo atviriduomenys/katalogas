@@ -61,3 +61,11 @@ def can_form_agreements(user: User, agreement: Agreement) -> bool:
     )
 
     return is_viisp_authenticated and is_representative
+
+
+def can_initiate_agreements(user: User, agreement: Agreement) -> bool:
+    return _is_viisp_authenticated_and_representative(user, agreement.assignee)
+
+
+def can_sign_agreements(user: User, agreement: Agreement) -> bool:
+    return _is_viisp_authenticated_and_representative(user, agreement.assigner)

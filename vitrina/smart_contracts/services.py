@@ -127,7 +127,7 @@ def validate_adoc(zip_file: zipfile.ZipFile, checksum: str) -> tuple[bool, str]:
         raise InvalidAdocError(_("PDF dokumentas nesutampa su sutartyje esančiu PDF dokumentu."))
 
 
-def validate_signers(signers: list[str], agreement: Agreement) -> tuple[bool, str | None]:
+def validate_signatures(signers: list[str], agreement: Agreement) -> tuple[bool, str | None]:
     num_of_signers = len(signers)
 
     if num_of_signers == 0:
@@ -139,7 +139,6 @@ def validate_signers(signers: list[str], agreement: Agreement) -> tuple[bool, st
             return False, _(
                 "Įkelta sutartis pasirašyta daugiau nei 1 parašu. Gavėjas turėtų pasirašyti tik vienu parašu."
             )
-
     elif agreement.status == AgreementStatuses.INITIATED:
         if num_of_signers == 1:
             return False, _("Įkelta sutartis nepasirašyta teikėjo parašu.")

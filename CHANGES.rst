@@ -32,6 +32,7 @@ https://github.com/atviriduomenys/katalogas/issues/2067
 - Part 2.3: Move permissions to dedicated `permisions.py` file.
 - Part 2.4: Adjust queryset to allow selecting contacts without an assigned user as well.
 - Part 3: Add forms for `submit`, `approve`, change the `form` status form. Separate the forms to be independant for each status.
+- Part 4: Add forms for `initiate` and `sign` statuses. Adjust the logic for each one. Make them easily extendable.
 
 https://github.com/atviriduomenys/katalogas/issues/1955
 - Improved contact form by adding new contact, position, removed dataset field.

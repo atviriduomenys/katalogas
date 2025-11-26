@@ -73,6 +73,7 @@ class UserAdmin(BaseUserAdmin):
         "first_name",
         "last_name",
     )
+    readonly_fields = ("viisp_company_code",)
     delete_confirmation_template = "vitrina/users/admin/delete_confirmation.html"
     change_list_template = "vitrina/users/admin/change_list.html"
     change_form_template = "vitrina/users/admin/change_form.html"
@@ -106,6 +107,8 @@ class UserAdmin(BaseUserAdmin):
                     "is_active",
                     "is_staff",
                     "is_superuser",
+                    "is_viisp_login",
+                    "viisp_company_code",
                     "groups",
                 ),
             },
@@ -134,6 +137,8 @@ class UserAdmin(BaseUserAdmin):
                     "is_active",
                     "is_staff",
                     "is_superuser",
+                    "is_viisp_login",
+                    "viisp_company_code",
                     "groups",
                 ),
             },

@@ -1353,14 +1353,15 @@ def get_allowed_visibilities(
     else:
         acl = ENUM_VISIBILITY_ACL
 
-    if (
+    is_information_system_representative = (
         dataset.subclass
         and dataset.subclass.is_information_system
+        and user.is_authenticated
+        and hasattr(user, "is_information_system_representative_for")
         and user.is_information_system_representative_for(dataset.organization)
-    ):
-        for (cls, visibility, action), roles in acl.items():
-            allowed_visibilities.add(visibility)
-        return allowed_visibilities
+    )
+    if is_information_system_representative:
+        return {visibility for (cls, visibility, action), roles in acl.items() if action == model_action}
 
     for (cls, visibility, action), roles in acl.items():
         if cls == model_class and user_role in roles and action == model_action:

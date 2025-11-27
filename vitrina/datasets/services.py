@@ -12,7 +12,7 @@ from django.urls import reverse
 from haystack.backends import SQ
 from haystack.query import SearchQuerySet
 
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.helpers import get_filter_url
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
@@ -266,9 +266,15 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
     if info_system_orgs.exists():
         combined_filter |= SQ(
             organization_id__in=info_system_orgs,
+            subclass_name=DCATResourceSubclass.INFORMATION_SYSTEM,
+            is_public="true",
+            access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL),
+        )
+        combined_filter |= SQ(
+            organization_id__in=info_system_orgs,
             is_public="true",
             access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC),
-        )
+        ) & ~SQ(subclass_name=DCATResourceSubclass.INFORMATION_SYSTEM)
     if open_data_orgs.exists():
         return datasets.filter(public_filter)
 

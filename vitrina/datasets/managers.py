@@ -41,7 +41,7 @@ class PermittedDatasetManager(TranslatableManager):
         return self._filter_datasets_for_user(user, base_queryset)
 
     def _filter_datasets_for_user(self, user: "User", datasets: QuerySet["Dataset"]) -> QuerySet["Dataset"]:
-        from vitrina.datasets.models import Dataset, Organization, Representative
+        from vitrina.datasets.models import Dataset, Organization, Representative, DCATResourceSubclass
 
         dataset_ct = ContentType.objects.get_for_model(Dataset)
         org_ct = ContentType.objects.get_for_model(Organization)
@@ -84,9 +84,25 @@ class PermittedDatasetManager(TranslatableManager):
         if info_system_orgs.exists():
             accessible_filter |= Q(
                 organization__in=info_system_orgs,
+                subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM,
                 is_public=True,
-                access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC),
+                access_rights__in=(
+                    Dataset.PUBLIC,
+                    Dataset.RESTRICTED,
+                    Dataset.NON_PUBLIC,
+                    Dataset.CONFIDENTIAL,
+                ),
             )
+            accessible_filter |= Q(
+                organization__in=info_system_orgs,
+                is_public=True,
+                access_rights__in=(
+                    Dataset.PUBLIC,
+                    Dataset.RESTRICTED,
+                    Dataset.NON_PUBLIC,
+                ),
+            ) & ~Q(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM)
+
         open_data_orgs = Representative.objects.filter(
             content_type=org_ct, user_id=user.id, open_data_representative=True
         ).values_list("object_id", flat=True)

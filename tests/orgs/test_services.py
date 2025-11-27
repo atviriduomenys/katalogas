@@ -112,7 +112,7 @@ def test_dataset_create_permission_organization_manager():
 def test_dataset_create_permission_organization_coordinator():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, user=user, role=Representative.COORDINATOR)
+    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.COORDINATOR)
     res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
     assert res is True
 

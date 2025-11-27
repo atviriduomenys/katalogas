@@ -1,5 +1,6 @@
 import factory
 import uuid
+
 from factory.django import DjangoModelFactory
 
 from vitrina.datasets.factories import DatasetFactory
@@ -16,34 +17,19 @@ from vitrina.structure.models import (
     Version,
 )
 
-_shared_version = None
-
-def get_shared_version():
-    global _shared_version
-    if _shared_version is None:
-        _shared_version = VersionFactory()
-    return _shared_version
-
-
-class VersionFactory(DjangoModelFactory):
-    class Meta:
-        model = Version
-
-    dataset = factory.SubFactory(DatasetFactory)
-
 
 class MetadataFactory(DjangoModelFactory):
     class Meta:
         model = Metadata
 
-    uuid = factory.LazyFunction(lambda: str(uuid.uuid4()))
-    dataset = factory.SelfAttribute("metadata_version.dataset")
+    uuid = str(uuid.uuid4())
+    dataset = factory.SubFactory(DatasetFactory)
     name = factory.Faker("word")
     title = factory.Faker("catch_phrase")
     description = factory.Faker("catch_phrase")
     version = 1
     access = Metadata.OPEN
-    metadata_version = factory.LazyFunction(get_shared_version)
+
     type = ""
     ref = ""
     source = ""
@@ -56,8 +42,7 @@ class ModelFactory(DjangoModelFactory):
     class Meta:
         model = Model
 
-    version = factory.LazyFunction(get_shared_version)
-    dataset = factory.SelfAttribute("version.dataset")
+    dataset = factory.SubFactory(DatasetFactory)
 
 
 class BaseFactory(DjangoModelFactory):
@@ -65,7 +50,6 @@ class BaseFactory(DjangoModelFactory):
         model = Base
 
     model = factory.SubFactory(ModelFactory)
-    version = factory.SelfAttribute("model.version")
 
 
 class PropertyFactory(DjangoModelFactory):
@@ -73,7 +57,6 @@ class PropertyFactory(DjangoModelFactory):
         model = Property
 
     model = factory.SubFactory(ModelFactory)
-    version = factory.SelfAttribute("model.version")
 
 
 class EnumFactory(DjangoModelFactory):
@@ -81,7 +64,6 @@ class EnumFactory(DjangoModelFactory):
         model = Enum
 
     name = factory.Faker("word")
-    version = factory.LazyFunction(get_shared_version)
 
 
 class EnumItemFactory(DjangoModelFactory):
@@ -89,7 +71,6 @@ class EnumItemFactory(DjangoModelFactory):
         model = EnumItem
 
     enum = factory.SubFactory(EnumFactory)
-    version = factory.SelfAttribute("enum.version")
 
 
 class PrefixFactory(DjangoModelFactory):
@@ -97,7 +78,6 @@ class PrefixFactory(DjangoModelFactory):
         model = Prefix
 
     name = factory.Faker("word")
-    version = factory.LazyFunction(get_shared_version)
 
 
 class ParamFactory(DjangoModelFactory):
@@ -105,7 +85,6 @@ class ParamFactory(DjangoModelFactory):
         model = Param
 
     name = factory.Faker("word")
-    version = factory.LazyFunction(get_shared_version)
 
 
 class ParamItemFactory(DjangoModelFactory):
@@ -113,4 +92,10 @@ class ParamItemFactory(DjangoModelFactory):
         model = ParamItem
 
     param = factory.SubFactory(ParamFactory)
-    version = factory.SelfAttribute("param.version")
+
+
+class VersionFactory(DjangoModelFactory):
+    class Meta:
+        model = Version
+
+    dataset = factory.SubFactory(DatasetFactory)

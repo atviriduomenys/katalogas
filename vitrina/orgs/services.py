@@ -36,9 +36,9 @@ class Action(Enum):
     UPDATE = "update"
     DELETE = "delete"
     REQUEST_UPDATE = "request_update"
-    INFORMATION_SYSTEM_UPDATE = "information_system_update"
-    INFORMATION_SYSTEM_REPRESENTATIVE_CREATE = "information_system_representative_create"
-    ORGANIZATION_GOV_REPRESENTATIVE_CREATE = "organization_gov_representative_create"
+    INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE = "information_system_at_gov_org_update"
+    INFORMATION_SYSTEM_AT_GOV_ORG_CREATE = "information_system_at_gov_org_create"
+    CREATE_RESOURCE_AT_GOV_ORG = "create_resource_at_gov_org"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
@@ -72,9 +72,9 @@ WRITE_ACTIONS: set[Action] = {
     Action.MANAGE_KEYS,
     Action.MANAGE_PROJECT_KEYS,
     Action.ASSIGN,
-    Action.INFORMATION_SYSTEM_UPDATE,
-    Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
-    Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
+    Action.CREATE_RESOURCE_AT_GOV_ORG,
+    Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE,
+    Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE,
 }
 DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
@@ -89,8 +89,8 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.PLAN,
     Action.REQUEST_UPDATE,
-    Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
-    Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
+    Action.CREATE_RESOURCE_AT_GOV_ORG,
+    Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE,
 }
 
 DATASET_IS_PUBLIC = True
@@ -204,75 +204,34 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
 _dataset_create_acl: ACL = {
     (Dataset, Action.CREATE): (Role.COORDINATOR, Role.RESOURCE_MANAGER, Role.GLOBAL_MANAGER, Role.MANAGER)
 }
-_dataset_gov_organization_create_acl: ACL = {
-    (Dataset, Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE): (
+_dataset_create_resource_at_gov_acl: ACL = inherit_acl(
+    _dataset_create_acl,
+    new_action=Action.CREATE_RESOURCE_AT_GOV_ORG,
+    new_roles={
         Role.COORDINATOR,
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.MANAGER,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
         Role.OPEN_DATA_REPRESENTATIVE,
-    )
-}
-_dataset_information_system_representative_create_acl: ACL = {
-    (Dataset, Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE): (
+    },
+)
+_information_system_update_acl: ACL = inherit_acl(
+    _dataset_update_acl,
+    new_action=Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE,
+    new_roles={Role.COORDINATOR, Role.GLOBAL_MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE},
+)
+_information_system_create_acl: ACL = inherit_acl(
+    _dataset_create_acl,
+    new_action=Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE,
+    new_roles={
         Role.COORDINATOR,
-        Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_MANAGER,
         Role.MANAGER,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-    )
-}
-_information_system_update_acl: ACL = {
-    (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
-    (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.INFORMATION_SYSTEM_UPDATE): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-    },
-    (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-    },
-    (Dataset, DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.INFORMATION_SYSTEM_UPDATE): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-    },
-    (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-    },
-    (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.INFORMATION_SYSTEM_UPDATE): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-    },
-    (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.INFORMATION_SYSTEM_UPDATE): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-    },
-    (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.INFORMATION_SYSTEM_UPDATE): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-    },
-}
+)
 _dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.COMMENT)
 _dataset_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.DELETE)
 _dataset_history_view_acl: ACL = inherit_acl(_dataset_view_acl, new_action=Action.HISTORY_VIEW)
@@ -301,9 +260,7 @@ _dataset_request_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_cl
 _dataset_request_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
 _dataset_request_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=Request, new_action=Action.DELETE)
 _dataset_request_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request, new_action=Action.COMMENT)
-_dataset_request_history_view_acl: ACL = inherit_acl(
-    _dataset_history_view_acl, new_model_class=Request, new_roles={Role.GLOBAL_MANAGER}
-)
+_dataset_request_history_view_acl: ACL = inherit_acl(_dataset_history_view_acl, new_model_class=Request)
 _dataset_structure_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetStructure)
 
 MODEL_VISIBILITY_ACL = {
@@ -367,9 +324,9 @@ ENUM_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, StructureEnum)
 acl: ACL = (
     _dataset_view_acl
     | _dataset_create_acl
-    | _dataset_information_system_representative_create_acl
-    | _dataset_gov_organization_create_acl
+    | _dataset_create_resource_at_gov_acl
     | _information_system_update_acl
+    | _information_system_create_acl
     | _dataset_update_acl
     | _dataset_comment_acl
     | _dataset_delete_acl
@@ -395,7 +352,7 @@ acl: ACL = (
         (Organization, Action.PLAN): (Role.COORDINATOR, Role.MANAGER),
         (Organization, Action.HISTORY_VIEW): (Role.COORDINATOR, Role.MANAGER),
         (Agent, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
-        (Agent, Action.VIEW): (Role.COORDINATOR, Role.MANAGER),
+        (Agent, Action.VIEW): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
         (Agent, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER),
         (Agent, Action.DELETE): (Role.COORDINATOR, Role.MANAGER),
         (Agreement, Action.CREATE): (Role.AUTHOR,),
@@ -418,7 +375,7 @@ acl: ACL = (
         (User, Action.UPDATE): (Role.AUTHOR,),
         (User, Action.VIEW): (Role.AUTHOR,),
         (Task, Action.UPDATE): (Role.AUTHENTICATED,),
-        (Organization, Action.MANAGE_KEYS): (Role.COORDINATOR, Role.MANAGER),
+        (Organization, Action.MANAGE_KEYS): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
         (Project, Action.MANAGE_PROJECT_KEYS): (Role.AUTHOR, Role.SUPERVISOR),
         (RequestAssignment, Action.CREATE): (Role.COORDINATOR,),
         (RequestAssignment, Action.DELETE): (Role.COORDINATOR,),
@@ -497,6 +454,15 @@ def _get_dataset_instance(obj: Model) -> Dataset | None:
 
 
 def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) -> bool:
+    # Special case: IS representative in GOV organization
+    if (
+        dataset.subclass is not None
+        and dataset.subclass.is_information_system
+        and dataset.organization.kind == Organization.GOV
+        and determine_user_role(user, dataset) == Role.INFORMATION_SYSTEM_REPRESENTATIVE
+    ):
+        return True
+
     datasets_to_check: set[Dataset] = {
         dataset,
         *dataset.get_ancestors(),
@@ -589,8 +555,14 @@ def has_perm(
                     or (
                         role == Role.INFORMATION_SYSTEM_REPRESENTATIVE
                         and user.is_information_system_representative_for(user_org)
+                        and action
+                        in (Action.VIEW, Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE, Action.CREATE_RESOURCE_AT_GOV_ORG)
                     )
-                    or (role == Role.OPEN_DATA_REPRESENTATIVE and user.is_open_data_representative_for(user_org))
+                    or (
+                        role == Role.OPEN_DATA_REPRESENTATIVE
+                        and user.is_open_data_representative_for(user_org)
+                        and action in (Action.VIEW, Action.CREATE_RESOURCE_AT_GOV_ORG)
+                    )
                 ):
                     return True
                 if role not in {Role.AUTHOR, Role.SUPERVISOR}:

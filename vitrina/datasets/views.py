@@ -119,7 +119,7 @@ from vitrina.helpers import (
 from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action, hash_api_key, can_manage_information_system
+from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.orgs.views import (
     ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
     DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
@@ -136,6 +136,7 @@ from vitrina.structure.models import Metadata, Property, Model
 from vitrina.structure.services import (
     create_structure_objects,
     get_model_name,
+    get_allowed_visibilities,
 )
 from vitrina.users.models import User
 from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset, can_manage_datasets
@@ -370,20 +371,12 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 Contact,
                 self.organization,
             )
-            has_permission = has_perm(
+            extra_context["can_create_dataset"] = has_perm(
                 self.request.user,
-                Action.CREATE,
+                Action.CREATE_RESOURCE_AT_GOV_ORG if self.organization.kind == Organization.GOV else Action.CREATE,
                 Dataset,
                 self.organization,
             )
-            if self.organization.kind == Organization.GOV:
-                has_permission = has_perm(
-                    self.request.user,
-                    Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
-                    Dataset,
-                    self.organization,
-                )
-            extra_context["can_create_dataset"] = has_permission
             context["organization_id"] = self.organization.pk
             if not form.selected_facets:
                 form.selected_facets.append("organization_exact:{0}".format(self.organization.id))
@@ -481,11 +474,7 @@ class DatasetDetailView(
         paginator = Paginator(related_datasets, 10)  # Show 10 relations per page
         page_number = self.request.GET.get("page")
         page_obj = paginator.get_page(page_number)
-        subclass = dataset.subclass
-        if subclass and subclass.is_information_system:
-            permissions = has_perm(self.request.user, Action.INFORMATION_SYSTEM_UPDATE, dataset)
-        else:
-            permissions = has_perm(self.request.user, Action.UPDATE, dataset)
+
         extra_context_data = {
             "tags": dataset.get_tag_object_list(),
             "subscription": [],
@@ -493,8 +482,15 @@ class DatasetDetailView(
             "public_status": dataset.is_public,
             # TODO: harvested functionality needs to be implemented
             "harvested": "",
-            "can_add_resource": has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),
-            "can_update_dataset": permissions,
+            "can_add_resource": has_perm(
+                self.request.user,
+                Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+                if self.organization.kind == Organization.GOV
+                else Action.CREATE,
+                Dataset,
+                self.organization,
+            ),
+            "can_update_dataset": has_perm(self.request.user, Action.UPDATE, dataset),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
             "resources": dataset.datasetdistribution_set.all().order_by("-period_start"),
             "org_logo": organization.image if organization else None,
@@ -569,15 +565,7 @@ class DatasetDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        subclass = dataset.subclass
-        has_permission = has_perm(self.request.user, Action.DELETE, dataset)
-        if subclass and subclass.is_information_system:
-            has_permission = can_manage_information_system(dataset, self.request.user) or has_perm(
-                self.request.user,
-                Action.DELETE,
-                dataset,
-            )
-        return has_permission
+        return has_perm(self.request.user, Action.DELETE, dataset)
 
 
 class DatasetRDFDownloadView(PermissionRequiredMixin, View):
@@ -689,20 +677,13 @@ class DatasetCreateView(
                 if request_id := match.kwargs.get("pk"):
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
-        has_permission = has_perm(
+
+        return has_perm(
             self.request.user,
-            Action.CREATE,
+            Action.CREATE_RESOURCE_AT_GOV_ORG if self.organization.kind == Organization.GOV else Action.CREATE,
             Dataset,
             self.organization,
         )
-        if self.organization.kind == Organization.GOV:
-            has_permission = has_perm(
-                self.request.user,
-                Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
-                Dataset,
-                self.organization,
-            )
-        return has_permission
 
     def get_breadcrumbs(self) -> list[Crumb]:
         """Generate hierarchical breadcrumbs for the dataset"""
@@ -986,20 +967,12 @@ class ResourceSubclassCreateView(
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
-        has_permission = has_perm(
+        return has_perm(
             self.request.user,
-            Action.CREATE,
+            Action.CREATE_RESOURCE_AT_GOV_ORG if organization.kind == Organization.GOV else Action.CREATE,
             Dataset,
             organization,
         )
-        if organization.kind == Organization.GOV:
-            has_permission = has_perm(
-                self.request.user,
-                Action.ORGANIZATION_GOV_REPRESENTATIVE_CREATE,
-                Dataset,
-                organization,
-            )
-        return has_permission
 
     def get_breadcrumbs(self) -> list[Crumb]:
         if parent_id := self.kwargs.get("parent_id"):
@@ -1088,8 +1061,6 @@ class DatasetUpdateView(
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        if dataset.subclass and dataset.subclass.is_information_system:
-            return has_perm(self.request.user, Action.INFORMATION_SYSTEM_UPDATE, dataset)
         return has_perm(self.request.user, Action.UPDATE, dataset)
 
     def get_context_data(self, **kwargs):
@@ -1422,15 +1393,33 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         return context
 
     def get_history_objects(self):
-        model_ids = self.models.values_list("pk", flat=True)
+        allowed_model_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        allowed_prop_visibilities = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        visibility_filter_model = Q(metadata__visibility__in=allowed_model_visibilities) | Q(
+            metadata__visibility__isnull=True
+        )
+        visibility_filter_property = Q(metadata__visibility__in=allowed_prop_visibilities) | Q(
+            metadata__visibility__isnull=True
+        )
+        model_ids = self.models.filter(visibility_filter_model).values_list("pk", flat=True)
         if self.can_manage_structure:
-            property_ids = Property.objects.filter(model__pk__in=model_ids, given=True).values_list("pk", flat=True)
+            property_ids = (
+                Property.objects.filter(model__pk__in=model_ids, given=True)
+                .filter(visibility_filter_property)
+                .values_list("pk", flat=True)
+            )
         else:
-            property_ids = Property.objects.filter(
-                model__pk__in=model_ids,
-                given=True,
-                metadata__access__gte=Metadata.PUBLIC,
-            ).values_list("pk", flat=True)
+            property_ids = (
+                Property.objects.filter(
+                    model__pk__in=model_ids,
+                    given=True,
+                    metadata__access__gte=Metadata.PUBLIC,
+                )
+                .filter(visibility_filter_property)
+                .values_list("pk", flat=True)
+            )
 
         property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
         model_history_objects = Version.objects.get_for_model(Model).filter(object_id__in=list(model_ids))
@@ -1485,20 +1474,14 @@ class DatasetStructureImportView(
 
     def has_permission(self):
         subclass = self.dataset.subclass
-        has_permission = has_perm(
+        return has_perm(
             self.request.user,
-            Action.CREATE,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            if subclass and subclass.is_information_system
+            else Action.CREATE,
             DatasetStructure,
-            self.dataset,
+            self.organization,
         )
-        if subclass and subclass.is_information_system:
-            has_permission = can_manage_information_system(self.dataset, self.request.user) or has_perm(
-                self.request.user,
-                Action.CREATE,
-                DatasetStructure,
-                self.dataset,
-            )
-        return has_permission
 
     def get_context_data(self, **kwargs):
         return {
@@ -1582,23 +1565,17 @@ class DatasetMembersView(
         context = super().get_context_data(**kwargs)
         context["dataset"] = self.object
         subclass = self.object.subclass
-        has_permission = has_perm(
+        context["has_permission"] = has_perm(
             self.request.user,
-            Action.CREATE,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+            if subclass and subclass.is_information_system
+            else Action.CREATE,
             Representative,
             self.object,
         )
-        if subclass and subclass.is_information_system:
-            has_permission = can_manage_information_system(self.object, self.request.user) or has_perm(
-                self.request.user,
-                Action.CREATE,
-                Representative,
-                self.object,
-            )
-        context["has_permission"] = has_permission
         context["can_view_members"] = has_perm(
             self.request.user,
-            Action.VIEW,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE if subclass and subclass.is_information_system else Action.VIEW,
             Representative,
             self.object,
         )
@@ -1622,20 +1599,14 @@ class CreateMemberView(
 
     def has_permission(self):
         subclass = self.dataset.subclass
-        has_permission = has_perm(
+        return has_perm(
             self.request.user,
-            Action.CREATE,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            if subclass and subclass.is_information_system
+            else Action.CREATE,
             Representative,
             self.dataset,
         )
-        if subclass and subclass.is_information_system:
-            has_permission = can_manage_information_system(self.dataset, self.request.user) or has_perm(
-                self.request.user,
-                Action.CREATE,
-                Representative,
-                self.dataset,
-            )
-        return has_permission
 
     def get_success_url(self):
         return reverse(
@@ -1813,20 +1784,7 @@ class UpdateMemberView(
             Representative,
             pk=self.kwargs.get("representative_id"),
         )
-        subclass = self.dataset.subclass
-        has_permission = has_perm(
-            self.request.user,
-            Action.UPDATE,
-            representative,
-        )
-        if subclass and subclass.is_information_system:
-            has_permission = can_manage_information_system(self.dataset, self.request.user) or has_perm(
-                self.request.user,
-                Action.UPDATE,
-                representative,
-                self.dataset,
-            )
-        return has_permission
+        return has_perm(self.request.user, Action.UPDATE, representative)
 
     def get_success_url(self):
         return reverse(
@@ -1928,20 +1886,11 @@ class DeleteMemberView(
     template_name = "confirm_delete.html"
 
     def has_permission(self):
-        dataset = Dataset.objects.filter(id=self.kwargs.get("dataset_id")).first()
         representative = get_object_or_404(
             Representative,
             pk=self.kwargs.get("pk"),
         )
-        subclass = dataset.subclass
-        has_permission = has_perm(self.request.user, Action.DELETE, representative)
-        if subclass and subclass.is_information_system:
-            has_permission = can_manage_information_system(dataset, self.request.user) or has_perm(
-                self.request.user,
-                Action.DELETE,
-                representative,
-            )
-        return has_permission
+        return has_perm(self.request.user, Action.DELETE, representative)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -3845,21 +3794,18 @@ class DatasetChildResourceListView(
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         dataset = self.object
         subclass = dataset.subclass
-        can_create_dataset = has_perm(
-            self.request.user,
-            Action.CREATE,
-            Dataset,
-            dataset.organization,
+        action = (
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            if subclass and subclass.is_information_system
+            else Action.CREATE
         )
-        if subclass and subclass.is_information_system:
-            can_create_dataset = can_manage_information_system(self.dataset, self.request.user) or has_perm(
-                self.request.user,
-                Action.CREATE,
-                Dataset,
-                dataset.organization,
-            )
         return super().get_context_data(**kwargs) | {
-            "can_create_dataset": can_create_dataset,
+            "can_create_dataset": has_perm(
+                self.request.user,
+                action,
+                Dataset,
+                self.object.organization,
+            ),
             "parent_dataset_id": self.parent_dataset_id,
             "organization_id": self.object.organization_id,
         }

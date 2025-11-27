@@ -9,9 +9,11 @@
 
     {% include 'vitrina/orgs/tabs.html' %}
 
-    <div class="buttons is-right">
-        <a class="button is-primary m-t-xs m-b-lg" href="{% url 'agent-create' organization.pk %}">{% translate "Pridėti agentą" %}</a>
-    </div>
+    {% if has_permission %}
+        <div class="buttons is-right">
+            <a class="button is-primary m-t-xs m-b-lg" href="{% url 'agent-create' organization.pk %}">{% translate "Pridėti agentą" %}</a>
+        </div>
+    {% endif %}
 
     {% if agents %}
         <table class="table is-fullwidth">

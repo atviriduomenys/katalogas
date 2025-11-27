@@ -63,9 +63,12 @@ class PermittedDatasetManager(TranslatableManager):
         )
 
         represented_orgs = Organization.objects.filter(
-            pk__in=Representative.objects.filter(content_type=org_ct, user_id=user.id).values_list(
-                "object_id", flat=True
-            )
+            pk__in=Representative.objects.filter(
+                content_type=org_ct,
+                user_id=user.id,
+                information_system_representative=False,
+                open_data_representative=False,
+            ).values_list("object_id", flat=True)
         )
 
         datasets_in_represented_orgs = Dataset.objects.filter(organization__in=represented_orgs)
@@ -73,6 +76,27 @@ class PermittedDatasetManager(TranslatableManager):
 
         for ds_path in represented_dataset_paths:
             accessible_filter |= Q(path__startswith=ds_path)
+
+        info_system_orgs = Representative.objects.filter(
+            content_type=org_ct, user_id=user.id, information_system_representative=True
+        ).values_list("object_id", flat=True)
+
+        if info_system_orgs.exists():
+            accessible_filter |= Q(
+                organization__in=info_system_orgs,
+                is_public=True,
+                access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC),
+            )
+        open_data_orgs = Representative.objects.filter(
+            content_type=org_ct, user_id=user.id, open_data_representative=True
+        ).values_list("object_id", flat=True)
+
+        if open_data_orgs.exists():
+            accessible_filter |= Q(
+                organization__in=open_data_orgs,
+                is_public=True,
+                access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED),
+            )
 
         if user.is_gov_organization_manager:
             accessible_filter |= Q(

@@ -2903,7 +2903,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.version = get_object_or_404(Version, pk=kwargs.get("version_id"))
+        self.version = get_object_or_404(_Version, pk=kwargs.get("version_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):

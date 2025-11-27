@@ -7,7 +7,7 @@
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
         <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų ištekliai' %}</span></a></li>
         <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
-        <li><a href="{% url 'dataset-structure' dataset.pk %}"><span>{% translate "Struktūra" %}</span></a></li>
+        <li><a href="{% url 'dataset-structure' dataset.pk version_id%}"><span>{% translate "Struktūra" %}</span></a></li>
         <li><a href="{% url 'version-list' dataset.pk %}"><span>{% translate "Keitimų žurnalas" %}</span></a></li>
     </ul>
 {% endblock %}

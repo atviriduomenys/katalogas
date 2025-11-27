@@ -70,6 +70,7 @@ from vitrina.datasets.forms import (
     CatalogResourceForm,
 )
 from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name
+from vitrina.structure import VersionStatus
 from vitrina.structure.views import DatasetStructureMixin
 
 from vitrina.tasks.models import Task
@@ -1470,6 +1471,10 @@ class DatasetStructureImportView(
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
         set_comment(_(f'Added Structure file "{self.object.file}".'))
+        if self.version.status != VersionStatus.DRAFT:
+            form.add_error("file", _("Negalima importuoti struktūros, kai versijos būsena yra juodraštis."))
+            return self.form_invalid(form)
+
         self.version = create_structure_objects(self.object, self.version)
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())

@@ -63,7 +63,7 @@ def create_structure_objects(structure: DatasetStructure, version: Version = Non
                 if state.errors:
                     errors = state.errors
                 else:
-                    if not version or version.status != VersionStatus.DRAFT:
+                    if not version:
                         max_version = (
                             Version.objects.filter(dataset=structure.dataset).aggregate(max_version=Max("version"))[
                                 "max_version"

@@ -484,11 +484,9 @@ class DatasetDetailView(
             "harvested": "",
             "can_add_resource": has_perm(
                 self.request.user,
-                Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
-                if self.organization.kind == Organization.GOV
-                else Action.CREATE,
+                Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE if organization.kind == Organization.GOV else Action.CREATE,
                 Dataset,
-                self.organization,
+                organization,
             ),
             "can_update_dataset": has_perm(self.request.user, Action.UPDATE, dataset),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),

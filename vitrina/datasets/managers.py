@@ -81,7 +81,7 @@ class PermittedDatasetManager(TranslatableManager):
             content_type=org_ct, user_id=user.id, information_system_representative=True
         ).values_list("object_id", flat=True)
 
-        if info_system_orgs.exists():
+        if info_system_orgs.all():
             accessible_filter |= Q(
                 organization__in=info_system_orgs,
                 subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM,

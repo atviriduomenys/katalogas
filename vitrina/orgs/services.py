@@ -260,7 +260,9 @@ _dataset_request_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_cl
 _dataset_request_update_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request)
 _dataset_request_delete_acl: ACL = inherit_acl(_dataset_delete_acl, new_model_class=Request, new_action=Action.DELETE)
 _dataset_request_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_model_class=Request, new_action=Action.COMMENT)
-_dataset_request_history_view_acl: ACL = inherit_acl(_dataset_history_view_acl, new_model_class=Request)
+_dataset_request_history_view_acl: ACL = inherit_acl(
+    _dataset_history_view_acl, new_model_class=Request, new_roles={Role.GLOBAL_MANAGER}
+)
 _dataset_structure_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_class=DatasetStructure)
 
 MODEL_VISIBILITY_ACL = {
@@ -461,6 +463,17 @@ def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) 
         and dataset.organization.kind == Organization.GOV
         and determine_user_role(user, dataset) == Role.INFORMATION_SYSTEM_REPRESENTATIVE
     ):
+        is_confidential_dataset = dataset.access_rights == Dataset.CONFIDENTIAL
+
+        if is_confidential_dataset and action in WRITE_ACTIONS:
+            org_representatives = Representative.objects.filter(
+                user=user,
+                content_type=user.organization_content_type,
+                object_id=dataset.organization_id,
+                information_system_representative=True,
+            )
+            can_write_representative: bool = any(r.can_write for r in org_representatives)
+            return can_write_representative
         return True
 
     datasets_to_check: set[Dataset] = {

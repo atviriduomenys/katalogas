@@ -98,7 +98,7 @@ class AgentListView(BaseAgentView):
                     reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
                     None: _("Agentai"),
                 },
-                "has_permission": has_perm(self.request.user, Action.CREATE, Agent, self.organization)
+                "has_permission": has_perm(self.request.user, Action.CREATE, Agent, self.organization),
             }
         )
 

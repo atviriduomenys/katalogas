@@ -3,7 +3,6 @@ import uuid
 from factory.django import DjangoModelFactory
 
 from vitrina.datasets.factories import DatasetFactory
-from vitrina.structure import VersionStatus
 from vitrina.structure.models import (
     Model,
     Metadata,
@@ -31,7 +30,7 @@ class VersionFactory(DjangoModelFactory):
         model = Version
 
     dataset = factory.SubFactory(DatasetFactory)
-    status = VersionStatus.DRAFT
+
 
 class MetadataFactory(DjangoModelFactory):
     class Meta:

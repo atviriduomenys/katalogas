@@ -2106,7 +2106,6 @@ class RemoveRequestView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
 class AddProjectView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
-    RevisionMixin,
     UpdateView,
 ):
     model = Dataset
@@ -2134,13 +2133,11 @@ class AddProjectView(
         return kwargs
 
     def form_valid(self, form):
-        super().form_valid(form)
-        self.object = form.save()
+        project_names = []
         for project in form.cleaned_data["projects"]:
-            temp_proj = get_object_or_404(Project, pk=project.pk)
-            temp_proj.datasets.add(self.object)
-        set_comment(Dataset.PROJECT_SET)
-        self.object.save()
+            project.datasets.add(self.object)
+            project_names.append(str(project))
+        set_comment(f"Prie ištekliaus '{self.object}' pridėti panaudojimo atvejai '{project_names}'")
         return HttpResponseRedirect(reverse("dataset-projects", kwargs={"pk": self.object.pk}))
 
     def get_context_data(self, **kwargs):

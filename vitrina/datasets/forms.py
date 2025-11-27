@@ -138,7 +138,7 @@ class BaseResourceForm(TranslatableModelForm):
     )
 
     creator = forms.ModelChoiceField(
-        queryset=Organization.public.all(),
+        queryset=Organization.public.all().order_by("title"),
         label=_("Institucija teikianti duomenis"),
         help_text=_("Subjektas, atsakingas už duomenų rinkinio parengimą. Atitinka dct:creator."),
         widget=Select2Widget(),
@@ -147,7 +147,7 @@ class BaseResourceForm(TranslatableModelForm):
     )
 
     publisher = forms.ModelChoiceField(
-        queryset=Organization.public.filter(publisher=True),
+        queryset=Organization.public.filter(publisher=True).order_by("title"),
         label=_("Paslaugų teikėjas"),
         help_text=_(
             "Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų ištekliaus prieinamumą. Atitinka dct:publisher."
@@ -236,11 +236,15 @@ class BaseResourceForm(TranslatableModelForm):
                 organization=request.user.organization,
                 content_type=ContentType.objects.get_for_model(Organization),
             ).values_list("object_id", flat=True)
-            self.fields["creator"].queryset = Organization.objects.filter(
-                Q(id__in=creator_ids)
-                | Q(id=request.user.organization.id)
-                | Q(id=organization.id if organization else self.instance.organization.id)
-            ).distinct()
+            self.fields["creator"].queryset = (
+                Organization.objects.filter(
+                    Q(id__in=creator_ids)
+                    | Q(id=request.user.organization.id)
+                    | Q(id=organization.id if organization else self.instance.organization.id)
+                )
+                .distinct()
+                .order_by("title")
+            )
 
             self.fields["creator"].initial = self.instance.organization or organization
 

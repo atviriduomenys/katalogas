@@ -46,16 +46,20 @@ https://github.com/atviriduomenys/katalogas/issues/2076
 https://github.com/atviriduomenys/katalogas/issues/2147
 - Order by title in `DatasetResourceForm` dropdowns of `Organization`.
 
+https://github.com/atviriduomenys/katalogas/issues/921
+- Fix breadcrumbs and title for dataset detail view.
+- Add custom title field for `Request` from comments.
+- Add link to `Request` in comments.
+- Delete comment functionality for comment author or superuser.
+- Edit comment functionality for comment author or superuser.
+- Remove automated status update comments.
+
+https://github.com/atviriduomenys/katalogas/pull/2145
+- Refactored `vertimas.vu.lt` translation function.
+- Added `try/except` for automatic translation with a timeout.
+
 v 1.7 (2025-11-20)
 ==================
-https://github.com/atviriduomenys/katalogas/issues/921
-Fix breadcrumbs and title for dataset detail view.
-Add custom title field for `Request` from comments.
-Add link to `Request` in comments.
-Delete comment functionality for comment author or superuser.
-Edit comment functionality for comment author or superuser.
-Remove automated status update comments.
-
 New features:
 
 https://github.com/atviriduomenys/katalogas/issues/2067
@@ -64,9 +68,6 @@ https://github.com/atviriduomenys/katalogas/issues/2067
 - Part 2.1: Remove organizations as juridical entities from the list of possible entities to represent organizations in agreements.
 - Part 2.2: Add new field `template` and new statuses for `Agreement`. Adding a few adjustments for field displays & formatting.
 - Part 2.3: Move permissions to dedicated `permisions.py` file.
-- Part 2.4: Adjust queryset to allow selecting contacts without an assigned user as well.
-- Part 3: Add forms for `submit`, `approve`, change the `form` status form. Separate the forms to be independant for each status.
-- Part 4: Add forms for `initiate` and `sign` statuses. Adjust the logic for each one. Make them easily extendable.
 
 https://github.com/atviriduomenys/katalogas/issues/1955
 - Improved contact form by adding new contact, position, removed dataset field.
@@ -184,6 +185,11 @@ Adjustments from the Catalog side for spinta changes:
 - Assign subclass to the service
 - Add an explicit message for Agent creation form, when the auth server is unavailable/unreachable
 - Define better error messages for Agent creation form
+
+https://github.com/atviriduomenys/spinta/issues/1488
+Add additional changes required by sinchronization from the Agent side:
+- New API endpoint for getting manifest structure (in csv).
+- Add an additional query parameter `parent_id` for retrieving all child datasets of a single dataset.
 
 v 1.2 (2025-09-10)
 ==================

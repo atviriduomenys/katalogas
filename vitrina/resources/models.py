@@ -1,7 +1,6 @@
 import pathlib
 from enum import StrEnum
 import uuid
-import requests
 import reversion
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
@@ -12,8 +11,8 @@ from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
+from vitrina.utils import translate_text
 from vitrina.datasets.models import Dataset
-from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL
 
 
 def get_default_status() -> uuid.UUID:
@@ -373,55 +372,13 @@ class DatasetDistribution(TranslatableModel):
             self.set_current_language("en")
 
             if lt_title and not self.en_title():
-                response_title = requests.post(
-                    TRANSLATION_URL,
-                    json={
-                        "appId": "",
-                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                        "text": lt_title,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                )
-                en_title = response_title.json()
-                self.title = en_title
+                self.title = translate_text(lt_title, f"distribution {self.id} title")
 
             if lt_description and not self.en_description():
-                response_desc = requests.post(
-                    TRANSLATION_URL,
-                    json={
-                        "appId": "",
-                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                        "text": lt_description,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                )
-                en_description = response_desc.json()
-                self.description = en_description
+                self.description = translate_text(lt_description, f"distribution {self.id} description")
 
             if lt_conditions and not self.en_conditions():
-                response_conditions = requests.post(
-                    TRANSLATION_URL,
-                    json={
-                        "appId": "",
-                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-                        "text": lt_conditions,
-                        "options": "",
-                    },
-                    headers={
-                        "client-id": TRANSLATION_CLIENT_ID,
-                        "Content-Type": "application/json; charset=utf-8",
-                    },
-                )
-                en_conditions = response_conditions.json()
-                self.conditions = en_conditions
+                self.conditions = translate_text(lt_conditions, f"distribution {self.id} conditions")
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
         existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-26 15:11+0200\n"
+"POT-Creation-Date: 2025-11-27 14:56+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2525,6 +2525,9 @@ msgstr "Data editor"
 
 msgid "Leidžiama keisti duomenis"
 msgstr "Can edit data"
+
+msgid "Atvirų duomenų tvarkytojas"
+msgstr "Open data representative"
 
 msgid "Ataskaita"
 msgstr "Report"

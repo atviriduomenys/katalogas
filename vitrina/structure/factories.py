@@ -29,6 +29,7 @@ class MetadataFactory(DjangoModelFactory):
     description = factory.Faker("catch_phrase")
     version = 1
     access = Metadata.OPEN
+    visibility = Metadata.UNDEFINED
 
     type = ""
     ref = ""

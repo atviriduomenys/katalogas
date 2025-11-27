@@ -834,7 +834,30 @@ class Dataset(Resource):
                 )
                 | Q(organization_id__in=organization_ids),
                 user__isnull=False,
+                information_system_representative=False,
+                open_data_representative=False,
             )
+            .values_list("user_id", flat=True)
+            .distinct()
+        )
+
+    def get_organization_special_representatives_queryset(self) -> QuerySet[int]:
+        """
+        Returns user IDs of organization-level representatives for this dataset
+        (or its ancestor datasets) who have either information_system_representative
+        or open_data_representative set to True.
+        """
+        organization_ids = {self.organization_id}
+        for parent_dataset in self.get_ancestors().only("organization_id"):
+            organization_ids.add(parent_dataset.organization_id)
+
+        return (
+            Representative.objects.filter(
+                Q(content_type=ContentType.objects.get_for_model(Organization), object_id__in=organization_ids)
+                | Q(organization_id__in=organization_ids),
+                user__isnull=False,
+            )
+            .filter(Q(information_system_representative=True) | Q(open_data_representative=True))
             .values_list("user_id", flat=True)
             .distinct()
         )

@@ -121,11 +121,13 @@ def inherit_acl(
     return new_acl
 
 
-def inherit_structure_acl(base_acl: ACL, new_model_class: type[Model]) -> ACL:
+def inherit_structure_acl(
+    base_acl: ACL,
+    new_model_class: Property | StructureEnum,
+) -> ACL:
     new_acl = {}
     for (cls, visibility, action), roles in base_acl.items():
-        new_cls = new_model_class if cls is Model else cls
-        new_acl[(new_cls, visibility, action)] = roles.copy()
+        new_acl[(new_model_class, visibility, action)] = roles.copy()
     return new_acl
 
 

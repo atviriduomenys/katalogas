@@ -21,6 +21,14 @@ class FakeViispForm(AuthenticationForm):
     )
     proxy_type = forms.ChoiceField(label=_("JA atstovavimo tipas"), choices=PROXY_TYPE_CHOICES, required=False)
 
+    error_messages = {
+        **AuthenticationForm.error_messages,
+        "invalid_login": _(
+            "Elektroninis paštas ir/arba slaptažodis yra neteisingas. "
+            "Atkreipkite dėmesį, kad abu laukai yra jautrūs raidžių dydžiui (mažosios ir didžiosios raidės)."
+        ),
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()

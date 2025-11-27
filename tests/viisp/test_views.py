@@ -82,9 +82,13 @@ def test_fake_viisp_logs_in_wrong_password(app: DjangoTestApp):
     user = UserFactory(email="existing@test.com", is_viisp_login=False)
     user.set_password("abc")
     user.save()
-    url = reverse("fake-viisp-complete-login")
     data = {"username": user.email, "password": "test", "lt_company_code": 12345678, "proxy_type": ""}
-    resp = app.post(url, params=data)
 
-    errors = resp.context["form"].errors
-    assert "Įveskite teisingą Elektroninis paštas ir slaptažodį. Abiejuose laukuose didžiosios mažosios raidės skiriasi." in errors["__all__"]
+    response = app.post(reverse("fake-viisp-complete-login"), params=data)
+
+    assert response.context["form"].errors["__all__"] == [
+        (
+            "Elektroninis paštas ir/arba slaptažodis yra neteisingas. "
+            "Atkreipkite dėmesį, kad abu laukai yra jautrūs raidžių dydžiui (mažosios ir didžiosios raidės)."
+        )
+    ]

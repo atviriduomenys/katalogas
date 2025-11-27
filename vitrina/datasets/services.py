@@ -16,7 +16,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.requests.models import Request, RequestObject
 from vitrina.resources.models import Format
@@ -257,6 +257,21 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
         combined_filter |= SQ(
             is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC)
         )
+    info_system_orgs = Representative.objects.filter(
+        user=user, content_type=ContentType.objects.get_for_model(Organization), information_system_representative=True
+    ).values_list("object_id", flat=True)
+    open_data_orgs = Representative.objects.filter(
+        user=user, content_type=ContentType.objects.get_for_model(Organization), open_data_representative=True
+    ).values_list("object_id", flat=True)
+    if info_system_orgs.exists():
+        combined_filter |= SQ(
+            organization_id__in=info_system_orgs,
+            is_public="true",
+            access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC),
+        )
+    if open_data_orgs.exists():
+        return datasets.filter(public_filter)
+
     return datasets.filter(combined_filter)
 
 

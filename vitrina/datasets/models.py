@@ -36,10 +36,8 @@ from vitrina.datasets.managers import (
 )
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
-from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem
-from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode
 from vitrina.users.models import User
 
 logger = logging.getLogger(__name__)

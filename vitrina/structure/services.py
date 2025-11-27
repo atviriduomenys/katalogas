@@ -1344,7 +1344,7 @@ def get_allowed_visibilities(
     user: User, dataset: Dataset, model_action: Action, model_class: type[Model | Property | Enum] = Model
 ) -> set[int]:
     user_role = determine_user_role(user, dataset)
-    allowed: set[int] = set()
+    allowed_visibilities: set[int] = set()
 
     if model_class == Model:
         acl = MODEL_VISIBILITY_ACL
@@ -1359,11 +1359,11 @@ def get_allowed_visibilities(
         and user.is_information_system_representative_for(dataset.organization)
     ):
         for (cls, visibility, action), roles in acl.items():
-            allowed.add(visibility)
-        return allowed
+            allowed_visibilities.add(visibility)
+        return allowed_visibilities
 
     for (cls, visibility, action), roles in acl.items():
         if cls == model_class and user_role in roles and action == model_action:
-            allowed.add(visibility)
+            allowed_visibilities.add(visibility)
 
-    return allowed
+    return allowed_visibilities

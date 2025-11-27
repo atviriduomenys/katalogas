@@ -163,7 +163,9 @@ class User(AbstractUser):
 
         return representatives.exists()
 
-    def is_information_system_representative_for(self, organization: Organization) -> bool:
+    def is_information_system_representative_for(self, organization: Organization | None) -> bool:
+        if organization is None:
+            return False
         org_type = self.organization_content_type
         return Representative.objects.filter(
             user=self,
@@ -172,7 +174,9 @@ class User(AbstractUser):
             information_system_representative=True,
         ).exists()
 
-    def is_open_data_representative_for(self, organization: Organization) -> bool:
+    def is_open_data_representative_for(self, organization: Organization | None) -> bool:
+        if organization is None:
+            return False
         org_type = self.organization_content_type
         return Representative.objects.filter(
             user=self,

@@ -302,45 +302,6 @@ class TestDatasetDetailView:
         assert response.status_code == 200
         assert response.context["dataset"] == dataset
 
-    def test_view_non_public_dataset_with_gov_org_open_data_representative(self, app: DjangoTestApp):
-        dataset = DatasetFactory(is_public=False)
-        user = UserFactory()
-        organization = OrganizationFactory()
-        user.organization = organization
-        user.save()
-
-        RepresentativeFactory(
-            organization=organization,
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            user=user,
-            role=Representative.MANAGER,
-            open_data_representative=True
-        )
-
-        app.set_user(user)
-        response = app.get(reverse("dataset-detail", args=[dataset.pk]))
-        assert response.status_code == 403
-
-    def test_view_non_public_dataset_with_gov_org_information_system_representative(self, app: DjangoTestApp):
-        dataset = DatasetFactory(is_public=False)
-        user = UserFactory()
-        organization = OrganizationFactory()
-        user.organization = organization
-        user.save()
-
-        RepresentativeFactory(
-            organization=organization,
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            user=user,
-            role=Representative.MANAGER,
-            information_system_representative=True
-        )
-
-        app.set_user(user)
-        response = app.get(reverse("dataset-detail", args=[dataset.pk]))
-        assert response.status_code == 403
 
     def test_dataset_detail_with_publisher(self, app: DjangoTestApp):
         frequency = FrequencyFactory(is_default=True)

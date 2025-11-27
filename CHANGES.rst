@@ -19,6 +19,9 @@ https://github.com/atviriduomenys/katalogas/issues/2123
 https://github.com/atviriduomenys/dvms/issues/346
 - Add password validation for fake VIISP login.
 
+https://github.com/atviriduomenys/katalogas/pull/2115
+- Publish version form now shows and lets the user select all fields that are created.
+
 v 1.7 (2025-11-20)
 ==================
 

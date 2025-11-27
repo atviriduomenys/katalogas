@@ -95,7 +95,7 @@ def _get_condition_descriptions():
                     description.text,
                     field_name=f"geoportal condition {identifier.text}"
                 )
-                
+
                 condition_info[identifier.text] = {
                     "description": translated_description,
                     "code_space": code_space,

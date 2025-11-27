@@ -977,7 +977,7 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    create_structure_objects(structure)
     assert Metadata.objects.count() == 14
     assert list(Enum.objects.values_list('name', flat=True)) == ['Size', 'Deprecated', 'Type']
     assert list(EnumItem.objects.filter(enum__name='Size').values_list(
@@ -1006,7 +1006,7 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
     structure.file = FilerFileFactory(
         file=FileField(filename='file.csv', data=new_manifest)
     )
-    create_structure_objects(structure, version)
+    create_structure_objects(structure)
     assert Metadata.objects.count() == 9
     assert list(Enum.objects.values_list('name', flat=True)) == ['Size', 'Type']
     assert list(EnumItem.objects.filter(enum__name='Size').values_list(
@@ -1037,7 +1037,7 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    create_structure_objects(structure)
     assert Metadata.objects.count() == 7
     assert list(Param.objects.values_list('name', flat=True)) == ['Size', 'Deprecated']
     assert list(ParamItem.objects.filter(param__name='Size').values_list(
@@ -1059,7 +1059,7 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
+    create_structure_objects(structure)
     assert Metadata.objects.count() == 3
     assert list(Param.objects.values_list('name', flat=True)) == ['Size']
     assert list(ParamItem.objects.filter(param__name='Size').values_list(
@@ -2195,13 +2195,13 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    create_structure_objects(structure)
 
     model = Model.objects.get(
         dataset=structure.dataset,
         metadata__name="test_dataset/Model"
     )
-    form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, model.name])).forms['model-form']
+    form = app.get(reverse('model-update', args=[structure.dataset.pk, model.name])).forms['model-form']
     form['name'] = "Modelis"
     resp = form.submit()
     assert resp.url == model.get_absolute_url()
@@ -2213,7 +2213,7 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
         dataset=structure.dataset,
         metadata__name="test_dataset/Country"
     )
-    form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, model.name])).forms['model-form']
+    form = app.get(reverse('model-update', args=[structure.dataset.pk, model.name])).forms['model-form']
     form['name'] = "Salis"
     resp = form.submit()
     assert resp.url == model.get_absolute_url()

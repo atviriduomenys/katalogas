@@ -33,40 +33,40 @@ def main():
             if not dataset.has_translation(language_code='en'):
                 dataset.create_translation(language_code='en')
             dataset.set_current_language('en')
-            #
-            # if not dataset.en_title():
-            #     response_title = requests.post(
-            #         "https://vertimas.vu.lt/ws/service.svc/json/Translate",
-            #         json={
-            #             "appId": "",
-            #             "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-            #             "text": lt_title,
-            #             "options": ""
-            #         },
-            #         headers={
-            #             "client-id": TRANSLATION_CLIENT_ID,
-            #             "Content-Type": "application/json; charset=utf-8"
-            #         },
-            #     )
-            #     en_title = response_title.json()
-            #     dataset.title = en_title
-            #
-            # if not dataset.en_description():
-            #     response_desc = requests.post(
-            #         "https://vertimas.vu.lt/ws/service.svc/json/Translate",
-            #         json={
-            #             "appId": "",
-            #             "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
-            #             "text": lt_description,
-            #             "options": ""
-            #         },
-            #         headers={
-            #             "client-id": TRANSLATION_CLIENT_ID,
-            #             "Content-Type": "application/json; charset=utf-8"
-            #         },
-            #     )
-            #     en_description = response_desc.json()
-            #     dataset.description = en_description
+
+            if not dataset.en_title():
+                response_title = requests.post(
+                    TRANSLATION_URL,
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_title,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_title = response_title.json()
+                dataset.title = en_title
+
+            if not dataset.en_description():
+                response_desc = requests.post(
+                    TRANSLATION_URL,
+                    json={
+                        "appId": "",
+                        "systemID": "smt-8abc06a7-09dc-405c-bd29-580edc74eb05",
+                        "text": lt_description,
+                        "options": ""
+                    },
+                    headers={
+                        "client-id": TRANSLATION_CLIENT_ID,
+                        "Content-Type": "application/json; charset=utf-8"
+                    },
+                )
+                en_description = response_desc.json()
+                dataset.description = en_description
 
             dataset.save()
             count += 1

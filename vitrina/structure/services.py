@@ -63,12 +63,12 @@ def create_structure_objects(structure: DatasetStructure, version: Version = Non
                 if state.errors:
                     errors = state.errors
                 else:
-
                     if not version or version.status != VersionStatus.DRAFT:
                         max_version = (
-                                Version.objects
-                                .filter(dataset=structure.dataset)
-                                .aggregate(max_version=Max('version'))['max_version'] or 0
+                            Version.objects.filter(dataset=structure.dataset).aggregate(max_version=Max("version"))[
+                                "max_version"
+                            ]
+                            or 0
                         )
 
                         version = Version.objects.create(
@@ -237,12 +237,7 @@ def _load_enums(dataset: Dataset, enums: Dict[str, List[struct.Enum]], obj: Unio
         enum.delete()
 
 
-def _load_params(
-    dataset: Dataset,
-    params: Dict[str, List[struct.Param]],
-    obj: Union[Dataset, Model],
-    version: Version
-):
+def _load_params(dataset: Dataset, params: Dict[str, List[struct.Param]], obj: Union[Dataset, Model], version: Version):
     ct = ContentType.objects.get_for_model(obj)
     param_ct = ContentType.objects.get_for_model(ParamItem)
 
@@ -426,7 +421,6 @@ def _create_or_update_metadata(
     order: int = None,
     use_existing_meta: bool = False,
     version: Version = None,
-
 ) -> Tuple[models.Model, struct.Metadata]:
     ct = ContentType.objects.get_for_model(obj)
 
@@ -606,7 +600,12 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, version:
                         resource_meta.id = md.uuid
 
                 distribution, metadata = _create_or_update_metadata(
-                    dataset, resource_meta, distribution, i, use_existing_meta=True, version=version,
+                    dataset,
+                    resource_meta,
+                    distribution,
+                    i,
+                    use_existing_meta=True,
+                    version=version,
                 )
                 metadata.name = resource_meta.name
                 metadata.save()
@@ -668,7 +667,12 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, version:
             resource_meta.id = md.uuid
 
         distribution, metadata = _create_or_update_metadata(
-            dataset, resource_meta, distribution, 1, use_existing_meta=True, version=version,
+            dataset,
+            resource_meta,
+            distribution,
+            1,
+            use_existing_meta=True,
+            version=version,
         )
         metadata.name = resource_meta.name
         metadata.save()

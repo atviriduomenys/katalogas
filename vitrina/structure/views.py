@@ -142,10 +142,7 @@ class DatasetStructureMixin(StructureMixin):
         if self.version:
             return reverse(
                 "dataset-structure",
-                kwargs={
-                    "pk": self.dataset.pk,
-                    "version_id": self.version.pk
-                },
+                kwargs={"pk": self.dataset.pk, "version_id": self.version.pk},
             )
         else:
             return reverse(
@@ -242,10 +239,7 @@ class DatasetStructureView(
         if self.version:
             return reverse(
                 "dataset-structure",
-                kwargs={
-                    "pk": self.object.pk,
-                    "version_id": self.version.pk
-                },
+                kwargs={"pk": self.object.pk, "version_id": self.version.pk},
             )
         else:
             return reverse(
@@ -320,7 +314,9 @@ class ModelStructureView(
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+                "metadata__name"
+            )
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -338,7 +334,12 @@ class ModelStructureView(
 
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(self.object, include_home=True, make_current=False)
-        crumbs.append(Crumb(title=_("Struktūra"), url=reverse("dataset-structure", kwargs={"pk": self.object.pk, "version_id": self.version_id})))
+        crumbs.append(
+            Crumb(
+                title=_("Struktūra"),
+                url=reverse("dataset-structure", kwargs={"pk": self.object.pk, "version_id": self.version_id}),
+            )
+        )
         crumbs.append(Crumb(title=self.model.title, url=None, is_current=True))
         return crumbs
 
@@ -562,10 +563,14 @@ class PropertyStructureView(
         if not self.model:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name, version_id=self.version_id)
+        self.property = get_object_or_404(
+            Property, model=self.model, metadata__name=prop_name, version_id=self.version_id
+        )
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+                "metadata__name"
+            )
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -584,11 +589,19 @@ class PropertyStructureView(
 
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(self.object, include_home=True, make_current=False)
-        crumbs.append(Crumb(title=_("Struktūra"), url=reverse("dataset-structure", kwargs={"pk": self.object.pk, "version_id": self.version_id})))
+        crumbs.append(
+            Crumb(
+                title=_("Struktūra"),
+                url=reverse("dataset-structure", kwargs={"pk": self.object.pk, "version_id": self.version_id}),
+            )
+        )
         crumbs.append(
             Crumb(
                 title=self.model.title,
-                url=reverse("model-structure", kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name}),
+                url=reverse(
+                    "model-structure",
+                    kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name},
+                ),
             )
         )
         crumbs.append(Crumb(title=self.property.title, url=None, is_current=True))
@@ -643,7 +656,9 @@ class PropertyStructureView(
 
     def get_data_url(self):
         if self.model.name:
-            return reverse("model-data", kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name})
+            return reverse(
+                "model-data", kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name}
+            )
         return None
 
     def get_api_url(self):
@@ -716,7 +731,9 @@ class ModelDataTableView(PermissionRequiredMixin, View):
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+                "metadata__name"
+            )
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -898,7 +915,7 @@ class ModelDataView(
                 title=self.model.title,
                 url=reverse(
                     "model-structure",
-                    kwargs={"pk": self.object.pk, "version_id": self.version_id ,"model": self.model.name},
+                    kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name},
                 ),
             )
         )
@@ -933,7 +950,9 @@ class ModelDataView(
 
     def get_data_url(self):
         if self.model.name:
-            return reverse("model-data", kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name})
+            return reverse(
+                "model-data", kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name}
+            )
         return None
 
     def get_api_url(self):
@@ -954,7 +973,7 @@ class ModelDataView(
         if self.model.name:
             return reverse(
                 self.history_url_name,
-                kwargs={"pk": self.object.pk, "version_id": self.version_id , "model": self.model.name},
+                kwargs={"pk": self.object.pk, "version_id": self.version_id, "model": self.model.name},
             )
         return None
 
@@ -1000,7 +1019,9 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+                "metadata__name"
+            )
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -1076,7 +1097,9 @@ class ObjectDataView(
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+                "metadata__name"
+            )
             self.props = self.model.get_given_props()
         else:
             self.models = (
@@ -1185,7 +1208,9 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+                "metadata__name"
+            )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -1490,7 +1515,9 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id)
+        self.property = get_object_or_404(
+            Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id
+        )
         self.enum = self.property.enums.first()
         return super().dispatch(request, *args, **kwargs)
 
@@ -1532,7 +1559,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
                 content_type=ContentType.objects.get_for_model(Property),
                 object_id=self.property.pk,
                 name=self.property.name,
-                version_id=self.version_id
+                version_id=self.version_id,
             )
         self.object.save()
         value = form.cleaned_data.get("value")
@@ -1599,7 +1626,9 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id)
+        self.property = get_object_or_404(
+            Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id
+        )
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -1620,7 +1649,7 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             reverse("dataset-structure", args=[self.dataset.pk, self.version_id]): _("Struktūra"),
         }
         if self.model_obj.name:
-            url = reverse("model-structure", args=[self.dataset.pk,self.version_id, self.model_obj.name])
+            url = reverse("model-structure", args=[self.dataset.pk, self.version_id, self.model_obj.name])
             context["parent_links"][url] = self.model_obj.title or self.model_obj.name
         if self.model_obj.name and self.property.name:
             url = reverse(
@@ -1715,7 +1744,9 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
         if not self.model:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id)
+        self.property = get_object_or_404(
+            Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id
+        )
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -1782,7 +1813,9 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
         # Filter by version?
         if has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset):
-            self.models = Model.objects.filter(dataset=self.dataset, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.dataset, version_id=self.version_id).order_by(
+                "metadata__name"
+            )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -1797,13 +1830,15 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         if not self.version_id:
-            new_draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
+            new_draft_version, created = _Version.objects.get_or_create(
+                dataset=self.dataset, status=VersionStatus.DRAFT
+            )
             self.version_id = new_draft_version.pk
 
         model = Model.objects.create(
             dataset=self.dataset,
             is_parameterized=form.cleaned_data.get("is_parameterized", False),
-            version_id = self.version_id,
+            version_id=self.version_id,
         )
         self.object.metadata_version_id = self.version_id
         self.object.object = model
@@ -1874,15 +1909,9 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         context["current_title"] = _("Modelio pridėjimas")
 
         if getattr(self, "version", None):
-            structure_url = reverse(
-                "dataset-structure",
-                args=[self.dataset.pk, self.version.pk]
-            )
+            structure_url = reverse("dataset-structure", args=[self.dataset.pk, self.version.pk])
         else:
-            structure_url = reverse(
-                "dataset-structure-no-version",
-                args=[self.dataset.pk]
-            )
+            structure_url = reverse("dataset-structure-no-version", args=[self.dataset.pk])
 
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
@@ -2076,9 +2105,14 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
 
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(self.dataset, include_home=True)
-        crumbs.append(Crumb(title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk, self.version_id])))
         crumbs.append(
-            Crumb(title=self.object.title, url=reverse("model-structure", args=[self.dataset.pk, self.version_id, self.model_obj.name]))
+            Crumb(title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk, self.version_id]))
+        )
+        crumbs.append(
+            Crumb(
+                title=self.object.title,
+                url=reverse("model-structure", args=[self.dataset.pk, self.version_id, self.model_obj.name]),
+            )
         )
         crumbs.append(Crumb(title=_("Modelio redagavimas"), url=None, is_current=True))
         return crumbs
@@ -2148,7 +2182,9 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         if not self.version_id:
-            new_draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
+            new_draft_version, created = _Version.objects.get_or_create(
+                dataset=self.dataset, status=VersionStatus.DRAFT
+            )
             self.version_id = new_draft_version.pk
 
         self.object.metadata_version_id = self.version_id
@@ -2184,10 +2220,13 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
 
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(dataset=self.dataset)
-        crumbs.append(Crumb(title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk, self.version_id])))
+        crumbs.append(
+            Crumb(title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk, self.version_id]))
+        )
         crumbs.append(
             Crumb(
-                title=self.model_obj.title, url=reverse("model-structure", args=[self.dataset.pk, self.version_id, self.model_obj.name])
+                title=self.model_obj.title,
+                url=reverse("model-structure", args=[self.dataset.pk, self.version_id, self.model_obj.name]),
             )
         )
         crumbs.append(Crumb(title=_("Duomenų lauko pridėjimas"), url=None, is_current=True))
@@ -2233,7 +2272,9 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id)
+        self.property = get_object_or_404(
+            Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id
+        )
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
@@ -2304,7 +2345,10 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
         crumbs.append(
             Crumb(
                 title=self.model_obj.title or self.model_obj.name,
-                url=reverse("model-structure", kwargs={"pk": self.dataset.pk, "version_id": self.version_id, "model": self.model_obj.name}),
+                url=reverse(
+                    "model-structure",
+                    kwargs={"pk": self.dataset.pk, "version_id": self.version_id, "model": self.model_obj.name},
+                ),
             )
         )
         prop_url = getattr(self.property, "get_absolute_url", None)
@@ -2681,7 +2725,9 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+                "metadata__name"
+            )
             self.props = self.model_obj.get_given_props()
         else:
             self.models = (
@@ -2722,7 +2768,7 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         if self.model_obj.name:
             return reverse(
                 "model-structure",
-                kwargs={"pk": self.kwargs.get("pk"), "version_id":self.version_id, "model": self.model_obj.name},
+                kwargs={"pk": self.kwargs.get("pk"), "version_id": self.version_id, "model": self.model_obj.name},
             )
         return None
 
@@ -2786,11 +2832,15 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
-        self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id)
+        self.property = get_object_or_404(
+            Property, model=self.model_obj, metadata__name=prop_name, version_id=self.version_id
+        )
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+                "metadata__name"
+            )
             self.props = self.model_obj.get_given_props()
         else:
             self.models = (

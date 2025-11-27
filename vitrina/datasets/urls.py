@@ -200,7 +200,6 @@ urlpatterns = [
         DatasetStructureImportView.as_view(),
         name="dataset-structure-import",
     ),
-
     path(
         "datasets/<int:pk>/structure/import/",
         DatasetStructureImportView.as_view(),

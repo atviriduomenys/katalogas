@@ -28,6 +28,21 @@ https://github.com/atviriduomenys/katalogas/issues/2067
 - Part 4: Add forms for `initiate` and `sign` statuses. Adjust the logic for each one. Make them easily extendable.
 - Part 5: Adjust selectable contact queryset for agreements.
 
+https://github.com/atviriduomenys/katalogas/issues/2076
+- New Flags for Government Organization Representatives
+- open_data_representative
+  - Cannot view non-public datasets.
+  - Cannot create Information System Resources.
+- information_system_representative
+  - Can create and update information systems within their organization.
+  - Can view non-public datasets.
+- Permissions for Structure Models, Properties, and Enums
+  - open_data_representative
+    - Access limited to Public and Package-level structure items.
+  - information_system_representative
+    - Access limited to Public, Package, and Protected-level structure items.
+- Indexes and managers have been updated to reflect the new roles and their respective permissions.
+
 v 1.7 (2025-11-20)
 ==================
 

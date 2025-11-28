@@ -135,7 +135,7 @@ def _load_datasets(state: struct.State, dataset: Dataset, version: Version):
                 if not meta.id:
                     meta.id = md.uuid
 
-            dataset, metadata = _create_or_update_metadata(dataset, meta, dataset, i)
+            dataset, metadata = _create_or_update_metadata(dataset, meta, dataset, i, version=version)
             _load_prefixes(dataset, meta.prefixes, dataset, version)
             _load_enums(dataset, meta.enums, dataset, version)
             _load_params(dataset, meta.params, dataset, version)

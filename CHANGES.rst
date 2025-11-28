@@ -1,7 +1,7 @@
 Changes
 #######
 
-v 1.8 (unreleased)
+v 1.8 (2025-11-28)
 ==================
 
 https://github.com/atviriduomenys/dvms/issues/336

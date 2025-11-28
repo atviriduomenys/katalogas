@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
+from django.db import transaction
 from django.db.models import Func, F, Value, TextField, Max
 from django.forms import BaseForm
 from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse
@@ -3261,32 +3262,179 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         metadata = form.cleaned_data.get("metadata", [])
 
-        for meta in metadata:
-            if meta := Metadata.objects.filter(pk=meta).first():
-                meta.draft = False
-                if meta.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
-                    meta.status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
-                meta.metadata_version = version
-                meta.save()
 
-                MetadataVersion.objects.create(
-                    metadata=meta,
-                    version=version,
-                    name=meta.name if meta.name else None,
-                    type=meta.type if meta.type else None,
-                    required=meta.required,
-                    unique=meta.unique,
-                    type_args=meta.type_args if meta.type_args else None,
-                    ref=meta.ref if meta.ref else None,
-                    source=meta.source if meta.source else None,
-                    prepare=meta.prepare if meta.prepare else None,
-                    level_given=meta.level_given,
-                    access=meta.access,
-                    base=meta.object.base if isinstance(meta.object, Model) else None,
-                    status=meta.status if meta.status else None,
-                )
+        old_new_models: dict = {}
+        old_new_props: dict = {}
+        all_new_props: list = []
+        all_enum_items: list = []
+        all_param_items: list = []
+
+        with transaction.atomic():
+            version.save()
+
+            for meta in metadata:
+                if meta := Metadata.objects.filter(pk=meta).first():
+                    new_model = meta.content_type.model_class()
+                    new_model_instance = new_model.objects.filter(id=meta.object_id).first()
+
+                    meta.pk = None
+                    meta.draft = False
+                    meta.metadata_version = version
+
+                    # TODO: remove?
+                    if isinstance(new_model_instance, Dataset):
+                        continue
+                    new_model_instance.pk = None
+                    new_model_instance.version = version
+                    new_model_instance.save()
+
+                    if isinstance(new_model_instance, Model):
+                        old_new_models[meta.object_id] = new_model_instance.id
+                    if isinstance(new_model_instance, Property):
+                        all_new_props.append(new_model_instance)
+                        old_new_props[meta.object_id] = new_model_instance.id
+                    if isinstance(new_model_instance, EnumItem):
+                        all_enum_items.append(new_model_instance)
+                    if isinstance(new_model_instance, ParamItem):
+                        all_param_items.append(new_model_instance)
+
+                    meta.object_id = new_model_instance.pk
+                    meta.save()
+
+                    MetadataVersion.objects.create(
+                        metadata=meta,
+                        version=version,
+                        name=meta.name if meta.name else None,
+                        type=meta.type if meta.type else None,
+                        required=meta.required,
+                        unique=meta.unique,
+                        type_args=meta.type_args if meta.type_args else None,
+                        ref=meta.ref if meta.ref else None,
+                        source=meta.source if meta.source else None,
+                        prepare=meta.prepare if meta.prepare else None,
+                        level_given=meta.level_given,
+                        access=meta.access,
+                        base=meta.object.base if isinstance(meta.object, Model) else None,
+                        status=meta.status if meta.status else None,
+                    )
+
+            self._fix_model_bases(old_new_models, version)
+            self._fix_property_relationship(old_new_models, all_new_props, version)
+            self._fix_enum_values(all_enum_items, old_new_props, version)
+            self._fix_param_values(all_param_items, old_new_props, version)
         # TODO after a new standalone version is created, this has to redirect to that one
-        return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version_id]))
+
+        if version:
+            return redirect(reverse("dataset-structure", args=[self.dataset.pk, version.pk]))
+        else:
+            return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.version_id]))
+
+    @staticmethod
+    def _fix_model_bases(old_new_models: dict, version: _Version):
+        for old_model_pk, new_model_pk in old_new_models.items():
+            old_model = Model.objects.filter(pk=old_model_pk).first()
+            new_model = Model.objects.filter(pk=new_model_pk).first()
+            if old_base := old_model.base:
+                old_base_pk = old_base.pk
+                new_base = old_base
+                new_base.pk = None
+                new_base.version = version
+                new_base.save()
+
+                new_model.base = new_base
+                new_model.save()
+                content_type_of_model = ContentType.objects.filter(model="model").first().pk
+                metadata_of_the_base = Metadata.objects.filter(object_id=old_base_pk, content_type_id=content_type_of_model).first()
+                new_metadata_of_the_base = metadata_of_the_base
+                new_metadata_of_the_base.pk = None
+                new_metadata_of_the_base.metadata_version = version
+                new_metadata_of_the_base.object_id = new_base.pk
+                new_metadata_of_the_base.save()
+
+    @staticmethod
+    def _fix_enum_values(all_enum_items: list, old_new_props: dict, version: _Version):
+        enum_created = {}
+        for enum_item in all_enum_items:
+            old_enum = enum_item.enum
+            old_pk = old_enum.pk
+
+            if old_pk not in enum_created:
+                new_enum = old_enum
+                new_enum.pk = None
+                if old_enum.object_id in old_new_props:
+                    new_enum.object_id = old_new_props[old_enum.object_id]
+                else:
+                    raise Http404("Not possible to include an enum without its property.")
+
+                new_enum.version = version
+                new_enum.save()
+                enum_created[old_pk] = new_enum
+
+            enum_item.enum = enum_created[old_pk]
+            enum_item.save()
+
+    @staticmethod
+    def _fix_param_values(all_param_items: list, old_new_props: dict, version: _Version):
+        param_created = {}
+        for param_item in all_param_items:
+            old_param = param_item.param
+            old_pk = old_param.pk
+
+            if old_pk not in param_created:
+                new_param = old_param
+                new_param.pk = None
+                new_param.object_id = old_new_props[old_param.object_id]
+                new_param.version = version
+                new_param.save()
+                param_created[old_pk] = new_param
+
+            param_item.param = param_created[old_pk]
+            param_item.save()
+
+    @staticmethod
+    def _fix_property_relationship(old_new_models: dict, all_new_props: list, version: _Version):
+        for _property in all_new_props:
+            current_model_id = _property.model.pk
+            if current_model_id in old_new_models:
+                _property.model_id = old_new_models[current_model_id]
+                _property.version = version
+                _property.save()
+            else:
+                raise Http404("Not possible to include a property without its model.")
+
+    #TODO after UI changes that allow editing prefixes and dataset_distribution are introduced, this should be rewritten to copy only the changed fields
+    # @staticmethod
+    # def _copy_prefix_db_distribution(dataset: Dataset, version: _Version):
+    #     content_type_of_prefix = ContentType.objects.filter(model="prefix").first().pk
+    #     content_type_of_dataset_distribution = ContentType.objects.filter(model="datasetdistribution").first().pk
+    #
+    #     prefixes = Metadata.objects.filter(content_type_id=content_type_of_prefix, dataset=dataset, draft=True)
+    #     dataset_distributions = Metadata.objects.filter(content_type_id=content_type_of_dataset_distribution, dataset=dataset, draft=True)
+    #
+    #     for metadata_prefix in prefixes:
+    #         actual_prefix = Prefix.objects.filter(id=metadata_prefix.object_id).first()
+    #         actual_prefix.pk = None
+    #         actual_prefix.version = version
+    #         actual_prefix.save()
+    #
+    #         metadata_prefix.pk = None
+    #         metadata_prefix.metadata_version = version
+    #         metadata_prefix.draft = False
+    #         metadata_prefix.object_id = actual_prefix.pk
+    #         metadata_prefix.save()
+    #
+    #     for metadata_dataset_distribution in dataset_distributions:
+    #         actual_dataset_distribution = DatasetDistribution.objects.filter(id=metadata_dataset_distribution.object_id).first()
+    #         actual_dataset_distribution.pk = None
+    #         actual_dataset_distribution.connected_version = version
+    #         actual_dataset_distribution.save()
+    #
+    #         metadata_dataset_distribution.pk = None
+    #         metadata_dataset_distribution.metadata_version = version
+    #         metadata_dataset_distribution.draft = False
+    #         metadata_dataset_distribution.object_id = actual_dataset_distribution.pk
+    #         metadata_dataset_distribution.save()
+
 
 
 class VersionListView(

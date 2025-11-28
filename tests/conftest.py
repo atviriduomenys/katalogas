@@ -15,6 +15,14 @@ from vitrina.datasets.models import DCATResourceSubclass
 builtins.pp = pp
 
 
+@pytest.fixture(autouse=True)
+def reset_shared_version():
+    import vitrina.structure.factories as f
+
+    f._shared_version = None
+    yield
+
+
 def _normalize_csv(csv_string: str) -> list[list[str]]:
     reader = csv.reader(io.StringIO(csv_string))
     rows = [row for row in reader if any(col.strip() for col in row)]

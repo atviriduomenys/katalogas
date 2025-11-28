@@ -13,7 +13,6 @@ from parler.models import TranslatableModel, TranslatedFields
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
 from vitrina.utils import translate_text
 from vitrina.datasets.models import Dataset
-from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL
 from vitrina.structure.models import Version
 
 

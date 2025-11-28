@@ -1471,8 +1471,8 @@ class DatasetStructureImportView(
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
         set_comment(_(f'Added Structure file "{self.object.file}".'))
-        if self.version.status != VersionStatus.DRAFT:
-            form.add_error("file", _("Negalima importuoti struktūros, kai versijos būsena yra juodraštis."))
+        if self.version and self.version.status != VersionStatus.DRAFT:
+            form.add_error("file", _("Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."))
             return self.form_invalid(form)
 
         self.version = create_structure_objects(self.object, self.version)

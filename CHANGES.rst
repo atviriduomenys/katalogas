@@ -4,51 +4,74 @@ Changes
 v 1.8 (unreleased)
 ==================
 
-New features:
-
 https://github.com/atviriduomenys/dvms/issues/336
+
 - new OAUTH_SERVER_PUBLIC_JWK_DOWNLOAD_PATH setting for .well-known/jwks.json (and env variable) which if specified will automatically jwks from specified endpoint and store it inside of a cache.
 - add support for multiple public keys picked dynamically for each access token by kid value. If not found, then by
   algorithm (`alg` & `kty`).
 - these features unlock using auth servers with public key rotation, like gravitee.
 
 https://github.com/atviriduomenys/katalogas/issues/2123
+
 - Update partner registration permissions: validate that user is in active VIISP session.
 - Update fake VIISP login to work with new partner registration.
 
 https://github.com/atviriduomenys/dvms/issues/346
+
 - Add password validation for fake VIISP login.
 
 https://github.com/atviriduomenys/katalogas/pull/2115
+
 - Publish version form now shows and lets the user select all fields that are created.
 
 https://github.com/atviriduomenys/katalogas/issues/2067
+
 - Part 2.4: Adjust queryset to allow selecting contacts without an assigned user as well.
 - Part 3: Add forms for `submit`, `approve`, change the `form` status form. Separate the forms to be independant for each status.
 - Part 4: Add forms for `initiate` and `sign` statuses. Adjust the logic for each one. Make them easily extendable.
 - Part 5: Adjust selectable contact queryset for agreements.
 
 https://github.com/atviriduomenys/katalogas/issues/2076
+
 - New Flags for Government Organization Representatives
 - open_data_representative
+
   - Cannot view non-public datasets.
   - Cannot create Information System Resources.
 - information_system_representative
+
   - Can create and update information systems within their organization.
   - Can view non-public datasets.
 - Permissions for Structure Models, Properties, and Enums
+
   - open_data_representative
+
     - Access limited to Public and Package-level structure items.
   - information_system_representative
+
     - Access limited to Public, Package, and Protected-level structure items.
 - Indexes and managers have been updated to reflect the new roles and their respective permissions.
 
 https://github.com/atviriduomenys/katalogas/issues/2147
+
 - Order by title in `DatasetResourceForm` dropdowns of `Organization`.
+
+https://github.com/atviriduomenys/katalogas/issues/921
+
+- Fix breadcrumbs and title for dataset detail view.
+- Add custom title field for `Request` from comments.
+- Add link to `Request` in comments.
+- Delete comment functionality for comment author or superuser.
+- Edit comment functionality for comment author or superuser.
+- Remove automated status update comments.
+
+https://github.com/atviriduomenys/katalogas/pull/2145
+
+- Refactored `vertimas.vu.lt` translation function.
+- Added `try/except` for automatic translation with a timeout.
 
 v 1.7 (2025-11-20)
 ==================
-
 New features:
 
 https://github.com/atviriduomenys/katalogas/issues/2067
@@ -57,9 +80,6 @@ https://github.com/atviriduomenys/katalogas/issues/2067
 - Part 2.1: Remove organizations as juridical entities from the list of possible entities to represent organizations in agreements.
 - Part 2.2: Add new field `template` and new statuses for `Agreement`. Adding a few adjustments for field displays & formatting.
 - Part 2.3: Move permissions to dedicated `permisions.py` file.
-- Part 2.4: Adjust queryset to allow selecting contacts without an assigned user as well.
-- Part 3: Add forms for `submit`, `approve`, change the `form` status form. Separate the forms to be independant for each status.
-- Part 4: Add forms for `initiate` and `sign` statuses. Adjust the logic for each one. Make them easily extendable.
 
 https://github.com/atviriduomenys/katalogas/issues/1955
 - Improved contact form by adding new contact, position, removed dataset field.

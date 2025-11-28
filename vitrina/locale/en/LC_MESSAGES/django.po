@@ -448,8 +448,8 @@ msgstr "Comment for object:"
 msgid "Registruoti kaip prašymą"
 msgstr "Register as request"
 
-msgid "Didinti duomenų atnaujinimo periodiškumą"
-msgstr "Increase the frequency of data updates"
+msgid "Pageidaujamas duomenų atnaujinimo periodiškumas"
+msgstr "Preferred frequency of data updates"
 
 msgid "Jei komentaras registruojamas kaip prašymas, jis privalo būti viešas"
 msgstr "If the comment is registered as a request, it must be public"
@@ -6000,3 +6000,9 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+msgid "Poreikio pavadinimas"
+msgstr "Request title"
+
+msgid "Įrašykite poreikio pavadinimą."
+msgstr "Please input request title."

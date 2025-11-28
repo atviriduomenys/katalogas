@@ -39,6 +39,7 @@ class CommentForm(forms.ModelForm):
 
 class RegisterRequestForm(CommentForm):
     register_request = forms.BooleanField(label=_("Registruoti kaip prašymą"), required=False)
+    request_title = forms.CharField(label=_("Poreikio pavadinimas"), required=False, max_length=200)
 
     class Meta(CommentForm.Meta):
         fields = (
@@ -52,11 +53,12 @@ class RegisterRequestForm(CommentForm):
 
         if self.is_opened is False:
             self.fields.pop("register_request")
+            self.fields.pop("request_title")
 
 
 class DatasetCommentForm(RegisterRequestForm):
     increase_frequency = forms.ModelChoiceField(
-        label=_("Didinti duomenų atnaujinimo periodiškumą"),
+        label=_("Pageidaujamas duomenų atnaujinimo periodiškumas"),
         required=False,
         queryset=Frequency.objects.all(),
         to_field_name="title",
@@ -66,6 +68,7 @@ class DatasetCommentForm(RegisterRequestForm):
         fields = (
             "is_public",
             "register_request",
+            "request_title",
             "increase_frequency",
             "body",
         )
@@ -73,12 +76,15 @@ class DatasetCommentForm(RegisterRequestForm):
     def clean(self):
         request = self.cleaned_data.get("register_request")
         public = self.cleaned_data.get("is_public")
+        request_title = self.cleaned_data.get("request_title")
         if request:
             if not public:
                 self.add_error(
                     "is_public",
                     _("Jei komentaras registruojamas kaip prašymas, jis privalo būti" + " viešas"),
                 )
+            if not request_title:
+                self.add_error("request_title", _("Įrašykite poreikio pavadinimą."))
         return self.cleaned_data
 
 

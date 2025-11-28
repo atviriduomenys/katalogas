@@ -482,7 +482,7 @@ def test_auto_subscribe_for_comment_and_reply_mail(app: DjangoTestApp, subscript
     reply_user = UserFactory()
     comment = created_comment.first()
     app.set_user(reply_user)
-    form = app.get(comment.content_object.get_absolute_url()).forms['reply-form']
+    form = app.get(comment.content_object.get_absolute_url()).forms[f'reply-form-{comment.pk}']
     form['is_public'] = True
     form['body'] = "Test reply"
     resp = form.submit().follow()

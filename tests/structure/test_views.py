@@ -19,9 +19,10 @@ from reversion.models import Version
 from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
-from vitrina.orgs.factories import RepresentativeFactory
-from vitrina.orgs.models import Representative
+from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
+from vitrina.orgs.models import Representative, Organization
 from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
     PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory, VersionFactory
@@ -3227,7 +3228,7 @@ def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_private_visibility_without_access(app: DjangoTestApp):
+def test_visibility_without_access(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     manifest = (
@@ -3235,12 +3236,19 @@ def test_private_visibility_without_access(app: DjangoTestApp):
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         ",,,,Country,,,,,,,,private,,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
-        ",,,,,title,string,,,,5,,private,open,,dct:title,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,City,,,,,,,,protected,,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
-        ",,,,,title,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,,1,,4,private,package,protected,,,Class One,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,Province,,,,,,,,package,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
+        ",,,,State,,,,,,,,public,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
+        ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest))
@@ -3251,7 +3259,8 @@ def test_private_visibility_without_access(app: DjangoTestApp):
 
     resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk]))
     assert list(resp.context["models"].values_list("metadata__name", flat=True)) == [
-        "datasets/gov/ivpk/adp/City"
+        "datasets/gov/ivpk/adp/Province",
+        "datasets/gov/ivpk/adp/State"
     ]
 
     resp = app.get(
@@ -3261,31 +3270,106 @@ def test_private_visibility_without_access(app: DjangoTestApp):
     assert resp.status_code == 403
 
     resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
         reverse("model-structure", args=[structure.dataset.pk, "City"]),
         expect_errors=True,
     )
-    assert resp.status_code == 200
+    assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, "City", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "City", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
 
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "Province"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "number"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "State"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "number"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "residence"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+
 @pytest.mark.django_db
-def test_private_visibility_with_access(app: DjangoTestApp):
+def test_model_visibility_with_manager_access(app: DjangoTestApp):
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         ",,,,Country,,,,,,,,private,,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
-        ",,,,,title,string,,,,5,,private,open,,dct:title,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,City,,,,,,,,protected,,,,,,\n"
-        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
-        ",,,,,title,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,,1,,4,private,package,protected,,,Class One,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,Province,,,,,,,,package,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
+        ",,,,State,,,,,,,,public,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
+        ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
     )
 
     structure = DatasetStructureFactory(
@@ -3307,9 +3391,17 @@ def test_private_visibility_with_access(app: DjangoTestApp):
     assert list(resp.context["models"].values_list("metadata__name", flat=True)) == [
         "datasets/gov/ivpk/adp/City",
         "datasets/gov/ivpk/adp/Country",
+        "datasets/gov/ivpk/adp/Province",
+        "datasets/gov/ivpk/adp/State",
     ]
     resp = app.get(
         reverse("model-structure", args=[structure.dataset.pk, "Country"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
@@ -3321,7 +3413,323 @@ def test_private_visibility_with_access(app: DjangoTestApp):
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, "City", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "City", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "Province"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "number"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "State"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "number"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "residence"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_model_visibility_with_open_data_representative_access(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,private,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,City,,,,,,,,protected,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,Province,,,,,,,,package,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
+        ",,,,State,,,,,,,,public,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
+        ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
+    )
+    organization = OrganizationFactory(kind=Organization.GOV)
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest))
+    )
+    structure.dataset.organization = organization
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    representative = RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(structure.dataset.organization),
+        object_id=structure.dataset.organization.pk,
+        role=Representative.MANAGER,
+        open_data_representative=True
+    )
+    app.set_user(representative.user)
+
+    resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk]))
+    assert list(resp.context["models"].values_list("metadata__name", flat=True)) == [
+        "datasets/gov/ivpk/adp/Province",
+        "datasets/gov/ivpk/adp/State",
+    ]
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "Country"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "City"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "City", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "City", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "Province"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "number"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "State"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "number"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "residence"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_model_visibility_with_information_system_representative_access(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,private,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,City,,,,,,,,protected,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,Province,,,,,,,,package,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
+        ",,,,State,,,,,,,,public,,,,,,\n"
+        ",,,,,id,integer,,,,5,,private,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,protected,open,dct:title,,,,\n"
+        ",,,,,number,string,,,,5,,package,open,dct:number,,,,\n"
+        ",,,,,residence,string,,,,5,,public,open,dct:residence,,,,\n"
+    )
+    organization = OrganizationFactory(kind=Organization.GOV)
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest))
+    )
+    structure.dataset.organization = organization
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    representative = RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(structure.dataset.organization),
+        object_id=structure.dataset.organization.pk,
+        role=Representative.MANAGER,
+        information_system_representative=True
+    )
+    app.set_user(representative.user)
+
+    resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk]))
+    assert list(resp.context["models"].values_list("metadata__name", flat=True)) == [
+        "datasets/gov/ivpk/adp/City",
+        "datasets/gov/ivpk/adp/Province",
+        "datasets/gov/ivpk/adp/State",
+    ]
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "Country"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "City"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "City", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "City", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "Province"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "Province", "number"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("model-structure", args=[structure.dataset.pk, "State"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "id"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 403
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "title"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "number"]),
+        expect_errors=True,
+    )
+    assert resp.status_code == 200
+
+    resp = app.get(
+        reverse("property-structure", args=[structure.dataset.pk, "State", "residence"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
@@ -4302,3 +4710,180 @@ def test_multiple_patch_versions_increment_external_version(app: DjangoTestApp):
 
     assert patch_versions[0].external_version == "1.1.1"
     assert patch_versions[1].external_version == "1.1.2"
+
+def test_publish_form_shows_all_metadata_rows_params(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        '2,,,,,,param,country,,"lt",,,,,,,,,\n'
+        '3,,,,,,,,,"lv",,,,,,,,,\n'
+        '4,,,,,,,,,"ee",,,,,,,,,\n'
+        '5,,,,City,,,,,,,,,,,,,,\n'
+        '6,,,,,,param,type,,"created",,,,,,,,,\n'
+        '7,,,,,,,,,"modified",,,,,,,,,\n'
+        '8,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        '9,,,,,type,string,,,,5,,,open,dct:type,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    assert len(form.fields["metadata"]) == 11 # 10 fields from DSA + 1 for dataset_distribution
+
+def test_publish_form_shows_all_metadata_rows_base(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        '1,,,,Base,,,,,,4,,,,,,,,,\n'
+        ',,,Base,,,,,,,4,,,,,,,,,\n'
+        '2,,,,City,,,,,,5,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,,,,,,,\n'
+        ',,,,,title,string,,,,5,,,,,,,,,\n'
+        ',,,,,country,ref,Country,,,4,,,,,,,,,\n'
+        '3,,,,Country,,,,,,4,,,,,,,,,\n'
+        ',,,,,id,integer,,,,3,,,,,,,,,\n'
+        ',,,,,title,string,,,,2,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    assert len(form.fields["metadata"]) == 10 # 9 fields from DSA, because Base as City Base is not displayed + 1 for dataset_distribution
+
+def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
+        '3,,,,,,enum,Size,,SMALL,,,,,,,,,,\n'
+        '4,,,,,,,,,MEDIUM,,,,,,,,,\n'
+        '5,,,,,,,,,BIG,,,,,,,,,\n'
+        '6,,,,City,,,,,,,,,,,,,,\n'
+        '7,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n'
+        '8,,,,,size,Size,,,,,5,,,open,dct:size,,,\n'
+        '9,,,,,type,string,,,,,5,,,open,dct:type,,,\n'
+        '10,,,,,,enum,Type,,CREATED,,,,,,,,,\n'
+        '11,,,,,,,,,MODIFIED,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    assert len(form.fields["metadata"]) == 12 # 11 DSA rows + 1 dataset_distribution
+
+def test_publish_form_shows_all_metadata_rows_single_defined_resource(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        '1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        '2,,,,City,,,,,,5,,,,,,,,,\n'
+        '3,,,,,id,integer,,,,5,,,,,,,,,\n'
+        '4,,,,,title,string,,,,5,,,,,,,,,\n'
+        '5,,,,,country,ref,Country,,,4,,,,,,,,,\n'
+        '6,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
+        '7,,,,Country,,,,,,4,,,,,,,,,\n'
+        '8,,,,,id,integer,,,,3,,,,,,,,,\n'
+        '9,,,,,title,string,,,,2,,,,,,,,,\n'
+    )
+
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    assert len(form.fields["metadata"]) == 9
+
+def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        '1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        '2,,resource1,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
+        '3,,,,City,,,,,,5,,,,,,,,,\n'
+        '4,,,,,id,integer,,,,5,,,,,,,,,\n'
+        '5,,,,,title,string,,,,5,,,,,,,,,\n'
+        '6,,,,,country,ref,Country,,,4,,,,,,,,,\n'
+        '7,,resource,,,,,,http://www.example2.com,,,,,,,,,Title,Description\n'
+        '8,,,,Country,,,,,,4,,,,,,,,,\n'
+        '9,,,,,id,integer,,,,3,,,,,,,,,\n'
+        '10,,,,,title,string,,,,2,,,,,,,,,\n'
+    )
+
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    dataset_distributions = DatasetDistribution.objects.filter(dataset=structure.dataset)
+
+    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    assert len(form.fields["metadata"]) == 10
+    assert len(dataset_distributions) == 2
+    assert dataset_distributions.first().metadata.first().name == "resource1"
+    assert dataset_distributions.last().metadata.first().name == "resource"
+
+def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        '1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        '2,,,,City,,,,,,,,,,,,,,\n'
+        '3,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n'
+        '4,,,,,title,string,,,,5,,,open,dct:title,,,,\n'
+        '5,,,,,country,ref,Country,,,5,,,open,,,,,,\n'
+        '6,,,,,country.id,,,,,5,,,open,,,,,,\n'
+        '7,,,,,country.continent.id,,,,,5,,,open,,,,,,\n'
+        '8,,resource,,,,,,http://www.example.com,,,,,,,,,Title,Description\n'
+        '9,,,,Country,,,,,,4,,,,,,,,,\n'
+        '10,,,,,id,integer,,,,3,,,,,,,,,\n'
+        '11,,,,,title,string,,,,2,,,,,,,,,\n'
+    )
+
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    assert len(form.fields["metadata"]) == 12 # Denorm props create an additional property country.continent

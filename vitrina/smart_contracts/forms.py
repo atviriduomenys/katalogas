@@ -6,7 +6,7 @@ from django import forms
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import FileExtensionValidator
-from django.db.models import Q, QuerySet, Subquery
+from django.db.models import Q, QuerySet
 from django.core.files.uploadedfile import UploadedFile
 from django.forms import CheckboxSelectMultiple
 from django.utils.functional import cached_property
@@ -94,12 +94,8 @@ class BaseAgreementForm(forms.ModelForm):
         )
 
     def get_contacts_by_organization(self, organization_id: int) -> QuerySet:
-        user_ids = User.objects.filter(organization=organization_id).exclude(deleted=True).values("pk")
-
         return Contact.objects.filter(
-            Q(organization=organization_id),
-            Q(content_type=self.content_type_user, object_id__in=Subquery(user_ids))
-            | Q(content_type__isnull=True, object_id__isnull=True),
+            Q(organization_id=organization_id), Q(content_type__isnull=True) | Q(content_type=self.content_type_user)
         )
 
 

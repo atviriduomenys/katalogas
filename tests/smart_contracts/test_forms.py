@@ -11,7 +11,7 @@ from tests.conftest import organization
 from tests.smart_contracts.conftest import agreement_pdf, ODRL_JSON
 from vitrina.datasets.factories import DatasetFactory, ContactFactory
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
@@ -111,12 +111,21 @@ class TestAgreementSubmitForm:
     def test_assignee_representative_queryset(self, organization: Organization):
         # Arrange
         unrelated_organization = OrganizationFactory()
+
         agreement = AgreementFactory(
             assignee=organization,
             project=ProjectFactory(organization=organization)
         )
-
         user = UserFactory(organization=organization)
+
+        contact_no_user = ContactFactory(
+            contact_name="Petras Petrauskas",
+            organization=organization,
+            content_type=None,
+            object_id=None,
+            email="example3@example.com",
+            phone="+37060000000"
+        )
         contact_with_user = ContactFactory(
             contact_name="Vardenis Pavardenis",
             organization=organization,
@@ -125,19 +134,12 @@ class TestAgreementSubmitForm:
             email="example@example.com",
             phone="+37060000000"
         )
-        contact_no_user = ContactFactory(
-            contact_name="Petras Petrauskas",
-            organization=organization,
-            content_object=user,
-            email="example2@example.com",
-            phone="+37060000000"
-        )
         contact_unrelated_organization = ContactFactory(
             contact_name="Jonas Jonauskas",
             organization=unrelated_organization,
-            object_id=None,
             content_type=None,
-            email="example3@example.com",
+            object_id=None,
+            email="example4@example.com",
             phone="+37060000000"
         )
 
@@ -145,9 +147,11 @@ class TestAgreementSubmitForm:
         form = AgreementSubmitForm(agreement=agreement)
 
         # Assert
-        contacts_selectable_in_form = list(form.fields["assignee_representative"].queryset)
-        assert contact_unrelated_organization not in contacts_selectable_in_form
-        assert all(contact in contacts_selectable_in_form for contact in {contact_with_user, contact_no_user})
+        selectable_contacts = list(form.fields["assignee_representative"].queryset)
+
+        assert contact_no_user in selectable_contacts
+        assert contact_with_user in selectable_contacts
+        assert contact_unrelated_organization not in selectable_contacts
 
     def test_failure_required_fields_unfilled(self, organization: Organization):
         agreement = AgreementFactory(
@@ -200,6 +204,7 @@ class TestAgreementApproveForm:
     def test_assigner_representative_queryset(self, organization: Organization):
         # Arrange
         unrelated_organization = OrganizationFactory()
+
         agreement = AgreementFactory(
             assigner=organization,
             project=ProjectFactory(organization=organization),
@@ -210,6 +215,7 @@ class TestAgreementApproveForm:
             is_viisp_login=True,
             viisp_company_code=organization.company_code,
         )
+
         contact_with_user = ContactFactory(
             contact_name="Vardenis Pavardenis",
             organization=organization,
@@ -221,26 +227,28 @@ class TestAgreementApproveForm:
         contact_no_user = ContactFactory(
             contact_name="Petras Petrauskas",
             organization=organization,
-            content_object=user,
-            email="example2@example.com",
+            content_type=None,
+            object_id=None,
+            email="example3@example.com",
             phone="+37060000000"
         )
         contact_unrelated_organization = ContactFactory(
             contact_name="Jonas Jonauskas",
             organization=unrelated_organization,
-            object_id=None,
             content_type=None,
-            email="example3@example.com",
+            object_id=None,
+            email="example4@example.com",
             phone="+37060000000"
         )
 
         # Act
         form = AgreementApproveForm(agreement=agreement)
+        contacts_selectable = list(form.fields["assigner_representative"].queryset)
 
         # Assert
-        contacts_selectable_in_form = list(form.fields["assigner_representative"].queryset)
-        assert contact_unrelated_organization not in contacts_selectable_in_form
-        assert all(contact in contacts_selectable_in_form for contact in (contact_with_user, contact_no_user))
+        assert contact_no_user in contacts_selectable
+        assert contact_with_user in contacts_selectable
+        assert contact_unrelated_organization not in contacts_selectable
 
     def test_template_queryset(self, organization: Organization):
         # Arrange

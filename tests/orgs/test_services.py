@@ -2,11 +2,11 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 import factory
 
-from vitrina.datasets.factories import DatasetFactory
-from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action, pre_representative_delete, _has_dataset_perm
+from vitrina.orgs.services import has_perm, Action, pre_representative_delete, _has_dataset_perm, WRITE_ACTIONS
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.requests.factories import RequestFactory
@@ -68,6 +68,24 @@ def test_organization_edit_permission_manager():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
     manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER)
+    res = has_perm(manager.user, Action.UPDATE, organization)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_organization_edit_permission_open_data_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=False)
+    res = has_perm(manager.user, Action.UPDATE, organization)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_organization_edit_permission_information_system_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, information_system_representative=False)
     res = has_perm(manager.user, Action.UPDATE, organization)
     assert res is False
 
@@ -179,7 +197,6 @@ def test_dataset_history_view_permission_manager():
     res = has_perm(manager.user, Action.HISTORY_VIEW, dataset)
     assert res is True
 
-
 @pytest.mark.django_db
 def test_dataset_history_view_permission_coordinator():
     dataset = DatasetFactory()
@@ -256,6 +273,17 @@ def test_dataset_distribution_create_permission_organization_coordinator():
 
 
 @pytest.mark.django_db
+def test_dataset_distribution_create_permission_organization_open_data_representative():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    manager = RepresentativeFactory(
+        content_type=ct, object_id=dataset.organization.pk, role=Representative.MANAGER, open_data_representative=True
+    )
+    res = has_perm(manager.user, Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE, DatasetDistribution, dataset)
+    assert res is False
+
+
+@pytest.mark.django_db
 def test_dataset_distribution_create_permission_dataset_manager():
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset)
@@ -327,6 +355,24 @@ def test_organization_representative_create_permission_manager():
 
 
 @pytest.mark.django_db
+def test_organization_representative_create_permission_open_data_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=True)
+    res = has_perm(manager.user, Action.CREATE, Representative, organization)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_organization_representative_create_permission_information_system_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, information_system_representative=True)
+    res = has_perm(manager.user, Action.CREATE, Representative, organization)
+    assert res is False
+
+
+@pytest.mark.django_db
 def test_organization_representative_create_permission_coordinator():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
@@ -340,6 +386,24 @@ def test_organization_representative_edit_permission_manager():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
     manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER)
+    res = has_perm(manager.user, Action.UPDATE, manager)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_organization_representative_edit_permission_open_data_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=True)
+    res = has_perm(manager.user, Action.UPDATE, manager)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_organization_representative_edit_permission_information_system_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, information_system_representative=True)
     res = has_perm(manager.user, Action.UPDATE, manager)
     assert res is False
 
@@ -363,6 +427,24 @@ def test_organization_representative_view_permission_manager():
 
 
 @pytest.mark.django_db
+def test_organization_representative_view_permission_open_data_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=True)
+    res = has_perm(manager.user, Action.VIEW, Representative, organization)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_organization_representative_view_permission_information_system_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, information_system_representative=True)
+    res = has_perm(manager.user, Action.VIEW, Representative, organization)
+    assert res is False
+
+
+@pytest.mark.django_db
 def test_organization_representative_view_permission_coordinator():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
@@ -376,6 +458,24 @@ def test_dataset_representative_create_permission_organization_manager():
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset.organization)
     manager = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=Representative.MANAGER)
+    res = has_perm(manager.user, Action.CREATE, Representative, dataset)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_dataset_representative_create_permission_organization_information_system_representative():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=Representative.MANAGER, information_system_representative=True)
+    res = has_perm(manager.user, Action.CREATE, Representative, dataset)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_dataset_representative_create_permission_organization_open_data_representative():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=Representative.MANAGER, open_data_representative=True)
     res = has_perm(manager.user, Action.CREATE, Representative, dataset)
     assert res is False
 
@@ -416,6 +516,32 @@ def test_dataset_representative_edit_permission_organization_manager():
     dataset_ct = ContentType.objects.get_for_model(dataset)
     manager = RepresentativeFactory(
         content_type=organization_ct, object_id=dataset.organization.pk, role=Representative.MANAGER
+    )
+    representative = RepresentativeFactory(content_type=dataset_ct, object_id=dataset.pk)
+    res = has_perm(manager.user, Action.UPDATE, representative)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_dataset_representative_edit_permission_organization_information_system_representative():
+    dataset = DatasetFactory()
+    organization_ct = ContentType.objects.get_for_model(dataset.organization)
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    manager = RepresentativeFactory(
+        content_type=organization_ct, object_id=dataset.organization.pk, role=Representative.MANAGER, information_system_representative=True
+    )
+    representative = RepresentativeFactory(content_type=dataset_ct, object_id=dataset.pk)
+    res = has_perm(manager.user, Action.UPDATE, representative)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_dataset_representative_edit_permission_organization_open_data_representative():
+    dataset = DatasetFactory()
+    organization_ct = ContentType.objects.get_for_model(dataset.organization)
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    manager = RepresentativeFactory(
+        content_type=organization_ct, object_id=dataset.organization.pk, role=Representative.MANAGER, open_data_representative=True
     )
     representative = RepresentativeFactory(content_type=dataset_ct, object_id=dataset.pk)
     res = has_perm(manager.user, Action.UPDATE, representative)
@@ -548,6 +674,15 @@ def test_dataset_structure_create_permission_organization_manager():
     manager = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=Representative.MANAGER)
     res = has_perm(manager.user, Action.CREATE, DatasetStructure, dataset)
     assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_structure_create_permission_open_data_representative():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    manager = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=Representative.MANAGER, open_data_representative=True)
+    res = has_perm(manager.user, Action.CREATE, DatasetStructure, dataset)
+    assert res is False
 
 
 @pytest.mark.django_db
@@ -690,6 +825,48 @@ def test_dataset_edit_permission_organization_publisher():
 
     res = has_perm(user, Action.UPDATE, dataset)
     assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_edit_permission_organization_open_data_representative():
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=dataset.organization.pk,
+        user=user,
+        role=Representative.MANAGER,
+        open_data_representative=True
+    )
+
+    res = has_perm(user, Action.UPDATE, dataset)
+    assert res is False
+
+
+@pytest.mark.django_db
+def test_dataset_edit_permission_organization_information_system_representative():
+    dataset = DatasetFactory(is_public=False)
+    user = UserFactory()
+    organization = OrganizationFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=dataset.organization.pk,
+        user=user,
+        role=Representative.MANAGER,
+        information_system_representative=True
+    )
+
+    res = has_perm(user, Action.UPDATE, dataset)
+    assert res is False
 
 
 @pytest.mark.django_db
@@ -870,3 +1047,42 @@ class TestHasDatasetPerm:
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, child_dataset, child_dataset)
+
+    def test_info_system_representative_permissions(self):
+        gov_org = OrganizationFactory(kind=Organization.GOV)
+        info_system_subclass = DCATResourceSubclass.objects.get(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset_confidential = DatasetFactory(
+            access_rights=Dataset.CONFIDENTIAL,
+            organization=gov_org,
+            subclass=info_system_subclass,
+        )
+        dataset_public = DatasetFactory(
+            access_rights=Dataset.PUBLIC,
+            organization=gov_org,
+            subclass=info_system_subclass,
+        )
+        user = UserFactory()
+        RepresentativeFactory(
+            user=user,
+            content_type=ContentType.objects.get_for_model(gov_org),
+            object_id=gov_org.pk,
+            information_system_representative=True,
+            can_write=True
+        )
+        assert _has_dataset_perm(user, Action.VIEW, dataset_confidential, dataset_confidential) is True
+        assert _has_dataset_perm(user, Action.VIEW, dataset_public, dataset_public) is True
+        for action in WRITE_ACTIONS:
+            assert _has_dataset_perm(user, action, dataset_confidential, dataset_confidential) is True
+        user_no_write = UserFactory()
+        RepresentativeFactory(
+            user=user_no_write,
+            content_type=ContentType.objects.get_for_model(gov_org),
+            object_id=gov_org.pk,
+            information_system_representative=True,
+            can_write=False
+        )
+
+        for action in WRITE_ACTIONS:
+            assert _has_dataset_perm(user_no_write, action, dataset_confidential, dataset_confidential) is False
+        for action in WRITE_ACTIONS:
+            assert _has_dataset_perm(user_no_write, action, dataset_public, dataset_public) is True

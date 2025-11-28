@@ -36,7 +36,8 @@ from vitrina.datasets.managers import (
 )
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
-from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode
+from vitrina.structure import VersionStatus
+from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem
 from vitrina.users.models import User
 
 logger = logging.getLogger(__name__)
@@ -833,7 +834,30 @@ class Dataset(Resource):
                 )
                 | Q(organization_id__in=organization_ids),
                 user__isnull=False,
+                information_system_representative=False,
+                open_data_representative=False,
             )
+            .values_list("user_id", flat=True)
+            .distinct()
+        )
+
+    def get_organization_special_representatives_queryset(self) -> QuerySet[int]:
+        """
+        Returns user IDs of organization-level representatives for this dataset
+        (or its ancestor datasets) who have either information_system_representative
+        or open_data_representative set to True.
+        """
+        organization_ids = {self.organization_id}
+        for parent_dataset in self.get_ancestors().only("organization_id"):
+            organization_ids.add(parent_dataset.organization_id)
+
+        return (
+            Representative.objects.filter(
+                Q(content_type=ContentType.objects.get_for_model(Organization), object_id__in=organization_ids)
+                | Q(organization_id__in=organization_ids),
+                user__isnull=False,
+            )
+            .filter(Q(information_system_representative=True) | Q(open_data_representative=True))
             .values_list("user_id", flat=True)
             .distinct()
         )
@@ -958,8 +982,17 @@ class Dataset(Resource):
         meta_objects = []
         models = []
         props = []
-
+        dataset_distributions = set()
         metadata = self.metadata.first()
+        dataset_param_item_metadata_ref = None
+        dataset_enum_item_metadata_ref = None
+        model_param_item_metadata_ref = None
+        dataset_content_type_pk = ContentType.objects.get_for_model(Dataset).pk
+
+        all_metadata_instances = (
+            Metadata.objects.filter(dataset=self.pk, draft=True).order_by("id").select_related("metadata_version")
+        )
+        # TODO optimize by introducing manual collection of all related models.
         if metadata and metadata.draft is True:
             if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
                 if latest_version.name != metadata.name:
@@ -976,7 +1009,77 @@ class Dataset(Resource):
                 )
                 meta_objects.append((metadata.pk, label))
 
+        for metadata_instance in all_metadata_instances:
+            metadata_model = metadata_instance.content_type.model
+            if metadata_model == "prefix":
+                label = mark_safe(
+                    f"Prefix ref: "
+                    f"<span class='tag is-success is-light is-medium prop_metadata'>{metadata_instance.name}</span>"
+                )
+
+                meta_objects.append((metadata_instance.pk, label))
+
+            if metadata_model == "paramitem":
+                param_item_instance = (
+                    ParamItem.objects.filter(metadata=metadata_instance).select_related("param").first()
+                )
+                if param_item_instance:
+                    if param := param_item_instance.param:
+                        if (
+                            param.content_type_id == dataset_content_type_pk
+                            and metadata_instance.metadata_version.status == VersionStatus.DRAFT
+                        ):
+                            if metadata_instance.ref:
+                                dataset_param_item_metadata_ref = metadata_instance.ref
+                            label = mark_safe(
+                                f"Param ref:  <span class='tag is-success is-light is-medium prop_metadata'>{dataset_param_item_metadata_ref}</span>"
+                                f" prepare: <span class='tag is-success is-light is-medium'>{metadata_instance.prepare}</span>"
+                            )
+                            meta_objects.append((metadata_instance.pk, label))
+
+            if metadata_model == "enumitem":
+                enum_item_instance = EnumItem.objects.filter(metadata=metadata_instance).select_related("enum").first()
+                if enum_item_instance:
+                    if enum := enum_item_instance.enum:
+                        if (
+                            enum.content_type_id == dataset_content_type_pk
+                            and metadata_instance.metadata_version.status == VersionStatus.DRAFT
+                        ):
+                            if metadata_instance.ref:
+                                dataset_enum_item_metadata_ref = metadata_instance.ref
+                            label = mark_safe(
+                                f"Enum ref:  <span class='tag is-success is-light is-medium prop_metadata'>{dataset_enum_item_metadata_ref}</span> "
+                                f" prepare: <span class='tag is-success is-light is-medium'>{metadata_instance.prepare}</span>"
+                            )
+                            meta_objects.append((metadata_instance.pk, label))
+
         for model in self.model_set.all():
+            dataset_distribution_for_model = model.distribution
+            dataset_distribution_metadata = (
+                dataset_distribution_for_model.metadata.first() if dataset_distribution_for_model else None
+            )
+
+            is_metadata_inside_expected_distributions = False
+            is_version_draft = False
+
+            if dataset_distribution_metadata:
+                is_metadata_inside_expected_distributions = dataset_distribution_metadata.pk in dataset_distributions
+                metadata_version_status = getattr(dataset_distribution_metadata.metadata_version, "status", None)
+                is_version_draft = metadata_version_status == VersionStatus.DRAFT
+
+            if (
+                dataset_distribution_for_model
+                and dataset_distribution_metadata
+                and not is_metadata_inside_expected_distributions
+                and is_version_draft
+            ):
+                label = mark_safe(
+                    f"<a href={dataset_distribution_for_model.get_absolute_url()}>{dataset_distribution_metadata.name}</a> name: "
+                    f"<span class='tag is-success is-light is-medium'>{dataset_distribution_metadata.name}</span>"
+                )
+                dataset_distributions.add(dataset_distribution_metadata.pk)
+                meta_objects.append((dataset_distribution_metadata.pk, label))
+
             metadata = model.metadata.first()
             if metadata and metadata.draft is True:
                 models.append(model)
@@ -1035,7 +1138,18 @@ class Dataset(Resource):
                     label = mark_safe(label_str)
                     meta_objects.append((metadata.pk, label))
 
-            for prop in model.model_properties.filter(given=True):
+                if param := model.params.first():
+                    for param_item in param.paramitem_set.all():
+                        metadata = param_item.metadata.first()
+                        if metadata and metadata.metadata_version.status == VersionStatus.DRAFT and metadata.ref:
+                            model_param_item_metadata_ref = metadata.ref
+                        label = mark_safe(
+                            f"Param ref:  <span class='tag is-success is-light is-medium prop_metadata'>{model_param_item_metadata_ref}</span>"
+                            f" prepare: <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
+                        )
+                        meta_objects.append((metadata_instance.pk, label))
+
+            for prop in model.model_properties.all():
                 metadata = prop.metadata.first()
                 if metadata and metadata.draft is True:
                     props.append(prop)

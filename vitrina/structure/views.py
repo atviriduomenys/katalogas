@@ -4,7 +4,7 @@ import json
 from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote
-
+from django.db.models import Q
 from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -69,6 +69,7 @@ from vitrina.structure.services import (
     get_srid,
     transform_coordinates,
     get_data_from_spinta_async,
+    get_allowed_visibilities,
 )
 from vitrina.tasks.models import Task
 from spinta.manifests.open_api.helpers import create_openapi_manifest
@@ -128,12 +129,18 @@ class DatasetStructureMixin(StructureMixin):
             self.version = None
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
+        allowed_visibilities = get_allowed_visibilities(self.request.user, self.dataset, Action.VIEW)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.dataset).order_by("metadata__name")
+            self.models = (
+                Model.objects.filter(dataset=self.dataset)
+                .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
+                .order_by("metadata__name")
+            )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.dataset, access__gte=Metadata.PUBLIC)
+                .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
                 .order_by("metadata__name")
             )
         return super().dispatch(request, *args, **kwargs)
@@ -194,9 +201,14 @@ class DatasetStructureView(
         else:
             self.version = None
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         self.models = Model.objects.filter(dataset=self.object)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version=self.version).order_by("metadata__name")
+            self.models = (
+                Model.objects.filter(dataset=self.object, version=self.version)
+                .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
+                .order_by("metadata__name")
+            )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -205,7 +217,7 @@ class DatasetStructureView(
                     access__gte=Metadata.PUBLIC,
                     version=self.version,
                 )
-                .exclude(metadata__visibility=Metadata.PRIVATE)
+                .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
                 .order_by("metadata__name")
             )
 
@@ -311,24 +323,41 @@ class ModelStructureView(
         )
         if not self.model:
             raise Http404("No Model matches the given query.")
-
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        model_visibility = self.model.visibility
+        allowed_structure_visibilities = get_allowed_visibilities(
+            self.request.user, self.object, Action.STRUCTURE, model_class=Model
+        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            model_visibility in allowed_structure_visibilities or model_visibility is None
+        )
+        allowed_model_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        allowed_prop_visibilities = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        model_visibility_filter = Q(metadata__visibility__in=allowed_model_visibilities) | Q(
+            metadata__visibility__isnull=True
+        )
+        prop_visibility_filter = Q(metadata__visibility__in=allowed_prop_visibilities) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+            self.models = (
+                Model.objects.filter(dataset=self.object, version_id=self.version_id).filter(model_visibility_filter).order_by(
                 "metadata__name"
             )
-            self.props = self.model.get_given_props()
+            )
+            self.props = self.model.get_given_props().filter(prop_visibility_filter).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
+                .filter(model_visibility_filter)
                 .order_by("metadata__name")
-                .exclude(metadata__visibility=Metadata.PRIVATE)
             )
             self.props = (
                 self.model.get_given_props()
                 .filter(metadata__access__gte=Metadata.PUBLIC)
-                .exclude(metadata__visibility=Metadata.PRIVATE)
+                .filter(prop_visibility_filter)
             )
         return super().dispatch(request, *args, **kwargs)
 
@@ -352,13 +381,19 @@ class ModelStructureView(
         context["models"] = self.models
         context["props"] = self.props
         context["prop_dict"] = {prop.name: prop for prop in self.props}
+        allowed_visibilities_property = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        visibility_filter = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            context["props_without_base"] = self.model.get_props_excluding_base()
+            context["props_without_base"] = self.model.get_props_excluding_base().filter(visibility_filter)
         else:
             context["props_without_base"] = (
                 self.model.get_props_excluding_base()
                 .filter(metadata__access__gte=Metadata.PUBLIC)
-                .exclude(metadata__visibility=Metadata.PRIVATE)
+                .filter(visibility_filter)
             )
         context["can_view_members"] = has_perm(
             self.request.user,
@@ -458,16 +493,33 @@ class PropertyGraphView(PermissionRequiredMixin, View):
         self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name)
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        allowed_visibilities_property = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
+            metadata__visibility__isnull=True
+        )
+        visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
-            self.props = self.model.get_given_props()
+            self.models = (
+                Model.objects.filter(dataset=self.object).filter(visibility_filter_model).order_by("metadata__name")
+            )
+            self.props = self.model.get_given_props().filter(visibility_filter_property)
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(visibility_filter_model)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+            self.props = (
+                self.model.get_given_props()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .filter(visibility_filter_property)
+            )
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -539,8 +591,6 @@ class PropertyStructureView(
     can_manage_structure: bool
 
     def has_permission(self):
-        if (metadata := self.property.metadata.first()) and metadata.visibility == Metadata.PRIVATE:
-            return has_perm(self.request.user, Action.STRUCTURE, self.object) and self.property in self.props
         return has_perm(self.request.user, Action.VIEW, self.object) and self.property in self.props
 
     def dispatch(self, request, *args, **kwargs):
@@ -566,23 +616,33 @@ class PropertyStructureView(
         self.property = get_object_or_404(
             Property, model=self.model, metadata__name=prop_name, version_id=self.version_id
         )
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_structure_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.STRUCTURE)
+        model_visibility = self.model.visibility
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            model_visibility in allowed_structure_visibilities or model_visibility is None
+        )
+        allowed_view_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         if self.can_manage_structure:
             self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
                 "metadata__name"
             )
-            self.props = self.model.get_given_props()
+            self.props = self.model.get_given_props().all().order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
-                .exclude(metadata__visibility=Metadata.PRIVATE)
+                .filter(Q(metadata__visibility__in=allowed_view_visibilities) | Q(metadata__visibility__isnull=True))
                 .order_by("metadata__name")
+            )
+            allowed_visibilities_property = get_allowed_visibilities(
+                self.request.user, self.object, Action.VIEW, model_class=Property
             )
             self.props = (
                 self.model.get_given_props()
                 .filter(metadata__access__gte=Metadata.PUBLIC)
-                .exclude(metadata__visibility=Metadata.PRIVATE)
+                .filter(
+                    Q(metadata__visibility__in=allowed_visibilities_property) | Q(metadata__visibility__isnull=True)
+                )
             )
 
         return super().dispatch(request, *args, **kwargs)
@@ -623,6 +683,20 @@ class PropertyStructureView(
             self.object,
         )
         context["can_manage_structure"] = self.can_manage_structure
+
+        allowed_enum_visibilities = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Enum
+        )
+
+        filtered_enums = []
+        for enum in self.property.enums.all():
+            enum_items = enum.enumitem_set.filter(
+                Q(metadata__visibility__in=allowed_enum_visibilities) | Q(metadata__visibility__isnull=True)
+            )
+            if enum_items.exists():
+                enum.filtered_items = enum_items
+                filtered_enums.append(enum)
+        self.property.filtered_enums = filtered_enums
 
         metadata = self.property.metadata.first()
         if metadata and metadata.type:
@@ -730,18 +804,35 @@ class ModelDataTableView(PermissionRequiredMixin, View):
             raise Http404("No Model matches the given query.")
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        allowed_visibilities_property = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
+            metadata__visibility__isnull=True
+        )
+        visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+            self.models = (
+                Model.objects.filter(dataset=self.object, version_id=self.version_id).filter(visibility_filter_model).order_by(
                 "metadata__name"
             )
-            self.props = self.model.get_given_props()
+            )
+            self.props = self.model.get_given_props().filter(visibility_filter_property)
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
+                .filter(visibility_filter_model)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+            self.props = (
+                self.model.get_given_props()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .filter(visibility_filter_property)
+            )
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -802,9 +893,13 @@ class ModelDataTableView(PermissionRequiredMixin, View):
             context["tags"] = tags
             context["select"] = select
             context["selected_cols"] = selected_cols or context["headers"]
-            context["can_manage"] = self.can_manage_structure = has_perm(
+            context["can_manage"] = context["can_manage"] = self.can_manage_structure = has_perm(
                 self.request.user, Action.STRUCTURE, Dataset, self.object
+            ) and (
+                self.model.visibility in get_allowed_visibilities(self.request.user, self.object, Action.STRUCTURE)
+                or self.model.visibility is None
             )
+
             context["dataset_id"] = self.object.id
             context["is_dev_features_enabled"] = settings.IS_DEV_FEATURES_ENABLED
 
@@ -881,17 +976,34 @@ class ModelDataView(
         if not self.model:
             raise Http404("No Model matches the given query.")
 
+        allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        allowed_visibilities_property = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
+            metadata__visibility__isnull=True
+        )
+        visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version=self.version_id).order_by("metadata__name")
-            self.props = self.model.get_given_props()
+            self.models = (
+                Model.objects.filter(dataset=self.object, version=self.version_id).order_by("metadata__name").filter(visibility_filter_model)
+            )
+            self.props = self.model.get_given_props().filter(visibility_filter_property)
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version=self.version_id)
+                .filter(visibility_filter_model)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+            self.props = (
+                self.model.get_given_props()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .filter(visibility_filter_property)
+            )
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -1018,18 +1130,35 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
             raise Http404("No Model matches the given query.")
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_visibilities_model = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        allowed_visibilities_property = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
+            metadata__visibility__isnull=True
+        )
+        visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+            self.models = (
+                Model.objects.filter(dataset=self.object, version_id=self.version_id).filter(visibility_filter_model).order_by(
                 "metadata__name"
             )
-            self.props = self.model.get_given_props()
+            )
+            self.props = self.model.get_given_props().filter(visibility_filter_property)
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
+                .filter(visibility_filter_model)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+            self.props = (
+                self.model.get_given_props()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .filter(visibility_filter_property)
+            )
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -1096,18 +1225,35 @@ class ObjectDataView(
             raise Http404("No Model matches the given query.")
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        allowed_visibilities_property = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
+            metadata__visibility__isnull=True
+        )
+        visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+            self.models = (
+                Model.objects.filter(dataset=self.object, version_id=self.version_id).filter(visibility_filter_model).order_by(
                 "metadata__name"
             )
-            self.props = self.model.get_given_props()
+            )
+            self.props = self.model.get_given_props().filter(visibility_filter_property)
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
+                .filter(visibility_filter_model)
                 .order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+            self.props = (
+                self.model.get_given_props()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .filter(visibility_filter_property)
+            )
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -1207,14 +1353,21 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
             raise Http404("No Model matches the given query.")
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+            self.models = (
+                Model.objects.filter(dataset=self.object, version_id=self.version_id).filter(visibility_filter_model).order_by(
                 "metadata__name"
+            )
             )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
+                .filter(visibility_filter_model)
                 .order_by("metadata__name")
             )
 
@@ -1953,6 +2106,10 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
 
     def get_object(self, queryset=None):
         model_name = self.kwargs.get("model")
+
+        allowed_vis = get_allowed_visibilities(self.request.user, self.dataset, Action.STRUCTURE)
+        visibility_filter = Q(metadata__visibility__in=allowed_vis) | Q(metadata__visibility__isnull=True)
+
         self.model_obj = (
             Model.objects.annotate(
                 model_name=Func(
@@ -1964,6 +2121,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                 )
             )
             .filter(model_name=model_name, dataset=self.dataset)
+            .filter(visibility_filter)
             .first()
         )
         if not self.model_obj:
@@ -2626,12 +2784,15 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object).filter(visibility_filter).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC)
+                .filter(visibility_filter)
                 .order_by("metadata__name")
             )
         return super().dispatch(request, *args, **kwargs)
@@ -2671,14 +2832,24 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def get_history_objects(self):
         model_ids = self.models.values_list("pk", flat=True)
+        allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
         if self.can_manage_structure:
-            property_ids = Property.objects.filter(model__pk__in=model_ids, given=True).values_list("pk", flat=True)
+            property_ids = (
+                Property.objects.filter(model__pk__in=model_ids, given=True)
+                .filter(visibility_filter)
+                .values_list("pk", flat=True)
+            )
         else:
-            property_ids = Property.objects.filter(
-                model__pk__in=model_ids,
-                given=True,
-                metadata__access__gte=Metadata.PUBLIC,
-            ).values_list("pk", flat=True)
+            property_ids = (
+                Property.objects.filter(
+                    model__pk__in=model_ids,
+                    given=True,
+                    metadata__access__gte=Metadata.PUBLIC,
+                )
+                .filter(visibility_filter)
+                .values_list("pk", flat=True)
+            )
 
         property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
         model_history_objects = Version.objects.get_for_model(Model).filter(object_id__in=list(model_ids))
@@ -2724,18 +2895,35 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
             raise Http404("No Model matches the given query.")
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        allowed_visibilities_property = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
+            metadata__visibility__isnull=True
+        )
+        visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+            self.models = (
+                Model.objects.filter(dataset=self.object, version_id=self.version_id).filter(visibility_filter_model).order_by(
                 "metadata__name"
             )
-            self.props = self.model_obj.get_given_props()
+            )
+            self.props = self.model_obj.get_given_props().filter(visibility_filter_property)
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
+                .filter(visibility_filter_model)
                 .order_by("metadata__name")
             )
-            self.props = self.model_obj.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+            self.props = (
+                self.model_obj.get_given_props()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .filter(visibility_filter_property)
+            )
 
         return super().dispatch(request, *args, **kwargs)
 
@@ -2837,18 +3025,35 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         )
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        allowed_visibilities_property = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
+            metadata__visibility__isnull=True
+        )
+        visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
+            metadata__visibility__isnull=True
+        )
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, version_id=self.version_id).order_by(
+            self.models = (
+                Model.objects.filter(dataset=self.object, version_id=self.version_id).filter(visibility_filter_model).order_by(
                 "metadata__name"
             )
-            self.props = self.model_obj.get_given_props()
+            )
+            self.props = self.model_obj.get_given_props().filter(visibility_filter_property)
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
                 .filter(dataset=self.object, access__gte=Metadata.PUBLIC, version_id=self.version_id)
+                .filter(visibility_filter_model)
                 .order_by("metadata__name")
             )
-            self.props = self.model_obj.get_given_props().filter(metadata__access__gte=Metadata.PUBLIC)
+            self.props = (
+                self.model_obj.get_given_props()
+                .filter(metadata__access__gte=Metadata.PUBLIC)
+                .filter(visibility_filter_property)
+            )
 
         return super().dispatch(request, *args, **kwargs)
 

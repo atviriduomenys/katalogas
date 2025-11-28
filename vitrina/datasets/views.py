@@ -137,6 +137,7 @@ from vitrina.structure.models import Metadata, Property, Model
 from vitrina.structure.services import (
     create_structure_objects,
     get_model_name,
+    get_allowed_visibilities,
 )
 from vitrina.users.models import User
 from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset, can_manage_datasets
@@ -373,7 +374,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             )
             extra_context["can_create_dataset"] = has_perm(
                 self.request.user,
-                Action.CREATE,
+                Action.CREATE_RESOURCE_AT_GOV_ORG if self.organization.kind == Organization.GOV else Action.CREATE,
                 Dataset,
                 self.organization,
             )
@@ -482,7 +483,12 @@ class DatasetDetailView(
             "public_status": dataset.is_public,
             # TODO: harvested functionality needs to be implemented
             "harvested": "",
-            "can_add_resource": has_perm(self.request.user, Action.CREATE, DatasetDistribution, dataset),
+            "can_add_resource": has_perm(
+                self.request.user,
+                Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE if organization.kind == Organization.GOV else Action.CREATE,
+                Dataset,
+                organization,
+            ),
             "can_update_dataset": has_perm(self.request.user, Action.UPDATE, dataset),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
             "resources": dataset.datasetdistribution_set.all().order_by("-period_start"),
@@ -670,7 +676,13 @@ class DatasetCreateView(
                 if request_id := match.kwargs.get("pk"):
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
-        return has_perm(self.request.user, Action.CREATE, Dataset, self.organization)
+
+        return has_perm(
+            self.request.user,
+            Action.CREATE_RESOURCE_AT_GOV_ORG if self.organization.kind == Organization.GOV else Action.CREATE,
+            Dataset,
+            self.organization,
+        )
 
     def get_breadcrumbs(self) -> list[Crumb]:
         """Generate hierarchical breadcrumbs for the dataset"""
@@ -954,7 +966,12 @@ class ResourceSubclassCreateView(
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
-        return has_perm(self.request.user, Action.CREATE, Dataset, organization)
+        return has_perm(
+            self.request.user,
+            Action.CREATE_RESOURCE_AT_GOV_ORG if organization.kind == Organization.GOV else Action.CREATE,
+            Dataset,
+            organization,
+        )
 
     def get_breadcrumbs(self) -> list[Crumb]:
         if parent_id := self.kwargs.get("parent_id"):
@@ -1375,15 +1392,33 @@ class DatasetHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
         return context
 
     def get_history_objects(self):
-        model_ids = self.models.values_list("pk", flat=True)
+        allowed_model_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
+        allowed_prop_visibilities = get_allowed_visibilities(
+            self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        visibility_filter_model = Q(metadata__visibility__in=allowed_model_visibilities) | Q(
+            metadata__visibility__isnull=True
+        )
+        visibility_filter_property = Q(metadata__visibility__in=allowed_prop_visibilities) | Q(
+            metadata__visibility__isnull=True
+        )
+        model_ids = self.models.filter(visibility_filter_model).values_list("pk", flat=True)
         if self.can_manage_structure:
-            property_ids = Property.objects.filter(model__pk__in=model_ids, given=True).values_list("pk", flat=True)
+            property_ids = (
+                Property.objects.filter(model__pk__in=model_ids, given=True)
+                .filter(visibility_filter_property)
+                .values_list("pk", flat=True)
+            )
         else:
-            property_ids = Property.objects.filter(
-                model__pk__in=model_ids,
-                given=True,
-                metadata__access__gte=Metadata.PUBLIC,
-            ).values_list("pk", flat=True)
+            property_ids = (
+                Property.objects.filter(
+                    model__pk__in=model_ids,
+                    given=True,
+                    metadata__access__gte=Metadata.PUBLIC,
+                )
+                .filter(visibility_filter_property)
+                .values_list("pk", flat=True)
+            )
 
         property_history_objects = Version.objects.get_for_model(Property).filter(object_id__in=list(property_ids))
         model_history_objects = Version.objects.get_for_model(Model).filter(object_id__in=list(model_ids))
@@ -1437,9 +1472,12 @@ class DatasetStructureImportView(
     plan_url_name = "dataset-plans"
 
     def has_permission(self):
+        subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.CREATE,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            if subclass and subclass.is_information_system
+            else Action.CREATE,
             DatasetStructure,
             self.dataset,
         )
@@ -1537,15 +1575,18 @@ class DatasetMembersView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["dataset"] = self.object
+        subclass = self.object.subclass
         context["has_permission"] = has_perm(
             self.request.user,
-            Action.CREATE,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+            if subclass and subclass.is_information_system
+            else Action.CREATE,
             Representative,
             self.object,
         )
         context["can_view_members"] = has_perm(
             self.request.user,
-            Action.VIEW,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE if subclass and subclass.is_information_system else Action.VIEW,
             Representative,
             self.object,
         )
@@ -1568,9 +1609,12 @@ class CreateMemberView(
     history_url_name = "dataset-history"
 
     def has_permission(self):
+        subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.CREATE,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            if subclass and subclass.is_information_system
+            else Action.CREATE,
             Representative,
             self.dataset,
         )
@@ -3759,10 +3803,17 @@ class DatasetChildResourceListView(
         return super(DatasetChildResourceListView, self).get_queryset().filter(django_id__in=list(descendants))
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
+        dataset = self.object
+        subclass = dataset.subclass
+        action = (
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            if subclass and subclass.is_information_system
+            else Action.CREATE
+        )
         return super().get_context_data(**kwargs) | {
             "can_create_dataset": has_perm(
                 self.request.user,
-                Action.CREATE,
+                action,
                 Dataset,
                 self.object.organization,
             ),

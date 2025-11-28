@@ -1,3 +1,5 @@
+from functools import cached_property
+
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -85,6 +87,10 @@ class User(AbstractUser):
     def get_acl_parents(self):
         return [self]
 
+    @cached_property
+    def organization_content_type(self):
+        return ContentType.objects.get_for_model(Organization)
+
     @property
     def is_manager(self):
         return bool(self.representative_set.filter(role=Representative.MANAGER))
@@ -99,11 +105,13 @@ class User(AbstractUser):
 
     @property
     def is_gov_organization_manager(self) -> bool:
-        gov_org_content_type = ContentType.objects.get_for_model(Organization)
+        gov_org_content_type = self.organization_content_type
         return Representative.objects.filter(
             user=self,
             content_type=gov_org_content_type,
             object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
+            information_system_representative=False,
+            open_data_representative=False,
         ).exists()
 
     @property
@@ -124,7 +132,7 @@ class User(AbstractUser):
 
     @property
     def org_representatives(self) -> models.QuerySet[Representative]:
-        return self.representative_set.filter(content_type=ContentType.objects.get_for_model(Organization))
+        return self.representative_set.filter(content_type=self.organization_content_type)
 
     @property
     def represented_org_ids(self) -> models.QuerySet[int]:
@@ -154,6 +162,28 @@ class User(AbstractUser):
             representatives = representatives.filter(can_make_agreements=True)
 
         return representatives.exists()
+
+    def is_information_system_representative_for(self, organization: Organization | None) -> bool:
+        if organization is None:
+            return False
+        org_type = self.organization_content_type
+        return Representative.objects.filter(
+            user=self,
+            content_type=org_type,
+            object_id=organization.pk,
+            information_system_representative=True,
+        ).exists()
+
+    def is_open_data_representative_for(self, organization: Organization | None) -> bool:
+        if organization is None:
+            return False
+        org_type = self.organization_content_type
+        return Representative.objects.filter(
+            user=self,
+            content_type=org_type,
+            object_id=organization.pk,
+            open_data_representative=True,
+        ).exists()
 
 
 class UserTablePreferences(models.Model):

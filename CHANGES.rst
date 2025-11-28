@@ -19,6 +19,30 @@ https://github.com/atviriduomenys/katalogas/issues/2123
 https://github.com/atviriduomenys/dvms/issues/346
 - Add password validation for fake VIISP login.
 
+https://github.com/atviriduomenys/katalogas/pull/2115
+- Publish version form now shows and lets the user select all fields that are created.
+
+https://github.com/atviriduomenys/katalogas/issues/2067
+- Part 2.4: Adjust queryset to allow selecting contacts without an assigned user as well.
+- Part 3: Add forms for `submit`, `approve`, change the `form` status form. Separate the forms to be independant for each status.
+- Part 4: Add forms for `initiate` and `sign` statuses. Adjust the logic for each one. Make them easily extendable.
+- Part 5: Adjust selectable contact queryset for agreements.
+
+https://github.com/atviriduomenys/katalogas/issues/2076
+- New Flags for Government Organization Representatives
+- open_data_representative
+  - Cannot view non-public datasets.
+  - Cannot create Information System Resources.
+- information_system_representative
+  - Can create and update information systems within their organization.
+  - Can view non-public datasets.
+- Permissions for Structure Models, Properties, and Enums
+  - open_data_representative
+    - Access limited to Public and Package-level structure items.
+  - information_system_representative
+    - Access limited to Public, Package, and Protected-level structure items.
+- Indexes and managers have been updated to reflect the new roles and their respective permissions.
+
 v 1.7 (2025-11-20)
 ==================
 
@@ -30,9 +54,6 @@ https://github.com/atviriduomenys/katalogas/issues/2067
 - Part 2.1: Remove organizations as juridical entities from the list of possible entities to represent organizations in agreements.
 - Part 2.2: Add new field `template` and new statuses for `Agreement`. Adding a few adjustments for field displays & formatting.
 - Part 2.3: Move permissions to dedicated `permisions.py` file.
-- Part 2.4: Adjust queryset to allow selecting contacts without an assigned user as well.
-- Part 3: Add forms for `submit`, `approve`, change the `form` status form. Separate the forms to be independant for each status.
-- Part 4: Add forms for `initiate` and `sign` statuses. Adjust the logic for each one. Make them easily extendable.
 
 https://github.com/atviriduomenys/katalogas/issues/1955
 - Improved contact form by adding new contact, position, removed dataset field.

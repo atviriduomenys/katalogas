@@ -148,20 +148,20 @@ def test_get_active_tasks_with_staff_after_10_days():
         parent_organization_user,
         now=timezone.datetime(2022, 11, 28).date()
     )
-    assert list(active_tasks) == [
+    assert set(active_tasks) == {
         task_for_parent_organization,
         task_for_child_organization1,
         task_for_child_organization2
-    ]
+    }
 
     active_tasks = get_active_tasks(
         child_organization_user,
         now=timezone.datetime(2022, 11, 28).date()
     )
-    assert list(active_tasks) == [
+    assert set(active_tasks) == {
         task_for_child_organization1,
         task_for_child_organization2
-    ]
+    }
 
     active_tasks = get_active_tasks(
         staff,

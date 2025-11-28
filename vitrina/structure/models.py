@@ -224,6 +224,12 @@ class Model(models.Model):
             return metadata.description
         return ""
 
+    @property
+    def visibility(self) -> int | None:
+        if metadata := self.metadata.first():
+            return metadata.visibility
+        return None
+
     def update_level(self):
         if metadata := self.metadata.first():
             prop_ids = self.model_properties.values_list("pk", flat=True)
@@ -380,6 +386,12 @@ class Property(models.Model):
         if metadata := self.metadata.first():
             return metadata.description
         return ""
+
+    @builtins.property
+    def visibility(self) -> int | None:
+        if metadata := self.metadata.first():
+            return metadata.visibility
+        return None
 
     def get_acl_parents(self):
         return [self.model.dataset]

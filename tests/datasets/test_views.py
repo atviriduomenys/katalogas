@@ -302,6 +302,7 @@ class TestDatasetDetailView:
         assert response.status_code == 200
         assert response.context["dataset"] == dataset
 
+
     def test_dataset_detail_with_publisher(self, app: DjangoTestApp):
         frequency = FrequencyFactory(is_default=True)
         organization = OrganizationFactory()

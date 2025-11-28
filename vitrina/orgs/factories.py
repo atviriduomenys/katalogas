@@ -56,6 +56,8 @@ class RepresentativeFactory(DjangoModelFactory):
         phone=factory.SelfAttribute("..phone"),
         email=factory.SelfAttribute("..email"),
     )
+    open_data_representative = False
+    information_system_representative = False
 
 
 class ViispRepresentativeFactory(RepresentativeFactory):

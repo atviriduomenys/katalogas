@@ -2,6 +2,7 @@ import logging
 import secrets
 
 import reversion
+from reversion.models import Version
 from django.contrib import messages
 from django.contrib.contenttypes.models import ContentType
 from django.db import transaction
@@ -38,7 +39,7 @@ from vitrina.projects.forms import ProjectForm, ClientCreateForm, ClientScopeCre
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.models import AgreementScope
+from vitrina.smart_contracts.models import AgreementScope, Agreement
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView
@@ -258,6 +259,14 @@ class ProjectHistoryView(ProjectViewBaseMixin, HistoryView):
         context["can_view_agreements"] = can_view_agreements(self.request.user, self.object)
         context["parent_links"].update({None: _("Istorija")})
         return context
+
+    def get_history_objects(self):
+        project_history_objects = Version.objects.get_for_object(self.project)
+        agreement_ids = Agreement.objects.filter(project=self.project).values_list("pk", flat=True)
+        agreement_ids = [str(id) for id in agreement_ids]
+        agreement_history_objects = Version.objects.get_for_model(Agreement).filter(object_id__in=agreement_ids)
+        history_objects = project_history_objects | agreement_history_objects
+        return history_objects.order_by("-revision__date_created")
 
 
 class ProjectDatasetsView(ProjectViewBaseMixin, PermissionRequiredMixin, ListView):

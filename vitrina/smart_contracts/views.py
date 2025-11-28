@@ -2,6 +2,7 @@ import os
 from itertools import groupby
 from typing import Any
 
+import reversion
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.files.base import ContentFile
@@ -298,14 +299,14 @@ class AgreementCreateView(
             for scope in form.cleaned_data["scopes"]:
                 resource, action = scope.rsplit("/:", 1)
                 agreement_scopes.append(
-                    AgreementScope(
+                    AgreementScope.objects.create(
                         agreement=agreement,
                         scope=scope,
                         resource=resource,
                         action=action,
                     )
                 )
-            AgreementScope.objects.bulk_create(agreement_scopes)
+            reversion.set_comment(f"Sukurta sutartis su duomenų teikėju '{form.instance}'")
 
         messages.success(self.request, _("Sutartys sėkmingai sugeneruotos"))
         return super().formset_valid(formset)

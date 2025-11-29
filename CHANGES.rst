@@ -4,6 +4,15 @@ Changes
 v 1.9 (unreleased)
 ==================
 
+Security improvements:
+- Added HTTP Strict Transport Security (HSTS) with 1-year max-age;
+- Enabled HSTS preload and includeSubDomains;
+- Strengthened cookie security (Secure, HttpOnly, SameSite=Lax);
+- Implemented Referrer-Policy: strict-origin-when-cross-origin;
+- Added Subresource Integrity (SRI) hashes to external scripts;
+- Migrated jQuery from HTTP to HTTPS CDN;
+- Enhanced Content Security Policy (CSP) directives.
+
 https://github.com/atviriduomenys/dvms/issues/293
 Security: Upgrade cryptography library to address CVE vulnerabilities:
 - Updated cryptography from 38.0.4 to 44.0.3 (fixes CVE-2023-49083, CVE-2024-26130);
@@ -80,7 +89,6 @@ https://github.com/atviriduomenys/katalogas/pull/2145
 
 - Refactored `vertimas.vu.lt` translation function.
 - Added `try/except` for automatic translation with a timeout.
-
 
 v 1.7 (2025-11-20)
 ==================

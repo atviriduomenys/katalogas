@@ -71,8 +71,8 @@ def _sign_xml(xml, key):
     root = ET.fromstring(xml.toxml())
     signer = XMLSigner(
         method=methods.enveloped,
-        signature_algorithm=SignatureMethod.RSA_SHA1,
-        digest_algorithm=DigestAlgorithm.SHA1,
+        signature_algorithm=SignatureMethod.RSA_SHA256,
+        digest_algorithm=DigestAlgorithm.SHA256,
         c14n_algorithm=CanonicalizationMethod.EXCLUSIVE_XML_CANONICALIZATION_1_0,
     )
     ns = {None: signer.namespaces["ds"]}

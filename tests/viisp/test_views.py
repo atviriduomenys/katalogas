@@ -47,7 +47,7 @@ def test_form_submit_with_correct_data(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-@override_settings(DEBUG=True)
+@override_settings(DEBUG=True, ROOT_URLCONF="vitrina.urls")
 def test_fake_viisp_logs_in_existing_user(app: DjangoTestApp):
     user = UserFactory(email="existing@test.com", is_viisp_login=False)
     user.set_password("abc")
@@ -64,7 +64,7 @@ def test_fake_viisp_logs_in_existing_user(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-@override_settings(DEBUG=True)
+@override_settings(DEBUG=True, ROOT_URLCONF="vitrina.urls")
 def test_fake_viisp_logs_in_existing_user_no_company_code(app: DjangoTestApp):
     user = UserFactory(email="existing@test.com", is_viisp_login=False, viisp_company_code="123")
     user.set_password("abc")
@@ -81,7 +81,7 @@ def test_fake_viisp_logs_in_existing_user_no_company_code(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-@override_settings(DEBUG=True)
+@override_settings(DEBUG=True, ROOT_URLCONF="vitrina.urls")
 def test_fake_viisp_logs_in_wrong_password(app: DjangoTestApp):
     user = UserFactory(email="existing@test.com", is_viisp_login=False)
     user.set_password("abc")

@@ -1,5 +1,6 @@
 import pytest
 from django.urls import reverse
+from django.test import override_settings
 from django_webtest import DjangoTestApp
 from django.contrib.auth.hashers import make_password
 

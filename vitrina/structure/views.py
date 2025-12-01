@@ -3202,59 +3202,59 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        version = form.save(commit=False)
-        version.dataset = self.dataset
-        version.status = VersionStatus.PRE_RELEASE
+        self.new_version = form.save(commit=False)
+        self.new_version.dataset = self.dataset
+        self.new_version.status = VersionStatus.PRE_RELEASE
 
         based_on_version = form.cleaned_data.get("related_version")
-        if version.version_type == "MAJOR":
+        if self.new_version.version_type == "MAJOR":
             max_major = _Version.objects.filter(dataset=self.dataset).aggregate(Max("major"))["major__max"]
-            version.major = max_major + 1 if max_major else 1
-            version.minor = 0
-            version.patch = 0
-        elif version.version_type == "MINOR":
-            version.major = based_on_version.major
-            version.minor = based_on_version.minor + 1
-            version.patch = 0
-        elif version.version_type == "PATCH":
-            version.major = based_on_version.major
-            version.minor = based_on_version.minor
-            version.patch = based_on_version.patch + 1
+            self.new_version.major = max_major + 1 if max_major else 1
+            self.new_version.minor = 0
+            self.new_version.patch = 0
+        elif self.new_version.version_type == "MINOR":
+            self.new_version.major = based_on_version.major
+            self.new_version.minor = based_on_version.minor + 1
+            self.new_version.patch = 0
+        elif self.new_version.version_type == "PATCH":
+            self.new_version.major = based_on_version.major
+            self.new_version.minor = based_on_version.minor
+            self.new_version.patch = based_on_version.patch + 1
 
-        version.external_version = f"{version.major}.{version.minor}.{version.patch}"
+        self.new_version.external_version = f"{self.new_version.major}.{self.new_version.minor}.{self.new_version.patch}"
 
         latest_version = self.dataset.dataset_version.order_by("-version").first()
         if latest_version and latest_version.version:
-            version.version = latest_version.version + 1
+            self.new_version.version = latest_version.version + 1
         else:
-            version.version = 1
-        version.save()
+            self.new_version.version = 1
+        self.new_version.save()
 
-        rel_projects = Project.objects.filter(datasets=version.dataset)
+        rel_projects = Project.objects.filter(datasets=self.new_version.dataset)
         emails = []
         version_content_type_list = []
         for proj in rel_projects:
             emails.append(proj.user.email)
-            version_content_type = ContentType.objects.get_for_model(version)
+            version_content_type = ContentType.objects.get_for_model(self.new_version)
             version_content_type_list.append(version_content_type)
             Task.objects.create(
                 # FIXME: Maybe task title and describtion should be generated
                 #        on display.
-                title=(f"Sukurta nauja duomenų rinkinio struktūros versija: {version_content_type}, id: {version.pk}"),
+                title=(f"Sukurta nauja duomenų rinkinio struktūros versija: {version_content_type}, id: {self.new_version.pk}"),
                 description=("Sukurta nauja duomenų rinkinio struktūros versija."),
                 content_type=version_content_type,
-                object_id=version.pk,
+                object_id=self.new_version.pk,
                 user=proj.user,
                 status=Task.CREATED,
             )
 
-        url = f"{get_current_domain(self.request)}/datasets/{version.dataset.pk}/version/{version.pk}"
+        url = f"{get_current_domain(self.request)}/datasets/{self.new_version.dataset.pk}/version/{self.new_version.pk}"
         email(
             emails,
             "new-dataset-structure-version",
             "vitrina/structure/emails/new_version.md",
             {
-                "dataset": version.dataset.title,
+                "dataset": self.new_version.dataset.title,
                 "url": url,
             },
         )
@@ -3266,12 +3266,12 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                 meta.draft = False
                 if meta.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
                     meta.status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
-                meta.metadata_version = version
+                meta.metadata_version = self.new_version
                 meta.save()
 
                 MetadataVersion.objects.create(
                     metadata=meta,
-                    version=version,
+                    version=self.new_version,
                     name=meta.name if meta.name else None,
                     type=meta.type if meta.type else None,
                     required=meta.required,

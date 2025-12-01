@@ -497,6 +497,10 @@ class DatasetDetailView(
             "json_ld": self.get_json_ld_from_dataset(dataset),
             "page_obj": page_obj,
             "child_resources_url": reverse("dataset-child-resources", kwargs={"pk": dataset.pk}),
+            "distributions_with_licence": dataset.datasetdistribution_set.filter(licence__isnull=False),
+            "distributions_with_conditions": dataset.datasetdistribution_set.filter(
+                translations__conditions__isnull=False
+            ).exclude(translations__conditions="")
         }
         part_of = dataset.part_of.order_by("relation")
         part_of = itertools.groupby(part_of, lambda x: x.relation)

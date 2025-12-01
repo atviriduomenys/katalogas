@@ -299,7 +299,7 @@ def main():
 
                 # access rights
                 access_rights = dataset.access_rights
-                if "atviri duomenys" in keyword_list:
+                if "atviri duomenys" in keyword_list or "open data" in keyword_list:
                     dataset.access_rights = Dataset.PUBLIC
                 else:
                     dataset.access_rights = Dataset.RESTRICTED

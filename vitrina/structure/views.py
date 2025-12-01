@@ -2013,7 +2013,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         self.object.save()
 
         if base_model := form.cleaned_data.get("base"):
-            base = Base.objects.create(model=base_model)
+            base = Base.objects.create(model=base_model, metadata_version_id=self.metadata_version_id)
             model.base = base
             model.save()
 
@@ -2034,6 +2034,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
                 level_given=form.cleaned_data.get("base_level"),
                 prepare_ast="",
                 ref=", ".join(base_ref.values_list("metadata__name", flat=True)) if base_ref else "",
+                metadata_version_id=self.metadata_version_id,
             )
 
             if base_ref:
@@ -2043,6 +2044,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
                         object_id=base.pk,
                         property=ref_prop,
                         order=i,
+                        metadata_version_id=self.metadata_version_id,
                     )
 
         model.update_level()
@@ -2165,6 +2167,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                     object_id=model.pk,
                     property=ref_prop,
                     order=i,
+                    metadata_version_id=self.metadata_version_id,
                 )
 
         if base_model := form.cleaned_data.get("base"):
@@ -2193,7 +2196,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                     level=base_level,
                     level_given=form.cleaned_data.get("base_level"),
                     prepare_ast="",
-                    metadata_metadata_version_id=self.metadata_version_id,
+                    metadata_version_id=self.metadata_version_id,
                 )
 
             base_ref = form.cleaned_data.get("base_ref")
@@ -2212,6 +2215,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
                         object_id=base.pk,
                         property=ref_prop,
                         order=i,
+                        metadata_version_id=self.metadata_version_id,
                     )
         elif model.base:
             model.base.delete()

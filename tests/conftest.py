@@ -65,6 +65,9 @@ def temp_media_root(tmp_path_factory):
 
     media_dir = tmp_path_factory.mktemp("media")
     settings.MEDIA_ROOT = str(media_dir)
+
+    internal_media_dir = tmp_path_factory.mktemp("internal-media")
+    settings.INTERNAL_MEDIA_ROOT = str(internal_media_dir)
     return media_dir
 
 

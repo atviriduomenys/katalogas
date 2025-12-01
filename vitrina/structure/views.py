@@ -2993,6 +2993,7 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
                 kwargs={
                     "pk": self.object.pk,
                     "model": self.model_obj.name,
+                    "version_id": self.metadata_version_id,
                 },
             )
         return None

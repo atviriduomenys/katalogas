@@ -1,7 +1,7 @@
 import pathlib
 from enum import StrEnum
 import uuid
-import reversion
+
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.urls import reverse
@@ -119,7 +119,6 @@ class PackagingFormat(models.Model):
         return self.title
 
 
-@reversion.register()
 class DatasetDistribution(TranslatableModel):
     DISTRIBUTION_STATUS_URI = "http://publications.europa.eu/resource/authority/distribution-status"
     UPLOAD_TO = "data"

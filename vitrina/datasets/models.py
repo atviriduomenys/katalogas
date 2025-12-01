@@ -4,7 +4,6 @@ import pathlib
 from datetime import datetime
 from random import randrange
 
-import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -118,7 +117,6 @@ class Resource(MP_Node, TranslatableModel):
         self.fix_tree(fix_paths=True)
 
 
-@reversion.register(follow=["category", "part_of"])
 class Dataset(Resource):
     node_order_by = ("subclass",)
 
@@ -1619,7 +1617,6 @@ class DatasetStructureLink(models.Model):
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
-@reversion.register()
 class DatasetStructure(models.Model):
     UPLOAD_TO = "data/structure"
 
@@ -1741,7 +1738,6 @@ class Attribution(models.Model):
         return self.title if self.title else self.name
 
 
-@reversion.register()
 class DatasetAttribution(models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     attribution = models.ForeignKey(Attribution, on_delete=models.PROTECT, verbose_name=_("Priskyrimo rūšis"))
@@ -1853,7 +1849,6 @@ class Relation(TranslatableModel):
         return self.safe_translation_getter("title", language_code=self.get_current_language())
 
 
-@reversion.register()
 class DatasetRelation(models.Model):
     relation = models.ForeignKey(Relation, verbose_name=_("Ryšio tipas"), on_delete=models.PROTECT)
     dataset = models.ForeignKey(

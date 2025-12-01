@@ -320,11 +320,11 @@ def test_structure_with_base_model_two_manifests(app: DjangoTestApp):
 
     base_structure.dataset.current_structure = base_structure
     base_structure.dataset.save()
-    create_structure_objects(base_structure)
+    version = create_structure_objects(base_structure)
 
     structure_with_base.dataset.current_structure = structure_with_base
     structure_with_base.dataset.save()
-    create_structure_objects(structure_with_base)
+    create_structure_objects(structure_with_base, version)
 
     models = Model.objects.all()
     assert models.count() == 2
@@ -388,7 +388,7 @@ def test_structure_with_property_ref_two_manifests(app: DjangoTestApp):
 
     ref_object_structure.dataset.current_structure = ref_object_structure
     ref_object_structure.dataset.save()
-    create_structure_objects(ref_object_structure)
+    version = create_structure_objects(ref_object_structure)
 
     manifest_with_ref = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
@@ -410,7 +410,7 @@ def test_structure_with_property_ref_two_manifests(app: DjangoTestApp):
 
     structure_with_ref.dataset.current_structure = structure_with_ref
     structure_with_ref.dataset.save()
-    create_structure_objects(structure_with_ref)
+    create_structure_objects(structure_with_ref, version)
 
     county = Model.objects.filter(metadata__uuid='1').first()
     municipality = Model.objects.filter(metadata__uuid='2').first()
@@ -515,7 +515,7 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
     assert Metadata.objects.count() == 9
 
     new_manifest = (
@@ -533,7 +533,7 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, version)
     assert Metadata.objects.count() == 6
     assert Metadata.objects.get(uuid='2').name == 'datasets/gov/ivpk/adp2/updated'
     assert Metadata.objects.get(uuid='3').name == 'datasets/gov/ivpk/adp2/updated/CountryUpdated'
@@ -573,7 +573,7 @@ def test_structure_with_comments(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
     assert Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Comment)
     ).count() == 3
@@ -1402,7 +1402,7 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
     assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
     assert Metadata.objects.filter(dataset=structure.dataset).count() == 3
 
@@ -1420,7 +1420,7 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, version)
 
     assert list(Comment.objects.filter(
         type=Comment.STRUCTURE_ERROR,
@@ -1448,7 +1448,7 @@ def test_structure_with_deleted_base(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
     assert Base.objects.count() == 1
     assert Base.objects.get(metadata__uuid='3').model == Model.objects.get(metadata__uuid='2')
     assert Model.objects.get(metadata__uuid='4').base == Base.objects.get(metadata__uuid='3')
@@ -1466,7 +1466,7 @@ def test_structure_with_deleted_base(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, version)
 
     assert Base.objects.count() == 0
     assert Model.objects.get(metadata__uuid='4').base is None

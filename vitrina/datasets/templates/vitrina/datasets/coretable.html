@@ -228,7 +228,7 @@
             </td>
         </tr>
     {% endif %}
-    {% if distributions_with_licence %}
+    {% if licences %}
         <tr>
             <th>
                 {% translate "Licencija" %}
@@ -238,10 +238,10 @@
                 </span>
             </th>
             <td>
-                {% for dist in distributions_with_licence %}
+                {% for licence in licences %}
                     <div>
-                        <a href="{{ dist.licence.url | default:dist.licence.pk }}" target="_blank"
-                           title="{{ dist.licence.description }}">{{ dist.licence.title }}</a>
+                        <a href="{{ licence.url | default:licence.pk }}" target="_blank"
+                           title="{{ licence.description }}">{{ licence.title }}</a>
                     </div>
                 {% endfor %}
             </td>
@@ -257,9 +257,9 @@
                 </span>
             </th>
             <td>
-                {% for resource in resources %}
-                    {% if resource.conditions %}
-                        {{ resource.conditions|linebreaks }}
+                {% for dist in distributions_with_conditions %}
+                    {% if dist.conditions %}
+                        {{ dist.conditions|linebreaks }}
                     {% endif %}
                 {% endfor %}
             </td>

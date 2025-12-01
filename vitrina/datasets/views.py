@@ -497,7 +497,19 @@ class DatasetDetailView(
             "json_ld": self.get_json_ld_from_dataset(dataset),
             "page_obj": page_obj,
             "child_resources_url": reverse("dataset-child-resources", kwargs={"pk": dataset.pk}),
+            "licences": set([dist.licence for dist in dataset.datasetdistribution_set.filter(licence__isnull=False)]),
         }
+
+        distributions_with_conditions_ids = (
+            dataset.datasetdistribution_set.filter(translations__conditions__isnull=False)
+            .exclude(translations__conditions="")
+            .values_list("id", flat=True)
+        )
+
+        extra_context_data["distributions_with_conditions"] = dataset.datasetdistribution_set.filter(
+            pk__in=distributions_with_conditions_ids
+        )
+
         part_of = dataset.part_of.order_by("relation")
         part_of = itertools.groupby(part_of, lambda x: x.relation)
         extra_context_data["part_of"] = [(relation, list(values)) for relation, values in part_of]

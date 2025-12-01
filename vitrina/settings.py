@@ -86,7 +86,7 @@ SPINTA_SERVER_NAME = env("SPINTA_SERVER_NAME")
 SPINTA_PATH = BASE_DIR / env("SPINTA_PATH")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env("DEBUG", default=True)
+DEBUG = env.bool("DEBUG", default=False)
 
 IS_DEV_FEATURES_ENABLED = env("IS_DEV_FEATURES_ENABLED", default=False)
 
@@ -475,8 +475,12 @@ SPINTA_SERVER_URL = env("SPINTA_SERVER_URL", default="https://get-test.data.gov.
 SPINTA_SERVER_CLIENT_ID = env("SPINTA_SERVER_CLIENT_ID", default="")
 SPINTA_SERVER_CLIENT_SECRET = env("SPINTA_SERVER_CLIENT_SECRET", default="")
 
-SECURE_HSTS_SECONDS = 31536000  # The max-age must be at least 31536000 seconds (1 year)
+SECURE_HSTS_SECONDS = 63072000  # 2 years (recommended for HSTS preload list)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+SECURE_HSTS_PRELOAD = True
+
+# Referrer Policy - controls how much information is sent in the Referer header
+SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
 
 if env("RECAPTCHA_SILENCE_KEY_ERROR", default=False):
     SILENCED_SYSTEM_CHECKS = ["django_recaptcha.recaptcha_test_key_error"]
@@ -525,6 +529,13 @@ DATA_UPLOAD_MAX_MEMORY_SIZE = None
 
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
+
+# Cookie security: SameSite and HttpOnly flags
+SESSION_COOKIE_SAMESITE = "Lax"  # Prevents CSRF via cross-site requests
+CSRF_COOKIE_SAMESITE = "Lax"
+SESSION_COOKIE_HTTPONLY = True  # Prevents JavaScript access (XSS protection)
+# Note: CSRF_COOKIE_HTTPONLY not set - jquery.postcsrf.js needs to read it for hitcount
+
 CSRF_TRUSTED_ORIGINS = ["https://*.gov.lt"]
 LANGUAGE_COOKIE_SECURE = True
 

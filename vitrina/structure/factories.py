@@ -33,6 +33,7 @@ class VersionFactory(DjangoModelFactory):
     dataset = factory.SubFactory(DatasetFactory)
     status = VersionStatus.DRAFT
 
+
 class MetadataFactory(DjangoModelFactory):
     class Meta:
         model = Metadata
@@ -59,8 +60,8 @@ class ModelFactory(DjangoModelFactory):
     class Meta:
         model = Model
 
-    version = factory.LazyFunction(get_shared_version)
-    dataset = factory.SelfAttribute("version.dataset")
+    metadata_version = factory.LazyFunction(get_shared_version)
+    dataset = factory.SelfAttribute("metadata_version.dataset")
 
 
 class BaseFactory(DjangoModelFactory):
@@ -68,7 +69,7 @@ class BaseFactory(DjangoModelFactory):
         model = Base
 
     model = factory.SubFactory(ModelFactory)
-    version = factory.SelfAttribute("model.version")
+    metadata_version = factory.SelfAttribute("model.metadata_version")
 
 
 class PropertyFactory(DjangoModelFactory):
@@ -76,7 +77,7 @@ class PropertyFactory(DjangoModelFactory):
         model = Property
 
     model = factory.SubFactory(ModelFactory)
-    version = factory.SelfAttribute("model.version")
+    metadata_version = factory.SelfAttribute("model.metadata_version")
 
 
 class EnumFactory(DjangoModelFactory):
@@ -84,7 +85,7 @@ class EnumFactory(DjangoModelFactory):
         model = Enum
 
     name = factory.Faker("word")
-    version = factory.LazyFunction(get_shared_version)
+    metadata_version = factory.LazyFunction(get_shared_version)
 
 
 class EnumItemFactory(DjangoModelFactory):
@@ -92,7 +93,7 @@ class EnumItemFactory(DjangoModelFactory):
         model = EnumItem
 
     enum = factory.SubFactory(EnumFactory)
-    version = factory.SelfAttribute("enum.version")
+    metadata_version = factory.SelfAttribute("enum.metadata_version")
 
 
 class PrefixFactory(DjangoModelFactory):
@@ -100,7 +101,7 @@ class PrefixFactory(DjangoModelFactory):
         model = Prefix
 
     name = factory.Faker("word")
-    version = factory.LazyFunction(get_shared_version)
+    metadata_version = factory.LazyFunction(get_shared_version)
 
 
 class ParamFactory(DjangoModelFactory):
@@ -108,7 +109,7 @@ class ParamFactory(DjangoModelFactory):
         model = Param
 
     name = factory.Faker("word")
-    version = factory.LazyFunction(get_shared_version)
+    metadata_version = factory.LazyFunction(get_shared_version)
 
 
 class ParamItemFactory(DjangoModelFactory):
@@ -116,4 +117,4 @@ class ParamItemFactory(DjangoModelFactory):
         model = ParamItem
 
     param = factory.SubFactory(ParamFactory)
-    version = factory.SelfAttribute("param.version")
+    metadata_version = factory.SelfAttribute("param.metadata_version")

@@ -41,7 +41,7 @@ class Prefix(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
-    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "prefix"
@@ -151,7 +151,7 @@ class Base(models.Model):
     metadata = GenericRelation("Metadata")
     property_list = GenericRelation("PropertyList")
     objects = models.Manager()
-    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "base"
@@ -189,7 +189,7 @@ class Model(models.Model):
     property_list = GenericRelation("PropertyList")
     params = GenericRelation("Param")
     requests = GenericRelation("vitrina_requests.RequestObject")
-    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "model"
@@ -260,7 +260,7 @@ class Model(models.Model):
         if self.name:
             return reverse(
                 "model-structure",
-                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.version.pk},
+                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.metadata_version_id},
             )
         return None
 
@@ -268,14 +268,14 @@ class Model(models.Model):
         if self.name:
             return reverse(
                 "model-data",
-                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.version.pk},
+                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.metadata_version_id},
             )
         return None
 
     def get_api_url(self):
         if self.name:
             return reverse(
-                "getall-api", kwargs={"pk": self.dataset.pk, "version_id": self.version_id, "model": self.name}
+                "getall-api", kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version_id, "model": self.name}
             )
         return None
 
@@ -345,7 +345,7 @@ class Property(models.Model):
     property_list = GenericRelation("PropertyList")
     enums = GenericRelation("Enum")
     requests = GenericRelation("vitrina_requests.RequestObject")
-    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "property"
@@ -364,7 +364,7 @@ class Property(models.Model):
                     "pk": self.model.dataset.pk,
                     "model": self.model.name,
                     "prop": self.name,
-                    "version_id": self.version.pk,
+                    "version_id": self.metadata_version_id,
                 },
             )
         return None
@@ -412,7 +412,7 @@ class PropertyList(models.Model):
     object = GenericForeignKey("content_type", "object_id")
 
     objects = models.Manager()
-    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "property_list"
@@ -434,7 +434,7 @@ class Enum(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
-    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "enum"
@@ -449,7 +449,7 @@ class EnumItem(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
-    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "enum_item"
@@ -473,7 +473,7 @@ class Param(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
-    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "param"
@@ -488,7 +488,7 @@ class ParamItem(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
-    version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "param_item"

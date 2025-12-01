@@ -28,7 +28,6 @@ def populate_version_field_for_models(apps, schema_editor):
         ct = ContentType.objects.get(id=metadata_row.content_type_id)
         content_type_model = apps.get_model(ct.app_label, ct.model)
 
-        # Only for local development, prod has no versions
         if content_type_model == Dataset or content_type_model == Comment:
             continue
 
@@ -37,15 +36,9 @@ def populate_version_field_for_models(apps, schema_editor):
         except content_type_model.DoesNotExist:
             continue
 
-
-        if content_type_model == DatasetDistribution:
-            content_type_model.objects.filter(id=content_type_object.id).update(
-                connected_version=metadata_row.metadata_version
-            )
-        else:
-            content_type_model.objects.filter(id=content_type_object.id).update(
-                version=metadata_row.metadata_version
-            )
+        content_type_model.objects.filter(id=content_type_object.id).update(
+            metadata_version=metadata_row.metadata_version
+        )
 
         if content_type_model == EnumItem:
             enum_updates[content_type_object.enum_id] = metadata_row.metadata_version
@@ -54,19 +47,20 @@ def populate_version_field_for_models(apps, schema_editor):
 
 
     for enum_id, version in enum_updates.items():
-        Enum.objects.filter(id=enum_id).update(version=version)
+        Enum.objects.filter(id=enum_id).update(metadata_version=version)
 
     for param_id, version in param_updates.items():
-        Param.objects.filter(id=param_id).update(version=version)
+        Param.objects.filter(id=param_id).update(metadata_version=version)
 
     for base_id, version in base_updates.items():
-        Base.objects.filter(id=base_id).update(version=version)
+        Base.objects.filter(id=base_id).update(metadata_version=version)
 
 
 class Migration(migrations.Migration):
 
     dependencies = [
         ('vitrina_structure', '0010_base_version_enum_version_enumitem_version_and_more'),
+        ('vitrina_resources', '0011_datasetdistribution_metadata_version'),
     ]
 
     operations = [

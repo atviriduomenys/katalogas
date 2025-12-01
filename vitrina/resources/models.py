@@ -281,7 +281,7 @@ class DatasetDistribution(TranslatableModel):
 
     objects = TranslatableManager()
 
-    connected_version = models.ForeignKey(
+    metadata_version = models.ForeignKey(
         Version,
         models.SET_NULL,
         blank=True,

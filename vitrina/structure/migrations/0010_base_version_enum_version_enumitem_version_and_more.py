@@ -13,47 +13,47 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddField(
             model_name='base',
-            name='version',
+            name='metadata_version',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_structure.version', verbose_name='Versija'),
         ),
         migrations.AddField(
             model_name='enum',
-            name='version',
+            name='metadata_version',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_structure.version', verbose_name='Versija'),
         ),
         migrations.AddField(
             model_name='enumitem',
-            name='version',
+            name='metadata_version',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_structure.version', verbose_name='Versija'),
         ),
         migrations.AddField(
             model_name='model',
-            name='version',
+            name='metadata_version',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_structure.version', verbose_name='Versija'),
         ),
         migrations.AddField(
             model_name='param',
-            name='version',
+            name='metadata_version',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_structure.version', verbose_name='Versija'),
         ),
         migrations.AddField(
             model_name='paramitem',
-            name='version',
+            name='metadata_version',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_structure.version', verbose_name='Versija'),
         ),
         migrations.AddField(
             model_name='prefix',
-            name='version',
+            name='metadata_version',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_structure.version', verbose_name='Versija'),
         ),
         migrations.AddField(
             model_name='property',
-            name='version',
+            name='metadata_version',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_structure.version', verbose_name='Versija'),
         ),
         migrations.AddField(
             model_name='propertylist',
-            name='version',
+            name='metadata_version',
             field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, to='vitrina_structure.version', verbose_name='Versija'),
         ),
     ]

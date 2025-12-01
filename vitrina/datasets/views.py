@@ -500,7 +500,7 @@ class DatasetDetailView(
             "distributions_with_licence": dataset.datasetdistribution_set.filter(licence__isnull=False),
             "distributions_with_conditions": dataset.datasetdistribution_set.filter(
                 translations__conditions__isnull=False
-            ).exclude(translations__conditions="")
+            ).exclude(translations__conditions=""),
         }
         part_of = dataset.part_of.order_by("relation")
         part_of = itertools.groupby(part_of, lambda x: x.relation)

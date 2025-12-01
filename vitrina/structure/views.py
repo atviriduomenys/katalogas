@@ -3294,22 +3294,22 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
                     old_to_new_metadata_object_map[old_related_instance] = new_related_instance
 
-                    # MetadataVersion.objects.create(
-                    #     metadata=meta,
-                    #     version=version,
-                    #     name=meta.name if meta.name else None,
-                    #     type=meta.type if meta.type else None,
-                    #     required=meta.required,
-                    #     unique=meta.unique,
-                    #     type_args=meta.type_args if meta.type_args else None,
-                    #     ref=meta.ref if meta.ref else None,
-                    #     source=meta.source if meta.source else None,
-                    #     prepare=meta.prepare if meta.prepare else None,
-                    #     level_given=meta.level_given,
-                    #     access=meta.access,
-                    #     base=meta.object.base if isinstance(meta.object, Model) else None,
-                    #     status=meta.status if meta.status else None,
-                    # )
+                    MetadataVersion.objects.create(
+                        metadata=meta,
+                        version=self.new_version,
+                        name=meta.name if meta.name else None,
+                        type=meta.type if meta.type else None,
+                        required=meta.required,
+                        unique=meta.unique,
+                        type_args=meta.type_args if meta.type_args else None,
+                        ref=meta.ref if meta.ref else None,
+                        source=meta.source if meta.source else None,
+                        prepare=meta.prepare if meta.prepare else None,
+                        level_given=meta.level_given,
+                        access=meta.access,
+                        base=meta.object.base if isinstance(meta.object, Model) else None,
+                        status=meta.status if meta.status else None,
+                    )
 
             recursively_created_fields = old_to_new_metadata_object_map
 
@@ -3320,7 +3320,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
             return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.new_version.pk]))
         else:
             return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version_id]))
-
 
     def recursive_duplicate_related_objects(self, new_related_object, recursively_created_fields):
         # Model instances which must be created

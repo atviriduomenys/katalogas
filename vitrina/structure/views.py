@@ -120,36 +120,36 @@ class DatasetStructureMixin(StructureMixin):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         version_id = kwargs.get("version_id")
         if version_id is not None:
-            self.version = get_object_or_404(
+            self.metadata_version_id = get_object_or_404(
                 _Version,
                 pk=version_id,
                 dataset=self.dataset,
             )
         else:
-            self.version = None
+            self.metadata_version_id = None
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.dataset, Action.VIEW)
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.dataset)
+                Model.objects.filter(dataset=self.dataset, metadata_version_id=self.metadata_version_id)
                 .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
                 .order_by("metadata__name")
             )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.dataset, access__gte=Metadata.PUBLIC)
+                .filter(dataset=self.dataset, access__gte=Metadata.PUBLIC, metadata_version_id=self.metadata_version_id)
                 .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
                 .order_by("metadata__name")
             )
         return super().dispatch(request, *args, **kwargs)
 
     def get_structure_url(self):
-        if self.version:
+        if self.metadata_version_id:
             return reverse(
                 "dataset-structure",
-                kwargs={"pk": self.dataset.pk, "version_id": self.version.pk},
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version_id},
             )
         else:
             return reverse(
@@ -193,19 +193,19 @@ class DatasetStructureView(
 
         version_id = kwargs.get("version_id")
         if version_id is not None:
-            self.version = get_object_or_404(
+            self.metadata_version_id = get_object_or_404(
                 _Version,
                 pk=version_id,
                 dataset=self.object,
-            )
+            ).pk
         else:
-            self.version = None
+            self.metadata_version_id = None
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
-        self.models = Model.objects.filter(dataset=self.object)
+        self.models = Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id)
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.object, metadata_version=self.version)
+                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id)
                 .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
                 .order_by("metadata__name")
             )
@@ -215,7 +215,7 @@ class DatasetStructureView(
                 .filter(
                     dataset=self.object,
                     access__gte=Metadata.PUBLIC,
-                    metadata_version=self.version,
+                    metadata_version_id=self.metadata_version_id,
                 )
                 .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
                 .order_by("metadata__name")
@@ -230,7 +230,7 @@ class DatasetStructureView(
         context = super().get_context_data(**kwargs)
         dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         structure = dataset.current_structure
-        context["selected_version"] = self.version
+        context["selected_version"] = self.metadata_version_id
         context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
         context["errors"] = []
         context["manifest"] = None
@@ -248,10 +248,10 @@ class DatasetStructureView(
         return context
 
     def get_structure_url(self):
-        if self.version:
+        if self.metadata_version_id:
             return reverse(
                 "dataset-structure",
-                kwargs={"pk": self.object.pk, "version_id": self.version.pk},
+                kwargs={"pk": self.object.pk, "version_id": self.metadata_version_id},
             )
         else:
             return reverse(

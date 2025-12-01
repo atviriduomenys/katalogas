@@ -34,7 +34,7 @@
                 </a>
             {% endif %}
             {% if selected_version %}
-                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk selected_version.pk %}">
+                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk selected_version %}">
                     {% translate "Importuoti" %}
                 </a>
             {% else %}
@@ -43,7 +43,7 @@
                 </a>
             {% endif %}
             {% if selected_version %}
-                <a class="button is-primary mb-5 ml-2" href="{% url 'model-create' dataset.pk selected_version.pk %}">
+                <a class="button is-primary mb-5 ml-2" href="{% url 'model-create' dataset.pk selected_version %}">
                     {% translate "Naujas modelis" %}
                 </a>
             {% else %}
@@ -81,7 +81,7 @@
 
             {% if selected_version %}
                 <a class="button is-primary mb-5 ml-2"
-                   href="{% url 'version-create' dataset.pk selected_version.pk %}">
+                   href="{% url 'version-create' dataset.pk selected_version %}">
                     {% translate "Publikuoti versiją" %}
                 </a>
             {% else %}

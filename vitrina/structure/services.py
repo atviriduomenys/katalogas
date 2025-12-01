@@ -120,12 +120,18 @@ def create_or_get_uapi_format():
 
 def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version):
     ct = ContentType.objects.get_for_model(dataset)
-    existing_metadata = Metadata.objects.filter(content_type=ct, object_id=dataset.pk, metadata_version=metadata_version)
+    existing_metadata = Metadata.objects.filter(
+        content_type=ct, object_id=dataset.pk, metadata_version=metadata_version
+    )
     loaded_metadata = []
 
     _clean_errors(dataset.current_structure)
     for i, meta in enumerate(state.manifest.datasets.values(), 1):
-        if metadata := Metadata.objects.filter(content_type=ct, name=meta.name, metadata_version=metadata_version).exclude(dataset=dataset).first():
+        if (
+            metadata := Metadata.objects.filter(content_type=ct, name=meta.name, metadata_version=metadata_version)
+            .exclude(dataset=dataset)
+            .first()
+        ):
             meta.errors.append(_(f'Duomenų išteklius "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
             metadata_version.delete()
@@ -189,7 +195,9 @@ def _load_prefixes(
                 if not meta.id:
                     meta.id = pr.metadata.first().uuid
 
-            prefix = Prefix(name=meta.name, uri=meta.uri, content_type=ct, object_id=obj.pk, metadata_version=metadata_version)
+            prefix = Prefix(
+                name=meta.name, uri=meta.uri, content_type=ct, object_id=obj.pk, metadata_version=metadata_version
+            )
             prefix, metadata = _create_or_update_metadata(dataset, meta, prefix, i, metadata_version=metadata_version)
             loaded_prefixes.append(prefix)
 
@@ -198,19 +206,19 @@ def _load_prefixes(
         prefix.delete()
 
 
-def _load_enums(dataset: Dataset, enums: Dict[str, List[struct.Enum]], obj: Union[Dataset, Property], metadata_version: Version):
+def _load_enums(
+    dataset: Dataset, enums: Dict[str, List[struct.Enum]], obj: Union[Dataset, Property], metadata_version: Version
+):
     ct = ContentType.objects.get_for_model(obj)
     enum_ct = ContentType.objects.get_for_model(EnumItem)
 
-    existing_enums = Enum.objects.filter(
-        content_type=ct,
-        object_id=obj.pk,
-        metadata_version=metadata_version
-    )
+    existing_enums = Enum.objects.filter(content_type=ct, object_id=obj.pk, metadata_version=metadata_version)
     loaded_enums = []
 
     for name, enum_items in enums.items():
-        enum, created = Enum.objects.get_or_create(name=name, content_type=ct, object_id=obj.pk, metadata_version=metadata_version)
+        enum, created = Enum.objects.get_or_create(
+            name=name, content_type=ct, object_id=obj.pk, metadata_version=metadata_version
+        )
         existing_enum_items = EnumItem.objects.filter(enum=enum, metadata_version=metadata_version)
         loaded_enum_items = []
 
@@ -230,7 +238,9 @@ def _load_enums(dataset: Dataset, enums: Dict[str, List[struct.Enum]], obj: Unio
                     if not meta.id:
                         meta.id = en.metadata.first().uuid
                 enum_item = EnumItem(enum=enum, metadata_version=metadata_version)
-                enum_item, metadata = _create_or_update_metadata(dataset, meta, enum_item, i, metadata_version=metadata_version)
+                enum_item, metadata = _create_or_update_metadata(
+                    dataset, meta, enum_item, i, metadata_version=metadata_version
+                )
                 loaded_enum_items.append(enum_item)
 
         loaded_enums.append(enum)
@@ -245,19 +255,19 @@ def _load_enums(dataset: Dataset, enums: Dict[str, List[struct.Enum]], obj: Unio
         enum.delete()
 
 
-def _load_params(dataset: Dataset, params: Dict[str, List[struct.Param]], obj: Union[Dataset, Model], metadata_version: Version):
+def _load_params(
+    dataset: Dataset, params: Dict[str, List[struct.Param]], obj: Union[Dataset, Model], metadata_version: Version
+):
     ct = ContentType.objects.get_for_model(obj)
     param_ct = ContentType.objects.get_for_model(ParamItem)
 
-    existing_params = Param.objects.filter(
-        content_type=ct,
-        object_id=obj.pk,
-        metadata_version=metadata_version
-    )
+    existing_params = Param.objects.filter(content_type=ct, object_id=obj.pk, metadata_version=metadata_version)
     loaded_params = []
 
     for name, param_items in params.items():
-        param, created = Param.objects.get_or_create(name=name, content_type=ct, object_id=obj.pk, metadata_version=metadata_version)
+        param, created = Param.objects.get_or_create(
+            name=name, content_type=ct, object_id=obj.pk, metadata_version=metadata_version
+        )
         existing_param_items = ParamItem.objects.filter(param=param, metadata_version=metadata_version)
         loaded_param_items = []
 
@@ -278,7 +288,9 @@ def _load_params(dataset: Dataset, params: Dict[str, List[struct.Param]], obj: U
                         meta.id = pr.metadata.first().uuid
 
                 param_item = ParamItem(param=param, metadata_version=metadata_version)
-                param_item, metadata = _create_or_update_metadata(dataset, meta, param_item, i, metadata_version=metadata_version)
+                param_item, metadata = _create_or_update_metadata(
+                    dataset, meta, param_item, i, metadata_version=metadata_version
+                )
                 loaded_param_items.append(param_item)
 
         loaded_params.append(param)
@@ -437,30 +449,23 @@ def _create_or_update_metadata(
         use_existing_meta
         and obj.pk
         and Metadata.objects.filter(
-            object_id=obj.pk,
-            content_type=ct,
-            dataset=dataset,
-            metadata_version=metadata_version
+            object_id=obj.pk, content_type=ct, dataset=dataset, metadata_version=metadata_version
         ).exists()
     ):
         metadata = Metadata.objects.filter(
-            object_id=obj.pk,
-            content_type=ct,
-            dataset=dataset,
-            metadata_version=metadata_version
+            object_id=obj.pk, content_type=ct, dataset=dataset, metadata_version=metadata_version
         ).first()
         return metadata.object, metadata
 
     if (
         obj_meta.id
         and Metadata.objects.filter(
-            uuid=obj_meta.id,
-            content_type=ct,
-            dataset=dataset,
-            metadata_version=metadata_version
+            uuid=obj_meta.id, content_type=ct, dataset=dataset, metadata_version=metadata_version
         ).exists()
     ):
-        metadata = Metadata.objects.filter(uuid=obj_meta.id, content_type=ct, dataset=dataset, metadata_version=metadata_version).first()
+        metadata = Metadata.objects.filter(
+            uuid=obj_meta.id, content_type=ct, dataset=dataset, metadata_version=metadata_version
+        ).first()
         type_args = ", ".join(obj_meta.type_args) if hasattr(obj_meta, "type_args") and obj_meta.type_args else None
         access = _parse_access(obj_meta.access)
         visibility = _parse_visibility(obj_meta.visibility)
@@ -578,9 +583,7 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
             if resource_meta.source:
                 title = resource_meta.title or dataset_meta.title or resource_meta.name
                 distribution = DatasetDistribution.objects.filter(
-                    dataset=dataset,
-                    download_url=resource_meta.source,
-                    metadata_version=metadata_version
+                    dataset=dataset, download_url=resource_meta.source, metadata_version=metadata_version
                 ).first()
                 if not distribution:
                     if not dataset.datasetdistribution_set.exists() and dataset.is_public:
@@ -626,7 +629,9 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
                 _clean_errors(distribution)
                 _load_comments(dataset, resource_meta.comments, distribution)
                 for model_meta in resource_meta.models.values():
-                    if model := Model.objects.filter(metadata__uuid=model_meta.id, dataset=dataset, metadata_version=metadata_version).first():
+                    if model := Model.objects.filter(
+                        metadata__uuid=model_meta.id, dataset=dataset, metadata_version=metadata_version
+                    ).first():
                         model.distribution = distribution
                         model.save()
 
@@ -644,9 +649,7 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
         ]
         resource_meta = struct.Resource(name=name, source=url)
         distribution = DatasetDistribution.objects.filter(
-            dataset=dataset,
-            download_url__in=urls,
-            metadata_version=metadata_version
+            dataset=dataset, download_url__in=urls, metadata_version=metadata_version
         ).first()
         if not distribution:
             if not dataset.datasetdistribution_set.exists() and dataset.is_public:
@@ -694,7 +697,9 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
         _clean_errors(distribution)
         _load_comments(dataset, resource_meta.comments, distribution)
         for model_meta in dataset_meta.models.values():
-            if model := Model.objects.filter(metadata__uuid=model_meta.id, dataset=dataset, metadata_version=metadata_version).first():
+            if model := Model.objects.filter(
+                metadata__uuid=model_meta.id, dataset=dataset, metadata_version=metadata_version
+            ).first():
                 model.distribution = distribution
                 model.save()
 
@@ -712,15 +717,13 @@ def _link_models(dataset: Dataset, dataset_meta: struct.Dataset, metadata_versio
             metadata__content_type=model_ct,
             metadata__uuid=model_meta.id,
             dataset=dataset,
-            metadata_version=metadata_version
+            metadata_version=metadata_version,
         ).first():
             _link_base(dataset, model_meta.base, model, metadata_version)
 
             if model_meta.ref and model_meta.ref_props:
                 PropertyList.objects.filter(
-                    content_type=model_ct,
-                    object_id=model.pk,
-                    metadata_version=metadata_version
+                    content_type=model_ct, object_id=model.pk, metadata_version=metadata_version
                 ).delete()
 
                 for j, prop in enumerate(model_meta.ref_props, 1):
@@ -728,7 +731,7 @@ def _link_models(dataset: Dataset, dataset_meta: struct.Dataset, metadata_versio
                         metadata__name=prop,
                         metadata__content_type=prop_ct,
                         model=model,
-                        metadata_version=metadata_version
+                        metadata_version=metadata_version,
                     ).first():
                         PropertyList.objects.create(
                             content_type=model_ct,
@@ -756,15 +759,13 @@ def _link_base(
             _create_errors(meta.errors, model)
         else:
             if base_model := Model.objects.filter(
-                metadata__content_type=model_ct,
-                metadata__name=meta.name,
-                metadata_version=metadata_version
+                metadata__content_type=model_ct, metadata__name=meta.name, metadata_version=metadata_version
             ).first():
                 if base := Base.objects.filter(
                     metadata__content_type=base_ct,
                     metadata__name=meta.name,
                     model=base_model,
-                    metadata_version=metadata_version
+                    metadata_version=metadata_version,
                 ).first():
                     if not meta.id:
                         meta.id = base.metadata.first().uuid
@@ -797,25 +798,20 @@ def _link_properties(
 
     for prop_meta in model_meta.properties.values():
         if prop := Property.objects.filter(
-            metadata__content_type=ct,
-            metadata__uuid=prop_meta.id,
-            model=model,
-            metadata_version=metadata_version
+            metadata__content_type=ct, metadata__uuid=prop_meta.id, model=model, metadata_version=metadata_version
         ).first():
             if "." in prop_meta.name:
                 _link_denorm_props(dataset, prop_meta, model, prop, metadata_version)
 
             if prop_meta.type in ("ref", "backref", "generic") and prop_meta.ref:
                 PropertyList.objects.filter(
-                    content_type=ct,
-                    object_id=prop.pk,
-                    metadata_version=metadata_version
+                    content_type=ct, object_id=prop.pk, metadata_version=metadata_version
                 ).delete()
 
                 if ref_model := Model.objects.filter(
                     metadata__name=prop_meta.ref,
                     metadata__content_type=model_ct,
-                    metadata__metadata_version=metadata_version
+                    metadata__metadata_version=metadata_version,
                 ).first():
                     prop.ref_model = ref_model
                     prop.save()
@@ -825,7 +821,7 @@ def _link_properties(
                             metadata__name=ref_prop,
                             metadata__content_type=ct,
                             model=ref_model,
-                            metadata_version=metadata_version
+                            metadata_version=metadata_version,
                         ).first():
                             PropertyList.objects.create(
                                 content_type=ct,
@@ -846,7 +842,9 @@ def _link_denorm_props(
     ct = ContentType.objects.get_for_model(Property)
 
     parent_prop = prop_meta.name.rsplit(".", 1)[0]
-    if parent_prop_meta := Metadata.objects.filter(content_type=ct, name=parent_prop, dataset=dataset, metadata_version=metadata_version).first():
+    if parent_prop_meta := Metadata.objects.filter(
+        content_type=ct, name=parent_prop, dataset=dataset, metadata_version=metadata_version
+    ).first():
         parent_prop = parent_prop_meta.object
     else:
         meta = struct.Property(

@@ -342,9 +342,9 @@ class ModelStructureView(
         )
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id).filter(model_visibility_filter).order_by(
-                "metadata__name"
-            )
+                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id)
+                .filter(model_visibility_filter)
+                .order_by("metadata__name")
             )
             self.props = self.model.get_given_props().filter(prop_visibility_filter).order_by("metadata__name")
         else:
@@ -412,7 +412,9 @@ class ModelStructureView(
         return context
 
     def get_structure_url(self):
-        return reverse("dataset-structure", kwargs={"pk": self.kwargs.get("pk"), "version_id": self.metadata_version_id})
+        return reverse(
+            "dataset-structure", kwargs={"pk": self.kwargs.get("pk"), "version_id": self.metadata_version_id}
+        )
 
     def get_data_url(self):
         if self.model.name:
@@ -623,9 +625,9 @@ class PropertyStructureView(
         )
         allowed_view_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(
+                dataset=self.object, metadata_version_id=self.metadata_version_id
+            ).order_by("metadata__name")
             self.props = self.model.get_given_props().all().order_by("metadata__name")
         else:
             self.models = (
@@ -726,12 +728,15 @@ class PropertyStructureView(
         return context
 
     def get_structure_url(self):
-        return reverse("dataset-structure", kwargs={"pk": self.kwargs.get("pk"), "version_id": self.metadata_version_id})
+        return reverse(
+            "dataset-structure", kwargs={"pk": self.kwargs.get("pk"), "version_id": self.metadata_version_id}
+        )
 
     def get_data_url(self):
         if self.model.name:
             return reverse(
-                "model-data", kwargs={"pk": self.object.pk, "version_id": self.metadata_version_id, "model": self.model.name}
+                "model-data",
+                kwargs={"pk": self.object.pk, "version_id": self.metadata_version_id, "model": self.model.name},
             )
         return None
 
@@ -816,9 +821,9 @@ class ModelDataTableView(PermissionRequiredMixin, View):
         )
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id).filter(visibility_filter_model).order_by(
-                "metadata__name"
-            )
+                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id)
+                .filter(visibility_filter_model)
+                .order_by("metadata__name")
             )
             self.props = self.model.get_given_props().filter(visibility_filter_property)
         else:
@@ -989,7 +994,9 @@ class ModelDataView(
         )
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.object, metadata_version=self.metadata_version_id).order_by("metadata__name").filter(visibility_filter_model)
+                Model.objects.filter(dataset=self.object, metadata_version=self.metadata_version_id)
+                .order_by("metadata__name")
+                .filter(visibility_filter_model)
             )
             self.props = self.model.get_given_props().filter(visibility_filter_property)
         else:
@@ -1063,7 +1070,8 @@ class ModelDataView(
     def get_data_url(self):
         if self.model.name:
             return reverse(
-                "model-data", kwargs={"pk": self.object.pk, "version_id": self.metadata_version_id, "model": self.model.name}
+                "model-data",
+                kwargs={"pk": self.object.pk, "version_id": self.metadata_version_id, "model": self.model.name},
             )
         return None
 
@@ -1142,9 +1150,9 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
         )
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id).filter(visibility_filter_model).order_by(
-                "metadata__name"
-            )
+                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id)
+                .filter(visibility_filter_model)
+                .order_by("metadata__name")
             )
             self.props = self.model.get_given_props().filter(visibility_filter_property)
         else:
@@ -1237,9 +1245,9 @@ class ObjectDataView(
         )
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id).filter(visibility_filter_model).order_by(
-                "metadata__name"
-            )
+                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id)
+                .filter(visibility_filter_model)
+                .order_by("metadata__name")
             )
             self.props = self.model.get_given_props().filter(visibility_filter_property)
         else:
@@ -1359,9 +1367,9 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
         )
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id).filter(visibility_filter_model).order_by(
-                "metadata__name"
-            )
+                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id)
+                .filter(visibility_filter_model)
+                .order_by("metadata__name")
             )
         else:
             self.models = (
@@ -1966,9 +1974,9 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
         # Filter by version?
         if has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset):
-            self.models = Model.objects.filter(dataset=self.dataset, metadata_version_id=self.metadata_version_id).order_by(
-                "metadata__name"
-            )
+            self.models = Model.objects.filter(
+                dataset=self.dataset, metadata_version_id=self.metadata_version_id
+            ).order_by("metadata__name")
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -2268,7 +2276,9 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(self.dataset, include_home=True)
         crumbs.append(
-            Crumb(title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version_id]))
+            Crumb(
+                title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version_id])
+            )
         )
         crumbs.append(
             Crumb(
@@ -2383,7 +2393,9 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(dataset=self.dataset)
         crumbs.append(
-            Crumb(title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version_id]))
+            Crumb(
+                title=_("Struktūra"), url=reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version_id])
+            )
         )
         crumbs.append(
             Crumb(
@@ -2501,7 +2513,9 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
         crumbs.append(
             Crumb(
                 title=_("Struktūra"),
-                url=reverse("dataset-structure", kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version_id}),
+                url=reverse(
+                    "dataset-structure", kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version_id}
+                ),
             )
         )
         crumbs.append(
@@ -2509,7 +2523,11 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
                 title=self.model_obj.title or self.model_obj.name,
                 url=reverse(
                     "model-structure",
-                    kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version_id, "model": self.model_obj.name},
+                    kwargs={
+                        "pk": self.dataset.pk,
+                        "version_id": self.metadata_version_id,
+                        "model": self.model_obj.name,
+                    },
                 ),
             )
         )
@@ -2911,9 +2929,9 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         )
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id).filter(visibility_filter_model).order_by(
-                "metadata__name"
-            )
+                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id)
+                .filter(visibility_filter_model)
+                .order_by("metadata__name")
             )
             self.props = self.model_obj.get_given_props().filter(visibility_filter_property)
         else:
@@ -2960,7 +2978,11 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         if self.model_obj.name:
             return reverse(
                 "model-structure",
-                kwargs={"pk": self.kwargs.get("pk"), "version_id": self.metadata_version_id, "model": self.model_obj.name},
+                kwargs={
+                    "pk": self.kwargs.get("pk"),
+                    "version_id": self.metadata_version_id,
+                    "model": self.model_obj.name,
+                },
             )
         return None
 
@@ -3041,9 +3063,9 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         )
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id).filter(visibility_filter_model).order_by(
-                "metadata__name"
-            )
+                Model.objects.filter(dataset=self.object, metadata_version_id=self.metadata_version_id)
+                .filter(visibility_filter_model)
+                .order_by("metadata__name")
             )
             self.props = self.model_obj.get_given_props().filter(visibility_filter_property)
         else:

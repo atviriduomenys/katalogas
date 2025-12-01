@@ -19,6 +19,7 @@ from vitrina.structure.models import (
 
 _shared_version = None
 
+
 def get_shared_version():
     global _shared_version
     if _shared_version is None:

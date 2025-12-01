@@ -1739,7 +1739,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
             title=form.cleaned_data.get("title"),
             description=form.cleaned_data.get("description"),
             version=1,
-            metadata_metadata_version_id=self.metadata_version_id,
+            metadata_version_id=self.metadata_version_id,
         )
 
         # Save history
@@ -2580,7 +2580,7 @@ class CreateBasePropertyView(PermissionRequiredMixin, View):
             type="inherit",
             name=base_prop.name,
             prepare_ast="",
-            metadata_metadata_version_id=self.metadata_version_id,
+            metadata_version_id=self.metadata_version_id,
         )
 
         model.update_level()

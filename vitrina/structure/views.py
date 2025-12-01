@@ -4,7 +4,7 @@ import json
 from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote
-from django.db.models import Q
+from django.db.models import Q, ForeignKey
 from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -29,14 +29,14 @@ from reversion.models import Version
 from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
-from vitrina.classifiers.models import Status
+from vitrina.classifiers.models import Status, Concept
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.mixins import Crumb, DatasetBreadcrumbsMixin
 from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none, build_page_title_context
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, Format
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import spyna
 from vitrina.structure.forms import (
@@ -59,7 +59,7 @@ from vitrina.structure.models import (
     Param,
     MetadataVersion,
     StatusCode,
-    VersionStatus,
+    VersionStatus, Prefix,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -76,6 +76,7 @@ from vitrina.tasks.models import Task
 from spinta.manifests.open_api.helpers import create_openapi_manifest
 from spinta.manifests.components import ManifestPath
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
+from copy import deepcopy
 
 EXCLUDED_COLS = ["_type", "_revision", "_base"]
 
@@ -3203,238 +3204,163 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
-        version = form.save(commit=False)
-        version.dataset = self.dataset
-        version.status = VersionStatus.PRE_RELEASE
+        self.new_version = form.save(commit=False)
+        self.new_version.dataset = self.dataset
+        self.new_version.status = VersionStatus.PRE_RELEASE
 
         based_on_version = form.cleaned_data.get("related_version")
-        if version.version_type == "MAJOR":
+        if self.new_version.version_type == "MAJOR":
             max_major = _Version.objects.filter(dataset=self.dataset).aggregate(Max("major"))["major__max"]
-            version.major = max_major + 1 if max_major else 1
-            version.minor = 0
-            version.patch = 0
-        elif version.version_type == "MINOR":
-            version.major = based_on_version.major
-            version.minor = based_on_version.minor + 1
-            version.patch = 0
-        elif version.version_type == "PATCH":
-            version.major = based_on_version.major
-            version.minor = based_on_version.minor
-            version.patch = based_on_version.patch + 1
+            self.new_version.major = max_major + 1 if max_major else 1
+            self.new_version.minor = 0
+            self.new_version.patch = 0
+        elif self.new_version.version_type == "MINOR":
+            self.new_version.major = based_on_version.major
+            self.new_version.minor = based_on_version.minor + 1
+            self.new_version.patch = 0
+        elif self.new_version.version_type == "PATCH":
+            self.new_version.major = based_on_version.major
+            self.new_version.minor = based_on_version.minor
+            self.new_version.patch = based_on_version.patch + 1
 
-        version.external_version = f"{version.major}.{version.minor}.{version.patch}"
+        self.new_version.external_version = f"{self.new_version.major}.{self.new_version.minor}.{self.new_version.patch}"
 
         latest_version = self.dataset.dataset_version.order_by("-version").first()
         if latest_version and latest_version.version:
-            version.version = latest_version.version + 1
+            self.new_version.version = latest_version.version + 1
         else:
-            version.version = 1
-        version.save()
+            self.new_version.version = 1
+        self.new_version.save()
 
-        rel_projects = Project.objects.filter(datasets=version.dataset)
+        rel_projects = Project.objects.filter(datasets=self.new_version.dataset)
         emails = []
         version_content_type_list = []
         for proj in rel_projects:
             emails.append(proj.user.email)
-            version_content_type = ContentType.objects.get_for_model(version)
+            version_content_type = ContentType.objects.get_for_model(self.new_version)
             version_content_type_list.append(version_content_type)
             Task.objects.create(
                 # FIXME: Maybe task title and describtion should be generated
                 #        on display.
-                title=(f"Sukurta nauja duomenų rinkinio struktūros versija: {version_content_type}, id: {version.pk}"),
+                title=(f"Sukurta nauja duomenų rinkinio struktūros versija: {version_content_type}, id: {self.new_version.pk}"),
                 description=("Sukurta nauja duomenų rinkinio struktūros versija."),
                 content_type=version_content_type,
-                object_id=version.pk,
+                object_id=self.new_version.pk,
                 user=proj.user,
                 status=Task.CREATED,
             )
 
-        url = f"{get_current_domain(self.request)}/datasets/{version.dataset.pk}/version/{version.pk}"
+        url = f"{get_current_domain(self.request)}/datasets/{self.new_version.dataset.pk}/version/{self.new_version.pk}"
         email(
             emails,
             "new-dataset-structure-version",
             "vitrina/structure/emails/new_version.md",
             {
-                "dataset": version.dataset.title,
+                "dataset": self.new_version.dataset.title,
                 "url": url,
             },
         )
 
         metadata = form.cleaned_data.get("metadata", [])
 
-
-        old_new_models: dict = {}
-        old_new_props: dict = {}
-        all_new_props: list = []
-        all_enum_items: list = []
-        all_param_items: list = []
+        old_to_new_metadata_object_map = {}
 
         with transaction.atomic():
-            version.save()
+            self.new_version.save()
 
             for meta in metadata:
                 if meta := Metadata.objects.filter(pk=meta).first():
-                    new_model = meta.content_type.model_class()
-                    new_model_instance = new_model.objects.filter(id=meta.object_id).first()
+                    old_metadata_instance = meta
 
-                    meta.pk = None
-                    meta.draft = False
-                    meta.metadata_version = version
+                    # Duplicate metadata
+                    new_metadata_instance = Metadata.objects.get(pk=meta.pk)
+                    new_metadata_instance.pk = None
+                    new_metadata_instance.draft = False
+                    new_metadata_instance.metadata_version = self.new_version
 
-                    # TODO: remove?
-                    if isinstance(new_model_instance, Dataset):
+                    # Duplicate related object
+                    related_model = old_metadata_instance.content_type.model_class()
+                    if related_model == Dataset:
                         continue
-                    new_model_instance.pk = None
-                    new_model_instance.version = version
-                    new_model_instance.save()
+                    old_related_instance = related_model.objects.filter(id=old_metadata_instance.object_id).first()
+                    new_related_instance = deepcopy(old_related_instance)
+                    new_related_instance.pk = None
+                    new_related_instance.metadata_version = self.new_version
+                    new_related_instance.save()
 
-                    if isinstance(new_model_instance, Model):
-                        old_new_models[meta.object_id] = new_model_instance.id
-                    if isinstance(new_model_instance, Property):
-                        all_new_props.append(new_model_instance)
-                        old_new_props[meta.object_id] = new_model_instance.id
-                    if isinstance(new_model_instance, EnumItem):
-                        all_enum_items.append(new_model_instance)
-                    if isinstance(new_model_instance, ParamItem):
-                        all_param_items.append(new_model_instance)
+                    # Assign duplicated related object to metadata
+                    new_metadata_instance.object = new_related_instance
+                    new_metadata_instance.save()
 
-                    meta.object_id = new_model_instance.pk
-                    meta.save()
+                    old_to_new_metadata_object_map[old_related_instance] = new_related_instance
 
-                    MetadataVersion.objects.create(
-                        metadata=meta,
-                        version=version,
-                        name=meta.name if meta.name else None,
-                        type=meta.type if meta.type else None,
-                        required=meta.required,
-                        unique=meta.unique,
-                        type_args=meta.type_args if meta.type_args else None,
-                        ref=meta.ref if meta.ref else None,
-                        source=meta.source if meta.source else None,
-                        prepare=meta.prepare if meta.prepare else None,
-                        level_given=meta.level_given,
-                        access=meta.access,
-                        base=meta.object.base if isinstance(meta.object, Model) else None,
-                        status=meta.status if meta.status else None,
-                    )
+                    # MetadataVersion.objects.create(
+                    #     metadata=meta,
+                    #     version=version,
+                    #     name=meta.name if meta.name else None,
+                    #     type=meta.type if meta.type else None,
+                    #     required=meta.required,
+                    #     unique=meta.unique,
+                    #     type_args=meta.type_args if meta.type_args else None,
+                    #     ref=meta.ref if meta.ref else None,
+                    #     source=meta.source if meta.source else None,
+                    #     prepare=meta.prepare if meta.prepare else None,
+                    #     level_given=meta.level_given,
+                    #     access=meta.access,
+                    #     base=meta.object.base if isinstance(meta.object, Model) else None,
+                    #     status=meta.status if meta.status else None,
+                    # )
 
-            self._fix_model_bases(old_new_models, version)
-            self._fix_property_relationship(old_new_models, all_new_props, version)
-            self._fix_enum_values(all_enum_items, old_new_props, version)
-            self._fix_param_values(all_param_items, old_new_props, version)
-        # TODO after a new standalone version is created, this has to redirect to that one
+            recursively_created_fields = old_to_new_metadata_object_map
 
-        if version:
-            return redirect(reverse("dataset-structure", args=[self.dataset.pk, version.pk]))
+            for old_related_instance, new_related_instance in list(old_to_new_metadata_object_map.items()):
+                self.recursive_duplicate_related_objects(new_related_instance, recursively_created_fields)
+
+        if self.new_version:
+            return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.new_version.pk]))
         else:
-            return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.version_id]))
+            return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version_id]))
 
-    @staticmethod
-    def _fix_model_bases(old_new_models: dict, version: _Version):
-        for old_model_pk, new_model_pk in old_new_models.items():
-            old_model = Model.objects.filter(pk=old_model_pk).first()
-            new_model = Model.objects.filter(pk=new_model_pk).first()
-            if old_base := old_model.base:
-                old_base_pk = old_base.pk
-                new_base = old_base
-                new_base.pk = None
-                new_base.version = version
-                new_base.save()
 
-                new_model.base = new_base
-                new_model.save()
-                content_type_of_model = ContentType.objects.filter(model="model").first().pk
-                metadata_of_the_base = Metadata.objects.filter(object_id=old_base_pk, content_type_id=content_type_of_model).first()
-                new_metadata_of_the_base = metadata_of_the_base
-                new_metadata_of_the_base.pk = None
-                new_metadata_of_the_base.metadata_version = version
-                new_metadata_of_the_base.object_id = new_base.pk
-                new_metadata_of_the_base.save()
+    def recursive_duplicate_related_objects(self, new_related_object, recursively_created_fields):
+        # Model instances which must be created
+        recursion_continues_for_models = [Model, Property, EnumItem, ParamItem, DatasetDistribution, Enum, Param, Prefix]
 
-    @staticmethod
-    def _fix_enum_values(all_enum_items: list, old_new_props: dict, version: _Version):
-        enum_created = {}
-        for enum_item in all_enum_items:
-            old_enum = enum_item.enum
-            old_pk = old_enum.pk
+        for field in new_related_object._meta.get_fields():
+            if isinstance(field, ForeignKey):
 
-            if old_pk not in enum_created:
-                new_enum = old_enum
-                new_enum.pk = None
-                if old_enum.object_id in old_new_props:
-                    new_enum.object_id = old_new_props[old_enum.object_id]
-                else:
-                    raise Http404("Not possible to include an enum without its property.")
+                # If the fields model is not in the needed list skip
+                if not issubclass(field.related_model, tuple(recursion_continues_for_models)):
+                    continue
 
-                new_enum.version = version
-                new_enum.save()
-                enum_created[old_pk] = new_enum
+                # Get instance of the foreign key relationship
+                deeper_old_related_object = getattr(new_related_object, field.name)
 
-            enum_item.enum = enum_created[old_pk]
-            enum_item.save()
+                # Check if the instance does not have a copy yet. If not create it recursively
+                if deeper_old_related_object and deeper_old_related_object not in recursively_created_fields:
+                    deeper_new_related_object = deepcopy(deeper_old_related_object)
+                    deeper_new_related_object.pk = None
+                    deeper_new_related_object.metadata_version = self.new_version
 
-    @staticmethod
-    def _fix_param_values(all_param_items: list, old_new_props: dict, version: _Version):
-        param_created = {}
-        for param_item in all_param_items:
-            old_param = param_item.param
-            old_pk = old_param.pk
+                    if hasattr(deeper_new_related_object, 'content_type_id'):
+                        related_model = deeper_new_related_object.content_type.model_class()
+                        if related_model in [Property, Model, DatasetDistribution]:
+                            deeper_new_related_object.object = recursively_created_fields[deeper_new_related_object.object]
 
-            if old_pk not in param_created:
-                new_param = old_param
-                new_param.pk = None
-                new_param.object_id = old_new_props[old_param.object_id]
-                new_param.version = version
-                new_param.save()
-                param_created[old_pk] = new_param
+                    deeper_new_related_object.save()
 
-            param_item.param = param_created[old_pk]
-            param_item.save()
+                    recursively_created_fields[deeper_old_related_object] = deeper_new_related_object
+                    setattr(new_related_object, field.name, deeper_new_related_object)
+                    new_related_object.save()
+                    self.recursive_duplicate_related_objects(deeper_new_related_object, recursively_created_fields)
 
-    @staticmethod
-    def _fix_property_relationship(old_new_models: dict, all_new_props: list, version: _Version):
-        for _property in all_new_props:
-            current_model_id = _property.model.pk
-            if current_model_id in old_new_models:
-                _property.model_id = old_new_models[current_model_id]
-                _property.version = version
-                _property.save()
-            else:
-                raise Http404("Not possible to include a property without its model.")
+                # Set the copy that was created before
+                elif deeper_old_related_object and deeper_old_related_object in recursively_created_fields:
+                    value_to_set = recursively_created_fields[deeper_old_related_object]
+                    setattr(new_related_object, field.name, value_to_set)
+                    new_related_object.save()
 
-    #TODO after UI changes that allow editing prefixes and dataset_distribution are introduced, this should be rewritten to copy only the changed fields
-    # @staticmethod
-    # def _copy_prefix_db_distribution(dataset: Dataset, version: _Version):
-    #     content_type_of_prefix = ContentType.objects.filter(model="prefix").first().pk
-    #     content_type_of_dataset_distribution = ContentType.objects.filter(model="datasetdistribution").first().pk
-    #
-    #     prefixes = Metadata.objects.filter(content_type_id=content_type_of_prefix, dataset=dataset, draft=True)
-    #     dataset_distributions = Metadata.objects.filter(content_type_id=content_type_of_dataset_distribution, dataset=dataset, draft=True)
-    #
-    #     for metadata_prefix in prefixes:
-    #         actual_prefix = Prefix.objects.filter(id=metadata_prefix.object_id).first()
-    #         actual_prefix.pk = None
-    #         actual_prefix.version = version
-    #         actual_prefix.save()
-    #
-    #         metadata_prefix.pk = None
-    #         metadata_prefix.metadata_version = version
-    #         metadata_prefix.draft = False
-    #         metadata_prefix.object_id = actual_prefix.pk
-    #         metadata_prefix.save()
-    #
-    #     for metadata_dataset_distribution in dataset_distributions:
-    #         actual_dataset_distribution = DatasetDistribution.objects.filter(id=metadata_dataset_distribution.object_id).first()
-    #         actual_dataset_distribution.pk = None
-    #         actual_dataset_distribution.connected_version = version
-    #         actual_dataset_distribution.save()
-    #
-    #         metadata_dataset_distribution.pk = None
-    #         metadata_dataset_distribution.metadata_version = version
-    #         metadata_dataset_distribution.draft = False
-    #         metadata_dataset_distribution.object_id = actual_dataset_distribution.pk
-    #         metadata_dataset_distribution.save()
-
+        return recursively_created_fields
 
 
 class VersionListView(

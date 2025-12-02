@@ -30,8 +30,8 @@
                 {% translate "Panaudojimo atvejai" %}
             </a>
         </li>
-        <li class="{%if request.resolver_match.url_name == 'organization-agreements' %} is-active {% endif %}">
-            <a href="{% url 'organization-agreements' organization.id %}">
+        <li class="{%if request.resolver_match.url_name == 'organization-agreement-list' %} is-active {% endif %}">
+            <a href="{% url 'organization-agreement-list' organization.id %}">
                 {% translate "Sutartys" %}
             </a>
         </li>

@@ -37,9 +37,16 @@ from reversion import set_comment
 from reversion.models import Version
 
 from vitrina.classifiers.models import AreaOfManagement
-from vitrina.orgs.permissions import can_view_organization_agreements
+from vitrina.orgs.permissions import can_view_organization_agreements, can_view_organization_agreement
+from vitrina.smart_contracts.models import Agreement
+from vitrina.smart_contracts.permissions import (
+    can_approve_agreements,
+    can_form_agreements,
+    can_sign_agreements,
+    can_upload_agreement_file,
+)
 from vitrina.smart_contracts.services import get_agreements
-from vitrina.smart_contracts.views import BaseAgreementListView
+from vitrina.smart_contracts.views import BaseAgreementListView, BaseAgreementDetailView
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.messages.models import SentMail
 from vitrina.orgs.helpers import get_or_create_parent_org
@@ -738,6 +745,48 @@ class OrganizationAgreementListView(OrganizationBaseViewMixin, BaseAgreementList
             reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
             None: _("Sutartys"),
         }
+        return context
+
+
+class OrganizationAgreementDetailView(OrganizationBaseViewMixin, BaseAgreementDetailView):
+    template_name = "vitrina/orgs/organization_agreements_detail.html"
+    parent_type = "organization"
+
+    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
+        super().setup(request, *args, **kwargs)
+        self.parent: Organization = self.organization
+
+        self.agreement = get_object_or_404(
+            Agreement.objects.all().select_related("assigner").prefetch_related("scopes"),
+            assigner=self.organization,
+            pk=self.kwargs["agreement_id"],
+        )
+
+    def has_permission(self) -> bool:
+        return can_view_organization_agreement(self.request.user, self.agreement)
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+
+        context.update(
+            {
+                "can_create_agreements": False,  # Assignee action, assigner is not able to execute it.
+                "can_submit_agreements": False,  # Assignee action, assigner is not able to execute it.
+                "can_approve_agreements": can_approve_agreements(self.request.user, self.agreement),
+                "can_form_agreements": can_form_agreements(self.request.user, self.agreement),
+                "can_initiate_agreements": False,  # Assignee action, assigner is not able to execute it.
+                "can_sign_agreements": can_sign_agreements(self.request.user, self.agreement),
+                "can_upload_agreement_file": can_upload_agreement_file(self.request.user, self.agreement),
+                "parent_links": {
+                    reverse("home"): _("Pradžia"),
+                    reverse("organization-list"): _("Organizacijos"),
+                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
+                    reverse("organization-agreement-list", args=[self.organization.pk]): "Sutartys",
+                    None: _("Sutartys"),
+                },
+            }
+        )
+
         return context
 
 

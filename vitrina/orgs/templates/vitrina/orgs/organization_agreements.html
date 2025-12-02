@@ -45,7 +45,9 @@
         </td>
 
         <td>
-            -
+            <a href="{% url 'organization-agreement-detail' agreement.assigner.pk agreement.pk %}">
+                {% translate "Peržiūrėti" %}
+            </a>
         </td>
     </tr>
 {% endblock %}

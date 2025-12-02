@@ -122,13 +122,42 @@ class BaseAgreementListView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         return context
 
 
+class BaseAgreementDetailView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+    template_name = None
+    parent: object = None
+    parent_type: str = None
+
+    agreement: Agreement
+
+    def has_permission(self) -> bool:
+        """Override in subclasses."""
+        return False
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+
+        context.update(
+            {
+                "agreement": self.agreement,
+                "project": self.agreement.project,
+                "agreement_files": self.agreement.files.all().order_by("-created_at"),
+                "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
+                "page_title": self.agreement.detail_page_title,
+                "parent": self.parent,
+                "parent_type": self.parent_type,
+            }
+        )
+
+        return context
+
+
 class AgreementListView(BaseProjectMixin, BaseAgreementListView):
     template_name = "smart_contracts/agreement_list.html"
     parent_type = "project"
 
     def setup(self, request, *args: Any, **kwargs: Any) -> None:
         super().setup(request, *args, **kwargs)
-        self.parent: Project = self.project
+        self.parent: Project = self.get_project(kwargs["pk"])
         return None
 
     def dispatch(self, request, *args, **kwargs):
@@ -155,21 +184,13 @@ class AgreementListView(BaseProjectMixin, BaseAgreementListView):
         return context
 
 
-class AgreementDetailView(
-    LoginRequiredMixin,
-    BaseProjectMixin,
-    BaseAgreementMixin,
-    PermissionRequiredMixin,
-    TemplateView,
-):
-    model = Agreement
+class AgreementDetailView(BaseProjectMixin, BaseAgreementMixin, BaseAgreementDetailView):
     template_name = "smart_contracts/agreement_detail.html"
+    parent_type = "project"
 
-    detail_url_name = "project-detail"
-    history_url_name = "project-history"
-
-    project: Project
-    agreement: Agreement
+    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
+        super().setup(request, *args, **kwargs)
+        self.parent: Project = self.get_project(kwargs["pk"])
 
     def has_permission(self) -> bool:
         return can_view_agreement(self.request.user, self.agreement)
@@ -179,10 +200,6 @@ class AgreementDetailView(
 
         context.update(
             {
-                "agreement": self.agreement,
-                "agreement_files": self.agreement.files.all().order_by("-created_at"),
-                "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
-                "page_title": self.agreement.detail_page_title,
                 "can_create_agreements": can_create_agreements(self.request.user, self.project),
                 "can_submit_agreements": can_submit_agreements(self.request.user, self.agreement),
                 "can_approve_agreements": can_approve_agreements(self.request.user, self.agreement),
@@ -192,12 +209,9 @@ class AgreementDetailView(
                 "can_upload_agreement_file": can_upload_agreement_file(self.request.user, self.agreement),
             }
         )
-        context["parent_links"].update(
-            {
-                reverse("agreement-list", args=[self.project.pk]): _("Sutartys"),
-                None: self.agreement.detail_page_title,
-            }
-        )
+
+        context["parent_links"].update({reverse("agreement-list", args=[self.project.pk]): _("Sutartys")})
+
         return context
 
 

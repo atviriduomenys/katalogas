@@ -2094,11 +2094,10 @@ class TestAgreementFileDownload:
 
         assert response.status_code == 404
 
+    @override_settings(DEBUG=True)
     def test_return_file_as_attachment_if_debug_true(
         self, app: DjangoTestApp, agreement_pdf: Path
     ):
-        debug = settings.DEBUG
-        settings.DEBUG = True
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
 
@@ -2128,13 +2127,10 @@ class TestAgreementFileDownload:
         assert response.headers.get("Content-Type") == "application/pdf"
         assert not response.headers.get("X-Accel-Redirect")
 
-        settings.DEBUG = debug
-
+    @override_settings(DEBUG=False)
     def test_return_file_path_as_x_accel_redirect_header_if_debug_false(
         self, app: DjangoTestApp, agreement_pdf: Path
     ):
-        debug = settings.DEBUG
-        settings.DEBUG = False
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
 
@@ -2162,5 +2158,3 @@ class TestAgreementFileDownload:
         assert response.status_code == 200
         assert "attachment" in response.headers.get("Content-Disposition")
         assert response.headers.get("X-Accel-Redirect")
-
-        settings.DEBUG = debug

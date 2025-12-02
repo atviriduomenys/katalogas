@@ -1509,11 +1509,12 @@ class DatasetStructureImportView(
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
         set_comment(_(f'Added Structure file "{self.object.file}".'))
-        if self.version and self.version.status != VersionStatus.DRAFT:
+
+        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
             form.add_error("file", _("Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."))
             return self.form_invalid(form)
 
-        self.version = create_structure_objects(self.object, self.version)
+        self.metadata_version = create_structure_objects(self.object, self.metadata_version)
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
@@ -1527,10 +1528,10 @@ class DatasetStructureImportView(
         return self.dataset
 
     def get_success_url(self):
-        if self.version.pk:
+        if self.metadata_version.pk:
             return reverse(
                 "dataset-structure",
-                kwargs={"pk": self.dataset.pk, "version_id": self.version.pk},
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk},
             )
         return reverse("dataset-structure-no-version", kwargs={"pk": self.dataset.pk})
 

@@ -58,8 +58,10 @@
                         <span>
                             {% if not selected_version %}
                                 {% translate "Pasirinkite versiją" %}
+                            {% elif selected_version.external_version %}
+                                {% translate "Versija" %}: {{ selected_version.external_version }}
                             {% else %}
-                                {% translate "Versija" %}: {{ selected_version.version }}
+                                {% translate "Versija: Juodraštis" %}
                             {% endif %}
                         </span>
                         <span class="icon is-small">
@@ -70,11 +72,15 @@
 
                 <div class="dropdown-menu" id="dropdown-menu" role="menu">
                     <div class="dropdown-content">
-                        {% for version in versions %}
-                            <a href="{% url 'dataset-structure' dataset.pk version.pk %}" class="dropdown-item">
-                                {{ version.version }}
-                            </a>
-                        {% endfor %}
+                    {% for version in versions %}
+                        <a href="{% url 'dataset-structure' dataset.pk version.pk %}" class="dropdown-item">
+                            {% if version.external_version %}
+                                {{ version.external_version }}
+                            {% else %}
+                                {% translate "Juodraštis"%}
+                            {% endif %}
+                        </a>
+                    {% endfor %}
                     </div>
                 </div>
             </div>

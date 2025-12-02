@@ -174,7 +174,7 @@
 
         {% if can_manage_structure and model.name and prop.name %}
         <div class="buttons is-right">
-            <a href="{% url 'property-update' dataset.pk version_id model.name prop.name %}" class="button is-primary">
+            <a href="{% url 'property-update' dataset.pk version_id.pk model.name prop.name %}" class="button is-primary">
                 {% translate "Redaguoti" %}
             </a>
         </div>
@@ -304,10 +304,10 @@
                             {% if enum_meta.prepare or enum_meta.title %}
                                 {% if prop.name and model.name and can_manage_structure %}
                                 <div class="buttons is-right">
-                                    <a href="{% url 'enum-update' dataset.pk version_id model.name prop.name enum_item.pk %}" class="button is-primary is-small">
+                                    <a href="{% url 'enum-update' dataset.pk version_id.pk model.name prop.name enum_item.pk %}" class="button is-primary is-small">
                                         {% translate "Keisti" %}
                                     </a>
-                                    <a href="{% url 'enum-delete' dataset.pk version_id model.name prop.name enum_item.pk %}"
+                                    <a href="{% url 'enum-delete' dataset.pk version_id.pk model.name prop.name enum_item.pk %}"
                                        onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti?' %})"
                                        class="button is-link is-small"
                                        id="delete_enum">{% translate "Ištrinti" %}
@@ -326,7 +326,7 @@
             {% endif %}
             {% if model.name and prop.name and can_manage_structure %}
                 <div class="buttons is-right mt-5">
-                    <a href="{% url 'enum-create' dataset.pk version_id model.name prop.name %}" class="button is-primary">
+                    <a href="{% url 'enum-create' dataset.pk version_id.pk model.name prop.name %}" class="button is-primary">
                         {% translate "Nauja reikšmė" %}
                     </a>
                 </div>

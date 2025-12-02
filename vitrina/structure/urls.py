@@ -51,6 +51,11 @@ urlpatterns = [
     path(
         "datasets/<int:pk>/models/history/",
         DatasetStructureHistoryView.as_view(),
+        name="dataset-structure-history-no-version",
+    ),
+    path(
+        "datasets/<int:pk>/version/<int:version_id>/models/history/",
+        DatasetStructureHistoryView.as_view(),
         name="dataset-structure-history",
     ),
     path("datasets/<int:pk>/version/<int:version_id>/models/add/", ModelCreateView.as_view(), name="model-create"),
@@ -106,9 +111,14 @@ urlpatterns = [
         name="model-data",
     ),
     path(
+        "datasets/<int:pk>/data/<str:model>/",
+        ModelDataView.as_view(),
+        name="model-data-no-version",
+    ),
+    path(
         "datasets/<int:pk>/data/<str:model>/count/",
         get_model_data_count,
-        name="model-data-count",  # not used
+        name="model-data-count",
     ),
     path(
         "datasets/<int:pk>/version/<int:version_id>/data/<str:model>/table/",

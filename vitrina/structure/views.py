@@ -3277,6 +3277,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     new_metadata_instance.pk = None
                     new_metadata_instance.draft = False
                     new_metadata_instance.metadata_version = self.new_version
+                    new_metadata_instance.save()
 
                     # Duplicate related object
                     related_model = old_metadata_instance.content_type.model_class()
@@ -3294,22 +3295,22 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
                     old_to_new_metadata_object_map[old_related_instance] = new_related_instance
 
-                    MetadataVersion.objects.create(
-                        metadata=meta,
-                        version=self.new_version,
-                        name=meta.name if meta.name else None,
-                        type=meta.type if meta.type else None,
-                        required=meta.required,
-                        unique=meta.unique,
-                        type_args=meta.type_args if meta.type_args else None,
-                        ref=meta.ref if meta.ref else None,
-                        source=meta.source if meta.source else None,
-                        prepare=meta.prepare if meta.prepare else None,
-                        level_given=meta.level_given,
-                        access=meta.access,
-                        base=meta.object.base if isinstance(meta.object, Model) else None,
-                        status=meta.status if meta.status else None,
-                    )
+                    # MetadataVersion.objects.create(
+                    #     metadata=meta,
+                    #     version=self.new_version,
+                    #     name=meta.name if meta.name else None,
+                    #     type=meta.type if meta.type else None,
+                    #     required=meta.required,
+                    #     unique=meta.unique,
+                    #     type_args=meta.type_args if meta.type_args else None,
+                    #     ref=meta.ref if meta.ref else None,
+                    #     source=meta.source if meta.source else None,
+                    #     prepare=meta.prepare if meta.prepare else None,
+                    #     level_given=meta.level_given,
+                    #     access=meta.access,
+                    #     base=meta.object.base if isinstance(meta.object, Model) else None,
+                    #     status=meta.status if meta.status else None,
+                    # )
 
             recursively_created_fields = old_to_new_metadata_object_map
 

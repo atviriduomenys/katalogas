@@ -7,7 +7,7 @@ import django.db.models.deletion
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_orgs', '0009_alter_publisherorganization_options'),
+        ('vitrina_orgs', '0010_representative_information_system_representative_and_more'),
     ]
 
     operations = [

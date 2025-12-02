@@ -30,7 +30,6 @@ from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
-from vitrina.datasets.helpers import generate_dataset_prefix
 from vitrina.datasets.services import get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 
@@ -198,6 +197,7 @@ class BaseResourceForm(TranslatableModelForm):
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-form"
         self.helper.form_tag = False
+        self.organization = organization
 
         if parent_id := request.resolver_match.kwargs.get("parent_id"):
             self.fields["parent"].initial = parent_id
@@ -344,10 +344,8 @@ class BaseResourceForm(TranslatableModelForm):
 
             if any(ch.isupper() for ch in name):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
-            organization = dataset_instance.organization
-            expected_prefix = generate_dataset_prefix(dataset_instance.organization)
-            whitelisted = organization.whitelisted_names
-            if not name.startswith(expected_prefix) and not (
+            whitelisted = self.organization.whitelisted_names
+            if not name.startswith(self.organization.name) and not (
                 whitelisted and any(name.startswith(prefix) for prefix in whitelisted)
             ):
                 message = (
@@ -355,9 +353,9 @@ class BaseResourceForm(TranslatableModelForm):
                         "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ "
                         "arba vieno iš organizacijos leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
                     )
-                    % {"expected": expected_prefix, "whitelisted": ", ".join(whitelisted)}
+                    % {"expected": self.organization.name, "whitelisted": ", ".join(whitelisted)}
                     if whitelisted
-                    else _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": expected_prefix}
+                    else _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": self.organization.name}
                 )
                 raise ValidationError(message)
 

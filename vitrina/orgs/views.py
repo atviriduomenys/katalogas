@@ -47,6 +47,7 @@ from vitrina.smart_contracts.permissions import (
 )
 from vitrina.smart_contracts.services import get_agreements
 from vitrina.smart_contracts.views import BaseAgreementListView, BaseAgreementDetailView
+from vitrina.orgs.helpers import generate_dataset_prefix
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.messages.models import SentMail
 from vitrina.orgs.helpers import get_or_create_parent_org
@@ -918,18 +919,21 @@ class OrganizationCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
         return kwargs
 
     def form_valid(self, form):
+        name = form.cleaned_data.get("name")
+        kind = form.cleaned_data.get("kind")
+        name = generate_dataset_prefix(name, kind)
         if jurisdiction := form.cleaned_data.get("jurisdiction"):
             parent_org: Organization = get_or_create_parent_org(jurisdiction)
             org: Organization = parent_org.add_child(
                 title=form.cleaned_data.get("title"),
-                name=form.cleaned_data.get("name"),
+                name=name,
                 image=form.cleaned_data.get("image"),
                 company_code=form.cleaned_data.get("company_code"),
                 address=form.cleaned_data.get("address"),
                 email=form.cleaned_data.get("email"),
                 phone=form.cleaned_data.get("phone"),
                 description=form.cleaned_data.get("description"),
-                kind=form.cleaned_data.get("kind"),
+                kind=kind,
                 publisher=False,
                 is_public=True,
                 jurisdiction=jurisdiction,
@@ -940,14 +944,14 @@ class OrganizationCreateView(LoginRequiredMixin, PermissionRequiredMixin, Create
         else:
             org: Organization = Organization.add_root(
                 title=form.cleaned_data.get("title"),
-                name=form.cleaned_data.get("name"),
+                name=name,
                 image=form.cleaned_data.get("image"),
                 company_code=form.cleaned_data.get("company_code"),
                 address=form.cleaned_data.get("address"),
                 email=form.cleaned_data.get("email"),
                 phone=form.cleaned_data.get("phone"),
                 description=form.cleaned_data.get("description"),
-                kind=form.cleaned_data.get("kind"),
+                kind=kind,
                 publisher=False,
                 is_public=True,
             )

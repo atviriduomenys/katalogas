@@ -250,6 +250,14 @@ class OrganizationBaseForm(ModelForm):
 class OrganizationUpdateForm(OrganizationBaseForm):
     submit_label = _("Redaguoti")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            field = self.fields["name"]
+            field.disabled = True
+            field.widget.attrs["disabled"] = True
+            self.initial["name"] = self.instance.name
+
 
 class OrganizationCreateForm(OrganizationBaseForm):
     submit_label = _("Sukurti")

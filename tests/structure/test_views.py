@@ -36,7 +36,7 @@ from vitrina.structure.models import Version as _Version
 @pytest.mark.django_db
 def test_model_data(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -52,8 +52,8 @@ def test_model_data(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop_1 = PropertyFactory(model=model, version=version)
-    prop_2 = PropertyFactory(model=model, version=version)
+    prop_1 = PropertyFactory(model=model, metadata_version=version)
+    prop_2 = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop_1),
         object_id=prop_1.pk,
@@ -100,7 +100,7 @@ def test_model_data(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_model_data_select(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -116,8 +116,8 @@ def test_model_data_select(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop_1 = PropertyFactory(model=model, version=version)
-    prop_2 = PropertyFactory(model=model, version=version)
+    prop_1 = PropertyFactory(model=model, metadata_version=version)
+    prop_2 = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop_1),
         object_id=prop_1.pk,
@@ -155,7 +155,7 @@ def test_model_data_select(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_model_data_sort(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -171,8 +171,8 @@ def test_model_data_sort(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop_1 = PropertyFactory(model=model, version=version)
-    prop_2 = PropertyFactory(model=model, version=version)
+    prop_1 = PropertyFactory(model=model, metadata_version=version)
+    prop_2 = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop_1),
         object_id=prop_1.pk,
@@ -211,7 +211,7 @@ def test_model_data_sort(app: DjangoTestApp):
 @pytest.mark.parametrize("operator", ['=', '<' '>' '<=', '>='])
 def test_model_data_with_compare_operators(app: DjangoTestApp, operator: str):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -227,8 +227,8 @@ def test_model_data_with_compare_operators(app: DjangoTestApp, operator: str):
         name="test/dataset",
         metadata_version=version,
     )
-    prop_1 = PropertyFactory(model=model, version=version)
-    prop_2 = PropertyFactory(model=model, version=version)
+    prop_1 = PropertyFactory(model=model, metadata_version=version)
+    prop_2 = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop_1),
         object_id=prop_1.pk,
@@ -266,7 +266,7 @@ def test_model_data_with_compare_operators(app: DjangoTestApp, operator: str):
 @pytest.mark.parametrize("operator", ['contains', 'startswith', 'endswith'])
 def test_model_data_with_string_operators(app: DjangoTestApp, operator: str):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -282,8 +282,8 @@ def test_model_data_with_string_operators(app: DjangoTestApp, operator: str):
         name="test/dataset",
         metadata_version=version,
     )
-    prop_1 = PropertyFactory(model=model, version=version)
-    prop_2 = PropertyFactory(model=model, version=version)
+    prop_1 = PropertyFactory(model=model, metadata_version=version)
+    prop_2 = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop_1),
         object_id=prop_1.pk,
@@ -320,7 +320,7 @@ def test_model_data_with_string_operators(app: DjangoTestApp, operator: str):
 @pytest.mark.django_db
 def test_object_data(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -336,8 +336,8 @@ def test_object_data(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop_1 = PropertyFactory(model=model, version=version)
-    prop_2 = PropertyFactory(model=model, version=version)
+    prop_1 = PropertyFactory(model=model, metadata_version=version)
+    prop_2 = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop_1),
         object_id=prop_1.pk,
@@ -379,7 +379,7 @@ def test_object_data(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_structure_tab_from_dataset_detail(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -395,7 +395,7 @@ def test_structure_tab_from_dataset_detail(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -413,7 +413,7 @@ def test_structure_tab_from_dataset_detail(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_structure_tab_from_model_structure(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -429,7 +429,7 @@ def test_structure_tab_from_model_structure(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -447,7 +447,7 @@ def test_structure_tab_from_model_structure(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_structure_tab_from_property_structure(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -463,7 +463,7 @@ def test_structure_tab_from_property_structure(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -481,7 +481,7 @@ def test_structure_tab_from_property_structure(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_structure_tab_from_model_data(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -497,7 +497,7 @@ def test_structure_tab_from_model_data(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -515,7 +515,7 @@ def test_structure_tab_from_model_data(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_data_tab_from_dataset_detail(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -531,7 +531,7 @@ def test_data_tab_from_dataset_detail(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -543,13 +543,13 @@ def test_data_tab_from_dataset_detail(app: DjangoTestApp):
 
     resp = app.get(dataset.get_absolute_url())
     resp = resp.click(linkid='data_tab')
-    assert resp.request.path == model.get_data_url() # Wtf
+    assert resp.request.path == model.get_data_url()
 
 
 @pytest.mark.django_db
 def test_data_tab_from_dataset_structure(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -565,7 +565,7 @@ def test_data_tab_from_dataset_structure(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -583,7 +583,7 @@ def test_data_tab_from_dataset_structure(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_data_tab_from_model_structure(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -599,7 +599,7 @@ def test_data_tab_from_model_structure(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -617,7 +617,7 @@ def test_data_tab_from_model_structure(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_data_tab_from_property_structure(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -633,7 +633,7 @@ def test_data_tab_from_property_structure(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -651,7 +651,7 @@ def test_data_tab_from_property_structure(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_data_tab_from_object_data(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -667,7 +667,7 @@ def test_data_tab_from_object_data(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -890,7 +890,7 @@ def test_private_comment_with_access(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_getall(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -906,7 +906,7 @@ def test_getall(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -969,7 +969,7 @@ def test_getall(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_getall_with_query(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -985,7 +985,7 @@ def test_getall_with_query(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1049,7 +1049,7 @@ def test_getall_with_query(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_getone(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1065,7 +1065,7 @@ def test_getone(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1120,7 +1120,7 @@ def test_getone(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_changes(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1136,7 +1136,7 @@ def test_changes(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1201,7 +1201,7 @@ def test_changes(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_api_tab_from_model_data(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1217,7 +1217,7 @@ def test_api_tab_from_model_data(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1235,7 +1235,7 @@ def test_api_tab_from_model_data(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_api_tab_from_model_data_with_query(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1251,7 +1251,7 @@ def test_api_tab_from_model_data_with_query(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1275,7 +1275,7 @@ def test_api_tab_from_model_data_with_query(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_api_tab_from_object_data(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1291,7 +1291,7 @@ def test_api_tab_from_object_data(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1310,7 +1310,7 @@ def test_api_tab_from_object_data(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_data_tab_from_getone(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1326,7 +1326,7 @@ def test_data_tab_from_getone(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1345,7 +1345,7 @@ def test_data_tab_from_getone(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_data_tab_from_getall(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1361,7 +1361,7 @@ def test_data_tab_from_getall(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1379,7 +1379,7 @@ def test_data_tab_from_getall(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_data_tab_from_getall_with_query(app: DjangoTestApp):
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1395,7 +1395,7 @@ def test_data_tab_from_getall_with_query(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1422,7 +1422,7 @@ def test_property_enum_item_create__string(app: DjangoTestApp):
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1438,7 +1438,7 @@ def test_property_enum_item_create__string(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1487,7 +1487,7 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1503,7 +1503,7 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1554,7 +1554,7 @@ def test_property_enum_item_create__integer_with_error(app: DjangoTestApp):
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1570,7 +1570,7 @@ def test_property_enum_item_create__integer_with_error(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version,
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1596,7 +1596,7 @@ def test_property_enum_item_update(app: DjangoTestApp):
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1612,7 +1612,7 @@ def test_property_enum_item_update(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1625,9 +1625,9 @@ def test_property_enum_item_update(app: DjangoTestApp):
     enum = EnumFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
-        version=version
+        metadata_version=version
     )
-    enum_item = EnumItemFactory(enum=enum, version=version)
+    enum_item = EnumItemFactory(enum=enum, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(enum_item),
         object_id=enum_item.pk,
@@ -1684,7 +1684,7 @@ def test_property_enum_item_delete(app: DjangoTestApp):
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1700,7 +1700,7 @@ def test_property_enum_item_delete(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1713,9 +1713,9 @@ def test_property_enum_item_delete(app: DjangoTestApp):
     enum = EnumFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
-        version=version
+        metadata_version=version
     )
-    enum_item = EnumItemFactory(enum=enum, version=version)
+    enum_item = EnumItemFactory(enum=enum, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(enum_item),
         object_id=enum_item.pk,
@@ -1839,9 +1839,9 @@ def test_model_create(app: DjangoTestApp):
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
-    PrefixFactory(name="dcat", version=version)
+    PrefixFactory(name="dcat", metadata_version=version)
 
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1858,7 +1858,7 @@ def test_model_create(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -1899,7 +1899,7 @@ def test_model_create(app: DjangoTestApp):
     assert new_model.base.metadata.first().level_given == 4
     assert new_model.base.metadata.first().name == 'test/dataset/TestModel'
     assert new_model.base.metadata.first().ref == 'prop'
-    assert new_model.base.metadata.first().metadata_version == None # The assigning of Base should not change Base version
+    assert new_model.base.metadata.first().metadata_version == version
 
     assert Version.objects.get_for_object(new_model).count() == 1
     assert Version.objects.get_for_object(new_model).first().revision.comment == 'Sukurtas "Model" modelis. Added Model'
@@ -1912,9 +1912,9 @@ def test_model_update(app: DjangoTestApp):
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
-    PrefixFactory(name="dcat", version=version)
+    PrefixFactory(name="dcat", metadata_version=version)
 
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -1931,7 +1931,7 @@ def test_model_update(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop1 = PropertyFactory(model=model, version=version)
+    prop1 = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop1),
         object_id=prop1.pk,
@@ -1940,7 +1940,7 @@ def test_model_update(app: DjangoTestApp):
         type='integer',
         metadata_version=version
     )
-    prop2 = PropertyFactory(model=model, version=version)
+    prop2 = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop2),
         object_id=prop2.pk,
@@ -1950,7 +1950,7 @@ def test_model_update(app: DjangoTestApp):
         metadata_version=version
     )
 
-    base_model = ModelFactory(dataset=dataset, version=version)
+    base_model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(base_model),
         object_id=base_model.pk,
@@ -2165,7 +2165,7 @@ def test_new_version_with_new_structure(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -2181,7 +2181,7 @@ def test_new_version_with_new_structure(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -2214,7 +2214,7 @@ def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -2230,7 +2230,7 @@ def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -2275,7 +2275,7 @@ def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -2291,7 +2291,7 @@ def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3031,7 +3031,7 @@ def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
 def test_model_structure_with_non_public_dataset_without_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3046,7 +3046,7 @@ def test_model_structure_with_non_public_dataset_without_access(app: DjangoTestA
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3065,7 +3065,7 @@ def test_model_structure_with_non_public_dataset_without_access(app: DjangoTestA
 def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3080,7 +3080,7 @@ def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp)
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3105,7 +3105,7 @@ def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp)
 def test_property_structure_with_non_public_dataset_without_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3120,7 +3120,7 @@ def test_property_structure_with_non_public_dataset_without_access(app: DjangoTe
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3139,7 +3139,7 @@ def test_property_structure_with_non_public_dataset_without_access(app: DjangoTe
 def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3154,7 +3154,7 @@ def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestA
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3179,7 +3179,7 @@ def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestA
 def test_model_data_with_non_public_dataset_without_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3194,7 +3194,7 @@ def test_model_data_with_non_public_dataset_without_access(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3213,7 +3213,7 @@ def test_model_data_with_non_public_dataset_without_access(app: DjangoTestApp):
 def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3228,7 +3228,7 @@ def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3253,7 +3253,7 @@ def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
 def test_object_data_with_non_public_dataset_without_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3268,7 +3268,7 @@ def test_object_data_with_non_public_dataset_without_access(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3287,7 +3287,7 @@ def test_object_data_with_non_public_dataset_without_access(app: DjangoTestApp):
 def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3302,7 +3302,7 @@ def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3327,7 +3327,7 @@ def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
 def test_api_with_non_public_dataset_without_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3342,7 +3342,7 @@ def test_api_with_non_public_dataset_without_access(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3361,7 +3361,7 @@ def test_api_with_non_public_dataset_without_access(app: DjangoTestApp):
 def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
-    model = ModelFactory(dataset=dataset, version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -3376,7 +3376,7 @@ def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -3440,7 +3440,7 @@ def test_visibility_without_access(app: DjangoTestApp):
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
@@ -3452,69 +3452,69 @@ def test_visibility_without_access(app: DjangoTestApp):
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "City", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "City", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "Province"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "Province"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "number"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "number"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "State"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "State"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "number"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "number"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "residence"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "residence"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
@@ -3677,7 +3677,7 @@ def test_model_visibility_with_open_data_representative_access(app: DjangoTestAp
     structure.dataset.organization = organization
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(structure.dataset.organization),
         object_id=structure.dataset.organization.pk,
@@ -3692,85 +3692,85 @@ def test_model_visibility_with_open_data_representative_access(app: DjangoTestAp
         "datasets/gov/ivpk/adp/State",
     ]
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "Country"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "City"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "City"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "City", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "City", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "Province"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "Province"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "number"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "number"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "State"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "State"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "number"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "number"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "residence"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "residence"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
@@ -3804,7 +3804,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
     structure.dataset.organization = organization
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(structure.dataset.organization),
@@ -3814,92 +3814,92 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
     )
     app.set_user(representative.user)
 
-    resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk]))
+    resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk, version.pk]))
     assert list(resp.context["models"].values_list("metadata__name", flat=True)) == [
         "datasets/gov/ivpk/adp/City",
         "datasets/gov/ivpk/adp/Province",
         "datasets/gov/ivpk/adp/State",
     ]
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "Country"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, version.pk, "City"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, version.pk, "City"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "City", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "City", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "Province"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "Province"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "number"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "number"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "State"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "State"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "number"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "number"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "residence"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "residence"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
@@ -3926,7 +3926,7 @@ def test_property_create__higher_visibility_with_error(app: DjangoTestApp):
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -3955,7 +3955,7 @@ def test_property_enum_item_create__higher_visibility_with_error(app: DjangoTest
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -3971,7 +3971,7 @@ def test_property_enum_item_create__higher_visibility_with_error(app: DjangoTest
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -4003,7 +4003,7 @@ def test_property_enum_item_create__higher_visibility_then_model_with_error(app:
     app.set_user(user)
 
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
@@ -4020,7 +4020,7 @@ def test_property_enum_item_create__higher_visibility_then_model_with_error(app:
         name="test/dataset",
         metadata_version=version
     )
-    prop = PropertyFactory(model=model, version=version)
+    prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
@@ -4234,9 +4234,9 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small", metadata_version=version).first()
 
     enum = enum_meta.object
     enum_id = enum.id
@@ -4245,18 +4245,19 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
         Metadata.objects.filter(
             dataset=structure.dataset,
             draft=True,
+            metadata_version=version,
         ).values_list('id', flat=True)
     )
 
-    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
+    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, "Country"])).forms['model-form']
     model_form['status'] = Status.objects.filter(codename="discont").first().id
     model_form.submit()
 
-    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, version.pk, "Country", "administration"])).forms['property-form']
     property_form['status'] = Status.objects.filter(codename="deprecated").first().id
     property_form.submit()
 
-    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, version.pk, "Country", "administration", enum_id])).forms['enum-form']
     enum_form['status'] = Status.objects.filter(codename="withdrawn").first().id
     enum_form.submit()
 
@@ -4663,7 +4664,7 @@ def test_published_metadata_form_does_not_change_status_is_kept(app: DjangoTestA
 @pytest.mark.django_db
 def test_props_metadata_rendering(app: DjangoTestApp) -> None:
     version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
     dataset = version.dataset
 
     MetadataFactory(
@@ -4681,8 +4682,8 @@ def test_props_metadata_rendering(app: DjangoTestApp) -> None:
         metadata_version=version
     )
 
-    prop_1 = PropertyFactory(model=model, version=version)
-    prop_2 = PropertyFactory(model=model, version=version)
+    prop_1 = PropertyFactory(model=model, metadata_version=version)
+    prop_2 = PropertyFactory(model=model, metadata_version=version)
 
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop_1),

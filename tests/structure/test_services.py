@@ -12,6 +12,7 @@ from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
+from vitrina.structure.factories import VersionFactory
 from vitrina.structure.models import Metadata, Prefix, Model, Property, PropertyList, Enum, Param, EnumItem, \
     ParamItem, Base
 from vitrina.structure.services import create_structure_objects
@@ -565,15 +566,17 @@ def test_structure_with_comments(app: DjangoTestApp):
             file=FileField(filename='file.csv', data=manifest)
         )
     )
+    metadata_version = VersionFactory(dataset=structure.dataset)
     DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
         format=FileFormat(title="Saugykla", extension='UAPI'),
+        metadata_version=metadata_version
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, metadata_version)
     assert Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Comment)
     ).count() == 3
@@ -607,15 +610,17 @@ def test_structure_with_resource_and_existing_distribution(app: DjangoTestApp):
             file=FileField(filename='file.csv', data=manifest)
         )
     )
+    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='http://www.example.com',
+        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, metadata_version)
 
     assert Metadata.objects.get(uuid='1').object == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
@@ -641,16 +646,18 @@ def test_structure_with_resource_and_existing_distribution_without_title(app: Dj
             file=FileField(filename='file.csv', data=manifest)
         )
     )
+    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='http://www.example.com',
-        title=""
+        title="",
+        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, metadata_version=metadata_version)
 
     distribution.refresh_from_db()
     distribution.set_current_language("lt")
@@ -710,16 +717,18 @@ def test_structure_without_resource_and_existing_distribution(app: DjangoTestApp
             file=FileField(filename='file.csv', data=manifest)
         )
     )
+    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
         format=FileFormat(title="Saugykla", extension='UAPI'),
+        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, metadata_version)
 
     assert distribution.metadata.count() == 1
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
@@ -745,17 +754,18 @@ def test_structure_without_resource_and_existing_distribution_without_title(app:
             file=FileField(filename='file.csv', data=manifest)
         )
     )
+    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
         format=FileFormat(title="Saugykla", extension='UAPI'),
-        title="",
+        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, metadata_version)
 
     distribution.refresh_from_db()
     distribution.set_current_language("lt")
@@ -784,16 +794,18 @@ def test_structure_without_resource_and_existing_distribution_without_ns(app: Dj
             file=FileField(filename='file.csv', data=manifest)
         )
     )
+    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/',
         format=FileFormat(title="Saugykla", extension='UAPI'),
+        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, metadata_version)
 
     assert distribution.metadata.count() == 1
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/'

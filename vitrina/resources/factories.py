@@ -70,6 +70,7 @@ class DatasetDistributionFactory(DjangoModelFactory):
             code="DEVELOP",
         )
     )
+    metadata_version = None
 
     class Params:
         uapi_format = factory.Trait(

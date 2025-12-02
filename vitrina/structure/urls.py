@@ -51,6 +51,11 @@ urlpatterns = [
     path(
         "datasets/<int:pk>/models/history/",
         DatasetStructureHistoryView.as_view(),
+        name="dataset-structure-history-no-version",
+    ),
+    path(
+        "datasets/<int:pk>/version/<int:version_id>/models/history/",
+        DatasetStructureHistoryView.as_view(),
         name="dataset-structure-history",
     ),
     path("datasets/<int:pk>/version/<int:version_id>/models/add/", ModelCreateView.as_view(), name="model-create"),

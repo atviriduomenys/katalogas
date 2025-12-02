@@ -66,14 +66,18 @@
                     <tr>
                         <th scope="row">{{ scope.scope }}</th>
                         <td style="width:10%">
-                            <a href="{% url 'project-clients-scopes-detail-toggle' project.pk client.uuid scope.uuid %}"
-                                 class="button is-warning is-small">
+                            <form action="{% url 'project-clients-scopes-detail-toggle' project.pk client.uuid scope.uuid %}"
+                                method="post"
+                                style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="button is-warning is-small">
                                 {% if scope.is_active %}
                                     {% translate "Išjungti" %}
                                 {% else %}
                                     {% translate "Įjungti" %}
                                 {% endif %}
-                            </a>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                 {% endfor %}

@@ -106,9 +106,14 @@ urlpatterns = [
         name="model-data",
     ),
     path(
+        "datasets/<int:pk>/data/<str:model>/",
+        ModelDataView.as_view(),
+        name="model-data-no-version",
+    ),
+    path(
         "datasets/<int:pk>/data/<str:model>/count/",
         get_model_data_count,
-        name="model-data-count",  # not used
+        name="model-data-count",
     ),
     path(
         "datasets/<int:pk>/version/<int:version_id>/data/<str:model>/table/",

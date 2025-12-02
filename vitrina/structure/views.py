@@ -124,7 +124,7 @@ class DatasetStructureMixin(StructureMixin):
                 _Version,
                 pk=version_id,
                 dataset=self.dataset,
-            )
+            ).pk
         else:
             self.metadata_version_id = None
 
@@ -2841,7 +2841,7 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
     def get_data_url(self):
         if self.models and self.models[0].name:
             return reverse(
-                "model-data",
+                "model-data-no-version",
                 kwargs={
                     "pk": self.kwargs.get("pk"),
                     "model": self.models[0].name,
@@ -3135,7 +3135,7 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         if self.model_obj.name:
             return reverse(
                 "model-data",
-                kwargs={"pk": self.object.pk, "model": self.model_obj.name},
+                kwargs={"pk": self.object.pk, "model": self.model_obj.name, "version_id": self.metadata_version_id},
             )
         return None
 

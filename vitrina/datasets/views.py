@@ -1509,11 +1509,12 @@ class DatasetStructureImportView(
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
         set_comment(_(f'Added Structure file "{self.object.file}".'))
-        if self.version and self.version.status != VersionStatus.DRAFT:
+        version_instance = Version.objects.filter(id=self.metadata_version_id).first()
+        if version_instance and version_instance.status != VersionStatus.DRAFT:
             form.add_error("file", _("Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."))
             return self.form_invalid(form)
 
-        self.version = create_structure_objects(self.object, self.version)
+        self.version = create_structure_objects(self.object, version_instance)
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 

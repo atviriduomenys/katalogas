@@ -262,10 +262,26 @@ class ProjectHistoryView(ProjectViewBaseMixin, HistoryView):
 
     def get_history_objects(self):
         project_history_objects = Version.objects.get_for_object(self.project)
+
         agreement_ids = Agreement.objects.filter(project=self.project).values_list("pk", flat=True)
         agreement_ids = [str(id) for id in agreement_ids]
         agreement_history_objects = Version.objects.get_for_model(Agreement).filter(object_id__in=agreement_ids)
-        history_objects = project_history_objects | agreement_history_objects
+
+        client_ids = UseCaseClient.objects.filter(use_case=self.project).values_list("pk", flat=True)
+        client_ids = [str(id) for id in client_ids]
+        client_history_objects = Version.objects.get_for_model(UseCaseClient).filter(object_id__in=client_ids)
+
+        client_scope_ids = UseCaseClientScope.objects.filter(use_case_client__in=client_ids).values_list(
+            "pk", flat=True
+        )
+        client_scope_ids = [str(id) for id in client_scope_ids]
+        client_scope_history_objects = Version.objects.get_for_model(UseCaseClientScope).filter(
+            object_id__in=client_scope_ids
+        )
+
+        history_objects = (
+            project_history_objects | agreement_history_objects | client_history_objects | client_scope_history_objects
+        )
         return history_objects.order_by("-revision__date_created")
 
 
@@ -694,6 +710,7 @@ class ClientCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequi
         self.object.save()
         self.object.client_id, secret = OAuthClientManagement.create_oauth_client()
         self.object.save(update_fields=["client_id"])
+        reversion.set_comment(f"Sukurtas naujas klientas '{self.object}'")
 
         success_message = _('Klientas "{0}" sukurtas sėkmingai.').format(self.object.name)
         messages.success(self.request, success_message)
@@ -741,6 +758,7 @@ class ClientUpdateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequi
         self.object.user = self.request.user
         self.object.use_case = self.project
         self.object.save()
+        reversion.set_comment(f"Redaguotas klientas '{self.object}'")
         success_message = _('Klientas "{0}" atnaujintas sėkmingai').format(self.object.name)
         messages.success(self.request, success_message)
         return redirect(reverse("project-clients", args=[self.project.pk]))
@@ -814,15 +832,15 @@ class ClientScopeCreateView(
     def form_valid(self, form) -> HttpResponse:
         selected_scope = form.cleaned_data["scope"]
 
-        UseCaseClientScope.objects.create(
+        scope = UseCaseClientScope.objects.create(
             resource=selected_scope.resource,
             action=selected_scope.action,
             scope=selected_scope.scope,
             use_case_client=self.client,
             is_active=False,
         )
-
-        success_message = _('Leidimas "{0}" sukurtas sėkmingai').format(selected_scope.resource)
+        reversion.set_comment(f"Klientui '{self.client} sukurtas naujas leidimas '{scope}'")
+        success_message = _('Leidimas "{0}" sukurtas sėkmingai').format(scope)
         messages.success(self.request, success_message)
         return redirect(reverse("project-clients-detail", args=[self.project.pk, self.client.uuid]))
 
@@ -869,5 +887,8 @@ class ClientScopeToggleView(PermissionRequiredMixin, View):
         OAuthClientManagement.update_oauth_client(
             client_id=self.client.client_id,
             new_scopes=list(self.client.scopes.filter(is_active=True).values_list("scope", flat=True)),
+        )
+        reversion.set_comment(
+            f"Kliento '{self.client}' leidimas '{self.scope}' - '{'Įjungtas' if self.scope.is_active else 'Išjungtas'}'"
         )
         return redirect(reverse("project-clients-detail", args=[self.project.pk, self.client.uuid]))

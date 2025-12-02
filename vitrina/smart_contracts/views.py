@@ -394,6 +394,9 @@ class AgreementSubmitView(BaseAgreementNegotiateView):
         self.agreement.status = AgreementStatuses.SUBMITTED
         self.agreement.assignee_representative = form.cleaned_data["assignee_representative"]
         self.agreement.save()
+        reversion.set_comment(
+            f"Pakeistas sutarties su '{self.agreement.assigner}' statusas į '{self.agreement.get_status_display()}'"
+        )
 
         messages.success(self.request, _("Pasiūlymas sėkmingai pateiktas duomenų teikėjui."))
         return HttpResponseRedirect(self.get_success_url())
@@ -416,6 +419,9 @@ class AgreementApproveView(BaseAgreementNegotiateView):
         self.agreement.assigner_representative = form.cleaned_data["assigner_representative"]
         self.agreement.other_assigner_legislations = form.cleaned_data["other_assigner_legislations"]
         self.agreement.save()
+        reversion.set_comment(
+            f"Pakeistas sutarties su '{self.agreement.assigner}' statusas į '{self.agreement.get_status_display()}'"
+        )
 
         messages.success(self.request, _("Pasiūlymas sėkmingai patvirtintas."))
         return HttpResponseRedirect(self.get_success_url())
@@ -447,6 +453,9 @@ class AgreementFormView(BaseAgreementNegotiateView):
                 is_template=True,
                 file_name=copy_file_name,
             )
+        reversion.set_comment(
+            f"Pakeistas sutarties su '{self.agreement.assigner}' statusas į '{self.agreement.get_status_display()}'"
+        )
 
         messages.success(self.request, _("Sutarties dokumentas sukurtas"))
         return HttpResponseRedirect(self.get_success_url())
@@ -520,6 +529,9 @@ class AgreementInitiateView(BaseAgreementInitiateSignView):
         self.agreement.status = AgreementStatuses.INITIATED
         self.agreement.save()
         AgreementFile.objects.create(agreement=self.agreement, file_name=file.name, file=file)
+        reversion.set_comment(
+            f"Pakeistas sutarties su '{self.agreement.assigner}' statusas į '{self.agreement.get_status_display()}'"
+        )
 
         messages.success(self.request, _("Sutarties dokumentas įkeltas sėkmingai"))
 
@@ -547,5 +559,8 @@ class AgreementSignView(BaseAgreementInitiateSignView):
         self.agreement.is_agent_sync_enabled = True
         self.agreement.save()
         AgreementFile.objects.create(agreement=self.agreement, file_name=file.name, file=file)
+        reversion.set_comment(
+            f"Pakeistas sutarties su '{self.agreement.assigner}' statusas į '{self.agreement.get_status_display()}'"
+        )
 
         messages.success(self.request, _("Sutarties dokumentas įkeltas sėkmingai"))

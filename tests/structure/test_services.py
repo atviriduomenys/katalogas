@@ -573,7 +573,7 @@ def test_structure_with_comments(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    create_structure_objects(structure)
     assert Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Comment)
     ).count() == 3

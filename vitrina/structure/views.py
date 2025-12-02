@@ -3222,7 +3222,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
             self.new_version.minor = based_on_version.minor
             self.new_version.patch = based_on_version.patch + 1
 
-        self.new_version.external_version = f"{self.new_version.major}.{self.new_version.minor}.{self.new_version.patch}"
+        self.new_version.external_version = (
+            f"{self.new_version.major}.{self.new_version.minor}.{self.new_version.patch}"
+        )
 
         latest_version = self.dataset.dataset_version.order_by("-version").first()
         if latest_version and latest_version.version:
@@ -3241,7 +3243,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
             Task.objects.create(
                 # FIXME: Maybe task title and describtion should be generated
                 #        on display.
-                title=(f"Sukurta nauja duomenų rinkinio struktūros versija: {version_content_type}, id: {self.new_version.pk}"),
+                title=(
+                    f"Sukurta nauja duomenų rinkinio struktūros versija: {version_content_type}, id: {self.new_version.pk}"
+                ),
                 description=("Sukurta nauja duomenų rinkinio struktūros versija."),
                 content_type=version_content_type,
                 object_id=self.new_version.pk,

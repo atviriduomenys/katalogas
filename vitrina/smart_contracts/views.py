@@ -83,26 +83,58 @@ class BaseAgreementMixin:
         )
 
 
-class AgreementListView(
-    LoginRequiredMixin,
-    BaseProjectMixin,
-    PermissionRequiredMixin,
-    TemplateView,
-):
+class BaseAgreementListView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     model = Agreement
-    template_name = "smart_contracts/agreement_list.html"
+    template_name = None
 
-    detail_url_name = "project-detail"
-    history_url_name = "project-history"
+    paginate_by = 10
 
-    project: Project
+    parent: object
+    parent_type: str
+
+    def get_queryset(self):
+        """Override in subclasses, agreement queryset will be filtered by parent."""
+        raise NotImplementedError
 
     def has_permission(self) -> bool:
-        return can_view_agreements(self.request.user, self.project)
+        """Override in subclasses, permission depends on parent."""
+        return False
+
+    def get_context_data(self, **kwargs: Any):
+        context = super().get_context_data(**kwargs)
+
+        agreements = self.get_queryset()
+        paginator = Paginator(agreements, self.paginate_by)
+        page = paginator.get_page(self.request.GET.get("page"))
+
+        context.update(
+            {
+                "agreements": agreements,
+                "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
+                "page_obj": page,
+                "paginator": paginator,
+                "can_create_agreements": False,  # Override in subclasses.
+                "parent": self.parent,
+                "parent_type": self.parent_type,
+            }
+        )
+
+        return context
+
+
+class AgreementListView(BaseProjectMixin, BaseAgreementListView):
+    template_name = "smart_contracts/agreement_list.html"
+    parent_type = "project"
+
+    def setup(self, request, *args: Any, **kwargs: Any) -> None:
+        super().setup(request, *args, **kwargs)
+        self.parent: Project = self.project
+        return None
 
     def dispatch(self, request, *args, **kwargs):
         dispatch = super().dispatch(request, *args, **kwargs)
-        if not self.project.organization:
+
+        if not self.parent.organization:
             messages.error(
                 self.request,
                 _("Panaudojimo atvejis registruotas fizinio asmens vardu negali turėti sutarčių."),
@@ -110,30 +142,16 @@ class AgreementListView(
             return HttpResponseRedirect(reverse("project-detail", kwargs={"pk": self.project.pk}))
         return dispatch
 
-    def get_context_data(self, **kwargs: Any) -> dict:
+    def has_permission(self) -> bool:
+        return can_view_agreements(self.request.user, self.project)
+
+    def get_queryset(self):
+        return get_agreements(self.request.user).filter(project=self.project)
+
+    def get_context_data(self, **kwargs: Any):
         context = super().get_context_data(**kwargs)
-
-        project_agreements = get_agreements(self.request.user).filter(project=self.project)
-
-        paginator = Paginator(project_agreements, 10)
-        page_number = self.request.GET.get("page")
-        page = paginator.get_page(page_number)
-
-        context.update(
-            {
-                "project": self.project,
-                "agreements": page.object_list,
-                "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
-                "page_obj": page,
-                "paginator": paginator,
-                "can_create_agreements": can_create_agreements(self.request.user, self.project),
-            }
-        )
-        context["parent_links"].update(
-            {
-                None: _("Sutartys"),
-            }
-        )
+        context["can_create_agreements"] = can_create_agreements(self.request.user, self.project)
+        context["parent_links"].update({None: _("Sutartys")})
         return context
 
 

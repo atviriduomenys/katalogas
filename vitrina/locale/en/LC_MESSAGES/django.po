@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-27 14:56+0200\n"
+"POT-Creation-Date: 2025-12-02 07:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -448,11 +448,17 @@ msgstr "Comment for object:"
 msgid "Registruoti kaip prašymą"
 msgstr "Register as request"
 
+msgid "Poreikio pavadinimas"
+msgstr "Request title"
+
 msgid "Pageidaujamas duomenų atnaujinimo periodiškumas"
 msgstr "Preferred frequency of data updates"
 
 msgid "Jei komentaras registruojamas kaip prašymas, jis privalo būti viešas"
 msgstr "If the comment is registered as a request, it must be public"
+
+msgid "Įrašykite poreikio pavadinimą."
+msgstr "Please input request title."
 
 msgid "Šis laukas yra privalomas"
 msgstr "This field is required"
@@ -1337,6 +1343,14 @@ msgstr "Harvested"
 
 msgid "Atlikto darbo būsena"
 msgstr "Harvesting status"
+
+msgid "Licencija"
+msgstr "License"
+
+msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
+msgstr ""
+"This property specifies the license under which the data service is "
+"distributed."
 
 msgid ""
 "Nurodoma konkreti informacinė sistema - valstybės informacinė sistema ar "
@@ -2705,6 +2719,18 @@ msgstr "Search for organization"
 msgid "Nauja organizacija"
 msgstr "New organization"
 
+msgid "Sukūrimo data"
+msgstr "Creation date"
+
+msgid "Duomenis gaunanti organizacija"
+msgstr "Data receiver organization"
+
+msgid "Panaudojimo atvejis"
+msgstr "Use case"
+
+msgid "Paskutinės sinchronizacijos data"
+msgstr "Date of last synchronization"
+
 msgid "Informacija duomenų teikėjo registravimui"
 msgstr "Data provider information for registration"
 
@@ -2777,6 +2803,9 @@ msgstr "Registration is not allowed"
 msgid ""
 "Šios registravimosi nuorodos galiojimas baigėsi arba nuoroda yra klaidinga."
 msgstr "This registration link has expired or the link is incorrect."
+
+msgid "Sutartys"
+msgstr "Agreements"
 
 msgid "Agentai"
 msgstr "Agents"
@@ -3010,9 +3039,6 @@ msgstr "Select a scope"
 msgid "Leidimai"
 msgstr "Permissions"
 
-msgid "Panaudojimo atvejis"
-msgstr "Use case"
-
 msgid "Kliento ID"
 msgstr "Client ID"
 
@@ -3103,9 +3129,6 @@ msgstr "Key title"
 
 msgid "Šiuo metu raktas leidimų neturi"
 msgstr "Currently the key does not have permissions"
-
-msgid "Sutartys"
-msgstr "Agreements"
 
 msgid "Panaudojimo atvejo registracija"
 msgstr "Use case registration"
@@ -3603,9 +3626,6 @@ msgstr "Upload to storage"
 msgid "Importuojamas išorinis metaduomenų katalogas"
 msgstr "Importing external metadata catalog"
 
-msgid "Licencija"
-msgstr "License"
-
 msgid "Statusas"
 msgstr "Status"
 
@@ -3627,11 +3647,6 @@ msgstr "Open dataset distribution"
 
 msgid "Publikuojamas saugykloje"
 msgstr "Published in storage"
-
-msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
-msgstr ""
-"This property specifies the license under which the data service is "
-"distributed."
 
 msgid "Modeliai"
 msgstr "Models"
@@ -3754,9 +3769,6 @@ msgstr "Specifies the organization to which the template is assigned."
 msgid "Duomenų teikėjo atstovas"
 msgstr "Data provider representative"
 
-msgid "Duomenis gaunanti organizacija"
-msgstr "Data receiver organization"
-
 msgid "Duomenų gavėjo atstovas"
 msgstr "Data receiver representative"
 
@@ -3765,9 +3777,6 @@ msgstr "Agreement template"
 
 msgid "Agento sinchronizacija įjungta"
 msgstr "Agent synchronization is enabled"
-
-msgid "Paskutinės sinchronizacijos data"
-msgstr "Date of last synchronization"
 
 msgid "Sutarties iniciatorius"
 msgstr "Creator of an agreement"
@@ -3901,14 +3910,8 @@ msgstr "Awaiting for signed document upload by data provider (assigner)"
 msgid "Sutarties identifikatorius"
 msgstr "Agreement id"
 
-msgid "Sukūrimo data"
-msgstr "Creation date"
-
 msgid "Nėra sutarčių dokumentų."
 msgstr "No agreement documents."
-
-msgid "Nėra sutarčių."
-msgstr "No agreements."
 
 msgid "Sutarties derinimo informacija"
 msgstr "Agreement negotation information"
@@ -3965,10 +3968,11 @@ msgstr "Agreement document is created"
 msgid "PDF failas sutarčiai nėra sukurtas."
 msgstr "PDF file for the agreement is not created."
 
-
 msgid ""
 "Rasti keli PDF failai susieti su sutartimi. Susisiekite su administratoriumi."
-msgstr "Multiple PDF files were found related to the agreement. Please contact the administrator."
+msgstr ""
+"Multiple PDF files were found related to the agreement. Please contact the "
+"administrator."
 
 msgid "Įkelti pasirašytą sutartį"
 msgstr "Upload signed document"
@@ -4958,11 +4962,32 @@ msgstr "Answer to"
 msgid "Komentaras pašalintas"
 msgstr "Comment deleted"
 
+msgid "ištrinta"
+msgstr "Deleted"
+
+msgid "redaguotas"
+msgstr "Edited"
+
 msgid "(neviešinamas komentaras)"
 msgstr "(private comment)"
 
 msgid "Atsakyti"
 msgstr "Answer"
+
+msgid "Atsakyti į komentarą"
+msgstr "Submit comment"
+
+msgid "Redaguoti komentarą"
+msgstr "Edit comment"
+
+msgid "Ištrinti komentarą"
+msgstr "Delete comment"
+
+msgid "Ištrinti komentarą?"
+msgstr "Delete comment?"
+
+msgid "Šis veiksmas negrąžinamas."
+msgstr "This action is irreversible."
 
 msgid "Komentarai"
 msgstr "Comments"
@@ -5083,6 +5108,9 @@ msgstr "Register request to open data"
 
 msgid "Statistika"
 msgstr "Statistics"
+
+msgid "Nėra sutarčių."
+msgstr "No agreements."
 
 msgid "Pradinis"
 msgstr "First"
@@ -5698,7 +5726,8 @@ msgid ""
 "Nurodomas įmonės kodas organizacijos, kurios vardu vartotojas yra "
 "prisijungęs per VIISP."
 msgstr ""
-"The company code of the organization the user is logged in on behalf of via VIISP."
+"The company code of the organization the user is logged in on behalf of via "
+"VIISP."
 
 msgid "Visi naudotojai"
 msgstr "All users"
@@ -5950,7 +5979,8 @@ msgid ""
 "Elektroninis paštas ir/arba slaptažodis yra neteisingas. Atkreipkite dėmesį, "
 "kad abu laukai yra jautrūs raidžių dydžiui (mažosios ir didžiosios raidės)."
 msgstr ""
-"The email and/or the password is incorrect. Note that both fields are case-sensitive."
+"The email and/or the password is incorrect. Note that both fields are case-"
+"sensitive."
 
 msgid "key_content"
 msgstr "key_content"

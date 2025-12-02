@@ -29,6 +29,7 @@ from vitrina.orgs.views import (
     ContactDeleteView,
     create_remote_organization,
     check_organization,
+    OrganizationAgreementListView,
 )
 from vitrina.orgs.views import (
     OrganizationDetailView,
@@ -133,6 +134,11 @@ urlpatterns = [
         "orgs/<int:pk>/projects/",
         OrganizationProjectsView.as_view(),
         name="organization-projects",
+    ),
+    path(
+        "orgs/<int:pk>/agreements/",
+        OrganizationAgreementListView.as_view(),
+        name="organization-agreements",
     ),
     path(
         "register/<token>/",

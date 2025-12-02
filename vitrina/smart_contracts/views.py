@@ -2,6 +2,7 @@ import os
 from itertools import groupby
 from typing import Any
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.core.files.base import ContentFile
@@ -14,11 +15,12 @@ from django.db.models import Prefetch, Q
 from django.forms import modelformset_factory, BaseFormSet
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
-from django.http.response import HttpResponseBase, HttpResponse
+from django.http.response import HttpResponseBase, HttpResponse, FileResponse
 from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from django.views import View
 from django.views.generic import TemplateView, FormView
 
 from vitrina.datasets.models import Dataset
@@ -548,3 +550,26 @@ class AgreementSignView(BaseAgreementInitiateSignView):
         AgreementFile.objects.create(agreement=self.agreement, file_name=file.name, file=file)
 
         messages.success(self.request, _("Sutarties dokumentas įkeltas sėkmingai"))
+
+
+class AgreementFileDownloadView(
+    LoginRequiredMixin,
+    BaseProjectMixin,
+    BaseAgreementMixin,
+    PermissionRequiredMixin,
+    View,
+):
+    def has_permission(self) -> bool:
+        return can_view_agreement(self.request.user, self.agreement)
+
+    def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse | FileResponse:
+        agreement_file = get_object_or_404(AgreementFile, pk=self.kwargs["agreement_file_id"])
+
+        if settings.DEBUG:
+            return FileResponse(open(agreement_file.file.path, "rb"), as_attachment=True)
+        else:
+            response = HttpResponse()
+            response["X-Accel-Redirect"] = f"/{agreement_file.file.url}"
+            response["Content-Disposition"] = f'attachment; filename="{agreement_file.file_name}"'
+
+            return response

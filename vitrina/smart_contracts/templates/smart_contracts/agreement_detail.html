@@ -177,7 +177,7 @@
                 {% for file in agreement_files %}
                     <tr>
                         <td>{{ file.created_at|date:"Y-m-d H:i" }}</td>
-                        <td><a href="{{ file.file.url }}" target="_blank">{{ file.file_name }}</a></td>
+                        <td><a href="{% url "agreement-file-download" project.pk agreement.pk file.pk %}" target="_blank">{{ file.file_name }}</a></td>
                     </tr>
                 {% endfor %}
             </tbody>

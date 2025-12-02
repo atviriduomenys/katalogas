@@ -4,17 +4,18 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
-from webtest import Upload
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.urls import reverse
+from django.test import override_settings
 from django_webtest import DjangoTestApp
 from pdfminer.high_level import extract_text
 
 from vitrina.datasets.factories import DatasetFactory, ContactFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
@@ -26,7 +27,7 @@ from vitrina.smart_contracts.models import (
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
-from tests.smart_contracts.constants import SIGNER1_FULL_NAME, SIGNER2_FULL_NAME
+from tests.smart_contracts.constants import SIGNER1_FULL_NAME
 
 pytestmark = pytest.mark.django_db
 test_contracts_dir = Path(__file__).parent / "files" / "test_contracts"
@@ -1995,3 +1996,171 @@ class TestAgreementSign:
 
         agreement.refresh_from_db()
         assert agreement.status == AgreementStatuses.INITIATED
+
+
+class TestAgreementFileDownload:
+    def test_cannot_download_file_if_unauthorized(
+        self, app: DjangoTestApp, agreement_pdf: Path,
+    ):
+        assignee = OrganizationFactory()
+        assigner = OrganizationFactory()
+
+        agreement = AgreementFactory(
+            assignee=assignee,
+            assigner=assigner,
+            project=ProjectFactory(organization=assignee),
+        )
+        agreement_file = AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        url = reverse("agreement-file-download", args=[agreement.project.pk, agreement.pk, agreement_file.pk])
+        response = app.get(url)
+
+        assert response.status_code == 302
+        assert response.location == f'{reverse("login")}?next={url}'
+
+    @pytest.mark.parametrize("user_field", ["is_staff", "is_superuser"])
+    def test_can_download_file_if_staff_or_superuser(
+        self, app: DjangoTestApp, agreement_pdf: Path, user_field: str,
+    ):
+        assignee = OrganizationFactory()
+        assigner = OrganizationFactory()
+
+        user = UserFactory(**{user_field: True})
+        app.set_user(user)
+
+        agreement = AgreementFactory(
+            assignee=assignee,
+            assigner=assigner,
+            project=ProjectFactory(organization=assignee),
+        )
+        agreement_file = AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+        response = app.get(
+            reverse("agreement-file-download", args=[agreement.project.pk, agreement.pk, agreement_file.pk])
+        )
+
+        assert response.status_code == 200
+
+    @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
+    def test_can_download_file_if_assignee_or_assigner_organization_representative(
+       self, app: DjangoTestApp, agreement_pdf: Path, is_acting_user_assignee: bool,
+    ):
+        assignee = OrganizationFactory()
+        assigner = OrganizationFactory()
+
+        user = UserFactory()
+        app.set_user(user)
+        RepresentativeFactory(
+            user=user,
+            organization=assignee if is_acting_user_assignee else assigner,
+            role=Representative.COORDINATOR,
+            object_id=assignee.id if is_acting_user_assignee else assigner.id,
+            content_type=ContentType.objects.get_for_model(assignee),
+        )
+        agreement = AgreementFactory(
+            assignee=assignee,
+            assigner=assigner,
+            project=ProjectFactory(organization=assignee),
+        )
+        agreement_file = AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+
+        response = app.get(
+            reverse("agreement-file-download", args=[agreement.project.pk, agreement.pk, agreement_file.pk])
+        )
+
+        assert response.status_code == 200
+
+    def test_raise_404_if_agreement_file_does_not_exist(self, app: DjangoTestApp):
+        assignee = OrganizationFactory()
+        assigner = OrganizationFactory()
+
+        user = UserFactory()
+        app.set_user(user)
+        RepresentativeFactory(
+            user=user,
+            organization=assignee,
+            role=Representative.COORDINATOR,
+            object_id=assignee.id,
+            content_type=ContentType.objects.get_for_model(assignee),
+        )
+        agreement = AgreementFactory(
+            assignee=assignee,
+            assigner=assigner,
+            project=ProjectFactory(organization=assignee),
+        )
+
+        response = app.get(
+            reverse("agreement-file-download", args=[agreement.project.pk, agreement.pk, uuid4()]),
+            expect_errors=True,
+        )
+
+        assert response.status_code == 404
+
+    def test_return_file_as_attachment_if_debug_true(
+        self, app: DjangoTestApp, agreement_pdf: Path
+    ):
+        debug = settings.DEBUG
+        settings.DEBUG = True
+        assignee = OrganizationFactory()
+        assigner = OrganizationFactory()
+
+        user = UserFactory()
+        app.set_user(user)
+        RepresentativeFactory(
+            user=user,
+            organization=assignee,
+            role=Representative.COORDINATOR,
+            object_id=assignee.id,
+            content_type=ContentType.objects.get_for_model(assignee),
+        )
+        agreement = AgreementFactory(
+            assignee=assignee,
+            assigner=assigner,
+            project=ProjectFactory(organization=assignee),
+        )
+        agreement_file = AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+
+        response = app.get(
+            reverse("agreement-file-download", args=[agreement.project.pk, agreement.pk, agreement_file.pk]),
+            expect_errors=True,
+        )
+
+        assert response.status_code == 200
+        assert "attachment" in response.headers.get("Content-Disposition")
+        assert response.headers.get("Content-Type") == "application/pdf"
+        assert not response.headers.get("X-Accel-Redirect")
+
+        settings.DEBUG = debug
+
+    def test_return_file_path_as_x_accel_redirect_header_if_debug_false(
+        self, app: DjangoTestApp, agreement_pdf: Path
+    ):
+        debug = settings.DEBUG
+        settings.DEBUG = False
+        assignee = OrganizationFactory()
+        assigner = OrganizationFactory()
+
+        user = UserFactory()
+        app.set_user(user)
+        RepresentativeFactory(
+            user=user,
+            organization=assignee,
+            role=Representative.COORDINATOR,
+            object_id=assignee.id,
+            content_type=ContentType.objects.get_for_model(assignee),
+        )
+        agreement = AgreementFactory(
+            assignee=assignee,
+            assigner=assigner,
+            project=ProjectFactory(organization=assignee),
+        )
+        agreement_file = AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
+
+        response = app.get(
+            reverse("agreement-file-download", args=[agreement.project.pk, agreement.pk, agreement_file.pk]),
+            expect_errors=True,
+        )
+
+        assert response.status_code == 200
+        assert "attachment" in response.headers.get("Content-Disposition")
+        assert response.headers.get("X-Accel-Redirect")
+
+        settings.DEBUG = debug

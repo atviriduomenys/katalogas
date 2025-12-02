@@ -355,7 +355,8 @@ class BaseResourceForm(TranslatableModelForm):
                     )
                     % {"expected": self.organization.name, "whitelisted": ", ".join(whitelisted)}
                     if whitelisted
-                    else _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": self.organization.name}
+                    else _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“")
+                    % {"expected": self.organization.name}
                 )
                 raise ValidationError(message)
 

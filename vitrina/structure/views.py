@@ -120,36 +120,36 @@ class DatasetStructureMixin(StructureMixin):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         version_id = kwargs.get("version_id")
         if version_id is not None:
-            self.metadata_version_id = get_object_or_404(
+            self.metadata_version = get_object_or_404(
                 _Version,
                 pk=version_id,
                 dataset=self.dataset,
-            ).pk
+            )
         else:
-            self.metadata_version_id = None
+            self.metadata_version = None
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.dataset, Action.VIEW)
         if self.can_manage_structure:
             self.models = (
-                Model.objects.filter(dataset=self.dataset, metadata_version_id=self.metadata_version_id)
+                Model.objects.filter(dataset=self.dataset, metadata_version=self.metadata_version)
                 .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
                 .order_by("metadata__name")
             )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
-                .filter(dataset=self.dataset, access__gte=Metadata.PUBLIC, metadata_version_id=self.metadata_version_id)
+                .filter(dataset=self.dataset, access__gte=Metadata.PUBLIC, metadata_version=self.metadata_version)
                 .filter(Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True))
                 .order_by("metadata__name")
             )
         return super().dispatch(request, *args, **kwargs)
 
     def get_structure_url(self):
-        if self.metadata_version_id:
+        if self.metadata_version:
             return reverse(
                 "dataset-structure",
-                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version_id},
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk},
             )
         else:
             return reverse(
@@ -166,7 +166,7 @@ class DatasetStructureMixin(StructureMixin):
                 kwargs={
                     "pk": self.dataset.pk,
                     "model": self.models[0].name,
-                    "version_id": self.models[0].metadata_version_id,
+                    "version_id": self.models[0].metadata_version.pk,
                 },
             )
         return None

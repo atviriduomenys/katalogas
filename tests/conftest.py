@@ -6,6 +6,7 @@ import io
 
 import pytest
 from django.apps import apps
+from django.conf import settings
 from django.core.management import call_command
 from pprintpp import pprint as pp
 from pytest_django.lazy_django import skip_if_no_django
@@ -143,3 +144,9 @@ def mock_translation_service():
 
         def raise_for_status(self) -> None:
             pass
+
+
+@pytest.fixture(autouse=True, scope="session")
+def disable_cms_toolbar():
+    settings.CMS_TOOLBAR_ANONYMOUS_ON = False
+    settings.CMS_TOOLBAR_ENABLED = False

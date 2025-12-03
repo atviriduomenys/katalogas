@@ -819,6 +819,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
             context["dataset_id"] = self.object.id
             context["is_dev_features_enabled"] = settings.IS_DEV_FEATURES_ENABLED
 
+        context["total_count"] = len(context["data"])
         rendered_template = render_to_string(self.template_name, context)
 
         return JsonResponse({"rendered_template": rendered_template, "data_count": data_count})
@@ -1055,7 +1056,12 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
             self.models = (
                 Model.objects.filter(dataset=self.object).filter(visibility_filter_model).order_by("metadata__name")
             )
-            self.props = self.model.get_given_props().filter(visibility_filter_property)
+            self.props = (
+                self.model.get_given_props()
+                .filter(visibility_filter_property)
+                .select_related("metadata")
+                .filter(metadata__isnull=False)
+            )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))

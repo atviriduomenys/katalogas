@@ -5,7 +5,6 @@ from django.db import migrations
 
 
 def populate_version_field_for_models(apps, schema_editor):
-    Model = apps.get_model("vitrina_structure", "Model")
     Metadata = apps.get_model("vitrina_structure", "Metadata")
     Enum = apps.get_model("vitrina_structure", "Enum")
     EnumItem = apps.get_model("vitrina_structure", "EnumItem")
@@ -14,46 +13,34 @@ def populate_version_field_for_models(apps, schema_editor):
     Base = apps.get_model("vitrina_structure", "Base")
     ContentType = apps.get_model("contenttypes", "ContentType")
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
-    DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
     Comment = apps.get_model("vitrina_comments", "Comment")
-
-    enum_updates = {}
-    param_updates = {}
-    base_updates = {}
 
     for metadata_row in Metadata.objects.all():
         if not metadata_row.metadata_version:
             continue
 
-        ct = ContentType.objects.get(id=metadata_row.content_type_id)
+        ct = ContentType.objects.filter(id=metadata_row.content_type_id).first()
         content_type_model = apps.get_model(ct.app_label, ct.model)
 
         if content_type_model == Dataset or content_type_model == Comment:
             continue
 
-        try:
-            content_type_object = content_type_model.objects.get(id=metadata_row.object_id)
-        except content_type_model.DoesNotExist:
-            continue
+        content_type_object = content_type_model.objects.filter(id=metadata_row.object_id).first()
 
-        content_type_model.objects.filter(id=content_type_object.id).update(
-            metadata_version=metadata_row.metadata_version
-        )
+        if content_type_object:
+            content_type_model.objects.filter(id=content_type_object.id).update(
+                metadata_version=metadata_row.metadata_version
+            )
 
-        if content_type_model == EnumItem:
-            enum_updates[content_type_object.enum_id] = metadata_row.metadata_version
-        if content_type_model == ParamItem:
-            param_updates[content_type_object.param_id] = metadata_row.metadata_version
+            if content_type_model == EnumItem:
+                Enum.objects.filter(id=content_type_object.enum_id).update(
+                    metadata_version=metadata_row.metadata_version
+                )
 
-
-    for enum_id, version in enum_updates.items():
-        Enum.objects.filter(id=enum_id).update(metadata_version=version)
-
-    for param_id, version in param_updates.items():
-        Param.objects.filter(id=param_id).update(metadata_version=version)
-
-    for base_id, version in base_updates.items():
-        Base.objects.filter(id=base_id).update(metadata_version=version)
+            if content_type_model == ParamItem:
+                Param.objects.filter(id=content_type_object.param_id).update(
+                    metadata_version=metadata_row.metadata_version
+                )
 
 
 class Migration(migrations.Migration):

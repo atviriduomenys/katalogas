@@ -344,21 +344,28 @@ class BaseResourceForm(TranslatableModelForm):
 
             if any(ch.isupper() for ch in name):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
-            whitelisted = self.organization.whitelisted_names
-            if not name.startswith(self.organization.name) and not (
-                whitelisted and any(name.startswith(prefix) for prefix in whitelisted)
-            ):
-                message = (
-                    _(
-                        "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ "
-                        "arba vieno iš organizacijos leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
-                    )
-                    % {"expected": self.organization.name, "whitelisted": ", ".join(whitelisted)}
-                    if whitelisted
-                    else _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“")
-                    % {"expected": self.organization.name}
-                )
+            organization = self.organization or dataset_instance.organization
+            whitelisted = organization.whitelisted_names or []
+            main_prefix = organization.name
+            allowed_prefixes = [main_prefix] + list(whitelisted)
+            matched_prefix = None
+            for prefix in allowed_prefixes:
+                if name.startswith(prefix):
+                    matched_prefix = prefix
+                    break
+            if not matched_prefix:
+                if whitelisted:
+                    message = _(
+                        "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
+                    ) % {"expected": main_prefix, "whitelisted": ", ".join(allowed_prefixes)}
+                else:
+                    message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": main_prefix}
+
                 raise ValidationError(message)
+            suffix = name[len(matched_prefix):]
+
+            if not suffix:
+                raise ValidationError(_("Po „%(prefix)s“ turi būti bent vienas simbolis.") % {"prefix": matched_prefix})
 
             metadata_qs = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Dataset),

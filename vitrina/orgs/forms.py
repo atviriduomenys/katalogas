@@ -225,6 +225,8 @@ class OrganizationBaseForm(ModelForm):
 
     def clean_name(self):
         name = self.cleaned_data.get("name")
+        if self.instance and self.instance.pk:
+            return name
         if name:
             if not name.islower():
                 raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))

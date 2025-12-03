@@ -40,7 +40,7 @@
                                     <small class="has-text-weight-normal is-italic">
                                         {% if prop.ref_model %}
                                             <a href="{{ prop.ref_model.get_data_url }}">{{ prop.ref_model.name }}</a>
-                                        {% else %}
+                                        {% elif prop %}
                                             {{ prop.metadata.first.type }}
                                         {% endif %}
                                     </small>

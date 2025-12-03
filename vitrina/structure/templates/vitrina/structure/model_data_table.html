@@ -133,7 +133,7 @@
                                 <small class="has-text-weight-normal is-italic">
                                     {% if prop.ref_model %}
                                         <a href="{{ prop.ref_model.get_data_url }}">{{ prop.ref_model.name }}</a>
-                                    {% else %}
+                                    {% elif prop %}
                                         {{ prop.metadata.first.type }}
                                     {% endif %}
                                 </small>
@@ -189,11 +189,13 @@
                                             {% translate "Slėpti" %}
                                         </button>
                                     </div>
-                                    <div class="buttons is-right">
-                                        <button id="{{ col }}_filter_id" class="button is-primary is-small is-fixed-length" onclick="filter('{{ col }}', '{{ prop.metadata.first.type }}')">
-                                            {% translate "Filtruoti" %}
-                                        </button>
-                                    </div>
+                                    {% if prop %}
+                                        <div class="buttons is-right">
+                                            <button id="{{ col }}_filter_id" class="button is-primary is-small is-fixed-length" onclick="filter('{{ col }}', '{{ prop.metadata.first.type }}')">
+                                                {% translate "Filtruoti" %}
+                                            </button>
+                                        </div>
+                                    {% endif %}
                                 </div>
                             </div>
 

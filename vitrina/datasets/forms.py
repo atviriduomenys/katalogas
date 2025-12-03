@@ -362,7 +362,7 @@ class BaseResourceForm(TranslatableModelForm):
                     message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": main_prefix}
 
                 raise ValidationError(message)
-            suffix = name[len(matched_prefix):]
+            suffix = name[len(matched_prefix) :]
 
             if not suffix:
                 raise ValidationError(_("Po „%(prefix)s“ turi būti bent vienas simbolis.") % {"prefix": matched_prefix})

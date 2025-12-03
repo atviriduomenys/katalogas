@@ -209,9 +209,7 @@ class DatasetStructureView(
 
         if self.metadata_version:
             self.breadcrumb_title = (
-                self.metadata_version.external_version
-                if self.metadata_version.external_version
-                else _("Juodraštis")
+                self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
             )
 
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
@@ -377,9 +375,7 @@ class ModelStructureView(
 
     def get_breadcrumbs(self) -> List[Crumb]:
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
         crumbs = self.dataset_hierarchy(self.object, include_home=True, make_current=False)
         crumbs.append(
@@ -388,7 +384,7 @@ class ModelStructureView(
                 url=reverse("dataset-structure", kwargs={"pk": self.object.pk, "version_id": self.metadata_version.pk}),
             )
         )
-        crumbs.append(Crumb(title=self.model.name, url=None, is_current=True))
+        crumbs.append(Crumb(title=self.model.title or self.model.name, url=None, is_current=True))
         return crumbs
 
     def get_context_data(self, **kwargs):
@@ -644,9 +640,9 @@ class PropertyStructureView(
         )
         allowed_view_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(
-                dataset=self.object, metadata_version=self.metadata_version
-            ).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.object, metadata_version=self.metadata_version).order_by(
+                "metadata__name"
+            )
             self.props = self.model.get_given_props().all().order_by("metadata__name")
         else:
             self.models = (
@@ -670,9 +666,7 @@ class PropertyStructureView(
 
     def get_breadcrumbs(self) -> List[Crumb]:
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
 
         crumbs = self.dataset_hierarchy(self.object, include_home=True, make_current=False)
@@ -684,14 +678,14 @@ class PropertyStructureView(
         )
         crumbs.append(
             Crumb(
-                title=self.model.name,
+                title=self.model.title or self.model.name,
                 url=reverse(
                     "model-structure",
                     kwargs={"pk": self.object.pk, "version_id": self.metadata_version.pk, "model": self.model.name},
                 ),
             )
         )
-        crumbs.append(Crumb(title=self.property.title, url=None, is_current=True))
+        crumbs.append(Crumb(title=self.property.title or self.property.name, url=None, is_current=True))
         return crumbs
 
     def get_context_data(self, **kwargs):
@@ -1054,9 +1048,7 @@ class ModelDataView(
 
     def get_breadcrumbs(self) -> List[Crumb]:
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
         crumbs = self.dataset_hierarchy(self.object, include_home=True)
         crumbs.append(
@@ -1067,7 +1059,7 @@ class ModelDataView(
         )
         crumbs.append(
             Crumb(
-                title=self.model.name,
+                title=self.model.title or self.model.name,
                 url=reverse(
                     "model-structure",
                     kwargs={"pk": self.object.pk, "version_id": self.metadata_version.pk, "model": self.model.name},
@@ -1555,9 +1547,7 @@ class GetAllApiView(ApiView):
 
     def get_breadcrumbs(self) -> List[Crumb]:
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
         crumbs = super().dataset_hierarchy(self.object, include_home=True, make_current=False)
         crumbs.append(
@@ -1568,7 +1558,7 @@ class GetAllApiView(ApiView):
         )
         crumbs.append(
             Crumb(
-                title=self.model.name,
+                title=self.model.title or self.model.name,
                 url=reverse(
                     "model-structure",
                     kwargs={"pk": self.object.pk, "version_id": self.metadata_version.pk, "model": self.model.name},
@@ -1626,9 +1616,7 @@ class GetOneApiView(ApiView):
 
     def get_breadcrumbs(self) -> List[Crumb]:
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
         crumbs = super().dataset_hierarchy(self.object, include_home=True, make_current=False)
         crumbs.append(
@@ -1639,7 +1627,7 @@ class GetOneApiView(ApiView):
         )
         crumbs.append(
             Crumb(
-                title=self.model.name,
+                title=self.model.title or self.model.name,
                 url=reverse(
                     "model-structure",
                     kwargs={"pk": self.object.pk, "version_id": self.metadata_version.pk, "model": self.model.name},
@@ -1688,9 +1676,7 @@ class ChangesApiView(ApiView):
 
     def get_breadcrumbs(self) -> List[Crumb]:
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
         crumbs = super().dataset_hierarchy(self.object, include_home=True, make_current=False)
         crumbs.append(
@@ -1701,7 +1687,7 @@ class ChangesApiView(ApiView):
         )
         crumbs.append(
             Crumb(
-                title=self.model.name,
+                title=self.model.title or self.model.name,
                 url=reverse(
                     "model-structure",
                     kwargs={"pk": self.object.pk, "version_id": self.metadata_version.pk, "model": self.model.name},
@@ -1789,9 +1775,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
 
     def get_context_data(self, **kwargs):
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
 
         context = super().get_context_data(**kwargs)
@@ -1905,9 +1889,7 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
 
     def get_context_data(self, **kwargs):
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Galimos reikšmės redagavimas")
@@ -2026,9 +2008,7 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
 
     def get_context_data(self, **kwargs):
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
 
         context = super().get_context_data(**kwargs)
@@ -2088,9 +2068,9 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
 
         # Filter by version?
         if has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset):
-            self.models = Model.objects.filter(
-                dataset=self.dataset, metadata_version=self.metadata_version
-            ).order_by("metadata__name")
+            self.models = Model.objects.filter(dataset=self.dataset, metadata_version=self.metadata_version).order_by(
+                "metadata__name"
+            )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -2105,9 +2085,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         if not self.metadata_version:
-            new_draft_version = _Version.objects.create(
-                dataset=self.dataset, status=VersionStatus.DRAFT
-            )
+            new_draft_version = _Version.objects.create(dataset=self.dataset, status=VersionStatus.DRAFT)
             self.metadata_version = new_draft_version
 
         model = Model.objects.create(
@@ -2383,19 +2361,18 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
 
     def get_breadcrumbs(self) -> List[Crumb]:
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
         crumbs = self.dataset_hierarchy(self.dataset, include_home=True)
         crumbs.append(
             Crumb(
-                title=structure_title, url=reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version.pk])
+                title=structure_title,
+                url=reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version.pk]),
             )
         )
         crumbs.append(
             Crumb(
-                title=self.model_obj.name,
+                title=self.model_obj.title or self.model_obj.name,
                 url=reverse("model-structure", args=[self.dataset.pk, self.metadata_version.pk, self.model_obj.name]),
             )
         )
@@ -2500,18 +2477,17 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
     def get_breadcrumbs(self) -> List[Crumb]:
         crumbs = self.dataset_hierarchy(dataset=self.dataset)
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
         crumbs.append(
             Crumb(
-                title=structure_title, url=reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version.pk])
+                title=structure_title,
+                url=reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version.pk]),
             )
         )
         crumbs.append(
             Crumb(
-                title=self.model_obj.title,
+                title=self.model_obj.title or self.model_obj.name,
                 url=reverse("model-structure", args=[self.dataset.pk, self.metadata_version.pk, self.model_obj.name]),
             )
         )
@@ -2622,9 +2598,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
 
     def get_breadcrumbs(self) -> List[Crumb]:
         structure_title = (
-            self.metadata_version.external_version
-            if self.metadata_version.external_version
-            else _("Juodraštis")
+            self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
         )
         crumbs = self.dataset_hierarchy(self.dataset, include_home=True)
         crumbs.append(
@@ -2942,7 +2916,11 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter = Q(metadata__visibility__in=allowed_visibilities) | Q(metadata__visibility__isnull=True)
         if self.can_manage_structure:
-            self.models = Model.objects.filter(dataset=self.object).filter(visibility_filter, metadata_version=self.metadata_version).order_by("metadata__name")
+            self.models = (
+                Model.objects.filter(dataset=self.object)
+                .filter(visibility_filter, metadata_version=self.metadata_version)
+                .order_by("metadata__name")
+            )
         else:
             self.models = (
                 Model.objects.annotate(access=Max("model_properties__metadata__access"))
@@ -2981,7 +2959,9 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def get_structure_url(self):
         if self.metadata_version:
-            return reverse("dataset-structure", kwargs={"pk": self.kwargs.get("pk"), "version_id": self.metadata_version.pk})
+            return reverse(
+                "dataset-structure", kwargs={"pk": self.kwargs.get("pk"), "version_id": self.metadata_version.pk}
+            )
         else:
             return reverse("dataset-structure-no-version", kwargs={"pk": self.kwargs.get("pk")})
 
@@ -2992,7 +2972,7 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
                 kwargs={
                     "pk": self.kwargs.get("pk"),
                     "model": self.models[0].name,
-                    "version_id": self.metadata_version.pk
+                    "version_id": self.metadata_version.pk,
                 },
             )
         elif self.models and self.models[0].name and not self.metadata_version:

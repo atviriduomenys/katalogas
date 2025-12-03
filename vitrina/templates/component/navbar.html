@@ -111,7 +111,6 @@
                             {% for language in languages %}
                                 <form action="{% url 'set_language' %}" method="post" id="languageChange{{ language.code }}">
                                     {% csrf_token %}
-                                    <input name="next" type="hidden" value="{{ redirect_to }}">
                                     <input name="language" type="hidden" value="{{ language.code }}">
                                 </form>
                                 <a href="#" rel="nofollow" class="navbar-item" onclick="document.getElementById('languageChange{{ language.code }}').submit();">

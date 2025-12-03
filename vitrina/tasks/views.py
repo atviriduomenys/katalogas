@@ -238,6 +238,7 @@ class AssignTaskView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["task"] = self.task
+        context["current_title"] = _("Užduoties priskyrimas")
         return context
 
     def post(self, request, *args, **kwargs):

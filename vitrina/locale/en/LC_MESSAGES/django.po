@@ -3218,10 +3218,9 @@ msgstr "API key will be shown only one time, so you must copy it. Created key:"
 msgid "Kurti klientą"
 msgstr "Create client"
 
-#, fuzzy, python-brace-format
-#| msgid "Klientas \"{0}\" sukurtas sėkmingai"
+#, python-brace-format
 msgid "Klientas \"{0}\" sukurtas sėkmingai."
-msgstr "Client \"{0}\" created successfully"
+msgstr "Client \"{0}\" created successfully."
 
 #, python-brace-format
 msgid "Kliento raktas - {0}. Butinai išsisaugokite raktą, jis nebebus rodomas!"
@@ -4944,6 +4943,9 @@ msgstr "All tasks"
 
 msgid "Užduoties uždarymas"
 msgstr "Close task"
+
+msgid "Užduoties priskyrimas"
+msgstr "Assign task"
 
 msgid "VIISP API Klaida"
 msgstr "VIISP API error"

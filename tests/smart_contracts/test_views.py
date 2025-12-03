@@ -4,7 +4,6 @@ from pathlib import Path
 from uuid import uuid4
 
 import pytest
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.files.base import ContentFile
 from django.urls import reverse

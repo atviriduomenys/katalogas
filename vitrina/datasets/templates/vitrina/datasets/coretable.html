@@ -542,7 +542,8 @@
                 <i class="fas fa-info-circle"></i>
             </span>
         </th>
-        <td>{% if harvested %}
+        <td>
+            {% if harvested %}
                 {% if dataset.useLimitation %}
                     {% translate "Naudojimo limitas" %}: {{ dataset.useLimitation }}<br>
                 {% endif %}
@@ -555,8 +556,6 @@
                 {% if dataset.otherConstraints %}
                     {% translate "Kiti apribojimai" %}: {{ dataset.otherConstraints }}
                 {% endif %}
-            {% else %}
-                {{ dataset.distributionConditions }}
             {% endif %}
         </td>
     </tr>

@@ -3456,22 +3456,23 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
                     old_to_new_metadata_object_map[old_related_instance] = new_related_instance
 
-                    # MetadataVersion.objects.create(
-                    #     metadata=meta,
-                    #     version=self.new_version,
-                    #     name=meta.name if meta.name else None,
-                    #     type=meta.type if meta.type else None,
-                    #     required=meta.required,
-                    #     unique=meta.unique,
-                    #     type_args=meta.type_args if meta.type_args else None,
-                    #     ref=meta.ref if meta.ref else None,
-                    #     source=meta.source if meta.source else None,
-                    #     prepare=meta.prepare if meta.prepare else None,
-                    #     level_given=meta.level_given,
-                    #     access=meta.access,
-                    #     base=meta.object.base if isinstance(meta.object, Model) else None,
-                    #     status=meta.status if meta.status else None,
-                    # )
+                    # TODO: remove and calculate diff by using metadata table
+                    MetadataVersion.objects.create(
+                        metadata=new_metadata_instance,
+                        version=self.new_version,
+                        name=meta.name if meta.name else None,
+                        type=meta.type if meta.type else None,
+                        required=meta.required,
+                        unique=meta.unique,
+                        type_args=meta.type_args if meta.type_args else None,
+                        ref=meta.ref if meta.ref else None,
+                        source=meta.source if meta.source else None,
+                        prepare=meta.prepare if meta.prepare else None,
+                        level_given=meta.level_given,
+                        access=meta.access,
+                        base=meta.object.base if isinstance(meta.object, Model) else None,
+                        status=meta.status if meta.status else None,
+                    )
 
             recursively_created_fields = old_to_new_metadata_object_map
 
@@ -3503,6 +3504,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     deeper_new_related_object.pk = None
                     deeper_new_related_object.metadata_version = self.new_version
 
+                    # Edge case for enums and params
                     if hasattr(deeper_new_related_object, 'content_type_id'):
                         related_model = deeper_new_related_object.content_type.model_class()
                         if related_model in [Property, Model, DatasetDistribution]:

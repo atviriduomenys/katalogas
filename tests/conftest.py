@@ -60,16 +60,19 @@ def _haystack_marker(request):
 
 
 @pytest.fixture(scope="session", autouse=True)
-def temp_media_root(tmp_path_factory):
-    """Use a temporary directory for MEDIA_ROOT during tests."""
+def set_test_settings(tmp_path_factory):
+    """Change django settings for tests"""
     from django.conf import settings
 
+    # Change MEDIA_ROOT directories to temporary directories
     media_dir = tmp_path_factory.mktemp("media")
     settings.MEDIA_ROOT = str(media_dir)
 
     internal_media_dir = tmp_path_factory.mktemp("internal-media")
     settings.INTERNAL_MEDIA_ROOT = str(internal_media_dir)
-    return media_dir
+
+    # Disable CMS toolbar in tests
+    settings.CMS_TOOLBAR_HIDE = True
 
 
 @pytest.fixture(autouse=True)

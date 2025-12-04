@@ -1,4 +1,6 @@
-from django.http import HttpResponse
+from django.conf import settings
+from django.core.handlers.wsgi import WSGIRequest
+from django.http import HttpResponse, HttpResponseBase, Http404
 from django.views import View
 from django.views.generic import TemplateView
 from django.urls import reverse
@@ -153,6 +155,11 @@ class FakeVIISPCompleteLoginView(LoginView):
     template_name = "vitrina/viisp/fake_viisp_form.html"
     form_class = FakeViispForm
     redirect_authenticated_user = True
+
+    def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
+        if settings.DEBUG:
+            return super().dispatch(request, *args, **kwargs)
+        raise Http404()
 
     def form_valid(self, form) -> HttpResponse:
         user: User = form.get_user()

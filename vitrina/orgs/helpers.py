@@ -1,4 +1,6 @@
 from typing import Union
+
+from django.core.exceptions import ValidationError
 from slugify import slugify
 from functools import partial
 
@@ -6,8 +8,20 @@ from django.utils.translation import gettext_lazy as _
 from rest_framework.request import Request
 
 from vitrina.classifiers.models import AreaOfManagement
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, WhitelistedCodeName
 from vitrina.users.models import User
+
+
+def validate_global_uniqueness(value, instance=None):
+    org_qs = Organization.objects.all()
+    code_qs = WhitelistedCodeName.objects.all()
+    if instance:
+        if isinstance(instance, Organization):
+            org_qs = org_qs.exclude(pk=instance.pk)
+        elif isinstance(instance, WhitelistedCodeName):
+            code_qs = code_qs.exclude(pk=instance.pk)
+    if org_qs.filter(name__iexact=value).exists() or code_qs.filter(code_name__iexact=value).exists():
+        raise ValidationError(_("Toks Organizacijos kodinis pavadinimas jau egzistuoja."))
 
 
 def generate_dataset_prefix(organization_name: str, organization_kind: Organization.ORGANIZATION_KINDS) -> str:
@@ -38,10 +52,9 @@ def get_or_create_parent_org(obj: Union[AreaOfManagement, int]) -> Organization:
 
     parent_org: Organization = Organization.objects.filter(title=jurisdiction.name_lt).first()
     if not parent_org:
-        name = generate_dataset_prefix(jurisdiction.name_lt, jurisdiction.name_lt)
         parent_org = Organization.add_root(
             title=jurisdiction.name_lt,
-            name=name,
+            name=jurisdiction.name_lt.lower(),
             publisher=False,
             is_public=True,
             jurisdiction=jurisdiction,

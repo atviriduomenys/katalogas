@@ -19,6 +19,7 @@ from vitrina.orgs.forms import (
     TemplateForm,
     AdminPublisherOrganizationForm,
     AdminPublisherAssignedOrganizationForm,
+    WhitelistedCodeNameInlineForm,
 )
 from vitrina.orgs.models import Representative, Template, WhitelistedCodeName
 
@@ -52,10 +53,20 @@ class RootOrganizationFilter(admin.SimpleListFilter):
 
 class WhitelistedCodeNameInline(admin.TabularInline):
     model = WhitelistedCodeName
+    form = WhitelistedCodeNameInlineForm
     extra = 1
     fields = ["code_name"]
     verbose_name = "Leistinas kodinis pavadinimas"
     verbose_name_plural = "Leistini kodiniai pavadinimai"
+
+    def has_add_permission(self, request, obj=None):
+        return request.user.is_staff or request.user.is_superuser
+
+    def has_change_permission(self, request, obj=None):
+        return request.user.is_staff or request.user.is_superuser
+
+    def has_delete_permission(self, request, obj=None):
+        return request.user.is_staff or request.user.is_superuser
 
 
 class OrganizationAdmin(VersionAdmin, TreeAdmin):

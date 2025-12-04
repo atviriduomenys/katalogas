@@ -2932,6 +2932,9 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["selected_version"] = self.metadata_version
+        context["versions"] = _Version.objects.filter(dataset=self.object).order_by("version")
+        context["dataset"] = self.object
         context["can_view_members"] = has_perm(
             self.request.user,
             Action.VIEW,

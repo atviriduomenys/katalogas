@@ -260,7 +260,7 @@ class Model(models.Model):
         if self.name:
             return reverse(
                 "model-structure",
-                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.metadata_version_id},
+                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.metadata_version.pk},
             )
         return None
 
@@ -268,14 +268,14 @@ class Model(models.Model):
         if self.name:
             return reverse(
                 "model-data",
-                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.metadata_version_id},
+                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.metadata_version.pk},
             )
         return None
 
     def get_api_url(self):
         if self.name:
             return reverse(
-                "getall-api", kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version_id, "model": self.name}
+                "getall-api", kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk, "model": self.name}
             )
         return None
 
@@ -364,7 +364,7 @@ class Property(models.Model):
                     "pk": self.model.dataset.pk,
                     "model": self.model.name,
                     "prop": self.name,
-                    "version_id": self.metadata_version_id,
+                    "version_id": self.metadata_version.pk,
                 },
             )
         return None

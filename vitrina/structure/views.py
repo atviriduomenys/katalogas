@@ -3321,7 +3321,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.metadata_version_id = get_object_or_404(_Version, pk=kwargs.get("version_id")).pk
+        self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -3335,7 +3335,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["dataset"] = self.dataset
-        context["version_id"] = self.metadata_version_id
+        context["version_id"] = self.metadata_version.pk
         return context
 
     def form_valid(self, form):
@@ -3427,7 +3427,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     status=meta.status if meta.status else None,
                 )
         # TODO after a new standalone version is created, this has to redirect to that one
-        return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version_id]))
+        return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version.pk]))
 
 
 class VersionListView(

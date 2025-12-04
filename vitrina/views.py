@@ -23,6 +23,7 @@ from vitrina.statistics.models import StatRoute
 from vitrina.users.models import User
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
+from vitrina.structure.models import Version as _Version
 
 
 def home(request):
@@ -118,6 +119,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context["history_url_versionable"] = self.populate_current_urls_with_version()
         context.update(
             {
                 "detail_url_name": self.get_detail_url_name(),
@@ -149,7 +151,6 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
             }
         )
         context["history"] = self._deduplicate_and_sort_history(context["history"])
-
         return context
 
     def _deduplicate_and_sort_history(self, history: list[dict]) -> list[dict]:
@@ -187,6 +188,22 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     def get_history_objects(self):
         return Version.objects.get_for_object(self.get_history_object()).order_by("-revision__date_created")
 
+    def populate_current_urls_with_version(self):
+        versions = _Version.objects.filter(dataset=self.object).all()
+        current_url = self.request.path
+        version_urls = []
+        if "version" in current_url:
+            url_segments = current_url.split("/")
+            version_id_segment = url_segments.index("version") + 1
+            for version in versions:
+                url_segments[version_id_segment] = str(version.pk)
+                url = "/".join(url_segments)
+                version_urls.append({
+                    "version": version,
+                    "url": url,
+                })
+
+        return version_urls
 
 class HistoryMixin:
     detail_url_name = None

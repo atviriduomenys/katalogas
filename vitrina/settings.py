@@ -188,6 +188,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django_otp.middleware.OTPMiddleware",
     "reversion.middleware.RevisionMiddleware",
+    "vitrina.middleware.AutoRevisionCommentMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",

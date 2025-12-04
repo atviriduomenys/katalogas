@@ -1,6 +1,11 @@
 import logging
 import requests
 from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL, TRANSLATION_REQUEST_TIMEOUT
+from dataclasses import dataclass, field, asdict
+from django.core.serializers.json import DjangoJSONEncoder
+import json
+from enum import StrEnum
+from typing import Any
 
 
 logger = logging.getLogger()
@@ -39,3 +44,38 @@ def translate_text(text: str, field_name: str = "") -> str | None:
     except Exception as e:
         logger.exception(f"Unexpected error during translation for {field_name}: {e}")
         return text
+
+
+class RevisionSource(StrEnum):
+    VIEW = "view"
+    ADMIN = "admin"
+    TASK = "task"
+
+
+@dataclass
+class RevisionComment:
+    source: RevisionSource
+    action: str | None = None
+    view: str | None = None
+    http_method: str | None = None
+    path: str | None = None
+    args: list[Any] = field(default_factory=list)
+    kwargs: dict[str, Any] = field(default_factory=dict)
+
+    def to_json(self) -> str:
+        data = asdict(self)
+        data["source"] = self.source.value
+        return json.dumps(data, cls=DjangoJSONEncoder)
+
+    @classmethod
+    def from_json(cls, raw: str) -> "RevisionComment | None":
+        try:
+            data = json.loads(raw)
+        except json.JSONDecodeError:
+            return None
+        source_value = data.get("source", RevisionSource.VIEW)
+        try:
+            data["source"] = RevisionSource(source_value)
+        except ValueError:
+            data["source"] = RevisionSource.VIEW
+        return cls(**data)

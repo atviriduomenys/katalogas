@@ -2,9 +2,10 @@ from django.contrib import admin
 from django.db.models import QuerySet
 from reversion.admin import VersionAdmin
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
+from vitrina.admin import JsonVersionAdmin
 
 
-class ProjectAdmin(VersionAdmin):
+class ProjectAdmin(JsonVersionAdmin):
     list_filter = ("status",)
     search_fields = ("title",)
     readonly_fields = ("organization",)

@@ -1,6 +1,16 @@
 from django.apps import AppConfig, apps
 import reversion
 from django.db.utils import OperationalError, ProgrammingError
+from django.db import models
+from django.core.exceptions import ImproperlyConfigured
+from fnmatch import fnmatch
+
+
+NOT_VERSIONED_MODELS = (
+    "vitrina.users.models.*",
+    "vitrina.cms.models.CmsAttachment",
+    ...
+)
 
 
 class ApiConfig(AppConfig):
@@ -18,8 +28,9 @@ class ApiConfig(AppConfig):
             for app_config in apps.get_app_configs():
                 if not app_config.name.startswith(project_prefix):
                     continue
-
-                for model in app_config.get_models():
+                
+                versioned_models: list[models.Model] = app_config.get_models()
+                for model in versioned_models:
                     if model._meta.proxy or not model._meta.managed:
                         continue
 

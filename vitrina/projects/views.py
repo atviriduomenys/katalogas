@@ -210,7 +210,7 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         super().form_valid(form)
         self.object = form.save(commit=True)
         self.object.save()
-        set_comment(Project.EDITED)
+        # set_comment(Project.EDITED)
         sub_ct = ContentType.objects.get_for_model(self.object)
         subs = Subscription.objects.filter(
             sub_type=Subscription.PROJECT,
@@ -237,6 +237,9 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
                     orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
                     sub_email_list = [org.email for org in orgs]
                 sub_email_list.append(sub.user.email)
+
+        from vitrina.structure.tasks import smthing
+        smthing.delay(self.object.pk, user_id=self.request.user.id)
         return HttpResponseRedirect(self.get_success_url())
 
     def get_context_data(self, **kwargs):
@@ -710,7 +713,7 @@ class ClientCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequi
         self.object.save()
         self.object.client_id, secret = OAuthClientManagement.create_oauth_client()
         self.object.save(update_fields=["client_id"])
-        reversion.set_comment(f"Sukurtas naujas klientas '{self.object}'")
+        # reversion.set_comment(f"Sukurtas naujas klientas '{self.object}'")
 
         success_message = _('Klientas "{0}" sukurtas sėkmingai.').format(self.object.name)
         messages.success(self.request, success_message)

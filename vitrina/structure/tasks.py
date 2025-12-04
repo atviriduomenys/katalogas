@@ -9,6 +9,8 @@ from spinta.core.enums import Mode
 from types import SimpleNamespace
 from uuid import UUID
 
+from vitrina.projects.models import Project
+
 
 @shared_task
 def validate_manifest_task(manifest_id: UUID) -> None:
@@ -31,3 +33,10 @@ def validate_manifest_task(manifest_id: UUID) -> None:
         manifest.error_message = logs
 
     manifest.save(update_fields=["validation_status", "error_message", "updated_at"])
+
+
+@shared_task
+def smthing(whatever: int):
+    prj = Project.objects.get(pk=whatever)
+    prj.title = "nustatyta per celery"
+    prj.save()

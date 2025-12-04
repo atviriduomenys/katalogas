@@ -2,51 +2,13 @@
 {% load i18n %}
 {% load util_tags %}
 
-
 {% block current_title %}
-    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <span>
-            {% if model.title %}
-                {{ model.title }}
-            {% else %}
-                {{ model.name }}
-            {% endif %}
-        </span>
-        <div class="dropdown is-hoverable">
-            <div class="dropdown-trigger">
-                <button class="button is-primary" aria-haspopup="true" aria-controls="dropdown-menu">
-                    <span>
-                        {% if not selected_version %}
-                            {% translate "Pasirinkite versiją" %}
-                        {% elif selected_version.external_version %}
-                            {% translate "Versija" %}: {{ selected_version.external_version }}
-                        {% else %}
-                            {% translate "Versija: Juodraštis" %}
-                        {% endif %}
-                    </span>
-                    <span class="icon is-small">
-                        <i class="fas fa-angle-down" aria-hidden="true"></i>
-                    </span>
-                </button>
-            </div>
-
-            <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                <div class="dropdown-content">
-                {% for version in versions %}
-                    <a href="{% url 'model-data' dataset.pk version.pk model.name %}" class="dropdown-item">
-                        {% if version.external_version %}
-                            {{ version.external_version }}
-                        {% else %}
-                            {% translate "Juodraštis"%}
-                        {% endif %}
-                    </a>
-                {% endfor %}
-                </div>
-            </div>
-        </div>
-    </div>
+    {% if model.title %}
+        {{ model.title }}
+    {% else %}
+        {{ model.name }}
+    {% endif %}
 {% endblock %}
-
 {% block parent_links %}
     {% include "component/breadcrumbs.html" %}
 {% endblock %}

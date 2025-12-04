@@ -1,49 +1,11 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block current_title %}
-    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <span>{% translate "Veiksmų istorija" %}</span>
-        {% if history_url_versionable %}
-            <div class="dropdown is-hoverable">
-                <div class="dropdown-trigger">
-                    <button class="button is-primary" aria-haspopup="true" aria-controls="dropdown-menu">
-                        <span>
-                            {% if not selected_version %}
-                                {% translate "Pasirinkite versiją" %}
-                            {% elif selected_version.external_version %}
-                                {% translate "Versija" %}: {{ selected_version.external_version }}
-                            {% else %}
-                                {% translate "Versija: Juodraštis" %}
-                            {% endif %}
-                        </span>
-                        <span class="icon is-small">
-                            <i class="fas fa-angle-down" aria-hidden="true"></i>
-                        </span>
-                    </button>
-                </div>
-
-                <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                    <div class="dropdown-content">
-                        {% for history_url_dict in history_url_versionable %}
-                            <a href="{{ history_url_dict.url }}" class="dropdown-item">
-                                {% if history_url_dict.version.external_version %}
-                                    {{ history_url_dict.version.external_version }}
-                                {% else %}
-                                    {% translate "Juodraštis" %}
-                                {% endif %}
-                            </a>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        {% endif %}
-    </div>
-{% endblock %}
+{% block current_title %}{% translate "Veiksmų istorija" %}{% endblock %}
 
 {% block content %}
 
-{% include tabs_template_name %}
+	{% include tabs_template_name %}
 
     <div class="columns">
         <div class="column is-three-quarters">

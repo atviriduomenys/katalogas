@@ -1072,8 +1072,6 @@ class ModelDataView(
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["is_data"] = True
-        context["selected_version"] = self.metadata_version
-        context["versions"] = _Version.objects.filter(dataset=self.object).order_by("version")
         context["dataset"] = self.object
         context["model"] = self.model
         context["models"] = self.models
@@ -1415,8 +1413,6 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
         context = super().get_context_data(**kwargs)
         context["is_api"] = True
         context["dataset"] = self.object
-        context["selected_version"] = self.metadata_version
-        context["api_url_versionable"] = self.populate_current_urls_with_version()
         context["model"] = self.model
         context["models"] = self.models
         context["can_view_members"] = has_perm(
@@ -1459,6 +1455,7 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
                 ),
             },
         }
+
         return context
 
     def get_structure_url(self):
@@ -1510,22 +1507,6 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
     def get_query(self):
         raise NotImplementedError
 
-    def populate_current_urls_with_version(self):
-        versions = _Version.objects.filter(dataset=self.object).all()
-        current_url = self.request.path
-        version_urls = []
-        if "version" in current_url:
-            url_segments = current_url.split("/")
-            version_id_segment = url_segments.index("version") + 1
-            for version in versions:
-                url_segments[version_id_segment] = str(version.pk)
-                url = "/".join(url_segments)
-                version_urls.append({
-                    "version": version,
-                    "url": url,
-                })
-
-        return version_urls
 
 class GetAllApiView(ApiView):
     def get_context_data(self, **kwargs):
@@ -2957,9 +2938,6 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
             Representative,
             self.object,
         )
-        context["selected_version"] = self.metadata_version
-        context["versions"] = _Version.objects.filter(dataset=self.object).order_by("version")
-        context["dataset"] = self.object
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
@@ -3109,9 +3087,6 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["selected_version"] = self.metadata_version
-        context["versions"] = _Version.objects.filter(dataset=self.object).order_by("version")
-        context["dataset"] = self.object
         context["can_view_members"] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -3247,9 +3222,6 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["selected_version"] = self.metadata_version
-        context["versions"] = _Version.objects.filter(dataset=self.object).order_by("version")
-        context["dataset"] = self.object
         context["can_view_members"] = has_perm(
             self.request.user,
             Action.VIEW,
@@ -3438,22 +3410,22 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                 meta.metadata_version = self.new_version
                 meta.save()
 
-                # MetadataVersion.objects.create(
-                #     metadata=meta,
-                #     version=self.new_version,
-                #     name=meta.name if meta.name else None,
-                #     type=meta.type if meta.type else None,
-                #     required=meta.required,
-                #     unique=meta.unique,
-                #     type_args=meta.type_args if meta.type_args else None,
-                #     ref=meta.ref if meta.ref else None,
-                #     source=meta.source if meta.source else None,
-                #     prepare=meta.prepare if meta.prepare else None,
-                #     level_given=meta.level_given,
-                #     access=meta.access,
-                #     base=meta.object.base if isinstance(meta.object, Model) else None,
-                #     status=meta.status if meta.status else None,
-                # )
+                MetadataVersion.objects.create(
+                    metadata=meta,
+                    version=self.new_version,
+                    name=meta.name if meta.name else None,
+                    type=meta.type if meta.type else None,
+                    required=meta.required,
+                    unique=meta.unique,
+                    type_args=meta.type_args if meta.type_args else None,
+                    ref=meta.ref if meta.ref else None,
+                    source=meta.source if meta.source else None,
+                    prepare=meta.prepare if meta.prepare else None,
+                    level_given=meta.level_given,
+                    access=meta.access,
+                    base=meta.object.base if isinstance(meta.object, Model) else None,
+                    status=meta.status if meta.status else None,
+                )
         # TODO after a new standalone version is created, this has to redirect to that one
         return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version.pk]))
 

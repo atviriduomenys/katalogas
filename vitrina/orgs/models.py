@@ -1,4 +1,3 @@
-from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -191,14 +190,6 @@ class Representative(models.Model):
             if organization in self.content_object.get_descendants():
                 return True
         return False
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        # save related datasets to update search index
-        Dataset = apps.get_model("vitrina_datasets", "Dataset")
-        if isinstance(self.content_object, Dataset):
-            self.content_object.save()
 
 
 class PublishedReport(models.Model):

@@ -353,9 +353,9 @@ class AgreementFileDownloadView(
 
         if settings.DEBUG:
             return FileResponse(open(agreement_file.file.path, "rb"), as_attachment=True)
-        else:
-            response = HttpResponse()
-            response["X-Accel-Redirect"] = f"/{agreement_file.file.url}"
-            response["Content-Disposition"] = f'attachment; filename="{agreement_file.file_name}"'
 
-            return response
+        response = HttpResponse()
+        response["X-Accel-Redirect"] = f"/{agreement_file.file.url}"
+        response["Content-Disposition"] = f'attachment; filename="{agreement_file.file_name}"'
+
+        return response

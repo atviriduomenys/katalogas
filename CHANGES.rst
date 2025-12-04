@@ -47,6 +47,18 @@ https://github.com/atviriduomenys/katalogas/issues/2075
 v 1.9 (2025-12-04)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2124
+
+- Adds new "internal media" directory for non public uploaded files. It works same way as Django media files, but uses `INTERNAL_MEDIA_ROOT` and `INTERNAL_MEDIA_URL` settings.
+- Adds new endpoint for downloading uploaded smart contract files. In production, file is returned via `X-Accel-Redirect` header
+- Additional Nginx configuration is needed:
+    ```
+    location /internal-static {
+        internal;
+        alias /internal-static;
+    }
+    ```
+
 Security improvements:
 
 - Added HTTP Strict Transport Security (HSTS) with 1-year max-age;

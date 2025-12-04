@@ -1,3 +1,4 @@
+import logging
 from django.contrib.contenttypes.models import ContentType
 from haystack.fields import (
     CharField,
@@ -14,7 +15,12 @@ from haystack.exceptions import NotHandled
 from haystack.indexes import SearchIndex, Indexable
 
 from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Representative
 from vitrina.requests.models import RequestObject, Request
+from vitrina.resources.models import DatasetDistribution
+
+
+logger = logging.getLogger(__name__)
 
 
 class DatasetIndex(SearchIndex, Indexable):
@@ -95,9 +101,108 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
         models.signals.post_save.connect(self.handle_save)
         models.signals.post_delete.connect(self.handle_delete)
 
+        models.signals.post_save.connect(self.handle_representative, sender=Representative)
+        models.signals.post_delete.connect(self.handle_representative, sender=Representative)
+
+        models.signals.post_save.connect(self.handle_distribution, sender=DatasetDistribution)
+        models.signals.post_delete.connect(self.handle_distribution, sender=DatasetDistribution)
+
     def teardown(self):
         models.signals.post_save.disconnect(self.handle_save)
         models.signals.post_delete.disconnect(self.handle_delete)
+
+        models.signals.post_save.disconnect(self.handle_representative, sender=Representative)
+        models.signals.post_delete.disconnect(self.handle_representative, sender=Representative)
+
+        models.signals.post_save.disconnect(self.handle_distribution, sender=DatasetDistribution)
+        models.signals.post_delete.disconnect(self.handle_distribution, sender=DatasetDistribution)
+
+    def handle_distribution(self, sender, instance, **kwargs):
+        if instance.dataset_id:
+            self._update_single_dataset(instance.dataset_id)
+
+    def handle_representative(self, sender, instance, **kwargs):
+        affected_datasets = self._get_affected_datasets(instance)
+        self._update_dataset_indexes(affected_datasets)
+
+    def _get_affected_datasets(self, representative):
+        dataset_ids = set()
+        dataset_ids.update(self._get_direct_datasets(representative))
+        dataset_ids.update(self._get_org_generic_fk_datasets(representative))
+        dataset_ids.update(self._get_org_direct_fk_datasets(representative))
+        return Dataset.objects.filter(pk__in=dataset_ids)
+
+    def _get_direct_datasets(self, representative):
+        dataset_ids = set()
+        dataset_ct = ContentType.objects.get_for_model(Dataset)
+
+        if representative.content_type_id == dataset_ct.id:
+            dataset_ids.add(representative.object_id)
+            try:
+                dataset = Dataset.objects.get(pk=representative.object_id)
+                dataset_ids.update(dataset.get_descendants().values_list("pk", flat=True))
+            except Dataset.DoesNotExist:
+                logger.warning(f"Dataset {representative.object_id} not found for representative {representative.pk}")
+
+        return dataset_ids
+
+    def _get_org_generic_fk_datasets(self, representative):
+        dataset_ids = set()
+
+        if representative.content_object and hasattr(representative.content_object, "get_descendants"):
+            try:
+                org_ids = {representative.object_id}
+                org_ids.update(representative.content_object.get_descendants().values_list("pk", flat=True))
+                dataset_ids.update(Dataset.objects.filter(organization_id__in=org_ids).values_list("pk", flat=True))
+            except Exception as e:
+                logger.exception("Failed getting Representative attached to an Organization via GenericFK: %s", e)
+
+        return dataset_ids
+
+    def _get_org_direct_fk_datasets(self, representative):
+        dataset_ids = set()
+
+        if representative.organization_id:
+            try:
+                org_ids = {representative.organization_id}
+                org_ids.update(representative.organization.get_descendants().values_list("pk", flat=True))
+                dataset_ids.update(Dataset.objects.filter(organization_id__in=org_ids).values_list("pk", flat=True))
+            except Exception as e:
+                logger.exception("Failed getting Representative organization field set (direct FK): %s", e)
+
+        return dataset_ids
+
+    def _update_dataset_indexes(self, datasets):
+        for dataset in datasets:
+            self._update_single_dataset_object(dataset)
+
+    def _update_single_dataset(self, dataset_id):
+        try:
+            dataset = Dataset.objects.get(pk=dataset_id)
+            self._update_single_dataset_object(dataset)
+        except Dataset.DoesNotExist:
+            logger.warning(f"Dataset {dataset_id} not found for index update")
+
+    def _update_single_dataset_object(self, dataset):
+        using_backends = self.connection_router.for_write(instance=dataset)
+        for using in using_backends:
+            try:
+                index = self.connections[using].get_unified_index().get_index(Dataset)
+                index.update_object(dataset, using=using)
+            except NotHandled:
+                pass
+
+    def _update_related_request_indexes(self, dataset, using):
+        try:
+            req_index = self.connections[using].get_unified_index().get_index(Request)
+            reqs = RequestObject.objects.filter(
+                content_type=ContentType.objects.get_for_model(dataset),
+                object_id=dataset.pk,
+            )
+            for req in reqs:
+                req_index.update_object(req.request, using=using)
+        except NotHandled:
+            pass
 
     def handle_save(self, sender, instance, **kwargs):
         using_backends = self.connection_router.for_write(instance=instance)
@@ -109,13 +214,7 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
                 if index.index_queryset().filter(pk=instance.pk):
                     index.update_object(instance, using=using)
                     if isinstance(instance, Dataset):
-                        req_index = self.connections[using].get_unified_index().get_index(Request)
-                        reqs = RequestObject.objects.filter(
-                            content_type=ContentType.objects.get_for_model(instance),
-                            object_id=instance.pk,
-                        )
-                        for req in reqs:
-                            req_index.update_object(req.request, using=using)
+                        self._update_related_request_indexes(instance, using)
                 else:
                     index.remove_object(instance, using=using)
 

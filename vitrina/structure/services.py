@@ -71,12 +71,8 @@ def create_structure_objects(structure: DatasetStructure, metadata_version: Vers
                     errors = state.errors
                 else:
                     if not metadata_version:
-                        max_version = (
-                            Version.objects.filter(dataset=structure.dataset).aggregate(max_version=Max("version"))[
-                                "max_version"
-                            ]
-                            or 0
-                        )
+                        latest_version = structure.dataset.latest_version()
+                        max_version = latest_version.version if latest_version else 0
 
                         metadata_version = Version.objects.create(
                             dataset=structure.dataset,

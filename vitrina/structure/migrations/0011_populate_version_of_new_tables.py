@@ -19,7 +19,7 @@ def populate_version_field_for_models(apps, schema_editor):
         ct = ContentType.objects.filter(id=metadata_row.content_type_id).first()
         content_type_model = apps.get_model(ct.app_label, ct.model)
 
-        if content_type_model == Dataset or content_type_model == Comment:
+        if content_type_model in (Dataset, Comment):
             continue
 
         content_type_object = content_type_model.objects.filter(id=metadata_row.object_id).first()

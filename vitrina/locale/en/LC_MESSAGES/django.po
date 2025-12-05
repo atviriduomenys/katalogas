@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-04 09:43+0200\n"
+"POT-Creation-Date: 2025-12-05 14:02+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1774,7 +1774,7 @@ msgid "Struktūros importas"
 msgstr "Structure import"
 
 msgid "Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."
-msgstr "Can not impport structure, when the version status is draft"
+msgstr "Can not import structure, when the version status is draft"
 
 msgid "Tvarkytojo pridėjimas"
 msgstr "Add manager"
@@ -4681,12 +4681,6 @@ msgstr "Export OpenAPI"
 msgid "Importuoti"
 msgstr "Import"
 
-msgid "Pasirinkite versiją"
-msgstr "Select a version."
-
-msgid "Versija: Juodraštis"
-msgstr "Version: Draft"
-
 msgid "Publikuoti versiją"
 msgstr "Publish version"
 
@@ -5093,6 +5087,12 @@ msgstr "Register request to open data"
 
 msgid "Statistika"
 msgstr "Statistics"
+
+msgid "Pasirinkite versiją"
+msgstr "Select a version"
+
+msgid "Versija: Juodraštis"
+msgstr "Version: Draft"
 
 msgid "Pradinis"
 msgstr "First"

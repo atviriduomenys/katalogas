@@ -546,3 +546,10 @@ LANGUAGE_COOKIE_SECURE = True
 OTP_EMAIL_TOKEN_VALIDITY = 600
 
 USE_OTP_VALIDATION = env.bool("USE_OTP_VALIDATION", default=True)
+
+# List model paths to exclude from versioning.
+# Supports exact model paths or wildcards.
+# Examples:
+#   "vitrina.users.models.*"          → excludes all models in that module
+#   "vitrina.comments.models.Comment" → excludes a specific model
+NOT_VERSIONED_MODELS = []

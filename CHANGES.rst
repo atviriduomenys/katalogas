@@ -11,6 +11,10 @@ https://github.com/atviriduomenys/katalogas/issues/2196
 - Return the mock for translation calling, vertimas.vu.lt is up and running, tests are breaking again, because the mock
   was removed
 
+https://github.com/atviriduomenys/katalogas/issues/1925
+
+- Remove `save()` from `Representative` model.
+- Update elasticsearch indices from `Representative` and `DataDistribution` model.
 Improvements:
 
 https://github.com/atviriduomenys/katalogas/issues/2040

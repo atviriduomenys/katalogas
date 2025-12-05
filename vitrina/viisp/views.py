@@ -157,9 +157,9 @@ class FakeVIISPCompleteLoginView(LoginView):
     redirect_authenticated_user = True
 
     def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
-        if settings.DEBUG:
-            return super().dispatch(request, *args, **kwargs)
-        raise Http404()
+        if not settings.DEBUG:
+            raise Http404()
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form) -> HttpResponse:
         user: User = form.get_user()

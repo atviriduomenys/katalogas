@@ -15,10 +15,7 @@ def populate_version_field_for_models(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     Comment = apps.get_model("vitrina_comments", "Comment")
 
-    for metadata_row in Metadata.objects.all():
-        if not metadata_row.metadata_version:
-            continue
-
+    for metadata_row in Metadata.objects.filter(metadata_version__isnull=False):
         ct = ContentType.objects.filter(id=metadata_row.content_type_id).first()
         content_type_model = apps.get_model(ct.app_label, ct.model)
 

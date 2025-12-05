@@ -5,7 +5,7 @@
 {% include 'vitrina/projects/tabs.html' %}
     <div class="columns is-centered">
         <div class="column is-half">
-            <form method="post" id="agreement-create">
+            <form method="post" id="project-agreement-create">
                 {% csrf_token %}
                 {% crispy formset.management_form formset_helper %}
                 {% for form in formset %}

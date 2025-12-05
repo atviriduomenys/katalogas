@@ -6,14 +6,14 @@
 {% endblock %}
 
 {% block back_link_url %}
-    {% url 'agreement-list' project.pk %}
+    {% url 'project-agreement-list' project.pk %}
 {% endblock %}
 
 {% block agreement_buttons %}
     <div class="buttons is-right">
         {% if agreement.status == "CREATED" %}
             {% if can_submit_agreements %}
-                <a href="{% url "agreement-submit" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                <a href="{% url "project-agreement-submit" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
                     {% translate "Pateikti pasiūlymą" %}
                 </a>
             {% else %}
@@ -23,7 +23,7 @@
             {% endif %}
         {% elif agreement.status == "SUBMITTED" %}
             {% if can_approve_agreements %}
-                <a href="{% url "agreement-approve" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                <a href="{% url "project-agreement-approve" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
                     {% translate "Peržiūrėti pateiktą pasiūlymą" %}
                 </a>
             {% else %}
@@ -32,12 +32,12 @@
                 </button>
             {% endif %}
         {% elif can_form_agreements and agreement.status == "APPROVED" %}
-            <a href="{% url "agreement-form" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+            <a href="{% url "project-agreement-form" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
                 {% translate "Formuoti sutartį" %}
             </a>
         {% elif agreement.status == "FORMED" %}
             {% if can_initiate_agreements %}
-                <a href="{% url "agreement-initiate" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                <a href="{% url "project-agreement-initiate" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
                     {% translate "Įkelti pasirašytą dokumentą (Gavėjo)" %}
                 </a>
             {% else %}
@@ -47,7 +47,7 @@
             {% endif %}
         {% elif agreement.status == "INITIATED" %}
             {% if can_sign_agreements %}
-                <a href="{% url "agreement-sign" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                <a href="{% url "project-agreement-sign" project.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
                     {% translate "Įkelti pasirašytą dokumentą (Teikėjo)" %}
                 </a>
             {% else %}

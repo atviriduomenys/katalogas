@@ -779,7 +779,7 @@ class Dataset(Resource):
         return randrange(5)
 
     def latest_version(self):
-        return self.dataset_version.order_by('-version').first()
+        return self.dataset_version.order_by("-version").first()
 
     @property
     def formats(self):

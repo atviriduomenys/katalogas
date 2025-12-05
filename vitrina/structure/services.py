@@ -6,7 +6,7 @@ from json import JSONDecodeError
 from typing import Union, Tuple, List, Dict
 
 import requests
-from django.db.models import Q, Max
+from django.db.models import Q
 from pyproj import Transformer
 
 import vitrina.datasets.structure as struct

@@ -778,6 +778,9 @@ class Dataset(Resource):
     def level(self):
         return randrange(5)
 
+    def latest_version(self):
+        return self.dataset_version.order_by("-version").first()
+
     @property
     def formats(self):
         return [obj.get_format() for obj in self.datasetdistribution_set.all() if obj.get_format()]

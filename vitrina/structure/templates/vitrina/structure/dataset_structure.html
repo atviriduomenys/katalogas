@@ -2,7 +2,14 @@
 {% load i18n %}
 {% load comment_tags util_tags %}
 
-{% block current_title %}{% translate "Duomenų rinkinio struktūra" %}{% endblock %}
+{% block current_title %}
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <span>{% translate "Duomenų rinkinio struktūra" %}</span>
+        {% if versions %}
+            {% include "version_picker.html" with url_name="dataset-structure" dataset=dataset versions=versions selected_version=selected_version %}
+        {% endif %}
+    </div>
+{% endblock %}
 {% block parent_links %}
     {% include "component/breadcrumbs.html" %}
 {% endblock %}
@@ -37,60 +44,22 @@
                 <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk selected_version.pk %}">
                     {% translate "Importuoti" %}
                 </a>
-            {% else %}
-                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import-no-version' view.kwargs.pk %}">
-                    {% translate "Importuoti" %}
-                </a>
-            {% endif %}
-            {% if selected_version %}
                 <a class="button is-primary mb-5 ml-2" href="{% url 'model-create' dataset.pk selected_version.pk %}">
                     {% translate "Naujas modelis" %}
                 </a>
-            {% else %}
-                <a class="button is-primary mb-5 ml-2" href="{% url 'model-create-no-version' dataset.pk %}">
-                    {% translate "Naujas modelis" %}
-                </a>
-            {% endif %}
-
-            <div class="dropdown is-hoverable">
-                <div class="dropdown-trigger">
-                    <button class="button is-primary mb-5 ml-2" aria-haspopup="true" aria-controls="dropdown-menu">
-                        <span>
-                            {% if not selected_version %}
-                                {% translate "Pasirinkite versiją" %}
-                            {% elif selected_version.external_version %}
-                                {% translate "Versija" %}: {{ selected_version.external_version }}
-                            {% else %}
-                                {% translate "Versija: Juodraštis" %}
-                            {% endif %}
-                        </span>
-                        <span class="icon is-small">
-                            <i class="fas fa-angle-down" aria-hidden="true"></i>
-                        </span>
-                    </button>
-                </div>
-
-                <div class="dropdown-menu" id="dropdown-menu" role="menu">
-                    <div class="dropdown-content">
-                    {% for version in versions %}
-                        <a href="{% url 'dataset-structure' dataset.pk version.pk %}" class="dropdown-item">
-                            {% if version.external_version %}
-                                {{ version.external_version }}
-                            {% else %}
-                                {% translate "Juodraštis"%}
-                            {% endif %}
-                        </a>
-                    {% endfor %}
-                    </div>
-                </div>
-            </div>
-
-            {% if selected_version %}
                 <a class="button is-primary mb-5 ml-2"
                    href="{% url 'version-create' dataset.pk selected_version.pk %}">
                     {% translate "Publikuoti versiją" %}
                 </a>
+
             {% else %}
+                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import-no-version' view.kwargs.pk %}">
+                    {% translate "Importuoti" %}
+                </a>
+                <a class="button is-primary mb-5 ml-2" href="{% url 'model-create-no-version' dataset.pk %}">
+                    {% translate "Naujas modelis" %}
+                </a>
+
                 <a class="button is-primary mb-5 ml-2 is-disabled"
                    style="pointer-events: none; opacity: 0.5;">
                     {% translate "Publikuoti versiją" %}

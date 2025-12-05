@@ -1527,7 +1527,7 @@ class DatasetStructureImportView(
     def get_history_object(self):
         return self.dataset
 
-    def get_success_url(self):
+    def get_success_url(self) -> str:
         if self.metadata_version.pk:
             return reverse(
                 "dataset-structure",

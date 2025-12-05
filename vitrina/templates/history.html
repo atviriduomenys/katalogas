@@ -1,7 +1,14 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block current_title %}{% translate "Veiksmų istorija" %}{% endblock %}
+{% block current_title %}
+<div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+    <span>{% translate "Veiksmų istorija" %}</span>
+    {% if versions %}
+        {% include "version_picker.html" with url_name="dataset-structure-history" dataset=dataset versions=versions selected_version=selected_version %}
+    {% endif %}
+</div>
+{% endblock %}
 
 {% block content %}
 

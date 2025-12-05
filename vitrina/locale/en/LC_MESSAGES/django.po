@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-27 14:56+0200\n"
+"POT-Creation-Date: 2025-12-05 14:02+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1772,6 +1772,9 @@ msgstr "Resource edit"
 
 msgid "Struktūros importas"
 msgstr "Structure import"
+
+msgid "Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."
+msgstr "Can not import structure, when the version status is draft"
 
 msgid "Tvarkytojo pridėjimas"
 msgstr "Add manager"
@@ -3965,10 +3968,11 @@ msgstr "Agreement document is created"
 msgid "PDF failas sutarčiai nėra sukurtas."
 msgstr "PDF file for the agreement is not created."
 
-
 msgid ""
 "Rasti keli PDF failai susieti su sutartimi. Susisiekite su administratoriumi."
-msgstr "Multiple PDF files were found related to the agreement. Please contact the administrator."
+msgstr ""
+"Multiple PDF files were found related to the agreement. Please contact the "
+"administrator."
 
 msgid "Įkelti pasirašytą sutartį"
 msgstr "Upload signed document"
@@ -4533,6 +4537,9 @@ msgstr "Object type"
 msgid "Objekto id"
 msgstr "Object id"
 
+msgid "Versija"
+msgstr "Version"
+
 msgid "Prefiksas"
 msgstr "Prefix"
 
@@ -4577,9 +4584,6 @@ msgstr "Row count"
 
 msgid "Žodyno atitikmuo"
 msgstr "Uri"
-
-msgid "Versija"
-msgstr "Version"
 
 msgid "Rikiavimo tvarka"
 msgstr "Order"
@@ -5083,6 +5087,12 @@ msgstr "Register request to open data"
 
 msgid "Statistika"
 msgstr "Statistics"
+
+msgid "Pasirinkite versiją"
+msgstr "Select a version"
+
+msgid "Versija: Juodraštis"
+msgstr "Version: Draft"
 
 msgid "Pradinis"
 msgstr "First"
@@ -5698,7 +5708,8 @@ msgid ""
 "Nurodomas įmonės kodas organizacijos, kurios vardu vartotojas yra "
 "prisijungęs per VIISP."
 msgstr ""
-"The company code of the organization the user is logged in on behalf of via VIISP."
+"The company code of the organization the user is logged in on behalf of via "
+"VIISP."
 
 msgid "Visi naudotojai"
 msgstr "All users"
@@ -5950,7 +5961,8 @@ msgid ""
 "Elektroninis paštas ir/arba slaptažodis yra neteisingas. Atkreipkite dėmesį, "
 "kad abu laukai yra jautrūs raidžių dydžiui (mažosios ir didžiosios raidės)."
 msgstr ""
-"The email and/or the password is incorrect. Note that both fields are case-sensitive."
+"The email and/or the password is incorrect. Note that both fields are case-"
+"sensitive."
 
 msgid "key_content"
 msgstr "key_content"

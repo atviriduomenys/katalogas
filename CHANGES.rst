@@ -1,10 +1,15 @@
 Changes
 #######
 
-v 1.9 (unreleased)
+v 1.10 (unreleased)
+==================
+
+
+v 1.9 (2025-12-04)
 ==================
 
 Security improvements:
+
 - Added HTTP Strict Transport Security (HSTS) with 1-year max-age;
 - Enabled HSTS preload and includeSubDomains;
 - Strengthened cookie security (Secure, HttpOnly, SameSite=Lax);
@@ -14,7 +19,9 @@ Security improvements:
 - Enhanced Content Security Policy (CSP) directives.
 
 https://github.com/atviriduomenys/dvms/issues/293
+
 Security: Upgrade cryptography library to address CVE vulnerabilities:
+
 - Updated cryptography from 38.0.4 to 44.0.3 (fixes CVE-2023-49083, CVE-2024-26130);
 - Updated signxml from 3.0.0 to 4.2.0;
 - Updated lxml from 4.9.4 to 6.0.2;

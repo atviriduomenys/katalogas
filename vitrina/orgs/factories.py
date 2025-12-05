@@ -22,7 +22,7 @@ class OrganizationFactory(DjangoModelFactory):
 
     title = factory.Faker("company")
     kind = factory.Faker("word")
-    name = factory.Sequence(lambda n: f"{Faker().last_name()}_{n:04d}".lower())
+    name = factory.Sequence(lambda n: f"datasets/gov/test/{n:04d}/")
     company_code = factory.Faker("bothify", text="?????????", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     email = factory.Faker("email")
     phone = Faker().phone_number()

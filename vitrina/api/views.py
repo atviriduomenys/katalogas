@@ -25,7 +25,6 @@ from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from reversion import set_comment, set_user
-from reversion.views import RevisionMixin
 
 from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiDescription
@@ -186,7 +185,7 @@ class LicenceViewSet(ListModelMixin, GenericViewSet):
         return super().list(request, *args, **kwargs)
 
 
-class DatasetViewSet(RevisionMixin, ModelViewSet):
+class DatasetViewSet(ModelViewSet):
     serializer_class = DatasetSerializer
     permission_classes = (APIKeyPermission,)
     lookup_url_kwarg = "datasetId"

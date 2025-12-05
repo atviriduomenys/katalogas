@@ -33,7 +33,6 @@ from django.views.generic import (
 from haystack.generic_views import FacetedSearchView
 from reversion import set_comment
 from reversion.models import Version
-from reversion.views import RevisionMixin
 from typing import List
 from urllib.parse import urlencode
 
@@ -636,7 +635,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
         return context_data
 
 
-class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
+class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Request
     form_class = RequestForm
     template_name = "vitrina/requests/request_create_form.html"
@@ -792,7 +791,7 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
         return self.request_obj
 
 
-class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Request
     form_class = RequestEditOrgForm
     template_name = "base_form.html"
@@ -907,7 +906,7 @@ class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMi
         return context_data
 
 
-class RequestOrgDeleteView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, DeleteView):
+class RequestOrgDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = RequestAssignment
     template_name = "confirm_delete.html"
 
@@ -948,7 +947,7 @@ class RequestOrgDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Revision
         return context
 
 
-class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Request
     form_class = RequestForm
     template_name = "base_form.html"
@@ -1067,7 +1066,7 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
         return self.request_obj
 
 
-class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView):
+class RequestCreatePlanView(PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/plans/plan_form.html"
 
     request_obj: Request
@@ -1163,7 +1162,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
             return render(request=request, template_name=self.template_name, context=context)
 
 
-class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
+class RequestDeletePlanView(PermissionRequiredMixin, DeleteView):
     model = PlanRequest
     template_name = "confirm_delete.html"
 
@@ -1329,7 +1328,7 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
         return self.request_obj
 
 
-class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Request
     form_class = RequestDatasetsEditForm
     template_name = "vitrina/requests/request_dataset_add.html"

@@ -10,7 +10,6 @@ from django.urls import reverse
 from django.views import View
 
 from reversion import set_comment
-from reversion.views import RevisionMixin
 
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.helpers import (
@@ -35,7 +34,7 @@ from vitrina.tasks.models import Task
 from django.utils.translation import gettext_lazy as _
 
 
-class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, View):
+class CommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
     content_type: ContentType
     obj: Model
 
@@ -334,7 +333,7 @@ class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
         return redirect(obj.get_absolute_url())
 
 
-class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, View):
+class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
     dataset: Dataset
 
     def dispatch(self, request, *args, **kwargs):

@@ -25,7 +25,6 @@ from pygments.lexers.special import TextLexer
 from pygments.styles import get_style_by_name
 from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
-from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
 from vitrina.classifiers.models import Status
@@ -1587,7 +1586,7 @@ class DatasetStructureExportOpenAPIView(PermissionRequiredMixin, View):
         return response
 
 
-class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
+class EnumCreateView(PermissionRequiredMixin, CreateView):
     model = EnumItem
     form_class = EnumForm
     template_name = "base_form.html"
@@ -1694,7 +1693,7 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
         return redirect(self.property.get_absolute_url())
 
 
-class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
+class EnumUpdateView(PermissionRequiredMixin, UpdateView):
     model = EnumItem
     form_class = EnumForm
     template_name = "base_form.html"
@@ -1905,15 +1904,13 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
         self.object.delete()
 
         # Save history
-        with create_revision():
-            self.property.save()
-            set_user(request.user)
-            set_comment(_(f'Pašalinta duomenų lauko "{self.property.name}" reikšmė "{value}".'))
+        self.property.save()
+        set_comment(_(f'Pašalinta duomenų lauko "{self.property.name}" reikšmė "{value}".'))
 
         return redirect(success_url)
 
 
-class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
+class ModelCreateView(PermissionRequiredMixin, CreateView):
     model = Metadata
     template_name = "vitrina/structure/model_form.html"
     form_class = ModelCreateForm
@@ -2029,7 +2026,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         return kwargs
 
 
-class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateView):
     model = Metadata
     template_name = "vitrina/structure/model_form.html"
     form_class = ModelUpdateForm
@@ -2236,7 +2233,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
         return metadata_changed and status_unchanged
 
 
-class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
+class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, CreateView):
     model = Metadata
     template_name = "vitrina/structure/property_form.html"
     form_class = PropertyForm
@@ -2325,7 +2322,7 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
         return kwargs
 
 
-class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateView):
     model = Metadata
     template_name = "vitrina/structure/property_form.html"
     form_class = PropertyForm
@@ -2595,10 +2592,8 @@ class ParamCreateView(PermissionRequiredMixin, CreateView):
 
         # Save history
         if isinstance(self.rel_object, Model):
-            with create_revision():
-                self.rel_object.save()
-                set_comment(_(f'Pridėtas "{self.rel_object.name}" modelio parametras "{self.object.name}".'))
-                set_user(self.request.user)
+            self.rel_object.save()
+            set_comment(_(f'Pridėtas "{self.rel_object.name}" modelio parametras "{self.object.name}".'))
 
         return redirect(self.rel_object.get_absolute_url())
 
@@ -2661,10 +2656,8 @@ class ParamUpdateView(PermissionRequiredMixin, UpdateView):
 
         # Save history
         if isinstance(rel_object, Model):
-            with create_revision():
-                rel_object.save()
-                set_comment(_(f'Redaguotas "{rel_object.name}" modelio parametras "{self.object.name}".'))
-                set_user(self.request.user)
+            rel_object.save()
+            set_comment(_(f'Redaguotas "{rel_object.name}" modelio parametras "{self.object.name}".'))
 
         return redirect(rel_object.get_absolute_url())
 
@@ -2693,10 +2686,8 @@ class ParamDeleteView(PermissionRequiredMixin, DeleteView):
 
         # Save history
         if isinstance(rel_object, Model):
-            with create_revision():
-                rel_object.save()
-                set_comment(_(f'Pašalintas "{rel_object.name}" modelio parametras "{value}".'))
-                set_user(self.request.user)
+            rel_object.save()
+            set_comment(_(f'Pašalintas "{rel_object.name}" modelio parametras "{value}".'))
 
         return response
 

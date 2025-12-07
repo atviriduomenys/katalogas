@@ -1147,7 +1147,7 @@ class Dataset(Resource):
                             f"Param ref:  <span class='tag is-success is-light is-medium prop_metadata'>{model_param_item_metadata_ref}</span>"
                             f" prepare: <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
                         )
-                        meta_objects.append((metadata_instance.pk, label))
+                        meta_objects.append((metadata.pk, label))
 
             for prop in model.model_properties.all():
                 metadata = prop.metadata.first()

@@ -30,4 +30,4 @@ class TestOrganizationCreateForm:
         form = OrganizationCreateForm(user=user, data=data)
         assert form.is_valid()
         generated_name = form.cleaned_data["name"]
-        assert generated_name == "datasets/org/test-org/"
+        assert generated_name == "datasets/gov/test-org/"

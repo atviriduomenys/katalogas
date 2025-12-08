@@ -3377,7 +3377,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
             self.new_version.version = latest_version.version + 1
         else:
             self.new_version.version = 1
-        self.new_version.save()
+
 
         rel_projects = Project.objects.filter(datasets=self.new_version.dataset)
         emails = []
@@ -3468,6 +3468,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                 try:
                     already_created_fields = self.duplicate_foreign_key_relationships(new_related_instance, already_created_fields)
                 except ValidationError as e:
+                    transaction.set_rollback(True)
                     form.add_error(None, e.message)
                     return self.form_invalid(form)
 

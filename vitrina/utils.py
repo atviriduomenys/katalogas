@@ -1,10 +1,16 @@
 import logging
 import requests
+import json
+from enum import StrEnum
+from typing import Any
+from dataclasses import dataclass, field, asdict
 from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL, TRANSLATION_REQUEST_TIMEOUT
 from django.conf import settings
 from fnmatch import fnmatchcase
 from django.db import models
 from django.apps import apps
+from django.core.serializers.json import DjangoJSONEncoder
+
 
 logger = logging.getLogger()
 
@@ -68,3 +74,43 @@ def get_all_models(
 
             project_models.add(model)
     return project_models
+
+
+class RevisionSource(StrEnum):
+    """Indicates where a revision change originated from."""
+
+    VIEW = "view"  # katalogas UI or UAPI
+    ADMIN = "admin"  # Django admin
+    TASK = "task"  # Background jobs (Celery, etc.)
+
+
+@dataclass
+class RevisionComment:
+    source: RevisionSource
+    action: str | None = None
+    http_method: str | None = None
+    path: str | None = None
+    args: list[Any] = field(default_factory=list)
+    kwargs: dict[str, Any] = field(default_factory=dict)
+
+    def to_json(self) -> str:
+        data = asdict(self)
+        data["source"] = self.source.value
+        return json.dumps(data, cls=DjangoJSONEncoder)
+
+    @classmethod
+    def from_json(cls, raw_json: str) -> "RevisionComment | None":
+        try:
+            data = json.loads(raw_json)
+        except json.JSONDecodeError:
+            return None
+
+        if "source" not in data:
+            raise ValueError("Missing 'source' in revision comment")
+
+        try:
+            data["source"] = RevisionSource(data["source"])
+        except ValueError as exception:
+            raise ValueError(f"Invalid source value: {data['source']}") from exception
+
+        return cls(**data)

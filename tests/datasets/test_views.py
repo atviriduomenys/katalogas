@@ -1301,7 +1301,7 @@ class TestDatasetUpdateView:
         assert dataset.catalog == catalog
         assert dataset.frequency == frequency
         assert dataset.access_rights == Dataset.PUBLIC
-        assert dataset.name == organization.name + "information_system_two"
+        assert dataset.name == f"{organization_name}information_system_two"
         assert dataset.landing_page == "https://www.test.test"
         assert dataset.information_system_type == information_system_type_concept
         assert dataset.information_system_importance == information_system_importance_concept

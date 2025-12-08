@@ -1014,7 +1014,7 @@ class Dataset(Resource):
             if metadata_model == "prefix":
                 label = mark_safe(
                     f"Prefix ref: "
-                    f"<span class='tag is-success is-light is-medium prop_metadata'>{metadata_instance.name}</span>"
+                    f"<span class='tag is-success is-light is-medium model_metadata'>{metadata_instance.name}</span>"
                 )
 
                 meta_objects.append((metadata_instance.pk, label))
@@ -1032,7 +1032,7 @@ class Dataset(Resource):
                             if metadata_instance.ref:
                                 dataset_param_item_metadata_ref = metadata_instance.ref
                             label = mark_safe(
-                                f"Param ref:  <span class='tag is-success is-light is-medium prop_metadata'>{dataset_param_item_metadata_ref}</span>"
+                                f"Param ref:  <span class='tag is-success is-light is-medium model_metadata'>{dataset_param_item_metadata_ref}</span>"
                                 f" prepare: <span class='tag is-success is-light is-medium'>{metadata_instance.prepare}</span>"
                             )
                             meta_objects.append((metadata_instance.pk, label))
@@ -1048,7 +1048,7 @@ class Dataset(Resource):
                             if metadata_instance.ref:
                                 dataset_enum_item_metadata_ref = metadata_instance.ref
                             label = mark_safe(
-                                f"Enum ref:  <span class='tag is-success is-light is-medium prop_metadata'>{dataset_enum_item_metadata_ref}</span> "
+                                f"Enum ref:  <span class='tag is-success is-light is-medium model_metadata'>{dataset_enum_item_metadata_ref}</span> "
                                 f" prepare: <span class='tag is-success is-light is-medium'>{metadata_instance.prepare}</span>"
                             )
                             meta_objects.append((metadata_instance.pk, label))

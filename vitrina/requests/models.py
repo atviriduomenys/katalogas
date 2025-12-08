@@ -347,13 +347,13 @@ class RequestAssignment(models.Model):
 
 
 class RequestEscalation(models.Model):
-    LEVEL_EDITORS = 0
-    LEVEL_COORDINATORS = 1
+    LEVEL_MANAGER = 0
+    LEVEL_COORDINATOR = 1
     LEVEL_ORGANIZATION = 2
 
     LEVEL_CHOICES = [
-        (LEVEL_EDITORS, _("Duomenų tvarkytojas")),
-        (LEVEL_COORDINATORS, _("Organizacijos koordinatorius")),
+        (LEVEL_MANAGER, _("Duomenų tvarkytojas")),
+        (LEVEL_COORDINATOR, _("Organizacijos koordinatorius")),
         (LEVEL_ORGANIZATION, _("Organizacija")),
     ]
 
@@ -374,7 +374,7 @@ class RequestEscalation(models.Model):
     )
 
     escalation_level = models.IntegerField(
-        default=LEVEL_EDITORS,
+        default=LEVEL_MANAGER,
         choices=LEVEL_CHOICES,
     )
 

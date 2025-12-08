@@ -16,7 +16,7 @@ from vitrina.comments.models import Comment
 from vitrina.requests.tasks.escalation import (
     has_response_since_last_escalation,
     get_recipients_for_level,
-    get_dataset_editors_emails,
+    get_dataset_managers,
     get_organization_coordinators_emails,
     get_organization_email,
     escalate_to_next_level,
@@ -129,7 +129,7 @@ class TestGetDatasetEditorsEmails:
             content_type=dataset_ct, object_id=dataset.pk, email="editor2@example.com", role=Representative.MANAGER
         )
 
-        emails = get_dataset_editors_emails(request_obj)
+        emails = get_dataset_managers(request_obj)
 
         assert len(emails) == 2
         assert "editor1@example.com" in emails
@@ -146,7 +146,7 @@ class TestGetDatasetEditorsEmails:
             content_type=dataset_ct, object_id=dataset.pk, email="coord@example.com", role=Representative.COORDINATOR
         )
 
-        emails = get_dataset_editors_emails(request_obj)
+        emails = get_dataset_managers(request_obj)
 
         assert len(emails) == 1
         assert "editor@example.com" in emails
@@ -163,7 +163,7 @@ class TestGetDatasetEditorsEmails:
             deleted=True,
         )
 
-        emails = get_dataset_editors_emails(request_obj)
+        emails = get_dataset_managers(request_obj)
 
         assert len(emails) == 0
 
@@ -224,27 +224,27 @@ class TestGetOrganizationEmail:
 
 @pytest.mark.django_db
 class TestGetRecipientsForLevel:
-    def test_level_editors(self, escalation, dataset):
+    def test_level_manager(self, escalation, dataset):
         dataset_ct = ContentType.objects.get_for_model(dataset)
 
         RepresentativeFactory(
             content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.MANAGER
         )
 
-        escalation.escalation_level = RequestEscalation.LEVEL_EDITORS
+        escalation.escalation_level = RequestEscalation.LEVEL_MANAGER
 
         recipients = get_recipients_for_level(escalation)
 
         assert "editor@example.com" in recipients
 
-    def test_level_coordinators(self, escalation, organization):
+    def test_level_coordinator(self, escalation, organization):
         org_ct = ContentType.objects.get_for_model(organization)
 
         RepresentativeFactory(
             content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.COORDINATOR
         )
 
-        escalation.escalation_level = RequestEscalation.LEVEL_COORDINATORS
+        escalation.escalation_level = RequestEscalation.LEVEL_COORDINATOR
 
         recipients = get_recipients_for_level(escalation)
 
@@ -269,14 +269,14 @@ class TestEscalateToNextLevel:
             content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.COORDINATOR
         )
 
-        escalation.escalation_level = RequestEscalation.LEVEL_EDITORS
+        escalation.escalation_level = RequestEscalation.LEVEL_MANAGER
         escalation.save()
 
         escalate_to_next_level(escalation)
 
         escalation.refresh_from_db()
 
-        assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATORS
+        assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATOR
         assert "coord@example.com" in escalation.recipients_at_current_level
         assert mock_send_emails.called
         assert mock_schedule.called
@@ -297,7 +297,7 @@ class TestEscalateToNextLevel:
     @patch("vitrina.requests.tasks.escalation.schedule_escalation_check.apply_async")  # Add this
     def test_escalate_skips_level_with_no_recipients(self, mock_schedule, mock_send_emails, escalation, organization):
         # No coordinators set up, should skip to organization level
-        escalation.escalation_level = RequestEscalation.LEVEL_EDITORS
+        escalation.escalation_level = RequestEscalation.LEVEL_MANAGER
         escalation.save()
 
         escalate_to_next_level(escalation)
@@ -365,7 +365,7 @@ class TestEscalationPipelineFunctional:
 
         assert escalation is not None
         assert escalation.request == request_obj
-        assert escalation.escalation_level == RequestEscalation.LEVEL_EDITORS
+        assert escalation.escalation_level == RequestEscalation.LEVEL_MANAGER
         assert escalation.is_active is True
         assert "editor@example.com" in escalation.recipients_at_current_level
 
@@ -422,7 +422,7 @@ class TestEscalationPipelineFunctional:
         escalation = start_escalation_for_request(request_obj)
 
         # Verify initial state
-        assert escalation.escalation_level == RequestEscalation.LEVEL_EDITORS
+        assert escalation.escalation_level == RequestEscalation.LEVEL_MANAGER
         assert escalation.is_active is True
 
         # Day 5: No response, escalate to coordinators
@@ -430,7 +430,7 @@ class TestEscalationPipelineFunctional:
             schedule_escalation_check(escalation.id)
             escalation.refresh_from_db()
 
-            assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATORS
+            assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATOR
             assert escalation.is_active is True
             assert "coordinator@example.com" in escalation.recipients_at_current_level
 
@@ -500,7 +500,7 @@ class TestEscalationPipelineFunctional:
             # Should stop - editor responded
             assert escalation.is_active is False
             assert escalation.stopped_reason == RequestEscalation.STOP_REASON_RESPONDED
-            assert escalation.escalation_level == RequestEscalation.LEVEL_EDITORS
+            assert escalation.escalation_level == RequestEscalation.LEVEL_MANAGER
 
     @freezegun.freeze_time("2025-11-18 10:00:00")  # Monday
     @patch("vitrina.requests.tasks.escalation.send_escalation_emails")
@@ -542,7 +542,7 @@ class TestEscalationPipelineFunctional:
             schedule_escalation_check(escalation.id)
             escalation.refresh_from_db()
 
-            assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATORS
+            assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATOR
             assert escalation.is_active is True
 
         # Day 7: Coordinator responds with status change
@@ -564,7 +564,7 @@ class TestEscalationPipelineFunctional:
             # Should stop - coordinator responded
             assert escalation.is_active is False
             assert escalation.stopped_reason == RequestEscalation.STOP_REASON_RESPONDED
-            assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATORS
+            assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATOR
 
     @freezegun.freeze_time("2025-11-18 10:00:00")  # Monday
     @patch("vitrina.requests.tasks.escalation.send_escalation_emails")
@@ -618,7 +618,7 @@ class TestEscalationPipelineFunctional:
 
             # Should escalate - random comment doesn't count
             assert escalation.is_active is True
-            assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATORS
+            assert escalation.escalation_level == RequestEscalation.LEVEL_COORDINATOR
             assert "coordinator@example.com" in escalation.recipients_at_current_level
 
     @freezegun.freeze_time("2025-11-18 10:00:00")  # Monday
@@ -656,4 +656,4 @@ class TestEscalationPipelineFunctional:
 
             # Should not escalate
             assert "no longer active" in result
-            assert escalation.escalation_level == RequestEscalation.LEVEL_EDITORS
+            assert escalation.escalation_level == RequestEscalation.LEVEL_MANAGER

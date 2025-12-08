@@ -14,7 +14,7 @@ class TestRequestEscalationModel:
             last_escalation_sent=timezone.now(),
         )
 
-        assert escalation.escalation_level == RequestEscalation.LEVEL_EDITORS
+        assert escalation.escalation_level == RequestEscalation.LEVEL_MANAGER
         assert escalation.is_active is True
         assert escalation.manually_stopped is False
         assert escalation.stopped_at is None
@@ -88,7 +88,7 @@ class TestRequestEscalationModel:
         escalation = RequestEscalation.objects.create(
             request=request,
             last_escalation_sent=timezone.now(),
-            escalation_level=RequestEscalation.LEVEL_EDITORS,
+            escalation_level=RequestEscalation.LEVEL_MANAGER,
         )
 
         assert escalation.can_escalate_further() is True
@@ -99,7 +99,7 @@ class TestRequestEscalationModel:
         escalation = RequestEscalation.objects.create(
             request=request,
             last_escalation_sent=timezone.now(),
-            escalation_level=RequestEscalation.LEVEL_COORDINATORS,
+            escalation_level=RequestEscalation.LEVEL_COORDINATOR,
         )
 
         assert escalation.can_escalate_further() is True
@@ -121,7 +121,7 @@ class TestRequestEscalationModel:
         escalation = RequestEscalation.objects.create(
             request=request,
             last_escalation_sent=timezone.now(),
-            escalation_level=RequestEscalation.LEVEL_COORDINATORS,
+            escalation_level=RequestEscalation.LEVEL_COORDINATOR,
         )
 
         display_name = escalation.get_level_display_name()
@@ -147,7 +147,7 @@ class TestRequestEscalationModel:
         escalation = RequestEscalation.objects.create(
             request=request,
             last_escalation_sent=timezone.now(),
-            escalation_level=RequestEscalation.LEVEL_EDITORS,
+            escalation_level=RequestEscalation.LEVEL_MANAGER,
         )
 
         str_repr = str(escalation)
@@ -160,13 +160,13 @@ class TestRequestEscalationModel:
         escalation = RequestEscalation.objects.create(
             request=request,
             last_escalation_sent=timezone.now(),
-            escalation_level=RequestEscalation.LEVEL_EDITORS,
+            escalation_level=RequestEscalation.LEVEL_MANAGER,
         )
 
         # Simulate escalation progression
         assert escalation.can_escalate_further() is True
 
-        escalation.escalation_level = RequestEscalation.LEVEL_COORDINATORS
+        escalation.escalation_level = RequestEscalation.LEVEL_COORDINATOR
         escalation.save()
         assert escalation.can_escalate_further() is True
 

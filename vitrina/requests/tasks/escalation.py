@@ -16,12 +16,12 @@ ESCALATION_PERIOD_IN_WORKING_DAYS = 5
 def start_escalation_for_request(request_obj):
     from django.utils import timezone
 
-    if not (recipients := get_dataset_editors_emails(request_obj)):
+    if not (recipients := get_dataset_managers(request_obj)):
         return None
 
     escalation = RequestEscalation.objects.create(
         request=request_obj,
-        escalation_level=RequestEscalation.LEVEL_EDITORS,
+        escalation_level=RequestEscalation.LEVEL_MANAGER,
         last_escalation_sent=timezone.now(),
         recipients_at_current_level=recipients,
         is_active=True,
@@ -116,10 +116,10 @@ def get_recipients_for_level(escalation):
     request = escalation.request
     level = escalation.escalation_level
 
-    if level == RequestEscalation.LEVEL_EDITORS:
-        return get_dataset_editors_emails(request)
+    if level == RequestEscalation.LEVEL_MANAGER:
+        return get_dataset_managers(request)
 
-    if level == RequestEscalation.LEVEL_COORDINATORS:
+    if level == RequestEscalation.LEVEL_COORDINATOR:
         return get_organization_coordinators_emails(request)
 
     if level == RequestEscalation.LEVEL_ORGANIZATION:
@@ -128,7 +128,7 @@ def get_recipients_for_level(escalation):
     return []
 
 
-def get_dataset_editors_emails(request):
+def get_dataset_managers(request):
     request_objects = request.requestobject_set.all()
 
     emails = []

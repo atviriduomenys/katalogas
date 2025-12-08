@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-02 07:53+0200\n"
+"POT-Creation-Date: 2025-12-08 12:02+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -669,6 +669,19 @@ msgstr "Code name can only include latin characters."
 
 msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
 msgstr "Code name can only include lowercase letters."
+
+msgid ""
+"Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
+"leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
+msgstr ""
+"The code name must begin with „%(expected)s“ or one of the following "
+"whitelisted code name prefixes: %(whitelisted)s"
+
+msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“"
+msgstr "The code name must begin with „%(expected)s“"
+
+msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
+msgstr "There must be at least one character after „%(prefix)s“."
 
 msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
 msgstr "Dataset with this code name already exists."
@@ -2290,6 +2303,15 @@ msgstr "Organizations"
 msgid "Registracijos numeris"
 msgstr "Registration number"
 
+msgid ""
+"Organizacijos identifikatorius. Rekomenduojama šiai reikšmei naudoti "
+"organizacijos trumpinį, kad bendras modelio pavadinimas nebūtų per daug "
+"ilgas. Atitinka dct:identifier."
+msgstr ""
+"Organization identifier. It is recommended to use the "
+"abbreviation of the organization for this value so that the overall model name is not too "
+"long. Corresponds to dct:identifier."
+
 msgid "Paveiksliukas"
 msgstr "Picture"
 
@@ -2498,6 +2520,9 @@ msgstr "A position must be specified for the contact person."
 msgid "Organizacijai negali būti nurodytos pareigos."
 msgstr "A position cannot be specified for an organization"
 
+msgid "Toks Organizacijos kodinis pavadinimas jau egzistuoja."
+msgstr "This code name for the Organization already exists."
+
 msgid "Neteisingas objekto tipas. Turi būti AreaOfManagement arba int"
 msgstr "Incorrect object type. It must be AreaOfManagement or int."
 
@@ -2554,6 +2579,12 @@ msgstr "Modified"
 
 msgid "Tekstas"
 msgstr "Rejected"
+
+msgid "Leistinas kodinis pavadinimas"
+msgstr "Allowed code name"
+
+msgid "Leistini kodiniai pavadinimai"
+msgstr "Allowed code names"
 
 msgid "Galimi duomenų ištekliai"
 msgstr "Available resources"
@@ -2697,6 +2728,12 @@ msgstr "Organization members list"
 
 msgid "Pridėti kontaktą"
 msgstr "Add contact"
+
+msgid "Organizacijos vietinė rinkinio vardų erdvė"
+msgstr "Local namespace of the organization"
+
+msgid "Leidžiami kodiniai pavadinimai"
+msgstr "Allowed code names"
 
 msgid "Redaguoti organizaciją"
 msgstr "Edit organization"

@@ -12,7 +12,7 @@ from vitrina.orgs.models import Organization, WhitelistedCodeName
 from vitrina.users.models import User
 
 
-def validate_global_uniqueness(value: str, instance: WhitelistedCodeName | Organization | None =None) -> None:
+def validate_global_uniqueness(value: str, instance: WhitelistedCodeName | Organization | None = None) -> None:
     org_qs = Organization.objects.all()
     code_qs = WhitelistedCodeName.objects.all()
     if instance:

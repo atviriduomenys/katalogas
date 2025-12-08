@@ -134,7 +134,7 @@ class Organization(MP_Node):
         return tags
 
     @property
-    def whitelisted_names(self):
+    def whitelisted_names(self) -> list[str]:
         return [whitelisted_code.code_name for whitelisted_code in self.whitelisted_code_names.all()]
 
 

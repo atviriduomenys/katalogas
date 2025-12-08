@@ -12,7 +12,7 @@ from vitrina.orgs.models import Organization, WhitelistedCodeName
 from vitrina.users.models import User
 
 
-def validate_global_uniqueness(value, instance=None):
+def validate_global_uniqueness(value: str, instance: WhitelistedCodeName | Organization | None =None) -> None:
     org_qs = Organization.objects.all()
     code_qs = WhitelistedCodeName.objects.all()
     if instance:
@@ -34,7 +34,7 @@ def generate_dataset_prefix(organization_name: str, organization_kind: Organizat
     slugify_ascii_lower = partial(slugify, lowercase=True, allow_unicode=False)
     organization_part = slugify_ascii_lower(organization_name)
 
-    prefix = "datasets/gov" if organization_kind == "GOV" else "datasets/org"
+    prefix = "datasets/gov" if organization_kind == Organization.GOV else "datasets/org"
     return f"{prefix}/{organization_part}/"
 
 

@@ -15,8 +15,7 @@ from vitrina.orgs.models import Organization
     ],
 )
 def test_generate_dataset_prefix(name, kind, expected):
-    prefix = generate_dataset_prefix(name, kind)
-    assert prefix == expected
+    assert generate_dataset_prefix(name, kind) == expected
 
 
 @pytest.mark.django_db

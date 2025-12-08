@@ -3,6 +3,7 @@ from __future__ import annotations
 import builtins
 import csv
 import io
+from unittest.mock import patch, Mock
 
 import pytest
 from django.apps import apps
@@ -120,23 +121,23 @@ def clear_cache():
 
 
 @pytest.fixture(autouse=True)
-def mock_translation_service():
+def mock_translate_text():
     TRANSLATION_MAPPING = {
         "Pavadinimas": "Title",
         "Aprašymas": "Description",
         "Būsena": "Status",
-        "copyright": "autorių teisės",
-        "license": "licencija",
-        "restricted": "apribota",
     }
 
-    class MockTranslationResponse:
-        def __init__(self, text: str) -> None:
-            self.status_code = 200
-            self._text = text
+    def fake_translate(text, field_name=""):
+        return TRANSLATION_MAPPING.get(text, text)
 
-        def json(self) -> str:
-            return TRANSLATION_MAPPING.get(self._text, self._text)
+    patches = [
+        patch("vitrina.utils.translate_text", side_effect=fake_translate),
+        patch("vitrina.resources.models.translate_text", side_effect=fake_translate),
+    ]
 
-        def raise_for_status(self) -> None:
-            pass
+    for _patch in patches:
+        _patch.start()
+    yield
+    for _patch in patches:
+        _patch.stop()

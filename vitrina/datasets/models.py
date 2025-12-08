@@ -26,7 +26,7 @@ from vitrina.classifiers.models import (
     ApplicableLegislation,
     Status,
 )
-from vitrina.utils import translate_text
+import vitrina.utils
 from vitrina.datasets.managers import (
     EdpPublicDatasetManager,
     EdpRestrictedDatasetManager,
@@ -1319,10 +1319,10 @@ class Dataset(Resource):
             self.set_current_language("en")
 
             if lt_title and not self.en_title():
-                self.title = translate_text(lt_title, f"dataset {self.id} title")
+                self.title = vitrina.utils.translate_text(lt_title, f"dataset {self.id} title")
 
             if lt_description and not self.en_description():
-                self.description = translate_text(lt_description, f"dataset {self.id} description")
+                self.description = vitrina.utils.translate_text(lt_description, f"dataset {self.id} description")
 
     def get_main_contact(self):
         if contact := self.contact:

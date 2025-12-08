@@ -190,7 +190,6 @@ class DatasetStructureView(
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        # breakpoint()
         version_id = kwargs.get("version_id")
         if version_id is not None:
             self.metadata_version = get_object_or_404(
@@ -3100,8 +3099,19 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
-            reverse("dataset-structure", args=[self.object.pk, self.metadata_version.pk]): _("Struktūra"),
         }
+        if self.metadata_version and self.metadata_version.external_version:
+            last_url = reverse("dataset-structure", args=[self.object.pk, self.metadata_version.pk])
+            last_label = self.metadata_version.external_version
+        elif self.metadata_version:
+            last_url = reverse("dataset-structure", args=[self.object.pk, self.metadata_version.pk])
+            last_label = _("Juodraštis")
+        else:
+            last_url = reverse("dataset-structure-no-version", args=[self.object.pk])
+            last_label = _("Struktūra")
+
+        context["parent_links"][last_url] = last_label
+
         if self.model_obj.name:
             context["parent_links"].update(
                 {
@@ -3235,8 +3245,19 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.object.pk]): self.object.title,
-            reverse("dataset-structure", args=[self.object.pk, self.metadata_version.pk]): _("Struktūra"),
         }
+        if self.metadata_version and self.metadata_version.external_version:
+            last_url = reverse("dataset-structure", args=[self.object.pk, self.metadata_version.pk])
+            last_label = self.metadata_version.external_version
+        elif self.metadata_version:
+            last_url = reverse("dataset-structure", args=[self.object.pk, self.metadata_version.pk])
+            last_label = _("Juodraštis")
+        else:
+            last_url = reverse("dataset-structure-no-version", args=[self.object.pk])
+            last_label = _("Struktūra")
+
+        context["parent_links"][last_url] = last_label
+
         if self.model_obj.name and self.property.name:
             context["parent_links"].update(
                 {
@@ -3338,7 +3359,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["dataset"] = self.dataset
-        context["version_id"] = self.metadata_version.pk
+        context["metadata_version"] = self.metadata_version
         return context
 
     def form_valid(self, form):

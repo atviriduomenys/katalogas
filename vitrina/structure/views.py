@@ -4,6 +4,8 @@ import json
 from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote
+
+from django.core.exceptions import ValidationError
 from django.db.models import Q, ForeignKey
 from django.conf import settings
 from django.contrib.auth.mixins import PermissionRequiredMixin
@@ -3344,6 +3346,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form):
+        if self.metadata_version.status != VersionStatus.DRAFT:
+            form.add_error(None, "Publikuota versija negali būti publikuota dar kartą.")
+            return self.form_invalid(form)
         self.new_version = form.save(commit=False)
         self.new_version.dataset = self.dataset
         self.new_version.status = VersionStatus.PRE_RELEASE
@@ -3405,35 +3410,36 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
             },
         )
 
-        metadata = form.cleaned_data.get("metadata", [])
-
+        selected_metadata = form.cleaned_data.get("metadata", [])
         old_to_new_metadata_object_map = {}
-
         with transaction.atomic():
             self.new_version.save()
 
-            for meta in metadata:
+            for meta in selected_metadata:
                 if meta := Metadata.objects.filter(pk=meta).first():
-                    old_metadata_instance = meta
 
-                    # Duplicate metadata
-                    new_metadata_instance = Metadata.objects.get(pk=meta.pk)
-                    new_metadata_instance.pk = None
-                    new_metadata_instance.draft = False
-                    new_metadata_instance.metadata_version = self.new_version
-                    new_metadata_instance.save()
+                    # Duplicate metadata row
+                    old_metadata_instance, new_metadata_instance = self.create_table_duplicate(meta)
 
                     # Duplicate related object
-                    related_model = old_metadata_instance.content_type.model_class()
-                    if related_model == Dataset:
+                    related_object_duplication_result = self.create_related_model_duplicate(old_metadata_instance)
+                    if related_object_duplication_result:
+                        old_related_instance, new_related_instance = related_object_duplication_result
+                    else:
                         continue
-                    old_related_instance = related_model.objects.filter(id=old_metadata_instance.object_id).first()
-                    new_related_instance = deepcopy(old_related_instance)
-                    new_related_instance.pk = None
-                    new_related_instance.metadata_version = self.new_version
-                    new_related_instance.save()
+                    # Need to create base if a model with base is published
+                    if hasattr(old_related_instance, "base") and old_related_instance.base:
+                        base_pk = old_related_instance.base.pk
+                        base_metadata = Metadata.objects.filter(dataset=self.dataset, object_id=base_pk, content_type=ContentType.objects.get_for_model(Base)).first()
+                        if base_metadata:
+                            old_base_metadata_instance, new_base_metadata_instance = self.create_table_duplicate(base_metadata)
+                            old_base_related_instance, new_base_related_instance = self.create_related_model_duplicate(old_base_metadata_instance)
+                            new_base_metadata_instance.object = new_base_related_instance
+                            new_base_metadata_instance.save()
+                            old_to_new_metadata_object_map[old_base_related_instance] = new_base_related_instance
 
-                    # Assign duplicated related object to metadata
+
+                    # Assign a duplicated related object to metadata
                     new_metadata_instance.object = new_related_instance
                     new_metadata_instance.save()
 
@@ -3457,56 +3463,119 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                         status=meta.status if meta.status else None,
                     )
 
-            recursively_created_fields = old_to_new_metadata_object_map
-
+            already_created_fields = old_to_new_metadata_object_map
             for old_related_instance, new_related_instance in list(old_to_new_metadata_object_map.items()):
-                self.recursive_duplicate_related_objects(new_related_instance, recursively_created_fields)
+                try:
+                    already_created_fields = self.duplicate_foreign_key_relationships(new_related_instance, already_created_fields)
+                except ValidationError as e:
+                    form.add_error(None, e.message)
+                    return self.form_invalid(form)
 
         if self.new_version:
             return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.new_version.pk]))
         else:
             return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version.pk]))
 
-    def recursive_duplicate_related_objects(self, new_related_object, recursively_created_fields):
-        # Model instances which must be created
-        recursion_continues_for_models = [Model, Property, EnumItem, ParamItem, DatasetDistribution, Enum, Param, Prefix]
+    def create_related_model_duplicate(self, old_metadata_instance):
+        related_model = old_metadata_instance.content_type.model_class()
+        if related_model == Dataset:
+            return None
+        old_related_instance = related_model.objects.filter(id=old_metadata_instance.object_id).first()
+        new_related_instance = deepcopy(old_related_instance)
+        new_related_instance.pk = None
+        new_related_instance.metadata_version = self.new_version
+        new_related_instance.save()
+
+        return old_related_instance, new_related_instance
+
+    def create_table_duplicate(self, old_metadata_instance) -> tuple:
+        new_metadata_instance = deepcopy(old_metadata_instance)
+        new_metadata_instance.pk = None
+        # TODO: column draft can be deprecated after full versioning is completed.
+        new_metadata_instance.draft = False
+        new_metadata_instance.metadata_version = self.new_version
+        new_metadata_instance.save()
+
+        return old_metadata_instance, new_metadata_instance
+
+    def duplicate_foreign_key_relationships(self, new_related_object, already_created_fields):
+        needed_foreign_key_relationships = [Base, Model, Property, EnumItem, ParamItem, DatasetDistribution, Enum, Param,
+                                          Prefix]
+        # recursion_must_stop_for_these_fields = ["ref_model", "property"]
 
         for field in new_related_object._meta.get_fields():
             if isinstance(field, ForeignKey):
-
-                # If the fields model is not in the needed list skip
-                if not issubclass(field.related_model, tuple(recursion_continues_for_models)):
+                # If the field model is not in the needed list skip
+                if not field.related_model in needed_foreign_key_relationships:
                     continue
-
-                # Get instance of the foreign key relationship
+                # Get an instance of the foreign key relationship
                 deeper_old_related_object = getattr(new_related_object, field.name)
-
-                # Check if the instance does not have a copy yet. If not create it recursively
-                if deeper_old_related_object and deeper_old_related_object not in recursively_created_fields:
+                if deeper_old_related_object:
+                    self.check_if_field_is_valid(deeper_old_related_object, new_related_object,
+                                                 already_created_fields)
+                if deeper_old_related_object and deeper_old_related_object not in already_created_fields:
+                    # if field.name in recursion_must_stop_for_these_fields:
+                    #     continue
                     deeper_new_related_object = deepcopy(deeper_old_related_object)
                     deeper_new_related_object.pk = None
                     deeper_new_related_object.metadata_version = self.new_version
 
-                    # Edge case for enums and params
+                    # Additional case for enums and params
                     if hasattr(deeper_new_related_object, 'content_type_id'):
                         related_model = deeper_new_related_object.content_type.model_class()
                         if related_model in [Property, Model, DatasetDistribution]:
-                            deeper_new_related_object.object = recursively_created_fields[deeper_new_related_object.object]
+                            deeper_new_related_object.object = already_created_fields[
+                                deeper_new_related_object.object]
 
                     deeper_new_related_object.save()
 
-                    recursively_created_fields[deeper_old_related_object] = deeper_new_related_object
+                    already_created_fields[deeper_old_related_object] = deeper_new_related_object
                     setattr(new_related_object, field.name, deeper_new_related_object)
                     new_related_object.save()
-                    self.recursive_duplicate_related_objects(deeper_new_related_object, recursively_created_fields)
-
-                # Set the copy that was created before
-                elif deeper_old_related_object and deeper_old_related_object in recursively_created_fields:
-                    value_to_set = recursively_created_fields[deeper_old_related_object]
+                elif deeper_old_related_object and deeper_old_related_object in already_created_fields:
+                    value_to_set = already_created_fields[deeper_old_related_object]
                     setattr(new_related_object, field.name, value_to_set)
                     new_related_object.save()
 
-        return recursively_created_fields
+        return already_created_fields
+
+    def check_if_field_has_same_dataset(self, field):
+        return field.metadata_version.dataset == self.dataset
+
+    def check_if_field_has_same_version(self, field):
+        return field.metadata_version == self.metadata_version
+
+    def check_if_field_has_published_version(self, field):
+        return field.metadata_version.status != VersionStatus.DRAFT
+
+    def check_if_field_is_valid(self, deeper_old_related_object, new_related_object, already_created_fields):
+        always_valid_fields = [Param, Enum]
+        if isinstance(deeper_old_related_object, tuple(always_valid_fields)):
+            return True
+        same_dataset = self.check_if_field_has_same_dataset(deeper_old_related_object)
+        same_version = self.check_if_field_has_same_version(deeper_old_related_object)
+        in_created = deeper_old_related_object in already_created_fields
+        published = self.check_if_field_has_published_version(deeper_old_related_object)
+        error_msg = None
+        deeper_name = getattr(deeper_old_related_object, "name", None) \
+                      or getattr(deeper_old_related_object, "title", None) \
+                      or deeper_old_related_object
+
+        new_name = getattr(new_related_object, "name", None) \
+                   or getattr(new_related_object, "title", None) \
+                   or new_related_object
+
+        if same_dataset and not same_version and not published:
+            error_msg = f"The field {new_name} references an unpublished version of {deeper_name} within the same dataset."
+
+        elif same_dataset and same_version and not in_created:
+            error_msg = f"The field {deeper_name} must be published, because it is referenced by {new_name}"
+
+        elif not same_dataset and not published:
+            error_msg = f"The field {new_name} references an unpublished field from another dataset"
+
+        if error_msg:
+            raise ValidationError(error_msg)
 
 
 class VersionListView(

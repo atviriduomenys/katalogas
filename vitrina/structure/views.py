@@ -3419,7 +3419,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                 if meta := Metadata.objects.filter(pk=meta).first():
 
                     # Duplicate metadata row
-                    old_metadata_instance, new_metadata_instance = self.create_table_duplicate(meta)
+                    old_metadata_instance, new_metadata_instance = self.create_metadata_duplicate(meta)
 
                     # Duplicate related object
                     related_object_duplication_result = self.create_related_model_duplicate(old_metadata_instance)
@@ -3432,7 +3432,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                         base_pk = old_related_instance.base.pk
                         base_metadata = Metadata.objects.filter(dataset=self.dataset, object_id=base_pk, content_type=ContentType.objects.get_for_model(Base)).first()
                         if base_metadata:
-                            old_base_metadata_instance, new_base_metadata_instance = self.create_table_duplicate(base_metadata)
+                            old_base_metadata_instance, new_base_metadata_instance = self.create_metadata_duplicate(base_metadata)
                             old_base_related_instance, new_base_related_instance = self.create_related_model_duplicate(old_base_metadata_instance)
                             new_base_metadata_instance.object = new_base_related_instance
                             new_base_metadata_instance.save()
@@ -3449,18 +3449,18 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     MetadataVersion.objects.create(
                         metadata=new_metadata_instance,
                         version=self.new_version,
-                        name=meta.name if meta.name else None,
-                        type=meta.type if meta.type else None,
-                        required=meta.required,
-                        unique=meta.unique,
-                        type_args=meta.type_args if meta.type_args else None,
-                        ref=meta.ref if meta.ref else None,
-                        source=meta.source if meta.source else None,
-                        prepare=meta.prepare if meta.prepare else None,
-                        level_given=meta.level_given,
-                        access=meta.access,
-                        base=meta.object.base if isinstance(meta.object, Model) else None,
-                        status=meta.status if meta.status else None,
+                        name=new_metadata_instance.name if new_metadata_instance.name else None,
+                        type=new_metadata_instance.type if new_metadata_instance.type else None,
+                        required=new_metadata_instance.required,
+                        unique=new_metadata_instance.unique,
+                        type_args=new_metadata_instance.type_args if new_metadata_instance.type_args else None,
+                        ref=new_metadata_instance.ref if new_metadata_instance.ref else None,
+                        source=new_metadata_instance.source if new_metadata_instance.source else None,
+                        prepare=new_metadata_instance.prepare if new_metadata_instance.prepare else None,
+                        level_given=new_metadata_instance.level_given,
+                        access=new_metadata_instance.access,
+                        base=new_metadata_instance.object.base if isinstance(new_metadata_instance.object, Model) else None,
+                        status=new_metadata_instance.status if new_metadata_instance.status else None,
                     )
 
             already_created_fields = old_to_new_metadata_object_map
@@ -3489,11 +3489,14 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         return old_related_instance, new_related_instance
 
-    def create_table_duplicate(self, old_metadata_instance) -> tuple:
+    def create_metadata_duplicate(self, old_metadata_instance) -> tuple:
         new_metadata_instance = deepcopy(old_metadata_instance)
         new_metadata_instance.pk = None
         # TODO: column draft can be deprecated after full versioning is completed.
         new_metadata_instance.draft = False
+        if old_metadata_instance.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
+            new_metadata_instance.status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
+
         new_metadata_instance.metadata_version = self.new_version
         new_metadata_instance.save()
 
@@ -3503,7 +3506,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         needed_foreign_key_relationships = [Base, Model, Property, EnumItem, ParamItem, DatasetDistribution, Enum, Param,
                                           Prefix]
         # recursion_must_stop_for_these_fields = ["ref_model", "property"]
-
         for field in new_related_object._meta.get_fields():
             if isinstance(field, ForeignKey):
                 # If the field model is not in the needed list skip
@@ -3525,6 +3527,8 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     if hasattr(deeper_new_related_object, 'content_type_id'):
                         related_model = deeper_new_related_object.content_type.model_class()
                         if related_model in [Property, Model, DatasetDistribution]:
+                            if deeper_new_related_object.object not in already_created_fields:
+                                raise ValidationError(f"The field {new_related_object.metadata.first().prepare or new_related_object.metadata.first()} references an unpublished field")
                             deeper_new_related_object.object = already_created_fields[
                                 deeper_new_related_object.object]
 

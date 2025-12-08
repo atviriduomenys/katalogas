@@ -32,7 +32,17 @@
             {{ agreement.get_status_display }}
             <span class="icon info-icon has-tooltip-multiline is-middle"
                   data-tooltip="{{ agreement_status_descriptions|get_item:agreement.status }}">
-                <i class="fas fa-info-circle"></i>
+                <i class="fas fa-info-circle
+                    {% if agreement.status in 'SUBMITTED,APPROVED,INITIATED' %}
+                        has-text-warning
+                    {% elif agreement.status in 'ACTIVE,SIGNED' %}
+                        has-text-success
+                    {% elif agreement.status in 'CREATED,FORMED' %}
+                        has-text-danger
+                    {% elif agreement.status == 'TERMINATED' %}
+                        has-text-black
+                    {% endif %}
+                "></i>
             </span>
         </td>
 

@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, QuerySet
 from django.forms import modelformset_factory, BaseFormSet
 from django.http import HttpResponseRedirect
 from django.http.response import HttpResponseBase, HttpResponse
@@ -75,7 +75,7 @@ class BaseAgreementListView(LoginRequiredMixin, PermissionRequiredMixin, Templat
 
         context.update(
             {
-                "agreements": agreements,
+                "agreements": page.object_list,
                 "agreement_status_descriptions": AGREEMENT_STATUS_DESCRIPTIONS,
                 "page_obj": page,
                 "paginator": paginator,
@@ -88,7 +88,7 @@ class BaseAgreementListView(LoginRequiredMixin, PermissionRequiredMixin, Templat
         return context
 
 
-class BaseAgreementDetailView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+class BaseAgreementDetailView(BaseAgreementMixin, LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
     template_name = None
     parent: object = None
     parent_type: str = None
@@ -150,13 +150,16 @@ class ProjectAgreementListView(BaseProjectMixin, BaseAgreementListView):
         return context
 
 
-class ProjectAgreementDetailView(BaseProjectMixin, BaseAgreementMixin, BaseAgreementDetailView):
+class ProjectAgreementDetailView(BaseProjectMixin, BaseAgreementDetailView):
     template_name = "smart_contracts/agreement_detail.html"
     parent_type = "project"
 
     def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
         super().setup(request, *args, **kwargs)
         self.parent: Project = self.get_project(kwargs["pk"])
+
+    def get_agreement_queryset(self) -> QuerySet:
+        return Agreement.objects.filter(project=self.project)
 
     def has_permission(self) -> bool:
         return can_view_agreement(self.request.user, self.agreement)
@@ -314,25 +317,20 @@ class AgreementCreateView(
 
 
 class ProjectBasedAgreementSubmitView(AgreementSubmitMixin, ProjectBasedAgreementNegotiateMixin):
-    def has_permission(self) -> bool:
-        return can_submit_agreements(self.request.user, self.agreement)
+    pass
 
 
 class ProjectBasedAgreementApproveView(AgreementApproveMixin, ProjectBasedAgreementNegotiateMixin):
-    def has_permission(self) -> bool:
-        return can_approve_agreements(self.request.user, self.agreement)
+    pass
 
 
 class ProjectBasedAgreementFormView(AgreementFormMixin, ProjectBasedAgreementNegotiateMixin):
-    def has_permission(self) -> bool:
-        return can_form_agreements(self.request.user, self.agreement)
+    pass
 
 
 class ProjectBasedAgreementInitiateView(AgreementInitiateMixin, ProjectBasedAgreementNegotiateMixin):
-    def has_permission(self) -> bool:
-        return can_initiate_agreements(self.request.user, self.agreement)
+    pass
 
 
 class ProjectBasedAgreementSignView(AgreementSignMixin, ProjectBasedAgreementNegotiateMixin):
-    def has_permission(self) -> bool:
-        return can_sign_agreements(self.request.user, self.agreement)
+    pass

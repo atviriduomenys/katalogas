@@ -1419,8 +1419,8 @@ class Dataset(Resource):
         existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
         new_urls = [url for url in urls if url not in existing_urls]
 
-        if new_urls:
-            ApplicableLegislation.objects.bulk_create([ApplicableLegislation(url=url) for url in new_urls])
+        for url in new_urls:
+            ApplicableLegislation.objects.create(url=url)
 
         all_entries = ApplicableLegislation.objects.filter(url__in=urls)
         self.applicable_legislation.set(all_entries)
@@ -1434,8 +1434,8 @@ class Dataset(Resource):
         )
         new_urls = [url for url in urls if url not in existing_urls]
 
-        if new_urls:
-            Documentation.objects.bulk_create([Documentation(documentation_link=url) for url in new_urls])
+        for url in new_urls:
+            Documentation.objects.create(documentation_link=url)
 
         all_entries = Documentation.objects.filter(documentation_link__in=urls)
         self.documentation.set(all_entries)

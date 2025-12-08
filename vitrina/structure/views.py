@@ -190,7 +190,7 @@ class DatasetStructureView(
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-
+        # breakpoint()
         version_id = kwargs.get("version_id")
         if version_id is not None:
             self.metadata_version = get_object_or_404(
@@ -201,7 +201,7 @@ class DatasetStructureView(
         else:
             self.metadata_version = _Version.objects.filter(dataset=self.object).last()
             if self.metadata_version:
-                redirect(
+                return redirect(
                     "dataset-structure",
                     pk=self.object.pk,
                     version_id=self.metadata_version.pk,

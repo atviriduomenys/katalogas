@@ -14,7 +14,7 @@ from vitrina.orgs.models import Organization
         ("My_Company", Organization.ORG, "datasets/org/my-company/"),
     ],
 )
-def test_generate_dataset_prefix(name, kind, expected):
+def test_generate_dataset_prefix(name: str, kind: Organization.ORGANIZATION_KINDS, expected: str) -> None:
     assert generate_dataset_prefix(name, kind) == expected
 
 

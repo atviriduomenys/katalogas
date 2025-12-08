@@ -1282,7 +1282,7 @@ class TestDatasetUpdateView:
             "catalog": catalog.pk,
             "frequency": frequency.pk,
             "access_rights": Dataset.PUBLIC,
-            "name": organization_name + "information_system_two",
+            "name": f"{organization_name}information_system_two",
             "landing_page": "https://www.test.test",
             "information_system_type": information_system_type_concept.pk,
             "information_system_importance": information_system_importance_concept.pk,

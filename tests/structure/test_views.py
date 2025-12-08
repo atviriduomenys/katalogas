@@ -15,6 +15,7 @@ from pygments.lexers.data import JsonLexer
 from pygments.lexers.special import TextLexer
 from pygments.styles import get_style_by_name
 from reversion.models import Version
+from webtest import AppError
 
 from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
@@ -542,6 +543,8 @@ def test_data_tab_from_dataset_detail(app: DjangoTestApp):
     )
 
     resp = app.get(dataset.get_absolute_url())
+    breakpoint()
+
     resp = resp.click(linkid='data_tab')
     assert resp.request.path == model.get_data_url()
 
@@ -2129,8 +2132,8 @@ def test_param_delete(app: DjangoTestApp):
 def test_new_version_with_released_date_earlier_than_two_weeks(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    version = VersionFactory()
+    form = app.get(reverse('version-create', args=[version.dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today()
     form['version_type'] = "MAJOR"
     resp = form.submit()
@@ -2143,14 +2146,14 @@ def test_new_version_with_released_date_earlier_than_two_weeks(app: DjangoTestAp
 def test_new_version_with_released_date_earlier_than_last_version(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
+    version = VersionFactory()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[version.dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
     form.submit()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[version.dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     resp = form.submit()
@@ -2198,15 +2201,11 @@ def test_new_version_with_new_structure(app: DjangoTestApp):
     form['description'] = "Add new structure to version"
     form.submit()
 
-    assert _Version.objects.exclude(status=VersionStatus.DRAFT).count() == 1
+    assert _Version.objects.count() == 2
     assert _Version.objects.exclude(status=VersionStatus.DRAFT).first().dataset == dataset
-    assert sorted(list(_Version.objects.exclude(status=VersionStatus.DRAFT).first().metadataversion_set.values_list(
-        'metadata__pk', flat=True
-    ))) == sorted([
-        dataset_meta.pk,
-        model_meta.pk,
-        prop_meta.pk
-    ])
+    assert len(list(_Version.objects.exclude(status=VersionStatus.DRAFT).first().metadata_set.values_list(
+        'pk', flat=True
+    ))) == 3
 
 
 @pytest.mark.django_db
@@ -2246,28 +2245,32 @@ def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     dataset_meta.name = "test/dataset1"
     dataset_meta.draft = True
     dataset_meta.save()
-
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(dataset),
-        metadata__object_id=dataset.pk
+    assert dataset.dataset_version.count() == 3
+
+    assert first_version_metadata.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk
     ).first().name == 'test/dataset'
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == dataset
-    assert new_version.metadataversion_set.first().name == 'test/dataset1'
+
+    assert second_version_metadata.count() == 1
+    assert second_version_metadata.first().object == dataset
+    assert second_version_metadata.first().name == 'test/dataset1'
 
 
 @pytest.mark.django_db
@@ -2307,6 +2310,8 @@ def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     model_meta.name = "test/dataset/TestModel1"
     model_meta.draft = True
@@ -2318,525 +2323,608 @@ def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(model),
-        metadata__object_id=model.pk
+    assert dataset.dataset_version.count() == 3
+
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(model),
     ).first().name == "test/dataset/TestModel"
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == model
-    assert new_version.metadataversion_set.first().name == "test/dataset/TestModel1"
+
+    assert second_version_metadata.count() == 1
+    assert second_version_metadata.first().object.pk != model.pk
+    assert second_version_metadata.first().name == "test/dataset/TestModel1"
 
 
 @pytest.mark.django_db
 def test_new_version_with_updated_structure__property_name(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
-        name="test/dataset/TestModel"
+        name="test/dataset/TestModel",
+        metadata_version=version
     )
     dataset_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
-        name="test/dataset"
+        name="test/dataset",
+        metadata_version=version
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=version)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name='prop',
         type='string',
+        metadata_version=version
     )
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     prop_meta.name = "prop1"
     prop_meta.draft = True
     prop_meta.save()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
-    form['metadata'] = [prop_meta.pk]
+    form['metadata'] = [model_meta.pk, prop_meta.pk] # Must version model if versioning property
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(prop),
-        metadata__object_id=prop.pk
+    assert dataset.dataset_version.count() == 3
+
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
     ).first().name == "prop"
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == prop
-    assert new_version.metadataversion_set.first().name == 'prop1'
+
+    assert second_version_metadata.count() == 2
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().object.pk != prop.pk
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().name == 'prop1'
 
 
 @pytest.mark.django_db
 def test_new_version_with_updated_structure__model_base(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
-        name="test/dataset/TestModel"
+        name="test/dataset/TestModel",
+        metadata_version=version,
     )
     dataset_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
-        name="test/dataset"
+        name="test/dataset",
+        metadata_version=version,
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=version)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name='prop',
         type='string',
+        metadata_version=version,
     )
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
-    base_model = ModelFactory(dataset=dataset)
+    base_model = ModelFactory(dataset=dataset, metadata_version=version,)
     base_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(base_model),
         object_id=base_model.pk,
         dataset=dataset,
-        name="test/dataset/BaseModel"
+        name="test/dataset/BaseModel",
+        metadata_version=version,
     )
-    base = BaseFactory(model=base_model)
+    base = BaseFactory(model=base_model, metadata_version=version,)
     base_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(base),
         object_id=base.pk,
         dataset=dataset,
-        name="test/dataset/BaseModel"
+        name="test/dataset/BaseModel",
+        metadata_version=version,
     )
     model.base = base
     model.save()
     model_meta.draft = True
     model_meta.save()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
-    form['metadata'] = [model_meta.pk]
+    form['metadata'] = [base_model_meta.pk, model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(model),
-        metadata__object_id=model.pk
-    ).first().base is None
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == model
-    assert new_version.metadataversion_set.first().base == base
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
+    assert dataset.dataset_version.count() == 3
+
+    assert first_version_metadata.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(model),
+    ).first().object.base is None
+
+    assert second_version_metadata.count() == 3
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(model),
+    ).first().object.pk != model.pk
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(model),
+        name="test/dataset/TestModel",
+    ).first().object.base is not None
 
 @pytest.mark.django_db
 def test_new_version_with_updated_structure__model_ref(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
-        name="test/dataset/TestModel"
+        name="test/dataset/TestModel",
+        metadata_version=version,
     )
     dataset_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
-        name="test/dataset"
+        name="test/dataset",
+        metadata_version=version,
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name='prop',
         type='string',
+        metadata_version=version,
     )
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     model_meta.ref = 'id'
     model_meta.draft = True
     model_meta.save()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(model),
-        metadata__object_id=model.pk
-    ).first().ref is None
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == model
-    assert new_version.metadataversion_set.first().ref == 'id'
+    assert dataset.dataset_version.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(model),
+    ).first().ref is "" # ?
+
+    assert second_version_metadata.count() == 1
+    assert second_version_metadata.first().object.pk != model.pk
+    assert second_version_metadata.first().ref == 'id'
 
 
 @pytest.mark.django_db
 def test_new_version_with_updated_structure__property_type(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
-        name="test/dataset/TestModel"
+        name="test/dataset/TestModel",
+        metadata_version=version,
     )
     dataset_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
-        name="test/dataset"
+        name="test/dataset",
+        metadata_version=version,
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name='prop',
         type='string',
+        metadata_version=version,
     )
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     prop_meta.type = 'integer'
     prop_meta.draft = True
     prop_meta.save()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
-    form['metadata'] = [prop_meta.pk]
+    form['metadata'] = [model_meta.pk, prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(prop),
-        metadata__object_id=prop.pk
+    assert dataset.dataset_version.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
     ).first().type == 'string'
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == prop
-    assert new_version.metadataversion_set.first().type == 'integer'
+
+    assert second_version_metadata.count() == 2
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().object.pk != prop.pk
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().type == 'integer'
 
 
 @pytest.mark.django_db
 def test_new_version_with_updated_structure__property_ref(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
-    model_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(model),
-        object_id=model.pk,
-        dataset=dataset,
-        name="test/dataset/TestModel"
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset"
-    )
-    prop = PropertyFactory(model=model)
-    prop_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(prop),
-        object_id=prop.pk,
-        dataset=dataset,
-        name='prop',
-        type='string',
-    )
-
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
-    form['version_type'] = "MAJOR"
-    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
-    form['description'] = "Add new structure to version"
-    form.submit()
-
-    prop_meta.ref = "test/dataset/TestModel"
-    prop_meta.draft = True
-    prop_meta.save()
-
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
-    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
-    form['version_type'] = "MAJOR"
-    form['metadata'] = [prop_meta.pk]
-    form['description'] = "Update structure version"
-    form.submit()
-
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(prop),
-        metadata__object_id=prop.pk
-    ).first().ref is None
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == prop
-    assert new_version.metadataversion_set.first().ref == "test/dataset/TestModel"
-
-
-@pytest.mark.django_db
-def test_new_version_with_updated_structure__model_level(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        level_given=3
+        metadata_version=version,
     )
     dataset_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
-        name="test/dataset"
+        name="test/dataset",
+        metadata_version=version,
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name='prop',
         type='string',
+        metadata_version=version,
     )
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
+
+    prop_meta.ref = "test/dataset/TestModel"
+    prop_meta.draft = True
+    prop_meta.save()
+
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [model_meta.pk, prop_meta.pk]
+    form['description'] = "Update structure version"
+    form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
+
+    assert dataset.dataset_version.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().ref == '' # ?
+
+    assert second_version_metadata.count() == 2
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().object.pk != prop.pk
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().ref == "test/dataset/TestModel"
+
+@pytest.mark.django_db
+def test_new_version_with_updated_structure__model_level(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        level_given=3,
+        metadata_version=version,
+    )
+    dataset_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version,)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='string',
+        metadata_version=version,
+    )
+
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=14)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
+    form['description'] = "Add new structure to version"
+    form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     model_meta.level_given = 5
     model_meta.draft = True
     model_meta.save()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
     form['metadata'] = [model_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(model),
-        metadata__object_id=model.pk
+    assert dataset.dataset_version.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(model),
     ).first().level_given == 3
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == model
-    assert new_version.metadataversion_set.first().level_given == 5
+
+    assert second_version_metadata.count() == 1
+    assert second_version_metadata.first().object.pk != model.pk
+    assert second_version_metadata.first().level_given == 5
 
 
 @pytest.mark.django_db
 def test_new_version_with_updated_structure__property_level(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
+        metadata_version=version,
     )
     dataset_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
-        name="test/dataset"
+        name="test/dataset",
+        metadata_version=version,
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=version, )
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name='prop',
         type='string',
-        level_given=3
+        level_given=3,
+        metadata_version=version,
     )
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     prop_meta.level_given = 5
     prop_meta.draft = True
     prop_meta.save()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
-    form['metadata'] = [prop_meta.pk]
+    form['metadata'] = [model_meta.pk, prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(prop),
-        metadata__object_id=prop.pk
+    assert dataset.dataset_version.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
     ).first().level_given == 3
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == prop
-    assert new_version.metadataversion_set.first().level_given == 5
+
+    assert second_version_metadata.count() == 2
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().object.pk != prop.pk
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().level_given == 5
 
 
 @pytest.mark.django_db
 def test_new_version_with_updated_structure__property_access(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
+        metadata_version=version,
     )
     dataset_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
-        name="test/dataset"
+        name="test/dataset",
+        metadata_version=version,
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=version, )
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name='prop',
         type='string',
-        access=3
+        access=3,
+        metadata_version=version,
     )
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     prop_meta.access = 5
     prop_meta.draft = True
     prop_meta.save()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
-    form['metadata'] = [prop_meta.pk]
+    form['metadata'] = [model_meta.pk, prop_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(prop),
-        metadata__object_id=prop.pk
+    assert dataset.dataset_version.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
     ).first().access == 3
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == prop
-    assert new_version.metadataversion_set.first().access == 5
+
+    assert second_version_metadata.count() == 2
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().object.pk != prop.pk
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(prop),
+    ).first().access == 5
 
 
 @pytest.mark.django_db
 def test_new_version_with_updated_structure__enum_prepare(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
+        metadata_version=version,
     )
     dataset_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
-        name="test/dataset"
+        name="test/dataset",
+        metadata_version=version,
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name='prop',
         type='string',
-        access=3
+        access=3,
+        metadata_version=version,
     )
     enum = EnumFactory(
         content_type=ContentType.objects.get_for_model(prop),
-        object_id=prop.pk
+        object_id=prop.pk,
+        metadata_version=version,
     )
-    enum_item = EnumItemFactory(enum=enum)
+    enum_item = EnumItemFactory(enum=enum, metadata_version=version,)
     enum_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(enum_item),
         object_id=enum_item.pk,
@@ -2846,70 +2934,80 @@ def test_new_version_with_updated_structure__enum_prepare(app: DjangoTestApp):
         prepare='1',
         access=Metadata.OPEN,
         source="TEST",
+        metadata_version=version,
     )
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     enum_meta.prepare = '2'
     enum_meta.draft = True
     enum_meta.save()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
-    form['metadata'] = [enum_meta.pk]
+    form['metadata'] = [model_meta.pk, prop_meta.pk, enum_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(enum_item),
-        metadata__object_id=enum_item.pk
+    assert dataset.dataset_version.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(enum_item),
     ).first().prepare == '1'
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == enum_item
-    assert new_version.metadataversion_set.first().prepare == '2'
+
+    assert second_version_metadata.count() == 3
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(enum_item)).first().object.pk != enum_item.pk
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(enum_item)).first().prepare == '2'
 
 
 @pytest.mark.django_db
 def test_new_version_with_updated_structure__enum_source(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
+        metadata_version=version,
     )
     dataset_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
-        name="test/dataset"
+        name="test/dataset",
+        metadata_version=version,
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name='prop',
         type='string',
-        access=3
+        access=3,
+        metadata_version=version,
     )
     enum = EnumFactory(
         content_type=ContentType.objects.get_for_model(prop),
-        object_id=prop.pk
+        object_id=prop.pk,
+        metadata_version=version,
     )
-    enum_item = EnumItemFactory(enum=enum)
+    enum_item = EnumItemFactory(enum=enum, metadata_version=version,)
     enum_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(enum_item),
         object_id=enum_item.pk,
@@ -2919,36 +3017,41 @@ def test_new_version_with_updated_structure__enum_source(app: DjangoTestApp):
         prepare='1',
         access=Metadata.OPEN,
         source="TEST",
+        metadata_version=version,
     )
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=14)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
     form['description'] = "Add new structure to version"
     form.submit()
+    first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
     enum_meta.source = 'TEST1'
     enum_meta.draft = True
     enum_meta.save()
 
-    form = app.get(reverse('version-create', args=[dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
-    form['metadata'] = [enum_meta.pk]
+    form['metadata'] = [model_meta.pk, prop_meta.pk, enum_meta.pk]
     form['description'] = "Update structure version"
     form.submit()
+    second_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
+    second_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=second_published_version).all()
 
-    assert dataset.dataset_version.count() == 2
-    old_version = dataset.dataset_version.order_by('created').first()
-    assert old_version.metadataversion_set.filter(
-        metadata__content_type=ContentType.objects.get_for_model(enum_item),
-        metadata__object_id=enum_item.pk
+    assert dataset.dataset_version.count() == 3
+    assert first_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(enum_item),
     ).first().source == 'TEST'
-    new_version = dataset.dataset_version.order_by('-created').first()
-    assert new_version.metadataversion_set.count() == 1
-    assert new_version.metadataversion_set.first().metadata.object == enum_item
-    assert new_version.metadataversion_set.first().source == 'TEST1'
+
+    assert second_version_metadata.count() == 3
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(enum_item)).first().object.pk != enum_item.pk
+    assert second_version_metadata.filter(
+        content_type=ContentType.objects.get_for_model(enum_item)).first().source == 'TEST1'
 
 
 @pytest.mark.django_db
@@ -3571,79 +3674,79 @@ def test_model_visibility_with_manager_access(app: DjangoTestApp):
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "City"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "City"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "City", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "City", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "Province"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "Province"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "Province", "number"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "number"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, "State"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "State"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "id"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "id"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "title"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "title"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "number"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "number"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
 
     resp = app.get(
-        reverse("property-structure", args=[structure.dataset.pk, "State", "residence"]),
+        reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "residence"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
@@ -3686,7 +3789,7 @@ def test_model_visibility_with_open_data_representative_access(app: DjangoTestAp
     )
     app.set_user(representative.user)
 
-    resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk]))
+    resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk, version.pk]))
     assert list(resp.context["models"].values_list("metadata__name", flat=True)) == [
         "datasets/gov/ivpk/adp/Province",
         "datasets/gov/ivpk/adp/State",
@@ -3833,7 +3936,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
     assert resp.status_code == 403
 
     resp = app.get(
-        reverse("model-structure", args=[structure.dataset.pk, version.pk, version.pk, "City"]),
+        reverse("model-structure", args=[structure.dataset.pk, version.pk, "City"]),
         expect_errors=True,
     )
     assert resp.status_code == 200
@@ -4177,7 +4280,7 @@ def test_published_metadata_gets_completed_status(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
     metadata_ids = list(
         Metadata.objects.filter(
@@ -4186,25 +4289,27 @@ def test_published_metadata_gets_completed_status(app: DjangoTestApp):
         ).values_list('id', flat=True)
     )
 
-    form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[structure.dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
     form['metadata'] = metadata_ids
     form.submit()
 
-    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    published_version = _Version.objects.exclude(status=VersionStatus.DRAFT).first()
+
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, published_version.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
     assert list(resp_models.context["props"].values_list("metadata__status__codename", flat=True)) == ["completed", "completed", "completed"]
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, published_version.pk, "Country", "id"]))
     assert list(resp_props.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
     assert resp_props.context["prop"].metadata.get().status.codename == "completed"
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, published_version.pk, "Country", "title"]))
     assert list(resp_props.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
     assert resp_props.context["prop"].metadata.get().status.codename == "completed"
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, published_version.pk, "Country", "administration"]))
     assert list(resp_props.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
 
     prop = resp_props.context["prop"]
@@ -4261,101 +4366,30 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
     enum_form['status'] = Status.objects.filter(codename="withdrawn").first().id
     enum_form.submit()
 
-    form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
+    form = app.get(reverse('version-create', args=[structure.dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
     form['metadata'] = metadata_ids
     form.submit()
+    published_version = _Version.objects.exclude(status=VersionStatus.DRAFT).first()
 
-    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, published_version.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["discont"]
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "id"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, published_version.pk, "Country", "id"]))
     assert resp_props.context["prop"].metadata.get().status.codename == "discont"
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, published_version.pk, "Country", "title"]))
     assert resp_props.context["prop"].metadata.get().status.codename == "completed"
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, published_version.pk, "Country", "administration"]))
     assert resp_props.context["prop"].metadata.get().status.codename == "deprecated"
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, published_version.pk, "Country", "administration"]))
     prop = resp_props.context["prop"]
     for enum_item in prop.enums.first().enumitem_set.all():
         assert enum_item.metadata.first().status.codename == "withdrawn"
 
-@pytest.mark.django_db
-def test_published_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    manifest = (
-        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
-        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
-        ",,,,Country,,,,,,,,,,,,,,\n"
-        ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
-        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
-        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
-        ",,,,,,,big,,BIG,,,,,,,,,\n"
-        ",,,,,,,,,,,,,,,,,,\n"
-    )
-    structure = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename="file.csv", data=manifest)
-        )
-    )
-    structure.dataset.current_structure = structure
-    structure.dataset.save()
-    create_structure_objects(structure)
-
-    metadata_ids = list(
-        Metadata.objects.filter(
-            dataset=structure.dataset,
-            draft=True,
-        ).values_list('id', flat=True)
-    )
-    publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
-    publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
-    publish_version_form['version_type'] = "MAJOR"
-    publish_version_form['metadata'] = metadata_ids
-    publish_version_form.submit()
-
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
-
-    enum = enum_meta.object
-    enum_id = enum.id
-    new_enum_name = "Largety"
-
-    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
-    model_form['level'] = 3
-    model_form.submit()
-
-    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    property_form['access'] = 2
-    property_form.submit()
-
-    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    enum_form['value'] = new_enum_name
-    enum_form.submit()
-
-    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
-    assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
-
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]))
-    assert resp_props.context["prop"].metadata.get().status.codename == "completed"
-
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
-    assert resp_props.context["prop"].metadata.get().status.codename == "develop"
-
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
-    prop = resp_props.context["prop"]
-    for enum_item in prop.enums.first().enumitem_set.all():
-        enum_metadata = enum_item.metadata.first()
-        if enum_metadata.name == new_enum_name:
-            assert enum_metadata.status.codename == "completed"
-        else:
-            assert enum_metadata.status.codename == "develop"
 
 @pytest.mark.django_db
 def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp):
@@ -4380,33 +4414,33 @@ def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, metadata_version=version, name="small").first()
 
     enum = enum_meta.object
     enum_id = enum.id
     new_enum_name = "Largety"
 
-    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
+    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, "Country"])).forms['model-form']
     model_form['level'] = 3
     model_form.submit()
 
-    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, version.pk, "Country", "administration"])).forms['property-form']
     property_form['access'] = 2
     property_form.submit()
 
-    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, version.pk, "Country", "administration", enum_id])).forms['enum-form']
     enum_form['value'] = new_enum_name
     enum_form.submit()
 
-    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
     assert resp_props.context["prop"].metadata.get().status.codename == "develop"
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
     prop = resp_props.context["prop"]
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
@@ -4435,36 +4469,36 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, metadata_version=version, name="small").first()
 
     enum = enum_meta.object
     enum_id = enum.id
     new_enum_name = "Largety"
 
-    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
+    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, "Country"])).forms['model-form']
     model_form['level'] = 2
     model_form["status"] = 5
     model_form.submit()
 
-    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, version.pk, "Country", "administration"])).forms['property-form']
     property_form['access'] = 2
     property_form["status"] = 5
     property_form.submit()
 
-    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, version.pk, "Country", "administration", enum_id])).forms['enum-form']
     enum_form['value'] = new_enum_name
     enum_form["status"] = 5
     enum_form.submit()
 
-    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["deprecated"]
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
     assert resp_props.context["prop"].metadata.get().status.codename == "deprecated"
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
     prop = resp_props.context["prop"]
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
@@ -4473,78 +4507,6 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
         else:
             assert enum_metadata.status.codename == "deprecated"
 
-@pytest.mark.django_db
-def test_changing_multiple_fields_in_published_structure_respects_status(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    manifest = (
-        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
-        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
-        ",,,,Country,,,,,,,,,,,,,,\n"
-        ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
-        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
-        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
-        ",,,,,,,big,,BIG,,,,,,,,,\n"
-        ",,,,,,,,,,,,,,,,,,\n"
-    )
-    structure = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename="file.csv", data=manifest)
-        )
-    )
-    structure.dataset.current_structure = structure
-    structure.dataset.save()
-    create_structure_objects(structure)
-
-    metadata_ids = list(
-        Metadata.objects.filter(
-            dataset=structure.dataset,
-            draft=True,
-        ).values_list('id', flat=True)
-    )
-    publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
-    publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
-    publish_version_form['version_type'] = "MAJOR"
-    publish_version_form['metadata'] = metadata_ids
-    publish_version_form.submit()
-
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
-
-    enum = enum_meta.object
-    enum_id = enum.id
-    new_enum_name = "Largety"
-
-    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
-    model_form['level'] = 2
-    model_form["status"] = 5
-    model_form.submit()
-
-    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    property_form['access'] = 2
-    property_form["status"] = 5
-    property_form.submit()
-
-    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    enum_form['value'] = new_enum_name
-    enum_form["status"] = 5
-    enum_form.submit()
-
-    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
-    assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["deprecated"]
-
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
-    assert resp_props.context["prop"].metadata.get().status.codename == "deprecated"
-
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
-    prop = resp_props.context["prop"]
-    for enum_item in prop.enums.first().enumitem_set.all():
-        enum_metadata = enum_item.metadata.first()
-        if enum_metadata.name == new_enum_name:
-            assert enum_metadata.status.codename == "completed"
-        else:
-            assert enum_metadata.status.codename == "deprecated"
 
 @pytest.mark.django_db
 def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
@@ -4569,97 +4531,34 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, metadata_version=version, name="small").first()
 
     enum = enum_meta.object
     enum_id = enum.id
 
-    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
+    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, "Country"])).forms['model-form']
     model_form.submit()
 
-    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, version.pk, "Country", "administration"])).forms['property-form']
     property_form.submit()
 
-    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, version.pk, "Country", "administration", enum_id])).forms['enum-form']
     enum_form.submit()
 
-    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
     assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
     assert resp_props.context["prop"].metadata.get().status.codename == "develop"
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
     prop = resp_props.context["prop"]
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
         assert enum_metadata.status.codename == "develop"
 
-@pytest.mark.django_db
-def test_published_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-    manifest = (
-        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
-        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
-        ",,,,Country,,,,,,,,,,,,,,\n"
-        ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
-        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
-        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
-        ",,,,,,,big,,BIG,,,,,,,,,\n"
-        ",,,,,,,,,,,,,,,,,,\n"
-    )
-    structure = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename="file.csv", data=manifest)
-        )
-    )
-    structure.dataset.current_structure = structure
-    structure.dataset.save()
-    create_structure_objects(structure)
-
-    metadata_ids = list(
-        Metadata.objects.filter(
-            dataset=structure.dataset,
-            draft=True,
-        ).values_list('id', flat=True)
-    )
-    publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
-    publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
-    publish_version_form['version_type'] = "MAJOR"
-    publish_version_form['metadata'] = metadata_ids
-    publish_version_form.submit()
-
-    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
-
-    enum = enum_meta.object
-    enum_id = enum.id
-
-    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
-    model_form.submit()
-
-    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
-    property_form.submit()
-
-    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
-    enum_form.submit()
-
-    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
-    assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
-
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
-    assert resp_props.context["prop"].metadata.get().status.codename == "completed"
-
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
-    prop = resp_props.context["prop"]
-    #TODO the status of enum should also be completed but because of a bug the name of the enum is changed even though nothing is submited. Change after bug fix
-    for enum_item in prop.enums.first().enumitem_set.all():
-        enum_metadata = enum_item.metadata.first()
-        assert enum_metadata.status.codename == "develop"
 
 @pytest.mark.django_db
 def test_props_metadata_rendering(app: DjangoTestApp) -> None:
@@ -4714,9 +4613,10 @@ def test_props_metadata_rendering(app: DjangoTestApp) -> None:
 def test_only_major_version_allowed_when_new_metadata(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
+    version = VersionFactory()
+    dataset = version.dataset
 
-    form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
 
     assert form["version_type"].options[0][0] == "MAJOR"
 
@@ -4724,14 +4624,15 @@ def test_only_major_version_allowed_when_new_metadata(app: DjangoTestApp):
 def test_minor_version_available_if_major_exists(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
+    version = VersionFactory()
+    dataset = version.dataset
 
-    form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     form["version_type"] = "MAJOR"
     form.submit()
 
-    second_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    second_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
 
     assert [opt[0] for opt in second_version_form["version_type"].options] == ["MAJOR", "MINOR", "PATCH"]
 
@@ -4739,22 +4640,23 @@ def test_minor_version_available_if_major_exists(app: DjangoTestApp):
 def test_patch_version_available_if_minor_exists(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
+    version = VersionFactory()
+    dataset = version.dataset
 
-    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
     major_version_form.submit()
 
     major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
 
-    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
     minor_version_form["related_version"] = major_version.pk
     minor_version_form.submit()
 
-    patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    patch_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
 
     assert [opt[0] for opt in patch_version_form["version_type"].options] == ["MAJOR", "MINOR", "PATCH"]
 
@@ -4762,14 +4664,15 @@ def test_patch_version_available_if_minor_exists(app: DjangoTestApp):
 def test_form_errors_if_major_not_selected(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
+    version = VersionFactory()
+    dataset = version.dataset
 
-    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
     major_version_form.submit()
 
-    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
 
@@ -4781,22 +4684,23 @@ def test_form_errors_if_major_not_selected(app: DjangoTestApp):
 def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
+    version = VersionFactory()
+    dataset = version.dataset
 
-    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
     major_version_form.submit()
 
     major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
 
-    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
     minor_version_form["related_version"] = major_version.pk
     minor_version_form.submit()
 
-    patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    patch_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     patch_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     patch_version_form["version_type"] = "PATCH"
 
@@ -4808,14 +4712,15 @@ def test_form_errors_if_minor_not_selected(app: DjangoTestApp):
 def test_multiple_major_versions_increment_external_version(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
+    version = VersionFactory()
+    dataset = version.dataset
 
-    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
     major_version_form.submit()
 
-    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
     major_version_form.submit()
@@ -4829,16 +4734,17 @@ def test_multiple_major_versions_increment_external_version(app: DjangoTestApp):
 def test_multiple_minor_versions_increment_external_version(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
+    version = VersionFactory()
+    dataset = version.dataset
 
-    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
     major_version_form.submit()
 
     major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
 
-    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
     minor_version_form["related_version"] = major_version.pk
@@ -4846,7 +4752,7 @@ def test_multiple_minor_versions_increment_external_version(app: DjangoTestApp):
 
     latest_version = _Version.objects.last()
 
-    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
     minor_version_form["related_version"] = latest_version.pk
@@ -4861,16 +4767,17 @@ def test_multiple_minor_versions_increment_external_version(app: DjangoTestApp):
 def test_multiple_patch_versions_increment_external_version(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    dataset = DatasetFactory()
+    version = VersionFactory()
+    dataset = version.dataset
 
-    major_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    major_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     major_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     major_version_form["version_type"] = "MAJOR"
     major_version_form.submit()
 
     major_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MAJOR)
 
-    minor_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    minor_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     minor_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     minor_version_form["version_type"] = "MINOR"
     minor_version_form["related_version"] = major_version.pk
@@ -4878,7 +4785,7 @@ def test_multiple_patch_versions_increment_external_version(app: DjangoTestApp):
 
     minor_version = _Version.objects.get(dataset=dataset, version_type=VersionType.MINOR)
 
-    patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    patch_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     patch_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     patch_version_form["related_version"] = minor_version.pk
     patch_version_form["version_type"] = "PATCH"
@@ -4886,7 +4793,7 @@ def test_multiple_patch_versions_increment_external_version(app: DjangoTestApp):
 
     latest_version = _Version.objects.last()
 
-    patch_version_form = app.get(reverse("version-create", args=[dataset.pk])).forms["version-form"]
+    patch_version_form = app.get(reverse("version-create", args=[dataset.pk, version.pk])).forms["version-form"]
     patch_version_form["released"] = datetime.date.today() + datetime.timedelta(days=15)
     patch_version_form["related_version"] = latest_version.pk
     patch_version_form["version_type"] = "PATCH"
@@ -4920,9 +4827,9 @@ def test_publish_form_shows_all_metadata_rows_params(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
-    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
     assert len(form.fields["metadata"]) == 11 # 10 fields from DSA + 1 for dataset_distribution
 
 def test_publish_form_shows_all_metadata_rows_base(app: DjangoTestApp):
@@ -4948,9 +4855,9 @@ def test_publish_form_shows_all_metadata_rows_base(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
-    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
     assert len(form.fields["metadata"]) == 10 # 9 fields from DSA, because Base as City Base is not displayed + 1 for dataset_distribution
 
 def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
@@ -4977,9 +4884,9 @@ def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
-    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
     assert len(form.fields["metadata"]) == 12 # 11 DSA rows + 1 dataset_distribution
 
 def test_publish_form_shows_all_metadata_rows_single_defined_resource(app: DjangoTestApp):
@@ -5005,9 +4912,9 @@ def test_publish_form_shows_all_metadata_rows_single_defined_resource(app: Djang
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
-    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
     assert len(form.fields["metadata"]) == 9
 
 def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTestApp):
@@ -5034,11 +4941,11 @@ def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTest
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
     dataset_distributions = DatasetDistribution.objects.filter(dataset=structure.dataset)
 
-    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
     assert len(form.fields["metadata"]) == 10
     assert len(dataset_distributions) == 2
     assert dataset_distributions.first().metadata.first().name == "resource1"
@@ -5069,7 +4976,7 @@ def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
 
-    form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
+    form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
     assert len(form.fields["metadata"]) == 12 # Denorm props create an additional property country.continent

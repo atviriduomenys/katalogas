@@ -52,7 +52,7 @@ class Migration(migrations.Migration):
                 ('is_public', models.BooleanField(blank=True, null=True, verbose_name='Organizacija viešinama')),
                 ('phone', models.CharField(blank=True, max_length=255, null=True, verbose_name='Telefono numeris')),
                 ('website', models.CharField(blank=True, max_length=255, null=True, verbose_name='Tinklalapis')),
-                ('kind', models.CharField(choices=[('gov', 'Valstybinė įstaiga'), ('com', 'Verslo organizacija'), ('org', 'Nepelno ir nevalstybinė organizacija')], default='org', max_length=36, verbose_name='Tipas')),
+                ('kind', models.CharField(choices=[('gov', 'Valstybinė įstaiga'), ('com', 'Verslo organizacija'), ('org', 'Ne pelno siekianti ar nevyriausybinė organizacija')], default='org', max_length=36, verbose_name='Tipas')),
                 ('role', models.CharField(blank=True, choices=[('group', 'Grupė'), ('ministry', 'Ministerija'), ('municipality', 'Savivaldybė')], max_length=255, null=True, verbose_name='Vaidmuo')),
                 ('publisher', models.BooleanField(default=False, verbose_name='Duomenų atvėrimo paslaugų teikėjas')),
                 ('name', models.TextField(blank=True, max_length=255, null=True, unique=True)),

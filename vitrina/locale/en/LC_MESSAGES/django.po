@@ -2493,8 +2493,8 @@ msgstr "State agency"
 msgid "Verslo organizacija"
 msgstr "Business organization"
 
-msgid "Nepelno ir nevalstybinė organizacija"
-msgstr "Non-profit and non-governmental organization"
+msgid "Ne pelno siekianti ar nevyriausybinė organizacija"
+msgstr "Non-profit or non-governmental organization"
 
 msgid "Ministerija"
 msgstr "Ministry"

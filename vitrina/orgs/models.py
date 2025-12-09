@@ -52,7 +52,7 @@ class Organization(MP_Node):
     ORGANIZATION_KINDS = (
         (GOV, _("Valstybinė įstaiga")),
         (COM, _("Verslo organizacija")),
-        (ORG, _("Nepelno ir nevalstybinė organizacija")),
+        (ORG, _("Ne pelno siekianti ar nevyriausybinė organizacija")),
     )
 
     GROUP = "group"

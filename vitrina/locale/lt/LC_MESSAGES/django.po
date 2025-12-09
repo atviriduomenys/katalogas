@@ -2320,7 +2320,7 @@ msgstr ""
 msgid "Verslo organizacija"
 msgstr ""
 
-msgid "Nepelno ir nevalstybinė organizacija"
+msgid "Ne pelno siekianti ar nevyriausybinė organizacija"
 msgstr ""
 
 msgid "Ministerija"

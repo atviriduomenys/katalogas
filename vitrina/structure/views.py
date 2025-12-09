@@ -31,14 +31,14 @@ from reversion.models import Version
 from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
-from vitrina.classifiers.models import Status, Concept
+from vitrina.classifiers.models import Status
 from vitrina.datasets.models import Dataset
 from vitrina.datasets.mixins import Crumb, DatasetBreadcrumbsMixin
 from vitrina.helpers import get_current_domain, email, none_to_string, object_to_none, build_page_title_context
 from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
-from vitrina.resources.models import DatasetDistribution, Format
+from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import spyna
 from vitrina.structure.forms import (
@@ -61,7 +61,8 @@ from vitrina.structure.models import (
     Param,
     MetadataVersion,
     StatusCode,
-    VersionStatus, Prefix,
+    VersionStatus,
+    Prefix,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -3378,7 +3379,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         else:
             self.new_version.version = 1
 
-
         rel_projects = Project.objects.filter(datasets=self.new_version.dataset)
         emails = []
         version_content_type_list = []
@@ -3417,7 +3417,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
             for meta in selected_metadata:
                 if meta := Metadata.objects.filter(pk=meta).first():
-
                     # Duplicate metadata row
                     old_metadata_instance, new_metadata_instance = self.create_metadata_duplicate(meta)
 
@@ -3430,14 +3429,21 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     # Need to create base if a model with base is published
                     if hasattr(old_related_instance, "base") and old_related_instance.base:
                         base_pk = old_related_instance.base.pk
-                        base_metadata = Metadata.objects.filter(dataset=self.dataset, object_id=base_pk, content_type=ContentType.objects.get_for_model(Base)).first()
+                        base_metadata = Metadata.objects.filter(
+                            dataset=self.dataset,
+                            object_id=base_pk,
+                            content_type=ContentType.objects.get_for_model(Base),
+                        ).first()
                         if base_metadata:
-                            old_base_metadata_instance, new_base_metadata_instance = self.create_metadata_duplicate(base_metadata)
-                            old_base_related_instance, new_base_related_instance = self.create_related_model_duplicate(old_base_metadata_instance)
+                            old_base_metadata_instance, new_base_metadata_instance = self.create_metadata_duplicate(
+                                base_metadata
+                            )
+                            old_base_related_instance, new_base_related_instance = self.create_related_model_duplicate(
+                                old_base_metadata_instance
+                            )
                             new_base_metadata_instance.object = new_base_related_instance
                             new_base_metadata_instance.save()
                             old_to_new_metadata_object_map[old_base_related_instance] = new_base_related_instance
-
 
                     # Assign a duplicated related object to metadata
                     new_metadata_instance.object = new_related_instance
@@ -3459,14 +3465,18 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                         prepare=new_metadata_instance.prepare if new_metadata_instance.prepare else None,
                         level_given=new_metadata_instance.level_given,
                         access=new_metadata_instance.access,
-                        base=new_metadata_instance.object.base if isinstance(new_metadata_instance.object, Model) else None,
+                        base=new_metadata_instance.object.base
+                        if isinstance(new_metadata_instance.object, Model)
+                        else None,
                         status=new_metadata_instance.status if new_metadata_instance.status else None,
                     )
 
             already_created_fields = old_to_new_metadata_object_map
             for old_related_instance, new_related_instance in list(old_to_new_metadata_object_map.items()):
                 try:
-                    already_created_fields = self.duplicate_foreign_key_relationships(new_related_instance, already_created_fields)
+                    already_created_fields = self.duplicate_foreign_key_relationships(
+                        new_related_instance, already_created_fields
+                    )
                 except ValidationError as e:
                     transaction.set_rollback(True)
                     form.add_error(None, e.message)
@@ -3503,34 +3513,41 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return old_metadata_instance, new_metadata_instance
 
     def duplicate_foreign_key_relationships(self, new_related_object, already_created_fields):
-        needed_foreign_key_relationships = [Base, Model, Property, EnumItem, ParamItem, DatasetDistribution, Enum, Param,
-                                          Prefix]
+        needed_foreign_key_relationships = [
+            Base,
+            Model,
+            Property,
+            EnumItem,
+            ParamItem,
+            DatasetDistribution,
+            Enum,
+            Param,
+            Prefix,
+        ]
         # recursion_must_stop_for_these_fields = ["ref_model", "property"]
         for field in new_related_object._meta.get_fields():
             if isinstance(field, ForeignKey):
                 # If the field model is not in the needed list skip
-                if not field.related_model in needed_foreign_key_relationships:
+                if field.related_model not in needed_foreign_key_relationships:
                     continue
                 # Get an instance of the foreign key relationship
                 deeper_old_related_object = getattr(new_related_object, field.name)
                 if deeper_old_related_object:
-                    self.check_if_field_is_valid(deeper_old_related_object, new_related_object,
-                                                 already_created_fields)
+                    self.check_if_field_is_valid(deeper_old_related_object, new_related_object, already_created_fields)
                 if deeper_old_related_object and deeper_old_related_object not in already_created_fields:
-                    # if field.name in recursion_must_stop_for_these_fields:
-                    #     continue
                     deeper_new_related_object = deepcopy(deeper_old_related_object)
                     deeper_new_related_object.pk = None
                     deeper_new_related_object.metadata_version = self.new_version
 
                     # Additional case for enums and params
-                    if hasattr(deeper_new_related_object, 'content_type_id'):
+                    if hasattr(deeper_new_related_object, "content_type_id"):
                         related_model = deeper_new_related_object.content_type.model_class()
                         if related_model in [Property, Model, DatasetDistribution]:
                             if deeper_new_related_object.object not in already_created_fields:
-                                raise ValidationError(f"The field {new_related_object.metadata.first().prepare or new_related_object.metadata.first()} references an unpublished field")
-                            deeper_new_related_object.object = already_created_fields[
-                                deeper_new_related_object.object]
+                                raise ValidationError(
+                                    f"The field {new_related_object.metadata.first().prepare or new_related_object.metadata.first()} references an unpublished field"
+                                )
+                            deeper_new_related_object.object = already_created_fields[deeper_new_related_object.object]
 
                     deeper_new_related_object.save()
 
@@ -3562,22 +3579,35 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         in_created = deeper_old_related_object in already_created_fields
         published = self.check_if_field_has_published_version(deeper_old_related_object)
         error_msg = None
-        deeper_name = getattr(deeper_old_related_object, "name", None) \
-                      or getattr(deeper_old_related_object, "title", None) \
-                      or deeper_old_related_object
+        deeper_name = (
+            getattr(deeper_old_related_object, "name", None)
+            or getattr(deeper_old_related_object, "title", None)
+            or deeper_old_related_object
+        )
 
-        new_name = getattr(new_related_object, "name", None) \
-                   or getattr(new_related_object, "title", None) \
-                   or new_related_object
+        new_name = (
+            getattr(new_related_object, "name", None)
+            or getattr(new_related_object, "title", None)
+            or new_related_object
+        )
 
         if same_dataset and not same_version and not published:
-            error_msg = f"The field {new_name} references an unpublished version of {deeper_name} within the same dataset."
+            error_msg = _(
+                "Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų ištekliuje"
+                .format(new_name, deeper_name)
+            )
 
         elif same_dataset and same_version and not in_created:
-            error_msg = f"The field {deeper_name} must be published, because it is referenced by {new_name}"
+            error_msg = _(
+                "Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį."
+                .format(deeper_name, new_name)
+            )
 
         elif not same_dataset and not published:
-            error_msg = f"The field {new_name} references an unpublished field from another dataset"
+            error_msg = _(
+                "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje"
+                .format(new_name)
+            )
 
         if error_msg:
             raise ValidationError(error_msg)

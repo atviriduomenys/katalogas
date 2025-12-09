@@ -2090,7 +2090,11 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         if not self.metadata_version:
-            new_draft_version = _Version.objects.create(dataset=self.dataset, status=VersionStatus.DRAFT)
+            latest_version = self.dataset.latest_version()
+            version_number = latest_version.version + 1 if latest_version else 1
+            new_draft_version = _Version.objects.create(
+                dataset=self.dataset, status=VersionStatus.DRAFT, version=version_number
+            )
             self.metadata_version = new_draft_version
 
         model = Model.objects.create(
@@ -3426,6 +3430,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                         old_related_instance, new_related_instance = related_object_duplication_result
                     else:
                         continue
+
                     # Need to create base if a model with base is published
                     if hasattr(old_related_instance, "base") and old_related_instance.base:
                         base_pk = old_related_instance.base.pk
@@ -3524,29 +3529,35 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
             Param,
             Prefix,
         ]
-        # recursion_must_stop_for_these_fields = ["ref_model", "property"]
         for field in new_related_object._meta.get_fields():
             if isinstance(field, ForeignKey):
-                # If the field model is not in the needed list skip
+                # If the foreign key relationship is not in the needed list skip
                 if field.related_model not in needed_foreign_key_relationships:
                     continue
+
                 # Get an instance of the foreign key relationship
                 deeper_old_related_object = getattr(new_related_object, field.name)
                 if deeper_old_related_object:
                     self.check_if_field_is_valid(deeper_old_related_object, new_related_object, already_created_fields)
-                if deeper_old_related_object and deeper_old_related_object not in already_created_fields:
+
+                if isinstance(deeper_old_related_object, (Enum, Param)):
                     deeper_new_related_object = deepcopy(deeper_old_related_object)
                     deeper_new_related_object.pk = None
                     deeper_new_related_object.metadata_version = self.new_version
 
-                    # Additional case for enums and params
                     if hasattr(deeper_new_related_object, "content_type_id"):
                         related_model = deeper_new_related_object.content_type.model_class()
                         if related_model in [Property, Model, DatasetDistribution]:
                             if deeper_new_related_object.object not in already_created_fields:
-                                raise ValidationError(
-                                    f"The field {new_related_object.metadata.first().prepare or new_related_object.metadata.first()} references an unpublished field"
+                                error_field_name = (
+                                    new_related_object.metadata.first().prepare or new_related_object.metadata.first()
                                 )
+                                error_msg = _(
+                                    "Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje".format(
+                                        error_field_name
+                                    )
+                                )
+                                raise ValidationError(error_msg)
                             deeper_new_related_object.object = already_created_fields[deeper_new_related_object.object]
 
                     deeper_new_related_object.save()
@@ -3554,6 +3565,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     already_created_fields[deeper_old_related_object] = deeper_new_related_object
                     setattr(new_related_object, field.name, deeper_new_related_object)
                     new_related_object.save()
+
                 elif deeper_old_related_object and deeper_old_related_object in already_created_fields:
                     value_to_set = already_created_fields[deeper_old_related_object]
                     setattr(new_related_object, field.name, value_to_set)
@@ -3593,21 +3605,18 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         if same_dataset and not same_version and not published:
             error_msg = _(
-                "Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų ištekliuje"
-                .format(new_name, deeper_name)
+                "Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų ištekliuje".format(
+                    new_name, deeper_name
+                )
             )
 
         elif same_dataset and same_version and not in_created:
             error_msg = _(
-                "Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį."
-                .format(deeper_name, new_name)
+                "Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį".format(deeper_name, new_name)
             )
 
         elif not same_dataset and not published:
-            error_msg = _(
-                "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje"
-                .format(new_name)
-            )
+            error_msg = _("Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje".format(new_name))
 
         if error_msg:
             raise ValidationError(error_msg)

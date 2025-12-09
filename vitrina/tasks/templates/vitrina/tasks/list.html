@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load markdown_tags %}
 
 {% block pageTitle %} | {% translate "Užduotys" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Užduotys" %}{% endblock %}
@@ -131,7 +132,7 @@
                             </div>
                             <div class="columns">
                                 <div class="column is-12">
-                                    <p>{{ i.description | safe }}</p>
+                                    <p>{{ i.description | markdown }}</p>
                                 </div>
                             </div>
                         </div>

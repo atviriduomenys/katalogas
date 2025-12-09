@@ -498,7 +498,19 @@ class DatasetDetailView(
             "json_ld": self.get_json_ld_from_dataset(dataset),
             "page_obj": page_obj,
             "child_resources_url": reverse("dataset-child-resources", kwargs={"pk": dataset.pk}),
+            "licences": set([dist.licence for dist in dataset.datasetdistribution_set.filter(licence__isnull=False)]),
         }
+
+        distributions_with_conditions_ids = (
+            dataset.datasetdistribution_set.filter(translations__conditions__isnull=False)
+            .exclude(translations__conditions="")
+            .values_list("id", flat=True)
+        )
+
+        extra_context_data["distributions_with_conditions"] = dataset.datasetdistribution_set.filter(
+            pk__in=distributions_with_conditions_ids
+        )
+
         part_of = dataset.part_of.order_by("relation")
         part_of = itertools.groupby(part_of, lambda x: x.relation)
         extra_context_data["part_of"] = [(relation, list(values)) for relation, values in part_of]
@@ -800,17 +812,8 @@ class DatasetCreateView(
             self.object.published = timezone.now()
             if self.object.service and self.object.endpoint_url:
                 self.object.status = Dataset.HAS_DATA
-                comment_status = Comment.OPENED
             else:
                 self.object.status = Dataset.INVENTORED
-                comment_status = Comment.INVENTORED
-            Comment.objects.create(
-                content_type=ContentType.objects.get_for_model(self.object),
-                object_id=self.object.pk,
-                user=self.request.user,
-                type=Comment.STATUS,
-                status=comment_status,
-            )
         if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (
             identifier := form.cleaned_data.get("identifier")
         ):
@@ -1124,35 +1127,12 @@ class DatasetUpdateView(
             if self.object.is_public and not self.object.published:
                 self.object.published = timezone.now()
 
-            latest_status_comment = (
-                Comment.objects.filter(
-                    content_type=ContentType.objects.get_for_model(self.object),
-                    object_id=self.object.pk,
-                    type=Comment.STATUS,
-                    status__isnull=False,
-                )
-                .order_by("-created")
-                .first()
-            )
-
             if self.object.datasetdistribution_set.exists() or (self.object.service and self.object.endpoint_url):
                 self.object.status = Dataset.HAS_DATA
-                comment_status = Comment.OPENED
             elif self.object.plandataset_set.exists():
                 self.object.status = Dataset.PLANNED
-                comment_status = Comment.PLANNED
             else:
                 self.object.status = Dataset.INVENTORED
-                comment_status = Comment.INVENTORED
-
-            if not latest_status_comment or latest_status_comment.status != comment_status:
-                Comment.objects.create(
-                    content_type=ContentType.objects.get_for_model(self.object),
-                    object_id=self.object.pk,
-                    user=self.request.user,
-                    type=Comment.STATUS,
-                    status=comment_status,
-                )
 
         elif not self.object.is_public and self.object.published:
             self.object.published = None
@@ -3429,13 +3409,6 @@ class DatasetCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 and self.dataset.status != Dataset.HAS_DATA
                 and self.dataset.status != Dataset.PLANNED
             ):
-                Comment.objects.create(
-                    content_type=ContentType.objects.get_for_model(self.dataset),
-                    object_id=self.dataset.pk,
-                    user=self.request.user,
-                    type=Comment.STATUS,
-                    status=Comment.PLANNED,
-                )
                 self.dataset.status = Dataset.PLANNED
                 self.dataset.save(update_fields=["status"])
 
@@ -3465,13 +3438,6 @@ class DatasetDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
 
         if dataset.is_public and dataset.status == Dataset.PLANNED and not dataset.plandataset_set.exists():
             dataset.status = Dataset.INVENTORED
-            Comment.objects.create(
-                content_type=ContentType.objects.get_for_model(dataset),
-                object_id=dataset.pk,
-                type=Comment.STATUS,
-                status=Comment.INVENTORED,
-                user=self.request.user,
-            )
             dataset.save(update_fields=["status"])
 
         return redirect(reverse("dataset-plans", args=[dataset.pk]))
@@ -3510,13 +3476,6 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
 
         if dataset.is_public and dataset.status == Dataset.PLANNED and not dataset.plandataset_set.exists():
             dataset.status = Dataset.INVENTORED
-            Comment.objects.create(
-                content_type=ContentType.objects.get_for_model(dataset),
-                object_id=dataset.pk,
-                type=Comment.STATUS,
-                status=Comment.INVENTORED,
-                user=self.request.user,
-            )
             dataset.save(update_fields=["status"])
 
         return redirect(reverse("plan-detail", args=[plan.receiver.pk, plan.pk]))

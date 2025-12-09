@@ -1944,6 +1944,8 @@ class Contact(models.Model):
         if self.content_type:
             if self.content_type.model == "organization":
                 return self.content_object.title
+            elif self.content_type.model == "user":
+                return f"{self.content_object.get_full_name()} ({self.position})"
             return self.content_object.get_full_name()
         return f"{self.contact_name} ({self.position})"
 

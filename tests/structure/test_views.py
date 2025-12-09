@@ -4178,25 +4178,25 @@ def test_manifest_export_openapi(app: DjangoTestApp):
 
     assert resp.status_code == 200
     assert resp.content_type == 'application/json'
-    
+
     openapi_spec = resp.json
-    
+
     expected_keys = ['openapi', 'info', 'externalDocs', 'servers', 'tags', 'components', 'paths']
     assert list(openapi_spec.keys()) == expected_keys, "OpenAPI spec missing required top-level fields"
-    
+
     info = openapi_spec['info']
     assert info['summary'] == structure.dataset.title, "Info summary should match dataset title"
     assert info['description'] == structure.dataset.description, "Info description should match dataset description"
     assert info['version'] == '1.0.0', "API version should be 1.0.0"
-    
+
     schemas = set(openapi_spec['components']['schemas'].keys())
     expected_schemas = {"Country", "CountryCollection", "CountryChange", "CountryChanges"}
     assert expected_schemas <= schemas, f"Missing required schemas: {expected_schemas - schemas}"
-    
+
     tag_names = {tag["name"] for tag in openapi_spec["tags"]}
     expected_tags = {"utility", "Country"}
     assert tag_names == expected_tags, f"Tags mismatch. Expected: {expected_tags}, Got: {tag_names}"
-    
+
     utility_paths = {"/version", "/health"}
     model_paths = {
         "/datasets/gov/ivpk/adp/Country",
@@ -5454,6 +5454,7 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
     assert response.status_code == 200
     assert response.context['form'].errors
     assert response.context['form'].errors['__all__'][0] == "Laukas Country privalo būti publikuojamas, nes laukas id turi nuorodą į jį"
+
     assert Metadata.objects.count() == 5
     assert Model.objects.count() == 2
     assert DatasetDistribution.objects.count() == 1
@@ -5536,13 +5537,11 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     assert Base.objects.count() == 0
 
     published_version = _Version.objects.filter(dataset=structure.dataset).order_by("-created").first()
-    base_model = Metadata.objects.filter(dataset=structure.dataset, name="datasets/govsssss/ivpk/adp/City", metadata_version=published_version).first()
-    inheriting_model = Metadata.objects.filter(dataset=structure.dataset, name="datasets/govsssss/ivpk/adp/Country").first()
+    base_model = Model.objects.filter(dataset=structure.dataset, metadata_version=published_version).first()
 
     form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, "Country"])).forms['model-form']
-    form['base'].force_value(str(base_model.object.pk))
+    form['base'].force_value(str(base_model.pk))
     form.submit()
-    inheriting_model.refresh_from_db()
 
     assert Metadata.objects.count() == 7
     assert Base.objects.count() == 1
@@ -5556,12 +5555,83 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     form['version_type'] = "MAJOR"
     form['metadata'] = publish_metadata
     form.submit()
+    published_version = _Version.objects.filter(dataset=structure.dataset).order_by("-created").first()
+    published_model = Model.objects.filter(dataset=structure.dataset, metadata_version=published_version).first()
 
+    assert base_model.pk == published_model.base.model.pk
     assert Metadata.objects.count() == 10
     assert Model.objects.count() == 4
     assert Base.objects.count() == 2
 
 def test_publishing_model_with_base_from_published_version_different_dataset(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    first_version = VersionFactory()
+    first_model = ModelFactory(dataset=first_version.dataset, metadata_version=first_version)
+    first_dataset = first_version.dataset
+    first_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(first_model),
+        object_id=first_model.pk,
+        dataset=first_dataset,
+        name="test/dataset/TestModel1",
+        metadata_version=first_version,
+    )
+
+    second_version = VersionFactory()
+    second_model = ModelFactory(dataset=second_version.dataset, metadata_version=second_version)
+    second_dataset = second_version.dataset
+    second_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(second_model),
+        object_id=second_model.pk,
+        dataset=second_dataset,
+        name="test/dataset/TestModel2",
+        metadata_version=second_version,
+    )
+
+    assert Metadata.objects.count() == 2
+    assert Model.objects.count() == 2
+    assert _Version.objects.count() == 2
+    assert Base.objects.count() == 0
+
+    form = app.get(reverse('version-create', args=[first_dataset.pk, first_version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [first_model_meta.pk]
+    form.submit()
+
+    assert Metadata.objects.count() == 3
+    assert Model.objects.count() == 3
+    assert _Version.objects.count() == 3
+    assert Base.objects.count() == 0
+
+    first_published_version = _Version.objects.filter(dataset=first_dataset).order_by("-created").first()
+    first_published_model = Model.objects.filter(dataset=first_dataset, metadata_version=first_published_version).first()
+
+    form = app.get(reverse('model-update', args=[second_dataset.pk, second_version.pk, "TestModel2"])).forms['model-form']
+    form['base'].force_value(str(first_published_model.pk))
+    form.submit()
+
+    assert Metadata.objects.count() == 4
+    assert Model.objects.count() == 3
+    assert _Version.objects.count() == 3
+    assert Base.objects.count() == 1
+
+    form = app.get(reverse('version-create', args=[second_dataset.pk, second_version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [second_model_meta.pk]
+    form.submit()
+    published_version = _Version.objects.filter(dataset=second_dataset).order_by("-created").first()
+    published_model_with_base = Model.objects.filter(dataset=second_dataset, metadata_version=published_version).first()
+
+    assert first_published_model.pk == published_model_with_base.base.model.pk
+    assert Metadata.objects.count() == 6
+    assert Model.objects.count() == 4
+    assert _Version.objects.count() == 4
+    assert Base.objects.count() == 2
+
+def test_publishing_model_with_base_from_draft_version_different_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     first_version = VersionFactory()
@@ -5590,37 +5660,271 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
     assert _Version.objects.count() == 2
     assert Base.objects.count() == 0
 
-    form = app.get(reverse('version-create', args=[first_dataset.pk, first_version.pk])).forms['version-form']
-    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
-    form['version_type'] = "MAJOR"
-    form['metadata'] = [first_model_meta.pk]
-    form.submit()
-
-    assert Metadata.objects.count() == 3
-    assert Model.objects.count() == 3
-    assert _Version.objects.count() == 3
-    assert Base.objects.count() == 0
-
-    first_published_version = _Version.objects.filter(dataset=first_dataset).order_by("-created").first()
-    first_published_model = Model.objects.filter(dataset=first_dataset, metadata_version=first_published_version).first()
-
     form = app.get(reverse('model-update', args=[second_dataset.pk, second_version.pk, "TestModel2"])).forms['model-form']
-    form['base'].force_value(str(first_published_model.pk))
+    form['base'].force_value(str(first_model.pk))
     form.submit()
     second_model.refresh_from_db()
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 3
-    assert _Version.objects.count() == 3
+    assert Metadata.objects.count() == 3
+    assert Model.objects.count() == 2
+    assert _Version.objects.count() == 2
     assert Base.objects.count() == 1
 
     form = app.get(reverse('version-create', args=[second_dataset.pk, second_version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
     form['metadata'] = [second_model_meta.pk]
+    response = form.submit()
+
+    assert response.status_code == 200
+    assert response.context['form'].errors
+    assert response.context['form'].errors['__all__'][0] == "Laukas test/dataset/TestModel1 turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje"
+
+def test_publishing_property_with_published_model_ref_same_dataset(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    version = VersionFactory()
+    first_model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    first_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(first_model),
+        object_id=first_model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+
+    second_model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    second_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(second_model),
+        object_id=second_model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel2",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=second_model, metadata_version=version,)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop2',
+        type='ref',
+        access=3,
+        metadata_version=version,
+    )
+
+    assert Metadata.objects.count() == 3
+    assert Property.objects.count() == 1
+    assert Model.objects.count() == 2
+
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [first_model_meta.pk]
+    form.submit()
+    published_version = _Version.objects.filter(dataset=dataset).order_by("-created").first()
+    first_published_model = Model.objects.filter(metadata_version=published_version).first()
+
+    assert Metadata.objects.count() == 4
+    assert Property.objects.count() == 1
+    assert Model.objects.count() == 3
+
+    property_form = app.get(reverse('property-update', args=[dataset.pk, version.pk, "TestModel2", "prop2"])).forms['property-form']
+    property_form['ref'].force_value(str(first_published_model.pk))
+    property_form.submit()
+    prop.refresh_from_db()
+
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [second_model_meta.pk, prop_meta.pk]
     form.submit()
 
+    published_version = _Version.objects.filter(dataset=dataset).order_by("-created").first()
+    second_published_property = Property.objects.filter(metadata_version=published_version).first()
+
+    assert first_published_model.pk == second_published_property.ref_model_id
     assert Metadata.objects.count() == 6
+    assert Property.objects.count() == 2
     assert Model.objects.count() == 4
-    assert _Version.objects.count() == 4
-    assert Base.objects.count() == 2
+
+def test_publishing_property_with_published_model_ref_different_dataset(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    first_version = VersionFactory()
+    first_dataset = first_version.dataset
+    first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
+    first_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(first_model),
+        object_id=first_model.pk,
+        dataset=first_dataset,
+        name="test/dataset/TestModel",
+        metadata_version=first_version,
+    )
+
+    second_version = VersionFactory()
+    second_dataset = second_version.dataset
+
+    second_model = ModelFactory(dataset=second_dataset, metadata_version=second_version)
+    second_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(second_model),
+        object_id=second_model.pk,
+        dataset=second_dataset,
+        name="test/dataset/TestModel2",
+        metadata_version=second_version,
+    )
+    prop = PropertyFactory(model=second_model, metadata_version=second_version,)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=second_dataset,
+        name='prop2',
+        type='ref',
+        access=3,
+        metadata_version=second_version,
+    )
+
+    assert Metadata.objects.count() == 3
+    assert Property.objects.count() == 1
+    assert Model.objects.count() == 2
+
+    form = app.get(reverse('version-create', args=[first_dataset.pk, first_version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [first_model_meta.pk]
+    form.submit()
+    published_version = _Version.objects.filter(dataset=first_dataset).order_by("-created").first()
+    first_published_model = Model.objects.filter(metadata_version=published_version).first()
+
+    assert Metadata.objects.count() == 4
+    assert Property.objects.count() == 1
+    assert Model.objects.count() == 3
+
+    property_form = app.get(reverse('property-update', args=[second_dataset.pk, second_version.pk, "TestModel2", "prop2"])).forms['property-form']
+    property_form['ref'].force_value(str(first_published_model.pk))
+    property_form.submit()
+    prop.refresh_from_db()
+
+
+    form = app.get(reverse('version-create', args=[second_dataset.pk, second_version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [second_model_meta.pk, prop_meta.pk]
+    form.submit()
+
+    published_version = _Version.objects.filter(dataset=second_dataset).order_by("-created").first()
+    second_published_property = Property.objects.filter(metadata_version=published_version).first()
+
+    assert first_published_model.pk == second_published_property.ref_model_id
+    assert Metadata.objects.count() == 6
+    assert Property.objects.count() == 2
+    assert Model.objects.count() == 4
+
+def test_publishing_property_with_draft_model_ref_same_dataset(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    version = VersionFactory()
+    dataset = version.dataset
+    first_model = ModelFactory(dataset=dataset, metadata_version=version)
+    first_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(first_model),
+        object_id=first_model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel1",
+        metadata_version=version,
+    )
+
+    second_model = ModelFactory(dataset=dataset, metadata_version=version)
+    second_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(second_model),
+        object_id=second_model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel2",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=second_model, metadata_version=version,)
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop2',
+        type='ref',
+        access=3,
+        metadata_version=version,
+    )
+
+    assert Metadata.objects.count() == 3
+    assert Property.objects.count() == 1
+    assert Model.objects.count() == 2
+
+    property_form = app.get(reverse('property-update', args=[dataset.pk, version.pk, "TestModel2", "prop2"])).forms['property-form']
+    property_form['ref'].force_value(str(first_model.pk))
+    property_form.submit()
+    prop.refresh_from_db()
+
+
+    form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [second_model_meta.pk, prop_meta.pk]
+    response = form.submit()
+
+    assert response.status_code == 200
+    assert response.context['form'].errors
+    assert response.context['form'].errors['__all__'][0] == "Laukas TestModel1§ privalo būti publikuojamas, nes laukas prop2 turi nuorodą į jį"
+
+def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    first_version = VersionFactory()
+    first_dataset = first_version.dataset
+    first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
+    first_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(first_model),
+        object_id=first_model.pk,
+        dataset=first_dataset,
+        name="test/dataset/TestModel1",
+        metadata_version=first_version,
+    )
+
+    second_version = VersionFactory()
+    second_dataset = second_version.dataset
+
+    second_model = ModelFactory(dataset=second_dataset, metadata_version=second_version)
+    second_model_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(second_model),
+        object_id=second_model.pk,
+        dataset=second_dataset,
+        name="test/dataset/TestModel2",
+        metadata_version=second_version,
+    )
+    prop = PropertyFactory(model=second_model, metadata_version=second_version, )
+    prop_meta = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=second_dataset,
+        name='prop2',
+        type='ref',
+        access=3,
+        metadata_version=second_version,
+    )
+
+    assert Metadata.objects.count() == 3
+    assert Property.objects.count() == 1
+    assert Model.objects.count() == 2
+
+    property_form = app.get(reverse('property-update', args=[second_dataset.pk, second_version.pk, "TestModel2", "prop2"])).forms['property-form']
+    property_form['ref'].force_value(str(first_model.pk))
+    property_form.submit()
+    prop.refresh_from_db()
+
+    form = app.get(reverse('version-create', args=[second_dataset.pk, second_version.pk])).forms['version-form']
+    form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    form['version_type'] = "MAJOR"
+    form['metadata'] = [second_model_meta.pk, prop_meta.pk]
+    response = form.submit()
+
+    assert response.status_code == 200
+    assert response.context['form'].errors
+    assert response.context['form'].errors['__all__'][0] == "Laukas prop2 turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje"

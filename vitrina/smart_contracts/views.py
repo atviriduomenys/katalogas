@@ -317,20 +317,20 @@ class AgreementCreateView(
 
 
 class ProjectBasedAgreementSubmitView(AgreementSubmitMixin, ProjectBasedAgreementNegotiateMixin):
-    pass
+    """Project-based agreement form view responsible for moving the agreement to status `SUBMITTED`"""
 
 
 class ProjectBasedAgreementApproveView(AgreementApproveMixin, ProjectBasedAgreementNegotiateMixin):
-    pass
+    """Project-based agreement form view responsible for moving the agreement to status `APPROVED`"""
 
 
 class ProjectBasedAgreementFormView(AgreementFormMixin, ProjectBasedAgreementNegotiateMixin):
-    pass
+    """Project-based agreement form view responsible for moving the agreement to status `FORMED`"""
 
 
 class ProjectBasedAgreementInitiateView(AgreementInitiateMixin, ProjectBasedAgreementNegotiateMixin):
-    pass
+    """Project-based agreement form view responsible for moving the agreement to status `INITIATED`"""
 
 
 class ProjectBasedAgreementSignView(AgreementSignMixin, ProjectBasedAgreementNegotiateMixin):
-    pass
+    """Project-based agreement form view responsible for moving the agreement to status `SIGNED`"""

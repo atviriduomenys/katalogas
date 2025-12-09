@@ -850,15 +850,15 @@ class OrganizationBasedAgreementNegotiateMixin(OrganizationBaseViewMixin, Agreem
 
 
 class OrganizationBasedAgreementApproveView(AgreementApproveMixin, OrganizationBasedAgreementNegotiateMixin):
-    pass
+    """Organization-based agreement form view responsible for moving the agreement to status `APPROVED`"""
 
 
 class OrganizationBasedAgreementFormView(AgreementFormMixin, OrganizationBasedAgreementNegotiateMixin):
-    pass
+    """Organization-based agreement form view responsible for moving the agreement to status `FORMED`"""
 
 
 class OrganizationBasedAgreementSignView(AgreementSignMixin, OrganizationBasedAgreementNegotiateMixin):
-    pass
+    """Organization-based agreement form view responsible for moving the agreement to status `SIGNED`"""
 
 
 class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):

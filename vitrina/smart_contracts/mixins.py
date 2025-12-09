@@ -86,6 +86,8 @@ class AgreementNegotiateMixin(BaseAgreementMixin, LoginRequiredMixin, FormView):
 
 
 class AgreementActionMixin:
+    """Mixin with common logic for all agreement status change views."""
+
     def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if not self.has_permission():
             return self.handle_no_permission()
@@ -123,6 +125,8 @@ class AgreementActionMixin:
 
 
 class AgreementUploadSignedFileMixin(AgreementActionMixin):
+    """Mixin holding the common logic for Initiate/Sign status change for agreements."""
+
     expected_status: AgreementStatuses | None = None
     next_status: AgreementStatuses | None = None
     signer_role_check: Callable[[User, Agreement], bool] | None = None
@@ -271,6 +275,8 @@ class AgreementSignMixin(AgreementUploadSignedFileMixin):
 
 
 class ProjectBasedAgreementNegotiateMixin(BaseProjectMixin, AgreementNegotiateMixin):
+    """Mixin class used for project-based agreement status-change views"""
+
     template_name = "smart_contracts/agreement_negotiate.html"
 
     detail_url_name = "project-detail"

@@ -2883,6 +2883,12 @@ msgstr "Add contact"
 msgid "Kontaktų redagavimas"
 msgstr "Contact editing"
 
+msgid "Organizacijos sutartys"
+msgstr "Organization agreements"
+
+msgid "Sutartis"
+msgstr "Agreement"
+
 msgid "Organizacijos redagavimas"
 msgstr "Edit organization"
 
@@ -3806,6 +3812,9 @@ msgstr "The attached file is not a ZIP archive."
 msgid "Įkelti pasirašytą dokumentą (Gavėjo)"
 msgstr "Upload document signed by data receiver"
 
+msgid "Veiksmas įvykdytas sėkmingai."
+msgstr "Action was executed successfully"
+
 msgid ""
 "Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
 "{expected_status}.Dabartinė būsena: {current_status}."
@@ -3827,8 +3836,8 @@ msgstr "The proposal has been successfully submitted to the data provider."
 msgid "Pasiūlymas sėkmingai patvirtintas."
 msgstr "Proposal was successfully confirmed."
 
-msgid "Sutarties dokumentas sukurtas"
-msgstr "Agreement document is created"
+msgid "Sutarties dokumentas sukurtas sėkmingai."
+msgstr "Agreement document created successfully"
 
 msgid "Įkelti pasirašytą sutartį"
 msgstr "Upload signed document"
@@ -3868,9 +3877,6 @@ msgstr "Legal basis for data provision (obligation)"
 
 msgid "Mokėjimo sąlygos"
 msgstr "Payment terms"
-
-msgid "Sutartis"
-msgstr "Agreement"
 
 #, python-brace-format
 msgid "Sutartis: {organization}"

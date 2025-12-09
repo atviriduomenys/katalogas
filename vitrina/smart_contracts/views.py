@@ -117,7 +117,7 @@ class BaseAgreementDetailView(BaseAgreementMixin, LoginRequiredMixin, Permission
         return context
 
 
-class ProjectAgreementListView(BaseProjectMixin, BaseAgreementListView):
+class ProjectBasedAgreementListView(BaseProjectMixin, BaseAgreementListView):
     template_name = "smart_contracts/agreement_list.html"
     parent_type = "project"
 
@@ -150,7 +150,7 @@ class ProjectAgreementListView(BaseProjectMixin, BaseAgreementListView):
         return context
 
 
-class ProjectAgreementDetailView(BaseProjectMixin, BaseAgreementDetailView):
+class ProjectBasedAgreementDetailView(BaseProjectMixin, BaseAgreementDetailView):
     template_name = "smart_contracts/agreement_detail.html"
     parent_type = "project"
 

@@ -729,7 +729,7 @@ class OrganizationProjectsView(
         return context_data
 
 
-class OrganizationAgreementListView(OrganizationBaseViewMixin, BaseAgreementListView):
+class OrganizationBasedAgreementListView(OrganizationBaseViewMixin, BaseAgreementListView):
     template_name = "vitrina/orgs/organization_agreements.html"
     parent_type = "organization"
 
@@ -773,7 +773,7 @@ class OrganizationAgreementListView(OrganizationBaseViewMixin, BaseAgreementList
         return context
 
 
-class OrganizationAgreementDetailView(OrganizationBaseViewMixin, BaseAgreementDetailView):
+class OrganizationBasedAgreementDetailView(OrganizationBaseViewMixin, BaseAgreementDetailView):
     template_name = "vitrina/orgs/organization_agreements_detail.html"
     parent_type = "organization"
 
@@ -803,8 +803,8 @@ class OrganizationAgreementDetailView(OrganizationBaseViewMixin, BaseAgreementDe
                     reverse("home"): _("Pradžia"),
                     reverse("organization-list"): _("Organizacijos"),
                     reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    reverse("organization-agreement-list", args=[self.organization.pk]): "Sutartys",
-                    None: _("Sutartys"),
+                    reverse("organization-agreement-list", args=[self.organization.pk]): _("Organizacijos sutartys"),
+                    None: _("Sutartis"),
                 },
             }
         )
@@ -813,6 +813,8 @@ class OrganizationAgreementDetailView(OrganizationBaseViewMixin, BaseAgreementDe
 
 
 class OrganizationBasedAgreementNegotiateMixin(OrganizationBaseViewMixin, AgreementNegotiateMixin):
+    """Mixin class used for organization-based agreement status-change views"""
+
     template_name = "vitrina/orgs/organization_based_agreement_negotiate.html"
 
     def get_agreement_queryset(self) -> QuerySet:

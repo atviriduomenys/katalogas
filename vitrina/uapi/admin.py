@@ -2,10 +2,11 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.uapi.models import Agent, RequestHistory, RequestHistoryChanges
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 @admin.register(Agent)
-class AgentAdmin(admin.ModelAdmin):
+class AgentAdmin(RevisionCommentVersionAdmin):
     class Meta:
         verbose_name = _("Agentas")
         verbose_name_plural = _("Agentai")
@@ -21,11 +22,11 @@ class AgentAdmin(admin.ModelAdmin):
 
 
 @admin.register(RequestHistory)
-class RequestHistoryAdmin(admin.ModelAdmin):
+class RequestHistoryAdmin(RevisionCommentVersionAdmin):
     autocomplete_fields = ["agent"]
     list_filter = ["agent"]
 
 
 @admin.register(RequestHistoryChanges)
-class RequestHistoryChangesAdmin(admin.ModelAdmin):
+class RequestHistoryChangesAdmin(RevisionCommentVersionAdmin):
     pass

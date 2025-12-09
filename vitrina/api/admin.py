@@ -1,8 +1,8 @@
 from django.contrib import admin
-from reversion.admin import VersionAdmin
 
 from vitrina.api.models import ApiKey, ApiScope
 from django.utils.translation import gettext_lazy as _
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 class ClientIdFilter(admin.SimpleListFilter):
@@ -29,7 +29,7 @@ class ApiScopeInline(admin.TabularInline):
     autocomplete_fields = ("organization", "dataset")
 
 
-class ApiKeyAdmin(VersionAdmin):
+class ApiKeyAdmin(RevisionCommentVersionAdmin):
     list_display = ("organization", "client_id", "client_name")
     list_filter = [ClientIdFilter]
     search_fields = ("organization", "representative", "project")

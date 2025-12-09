@@ -5,13 +5,14 @@ from django.db import transaction
 
 from vitrina.structure.models import Prefix, ManifestValidationEntry
 from vitrina.structure.tasks import validate_manifest_task
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
-class PrefixAdmin(admin.ModelAdmin):
+class PrefixAdmin(RevisionCommentVersionAdmin):
     list_display = ("name", "uri", "object")
 
 
-class ManifestValidationEntryAdmin(admin.ModelAdmin):
+class ManifestValidationEntryAdmin(RevisionCommentVersionAdmin):
     list_display = ("uuid", "created_at", "updated_at", "validation_status", "error_message")
     readonly_fields = ("created_at", "updated_at", "validation_status", "error_message")
 

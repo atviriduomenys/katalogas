@@ -4,7 +4,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.http import HttpRequest
 from django.shortcuts import redirect
 from django.utils.safestring import mark_safe
-from reversion.admin import VersionAdmin
 
 from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
@@ -32,6 +31,7 @@ from vitrina.orgs.models import (
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.orgs.services import pre_representative_delete
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 class RootOrganizationFilter(admin.SimpleListFilter):
@@ -70,7 +70,7 @@ class WhitelistedCodeNameInline(admin.TabularInline):
         return request.user.is_staff or request.user.is_superuser
 
 
-class OrganizationAdmin(VersionAdmin, TreeAdmin):
+class OrganizationAdmin(TreeAdmin, RevisionCommentVersionAdmin):
     form = movenodeform_factory(Organization)
     list_display = [
         "title",
@@ -103,7 +103,7 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
         return readonly_fields
 
 
-class RepresentativeAdmin(admin.ModelAdmin):
+class RepresentativeAdmin(RevisionCommentVersionAdmin):
     search_fields = ("email",)
     readonly_fields = ("can_make_agreements",)
 
@@ -117,7 +117,7 @@ class RepresentativeAdmin(admin.ModelAdmin):
         super().delete_queryset(request, queryset)
 
 
-class PublisherAdmin(admin.ModelAdmin):
+class PublisherAdmin(RevisionCommentVersionAdmin):
     list_display = ["title"]
     search_fields = ("title",)
     actions = ["remove_publisher_status"]

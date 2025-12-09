@@ -44,6 +44,7 @@ from vitrina.orgs.models import Organization, RepresentativeRequest, Representat
 from vitrina.structure.services import to_row
 from vitrina.users.forms import UserCreationAdminForm, UserChangeAdminForm
 from vitrina.users.models import User
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 class AtTimeZone(Func):
@@ -51,7 +52,7 @@ class AtTimeZone(Func):
     template = f"(%(expressions)s %(function)s '{settings.TIME_ZONE}')"
 
 
-class UserAdmin(BaseUserAdmin):
+class UserAdmin(BaseUserAdmin, RevisionCommentVersionAdmin):
     list_display = (
         "created_display",
         "last_login_display",

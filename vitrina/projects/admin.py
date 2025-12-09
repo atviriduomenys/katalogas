@@ -1,17 +1,17 @@
 from django.contrib import admin
 from django.db.models import QuerySet
-from reversion.admin import VersionAdmin
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
-class ProjectAdmin(VersionAdmin):
+class ProjectAdmin(RevisionCommentVersionAdmin):
     list_filter = ("status",)
     search_fields = ("title",)
     readonly_fields = ("organization",)
 
 
 @admin.register(UseCaseClient)
-class UseCaseClientAdmin(VersionAdmin):
+class UseCaseClientAdmin(RevisionCommentVersionAdmin):
     list_display = ["use_case", "name", "client_id"]
     autocomplete_fields = ["use_case"]
     search_fields = ["use_case__title"]
@@ -22,7 +22,7 @@ class UseCaseClientAdmin(VersionAdmin):
 
 
 @admin.register(UseCaseClientScope)
-class UseCaseClientScopeAdmin(VersionAdmin):
+class UseCaseClientScopeAdmin(RevisionCommentVersionAdmin):
     list_display = ["resource", "action", "scope", "use_case_client"]
     autocomplete_fields = ["use_case_client"]
     search_fields = ["use_case_client__name"]

@@ -4,9 +4,10 @@ from django.utils.translation import gettext_lazy as _
 from parler.admin import TranslatableAdmin
 
 from vitrina.statistics.models import StatRoute
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
-class StatRouteAdmin(TranslatableAdmin):
+class StatRouteAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = (
         "title",
         "formatted_url",

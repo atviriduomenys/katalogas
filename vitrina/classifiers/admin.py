@@ -24,6 +24,7 @@ from vitrina.classifiers.models import Frequency
 from vitrina.datasets.models import DatasetGroupCategoryUri
 from vitrina.orgs.helpers import get_or_create_parent_org
 from vitrina.orgs.models import Organization
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 class RootCategoryFilter(admin.SimpleListFilter):
@@ -52,7 +53,7 @@ class DatasetGroupCategoryUriInline(admin.TabularInline):
     verbose_name_plural = _("Kategorijos URI specifinei parinktai grupei")
 
 
-class CategoryAdmin(TreeAdmin):
+class CategoryAdmin(TreeAdmin, RevisionCommentVersionAdmin):
     form = movenodeform_factory(Category)
     list_display = [
         "title",
@@ -74,7 +75,7 @@ class CategoryAdmin(TreeAdmin):
                 dataset.save()
 
 
-class LicenceAdmin(admin.ModelAdmin):
+class LicenceAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "title",
         "is_default",
@@ -92,7 +93,7 @@ class LicenceAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class FrequencyAdmin(admin.ModelAdmin):
+class FrequencyAdmin(RevisionCommentVersionAdmin):
     list_display = ("title", "is_default", "hours")
     fields = (
         "title",
@@ -108,7 +109,7 @@ class FrequencyAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class AreaOfManagementAdmin(admin.ModelAdmin):
+class AreaOfManagementAdmin(RevisionCommentVersionAdmin):
     form = AreaOfManagementAdminForm
     list_display = ("name_lt_verbose", "organization_count")
     fields = ("name_lt", "name_en", "organizations")
@@ -197,7 +198,7 @@ class AreaOfManagementAdmin(admin.ModelAdmin):
         return super().add_view(request, form_url, extra_context)
 
 
-class GeoportalCategoryAdmin(admin.ModelAdmin):
+class GeoportalCategoryAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "title",
         "categories_display",
@@ -210,14 +211,14 @@ class GeoportalCategoryAdmin(admin.ModelAdmin):
     categories_display.short_description = _("Kategorijos")
 
 
-class GeoportalFrequencyAdmin(admin.ModelAdmin):
+class GeoportalFrequencyAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "title",
         "frequency",
     )
 
 
-class StatusAdmin(TranslatableAdmin):
+class StatusAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = ("name", "codename", "is_default", "url")
     fields = ("name", "description", "codename", "url", "is_default")
 
@@ -228,12 +229,12 @@ class StatusAdmin(TranslatableAdmin):
 
 
 @admin.register(ConceptSchema)
-class ConceptSchemaAdmin(TranslatableAdmin):
+class ConceptSchemaAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = ("label", "uri", "description")
 
 
 @admin.register(Concept)
-class ConceptAdmin(TranslatableAdmin):
+class ConceptAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = ("code", "uri", "label", "description")
     list_filter = ("concept_schemas",)
 
@@ -242,7 +243,7 @@ class ConceptAdmin(TranslatableAdmin):
 
 
 @admin.register(ApplicableLegislation)
-class ApplicableLegislationAdmin(admin.ModelAdmin):
+class ApplicableLegislationAdmin(RevisionCommentVersionAdmin):
     list_display = ("description", "url")
 
 

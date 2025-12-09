@@ -160,10 +160,10 @@ def test_geoportal_import__title_and_description_create_without_translation(app:
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
-                    <gco:CharacterString>Pavadinimas</gco:CharacterString>
+                    <gco:CharacterString>Title</gco:CharacterString>
                 </gmd:title>
                 <gmd:abstract>
-                    <gco:CharacterString>Aprašymas</gco:CharacterString>
+                    <gco:CharacterString>Description</gco:CharacterString>
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
@@ -778,9 +778,9 @@ def test_geoportal_import__distribution_conditions_create(app: DjangoTestApp):
     distribution = dataset.datasetdistribution_set.first()
     assert distribution.download_url == "https://example.com/file.csv"
     assert distribution.conditions == \
-           'Prieigos apribojimai: copyright (copyright). Code space - ISOTC211/19115.\n' \
-           'Naudojimo apribojimai: license (license). Code space - ISOTC211/19115.\n'\
-           'Kiti apribojimai: restricted (restricted). Code space - ISOTC211/19115.\n'\
+           'Prieigos apribojimai: autorių teisės (copyright). Code space - ISOTC211/19115.\n' \
+           'Naudojimo apribojimai: licencija (license). Code space - ISOTC211/19115.\n'\
+           'Kiti apribojimai: apribota (restricted). Code space - ISOTC211/19115.\n'\
            'Naudojimo ribotumas: limitations'
 
 
@@ -874,9 +874,9 @@ def test_geoportal_import__distribution_conditions_update(app: DjangoTestApp):
 
     distribution.refresh_from_db()
     assert distribution.conditions == \
-           'Prieigos apribojimai: copyright (copyright). Code space - ISOTC211/19115.\n' \
-           'Naudojimo apribojimai: license (license). Code space - ISOTC211/19115.\n'\
-           'Kiti apribojimai: restricted (restricted). Code space - ISOTC211/19115.\n'\
+           'Prieigos apribojimai: autorių teisės (copyright). Code space - ISOTC211/19115.\n' \
+           'Naudojimo apribojimai: licencija (license). Code space - ISOTC211/19115.\n'\
+           'Kiti apribojimai: apribota (restricted). Code space - ISOTC211/19115.\n'\
            'Naudojimo ribotumas: limitations'
 
 

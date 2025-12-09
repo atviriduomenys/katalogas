@@ -120,7 +120,7 @@ def clear_cache():
 
 
 @pytest.fixture(autouse=True)
-def mock_translation_service():
+def mock_translation_service(monkeypatch):
     TRANSLATION_MAPPING = {
         "Pavadinimas": "Title",
         "Aprašymas": "Description",
@@ -130,13 +130,8 @@ def mock_translation_service():
         "restricted": "apribota",
     }
 
-    class MockTranslationResponse:
-        def __init__(self, text: str) -> None:
-            self.status_code = 200
-            self._text = text
+    def mock_translate(text: str, field_name: str = "") -> str:
+        return TRANSLATION_MAPPING.get(text, text)
 
-        def json(self) -> str:
-            return TRANSLATION_MAPPING.get(self._text, self._text)
-
-        def raise_for_status(self) -> None:
-            pass
+    monkeypatch.setattr("vitrina.utils.translate_text", mock_translate)
+    monkeypatch.setattr("scripts.geoportal_import.translate_text", mock_translate)

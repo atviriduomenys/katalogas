@@ -1,4 +1,5 @@
 import pytest
+import requests
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
@@ -428,12 +429,36 @@ def test_create_distribution__translation(app: DjangoTestApp):
     assert distribution.title == "Pavadinimas"
     assert distribution.description == "Aprašymas"
     distribution.set_current_language("en")
-    assert distribution.title == "Pavadinimas"
-    assert distribution.description == "Aprašymas"
+    assert distribution.title == "Title"
+    assert distribution.description == "Description"
 
 
 @pytest.mark.django_db
 def test_update_distribution__translation(app: DjangoTestApp):
+    distribution = DatasetDistributionFactory(title="", description="")
+    user = UserFactory(is_staff=True, organization=distribution.dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk}) + "?language=lt").forms['resource-form']
+    form['title'] = 'Pavadinimas'
+    form['description'] = 'Aprašymas'
+    resp = form.submit()
+    distribution.refresh_from_db()
+    assert resp.status_code == 302
+    distribution.set_current_language("lt")
+    assert distribution.title == "Pavadinimas"
+    assert distribution.description == "Aprašymas"
+    distribution.set_current_language("en")
+    assert distribution.title == "Title"
+    assert distribution.description == "Description"
+
+
+@pytest.mark.django_db
+def test_create_distribution__translation_service_down(app: DjangoTestApp, monkeypatch):
+    def mock_post(*args, **kwargs):
+        raise requests.exceptions.Timeout("Service down")
+
+    monkeypatch.setattr("vitrina.utils.requests.post", mock_post)
+
     distribution = DatasetDistributionFactory(title="", description="")
     user = UserFactory(is_staff=True, organization=distribution.dataset.organization)
     app.set_user(user)

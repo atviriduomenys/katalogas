@@ -1,7 +1,6 @@
 import os
 import django
 
-from vitrina.settings import TRANSLATION_URL
 from vitrina.utils import translate_text
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "vitrina.settings")

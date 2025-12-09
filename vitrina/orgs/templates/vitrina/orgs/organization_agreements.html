@@ -37,9 +37,7 @@
                         has-text-warning
                     {% elif agreement.status in 'ACTIVE,SIGNED' %}
                         has-text-success
-                    {% elif agreement.status in 'CREATED,FORMED' %}
-                        has-text-danger
-                    {% elif agreement.status == 'TERMINATED' %}
+                    {% else %}
                         has-text-black
                     {% endif %}
                 "></i>

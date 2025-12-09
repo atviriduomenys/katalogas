@@ -5305,7 +5305,7 @@ def test_publishing_enum_without_property_error(app: DjangoTestApp):
 
     assert response.status_code == 200
     assert response.context['form'].errors
-    assert response.context['form'].errors['__all__'][0] == "Laukas 1 kreipiasi į nepublikuojamą lauką tame pačiame duomenų ištekliuje"
+    assert response.context['form'].errors['__all__'][0] == "Laukas 1 turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje"
 
     assert Metadata.objects.count() == 3
     assert EnumItem.objects.count() == 1
@@ -5453,7 +5453,7 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
 
     assert response.status_code == 200
     assert response.context['form'].errors
-    assert response.context['form'].errors['__all__'][0] == "Laukas Country privalo būti publikuojamas, nes laukas id turi nuorodą į jį."
+    assert response.context['form'].errors['__all__'][0] == "Laukas Country privalo būti publikuojamas, nes laukas id turi nuorodą į jį"
     assert Metadata.objects.count() == 5
     assert Model.objects.count() == 2
     assert DatasetDistribution.objects.count() == 1

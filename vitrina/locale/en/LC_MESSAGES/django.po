@@ -4963,10 +4963,10 @@ msgid "Komentaras pašalintas"
 msgstr "Comment deleted"
 
 msgid "ištrinta"
-msgstr "Deleted"
+msgstr "deleted"
 
 msgid "redaguotas"
-msgstr "Edited"
+msgstr "edited"
 
 msgid "(neviešinamas komentaras)"
 msgstr "(private comment)"

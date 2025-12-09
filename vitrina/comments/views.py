@@ -1,9 +1,10 @@
-from datetime import datetime, timezone
+from django.utils import timezone
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef, Q
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
@@ -63,7 +64,7 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
 
             if form.cleaned_data.get("register_request"):
                 frequency = form.cleaned_data.get("increase_frequency")
-                title = obj.title
+                title = form.cleaned_data.get("request_title") or obj.title
                 if not title and hasattr(obj, "name"):
                     title = obj.name
                 new_request = Request.objects.create(
@@ -287,7 +288,7 @@ class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
             comment_task = Task.objects.filter(comment_object=parent_comment).first()
             if comment_task:
                 comment_task.status = Task.COMPLETED
-                comment_task.completed = datetime.now(timezone.utc)
+                comment_task.completed = timezone.now()
                 comment_task.save()
         else:
             messages.error(request, "\n".join([error[0] for error in form.errors.values()]))
@@ -454,3 +455,62 @@ class ExternalReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 )
 
         return self.handle_no_permission()
+
+
+class OwnerOrSuperuserQuerysetMixin:
+    owner_field = "user"
+
+    def get_queryset(self):
+        qs = super().get_queryset()
+        if not self.request.user.is_authenticated:
+            return qs.none()
+        if self.request.user.is_superuser:
+            return qs
+        return qs.filter(**{f"{self.owner_field}_id": self.request.user.id})
+
+
+class CommentDeleteView(LoginRequiredMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request, pk):
+        queryset = Comment.objects.all()
+
+        if not request.user.is_superuser:
+            queryset = queryset.filter(user=request.user)
+
+        try:
+            comment = queryset.get(pk=pk)
+
+            comment.deleted = True
+            comment.deleted_on = timezone.now()
+            comment.save()
+
+            return JsonResponse({"success": True})
+        except Comment.DoesNotExist:
+            return JsonResponse({"error": "Not found"}, status=404)
+
+
+class CommentEditView(LoginRequiredMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request, pk):
+        queryset = Comment.objects.all()
+
+        if not request.user.is_superuser:
+            queryset = queryset.filter(user=request.user)
+
+        try:
+            comment = queryset.get(pk=pk)
+
+            body = request.POST.get("body", "").strip()
+            if not body:
+                return JsonResponse({"error": "Body is required"}, status=400)
+
+            comment.body = body
+            comment.is_public = "is_public" in request.POST
+            comment.edited_at = timezone.now()
+            comment.save()
+
+            return JsonResponse({"success": True, "body": comment.body, "is_public": comment.is_public})
+        except Comment.DoesNotExist:
+            return JsonResponse({"error": "Not found"}, status=404)

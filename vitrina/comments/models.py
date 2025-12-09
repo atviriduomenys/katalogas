@@ -1,7 +1,7 @@
-from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
+from django.urls import reverse
 from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
@@ -46,6 +46,7 @@ class Comment(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
+    edited_at = models.DateTimeField(blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
     deleted_date = models.DateTimeField(blank=True, null=True)
@@ -122,22 +123,11 @@ class Comment(models.Model):
         return True
 
     def body_text(self):
-        Dataset = apps.get_model("vitrina_datasets", "Dataset")
         if self.type == self.REQUEST and self.rel_content_object:
-            body_text = _(
-                f"Pateiktas naujas prašymas {self.rel_content_object.title}. {self.rel_content_object.description}"
-            )
+            url = reverse("request-detail", kwargs={"pk": self.rel_content_object.id})
+            body_text = _(f"Pateiktas naujas prašymas: **[{self.rel_content_object.title}]({url})**.")
         elif self.type == self.PROJECT and self.rel_content_object:
             body_text = _(f"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title()} projektą.")
-        elif self.type == self.STATUS:
-            if isinstance(self.content_object, Request) and self.status == self.OPENED:
-                body_text = _(f"Statusas pakeistas į {Request.FILTER_STATUSES.get(Request.OPENED)}.")
-            elif isinstance(self.content_object, Dataset) and self.status == self.OPENED:
-                body_text = _(f"Statusas pakeistas į {Dataset.HAS_DATA_TITLE}.")
-            else:
-                body_text = _(f"Statusas pakeistas į {self.get_status_display()}.")
-            if self.body:
-                body_text = f"{body_text}\n{self.body}"
         elif self.type == self.PLAN and self.rel_content_object:
             body_text = mark_safe(
                 f'Įtraukta į planą <a href="{self.rel_content_object.get_absolute_url()}">{self.rel_content_object}</a>'

@@ -389,6 +389,7 @@ class DynamicResourceService:
                 "media_type": {"uri": format_media_type},
                 "created": self.uapi_distribution.created,
                 "modified": self.uapi_distribution.modified,
+                "is_hvd": self.uapi_distribution.is_hvd,
             }
         return {
             "title": distribution_name,

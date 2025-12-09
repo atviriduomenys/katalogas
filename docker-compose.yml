@@ -47,20 +47,6 @@ services:
       ADMINER_PLUGINS: 'tables-filter'
       ADMINER_DEFAULT_SERVER: 'postgres'
 
-  mysql:
-    image: mysql
-    environment:
-      MYSQL_ROOT_PASSWORD: 'secret'
-      MYSQL_DATABASE: 'adp-dev'
-      MYSQL_USER: 'adp'
-      MYSQL_PASSWORD: 'secret'
-    command: --init-file /data/application/init.sql
-    volumes:
-      - ./var/mysql:/var/lib/mysql
-      - ./resources/adp-dev.sql:/data/application/init.sql
-    ports:
-      - 127.0.0.1:3306:3306
-
   elasticsearch:
     image: elasticsearch:7.8.1
     ports:
@@ -77,7 +63,7 @@ services:
     ports:
       - 127.0.0.1:6379:6379
     volumes:
-      - ./var/redis/dаta:/root/redis
+      - ./var/redis/data:/root/redis
       - ./var/redis/redis.conf:/usr/local/etc/redis/redis.conf
 
   celery:

@@ -21,7 +21,7 @@ assignment_tag = getattr(register, "assignment_tag", register.simple_tag)
 def comments(obj, user, is_structure=False):
     content_type = ContentType.objects.get_for_model(obj)
     obj_comments = Comment.objects.filter(content_type=content_type, object_id=obj.pk, parent_id__isnull=True).order_by(
-        "created"
+        "-created"
     )
     if is_structure:
         can_manage_structure = has_perm(user, Action.STRUCTURE, Dataset, obj)
@@ -56,7 +56,7 @@ def external_comments(content_type, object_id, user, dataset):
         external_content_type=content_type,
         external_object_id=object_id,
         parent_id__isnull=True,
-    ).order_by("created")
+    ).order_by("-created")
     comments_array = []
     for comment in obj_comments:
         if has_comment_view_perm(comment, dataset, user):

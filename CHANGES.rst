@@ -9,6 +9,12 @@ Bug fixes:
 - Return the mock for translation calling, vertimas.vu.lt is up and running, tests are breaking again, because the mock
   was removed
 
+Improvements
+
+- https://github.com/atviriduomenys/katalogas/issues/2155
+
+Corrected some texts.
+
 
 v 1.9 (2025-12-04)
 ==================

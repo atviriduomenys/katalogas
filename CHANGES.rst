@@ -4,6 +4,11 @@ Changes
 v 1.10 (unreleased)
 ==================
 
+Bug fixes:
+
+- Return the mock for translation calling, vertimas.vu.lt is up and running, tests are breaking again, because the mock
+  was removed
+
 
 v 1.9 (2025-12-04)
 ==================

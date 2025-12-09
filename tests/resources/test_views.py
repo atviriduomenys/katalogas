@@ -428,8 +428,8 @@ def test_create_distribution__translation(app: DjangoTestApp):
     assert distribution.title == "Pavadinimas"
     assert distribution.description == "Aprašymas"
     distribution.set_current_language("en")
-    assert distribution.title == "Pavadinimas"
-    assert distribution.description == "Aprašymas"
+    assert distribution.title == "Title"
+    assert distribution.description == "Description"
 
 
 @pytest.mark.django_db
@@ -447,8 +447,8 @@ def test_update_distribution__translation(app: DjangoTestApp):
     assert distribution.title == "Pavadinimas"
     assert distribution.description == "Aprašymas"
     distribution.set_current_language("en")
-    assert distribution.title == "Pavadinimas"
-    assert distribution.description == "Aprašymas"
+    assert distribution.title == "Title"
+    assert distribution.description == "Description"
 
 
 @pytest.mark.django_db

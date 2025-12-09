@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-05 14:02+0200\n"
+"POT-Creation-Date: 2025-12-09 14:53+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -4831,6 +4831,28 @@ msgstr "Add parameter"
 msgid "Parametro redagavimas"
 msgstr "Edit parameter"
 
+#, python-brace-format
+msgid ""
+"Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų "
+"ištekliuje"
+msgstr "Field {0} has a reference to an unpublished field in the same dataset"
+
+#, python-brace-format
+msgid ""
+"Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų "
+"ištekliuje"
+msgstr ""
+"Field {0} has a reference to an unpublished field {1} in the same dataset"
+
+#, python-brace-format
+msgid "Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį"
+msgstr "Field {0} must be published, because field {1} has a reference to it"
+
+#, python-brace-format
+msgid "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje"
+msgstr ""
+"Field {0} has a reference to an unpublished field in a different dataset"
+
 msgid "Vyr. koordinatorius"
 msgstr "Senior coordinator"
 
@@ -6012,3 +6034,9 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+#~ msgid ""
+#~ "Laukas {0} kreipiasi į nepublikuojamą lauką tame pačiame duomenų "
+#~ "ištekliuje"
+#~ msgstr ""
+#~ "Field {0} has a reference to an unpublished field {1} in the same dataset"

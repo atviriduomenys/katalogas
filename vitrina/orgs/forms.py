@@ -27,6 +27,7 @@ from django.forms import (
     Textarea,
     CheckboxInput,
     RegexField,
+    TextInput,
 )
 from django.forms.models import ModelChoiceIterator
 from django.urls import resolve, Resolver404
@@ -1291,9 +1292,7 @@ class WhitelistedCodeNameInlineForm(ModelForm):
     class Meta:
         model = WhitelistedCodeName
         fields = ["code_name"]
-        help_texts = {
-            "code_name": "Įveskite leistinus kodinius pavadinimus. Veskite pilną kodinį pavadinimą sudaryta iš: datasets/{form}/{org}/"
-        }
+        widgets = {"code_name": TextInput(attrs={"placeholder": "datasets/{form}/{org}/"})}
 
     def clean_code_name(self):
         code_name = self.cleaned_data.get("code_name")

@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_orgs', '0010_representative_information_system_representative_and_more'),
+        ('vitrina_orgs', '0012_generate_organization_name_with_prefix'),
     ]
 
     operations = [

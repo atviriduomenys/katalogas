@@ -6,8 +6,16 @@ v 1.10 (unreleased)
 
 Bug fixes:
 
+https://github.com/atviriduomenys/katalogas/issues/2196
+
 - Return the mock for translation calling, vertimas.vu.lt is up and running, tests are breaking again, because the mock
   was removed
+
+Improvements:
+
+https://github.com/atviriduomenys/katalogas/issues/2040
+
+- Part 1: Organization-based detail & list agreement pages (previously only available under Projects)
 
 
 v 1.9 (2025-12-04)

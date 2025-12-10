@@ -3,23 +3,14 @@
 {% load util_tags %}
 
 {% block agreement_tabs %}
-    {% include 'vitrina/projects/tabs.html' %}
-{% endblock %}
-
-{% block agreement_actions %}
-    {% if can_create_agreements %}
-        <div class="buttons is-right">
-            <a class="button is-primary m-t-xs m-b-lg"
-               href="{% url 'agreement-create' project.pk %}">
-                {% translate "Generuoti sutartis" %}
-            </a>
-        </div>
-    {% endif %}
+    {% include "vitrina/orgs/tabs.html" %}
 {% endblock %}
 
 {% block agreement_table_head %}
     <tr>
-        <th>{% translate "Duomenis teikianti organizacija" %}</th>
+        <th>{% translate "Sukūrimo data" %}</th>
+        <th>{% translate "Duomenis gaunanti organizacija" %}</th>
+        <th>{% translate "Panaudojimo atvejis" %}</th>
         <th>{% translate "Būsena" %}</th>
         <th>{% translate "Paskutinės sinchronizacijos data" %}</th>
         <th>{% translate "Veiksmai" %}</th>
@@ -28,7 +19,14 @@
 
 {% block agreement_table_row %}
     <tr>
-        <td>{{ agreement.assigner }}</td>
+        <td>{{ agreement.created_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ agreement.assignee|truncatechars:50 }}</td>
+
+        <td>
+            <a href="{% url 'project-detail' agreement.project.pk %}">
+                {{ agreement.project|truncatechars:30 }}
+            </a>
+        </td>
 
         <td>
             {{ agreement.get_status_display }}
@@ -47,7 +45,7 @@
         </td>
 
         <td>
-            <a href="{% url 'agreement-detail' project.pk agreement.pk %}">
+            <a href="{% url 'organization-agreement-detail' agreement.assigner.pk agreement.pk %}">
                 {% translate "Peržiūrėti" %}
             </a>
         </td>

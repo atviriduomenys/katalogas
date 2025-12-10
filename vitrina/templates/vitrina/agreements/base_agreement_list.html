@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}
+    {% translate "Sutartys" %}
+{% endblock %}
+
+{% block content %}
+
+    {% block agreement_tabs %}{% endblock %}
+    {% block agreement_actions %}{% endblock %}
+
+    {% if agreements %}
+        <table class="table is-fullwidth">
+            <thead>
+                {% block agreement_table_head %}{% endblock %}
+            </thead>
+            <tbody>
+                {% for agreement in agreements %}
+                    {% block agreement_table_row %}
+                    {% endblock %}
+                {% endfor %}
+            </tbody>
+        </table>
+
+        {% include "vitrina/common/pagination.html" %}
+
+    {% else %}
+        <p>{% translate "Nėra sutarčių." %}</p>
+    {% endif %}
+
+{% endblock %}

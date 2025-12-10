@@ -1294,6 +1294,10 @@ class WhitelistedCodeNameInlineForm(ModelForm):
 
     def clean_code_name(self):
         code_name = self.cleaned_data.get("code_name")
-        if code_name:
+
+        required_prefix = "datasets/"
+
+        if code_name and not code_name.startswith(required_prefix):
+            code_name = required_prefix + code_name
             validate_global_uniqueness(code_name, instance=self.instance)
         return code_name

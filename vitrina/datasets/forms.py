@@ -357,7 +357,7 @@ class BaseResourceForm(TranslatableModelForm):
                 if whitelisted:
                     message = _(
                         "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
-                    ) % {"expected": main_prefix, "whitelisted": ", ".join(allowed_prefixes)}
+                    ) % {"expected": main_prefix, "whitelisted": ", ".join(whitelisted)}
                 else:
                     message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": main_prefix}
 

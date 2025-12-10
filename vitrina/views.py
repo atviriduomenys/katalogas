@@ -20,7 +20,7 @@ from reversion.models import Version, Revision
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
 from vitrina.requests.models import Request
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.statistics.models import StatRoute
 from vitrina.users.models import User
 from vitrina.orgs.services import has_perm, Action
@@ -29,22 +29,33 @@ from vitrina.utils import RevisionComment
 
 
 def home(request):
+    COORDINATOR_ROLES = [
+        Representative.RESOURCE_COORDINATOR,
+        Representative.OPEN_DATA_COORDINATOR,
+    ]
+
+    MANAGER_ROLES = [
+        Representative.RESOURCE_MANAGER,
+        Representative.OPEN_DATA_MANAGER,
+    ]
+
     coordinator_count = (
-        User.objects.select_related("representative")
-        .filter(representative__role="coordinator")
+        User.objects.filter(representative__role__in=COORDINATOR_ROLES)
         .distinct("representative__user")
         .count()
     )
     manager_count = (
-        User.objects.select_related("representative")
-        .filter(representative__role="manager")
-        .exclude(representative__role="coordinator")
+        User.objects.filter(representative__role__in=MANAGER_ROLES)
+        .exclude(representative__role__in=COORDINATOR_ROLES)
         .distinct("representative__user")
         .count()
     )
     user_count = (
-        User.objects.exclude(representative__role="manager").exclude(representative__role="coordinator").count()
+        User.objects.exclude(representative__role__in=COORDINATOR_ROLES + MANAGER_ROLES)
+        .distinct()
+        .count()
     )
+
     return render(
         request,
         "landing.html",

@@ -831,10 +831,12 @@ class Dataset(Resource):
                 Q(
                     content_type=ContentType.objects.get_for_model(Dataset),
                     object_id__in=datasets_ids,
+                    role__in=[Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER],
                 )
                 | Q(
                     content_type=ContentType.objects.get_for_model(Organization),
                     object_id__in=organization_ids,
+                    role__in=[Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER],
                 )
                 | Q(organization_id__in=organization_ids),
                 user__isnull=False,
@@ -845,56 +847,27 @@ class Dataset(Resource):
             .distinct()
         )
 
-    def get_resource_managers_queryset_specific_role(
-        self, include_information_system: bool = False, include_open_data: bool = False
-    ) -> QuerySet["Dataset"]:
+    def get_open_data_managers_queryset(self) -> QuerySet["Dataset"]:
         datasets_ids = {self.id}
         organization_ids = {self.organization_id}
-
         for parent_dataset in self.get_ancestors().only("pk", "organization_id"):
             datasets_ids.add(parent_dataset.pk)
             organization_ids.add(parent_dataset.organization_id)
-
-        base_queryset = (
-            Q(
-                content_type=self.dataset_content_type,
-                object_id__in=datasets_ids,
-            )
-            | Q(
-                content_type=ContentType.objects.get_for_model(Organization),
-                object_id__in=organization_ids,
-            )
-            | Q(organization_id__in=organization_ids)
-        )
-        filters = {
-            "user__isnull": False,
-        }
-
-        if not include_information_system:
-            filters["information_system_representative"] = False
-
-        if not include_open_data:
-            filters["open_data_representative"] = False
-
-        return Representative.objects.filter(base_queryset, **filters).values_list("user_id", flat=True).distinct()
-
-    def get_organization_special_representatives_queryset(self) -> QuerySet[int]:
-        """
-        Returns user IDs of organization-level representatives for this dataset
-        (or its ancestor datasets) who have either information_system_representative
-        or open_data_representative set to True.
-        """
-        organization_ids = {self.organization_id}
-        for parent_dataset in self.get_ancestors().only("organization_id"):
-            organization_ids.add(parent_dataset.organization_id)
-
         return (
             Representative.objects.filter(
-                Q(content_type=ContentType.objects.get_for_model(Organization), object_id__in=organization_ids)
+                Q(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    object_id__in=datasets_ids,
+                    role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_COORDINATOR],
+                )
+                | Q(
+                    content_type=ContentType.objects.get_for_model(Organization),
+                    object_id__in=organization_ids,
+                    role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_COORDINATOR],
+                )
                 | Q(organization_id__in=organization_ids),
                 user__isnull=False,
             )
-            .filter(Q(information_system_representative=True) | Q(open_data_representative=True))
             .values_list("user_id", flat=True)
             .distinct()
         )

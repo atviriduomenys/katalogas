@@ -705,7 +705,7 @@ class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
                         and Representative.objects.filter(
                             content_type=ContentType.objects.get_for_model(organization),
                             object_id=organization.pk,
-                            role=Representative.COORDINATOR,
+                            role=Representative.OPEN_DATA_COORDINATOR,
                             email=sub.user.email,
                         ).exists()
                     ):
@@ -822,7 +822,7 @@ class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
                     and Representative.objects.filter(
                         content_type=ContentType.objects.get_for_model(org),
                         object_id=org.pk,
-                        role=Representative.COORDINATOR,
+                        role=Representative.OPEN_DATA_COORDINATOR,
                         email=sub.user.email,
                     ).exists()
                 ):
@@ -856,7 +856,7 @@ class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
                             and Representative.objects.filter(
                                 content_type=ContentType.objects.get_for_model(c_org),
                                 object_id=c_org.pk,
-                                role=Representative.COORDINATOR,
+                                role=Representative.OPEN_DATA_COORDINATOR,
                                 email=sub.user.email,
                             ).exists()
                         ):

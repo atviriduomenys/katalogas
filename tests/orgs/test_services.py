@@ -67,7 +67,7 @@ def test_has_perm__is_staff():
 def test_organization_edit_permission_manager():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.OPEN_DATA_MANAGER)
     res = has_perm(manager.user, Action.UPDATE, organization)
     assert res is False
 
@@ -76,7 +76,7 @@ def test_organization_edit_permission_manager():
 def test_organization_edit_permission_open_data_representative():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=True)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.OPEN_DATA_MANAGER)
     res = has_perm(manager.user, Action.UPDATE, organization)
     assert res is False
 
@@ -116,23 +116,6 @@ def test_dataset_create_permission_organization_coordinator():
     res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
     assert res is True
 
-
-@pytest.mark.django_db
-def test_dataset_create_permission_open_data_representative():
-    organization = OrganizationFactory()
-    ct = ContentType.objects.get_for_model(organization)
-    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=True)
-    res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
-    assert res is True
-
-
-@pytest.mark.django_db
-def test_dataset_create_permission_information_system_representative():
-    organization = OrganizationFactory()
-    ct = ContentType.objects.get_for_model(organization)
-    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, information_system_representative=True)
-    res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
-    assert res is True
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(

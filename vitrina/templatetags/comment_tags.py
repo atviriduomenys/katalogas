@@ -107,7 +107,7 @@ def get_author_name(comment, user):
         comment.content_type.model == "dataset"
         and Representative.objects.filter(
             user=user,
-            role__in=[Representative.COORDINATOR, Representative.MANAGER],
+            role__in=[Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES],
             content_type=comment.content_type,
             object_id=comment.object_id,
         ).exists()
@@ -120,7 +120,7 @@ def get_author_name(comment, user):
         organization_id = Dataset.objects.values_list("organization_id", flat=True).get(pk=dataset_id)
         if Representative.objects.filter(
             user=user,
-            role__in=[Representative.COORDINATOR, Representative.MANAGER],
+            role__in=[Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES],
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=organization_id,
         ).exists():
@@ -132,7 +132,7 @@ def get_author_name(comment, user):
         organization_id = Dataset.objects.values_list("organization_id", flat=True).get(pk=dataset_id)
         if Representative.objects.filter(
             user=user,
-            role__in=[Representative.COORDINATOR, Representative.MANAGER],
+            role__in=[Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES],
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=organization_id,
         ).exists():
@@ -144,7 +144,7 @@ def get_author_name(comment, user):
         organization_id = Dataset.objects.filter(pk=dataset_id).values_list("organization_id", flat=True).first()
         if Representative.objects.filter(
             user=user,
-            role__in=[Representative.COORDINATOR, Representative.MANAGER],
+            role__in=[Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES],
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=organization_id,
         ).exists():
@@ -157,7 +157,7 @@ def get_author_name(comment, user):
         organization_id = Dataset.objects.values_list("organization_id", flat=True).get(pk=dataset_id)
         if Representative.objects.filter(
             user=user,
-            role__in=[Representative.COORDINATOR, Representative.MANAGER],
+            role__in=[Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES],
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=organization_id,
         ).exists():

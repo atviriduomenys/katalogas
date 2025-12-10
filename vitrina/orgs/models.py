@@ -146,11 +146,22 @@ class PublisherOrganization(Organization):
 
 
 class Representative(models.Model):
-    COORDINATOR = "coordinator"  # Manager + manages other Representatives
-    MANAGER = "manager"  # Manager
+    RESOURCE_COORDINATOR = "resource_coordinator"  # Manager + manages other Representatives
     RESOURCE_MANAGER = "resource_manager"  # Resource Manager
     SUPERVISOR = "supervisor"
-    ROLES = ((COORDINATOR, _("Koordinatorius")), (MANAGER, _("Tvarkytojas")))
+    OPEN_DATA_COORDINATOR = "open_data_coordinator"
+    OPEN_DATA_MANAGER = "open_data_manager"
+
+    COORDINATOR_ROLES = [
+        RESOURCE_COORDINATOR,
+        OPEN_DATA_COORDINATOR,
+    ]
+    MANAGER_ROLES = [
+        RESOURCE_MANAGER,
+        OPEN_DATA_MANAGER,
+    ]
+
+    ROLES = ((RESOURCE_COORDINATOR, _("Duomenų išteklių koordinatorius")), (RESOURCE_MANAGER, _("Duomenų išteklių tvarkytojas")), (OPEN_DATA_COORDINATOR, _("Atvirų duomenų koordinatorius")), (OPEN_DATA_MANAGER, _("Atvirų duomenų tvarkytojas")),)
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -168,12 +179,7 @@ class Representative(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey("content_type", "object_id")
-    can_write = models.BooleanField(default=False, verbose_name=_("Leidžiama keisti duomenis"))
     can_make_agreements = models.BooleanField(default=False)
-    information_system_representative = models.BooleanField(
-        default=False, verbose_name=_("Informacinės sistemos tvarkytojas")
-    )
-    open_data_representative = models.BooleanField(default=False, verbose_name=_("Atvirų duomenų tvarkytojas"))
 
     objects = models.Manager()
 

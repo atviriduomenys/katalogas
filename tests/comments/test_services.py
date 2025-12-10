@@ -45,7 +45,7 @@ def test_get_comment_form_class_for_request_with_manager_perm():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(resource.organization),
         object_id=resource.organization.pk,
-        role=Representative.MANAGER,
+        role=Representative.OPEN_DATA_MANAGER,
         user=user,
     )
     res = get_comment_form_class(request, user)

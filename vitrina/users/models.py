@@ -91,35 +91,54 @@ class User(AbstractUser):
     def organization_content_type(self):
         return ContentType.objects.get_for_model(Organization)
 
-    @property
-    def is_manager(self):
-        return bool(self.representative_set.filter(role=Representative.MANAGER))
+    def get_representative_role(self) -> str:
+        if self.is_resource_coordinator:
+            return Representative.RESOURCE_COORDINATOR
+        if self.is_open_data_coordinator:
+            return Representative.OPEN_DATA_COORDINATOR
+        if self.is_manager:
+            return Representative.RESOURCE_MANAGER
+        if self.is_open_data_manager:
+            return Representative.OPEN_DATA_MANAGER
 
     @property
-    def is_coordinator(self):
-        return bool(self.representative_set.filter(role=Representative.COORDINATOR))
+    def is_manager(self) -> bool:
+        return bool(self.representative_set.filter(role=Representative.RESOURCE_MANAGER))
+
+    @property
+    def is_resource_coordinator(self) -> bool:
+        return bool(self.representative_set.filter(role=Representative.RESOURCE_COORDINATOR))
+
+    @property
+    def is_open_data_coordinator(self) -> bool:
+        return bool(self.representative_set.filter(role=Representative.OPEN_DATA_COORDINATOR))
+
+    @property
+    def is_open_data_manager(self) -> bool:
+        return bool(self.representative_set.filter(role=Representative.OPEN_DATA_MANAGER))
 
     @property
     def is_supervisor(self):
         return bool(self.representative_set.filter(role=Representative.SUPERVISOR))
 
     @property
-    def is_gov_organization_manager(self) -> bool:
+    def is_gov_organization_open_data_manager(self) -> bool:
+        gov_org_content_type = self.organization_content_type
         return Representative.objects.filter(
             user=self,
-            content_type=self.organization_content_type,
+            content_type=gov_org_content_type,
             object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
-            information_system_representative=False,
-            open_data_representative=False,
+            role__in=[Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR]
         ).exists()
 
     @property
-    def is_gov_organization_information_system_manager(self) -> bool:
+    def is_gov_organization_resource_manager(self) -> bool:
+        gov_org_content_type = self.organization_content_type
         return Representative.objects.filter(
             user=self,
-            content_type=self.organization_content_type,
+            content_type=gov_org_content_type,
             object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
-            information_system_representative=True,
+            role__in=[Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER]
         ).exists()
 
     @property
@@ -127,7 +146,7 @@ class User(AbstractUser):
         from vitrina.datasets.models import Dataset
 
         if self.is_manager:
-            org_ids = [rep.object_id for rep in self.representative_set.filter(role=Representative.MANAGER)]
+            org_ids = [rep.object_id for rep in self.representative_set.filter(role=Representative.RESOURCE_MANAGER)]
             for org_id in org_ids:
                 if Dataset.objects.filter(organization=org_id):
                     return True
@@ -179,7 +198,6 @@ class User(AbstractUser):
             user=self,
             content_type=org_type,
             object_id=organization.pk,
-            information_system_representative=True,
         ).exists()
 
     def is_open_data_representative_for(self, organization: Organization | None) -> bool:
@@ -190,7 +208,7 @@ class User(AbstractUser):
             user=self,
             content_type=org_type,
             object_id=organization.pk,
-            open_data_representative=True,
+            role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER],
         ).exists()
 
 

@@ -233,7 +233,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
     title_display.allow_tags = True
 
     def coordinators_display(self, obj):
-        coordinators = obj.representatives.filter(role=Representative.COORDINATOR).values_list("email", flat=True)
+        coordinators = obj.representatives.filter(role__in=Representative.COORDINATOR_ROLES).values_list("email", flat=True)
         if coordinators:
             return mark_safe("<br/>".join(coordinators))
         return "-"
@@ -242,7 +242,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
     coordinators_display.allow_tags = True
 
     def managers_display(self, obj):
-        managers = obj.representatives.filter(role=Representative.MANAGER).values_list("email", flat=True)
+        managers = obj.representatives.filter(role__in=Representative.MANAGER_ROLES).values_list("email", flat=True)
         if managers:
             return mark_safe("<br/>".join(managers))
         return "-"
@@ -412,13 +412,13 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
 
     def _get_dataset_report(self, cols, queryset, request):
         for item in queryset:
-            coordinators = item.representatives.filter(role=Representative.COORDINATOR).values_list("email", flat=True)
+            coordinators = item.representatives.filter(role__in=Representative.COORDINATOR_ROLES).values_list("email", flat=True)
             if coordinators:
                 coordinators = "\n".join(coordinators)
             else:
                 coordinators = "-"
 
-            managers = item.representatives.filter(role=Representative.MANAGER).values_list("email", flat=True)
+            managers = item.representatives.filter(role__in=Representative.MANAGER_ROLES).values_list("email", flat=True)
             if managers:
                 managers = "\n".join(managers)
             else:

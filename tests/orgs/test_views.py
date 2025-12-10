@@ -1265,7 +1265,7 @@ def test_create_organization(app: DjangoTestApp):
 
     organization = Organization.objects.get(company_code="123456789")
     assert organization.title == "Imone"
-    assert organization.name == "kodinis_pavadinimas"
+    assert organization.name == "datasets/gov/kodinis-pavadinimas/"
     assert organization.jurisdiction == jurisdiction
     assert organization.email == "example@example.com"
     assert organization.phone == "061234567"

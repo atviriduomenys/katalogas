@@ -133,6 +133,10 @@ class Organization(MP_Node):
                     tags.append(tag)
         return tags
 
+    @property
+    def whitelisted_names(self) -> list[str]:
+        return [whitelisted_code.code_name for whitelisted_code in self.whitelisted_code_names.all()]
+
 
 class PublisherOrganization(Organization):
     class Meta:
@@ -293,3 +297,26 @@ class Template(models.Model):
 
     def __str__(self):
         return self.document.name
+
+
+class WhitelistedCodeName(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="whitelisted_code_names",
+        verbose_name=_("Organizacija"),
+    )
+    code_name = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name=_("Kodinis pavadinimas"),
+        help_text=_("Unikalus kodinis pavadinimas, kurį galima naudoti kuriant duomenų išteklius."),
+    )
+
+    class Meta:
+        verbose_name = _("Leistinas kodinis pavadinimas")
+        verbose_name_plural = _("Leistini kodiniai pavadinimai")
+        ordering = ["code_name"]
+
+    def __str__(self):
+        return self.code_name

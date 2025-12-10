@@ -1,6 +1,7 @@
 import pytz
 from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
+from django.http import HttpRequest
 from django.shortcuts import redirect
 from django.utils.safestring import mark_safe
 from reversion.admin import VersionAdmin
@@ -19,8 +20,9 @@ from vitrina.orgs.forms import (
     TemplateForm,
     AdminPublisherOrganizationForm,
     AdminPublisherAssignedOrganizationForm,
+    WhitelistedCodeNameInlineForm,
 )
-from vitrina.orgs.models import Representative, Template
+from vitrina.orgs.models import Representative, Template, WhitelistedCodeName
 
 from vitrina.orgs.models import (
     Organization,
@@ -50,6 +52,24 @@ class RootOrganizationFilter(admin.SimpleListFilter):
             return queryset.filter(path__startswith=org.path)
 
 
+class WhitelistedCodeNameInline(admin.TabularInline):
+    model = WhitelistedCodeName
+    form = WhitelistedCodeNameInlineForm
+    extra = 1
+    fields = ["code_name"]
+    verbose_name = _("Leistinas kodinis pavadinimas")
+    verbose_name_plural = _("Leistini kodiniai pavadinimai")
+
+    def has_add_permission(self, request: HttpRequest, obj: object | None = None) -> bool:
+        return request.user.is_staff or request.user.is_superuser
+
+    def has_change_permission(self, request: HttpRequest, obj: object | None = None) -> bool:
+        return request.user.is_staff or request.user.is_superuser
+
+    def has_delete_permission(self, request: HttpRequest, obj: object | None = None) -> bool:
+        return request.user.is_staff or request.user.is_superuser
+
+
 class OrganizationAdmin(VersionAdmin, TreeAdmin):
     form = movenodeform_factory(Organization)
     list_display = [
@@ -57,6 +77,7 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
         "numchild",
     ]
     list_filter = (RootOrganizationFilter,)
+    inlines = [WhitelistedCodeNameInline]
     search_fields = ("title",)
 
     def has_view_permission(self, request, obj=None):

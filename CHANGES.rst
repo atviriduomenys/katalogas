@@ -22,6 +22,14 @@ https://github.com/atviriduomenys/katalogas/issues/2040
 - Part 1-2: Organization-based detail & list agreement pages (previously only available under Projects).
 - Part 3: Refactor agreements to be easily extendable to other pages.
 
+https://github.com/atviriduomenys/katalogas/issues/2075
+
+- OrganizationUpdateForm disables the name field when updating an existing organization to prevent edits.
+- OrganizationBaseForm now includes a clean method that automatically generates a dataset prefix based on the organization’s name and kind, and saves it to the database.
+- Uniqueness is enforced across WhitelistedCodeNames and the generated organization names.
+- Introduced WhitelistedCodeName, linked to Organization.
+- Added support in the Organization admin form to manage an array of WhitelistedCodeNames.
+- Made migrations to Organization and Dataset models, to generate organization name prefixes.
 
 v 1.9 (2025-12-04)
 ==================

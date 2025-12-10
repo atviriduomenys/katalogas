@@ -43,7 +43,7 @@ from parler.views import (
     LanguageChoiceMixin,
     ViewUrlMixin,
 )
-from reversion import set_comment, add_to_revision
+from reversion import add_to_revision
 from reversion.models import Version
 
 from vitrina.api.helpers import get_datasets_for_rdf
@@ -835,7 +835,6 @@ class DatasetCreateView(
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
         self.object.save()
-        set_comment(Dataset.CREATED)
         if not form.cleaned_data.get("creator"):
             Representative.objects.create(
                 content_type=ContentType.objects.get_for_model(self.object),
@@ -1168,7 +1167,6 @@ class DatasetUpdateView(
             self.object.service_type.set(form.cleaned_data["service_type"])
 
         self.object.save()
-        set_comment(Dataset.EDITED)
 
         if "files" in form.changed_data:
             for file in form.cleaned_data.get("files", []):
@@ -1493,7 +1491,6 @@ class DatasetStructureImportView(
         self.object.save()
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
-        set_comment(_(f'Added Structure file "{self.object.file}".'))
         create_structure_objects(self.object)
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
@@ -2057,7 +2054,6 @@ class AddRequestView(
             status=Task.CREATED,
             type=Task.REQUEST,
         )
-        set_comment(Dataset.REQUEST_SET)
         self.object.save()
         return HttpResponseRedirect(reverse("dataset-requests", kwargs={"pk": self.object.pk}))
 
@@ -2142,7 +2138,6 @@ class AddProjectView(
         for project in form.cleaned_data["projects"]:
             temp_proj = get_object_or_404(Project, pk=project.pk)
             temp_proj.datasets.add(self.object)
-        set_comment(Dataset.PROJECT_SET)
         self.object.save()
         return HttpResponseRedirect(reverse("dataset-projects", kwargs={"pk": self.object.pk}))
 
@@ -3101,7 +3096,6 @@ class DatasetCategoryView(PermissionRequiredMixin, TemplateView):
             for category in form.cleaned_data.get("category"):
                 self.dataset.category.add(category)
             self.dataset.save()
-            set_comment(Dataset.CATEGORY_UPDATED)
 
             DatasetExcludedGroups.objects.filter(dataset=self.dataset).delete()
             for group in DatasetGroup.objects.filter(
@@ -3189,7 +3183,6 @@ class DatasetAttributionCreateView(PermissionRequiredMixin, CreateView):
         self.object: DatasetAttribution = form.save(commit=False)
         self.object.dataset = self.dataset
         self.object.save()
-        set_comment(Dataset.ATTRIBUTION_ADDED)
         return redirect(self.dataset.get_absolute_url())
 
 
@@ -3208,7 +3201,6 @@ class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
     def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object = self.get_object()
         add_to_revision(self.object)
-        set_comment(Dataset.ATTRIBUTION_DELETED)
 
         return super().form_valid(form)
 
@@ -3266,7 +3258,6 @@ class DatasetRelationCreateView(PermissionRequiredMixin, CreateView):
             # need to save to update search index
             self.object.dataset.save()
             self.object.part_of.save()
-            set_comment(Dataset.RELATION_ADDED)
 
         return redirect(self.dataset.get_absolute_url())
 
@@ -3285,7 +3276,6 @@ class DatasetRelationDeleteView(PermissionRequiredMixin, DeleteView):
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object = self.get_object()
-        set_comment(Dataset.RELATION_DELETED)
         add_to_revision(self.object)
         return super().form_valid(form)
 
@@ -3378,7 +3368,6 @@ class DatasetCreatePlanView(PermissionRequiredMixin, TemplateView):
             if form_type == "create_form":
                 plan = form.save()
                 PlanDataset.objects.create(plan=plan, dataset=self.dataset)
-                set_comment(_(f'Pridėtas terminas "{plan}". Į terminą įtrauktas duomenų rinkinys "{self.dataset}".'))
 
             else:
                 plan_dataset = form.save(commit=False)
@@ -3386,7 +3375,6 @@ class DatasetCreatePlanView(PermissionRequiredMixin, TemplateView):
                 plan_dataset.save()
                 plan = plan_dataset.plan
                 plan.save()
-                set_comment(_(f'Į terminą "{plan}" įtrauktas duomenų rinkinys "{self.dataset}".'))
 
             Comment.objects.create(
                 content_type=ContentType.objects.get_for_model(self.dataset),
@@ -3427,7 +3415,6 @@ class DatasetDeletePlanView(PermissionRequiredMixin, DeleteView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
 
         if dataset.is_public and dataset.status == Dataset.PLANNED and not dataset.plandataset_set.exists():
             dataset.status = Dataset.INVENTORED
@@ -3465,7 +3452,6 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš termino "{plan}" pašalintas duomenų rinkinys "{dataset}".'))
 
         if dataset.is_public and dataset.status == Dataset.PLANNED and not dataset.plandataset_set.exists():
             dataset.status = Dataset.INVENTORED

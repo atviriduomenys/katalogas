@@ -1688,7 +1688,6 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
 
         # Save history
         self.property.save()
-        set_comment(_(f'Pridėta duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'))
 
         return redirect(self.property.get_absolute_url())
 
@@ -1816,7 +1815,6 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
             metadata.save()
         # Save history
         self.property.save()
-        set_comment(_(f'Redaguota duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'))
 
         return redirect(self.property.get_absolute_url())
 
@@ -1900,12 +1898,10 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         success_url = self.get_success_url()
-        value = str(self.object).replace('"', "")
         self.object.delete()
 
         # Save history
         self.property.save()
-        set_comment(_(f'Pašalinta duomenų lauko "{self.property.name}" reikšmė "{value}".'))
 
         return redirect(success_url)
 
@@ -1999,13 +1995,6 @@ class ModelCreateView(PermissionRequiredMixin, CreateView):
 
         model.update_level()
         self.dataset.update_level()
-
-        if form.cleaned_data.get("comment"):
-            comment = _(f'Sukurtas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
-        else:
-            comment = _(f'Sukurtas "{model.name}" modelis.')
-        set_comment(comment)
-        set_user(self.request.user)
 
         return redirect(model.get_absolute_url())
 
@@ -2185,13 +2174,6 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateVi
             self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 
-        if form.cleaned_data.get("comment"):
-            comment = _(f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
-        else:
-            comment = _(f'Redaguotas "{model.name}" modelis.')
-        set_comment(comment)
-        set_user(self.request.user)
-
         return redirect(model.get_absolute_url())
 
     def get_breadcrumbs(self) -> List[Crumb]:
@@ -2295,8 +2277,6 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Creat
 
         self.model_obj.update_level()
         self.dataset.update_level()
-        # Save history
-        set_comment(_(f'Pridėtas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
 
@@ -2419,10 +2399,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Updat
 
         self.model_obj.update_level()
         self.dataset.update_level()
-
-        # Save history
         prop.save()
-        set_comment(_(f'Redaguotas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
 
@@ -2593,7 +2570,6 @@ class ParamCreateView(PermissionRequiredMixin, CreateView):
         # Save history
         if isinstance(self.rel_object, Model):
             self.rel_object.save()
-            set_comment(_(f'Pridėtas "{self.rel_object.name}" modelio parametras "{self.object.name}".'))
 
         return redirect(self.rel_object.get_absolute_url())
 
@@ -2657,7 +2633,6 @@ class ParamUpdateView(PermissionRequiredMixin, UpdateView):
         # Save history
         if isinstance(rel_object, Model):
             rel_object.save()
-            set_comment(_(f'Redaguotas "{rel_object.name}" modelio parametras "{self.object.name}".'))
 
         return redirect(rel_object.get_absolute_url())
 
@@ -2680,14 +2655,12 @@ class ParamDeleteView(PermissionRequiredMixin, DeleteView):
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object = self.get_object()
-        value = str(self.object)
         rel_object = self.object.param.object
         response = super().form_valid(form)
 
         # Save history
         if isinstance(rel_object, Model):
             rel_object.save()
-            set_comment(_(f'Pašalintas "{rel_object.name}" modelio parametras "{value}".'))
 
         return response
 

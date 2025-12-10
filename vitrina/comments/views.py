@@ -9,8 +9,6 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 
-from reversion import set_comment
-
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.helpers import (
     create_task,
@@ -113,7 +111,6 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
             object_id=self.obj.pk,
             content_type=self.content_type,
         )
-        set_comment(Request.CREATED)
 
         # Link comment to request
         comment.type = Comment.REQUEST
@@ -207,7 +204,6 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
         save_request_comment(self.obj, status, comment.body, request.user)
         self.obj.status = status
         self.obj.save()
-        set_comment(type(self.obj).STATUS_CHANGED)
         comment.save()
         self._finalize_comment(comment, request)
         return redirect(self.obj.get_absolute_url())
@@ -224,7 +220,6 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
         save_request_comment(self.obj, status, comment.body, request.user)
         self.obj.status = status
         self.obj.save()
-        set_comment(type(self.obj).STATUS_CHANGED)
 
         # Handle assignment
         user_org = request.user.organization
@@ -374,7 +369,6 @@ class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
                         organization=self.dataset.organization,
                         status=Request.CREATED,
                     )
-                set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST

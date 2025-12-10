@@ -10,7 +10,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DeleteView, DetailView
 from parler.views import TranslatableCreateView, TranslatableUpdateView
-from reversion import set_comment, add_to_revision
+from reversion import add_to_revision
 
 from vitrina import settings
 from vitrina.comments.models import Comment
@@ -169,7 +169,6 @@ class ResourceCreateView(
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
             resource.update_applicable_legislation(applicable_legislation_urls)
 
-        set_comment((f'Pridėtas naujas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
 
@@ -255,7 +254,6 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
         if "applicable_legislation" in form.changed_data:
             resource.update_applicable_legislation(applicable_legislation_urls)
 
-        set_comment((f'Redaguotas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
 
@@ -284,7 +282,6 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
         add_to_revision(resource)
-        set_comment((f'Ištrintas duomenų šaltinis "{resource.lt_title()}".'))
         resource.delete()
 
         if not DatasetDistribution.objects.filter(dataset=dataset) and dataset.is_public:

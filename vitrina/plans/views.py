@@ -4,7 +4,6 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, UpdateView, DeleteView
 from django.utils.translation import gettext_lazy as _
-from reversion import set_comment
 from reversion.models import Version
 
 from vitrina.orgs.forms import OrganizationPlanForm
@@ -83,7 +82,6 @@ class PlanUpdateView(PermissionRequiredMixin, UpdateView):
 
     def form_valid(self, form):
         resp = super().form_valid(form)
-        set_comment(_(f'Redaguotas terminas "{self.object}"'))
         return resp
 
 

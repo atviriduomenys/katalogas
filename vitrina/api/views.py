@@ -24,7 +24,7 @@ from rest_framework.parsers import JSONParser
 from rest_framework.parsers import MultiPartParser
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
-from reversion import set_comment, set_user
+from reversion import set_user
 
 from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiDescription
@@ -261,7 +261,6 @@ class DatasetViewSet(ModelViewSet):
         instance.slug = None
 
         instance.save()
-        set_comment(Dataset.DELETED)
         set_user(self.user)
         return Response(status=status.HTTP_204_NO_CONTENT)
 

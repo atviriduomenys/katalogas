@@ -23,7 +23,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 import requests
-from reversion import set_comment
 
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.api.oauth import OAuthClientManagement
@@ -151,7 +150,6 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
         self.object.user = self.request.user
         self.object.status = Project.CREATED
         self.object.save()
-        set_comment(Project.CREATED)
         Task.objects.create(
             title=f"Užregistruotas naujas panaudojimo atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
             description="Portale užregistruotas naujas panaudojimo atvejis.",
@@ -207,7 +205,6 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView)
         super().form_valid(form)
         self.object = form.save(commit=True)
         self.object.save()
-        set_comment(Project.EDITED)
         sub_ct = ContentType.objects.get_for_model(self.object)
         subs = Subscription.objects.filter(
             sub_type=Subscription.PROJECT,

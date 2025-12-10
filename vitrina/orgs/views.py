@@ -33,7 +33,6 @@ from django.views.generic.edit import FormView
 from haystack.generic_views import SearchView
 from itsdangerous import URLSafeSerializer, BadSignature
 from requests import Response
-from reversion import set_comment
 from reversion.models import Version
 
 from vitrina.classifiers.models import AreaOfManagement
@@ -1525,7 +1524,6 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, OrganizationBaseViewMi
         self.object = form.save(commit=False)
         self.object.receiver = self.organization
         self.object.save()
-        set_comment(_(f'Pridėtas terminas "{self.object}".'))
         return redirect(reverse("organization-plans", args=[self.organization.pk]))
 
 

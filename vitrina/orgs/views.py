@@ -47,7 +47,6 @@ from vitrina.smart_contracts.permissions import (
 )
 from vitrina.smart_contracts.services import get_agreements
 from vitrina.smart_contracts.views import BaseAgreementListView, BaseAgreementDetailView
-from vitrina.orgs.helpers import generate_dataset_prefix
 from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.messages.models import SentMail
 from vitrina.orgs.helpers import get_or_create_parent_org

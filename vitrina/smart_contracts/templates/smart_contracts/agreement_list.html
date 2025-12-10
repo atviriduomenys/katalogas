@@ -10,7 +10,7 @@
     {% if can_create_agreements %}
         <div class="buttons is-right">
             <a class="button is-primary m-t-xs m-b-lg"
-               href="{% url 'agreement-create' project.pk %}">
+               href="{% url 'project-agreement-create' project.pk %}">
                 {% translate "Generuoti sutartis" %}
             </a>
         </div>
@@ -47,7 +47,7 @@
         </td>
 
         <td>
-            <a href="{% url 'agreement-detail' project.pk agreement.pk %}">
+            <a href="{% url 'project-agreement-detail' project.pk agreement.pk %}">
                 {% translate "Peržiūrėti" %}
             </a>
         </td>

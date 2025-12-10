@@ -147,6 +147,11 @@ urlpatterns = [
         name="organization-agreement-detail",
     ),
     path(
+        "orgs/<int:pk>/agreements/<uuid:agreement_id>/",
+        OrganizationAgreementDetailView.as_view(),
+        name="organization-agreements-detail",
+    ),
+    path(
         "register/<token>/",
         RepresentativeRegisterView.as_view(),
         name="representative-register",

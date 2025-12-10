@@ -19,7 +19,8 @@ Improvements:
 
 https://github.com/atviriduomenys/katalogas/issues/2040
 
-- Part 1: Organization-based detail & list agreement pages (previously only available under Projects)
+- Part 1-2: Organization-based detail & list agreement pages (previously only available under Projects).
+- Part 3: Refactor agreements to be easily extendable to other pages.
 
 
 v 1.9 (2025-12-04)

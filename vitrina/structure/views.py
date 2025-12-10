@@ -3436,23 +3436,31 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         )
 
         selected_metadata = form.cleaned_data.get("metadata", [])
+
+        metadata_dataset = Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            metadata_version=self.metadata_version
+        ).first()
+
+        if str(metadata_dataset.pk) not in selected_metadata:
+            form.add_error(None, _("Privalote publikuoti duomenų rinkinį."))
+            return self.form_invalid(form)
+
         old_to_new_metadata_object_map = {}
         with transaction.atomic():
             self.new_version.save()
 
             for meta in selected_metadata:
                 if meta := Metadata.objects.filter(pk=meta).first():
-                    # Duplicate metadata row
+
                     old_metadata_instance, new_metadata_instance = self.create_metadata_duplicate(meta)
 
-                    # Duplicate related object
                     related_object_duplication_result = self.create_related_model_duplicate(old_metadata_instance)
                     if related_object_duplication_result:
                         old_related_instance, new_related_instance = related_object_duplication_result
                     else:
                         continue
 
-                    # Need to create base if a model with base is published
                     if hasattr(old_related_instance, "base") and old_related_instance.base:
                         base_pk = old_related_instance.base.pk
                         base_metadata = Metadata.objects.filter(
@@ -3471,7 +3479,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                             new_base_metadata_instance.save()
                             old_to_new_metadata_object_map[old_base_related_instance] = new_base_related_instance
 
-                    # Assign a duplicated related object to metadata
                     new_metadata_instance.object = new_related_instance
                     new_metadata_instance.save()
 
@@ -3508,12 +3515,10 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     form.add_error(None, e.message)
                     return self.form_invalid(form)
 
-        if self.new_version:
-            return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.new_version.pk]))
-        else:
-            return redirect(reverse("dataset-structure", args=[self.dataset.pk, self.metadata_version.pk]))
+        version_pk = self.new_version.pk if self.new_version else self.metadata_version.pk
+        return redirect(reverse("dataset-structure", args=[self.dataset.pk, version_pk]))
 
-    def create_related_model_duplicate(self, old_metadata_instance):
+    def create_related_model_duplicate(self, old_metadata_instance: Metadata) -> tuple | None:
         related_model = old_metadata_instance.content_type.model_class()
         if related_model == Dataset:
             return None
@@ -3525,7 +3530,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         return old_related_instance, new_related_instance
 
-    def create_metadata_duplicate(self, old_metadata_instance) -> tuple:
+    def create_metadata_duplicate(self, old_metadata_instance: Metadata) -> tuple:
         new_metadata_instance = deepcopy(old_metadata_instance)
         new_metadata_instance.pk = None
         # TODO: column draft can be deprecated after full versioning is completed.
@@ -3538,7 +3543,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         return old_metadata_instance, new_metadata_instance
 
-    def duplicate_foreign_key_relationships(self, new_related_object, already_created_fields):
+    def duplicate_foreign_key_relationships(self, new_related_object, already_created_fields: dict) -> dict:
         needed_foreign_key_relationships = [
             Base,
             Model,
@@ -3552,7 +3557,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         ]
         for field in new_related_object._meta.get_fields():
             if isinstance(field, ForeignKey):
-                # If the foreign key relationship is not in the needed list skip
                 if field.related_model not in needed_foreign_key_relationships:
                     continue
 
@@ -3568,18 +3572,17 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
                     if hasattr(deeper_new_related_object, "content_type_id"):
                         related_model = deeper_new_related_object.content_type.model_class()
-                        if related_model in [Property, Model, DatasetDistribution]:
-                            if deeper_new_related_object.object not in already_created_fields:
-                                error_field_name = (
-                                    new_related_object.metadata.first().prepare or new_related_object.metadata.first()
+                        if related_model in [Property, Model, DatasetDistribution] and deeper_new_related_object.object not in already_created_fields:
+                            error_field_name = (
+                                new_related_object.metadata.first().prepare or new_related_object.metadata.first()
+                            )
+                            error_msg = _(
+                                "Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje".format(
+                                    error_field_name
                                 )
-                                error_msg = _(
-                                    "Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje".format(
-                                        error_field_name
-                                    )
-                                )
-                                raise ValidationError(error_msg)
-                            deeper_new_related_object.object = already_created_fields[deeper_new_related_object.object]
+                            )
+                            raise ValidationError(error_msg)
+                        deeper_new_related_object.object = already_created_fields[deeper_new_related_object.object]
 
                     deeper_new_related_object.save()
 
@@ -3594,19 +3597,19 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         return already_created_fields
 
-    def check_if_field_has_same_dataset(self, field):
+    def check_if_field_has_same_dataset(self, field) -> bool:
         return field.metadata_version.dataset == self.dataset
 
-    def check_if_field_has_same_version(self, field):
+    def check_if_field_has_same_version(self, field) -> bool:
         return field.metadata_version == self.metadata_version
 
-    def check_if_field_has_published_version(self, field):
+    def check_if_field_has_published_version(self, field) -> bool:
         return field.metadata_version.status != VersionStatus.DRAFT
 
-    def check_if_field_is_valid(self, deeper_old_related_object, new_related_object, already_created_fields):
+    def check_if_field_is_valid(self, deeper_old_related_object, new_related_object, already_created_fields: dict) -> None:
         always_valid_fields = [Param, Enum]
         if isinstance(deeper_old_related_object, tuple(always_valid_fields)):
-            return True
+            return None
         same_dataset = self.check_if_field_has_same_dataset(deeper_old_related_object)
         same_version = self.check_if_field_has_same_version(deeper_old_related_object)
         in_created = deeper_old_related_object in already_created_fields
@@ -3641,7 +3644,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         if error_msg:
             raise ValidationError(error_msg)
-
+        return None
 
 class VersionListView(
     PermissionRequiredMixin,

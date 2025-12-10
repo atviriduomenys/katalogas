@@ -42,6 +42,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('vitrina_orgs', '0012_generate_organization_name_with_prefix'),
         ('vitrina_datasets', '0036_alter_contact_email_alter_contact_unique_together_and_more'),
+        ('vitrina_structure', '0009_version_external_version_version_major_version_minor_and_more')
     ]
 
     operations = [

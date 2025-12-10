@@ -29,7 +29,7 @@ def generate_dataset_prefix(organization_name: str, organization_kind: Organizat
     Generates the dataset prefix based on the organization's kind and name.
     Returns a string like:
         - "datasets/gov/vssa/"
-        - "datasets/org/test_org/"
+        - "datasets/org/test-org/"
     """
     slugify_ascii_lower = partial(slugify, lowercase=True, allow_unicode=False)
     organization_part = slugify_ascii_lower(organization_name)

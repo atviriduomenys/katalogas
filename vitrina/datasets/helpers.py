@@ -27,10 +27,9 @@ def generate_dataset_name(organization: Organization, dataset_title: str) -> str
     dataset_part = slugify_ascii_lower(dataset_title)
     if organization.name:
         return f"{organization.name}{dataset_part}"
-    organization_part = organization.slug or organization.title
-    organization_part = slugify_ascii_lower(organization_part)
-    prefix = "datasets/gov" if organization.kind == Organization.GOV else "datasets/org"
-    return f"{prefix}/{organization_part}/{dataset_part}"
+    organization_part = slugify_ascii_lower(organization.slug or organization.title)
+    organization_kind = "gov" if organization.kind == Organization.GOV else "org"
+    return f"datasets/{organization_kind}/{organization_part}/{dataset_part}"
 
 
 def generate_unique_dataset_name(organization: Organization, dataset: Dataset) -> str:

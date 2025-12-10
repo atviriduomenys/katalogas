@@ -1,6 +1,7 @@
 import pytz
 from django.contrib import admin, messages
 from django.contrib.contenttypes.models import ContentType
+from django.http import HttpRequest
 from django.shortcuts import redirect
 from django.utils.safestring import mark_safe
 from reversion.admin import VersionAdmin
@@ -59,13 +60,13 @@ class WhitelistedCodeNameInline(admin.TabularInline):
     verbose_name = _("Leistinas kodinis pavadinimas")
     verbose_name_plural = _("Leistini kodiniai pavadinimai")
 
-    def has_add_permission(self, request, obj=None):
+    def has_add_permission(self, request: HttpRequest, obj: object | None = None) -> bool:
         return request.user.is_staff or request.user.is_superuser
 
-    def has_change_permission(self, request, obj=None):
+    def has_change_permission(self, request: HttpRequest, obj: object | None = None) -> bool:
         return request.user.is_staff or request.user.is_superuser
 
-    def has_delete_permission(self, request, obj=None):
+    def has_delete_permission(self, request: HttpRequest, obj: object | None = None) -> bool:
         return request.user.is_staff or request.user.is_superuser
 
 

@@ -4,6 +4,9 @@ from django.db import migrations
 from functools import partial
 from slugify import slugify
 
+from vitrina.orgs.models import Organization
+
+
 def update_dataset_names(apps, schema_editor):
     Metadata = apps.get_model("vitrina_structure", "Metadata")
     metadata_qs = Metadata.objects.select_related("dataset__organization").filter(
@@ -19,11 +22,9 @@ def update_dataset_names(apps, schema_editor):
         if org.name:
             prefix = org.name
         else:
-            organization_part = org.slug or org.title
-            organization_part = slugify_ascii_lower(organization_part)
-            prefix_start = "datasets/gov" if org.kind == "GOV" else "datasets/org"
-            prefix = f"{prefix_start}/{organization_part}/"
-
+            organization_part = slugify_ascii_lower(org.slug or org.title)
+            organization_kind = "gov" if org.kind == Organization.GOV else "org"
+            prefix = f"datasets/{organization_kind}/{organization_part}/"
         if metadata.name.startswith(prefix):
             continue
 

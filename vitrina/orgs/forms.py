@@ -231,7 +231,7 @@ class OrganizationBaseForm(ModelForm):
             Submit("submit", self.submit_label, css_class="button is-primary"),
         )
 
-    def clean_name(self):
+    def clean_name(self) -> str:
         name = self.cleaned_data.get("name")
         if self.instance and self.instance.pk:
             return name
@@ -1294,7 +1294,7 @@ class WhitelistedCodeNameInlineForm(ModelForm):
         fields = ["code_name"]
         widgets = {"code_name": TextInput(attrs={"placeholder": "datasets/{form}/{org}/"})}
 
-    def clean_code_name(self):
+    def clean_code_name(self) -> str:
         code_name = self.cleaned_data.get("code_name")
         validate_global_uniqueness(code_name, instance=self.instance)
         return code_name

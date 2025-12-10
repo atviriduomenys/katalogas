@@ -11,7 +11,7 @@ from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
-import vitrina.utils
+from vitrina.utils import translate_text
 from vitrina.datasets.models import Dataset
 
 
@@ -372,13 +372,13 @@ class DatasetDistribution(TranslatableModel):
             self.set_current_language("en")
 
             if lt_title and not self.en_title():
-                self.title = vitrina.utils.translate_text(lt_title, f"distribution {self.id} title")
+                self.title = translate_text(lt_title, f"distribution {self.id} title")
 
             if lt_description and not self.en_description():
-                self.description = vitrina.utils.translate_text(lt_description, f"distribution {self.id} description")
+                self.description = translate_text(lt_description, f"distribution {self.id} description")
 
             if lt_conditions and not self.en_conditions():
-                self.conditions = vitrina.utils.translate_text(lt_conditions, f"distribution {self.id} conditions")
+                self.conditions = translate_text(lt_conditions, f"distribution {self.id} conditions")
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
         existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))

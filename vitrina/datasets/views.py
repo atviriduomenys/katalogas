@@ -205,7 +205,8 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
 
         if is_manager_dataset_list(self.request):
             org_ids = [
-                rep.object_id for rep in self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
+                rep.object_id
+                for rep in self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
             ]
             queryset = queryset.filter(organization__in=org_ids)
 
@@ -482,20 +483,20 @@ class DatasetDetailView(
             # TODO: harvested functionality needs to be implemented
             "harvested": "",
             "can_add_resource": has_perm(
-            self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
-            if subclass and subclass.is_information_system
-            else Action.CREATE,
-            Dataset,
-            organization,
-        ),
+                self.request.user,
+                Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+                if subclass and subclass.is_information_system
+                else Action.CREATE,
+                Dataset,
+                organization,
+            ),
             "can_update_dataset": has_perm(
-            self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
-            if subclass and subclass.is_information_system
-            else Action.UPDATE,
-            dataset
-        ),
+                self.request.user,
+                Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+                if subclass and subclass.is_information_system
+                else Action.UPDATE,
+                dataset,
+            ),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
             "resources": dataset.datasetdistribution_set.all().order_by("-period_start"),
             "org_logo": organization.image if organization else None,
@@ -1061,8 +1062,9 @@ class DatasetUpdateView(
             Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
             if subclass and subclass.is_information_system
             else Action.UPDATE,
-            dataset
+            dataset,
         )
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         subclass_uuid = self.object.subclass.uuid
@@ -3301,7 +3303,13 @@ class DatasetPlanView(
         else:
             context["plans"] = self.dataset.plandataset_set.filter(plan__is_closed=False)
         subclass = self.dataset.subclass
-        context["can_manage_plans"] = has_perm(self.request.user, Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE if subclass and subclass.is_information_system else Action.UPDATE, self.dataset)
+        context["can_manage_plans"] = has_perm(
+            self.request.user,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+            if subclass and subclass.is_information_system
+            else Action.UPDATE,
+            self.dataset,
+        )
         context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
         context["selected_tab"] = status
         return context
@@ -3730,7 +3738,6 @@ class DatasetChildResourceListView(
 
     def has_permission(self):
         return has_perm(self.request.user, Action.VIEW, get_object_or_404(Dataset, pk=self.parent_dataset_id))
-
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         dataset = self.object

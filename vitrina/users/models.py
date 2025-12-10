@@ -128,7 +128,7 @@ class User(AbstractUser):
             user=self,
             content_type=gov_org_content_type,
             object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
-            role__in=[Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR]
+            role__in=[Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR],
         ).exists()
 
     @property
@@ -138,7 +138,7 @@ class User(AbstractUser):
             user=self,
             content_type=gov_org_content_type,
             object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
-            role__in=[Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER]
+            role__in=[Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER],
         ).exists()
 
     @property

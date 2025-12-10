@@ -54,8 +54,8 @@ class Role(Enum):
     RESOURCE_MANAGER = Representative.RESOURCE_MANAGER
     OPEN_DATA_COORDINATOR = Representative.OPEN_DATA_COORDINATOR
     OPEN_DATA_MANAGER = Representative.OPEN_DATA_MANAGER
-    GLOBAL_RESOURCE_MANAGER = "global_resource_manager" # All resource managers
-    GLOBAL_OPEN_DATA_MANAGER = "global_open_data_manager" # All open data managers
+    GLOBAL_RESOURCE_MANAGER = "global_resource_manager"  # All resource managers
+    GLOBAL_OPEN_DATA_MANAGER = "global_open_data_manager"  # All open data managers
     SUPERVISOR = Representative.SUPERVISOR
     AUTHOR = "author"
     GLOBAL_MANAGER = "global_manager"  # Global Manager (is staff)
@@ -185,7 +185,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.OPEN_DATA_COORDINATOR,
         Role.OPEN_DATA_MANAGER,
         Role.GLOBAL_RESOURCE_MANAGER,
-        Role.GLOBAL_OPEN_DATA_MANAGER
+        Role.GLOBAL_OPEN_DATA_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.VIEW): {
         Role.AUTHENTICATED,
@@ -196,7 +196,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.OPEN_DATA_COORDINATOR,
         Role.OPEN_DATA_MANAGER,
         Role.GLOBAL_RESOURCE_MANAGER,
-        Role.GLOBAL_OPEN_DATA_MANAGER
+        Role.GLOBAL_OPEN_DATA_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.VIEW): {
         Role.RESOURCE_COORDINATOR,
@@ -207,7 +207,13 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
 }
 
 _dataset_create_acl: ACL = {
-    (Dataset, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER, Role.GLOBAL_MANAGER, Role.OPEN_DATA_COORDINATOR, Role.OPEN_DATA_MANAGER)
+    (Dataset, Action.CREATE): (
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
+    )
 }
 _information_system_update_acl: ACL = inherit_acl(
     _dataset_update_acl,
@@ -335,8 +341,18 @@ acl: ACL = (
     | _dataset_structure_create_acl
     | {
         (Organization, Action.UPDATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
-        (Organization, Action.PLAN): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER, Role.OPEN_DATA_COORDINATOR, Role.OPEN_DATA_MANAGER),
-        (Organization, Action.HISTORY_VIEW): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER, Role.OPEN_DATA_COORDINATOR, Role.OPEN_DATA_MANAGER),
+        (Organization, Action.PLAN): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
+        (Organization, Action.HISTORY_VIEW): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
         (Agent, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
         (Agent, Action.VIEW): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
         (Agent, Action.UPDATE): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
@@ -346,14 +362,40 @@ acl: ACL = (
         (Contact, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
         (Contact, Action.UPDATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
         (Contact, Action.DELETE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
-        (Contact, Action.VIEW): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER, Role.OPEN_DATA_COORDINATOR, Role.OPEN_DATA_MANAGER),
+        (Contact, Action.VIEW): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
         (Request, Action.CREATE): (Role.AUTHENTICATED,),
         (Request, Action.REQUEST_UPDATE): (Role.AUTHOR,),
         (Request, Action.DELETE): (Role.AUTHOR,),
-        (Request, Action.COMMENT): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER, Role.OPEN_DATA_COORDINATOR, Role.OPEN_DATA_MANAGER),
-        (Request, Action.VIEW): (Role.AUTHOR, Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER, Role.OPEN_DATA_COORDINATOR, Role.OPEN_DATA_MANAGER),
-        (Request, Action.PLAN): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER, Role.OPEN_DATA_COORDINATOR, Role.OPEN_DATA_MANAGER),
-        (Request, Action.ASSIGN): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER, Role.OPEN_DATA_COORDINATOR, Role.OPEN_DATA_MANAGER),
+        (Request, Action.COMMENT): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
+        (Request, Action.VIEW): (
+            Role.AUTHOR,
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
+        (Request, Action.PLAN): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
+        (Request, Action.ASSIGN): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
         (Project, Action.CREATE): (Role.AUTHENTICATED,),
         (Project, Action.UPDATE): (Role.AUTHOR,),
         (Project, Action.DELETE): (Role.AUTHOR,),
@@ -505,7 +547,9 @@ def has_perm(
             if role == Role.AUTHENTICATED:
                 return True
             for node in nodes:
-                if (role == Role.AUTHOR and is_author(user, node)) or (role == Role.SUPERVISOR and is_supervisor(user, node)):
+                if (role == Role.AUTHOR and is_author(user, node)) or (
+                    role == Role.SUPERVISOR and is_supervisor(user, node)
+                ):
                     return True
                 if role not in {Role.AUTHOR, Role.SUPERVISOR}:
                     ct = ContentType.objects.get_for_model(node)
@@ -518,8 +562,7 @@ def has_perm(
                     )
         if where:
             where = functools.reduce(operator.or_, where)
-            if Representative.objects.filter(
-                where, user=user).exists():
+            if Representative.objects.filter(where, user=user).exists():
                 return True
 
             if user_org and Representative.objects.filter(where, organization=user_org).exists():

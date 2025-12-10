@@ -161,7 +161,12 @@ class Representative(models.Model):
         OPEN_DATA_MANAGER,
     ]
 
-    ROLES = ((RESOURCE_COORDINATOR, _("Duomenų išteklių koordinatorius")), (RESOURCE_MANAGER, _("Duomenų išteklių tvarkytojas")), (OPEN_DATA_COORDINATOR, _("Atvirų duomenų koordinatorius")), (OPEN_DATA_MANAGER, _("Atvirų duomenų tvarkytojas")),)
+    ROLES = (
+        (RESOURCE_COORDINATOR, _("Duomenų išteklių koordinatorius")),
+        (RESOURCE_MANAGER, _("Duomenų išteklių tvarkytojas")),
+        (OPEN_DATA_COORDINATOR, _("Atvirų duomenų koordinatorius")),
+        (OPEN_DATA_MANAGER, _("Atvirų duomenų tvarkytojas")),
+    )
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

@@ -393,8 +393,8 @@ class RepresentativeUpdateForm(ModelForm):
     def clean(self):
         role = self.cleaned_data.get("role")
         if (
-                self.instance.role in Representative.COORDINATOR_ROLES
-                and role not in Representative.COORDINATOR_ROLES
+            self.instance.role in Representative.COORDINATOR_ROLES
+            and role not in Representative.COORDINATOR_ROLES
             and get_coordinators_count(
                 self.object_model,
                 self.instance.object_id,

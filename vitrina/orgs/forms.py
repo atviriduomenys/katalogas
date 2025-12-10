@@ -280,7 +280,7 @@ class OrganizationCreateForm(OrganizationBaseForm):
             self.fields["company_code"].widget.attrs["readonly"] = True
             self.fields["address"].widget.attrs["readonly"] = True
 
-    def clean(self):
+    def clean(self) -> dict[str, object]:
         cleaned_data = super().clean()
         name = cleaned_data.get("name")
         kind = cleaned_data.get("kind")

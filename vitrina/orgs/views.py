@@ -747,11 +747,11 @@ class OrganizationBasedAgreementListView(OrganizationBaseViewMixin, BaseAgreemen
             .filter(assigner=self.organization)
             .annotate(
                 priority=Case(
-                    When(status=AgreementStatuses.ACTIVE, then=0),
-                    When(status=AgreementStatuses.SIGNED, then=1),
-                    When(status=AgreementStatuses.SUBMITTED, then=2),
-                    When(status=AgreementStatuses.APPROVED, then=3),
-                    When(status=AgreementStatuses.INITIATED, then=4),
+                    When(status=AgreementStatuses.SUBMITTED, then=0),
+                    When(status=AgreementStatuses.APPROVED, then=1),
+                    When(status=AgreementStatuses.INITIATED, then=2),
+                    When(status=AgreementStatuses.ACTIVE, then=3),
+                    When(status=AgreementStatuses.SIGNED, then=4),
                     When(status=AgreementStatuses.CREATED, then=5),
                     When(status=AgreementStatuses.FORMED, then=6),
                     When(status=AgreementStatuses.TERMINATED, then=7),

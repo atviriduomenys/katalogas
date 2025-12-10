@@ -6,9 +6,9 @@ from django.db import migrations
 def assign_version_number_if_missing(apps, schema_editor):
     Version = apps.get_model("vitrina_structure", "Version")
 
-    datasets_with_no_versions = Version.objects.filter(version__isnull=True).values_list("dataset_id", flat=True)
+    datasets_with_bad_versions = Version.objects.filter(version__isnull=True).values_list("dataset_id", flat=True)
 
-    for dataset_id in datasets_with_no_versions:
+    for dataset_id in datasets_with_bad_versions:
         all_dataset_versions = Version.objects.filter(dataset_id=dataset_id).order_by("-version")
         all_dataset_versions.update(version=None)
 

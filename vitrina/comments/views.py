@@ -26,7 +26,7 @@ from vitrina.comments.services import get_comment_form_class, has_comment_permis
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain, email
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Representative
+from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
@@ -39,6 +39,31 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
     content_type: ContentType
     obj: Model
 
+    @staticmethod
+    def _update_request_assignment(form, comment, request_assignment, status):
+        ra_comment = form.save(commit=False)
+        ra_comment.content_type = ContentType.objects.get_for_model(RequestAssignment)
+        ra_comment.object_id = request_assignment.pk
+        request_assignment.status = status
+        request_assignment.comment = ra_comment.body
+        request_assignment.save()
+        ra_comment.save()
+
+    @staticmethod
+    def _should_close_plan(plan):
+        all_requests_opened = (
+            plan.planrequest_set.filter(request__status=Request.OPENED).count() == plan.planrequest_set.count()
+        )
+        all_datasets_have_distributions = (
+            plan.plandataset_set.annotate(
+                has_distributions=Exists(DatasetDistribution.objects.filter(dataset_id=OuterRef("dataset_id")))
+            )
+            .filter(has_distributions=True)
+            .count()
+            == plan.plandataset_set.count()
+        )
+        return all_requests_opened and all_datasets_have_distributions
+
     def dispatch(self, request, *args, **kwargs):
         self.content_type = get_object_or_404(ContentType, pk=kwargs.get("content_type_id"))
         self.obj = get_object_or_404(self.content_type.model_class(), pk=kwargs.get("object_id"))
@@ -48,190 +73,204 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
         return has_comment_permission(self.obj, self.request.user)
 
     def post(self, request, content_type_id, object_id):
-        obj = self.obj
-        content_type = self.content_type
+        form_class = get_comment_form_class(self.obj, request.user)
+        form = form_class(self.obj, request.POST)
 
-        form_class = get_comment_form_class(obj, request.user)
-        form = form_class(obj, request.POST)
-        link = "%s%s" % (get_current_domain(self.request), obj.get_absolute_url())
-        sub_email_list = []
-
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.user = request.user
-            comment.content_type = content_type
-            comment.object_id = object_id
-
-            if form.cleaned_data.get("register_request"):
-                frequency = form.cleaned_data.get("increase_frequency")
-                title = form.cleaned_data.get("request_title") or obj.title
-                if not title and hasattr(obj, "name"):
-                    title = obj.name
-                new_request = Request.objects.create(
-                    status=Request.CREATED,
-                    user=request.user,
-                    title=title,
-                    description=comment.body,
-                    periodicity=frequency.title if frequency else "",
-                )
-                RequestObject.objects.create(
-                    request=new_request,
-                    object_id=object_id,
-                    content_type=content_type,
-                )
-                new_request.save()
-                set_comment(Request.CREATED)
-
-                comment.type = Comment.REQUEST
-                comment.rel_content_type = ContentType.objects.get_for_model(new_request)
-                comment.rel_object_id = new_request.pk
-
-                if isinstance(obj, Model) and obj.dataset.organization:
-                    RequestAssignment.objects.create(
-                        request=new_request,
-                        organization=obj.dataset.organization,
-                        status=Request.CREATED,
-                    )
-                elif isinstance(obj, Property) and obj.model.dataset.organization:
-                    RequestAssignment.objects.create(
-                        request=new_request,
-                        organization=obj.model.dataset.organization,
-                        status=Request.CREATED,
-                    )
-                elif isinstance(obj, Dataset):
-                    if obj.organization:
-                        RequestAssignment.objects.create(
-                            request=new_request,
-                            organization=obj.organization,
-                            status=Request.CREATED,
-                        )
-                        if obj.organization.email:
-                            sub_email_list.append(obj.organization.email)
-
-                    subs = Subscription.objects.filter(
-                        Q(object_id=obj.pk) | Q(object_id=None),
-                        sub_type=Subscription.DATASET,
-                        content_type=ContentType.objects.get_for_model(obj),
-                        dataset_comments_sub=True,
-                    )
-                    for sub in subs:
-                        if (
-                            sub.user.email
-                            and sub.email_subscribed
-                            and sub.user.email not in sub_email_list
-                            and Representative.objects.filter(
-                                content_type=ContentType.objects.get_for_model(obj),
-                                object_id=obj.pk,
-                                email=sub.user.email,
-                            ).exists()
-                        ):
-                            sub_email_list.append(sub.user.email)
-
-                    if sub_email_list:
-                        email(
-                            sub_email_list,
-                            "request-created-sub",
-                            "vitrina/emails/request_created_organization_sub.md",
-                            {
-                                "request": new_request.title,
-                                "link": get_current_domain(self.request) + new_request.get_absolute_url(),
-                            },
-                        )
-
-            elif status := form.cleaned_data.get("status"):
-                user_org = request.user.organization
-                comment.type = Comment.STATUS
-                if isinstance(obj, Request):
-                    user_org = request.user.organization
-                    request_assignment = RequestAssignment.objects.filter(organization=user_org, request=obj).first()
-                    save_request_comment(obj, status, comment.body, request.user)
-                    obj.status = status
-                    obj.save()
-                    set_comment(type(obj).STATUS_CHANGED)
-                    if not request_assignment:
-                        if user_org and status == Request.APPROVED:
-                            request_assignment = RequestAssignment(
-                                request=obj,
-                                organization=user_org,
-                                status=Request.APPROVED,
-                            )
-                            request_assignment.save()
-                            messages.info(
-                                request,
-                                _("Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"),
-                            )
-                        else:
-                            messages.error(
-                                request,
-                                _("Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą"),
-                            )
-                            return redirect(obj.get_absolute_url())
-                    if status == Request.OPENED:
-                        save_request_comment(obj, status, comment.body, request.user)
-                        obj.status = status
-                        obj.save()
-                        set_comment(type(obj).STATUS_CHANGED)
-                        request_plans = Plan.objects.filter(planrequest__request=obj)
-                        for plan in request_plans:
-                            if (
-                                plan.planrequest_set.filter(request__status=Request.OPENED).count()
-                                == plan.planrequest_set.count()
-                                and plan.plandataset_set.annotate(
-                                    has_distributions=Exists(
-                                        DatasetDistribution.objects.filter(
-                                            dataset_id=OuterRef("dataset_id"),
-                                        )
-                                    )
-                                ).count()
-                                == plan.plandataset_set.count()
-                            ):
-                                plan.is_closed = True
-                                plan.save()
-                    if status == Request.APPROVED:
-                        save_request_comment(obj, status, comment.body, request.user)
-                        obj.status = status
-                        obj.save()
-                        set_comment(type(obj).STATUS_CHANGED)
-                    if status == Request.REJECTED:
-                        approved_assignments_exists = RequestAssignment.objects.filter(
-                            status=Request.APPROVED, request=obj
-                        )
-                        opened_assignments_exists = RequestAssignment.objects.filter(status=Request.OPENED, request=obj)
-                        if not approved_assignments_exists and not opened_assignments_exists:
-                            save_request_comment(obj, status, comment.body, request.user)
-                            obj.status = status
-                            obj.save()
-                            set_comment(type(obj).STATUS_CHANGED)
-                    ra_comment = form.save(commit=False)
-                    request_assignment.status = status
-                    request_assignment.comment = ra_comment.body
-                    ra_comment.content_type = ContentType.objects.get_for_model(RequestAssignment)
-                    ra_comment.object_id = request_assignment.pk
-                    request_assignment.save()
-                    ra_comment.save()
-                else:
-                    save_request_comment(obj, status, comment.body, request.user)
-                    obj.status = status
-                    obj.save()
-                    set_comment(type(obj).STATUS_CHANGED)
-            else:
-                comment.type = Comment.USER
-            comment.save()
-            create_task(NEW_COMMENT, content_type, obj.pk, request.user, obj=obj)
-            create_subscription(request.user, comment)
-            send_mail_and_create_tasks_for_subs(
-                NEW_COMMENT,
-                content_type,
-                obj.pk,
-                request.user,
-                link,
-                obj=obj,
-                excluded_emails=sub_email_list,
-                text=comment.body,
-            )
-        else:
+        if not form.is_valid():
             messages.error(request, "\n".join([error[0] for error in form.errors.values()]))
-        return redirect(obj.get_absolute_url())
+            return redirect(self.obj.get_absolute_url())
+
+        comment = form.save(commit=False)
+        comment.user = request.user
+        comment.content_type = self.content_type
+        comment.object_id = object_id
+
+        if form.cleaned_data.get("register_request"):
+            return self._handle_request_registration(form, comment, request)
+
+        if status := form.cleaned_data.get("status"):
+            return self._handle_status_change(form, comment, status, request)
+
+        comment.type = Comment.USER
+        comment.save()
+        self._finalize_comment(comment, request)
+        return redirect(self.obj.get_absolute_url())
+
+    def _handle_request_registration(self, form, comment, request):
+        # Create request
+        frequency = form.cleaned_data.get("increase_frequency")
+        title = form.cleaned_data.get("request_title") or self._get_fallback_title()
+
+        new_request = Request.objects.create(
+            status=Request.CREATED,
+            user=comment.user,
+            title=title,
+            description=comment.body,
+            periodicity=frequency.title if frequency else "",
+        )
+
+        RequestObject.objects.create(
+            request=new_request,
+            object_id=self.obj.pk,
+            content_type=self.content_type,
+        )
+        set_comment(Request.CREATED)
+
+        # Link comment to request
+        comment.type = Comment.REQUEST
+        comment.rel_content_type = ContentType.objects.get_for_model(new_request)
+        comment.rel_object_id = new_request.pk
+        comment.save()
+
+        # Create assignment
+        if org := self._get_assignment_organization():
+            RequestAssignment.objects.create(
+                request=new_request,
+                organization=org,
+                status=Request.CREATED,
+            )
+
+        # Handle emails for datasets only
+        excluded_emails = []
+        if isinstance(self.obj, Dataset):
+            excluded_emails = self._collect_and_send_request_emails(new_request, request)
+
+        self._finalize_comment(comment, request, excluded_emails)
+        return redirect(self.obj.get_absolute_url())
+
+    def _collect_and_send_request_emails(self, new_request, request):
+        recipients = set()
+        content_type = ContentType.objects.get_for_model(self.obj)
+
+        # Organization email
+        if self.obj.organization and self.obj.organization.email:
+            recipients.add(self.obj.organization.email)
+
+        # Subscription emails
+        subs = Subscription.objects.filter(
+            Q(object_id=self.obj.pk) | Q(object_id=None),
+            sub_type=Subscription.DATASET,
+            content_type=content_type,
+            dataset_comments_sub=True,
+        )
+        for sub in subs:
+            if (
+                sub.user.email
+                and sub.email_subscribed
+                and Representative.objects.filter(
+                    content_type=content_type,
+                    object_id=self.obj.pk,
+                    email=sub.user.email,
+                ).exists()
+            ):
+                recipients.add(sub.user.email)
+
+        # Publisher email
+        if publisher := Organization.objects.filter(id=self.obj.publisher_id).first():
+            if publisher.email:
+                recipients.add(publisher.email)
+
+        # Send emails
+        if recipients:
+            email(
+                list(recipients),
+                "request-created-sub",
+                "vitrina/emails/request_created_organization_sub.md",
+                {
+                    "request": new_request.title,
+                    "link": get_current_domain(request) + new_request.get_absolute_url(),
+                },
+            )
+
+        return list(recipients)
+
+    def _get_fallback_title(self):
+        if hasattr(self.obj, "title") and self.obj.title:
+            return self.obj.title
+        if hasattr(self.obj, "name"):
+            return self.obj.name
+        return ""
+
+    def _get_assignment_organization(self):
+        org_map = {
+            Model: lambda: self.obj.dataset.organization if self.obj.dataset else None,
+            Property: lambda: self.obj.model.dataset.organization if self.obj.model.dataset else None,
+            Dataset: lambda: self.obj.organization,
+        }
+        return org_map.get(type(self.obj), lambda: None)()
+
+    def _handle_status_change(self, form, comment, status, request):
+        comment.type = Comment.STATUS
+
+        if isinstance(self.obj, Request):
+            return self._handle_request_status_change(form, comment, status, request)
+
+        save_request_comment(self.obj, status, comment.body, request.user)
+        self.obj.status = status
+        self.obj.save()
+        set_comment(type(self.obj).STATUS_CHANGED)
+        comment.save()
+        self._finalize_comment(comment, request)
+        return redirect(self.obj.get_absolute_url())
+
+    def _handle_request_status_change(self, form, comment, status, request):
+        if status == Request.REJECTED:
+            has_approved = RequestAssignment.objects.filter(status=Request.APPROVED, request=self.obj).exists()
+            has_opened = RequestAssignment.objects.filter(status=Request.OPENED, request=self.obj).exists()
+            if has_approved or has_opened:
+                messages.error(request, _("Cannot reject - approved/opened assignments exist"))
+                return redirect(self.obj.get_absolute_url())
+
+        # Update request status
+        save_request_comment(self.obj, status, comment.body, request.user)
+        self.obj.status = status
+        self.obj.save()
+        set_comment(type(self.obj).STATUS_CHANGED)
+
+        # Handle assignment
+        user_org = request.user.organization
+        request_assignment = RequestAssignment.objects.filter(organization=user_org, request=self.obj).first()
+
+        if not request_assignment and status == Request.APPROVED:
+            if not user_org:
+                messages.error(request, _("Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą"))
+                return redirect(self.obj.get_absolute_url())
+
+            request_assignment = RequestAssignment.objects.create(
+                request=self.obj,
+                organization=user_org,
+                status=Request.APPROVED,
+            )
+            messages.info(request, _("Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"))
+
+        # Close plans if all requests opened
+        if status == Request.OPENED:
+            for plan in Plan.objects.filter(planrequest__request=self.obj):
+                if self._should_close_plan(plan):
+                    plan.is_closed = True
+                    plan.save()
+
+        if request_assignment:
+            self._update_request_assignment(form, comment, request_assignment, status)
+
+        comment.save()
+        self._finalize_comment(comment, request)
+        return redirect(self.obj.get_absolute_url())
+
+    def _finalize_comment(self, comment, request, excluded_emails=None):
+        link = f"{get_current_domain(request)}{self.obj.get_absolute_url()}"
+        create_task(NEW_COMMENT, self.content_type, self.obj.pk, request.user, obj=self.obj)
+        create_subscription(request.user, comment)
+        send_mail_and_create_tasks_for_subs(
+            NEW_COMMENT,
+            self.content_type,
+            self.obj.pk,
+            request.user,
+            link,
+            obj=self.obj,
+            excluded_emails=excluded_emails or [],
+            text=comment.body,
+        )
 
 
 class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
@@ -363,6 +402,8 @@ class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionM
                     ):
                         sub_email_list.append(sub.user.email)
 
+                if publisher := Organization.objects.filter(id=self.dataset.publisher_id).first():
+                    sub_email_list.append(publisher.email)
                 if sub_email_list:
                     email(
                         sub_email_list,

@@ -75,6 +75,7 @@ spinta = {git = "https://github.com/atviriduomenys/spinta.git", rev = "0.2dev6"}
 bleach = "^6.2.0"
 requests-mock = "^1.12.1"
 celery = "^5.5.3"
+workalendar = "^17.0.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"

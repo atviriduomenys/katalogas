@@ -5429,3 +5429,21 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr ""
+
+msgid ""
+msgstr "Poreikio eskalacija"
+
+msgid ""
+msgstr "Poreikių eskalacija"
+
+msgid ""
+msgstr "Nežinoma"
+
+msgid ""
+msgstr "Atsakymas gautas iš tvarkytojų/koordinatorių."
+
+msgid ""
+msgstr "Sustabdyta rankiniu būdu."
+
+msgid ""
+msgstr "Pasiektas maksimalus eskalacijos lygis."

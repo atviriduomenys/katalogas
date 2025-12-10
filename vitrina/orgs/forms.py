@@ -1290,14 +1290,12 @@ class ContactUpdateForm(BaseContactForm):
 class WhitelistedCodeNameInlineForm(ModelForm):
     class Meta:
         model = WhitelistedCodeName
-        fields = "__all__"
+        fields = ["code_name"]
+        help_texts = {
+            "code_name": "Įveskite leistinus kodinius pavadinimus. Veskite pilną kodinį pavadinimą sudaryta iš: datasets/{form}/{org}/"
+        }
 
     def clean_code_name(self):
         code_name = self.cleaned_data.get("code_name")
-
-        required_prefix = "datasets/"
-
-        if code_name and not code_name.startswith(required_prefix):
-            code_name = required_prefix + code_name
-            validate_global_uniqueness(code_name, instance=self.instance)
+        validate_global_uniqueness(code_name, instance=self.instance)
         return code_name

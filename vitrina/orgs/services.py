@@ -214,7 +214,6 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.MANAGER,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
         Role.INFORMATION_SYSTEM_MANAGER,
-        Role.OPEN_DATA_REPRESENTATIVE,
     },
 }
 

@@ -487,7 +487,7 @@ class DatasetDetailView(
                 self.request.user,
                 Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
                 if subclass and subclass.is_information_system
-                else Action.CREATE,
+                else Action.UPDATE,
                 Dataset,
                 organization,
             ),
@@ -3775,7 +3775,7 @@ class DatasetChildResourceListView(
         action = (
             Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
             if subclass and subclass.is_information_system
-            else Action.CREATE
+            else Action.UPDATE
         )
         return super().get_context_data(**kwargs) | {
             "can_create_dataset": has_perm(

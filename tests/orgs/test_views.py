@@ -1171,6 +1171,36 @@ def test_contact_delete_no_permission(app, representative_data):
     assert Contact.objects.count() == 1
 
 
+@pytest.mark.django_db
+def test_contact_delete_blocked_if_assigned_to_agreements(app, representative_data):
+    # Arrange
+    user = representative_data["coordinator"]
+    organization = representative_data["organization"]
+    app.set_user(user)
+
+    contact = ContactFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+    )
+    AgreementFactory(
+        assigner=organization,
+        assignee=organization,
+        assigner_representative=contact,
+        status=AgreementStatuses.CREATED,
+        created_by=user,
+    )
+
+    url = reverse("contact-delete", kwargs={"pk": organization.pk, "contact_id": contact.pk})
+
+    # Act
+    response = app.get(url, expect_errors=True)
+
+    # Assert
+    assert response.status_code == 302
+    assert Contact.objects.filter(pk=contact.pk).exists()
+
+
 def test_non_gov_organizaton_no_gov_kind(app: DjangoTestApp):
     representative = ViispRepresentativeFactory()
     org = representative.content_object

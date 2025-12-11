@@ -16,7 +16,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
 from django.db.models import Q, Count, QuerySet, Case, When, IntegerField
 from django.forms import BaseForm
-from django.http import HttpResponseRedirect, JsonResponse
+from django.http import HttpResponseRedirect, JsonResponse, HttpResponseBase
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -683,14 +683,27 @@ class ContactDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView)
     template_name = "confirm_delete.html"
     pk_url_kwarg = "contact_id"
 
+    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponseRedirect | HttpResponseBase:
+        self.object = self.get_object()
+
+        is_contact_assigned_to_agreements = (
+            self.object.agreements_as_assignee_representative.exists()
+            or self.object.agreements_as_assigner_representative.exists()
+        )
+
+        if is_contact_assigned_to_agreements:
+            messages.error(request, _("Šio kontakto ištrinti negalima, nes jis yra naudojamas sutartyse."))
+            return HttpResponseRedirect(self.get_success_url())
+
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
         contact = get_object_or_404(Contact, pk=self.kwargs.get("contact_id"))
         return has_perm(self.request.user, Action.DELETE, contact)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        obj = self.get_object()
-        context["delete_text"] = _(f'Ar tikrai norite ištrinti kontaktą "{obj}"?')
+        context["delete_text"] = _('Ar tikrai norite ištrinti kontaktą "{contact}"?').format(contact=self.get_object())
         return context
 
     def get_success_url(self):

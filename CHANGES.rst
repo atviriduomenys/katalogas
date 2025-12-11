@@ -14,7 +14,13 @@ Bug fixes:
 https://github.com/atviriduomenys/katalogas/issues/2196
 
 - Return the mock for translation calling, vertimas.vu.lt is up and running, tests are breaking again, because the mock
-  was removed
+  was removed.
+
+<No ticket>
+
+- Adjust button spacing for dataset form.
+- Forbid deleting contacts assigned to agreements (protected attributes, throw a nicer error to the user).
+- Replace incorrect translation.
 
 https://github.com/atviriduomenys/katalogas/issues/1925
 

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-10 12:09+0200\n"
+"POT-Creation-Date: 2025-12-11 10:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -502,11 +502,14 @@ msgstr "Evaluated"
 msgid "Viešas komentaras"
 msgstr "Public comment"
 
-msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
-msgstr "Your organization was added to request organization list"
+msgid "Negalima atmesti — patvirtinti/atidaryti priskyrimai egzistuoja."
+msgstr "Cannot reject - approved/opened assignments exist"
 
 msgid "Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą"
 msgstr "Your organization was not added to request organization list"
+
+msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
+msgstr "Your organization was added to request organization list"
 
 msgid "Vėluoja"
 msgstr "Is late"
@@ -2586,6 +2589,10 @@ msgstr "Modified"
 msgid "Tekstas"
 msgstr "Rejected"
 
+msgid ""
+"Unikalus kodinis pavadinimas, kurį galima naudoti kuriant duomenų išteklius."
+msgstr "The unique codename, which can be used while creating data resources."
+
 msgid "Galimi duomenų ištekliai"
 msgstr "Available resources"
 
@@ -2882,6 +2889,12 @@ msgstr "Add contact"
 
 msgid "Kontaktų redagavimas"
 msgstr "Contact editing"
+
+msgid "Šio kontakto ištrinti negalima, nes jis yra naudojamas sutartyse."
+msgstr "This contact can not be deleted, because it is used in agreements."
+
+msgid "Ar tikrai norite ištrinti kontaktą \"{contact}\"?"
+msgstr "Are you sure you want to delete the contact \"{contact}\"?"
 
 msgid "Organizacijos sutartys"
 msgstr "Organization agreements"
@@ -3292,6 +3305,27 @@ msgstr "A free-text account of the record. Corresponds to dct:description."
 
 msgid "Klaidų duomenyse pataisymas"
 msgstr "Data error fix"
+
+msgid "Organizacijos koordinatorius"
+msgstr "Organization coordinator"
+
+msgid "Atsakymas gautas iš tvarkytojų/koordinatorių."
+msgstr "Response received from data editors/coordinators."
+
+msgid "Sustabdyta rankiniu būdu."
+msgstr "Stopped manually."
+
+msgid "Pasiektas maksimalus eskalacijos lygis."
+msgstr "Reached maximum level of escalation."
+
+msgid "Poreikio eskalacija"
+msgstr "Request escalation"
+
+msgid "Poreikių eskalacija"
+msgstr "Requests escalation"
+
+msgid "Nežinoma"
+msgstr "Unknown"
 
 msgid "Gauti poreikiai duomenų rinkiniams"
 msgstr "Received requests for datasets"
@@ -4848,9 +4882,6 @@ msgstr "Edit parameter"
 msgid "Vyr. koordinatorius"
 msgstr "Senior coordinator"
 
-msgid "Organizacijos koordinatorius"
-msgstr "Organization coordinator"
-
 msgid "Organizacijos tvarkytojas"
 msgstr "Data editor"
 
@@ -6071,21 +6102,3 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
-
-msgid "Poreikio eskalacija"
-msgstr "Request escalation"
-
-msgid "Poreikių eskalacija"
-msgstr "Requests escalation"
-
-msgid "Nežinoma"
-msgstr "Unknown"
-
-msgid "Atsakymas gautas iš tvarkytojų/koordinatorių."
-msgstr "Response received from data editors/coordinators."
-
-msgid "Sustabdyta rankiniu būdu."
-msgstr "Stopped manually."
-
-msgid "Pasiektas maksimalus eskalacijos lygis."
-msgstr "Reached maximum level of escalation."

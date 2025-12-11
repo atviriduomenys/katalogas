@@ -22,6 +22,7 @@ https://github.com/atviriduomenys/katalogas/issues/2040
 - Part 1-2: Organization-based detail & list agreement pages (previously only available under Projects).
 - Part 3: Refactor agreements to be easily extendable to other pages.
 - Part 4: Add separate agreement-negotiation views that are organization-based (reachable from organization tabs).
+- Part 5: Leftovers. Adding the PDF replace in ADOC's script.
 
 https://github.com/atviriduomenys/katalogas/issues/2075
 

@@ -218,7 +218,7 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
             has_approved = RequestAssignment.objects.filter(status=Request.APPROVED, request=self.obj).exists()
             has_opened = RequestAssignment.objects.filter(status=Request.OPENED, request=self.obj).exists()
             if has_approved or has_opened:
-                messages.error(request, _("Cannot reject - approved/opened assignments exist"))
+                messages.error(request, _("Negalima atmesti — patvirtinti/atidaryti priskyrimai egzistuoja."))
                 return redirect(self.obj.get_absolute_url())
 
         # Update request status

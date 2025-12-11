@@ -118,7 +118,15 @@ class DatasetStructureMixin(StructureMixin):
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
+        subclass = self.dataset.subclass
+        self.can_manage_structure = has_perm(
+            self.request.user,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+            if subclass and subclass.is_information_system
+            else Action.STRUCTURE,
+            Dataset,
+            self.dataset,
+        )
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.dataset, Action.VIEW)
         if self.can_manage_structure:
             self.models = (
@@ -281,9 +289,7 @@ class ModelStructureView(
         allowed_structure_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.STRUCTURE, model_class=Model
         )
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
-            model_visibility in allowed_structure_visibilities or model_visibility is None
-        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         allowed_model_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         allowed_prop_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property
@@ -435,11 +441,13 @@ class PropertyGraphView(PermissionRequiredMixin, View):
             raise Http404("No Model matches the given query.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(Property, model=self.model, metadata__name=prop_name)
-
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        model_visibility = self.model.visibility
         allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         allowed_visibilities_property = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property
+        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            model_visibility in allowed_visibilities_model or model_visibility is None
         )
         visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
             metadata__visibility__isnull=True
@@ -729,7 +737,6 @@ class ModelDataTableView(PermissionRequiredMixin, View):
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         allowed_visibilities_property = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property
@@ -740,6 +747,10 @@ class ModelDataTableView(PermissionRequiredMixin, View):
         visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
             metadata__visibility__isnull=True
         )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            self.model.visibility in allowed_visibilities_model or self.model.visibility is None
+        )
+
         if self.can_manage_structure:
             self.models = (
                 Model.objects.filter(dataset=self.object).filter(visibility_filter_model).order_by("metadata__name")
@@ -903,7 +914,9 @@ class ModelDataView(
         allowed_visibilities_property = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property
         )
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            self.model.visibility in allowed_visibilities_model or self.model.visibility is None
+        )
         visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
             metadata__visibility__isnull=True
         )
@@ -1048,7 +1061,6 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         allowed_visibilities_model = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property
         )
@@ -1059,6 +1071,10 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
         visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
             metadata__visibility__isnull=True
         )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            self.model.visibility in allowed_visibilities_model or self.model.visibility is None
+        )
+
         if self.can_manage_structure:
             self.models = (
                 Model.objects.filter(dataset=self.object).filter(visibility_filter_model).order_by("metadata__name")
@@ -1139,7 +1155,6 @@ class ObjectDataView(
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         allowed_visibilities_property = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property
@@ -1150,6 +1165,10 @@ class ObjectDataView(
         visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
             metadata__visibility__isnull=True
         )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            self.model.visibility in allowed_visibilities_model or self.model.visibility is None
+        )
+
         if self.can_manage_structure:
             self.models = (
                 Model.objects.filter(dataset=self.object).filter(visibility_filter_model).order_by("metadata__name")
@@ -1261,11 +1280,14 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
         if not self.model:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
             metadata__visibility__isnull=True
         )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            self.model.visibility in allowed_visibilities_model or self.model.visibility is None
+        )
+
         if self.can_manage_structure:
             self.models = (
                 Model.objects.filter(dataset=self.object).filter(visibility_filter_model).order_by("metadata__name")
@@ -2724,7 +2746,6 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
 
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         allowed_visibilities_property = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property
@@ -2734,6 +2755,9 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         )
         visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
             metadata__visibility__isnull=True
+        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            self.model.visibility in allowed_visibilities_model or self.model.visibility is None
         )
         if self.can_manage_structure:
             self.models = (
@@ -2849,7 +2873,6 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(Property, model=self.model_obj, metadata__name=prop_name)
 
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
         allowed_visibilities_model = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         allowed_visibilities_property = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property
@@ -2859,6 +2882,9 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         )
         visibility_filter_property = Q(metadata__visibility__in=allowed_visibilities_property) | Q(
             metadata__visibility__isnull=True
+        )
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            self.model.visibility in allowed_visibilities_model or self.model.visibility is None
         )
         if self.can_manage_structure:
             self.models = (

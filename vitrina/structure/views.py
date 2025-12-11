@@ -289,7 +289,9 @@ class ModelStructureView(
         allowed_structure_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.STRUCTURE, model_class=Model
         )
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
+            model_visibility in allowed_structure_visibilities or model_visibility is None
+        )
         allowed_model_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         allowed_prop_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Property

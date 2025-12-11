@@ -2,11 +2,11 @@ import os
 from typing import Any, Callable
 
 from django.contrib import messages
-from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
 from django.core.files.base import ContentFile
 from django.core.handlers.wsgi import WSGIRequest
 from django.db import transaction
-from django.db.models import Prefetch
+from django.db.models import Prefetch, QuerySet
 from django.forms.models import ModelForm
 from django.http import HttpResponseRedirect
 from django.http.response import HttpResponse
@@ -29,6 +29,13 @@ from vitrina.smart_contracts.models import (
     Agreement,
     AgreementFile,
 )
+from vitrina.smart_contracts.permissions import (
+    can_submit_agreements,
+    can_approve_agreements,
+    can_form_agreements,
+    can_initiate_agreements,
+    can_sign_agreements,
+)
 from vitrina.users.models import User
 from vitrina.projects.views import ProjectViewBaseMixin
 
@@ -50,16 +57,18 @@ class BaseProjectMixin(ProjectViewBaseMixin):
 
 
 class BaseAgreementMixin:
+    def get_agreement_queryset(self) -> QuerySet:
+        return Agreement.objects.all()
+
     def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
         super().setup(request, *args, **kwargs)
         self.agreement = get_object_or_404(
-            Agreement.objects.all().select_related("assigner").prefetch_related("scopes"),
-            project=self.project,
+            self.get_agreement_queryset().select_related("assigner").prefetch_related("scopes"),
             pk=self.kwargs["agreement_id"],
         )
 
 
-class AgreementNegotiateMixin(BaseAgreementMixin, LoginRequiredMixin, PermissionRequiredMixin, FormView):
+class AgreementNegotiateMixin(BaseAgreementMixin, LoginRequiredMixin, FormView):
     template_name = None
     form_class = None
     title = ""
@@ -70,7 +79,38 @@ class AgreementNegotiateMixin(BaseAgreementMixin, LoginRequiredMixin, Permission
     def has_permission(self) -> None:
         raise NotImplementedError
 
-    def validate_status(self, expected_status: str) -> bool:
+    def get_form_kwargs(self) -> dict:
+        kwargs = super().get_form_kwargs()
+        kwargs["agreement"] = self.agreement
+        return kwargs
+
+
+class AgreementActionMixin:
+    """Mixin with common logic for all agreement status change views."""
+
+    def dispatch(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if not self.has_permission():
+            return self.handle_no_permission()
+        return super().dispatch(request, *args, **kwargs)
+
+    @transaction.atomic
+    def form_valid(self, form: ModelForm) -> HttpResponse:
+        if self.expected_status and not self.validate_status(self.expected_status):
+            return HttpResponseRedirect(self.get_success_url())
+
+        self.perform_action(form)
+        if self.next_status:
+            self.agreement.status = self.next_status
+        self.agreement.save()
+
+        messages.success(self.request, self.success_message or _("Veiksmas įvykdytas sėkmingai."))
+        return HttpResponseRedirect(self.get_success_url())
+
+    def perform_action(self, form: ModelForm) -> None:
+        """Override in child classes for extra per-action logic."""
+        return None
+
+    def validate_status(self, expected_status: AgreementStatuses) -> bool:
         if self.agreement.status != expected_status:
             error_message = _(
                 "Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje {expected_status}."
@@ -84,11 +124,14 @@ class AgreementNegotiateMixin(BaseAgreementMixin, LoginRequiredMixin, Permission
         return True
 
 
-class AgreementUploadSignedFileMixin:
+class AgreementUploadSignedFileMixin(AgreementActionMixin):
+    """Mixin holding the common logic for Initiate/Sign status change for agreements."""
+
     expected_status: AgreementStatuses | None = None
     next_status: AgreementStatuses | None = None
-    signer_check: Callable[[User, Agreement], bool] | None = None
+    signer_role_check: Callable[[User, Agreement], bool] | None = None
     success_message: str | None = None
+    signer_error_message: str | None = None
 
     def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
@@ -103,8 +146,15 @@ class AgreementUploadSignedFileMixin:
         if not self.has_permission():
             return self.handle_no_permission()
 
-        if error := self._validate_pdf_state():
-            messages.error(request, error)
+        count = AgreementFile.objects.filter(
+            agreement=self.agreement,
+            file__iendswith=AgreementFile.AllowedFileTypes.PDF,
+        ).count()
+        if count == 0:
+            messages.error(request, _("PDF failas sutarčiai nėra sukurtas."))
+            return HttpResponseRedirect(self.get_success_url())
+        elif count > 1:
+            messages.error(request, _("Rasti keli PDF failai. Susisiekite su administratoriumi."))
             return HttpResponseRedirect(self.get_success_url())
 
         has_expected_status = self.agreement.status == self.expected_status
@@ -115,99 +165,65 @@ class AgreementUploadSignedFileMixin:
 
         return super().dispatch(request, *args, **kwargs)
 
-    def _validate_pdf_state(self) -> str | None:
-        count = AgreementFile.objects.filter(
-            agreement=self.agreement,
-            file__iendswith=AgreementFile.AllowedFileTypes.PDF,
-        ).count()
-
-        if count == 0:
-            return _("PDF failas sutarčiai nėra sukurtas.")
-        elif count > 1:
-            return _("Rasti keli PDF failai. Susisiekite su administratoriumi.")
-        return None
-
-    @transaction.atomic
-    def form_valid(self, form: ModelForm) -> HttpResponseRedirect:
-        if not self.validate_status(self.expected_status):
-            return HttpResponseRedirect(self.get_success_url())
-
-        self._execute_action(form)
-
-        return HttpResponseRedirect(self.get_success_url())
-
-    def _execute_action(self, form: ModelForm) -> None:
+    def perform_action(self, form: ModelForm) -> None:
         uploaded_file = form.cleaned_data["file"]
-
-        self.agreement.status = self.next_status
-        self.agreement.save()
-
         AgreementFile.objects.create(
             agreement=self.agreement,
             file_name=uploaded_file.name,
             file=uploaded_file,
         )
 
-        messages.success(self.request, self.success_message)
 
-
-class AgreementSubmitMixin:
+class AgreementSubmitMixin(AgreementActionMixin):
     form_class = AgreementSubmitForm
     title = _("Pateikti pasiūlymą")
+
     expected_status = AgreementStatuses.CREATED
+    next_status = AgreementStatuses.SUBMITTED
 
-    def _execute_action(self, form: ModelForm) -> HttpResponse:
-        if not self.validate_status(self.expected_status):
-            return HttpResponseRedirect(self.get_success_url())
+    success_message = _("Pasiūlymas sėkmingai pateiktas duomenų teikėjui.")
 
-        self.agreement.status = AgreementStatuses.SUBMITTED
+    def has_permission(self) -> bool:
+        return can_submit_agreements(self.request.user, self.agreement)
+
+    def perform_action(self, form: ModelForm) -> None:
         self.agreement.assignee_representative = form.cleaned_data["assignee_representative"]
-        self.agreement.save()
-
-        messages.success(self.request, _("Pasiūlymas sėkmingai pateiktas duomenų teikėjui."))
-        return HttpResponseRedirect(self.get_success_url())
-
-    def form_valid(self, form: ModelForm) -> HttpResponse:
-        return self._execute_action(form)
 
 
-class AgreementApproveMixin:
+class AgreementApproveMixin(AgreementActionMixin):
     form_class = AgreementApproveForm
     title = _("Patvirtinti pasiūlymą")
+
     expected_status = AgreementStatuses.SUBMITTED
+    next_status = AgreementStatuses.APPROVED
 
-    def _execute_action(self, form: ModelForm) -> HttpResponse:
-        if not self.validate_status(self.expected_status):
-            return HttpResponseRedirect(self.get_success_url())
+    success_message = _("Pasiūlymas sėkmingai patvirtintas.")
 
-        self.agreement.status = AgreementStatuses.APPROVED
+    def has_permission(self) -> bool:
+        return can_approve_agreements(self.request.user, self.agreement)
+
+    def perform_action(self, form: ModelForm) -> None:
         self.agreement.template = form.cleaned_data["template"]
         self.agreement.assigner_representative = form.cleaned_data["assigner_representative"]
         self.agreement.other_assigner_legislations = form.cleaned_data["other_assigner_legislations"]
-        self.agreement.save()
-
-        messages.success(self.request, _("Pasiūlymas sėkmingai patvirtintas."))
-        return HttpResponseRedirect(self.get_success_url())
-
-    def form_valid(self, form: ModelForm) -> HttpResponse:
-        return self._execute_action(form)
 
 
-class AgreementFormMixin:
+class AgreementFormMixin(AgreementActionMixin):
     form_class = AgreementFormForm
     title = _("Formuoti sutartį")
+
     expected_status = AgreementStatuses.APPROVED
+    next_status = AgreementStatuses.FORMED
 
-    def _execute_action(self, form: ModelForm) -> HttpResponse:
-        if not self.validate_status(AgreementStatuses.APPROVED):
-            return HttpResponseRedirect(self.get_success_url())
+    success_message = _("Sutarties dokumentas sukurtas sėkmingai.")
 
+    def has_permission(self) -> bool:
+        return can_form_agreements(self.request.user, self.agreement)
+
+    def perform_action(self, form: ModelForm) -> None:
         template = self.agreement.template
-
-        self.agreement.status = AgreementStatuses.FORMED
-        self.agreement.save()
-
         self.agreement.generate_contract_pdf_file(template=template)
+
         file_name, extension = os.path.splitext(os.path.basename(template.file.name))
         copy_file_name = f"{file_name}_copy{extension}"
         with template.file.open() as file:
@@ -216,12 +232,6 @@ class AgreementFormMixin:
                 is_template=True,
                 file_name=copy_file_name,
             )
-
-        messages.success(self.request, _("Sutarties dokumentas sukurtas"))
-        return HttpResponseRedirect(self.get_success_url())
-
-    def form_valid(self, form: ModelForm) -> HttpResponse:
-        return self._execute_action(form)
 
 
 class AgreementInitiateMixin(AgreementUploadSignedFileMixin):
@@ -234,7 +244,11 @@ class AgreementInitiateMixin(AgreementUploadSignedFileMixin):
     success_message = _("Sutarties dokumentas įkeltas sėkmingai.")
     signer_error_message = _("Šią sutartį šiuo metu turi pasirašyti duomenų gavėjo atstovas.")
 
-    def signer_role_check(self, user: User, agreement: Agreement) -> bool:
+    def has_permission(self) -> bool:
+        return can_initiate_agreements(self.request.user, self.agreement)
+
+    @staticmethod
+    def signer_role_check(user: User, agreement: Agreement) -> bool:
         return user.viisp_organization == agreement.assignee
 
 
@@ -248,57 +262,53 @@ class AgreementSignMixin(AgreementUploadSignedFileMixin):
     success_message = _("Sutarties dokumentas įkeltas sėkmingai.")
     signer_error_message = _("Šią sutartį šiuo metu turi pasirašyti duomenų teikėjo atstovas.")
 
-    def signer_role_check(self, user: User, agreement: Agreement) -> bool:
+    def has_permission(self) -> bool:
+        return can_sign_agreements(self.request.user, self.agreement)
+
+    @staticmethod
+    def signer_role_check(user: User, agreement: Agreement) -> bool:
         return user.viisp_organization == agreement.assigner
 
-    def _execute_action(self, form: ModelForm) -> None:
-        super()._execute_action(form)
-
+    def perform_action(self, form: ModelForm) -> None:
+        super().perform_action(form)
         self.agreement.is_agent_sync_enabled = True
-        self.agreement.save()
 
 
 class ProjectBasedAgreementNegotiateMixin(BaseProjectMixin, AgreementNegotiateMixin):
+    """Mixin class used for project-based agreement status-change views"""
+
     template_name = "smart_contracts/agreement_negotiate.html"
 
     detail_url_name = "project-detail"
     history_url_name = "project-history"
 
-    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
-        self.object = self.get_project(kwargs["pk"])
-        return super().setup(request, *args, **kwargs)
-
-    def get_form_kwargs(self) -> dict:
-        kwargs = super().get_form_kwargs()
-        kwargs["agreement"] = self.agreement
-        return kwargs
+    def get_agreement_queryset(self) -> QuerySet:
+        return Agreement.objects.filter(project=self.project)
 
     def get_success_url(self) -> str:
-        return reverse("project-agreement-detail", args=[self.object.pk, self.agreement.pk])
+        return reverse("project-agreement-detail", args=[self.project.pk, self.agreement.pk])
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-
         context.update(
             {
                 "current_title": self.title,
                 "parent_links": self.get_parent_links(self.title),
                 "agreement": self.agreement,
-                "project": self.agreement.project,
-                "datasets": self.object.datasets.filter(organization=self.agreement.assigner).all(),
+                "project": self.project,
+                "datasets": self.project.datasets.all(),
             }
         )
 
         return context
 
     def get_parent_links(self, current_action_name: str) -> dict[str | None, str]:
+        project_pk = self.project.pk
         return {
             reverse("home"): _("Pradžia"),
             reverse("project-list"): _("Panaudojimo atvejai"),
-            reverse("project-detail", args=[self.project.pk]): self.project,
-            reverse("project-agreement-list", args=[self.object.pk]): _("Sutartys"),
-            reverse(
-                "project-agreement-detail", args=[self.object.pk, self.agreement.pk]
-            ): self.agreement.detail_page_title,
+            reverse("project-detail", args=[project_pk]): self.project,
+            reverse("project-agreement-list", args=[project_pk]): _("Sutartys"),
+            reverse("project-agreement-detail", args=[project_pk, self.agreement.pk]): self.agreement.detail_page_title,
             None: current_action_name,
         }

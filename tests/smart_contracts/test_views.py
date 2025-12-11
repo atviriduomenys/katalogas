@@ -32,7 +32,7 @@ pytestmark = pytest.mark.django_db
 test_contracts_dir = Path(__file__).parent / "files" / "test_contracts"
 
 
-class TestProjectAgreementListView:
+class TestProjectBasedAgreementListView:
     def test_cannot_list_for_personal_project(self, app: DjangoTestApp) -> None:
         user = UserFactory()
         project = ProjectFactory(user=user)
@@ -95,7 +95,7 @@ class TestProjectAgreementListView:
         assert response.context["agreements"].count() == 1
 
 
-class TestProjectAgreementDetailView:
+class TestProjectBasedAgreementDetailView:
     def test_cannot_show_details_without_permission(
         self, app: DjangoTestApp, organization: Organization
     ) -> None:

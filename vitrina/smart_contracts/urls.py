@@ -2,8 +2,8 @@ from django.urls import path
 
 from vitrina.smart_contracts.views import (
     AgreementCreateView,
-    ProjectAgreementListView,
-    ProjectAgreementDetailView,
+    ProjectBasedAgreementListView,
+    ProjectBasedAgreementDetailView,
     ProjectBasedAgreementSubmitView,
     ProjectBasedAgreementApproveView,
     ProjectBasedAgreementFormView,
@@ -19,12 +19,12 @@ urlpatterns = [
     ),
     path(
         "projects/<int:pk>/agreement/",
-        ProjectAgreementListView.as_view(),
+        ProjectBasedAgreementListView.as_view(),
         name="project-agreement-list",
     ),
     path(
         "projects/<int:pk>/agreement/<uuid:agreement_id>/",
-        ProjectAgreementDetailView.as_view(),
+        ProjectBasedAgreementDetailView.as_view(),
         name="project-agreement-detail",
     ),
     path(

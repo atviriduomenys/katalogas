@@ -2768,6 +2768,21 @@ msgstr "Use case"
 msgid "Paskutinės sinchronizacijos data"
 msgstr "Date of last synchronization"
 
+msgid "Laukiama gavėjo veiksmų"
+msgstr "Awaiting for the recipient's actions"
+
+msgid "Peržiūrėti pateiktą pasiūlymą"
+msgstr "Review proposal"
+
+msgid "Formuoti sutartį"
+msgstr "Form agreement"
+
+msgid "Laukiama kol gavėjas įkels pasirašytą dokumentą"
+msgstr "Awaiting for signed document upload by data recipient (assignee)"
+
+msgid "Įkelti pasirašytą dokumentą (Teikėjo)"
+msgstr "Upload document signed by data receiver"
+
 msgid "Informacija duomenų teikėjo registravimui"
 msgstr "Data provider information for registration"
 
@@ -2867,6 +2882,12 @@ msgstr "Add contact"
 
 msgid "Kontaktų redagavimas"
 msgstr "Contact editing"
+
+msgid "Organizacijos sutartys"
+msgstr "Organization agreements"
+
+msgid "Sutartis"
+msgstr "Agreement"
 
 msgid "Organizacijos redagavimas"
 msgstr "Edit organization"
@@ -3778,9 +3799,6 @@ msgstr "Submit proposal"
 msgid "Patvirtinti pasiūlymą"
 msgstr "Confirm proposal"
 
-msgid "Formuoti sutartį"
-msgstr "Form agreement"
-
 msgid "Dokumentas turi būti adoc formato."
 msgstr "The document must be in adoc format."
 
@@ -3794,8 +3812,44 @@ msgstr "The attached file is not a ZIP archive."
 msgid "Įkelti pasirašytą dokumentą (Gavėjo)"
 msgstr "Upload document signed by data receiver"
 
-msgid "Įkelti pasirašytą dokumentą (Teikėjo)"
-msgstr "Upload document signed by data receiver"
+msgid "Veiksmas įvykdytas sėkmingai."
+msgstr "Action was executed successfully"
+
+msgid ""
+"Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
+"{expected_status}.Dabartinė būsena: {current_status}."
+msgstr ""
+"The action can only be executed when the agreement has the status "
+"{expected_status}. Current status: {current_status}"
+
+msgid "PDF failas sutarčiai nėra sukurtas."
+msgstr "PDF file for the agreement is not created."
+
+msgid "Rasti keli PDF failai. Susisiekite su administratoriumi."
+msgstr ""
+"Multiple PDF files were found related to the agreement. Please contact the "
+"administrator."
+
+msgid "Pasiūlymas sėkmingai pateiktas duomenų teikėjui."
+msgstr "The proposal has been successfully submitted to the data provider."
+
+msgid "Pasiūlymas sėkmingai patvirtintas."
+msgstr "Proposal was successfully confirmed."
+
+msgid "Sutarties dokumentas sukurtas sėkmingai."
+msgstr "Agreement document created successfully"
+
+msgid "Įkelti pasirašytą sutartį"
+msgstr "Upload signed document"
+
+msgid "Sutarties dokumentas įkeltas sėkmingai."
+msgstr "Agreement document uploaded successfully"
+
+msgid "Šią sutartį šiuo metu turi pasirašyti duomenų gavėjo atstovas."
+msgstr "Agreement document needs to be signed by data recipient first."
+
+msgid "Šią sutartį šiuo metu turi pasirašyti duomenų teikėjo atstovas."
+msgstr "Agreement document needs to be signed by data provider."
 
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr "File must be in Markdown format (.md)."
@@ -3823,9 +3877,6 @@ msgstr "Legal basis for data provision (obligation)"
 
 msgid "Mokėjimo sąlygos"
 msgstr "Payment terms"
-
-msgid "Sutartis"
-msgstr "Agreement"
 
 #, python-brace-format
 msgid "Sutartis: {organization}"
@@ -3926,47 +3977,11 @@ msgstr "Invalid ADOC file: {error}"
 msgid "Generuoti sutartis"
 msgstr "Generate agreements"
 
-msgid "Grįžti į sutartis"
-msgstr "Go back to agreements"
-
-msgid "Laukiama gavėjo veiksmų"
-msgstr "Awaiting for the recipient's actions"
-
-msgid "Peržiūrėti pateiktą pasiūlymą"
-msgstr "Review proposal"
-
 msgid "Laukiama teikėjo patvirtinimo"
 msgstr "Waiting for confirmation from the provider"
 
-msgid "Laukiama kol gavėjas įkels pasirašytą dokumentą"
-msgstr "Awaiting for signed document upload by data recipient (assignee)"
-
 msgid "Laukiama kol teikėjas įkels pasirašytą dokumentą"
 msgstr "Awaiting for signed document upload by data provider (assigner)"
-
-msgid "Sutarties identifikatorius"
-msgstr "Agreement id"
-
-msgid "Nėra sutarčių dokumentų."
-msgstr "No agreement documents."
-
-msgid "Sutarties derinimo informacija"
-msgstr "Agreement negotation information"
-
-msgid "Nėra susietų duomenų išteklių."
-msgstr "No related datasets found."
-
-msgid "Duomenų gavimo tikslas"
-msgstr "Purpose of data acquisition"
-
-msgid "Nėra pasirinktas duomenų gavėjo atstovas."
-msgstr "Data receiver representative is not selected."
-
-msgid "Nėra pasirinktas duomenų teikėjo atstovas."
-msgstr "Data provider representative is not selected."
-
-msgid "Šablono failas nepridėtas."
-msgstr "Template file is not added."
 
 msgid ""
 "Panaudojimo atvejis registruotas fizinio asmens vardu negali turėti sutarčių."
@@ -3984,44 +3999,6 @@ msgstr "Agreements generated successfully"
 
 msgid "Sutarčių generavime kilo klaidų"
 msgstr "Errors occurred while generating agreements"
-
-#, python-brace-format
-msgid ""
-"Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
-"{expected_status}.Dabartinė būsena: {current_status}."
-msgstr ""
-"The action can only be executed when the agreement has the status "
-"{expected_status}. Current status: {current_status}"
-
-msgid "Pasiūlymas sėkmingai pateiktas duomenų teikėjui."
-msgstr "The proposal has been successfully submitted to the data provider."
-
-msgid "Pasiūlymas sėkmingai patvirtintas."
-msgstr "Proposal was successfully confirmed."
-
-msgid "Sutarties dokumentas sukurtas"
-msgstr "Agreement document is created"
-
-msgid "PDF failas sutarčiai nėra sukurtas."
-msgstr "PDF file for the agreement is not created."
-
-msgid ""
-"Rasti keli PDF failai susieti su sutartimi. Susisiekite su administratoriumi."
-msgstr ""
-"Multiple PDF files were found related to the agreement. Please contact the "
-"administrator."
-
-msgid "Įkelti pasirašytą sutartį"
-msgstr "Upload signed document"
-
-msgid "Šią sutartį šiuo metu turi pasirašyti duomenų gavėjo atstovas"
-msgstr "Agreement document needs to be signed by data recipient first."
-
-msgid "Sutarties dokumentas įkeltas sėkmingai"
-msgstr "Agreement document uploaded successfully"
-
-msgid "Šią sutartį šiuo metu turi pasirašyti duomenų teikėjo atstovas."
-msgstr "Agreement document needs to be signed by data provider."
 
 msgid "Rodoma tituliniame puslapyje"
 msgstr "Shown in home page"
@@ -5146,8 +5123,35 @@ msgstr "Register request to open data"
 msgid "Statistika"
 msgstr "Statistics"
 
+msgid "Grįžti į sutartis"
+msgstr "Go back to agreements"
+
+msgid "Sutarties identifikatorius"
+msgstr "Agreement id"
+
+msgid "Nėra sutarčių dokumentų."
+msgstr "No agreement documents."
+
 msgid "Nėra sutarčių."
 msgstr "No agreements."
+
+msgid "Sutarties derinimo informacija"
+msgstr "Agreement negotation information"
+
+msgid "Nėra susietų duomenų išteklių."
+msgstr "No related datasets found."
+
+msgid "Duomenų gavimo tikslas"
+msgstr "Purpose of data acquisition"
+
+msgid "Nėra pasirinktas duomenų gavėjo atstovas."
+msgstr "Data receiver representative is not selected."
+
+msgid "Nėra pasirinktas duomenų teikėjo atstovas."
+msgstr "Data provider representative is not selected."
+
+msgid "Šablono failas nepridėtas."
+msgstr "Template file is not added."
 
 msgid "Pradinis"
 msgstr "First"

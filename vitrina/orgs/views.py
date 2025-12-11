@@ -14,7 +14,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
-from django.db.models import Q, Count, QuerySet
+from django.db.models import Q, Count, QuerySet, Case, When, IntegerField
 from django.forms import BaseForm
 from django.http import HttpResponseRedirect, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -38,6 +38,13 @@ from reversion.models import Version
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.orgs.permissions import can_view_organization_agreements, can_view_organization_agreement
+from vitrina.smart_contracts import AgreementStatuses
+from vitrina.smart_contracts.mixins import (
+    AgreementNegotiateMixin,
+    AgreementApproveMixin,
+    AgreementSignMixin,
+    AgreementFormMixin,
+)
 from vitrina.smart_contracts.models import Agreement
 from vitrina.smart_contracts.permissions import (
     can_approve_agreements,
@@ -722,7 +729,7 @@ class OrganizationProjectsView(
         return context_data
 
 
-class OrganizationAgreementListView(OrganizationBaseViewMixin, BaseAgreementListView):
+class OrganizationBasedAgreementListView(OrganizationBaseViewMixin, BaseAgreementListView):
     template_name = "vitrina/orgs/organization_agreements.html"
     parent_type = "organization"
 
@@ -735,7 +742,25 @@ class OrganizationAgreementListView(OrganizationBaseViewMixin, BaseAgreementList
         return can_view_organization_agreements(self.request.user, self.organization)
 
     def get_queryset(self) -> QuerySet:
-        return get_agreements(self.request.user).filter(assigner=self.organization)
+        return (
+            get_agreements(self.request.user)
+            .filter(assigner=self.organization)
+            .annotate(
+                priority=Case(
+                    When(status=AgreementStatuses.SUBMITTED, then=0),
+                    When(status=AgreementStatuses.APPROVED, then=1),
+                    When(status=AgreementStatuses.INITIATED, then=2),
+                    When(status=AgreementStatuses.ACTIVE, then=3),
+                    When(status=AgreementStatuses.SIGNED, then=4),
+                    When(status=AgreementStatuses.CREATED, then=5),
+                    When(status=AgreementStatuses.FORMED, then=6),
+                    When(status=AgreementStatuses.TERMINATED, then=7),
+                    default=8,
+                    output_field=IntegerField(),
+                )
+            )
+            .order_by("priority", "created_at")
+        )
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -748,7 +773,7 @@ class OrganizationAgreementListView(OrganizationBaseViewMixin, BaseAgreementList
         return context
 
 
-class OrganizationAgreementDetailView(OrganizationBaseViewMixin, BaseAgreementDetailView):
+class OrganizationBasedAgreementDetailView(OrganizationBaseViewMixin, BaseAgreementDetailView):
     template_name = "vitrina/orgs/organization_agreements_detail.html"
     parent_type = "organization"
 
@@ -756,11 +781,8 @@ class OrganizationAgreementDetailView(OrganizationBaseViewMixin, BaseAgreementDe
         super().setup(request, *args, **kwargs)
         self.parent: Organization = self.organization
 
-        self.agreement = get_object_or_404(
-            Agreement.objects.all().select_related("assigner").prefetch_related("scopes"),
-            assigner=self.organization,
-            pk=self.kwargs["agreement_id"],
-        )
+    def get_agreement_queryset(self) -> QuerySet:
+        return Agreement.objects.filter(assigner=self.organization)
 
     def has_permission(self) -> bool:
         return can_view_organization_agreement(self.request.user, self.agreement)
@@ -781,13 +803,64 @@ class OrganizationAgreementDetailView(OrganizationBaseViewMixin, BaseAgreementDe
                     reverse("home"): _("Pradžia"),
                     reverse("organization-list"): _("Organizacijos"),
                     reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    reverse("organization-agreement-list", args=[self.organization.pk]): "Sutartys",
-                    None: _("Sutartys"),
+                    reverse("organization-agreement-list", args=[self.organization.pk]): _("Organizacijos sutartys"),
+                    None: _("Sutartis"),
                 },
             }
         )
 
         return context
+
+
+class OrganizationBasedAgreementNegotiateMixin(OrganizationBaseViewMixin, AgreementNegotiateMixin):
+    """Mixin class used for organization-based agreement status-change views"""
+
+    template_name = "vitrina/orgs/organization_based_agreement_negotiate.html"
+
+    def get_agreement_queryset(self) -> QuerySet:
+        return Agreement.objects.filter(assigner=self.organization)
+
+    def get_success_url(self) -> str:
+        return reverse("organization-agreement-detail", args=[self.organization.pk, self.agreement.pk])
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+        context.update(
+            {
+                "current_title": self.title,
+                "parent_links": self.get_parent_links(self.title),
+                "agreement": self.agreement,
+                "project": self.agreement.project,
+                "datasets": self.agreement.project.datasets.filter(organization=self.agreement.assigner).all(),
+            }
+        )
+
+        return context
+
+    def get_parent_links(self, current_action_name: str) -> dict[str | None, str]:
+        organization_pk = self.organization.pk
+        return {
+            reverse("home"): _("Pradžia"),
+            reverse("organization-list"): _("Panaudojimo atvejai"),
+            reverse("organization-detail", args=[organization_pk]): self.organization,
+            reverse("organization-agreement-list", args=[organization_pk]): _("Sutartys"),
+            reverse(
+                "organization-agreement-detail", args=[organization_pk, self.agreement.pk]
+            ): self.agreement.detail_page_title,
+            None: current_action_name,
+        }
+
+
+class OrganizationBasedAgreementApproveView(AgreementApproveMixin, OrganizationBasedAgreementNegotiateMixin):
+    """Organization-based agreement form view responsible for moving the agreement to status `APPROVED`"""
+
+
+class OrganizationBasedAgreementFormView(AgreementFormMixin, OrganizationBasedAgreementNegotiateMixin):
+    """Organization-based agreement form view responsible for moving the agreement to status `FORMED`"""
+
+
+class OrganizationBasedAgreementSignView(AgreementSignMixin, OrganizationBasedAgreementNegotiateMixin):
+    """Organization-based agreement form view responsible for moving the agreement to status `SIGNED`"""
 
 
 class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):

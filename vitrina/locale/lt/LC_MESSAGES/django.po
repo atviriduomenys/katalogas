@@ -5430,20 +5430,20 @@ msgid ""
 "iš naujo"
 msgstr ""
 
-msgid ""
-msgstr "Poreikio eskalacija"
+msgid "Poreikio eskalacija"
+msgstr ""
 
-msgid ""
-msgstr "Poreikių eskalacija"
+msgid "Poreikių eskalacija"
+msgstr ""
 
-msgid ""
-msgstr "Nežinoma"
+msgid "Nežinoma"
+msgstr ""
 
-msgid ""
-msgstr "Atsakymas gautas iš tvarkytojų/koordinatorių."
+msgid "Atsakymas gautas iš tvarkytojų/koordinatorių."
+msgstr ""
 
-msgid ""
-msgstr "Sustabdyta rankiniu būdu."
+msgid "Sustabdyta rankiniu būdu."
+msgstr ""
 
-msgid ""
-msgstr "Pasiektas maksimalus eskalacijos lygis."
+msgid "Pasiektas maksimalus eskalacijos lygis."
+msgstr ""

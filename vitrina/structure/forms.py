@@ -1267,8 +1267,9 @@ class PublishForm(forms.ModelForm):
             "version_type",
         )
 
-    def __init__(self, dataset, *args, **kwargs):
+    def __init__(self, dataset, metadata_version, *args, **kwargs):
         self.dataset = dataset
+        self.metadata_version = metadata_version
         super().__init__(*args, **kwargs)
         latest_versions = []
         major_versions = Version.objects.filter(dataset=self.dataset, version_type=VersionType.MAJOR).order_by("major")
@@ -1301,7 +1302,7 @@ class PublishForm(forms.ModelForm):
             Field("metadata"),
             Submit("submit", _("Publikuoti"), css_class="button is-primary"),
         )
-        self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version()
+        self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version(self.metadata_version)
 
     def clean(self) -> dict:
         cleaned_data = super().clean()

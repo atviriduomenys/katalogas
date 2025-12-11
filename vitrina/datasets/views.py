@@ -47,6 +47,7 @@ from reversion import set_comment, create_revision, set_user, add_to_revision
 from reversion.models import Version
 from reversion.views import RevisionMixin
 
+from vitrina.structure.models import Version as _Version
 from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiKey
 from vitrina.comments.models import Comment
@@ -847,6 +848,11 @@ class DatasetCreateView(
         dataset_name = form.cleaned_data.get("name", "") or generate_unique_dataset_name(
             self.object.organization, self.object
         )
+        draft_metadata_version = _Version.objects.create(
+            dataset=self.object,
+            version=1,
+            status=VersionStatus.DRAFT,
+        )
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
             dataset=self.object,
@@ -857,6 +863,7 @@ class DatasetCreateView(
             description=self.object.description,
             prepare_ast={},
             version=1,
+            metadata_version=draft_metadata_version,
         )
         if self.object.organization:
             org_id = self.object.organization.id

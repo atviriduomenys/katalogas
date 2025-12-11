@@ -3363,6 +3363,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["dataset"] = self.dataset
+        kwargs["metadata_version"] = self.metadata_version
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -3373,7 +3374,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         if self.metadata_version.status != VersionStatus.DRAFT:
-            form.add_error(None, "Publikuota versija negali būti publikuota dar kartą.")
+            form.add_error(None, _("Publikuota versija negali būti publikuota dar kartą."))
             return self.form_invalid(form)
         self.new_version = form.save(commit=False)
         self.new_version.dataset = self.dataset
@@ -3442,7 +3443,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
             metadata_version=self.metadata_version
         ).first()
 
-        if str(metadata_dataset.pk) not in selected_metadata:
+        if not metadata_dataset or str(metadata_dataset.pk) not in selected_metadata:
             form.add_error(None, _("Privalote publikuoti duomenų rinkinį."))
             return self.form_invalid(form)
 
@@ -3577,7 +3578,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                                 new_related_object.metadata.first().prepare or new_related_object.metadata.first()
                             )
                             error_msg = _(
-                                "Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje".format(
+                                "Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje.".format(
                                     error_field_name
                                 )
                             )
@@ -3629,18 +3630,18 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         if same_dataset and not same_version and not published:
             error_msg = _(
-                "Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų ištekliuje".format(
+                "Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų ištekliuje.".format(
                     new_name, deeper_name
                 )
             )
 
         elif same_dataset and same_version and not in_created:
             error_msg = _(
-                "Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį".format(deeper_name, new_name)
+                "Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį.".format(deeper_name, new_name)
             )
 
         elif not same_dataset and not published:
-            error_msg = _("Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje".format(new_name))
+            error_msg = _("Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje.".format(new_name))
 
         if error_msg:
             raise ValidationError(error_msg)

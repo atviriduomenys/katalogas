@@ -173,7 +173,15 @@ class DatasetStructureView(
 
     def dispatch(self, request, *args, **kwargs):
         self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
+        subclass = self.object.subclass
+        self.can_manage_structure = has_perm(
+            self.request.user,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+            if subclass and subclass.is_information_system
+            else Action.STRUCTURE,
+            Dataset,
+            self.object,
+        )
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         if self.can_manage_structure:
             self.models = (

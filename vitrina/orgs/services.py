@@ -60,6 +60,7 @@ class Role(Enum):
     VISITOR = "visitor"  # All unauthenticated users
     INFORMATION_SYSTEM_REPRESENTATIVE = "information_system_representative"
     OPEN_DATA_REPRESENTATIVE = "open_data_representative"
+    INFORMATION_SYSTEM_MANAGER = "information_system_manager"
 
 
 WRITE_ACTIONS: set[Action] = {
@@ -136,41 +137,51 @@ _dataset_update_acl: ACL = {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
 }
 _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW) | {
@@ -183,6 +194,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.VISITOR,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
         Role.OPEN_DATA_REPRESENTATIVE,
+        Role.INFORMATION_SYSTEM_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
@@ -193,6 +205,7 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.VISITOR,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
         Role.OPEN_DATA_REPRESENTATIVE,
+        Role.INFORMATION_SYSTEM_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,
@@ -200,11 +213,20 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.COORDINATOR,
         Role.MANAGER,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.INFORMATION_SYSTEM_MANAGER,
+        Role.OPEN_DATA_REPRESENTATIVE,
     },
 }
 
 _dataset_create_acl: ACL = {
-    (Dataset, Action.CREATE): (Role.COORDINATOR, Role.RESOURCE_MANAGER, Role.GLOBAL_MANAGER, Role.MANAGER)
+    (Dataset, Action.CREATE): (
+        Role.COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.MANAGER,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
+    )
 }
 _dataset_create_resource_at_gov_acl: ACL = inherit_acl(
     _dataset_create_acl,
@@ -277,6 +299,7 @@ MODEL_VISIBILITY_ACL = {
         Role.VISITOR,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
         Role.OPEN_DATA_REPRESENTATIVE,
+        Role.INFORMATION_SYSTEM_MANAGER,
     },
     (Model, Metadata.PACKAGE, Action.VIEW): {
         Role.GLOBAL_MANAGER,
@@ -287,6 +310,7 @@ MODEL_VISIBILITY_ACL = {
         Role.VISITOR,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
         Role.OPEN_DATA_REPRESENTATIVE,
+        Role.INFORMATION_SYSTEM_MANAGER,
     },
     (Model, Metadata.PROTECTED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
@@ -299,26 +323,33 @@ MODEL_VISIBILITY_ACL = {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.VISIBILITY_PUBLIC, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
     },
     (Model, Metadata.PACKAGE, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_REPRESENTATIVE,
     },
     (Model, Metadata.PROTECTED, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.PRIVATE, Action.STRUCTURE): {
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
         Role.COORDINATOR,
+        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
 }
 PROPERTY_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, Property)
@@ -431,12 +462,18 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.GLOBAL_MANAGER
     if resource.get_resource_managers_queryset().filter(user=user).exists():
         return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
-    if user.id in resource.get_organization_special_representatives_queryset():
-        if user.is_information_system_representative_for(resource.organization):
-            return Role.INFORMATION_SYSTEM_REPRESENTATIVE
+    if (
+        resource.get_resource_managers_queryset_specific_role(include_information_system=True)
+        .filter(user=user)
+        .exists()
+    ):
+        return Role.INFORMATION_SYSTEM_REPRESENTATIVE
+    if resource.get_resource_managers_queryset_specific_role(include_open_data=True).filter(user=user).exists():
         return Role.OPEN_DATA_REPRESENTATIVE
     if user.is_gov_organization_manager:
         return Role.MANAGER
+    if user.check_gov_organization_manager(include_information_system=True):
+        return Role.INFORMATION_SYSTEM_MANAGER
     return Role.AUTHENTICATED
 
 
@@ -458,26 +495,6 @@ def _get_dataset_instance(obj: Model) -> Dataset | None:
 
 
 def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) -> bool:
-    # Special case: IS representative in GOV organization
-    if (
-        dataset.subclass is not None
-        and dataset.subclass.is_information_system
-        and dataset.organization.kind == Organization.GOV
-        and determine_user_role(user, dataset) == Role.INFORMATION_SYSTEM_REPRESENTATIVE
-    ):
-        is_confidential_dataset = dataset.access_rights == Dataset.CONFIDENTIAL
-
-        if is_confidential_dataset and action in WRITE_ACTIONS:
-            org_representatives = Representative.objects.filter(
-                user=user,
-                content_type=user.organization_content_type,
-                object_id=dataset.organization_id,
-                information_system_representative=True,
-            )
-            can_write_representative: bool = any(r.can_write for r in org_representatives)
-            return can_write_representative
-        return True
-
     datasets_to_check: set[Dataset] = {
         dataset,
         *dataset.get_ancestors(),
@@ -564,21 +581,7 @@ def has_perm(
             if role == Role.AUTHENTICATED:
                 return True
             for node in nodes:
-                if (role == Role.AUTHOR and is_author(user, node)) or (
-                    role == Role.SUPERVISOR
-                    and is_supervisor(user, node)
-                    or (
-                        role == Role.INFORMATION_SYSTEM_REPRESENTATIVE
-                        and user.is_information_system_representative_for(user_org)
-                        and action
-                        in (Action.VIEW, Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE, Action.CREATE_RESOURCE_AT_GOV_ORG)
-                    )
-                    or (
-                        role == Role.OPEN_DATA_REPRESENTATIVE
-                        and user.is_open_data_representative_for(user_org)
-                        and action in (Action.VIEW, Action.CREATE_RESOURCE_AT_GOV_ORG)
-                    )
-                ):
+                if role == Role.SUPERVISOR and is_supervisor(user, node):
                     return True
                 if role not in {Role.AUTHOR, Role.SUPERVISOR}:
                     ct = ContentType.objects.get_for_model(node)
@@ -591,20 +594,10 @@ def has_perm(
                     )
         if where:
             where = functools.reduce(operator.or_, where)
-            if Representative.objects.filter(
-                where, user=user, information_system_representative=False, open_data_representative=False
-            ).exists():
+            if Representative.objects.filter(where, user=user).exists():
                 return True
 
-            if (
-                user_org
-                and Representative.objects.filter(
-                    where,
-                    organization=user_org,
-                    information_system_representative=False,
-                    open_data_representative=False,
-                ).exists()
-            ):
+            if user_org and Representative.objects.filter(where, organization=user_org).exists():
                 return True
         return False
 

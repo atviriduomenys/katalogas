@@ -65,6 +65,7 @@ from vitrina.users.models import User
 from vitrina.identifiers.factories import AgencyFactory, IdentifierFactory
 from vitrina.identifiers.models import Identifier, Agency
 from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.utils import RevisionComment, RevisionSource
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -1037,7 +1038,8 @@ class TestDatasetUpdateView:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset.manager = user
-        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
+        url = reverse("dataset-change", kwargs={"pk": dataset.id})
+        form = app.get(url).forms["dataset-form"]
         form["title"] = "Edited title"
         form["description"] = "edited dataset description"
         form["parent"] = parent_dataset.pk
@@ -1048,7 +1050,15 @@ class TestDatasetUpdateView:
         assert dataset.title == "Edited title"
         assert dataset.description == "edited dataset description"
         assert Version.objects.get_for_object(dataset).count() == 1
-        assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
+        revision_comment = RevisionComment(
+            source=RevisionSource.VIEW,
+            action="dataset-change",
+            http_method="POST",
+            path=url,
+            args=(),
+            kwargs={"pk": dataset.id}
+        )
+        assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
         assert dataset.metadata.count() == 1
         assert dataset.metadata.first().title == "Edited title"
         assert dataset.metadata.first().description == "edited dataset description"
@@ -1564,7 +1574,8 @@ class TestDatasetCreateView:
         )
         user = UserFactory(is_staff=True)
         app.set_user(user)
-        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
+        url = reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+        form = app.get(url).forms[
             "dataset-form"
         ]
         form["title"] = "Added title"
@@ -1582,7 +1593,15 @@ class TestDatasetCreateView:
         assert str(added_dataset.id) in resp.url
         added_dataset = added_datasets.first()
         assert Version.objects.get_for_object(added_dataset).count() == 1
-        assert Version.objects.get_for_object(added_dataset).first().revision.comment == Dataset.CREATED
+        revision_comment = RevisionComment(
+            source=RevisionSource.VIEW,
+            action="dataset-add",
+            http_method="POST",
+            path=url,
+            args=(),
+            kwargs={"pk": org.id, "subclass_uuid": subclass.pk}
+        )
+        assert Version.objects.get_for_object(added_dataset).first().revision.comment == revision_comment.to_json()
         assert added_dataset.metadata.count() == 1
         assert added_dataset.metadata.first().title == "Added title"
         assert added_dataset.metadata.first().description == "Added new dataset description"
@@ -3035,16 +3054,24 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     user = ManagerFactory(is_staff=True)
     dataset = DatasetFactory(organization=user.organization)
     app.set_user(user)
-
-    form = app.get(reverse("dataset-change", args=[dataset.pk])).forms["dataset-form"]
+    url = reverse("dataset-change", args=[dataset.pk])
+    form = app.get(url).forms["dataset-form"]
     form["title"] = "Updated title"
     form["description"] = "Updated description"
     resp = form.submit().follow()
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="dataset-change",
+        http_method="POST",
+        path=url,
+        args=[],
+        kwargs={"pk": dataset.pk}
+    )
     resp = resp.click(linkid="history-tab")
     assert resp.context["detail_url_name"] == "dataset-detail"
     assert resp.context["history_url_name"] == "dataset-history"
     assert len(resp.context["history"]) == 1
-    assert resp.context["history"][0]["action"] == "Redaguota"
+    assert resp.context["history"][0]["action"] == revision_comment.to_json()
     assert resp.context["history"][0]["user"] == user
 
 

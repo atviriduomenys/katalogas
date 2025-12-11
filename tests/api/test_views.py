@@ -26,6 +26,7 @@ from vitrina.users.factories import UserFactory
 from vitrina.classifiers.factories import LicenceFactory
 from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.resources.factories import FileFormat
+from vitrina.utils import RevisionComment, RevisionSource
 
 
 @pytest.mark.django_db
@@ -520,7 +521,8 @@ def test_create_dataset(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
-    res = app.post(reverse("api-dataset"), {
+    url = reverse("api-dataset")
+    res = app.post(url, {
         'title': 'Test dataset',
         'description': 'Test dataset',
         'language': [
@@ -544,7 +546,15 @@ def test_create_dataset(app: DjangoTestApp):
     assert list(dataset.category.all()) == [category]
     assert dataset.organization == organization
     assert Version.objects.get_for_object(dataset).count() == 1
-    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.CREATED
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="api-dataset",
+        http_method="POST",
+        path=url,
+        args=[],
+        kwargs={}
+    )
+    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
     assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
@@ -612,13 +622,22 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
-    res = app.patch(reverse("api-single-dataset", kwargs={'datasetId': dataset.pk}), {
+    url = reverse("api-single-dataset", kwargs={'datasetId': dataset.pk})
+    res = app.patch(url, {
         'title': "Updated title",
         'description': "Updated description"
     })
     dataset.refresh_from_db()
     assert Version.objects.get_for_object(dataset).count() == 1
-    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="api-single-dataset",
+        http_method="PATCH",
+        path=url,
+        args=[],
+        kwargs={'datasetId': dataset.pk}
+    )
+    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
     assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
@@ -657,13 +676,22 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
-    res = app.patch(reverse("api-single-dataset-internal", kwargs={'internalId': dataset.internal_id}), {
+    url = reverse("api-single-dataset-internal", kwargs={'internalId': dataset.internal_id})
+    res = app.patch(url, {
         'title': "Updated title",
         'description': "Updated description"
     })
     dataset.refresh_from_db()
     assert Version.objects.get_for_object(dataset).count() == 1
-    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="api-single-dataset-internal",
+        http_method="PATCH",
+        path=url,
+        args=[],
+        kwargs={'internalId': dataset.internal_id}
+    )
+    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
     assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
@@ -730,16 +758,23 @@ def test_delete_dataset_with_dataset_id(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
-    app.delete(reverse('api-single-dataset', kwargs={
-        'datasetId': dataset.pk
-    }))
+    url = reverse('api-single-dataset', kwargs={'datasetId': dataset.pk})
+    app.delete(url)
     dataset.refresh_from_db()
     assert dataset.internal_id is None
     assert dataset.slug is None
     assert dataset.deleted is True
     assert dataset.deleted_on is not None
     assert Version.objects.get_for_object(dataset).count() == 1
-    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.DELETED
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="api-single-dataset",
+        http_method="DELETE",
+        path=url,
+        args=[],
+        kwargs={'datasetId': dataset.pk}
+    )
+    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
     assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
 
 
@@ -758,16 +793,24 @@ def test_delete_dataset_with_internal_id(app: DjangoTestApp):
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
-    app.delete(reverse('api-single-dataset-internal', kwargs={
-        'internalId': dataset.internal_id
-    }))
+    kwargs_dict = {'internalId': dataset.internal_id}
+    url = reverse('api-single-dataset-internal', kwargs=kwargs_dict)
+    app.delete(url)
     dataset.refresh_from_db()
     assert dataset.internal_id is None
     assert dataset.slug is None
     assert dataset.deleted is True
     assert dataset.deleted_on is not None
     assert Version.objects.get_for_object(dataset).count() == 1
-    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.DELETED
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="api-single-dataset-internal",
+        http_method="DELETE",
+        path=url,
+        args=[],
+        kwargs=kwargs_dict
+    )
+    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
     assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
 
 

@@ -574,7 +574,9 @@ def has_perm(
             if role == Role.AUTHENTICATED:
                 return True
             for node in nodes:
-                if role == Role.SUPERVISOR and is_supervisor(user, node):
+                if (role == Role.AUTHOR and is_author(user, node)) or (
+                    role == Role.SUPERVISOR and is_supervisor(user, node)
+                ):
                     return True
                 if role not in {Role.AUTHOR, Role.SUPERVISOR}:
                     ct = ContentType.objects.get_for_model(node)

@@ -673,7 +673,6 @@ msgstr "Code name can only include latin characters."
 msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
 msgstr "Code name can only include lowercase letters."
 
-#, python-format
 msgid ""
 "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
 "leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
@@ -681,11 +680,9 @@ msgstr ""
 "The code name must begin with „%(expected)s“ or one of the following "
 "whitelisted code name prefixes: %(whitelisted)s"
 
-#, python-format
 msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“"
 msgstr "The code name must begin with „%(expected)s“"
 
-#, python-format
 msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
 msgstr "There must be at least one character after „%(prefix)s“."
 
@@ -3852,7 +3849,6 @@ msgstr "Upload document signed by data receiver"
 msgid "Veiksmas įvykdytas sėkmingai."
 msgstr "Action was executed successfully"
 
-#, python-brace-format
 msgid ""
 "Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
 "{expected_status}.Dabartinė būsena: {current_status}."

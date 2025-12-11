@@ -2192,6 +2192,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["dataset"] = self.dataset
+        kwargs["metadata_version"] = self.metadata_version
         return kwargs
 
 
@@ -2400,6 +2401,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["dataset"] = self.dataset
+        kwargs["metadata_version"] = self.metadata_version
         return kwargs
 
     @staticmethod
@@ -3439,8 +3441,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         selected_metadata = form.cleaned_data.get("metadata", [])
 
         metadata_dataset = Metadata.objects.filter(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            metadata_version=self.metadata_version
+            content_type=ContentType.objects.get_for_model(Dataset), metadata_version=self.metadata_version
         ).first()
 
         if not metadata_dataset or str(metadata_dataset.pk) not in selected_metadata:
@@ -3453,7 +3454,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
             for meta in selected_metadata:
                 if meta := Metadata.objects.filter(pk=meta).first():
-
                     old_metadata_instance, new_metadata_instance = self.create_metadata_duplicate(meta)
 
                     related_object_duplication_result = self.create_related_model_duplicate(old_metadata_instance)
@@ -3573,7 +3573,10 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
                     if hasattr(deeper_new_related_object, "content_type_id"):
                         related_model = deeper_new_related_object.content_type.model_class()
-                        if related_model in [Property, Model, DatasetDistribution] and deeper_new_related_object.object not in already_created_fields:
+                        if (
+                            related_model in [Property, Model, DatasetDistribution]
+                            and deeper_new_related_object.object not in already_created_fields
+                        ):
                             error_field_name = (
                                 new_related_object.metadata.first().prepare or new_related_object.metadata.first()
                             )
@@ -3607,7 +3610,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def check_if_field_has_published_version(self, field) -> bool:
         return field.metadata_version.status != VersionStatus.DRAFT
 
-    def check_if_field_is_valid(self, deeper_old_related_object, new_related_object, already_created_fields: dict) -> None:
+    def check_if_field_is_valid(
+        self, deeper_old_related_object, new_related_object, already_created_fields: dict
+    ) -> None:
         always_valid_fields = [Param, Enum]
         if isinstance(deeper_old_related_object, tuple(always_valid_fields)):
             return None
@@ -3646,6 +3651,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         if error_msg:
             raise ValidationError(error_msg)
         return None
+
 
 class VersionListView(
     PermissionRequiredMixin,

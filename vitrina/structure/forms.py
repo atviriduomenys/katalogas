@@ -568,9 +568,10 @@ class ModelCreateForm(forms.ModelForm):
             "is_parameterized",
         )
 
-    def __init__(self, dataset, *args, **kwargs):
+    def __init__(self, dataset, metadata_version, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dataset = dataset
+        self.metadata_version = metadata_version
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "model-form"
@@ -638,11 +639,13 @@ class ModelCreateForm(forms.ModelForm):
             metadata = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Model),
                 name=metadata_name,
+                metadata_version=self.metadata_version,
             ).exclude(pk=self.instance.pk)
         else:
             metadata = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Model),
                 name=metadata_name,
+                metadata_version=self.metadata_version,
             )
 
         if name:
@@ -732,8 +735,8 @@ class ModelUpdateForm(ModelCreateForm):
             "comment",
         )
 
-    def __init__(self, dataset, *args, **kwargs):
-        super().__init__(dataset, *args, **kwargs)
+    def __init__(self, dataset, metadata_version, *args, **kwargs):
+        super().__init__(dataset, metadata_version, *args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
 
         self.helper.layout = Layout(

@@ -993,7 +993,9 @@ class Dataset(Resource):
         dataset_content_type_pk = ContentType.objects.get_for_model(Dataset).pk
 
         all_metadata_instances = (
-            Metadata.objects.filter(dataset=self.pk, draft=True, metadata_version=metadata_version).order_by("id").select_related("metadata_version")
+            Metadata.objects.filter(dataset=self.pk, draft=True, metadata_version=metadata_version)
+            .order_by("id")
+            .select_related("metadata_version")
         )
         # TODO optimize by introducing manual collection of all related models.
         if metadata and metadata.draft is True:

@@ -210,7 +210,7 @@ class BaseResourceForm(TranslatableModelForm):
 
         if self.language_code == "en":
             self.fields["description"].required = False
-
+        organization = self.organization if self.organization else instance.organization
         if request.user.is_open_data_representative_for(organization):
             self.fields["access_rights"].choices = [
                 (Dataset.PUBLIC, _("Vieši")),

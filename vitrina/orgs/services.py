@@ -242,17 +242,12 @@ _dataset_create_resource_at_gov_acl: ACL = inherit_acl(
 _information_system_update_acl: ACL = inherit_acl(
     _dataset_update_acl,
     new_action=Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE,
-    new_roles={Role.COORDINATOR, Role.GLOBAL_MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE},
-)
-_information_system_create_acl: ACL = inherit_acl(
-    _dataset_create_acl,
-    new_action=Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE,
     new_roles={
         Role.COORDINATOR,
         Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.MANAGER,
         Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.MANAGER,
+        Role.RESOURCE_MANAGER,
     },
 )
 _dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.COMMENT)
@@ -360,7 +355,6 @@ acl: ACL = (
     | _dataset_create_acl
     | _dataset_create_resource_at_gov_acl
     | _information_system_update_acl
-    | _information_system_create_acl
     | _dataset_update_acl
     | _dataset_comment_acl
     | _dataset_delete_acl

@@ -485,11 +485,11 @@ class DatasetDetailView(
             "harvested": "",
             "can_add_resource": has_perm(
                 self.request.user,
-                Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+                Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
                 if subclass and subclass.is_information_system
                 else Action.UPDATE,
                 Dataset,
-                organization,
+                dataset,
             ),
             "can_update_dataset": has_perm(
                 self.request.user,
@@ -1465,7 +1465,7 @@ class DatasetStructureImportView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
             if subclass and subclass.is_information_system
             else Action.CREATE,
             DatasetStructure,
@@ -1590,7 +1590,7 @@ class CreateMemberView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
             if subclass and subclass.is_information_system
             else Action.CREATE,
             Representative,
@@ -3773,7 +3773,7 @@ class DatasetChildResourceListView(
         dataset = self.object
         subclass = dataset.subclass
         action = (
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
             if subclass and subclass.is_information_system
             else Action.UPDATE
         )
@@ -3782,7 +3782,7 @@ class DatasetChildResourceListView(
                 self.request.user,
                 action,
                 Dataset,
-                self.object.organization,
+                self.object,
             ),
             "parent_dataset_id": self.parent_dataset_id,
             "organization_id": self.object.organization_id,

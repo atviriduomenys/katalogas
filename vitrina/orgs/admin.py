@@ -105,6 +105,7 @@ class OrganizationAdmin(VersionAdmin, TreeAdmin):
 
 class RepresentativeAdmin(admin.ModelAdmin):
     search_fields = ("email",)
+    readonly_fields = ("can_make_agreements",)
 
     def delete_model(self, request, obj):
         pre_representative_delete(obj)

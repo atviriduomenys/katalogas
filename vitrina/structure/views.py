@@ -14,10 +14,11 @@ from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Func, F, Value, TextField, Max
 from django.forms import BaseForm
-from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse
+from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.urls import reverse
+from django.utils.functional import cached_property
 from django.views import View
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import TemplateView, CreateView, UpdateView, DeleteView
@@ -3374,7 +3375,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         context["metadata_version"] = self.metadata_version
         return context
 
-    def form_valid(self, form):
+    def form_valid(self, form: ModelCreateForm) -> HttpResponseRedirect:
         if self.metadata_version.status != VersionStatus.DRAFT:
             form.add_error(None, _("Publikuota versija negali būti publikuota dar kartą."))
             return self.form_invalid(form)
@@ -3456,11 +3457,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                 if meta := Metadata.objects.filter(pk=meta).first():
                     old_metadata_instance, new_metadata_instance = self.create_metadata_duplicate(meta)
 
-                    related_object_duplication_result = self.create_related_model_duplicate(old_metadata_instance)
-                    if related_object_duplication_result:
-                        old_related_instance, new_related_instance = related_object_duplication_result
-                    else:
+                    if not (related_object_duplication_result := self.create_related_model_duplicate(old_metadata_instance)):
                         continue
+                    old_related_instance, new_related_instance = related_object_duplication_result
 
                     if hasattr(old_related_instance, "base") and old_related_instance.base:
                         base_pk = old_related_instance.base.pk
@@ -3520,10 +3519,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return redirect(reverse("dataset-structure", args=[self.dataset.pk, version_pk]))
 
     def create_related_model_duplicate(self, old_metadata_instance: Metadata) -> tuple | None:
-        related_model = old_metadata_instance.content_type.model_class()
-        if related_model == Dataset:
+        if type(old_metadata_instance.object) == Dataset:
             return None
-        old_related_instance = related_model.objects.filter(id=old_metadata_instance.object_id).first()
+        old_related_instance = old_metadata_instance.object
         new_related_instance = deepcopy(old_related_instance)
         new_related_instance.pk = None
         new_related_instance.metadata_version = self.new_version
@@ -3536,8 +3534,8 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         new_metadata_instance.pk = None
         # TODO: column draft can be deprecated after full versioning is completed.
         new_metadata_instance.draft = False
-        if old_metadata_instance.status == Status.objects.filter(codename=StatusCode.DEVELOP).first():
-            new_metadata_instance.status = Status.objects.filter(codename=StatusCode.COMPLETED).first()
+        if old_metadata_instance.status and old_metadata_instance.status.codename == StatusCode.DEVELOP:
+            new_metadata_instance.status = self.get_status_completed
 
         new_metadata_instance.metadata_version = self.new_version
         new_metadata_instance.save()
@@ -3561,11 +3559,12 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                 if field.related_model not in needed_foreign_key_relationships:
                     continue
 
-                # Get an instance of the foreign key relationship
                 deeper_old_related_object = getattr(new_related_object, field.name)
+
                 if deeper_old_related_object:
                     self.check_if_field_is_valid(deeper_old_related_object, new_related_object, already_created_fields)
 
+                # EnumItem and ParamItem have an additional connection to a specific table.
                 if isinstance(deeper_old_related_object, (Enum, Param)):
                     deeper_new_related_object = deepcopy(deeper_old_related_object)
                     deeper_new_related_object.pk = None
@@ -3608,7 +3607,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return field.metadata_version == self.metadata_version
 
     def check_if_field_has_published_version(self, field) -> bool:
-        return field.metadata_version.status != VersionStatus.DRAFT
+        return field.metadata_version.status and field.metadata_version.status != VersionStatus.DRAFT
 
     def check_if_field_is_valid(
         self, deeper_old_related_object, new_related_object, already_created_fields: dict
@@ -3651,6 +3650,10 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         if error_msg:
             raise ValidationError(error_msg)
         return None
+
+    @cached_property
+    def get_status_completed(self) -> Status:
+        return get_object_or_404(Status, codename=StatusCode.COMPLETED)
 
 
 class VersionListView(

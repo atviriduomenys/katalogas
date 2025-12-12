@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-09 14:53+0200\n"
+"POT-Creation-Date: 2025-12-11 15:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -448,11 +448,17 @@ msgstr "Comment for object:"
 msgid "Registruoti kaip prašymą"
 msgstr "Register as request"
 
+msgid "Poreikio pavadinimas"
+msgstr "Request title"
+
 msgid "Pageidaujamas duomenų atnaujinimo periodiškumas"
 msgstr "Preferred frequency of data updates"
 
 msgid "Jei komentaras registruojamas kaip prašymas, jis privalo būti viešas"
 msgstr "If the comment is registered as a request, it must be public"
+
+msgid "Įrašykite poreikio pavadinimą."
+msgstr "Please input request title."
 
 msgid "Šis laukas yra privalomas"
 msgstr "This field is required"
@@ -1337,6 +1343,14 @@ msgstr "Harvested"
 
 msgid "Atlikto darbo būsena"
 msgstr "Harvesting status"
+
+msgid "Licencija"
+msgstr "License"
+
+msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
+msgstr ""
+"This property specifies the license under which the data service is "
+"distributed."
 
 msgid ""
 "Nurodoma konkreti informacinė sistema - valstybės informacinė sistema ar "
@@ -3606,9 +3620,6 @@ msgstr "Upload to storage"
 msgid "Importuojamas išorinis metaduomenų katalogas"
 msgstr "Importing external metadata catalog"
 
-msgid "Licencija"
-msgstr "License"
-
 msgid "Statusas"
 msgstr "Status"
 
@@ -3630,11 +3641,6 @@ msgstr "Open dataset distribution"
 
 msgid "Publikuojamas saugykloje"
 msgstr "Published in storage"
-
-msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
-msgstr ""
-"This property specifies the license under which the data service is "
-"distributed."
 
 msgid "Modeliai"
 msgstr "Models"
@@ -4831,27 +4837,34 @@ msgstr "Add parameter"
 msgid "Parametro redagavimas"
 msgstr "Edit parameter"
 
+msgid "Publikuota versija negali būti publikuota dar kartą."
+msgstr ""
+
+msgid "Privalote publikuoti duomenų rinkinį."
+msgstr "You must publish the dataset"
+
 #, python-brace-format
 msgid ""
 "Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų "
-"ištekliuje"
-msgstr "Field {0} has a reference to an unpublished field in the same dataset"
+"ištekliuje."
+msgstr "Field {0} has a reference to an unpublished field in the same dataset."
 
 #, python-brace-format
 msgid ""
 "Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų "
-"ištekliuje"
+"ištekliuje."
 msgstr ""
-"Field {0} has a reference to an unpublished field {1} in the same dataset"
+"Field {0} has a reference to an unpublished field {1} in the same dataset."
 
 #, python-brace-format
-msgid "Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį"
-msgstr "Field {0} must be published, because field {1} has a reference to it"
+msgid ""
+"Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį."
+msgstr "Field {0} must be published, because field {1} has a reference to it."
 
 #, python-brace-format
-msgid "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje"
+msgid "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje."
 msgstr ""
-"Field {0} has a reference to an unpublished field in a different dataset"
+"Field {0} has a reference to an unpublished field in a different dataset."
 
 msgid "Vyr. koordinatorius"
 msgstr "Senior coordinator"
@@ -4984,11 +4997,32 @@ msgstr "Answer to"
 msgid "Komentaras pašalintas"
 msgstr "Comment deleted"
 
+msgid "ištrinta"
+msgstr "Deleted"
+
+msgid "redaguotas"
+msgstr "Edited"
+
 msgid "(neviešinamas komentaras)"
 msgstr "(private comment)"
 
 msgid "Atsakyti"
 msgstr "Answer"
+
+msgid "Atsakyti į komentarą"
+msgstr "Submit comment"
+
+msgid "Redaguoti komentarą"
+msgstr "Edit comment"
+
+msgid "Ištrinti komentarą"
+msgstr "Delete comment"
+
+msgid "Ištrinti komentarą?"
+msgstr "Delete comment?"
+
+msgid "Šis veiksmas negrąžinamas."
+msgstr "This action cannot be undone."
 
 msgid "Komentarai"
 msgstr "Comments"
@@ -6034,9 +6068,3 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
-
-msgid "Poreikio pavadinimas"
-msgstr "Request title"
-
-msgid "Įrašykite poreikio pavadinimą."
-msgstr "Please input request title."

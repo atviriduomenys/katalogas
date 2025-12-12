@@ -1,6 +1,7 @@
 from itertools import groupby
 from typing import Any
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -10,10 +11,12 @@ from django.db import transaction
 from django.db.models import Q, QuerySet
 from django.forms import modelformset_factory, BaseFormSet
 from django.http import HttpResponseRedirect
-from django.http.response import HttpResponseBase, HttpResponse
+from django.http.response import HttpResponseBase, HttpResponse, FileResponse
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.utils.translation import gettext_lazy as _
+from django.views import View
 from django.views.generic import TemplateView
 
 from vitrina.datasets.models import Dataset
@@ -31,7 +34,7 @@ from vitrina.smart_contracts.mixins import (
     AgreementInitiateMixin,
     AgreementSignMixin,
 )
-from vitrina.smart_contracts.models import Agreement, AgreementScope
+from vitrina.smart_contracts.models import Agreement, AgreementScope, AgreementFile
 from vitrina.users.models import User
 from vitrina.structure.models import Metadata
 from vitrina.views import FormsetView
@@ -334,3 +337,25 @@ class ProjectBasedAgreementInitiateView(AgreementInitiateMixin, ProjectBasedAgre
 
 class ProjectBasedAgreementSignView(AgreementSignMixin, ProjectBasedAgreementNegotiateMixin):
     """Project-based agreement form view responsible for moving the agreement to status `SIGNED`"""
+
+
+class AgreementFileDownloadView(
+    LoginRequiredMixin,
+    BaseAgreementMixin,
+    PermissionRequiredMixin,
+    View,
+):
+    def has_permission(self) -> bool:
+        return can_view_agreement(self.request.user, self.agreement)
+
+    def get(self, request: WSGIRequest, *args, **kwargs) -> HttpResponse | FileResponse:
+        agreement_file = get_object_or_404(AgreementFile, pk=self.kwargs["agreement_file_id"])
+
+        if settings.DEBUG:
+            return FileResponse(open(agreement_file.file.path, "rb"), as_attachment=True)
+
+        response = HttpResponse()
+        response["X-Accel-Redirect"] = f"/{agreement_file.file.url}"
+        response["Content-Disposition"] = f'attachment; filename="{agreement_file.file_name}"'
+
+        return response

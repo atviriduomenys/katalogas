@@ -305,6 +305,9 @@ MEDIA_ROOT = env.path("MEDIA_ROOT", default=BASE_DIR / "var/media/")
 STATIC_URL = "static/"
 STATIC_ROOT = env.path("STATIC_ROOT", default=BASE_DIR / "var/static/")
 
+INTERNAL_MEDIA_URL = "internal-media/"
+INTERNAL_MEDIA_ROOT = env.path("INTERNAL_MEDIA_ROOT", default=BASE_DIR / "var/internal-media/")
+
 SASS_PROCESSOR_ROOT = STATIC_ROOT
 
 # Default primary key field type

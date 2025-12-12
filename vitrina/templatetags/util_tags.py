@@ -75,14 +75,6 @@ def get_google_analytics_id():
 
 
 @assignment_tag
-def logged_in_user(_user, _logged_in_user):
-    if _logged_in_user != "":
-        return _logged_in_user
-    else:
-        return _user
-
-
-@assignment_tag
 def convert_coordinates(
     geometry_obj: str,
     source_srid: int,

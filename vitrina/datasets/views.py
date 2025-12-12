@@ -1467,7 +1467,7 @@ class DatasetStructureImportView(
             self.request.user,
             Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
             if subclass and subclass.is_information_system
-            else Action.CREATE,
+            else Action.UPDATE,
             DatasetStructure,
             self.dataset,
         )

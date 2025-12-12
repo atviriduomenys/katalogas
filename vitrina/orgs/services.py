@@ -484,7 +484,7 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.OPEN_DATA_REPRESENTATIVE
     if user.is_gov_organization_manager:
         return Role.MANAGER
-    if user.check_gov_organization_manager_is_representative(information_system_representative_flag=True):
+    if user.is_gov_organization_information_system_manager:
         return Role.INFORMATION_SYSTEM_MANAGER
     return Role.AUTHENTICATED
 

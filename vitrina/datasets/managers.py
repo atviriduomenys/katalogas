@@ -114,7 +114,7 @@ class PermittedDatasetManager(TranslatableManager):
                 access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED),
             )
 
-        if user.is_gov_organization_manager:
+        if user.is_gov_organization_manager or user.is_gov_organization_information_system_manager:
             accessible_filter |= Q(
                 is_public=True,
                 access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC),

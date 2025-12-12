@@ -253,7 +253,7 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
     elif user.is_staff or user.is_superuser:
         return datasets
 
-    if user.is_gov_organization_manager:
+    if user.is_gov_organization_manager or user.is_gov_organization_information_system_manager:
         combined_filter |= SQ(
             is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC)
         )

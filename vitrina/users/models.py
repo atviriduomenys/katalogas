@@ -115,6 +115,16 @@ class User(AbstractUser):
         ).exists()
 
     @property
+    def is_gov_organization_information_system_manager(self) -> bool:
+        gov_org_content_type = self.organization_content_type
+        return Representative.objects.filter(
+            user=self,
+            content_type=gov_org_content_type,
+            object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
+            information_system_representative=True,
+        ).exists()
+
+    @property
     def can_see_manager_dataset_list_url(self):
         from vitrina.datasets.models import Dataset
 
@@ -184,21 +194,6 @@ class User(AbstractUser):
             object_id=organization.pk,
             open_data_representative=True,
         ).exists()
-
-    def check_gov_organization_manager_is_representative(
-        self,
-        information_system_representative_flag: bool = False,
-    ) -> bool:
-        gov_org_content_type = self.organization_content_type
-
-        qs = Representative.objects.filter(
-            user=self,
-            content_type=gov_org_content_type,
-            object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
-            information_system_representative=information_system_representative_flag,
-        )
-
-        return qs.exists()
 
 
 class UserTablePreferences(models.Model):

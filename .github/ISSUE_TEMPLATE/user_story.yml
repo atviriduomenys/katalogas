@@ -21,32 +21,17 @@ body:
         noriu matyti patogų redagavimo langą.
       render: markdown
 
-  - type: markdown
-    attributes:
-      value: |
-        > [!NOTE]
-        > Apibrėžia naudotojo poreikį ir funkcionalumo vertę.
-
-  - type: textarea
-    id: aprasymas
-    attributes:
-      label: "Aprašymas"
-      description: "Ką šis funkcionalumas turi daryti, kokią problemą sprendžia, ar yra priklausomybių?"
-      placeholder: "Paaiškink pokyčio kontekstą ir tikslą."
-
   - type: textarea
     id: asis
     attributes:
       label: "Dabartinė būsena"
-      description: "Kaip ši vieta veikia dabar?"
       placeholder: "Aprašyk dabartinį veikimą"
 
   - type: textarea
     id: tobe
     attributes:
-      label: "Reikiama būsena"
-      description: "Aprašyk, kaip sistema turėtų veikti po pakeitimo."
-      placeholder: "Norimas elgesys, UI reakcijos, būsenos keitimas."
+      label: "Siekiama būsena"
+      placeholder: "Norimas elgesys, UI reakcijos."
 
   - type: textarea
     id: wireframes

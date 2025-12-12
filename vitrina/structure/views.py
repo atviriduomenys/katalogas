@@ -3457,7 +3457,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                 if meta := Metadata.objects.filter(pk=meta).first():
                     old_metadata_instance, new_metadata_instance = self.create_metadata_duplicate(meta)
 
-                    if not (related_object_duplication_result := self.create_related_model_duplicate(old_metadata_instance)):
+                    if not (
+                        related_object_duplication_result := self.create_related_model_duplicate(old_metadata_instance)
+                    ):
                         continue
                     old_related_instance, new_related_instance = related_object_duplication_result
 
@@ -3519,7 +3521,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return redirect(reverse("dataset-structure", args=[self.dataset.pk, version_pk]))
 
     def create_related_model_duplicate(self, old_metadata_instance: Metadata) -> tuple | None:
-        if type(old_metadata_instance.object) == Dataset:
+        if isinstance(old_metadata_instance.object, Dataset):
             return None
         old_related_instance = old_metadata_instance.object
         new_related_instance = deepcopy(old_related_instance)

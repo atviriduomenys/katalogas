@@ -191,5 +191,3 @@ class ResourceSubclassForm:
         assert Dataset.CONFIDENTIAL not in choices
         assert Dataset.PUBLIC in choices
         assert Dataset.RESTRICTED in choices
-
-

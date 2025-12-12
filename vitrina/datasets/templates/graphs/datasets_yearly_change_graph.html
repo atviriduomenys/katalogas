@@ -27,7 +27,7 @@
             </div>
             {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
                 <div class="buttons is-right">
-                    <a href="{%url 'dataset-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                    <a href="{%url 'resource-subclass-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
                         {% translate "Pridėti rinkinį" %}
                     </a>
                 </div>

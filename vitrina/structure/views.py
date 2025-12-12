@@ -3544,7 +3544,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         return old_metadata_instance, new_metadata_instance
 
-    def duplicate_foreign_key_relationships(self, new_related_object: RELATED_OBJECT_TYPE, already_created_fields: dict) -> dict:
+    def duplicate_foreign_key_relationships(
+        self, new_related_object: RELATED_OBJECT_TYPE, already_created_fields: dict
+    ) -> dict:
         needed_foreign_key_relationships = [
             Base,
             Model,
@@ -3612,7 +3614,10 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return field.metadata_version.status and field.metadata_version.status != VersionStatus.DRAFT
 
     def check_if_field_is_valid(
-        self, deeper_old_related_object: RELATED_OBJECT_TYPE, new_related_object: RELATED_OBJECT_TYPE, already_created_fields: dict
+        self,
+        deeper_old_related_object: RELATED_OBJECT_TYPE,
+        new_related_object: RELATED_OBJECT_TYPE,
+        already_created_fields: dict,
     ) -> None:
         always_valid_fields = [Param, Enum]
         if isinstance(deeper_old_related_object, tuple(always_valid_fields)):

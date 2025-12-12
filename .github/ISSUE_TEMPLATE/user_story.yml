@@ -15,7 +15,6 @@ body:
     id: poreikis
     attributes:
       label: "Poreikis"
-      description: "Kaip <rolė>, tam, kad <tikslas>, noriu <funkcionalumas>."
       placeholder: |
         Kaip naudotojas,
         tam, kad galėčiau patogiai redaguoti duomenis naršyklėje,

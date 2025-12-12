@@ -37,14 +37,12 @@ body:
     id: wireframes
     attributes:
       label: "Wireframes"
-      description: "Wireframe schema, geriausia iš screenshot, su atvaizduotais pakeitimais"
-      placeholder: "Įkelk Wireframes (coy+paste)"
+      placeholder: "Įkelk norimo veikimo Wireframes (pavyzdžiui, screenshotais) (coy+paste)"
 
   - type: textarea
     id: acceptance
     attributes:
       label: "Acceptance Criteria"
-      description: "Sąlygos, kurias įgyvendinus, istorija laikoma atlikta."
       placeholder: |
         - [ ] <UI elementas atvaizduojamas pagal dizainą>
         - [ ] <Veiksmas sukelia tinkamą reakciją>
@@ -54,9 +52,9 @@ body:
     id: priedai
     attributes:
       label: "Priedai"
-      description: "Nuorodos į API, schemas, kitas užduotis, Task tipo užduotis techniniam įgyvendinimui ar kitus dokumentus."
       placeholder: |
         - [ ] API dokumentacija
+        - [ ] DSA Specifikacija
         - [ ] Dizaino nuoroda
         - [ ] Susijusi užduotis #123
         - [ ] Techninio įgyvendinimo užduotis (Task tipo) #123
@@ -65,12 +63,8 @@ body:
     id: definition_of_done
     attributes:
       label: 📋 Definition of Done
-      description: "Checklist, kuris visada turi būti pažymėtas prieš uždarant istoriją"
       value: |
         - [ ] **Testai** parašyti / atnaujinti
         - [ ] **Dokumentacija atnaujinta** (jei reikia)
         - [ ] Padeployinta ir ištestuota **Laikinojoj testinėj** aplinkoj
-        - [ ] Acceptance Criteria įvykdyti
         - [ ] CHANGES.rst
-        - [ ] Pademonstruota per Sprint Review
-        - [ ] PO (ar atsakingas asmuo) peržiūrėjo ir patvirtino

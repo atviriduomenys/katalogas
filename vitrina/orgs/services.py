@@ -37,7 +37,6 @@ class Action(Enum):
     DELETE = "delete"
     REQUEST_UPDATE = "request_update"
     INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE = "information_system_at_gov_org_update"
-    INFORMATION_SYSTEM_AT_GOV_ORG_CREATE = "information_system_at_gov_org_create"
     CREATE_RESOURCE_AT_GOV_ORG = "create_resource_at_gov_org"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
@@ -75,7 +74,6 @@ WRITE_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.CREATE_RESOURCE_AT_GOV_ORG,
     Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE,
-    Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE,
 }
 DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
@@ -91,7 +89,6 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.PLAN,
     Action.REQUEST_UPDATE,
     Action.CREATE_RESOURCE_AT_GOV_ORG,
-    Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE,
 }
 
 DATASET_IS_PUBLIC = True

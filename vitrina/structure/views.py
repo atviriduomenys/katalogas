@@ -289,7 +289,7 @@ class ModelStructureView(
             self.request.user, self.object, Action.STRUCTURE, model_class=Model
         )
         self.can_manage_structure = has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object) and (
-            self.model.visibility in allowed_structure_visibilities or self.model.visibility is None
+            self.model.visibility in allowed_structure_visibilities
         )
         allowed_model_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         allowed_prop_visibilities = get_allowed_visibilities(
@@ -767,7 +767,6 @@ class ModelDataTableView(PermissionRequiredMixin, View):
         self.can_manage_structure = (
             has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
             and self.model.visibility in allowed_visibilities_structure_model
-            or self.model.visibility is None
         )
         if self.can_manage_structure:
             self.models = (
@@ -848,10 +847,7 @@ class ModelDataTableView(PermissionRequiredMixin, View):
             context["selected_cols"] = selected_cols or context["headers"]
             context["can_manage"] = context["can_manage"] = self.can_manage_structure = has_perm(
                 self.request.user, Action.STRUCTURE, Dataset, self.object
-            ) and (
-                self.model.visibility in get_allowed_visibilities(self.request.user, self.object, Action.STRUCTURE)
-                or self.model.visibility is None
-            )
+            ) and (self.model.visibility in get_allowed_visibilities(self.request.user, self.object, Action.STRUCTURE))
 
             context["dataset_id"] = self.object.id
             context["is_dev_features_enabled"] = settings.IS_DEV_FEATURES_ENABLED
@@ -938,7 +934,6 @@ class ModelDataView(
         self.can_manage_structure = (
             has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
             and self.model.visibility in allowed_visibilities_structure_model
-            or self.model.visibility is None
         )
         visibility_filter_model = Q(metadata__visibility__in=allowed_visibilities_model) | Q(
             metadata__visibility__isnull=True
@@ -1098,7 +1093,6 @@ class ObjectDataTableView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, View
         self.can_manage_structure = (
             has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
             and self.model.visibility in allowed_visibilities_structure
-            or self.model.visibility is None
         )
 
         if self.can_manage_structure:
@@ -1195,7 +1189,6 @@ class ObjectDataView(
         self.can_manage_structure = (
             has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
             and self.model.visibility in allowed_visibilities_structure
-            or self.model.visibility is None
         )
         if self.can_manage_structure:
             self.models = (
@@ -1316,7 +1309,6 @@ class ApiView(DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, 
         self.can_manage_structure = (
             has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
             and self.model.visibility in allowed_visibilities_structure
-            or self.model.visibility is None
         )
 
         if self.can_manage_structure:
@@ -2848,7 +2840,6 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         self.can_manage_structure = (
             has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
             and self.model_obj.visibility in allowed_visibilities_structure
-            or self.model_obj.visibility in None
         )
 
         if self.can_manage_structure:
@@ -2979,7 +2970,6 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
         self.can_manage_structure = (
             has_perm(self.request.user, Action.STRUCTURE, Dataset, self.object)
             and self.model_obj.visibility in allowed_visibilities_structure
-            or self.model_obj.visibility is None
         )
 
         if self.can_manage_structure:

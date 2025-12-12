@@ -28,10 +28,24 @@ def can_view_project(user: User | AnonymousUser, project: Project) -> bool:
     return Project.objects.filter(visible_projects_filter(user), pk=project.pk).exists()
 
 
-def get_projects(user: User | AnonymousUser) -> QuerySet["Project"]:
+def get_projects(
+    user: User | AnonymousUser,
+    limit: int | None = None,
+    require_images: bool = False,
+) -> QuerySet["Project"]:
     queryset = Project.objects.filter(visible_projects_filter(user))
 
-    return queryset.distinct().order_by("-created")
+    if require_images:
+        queryset = queryset.filter(image__isnull=False)
+
+    queryset = queryset.order_by("-created")
+
+    if limit:
+        queryset = queryset[:limit]
+    else:
+        queryset = queryset.distinct()
+
+    return queryset
 
 
 def can_update_project(user: User | AnonymousUser, project: Project) -> bool:

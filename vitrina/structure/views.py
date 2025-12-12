@@ -3561,50 +3561,61 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
             Prefix,
         ]
         for field in new_related_object._meta.get_fields():
-            if isinstance(field, ForeignKey):
-                if field.related_model not in needed_foreign_key_relationships:
-                    continue
+            if not self._should_process_foreign_key(field, needed_foreign_key_relationships):
+                continue
 
-                deeper_old_related_object = getattr(new_related_object, field.name)
+            deeper_old_related_object = getattr(new_related_object, field.name)
+            if deeper_old_related_object:
+                self.check_if_field_is_valid(deeper_old_related_object, new_related_object, already_created_fields)
 
-                if deeper_old_related_object:
-                    self.check_if_field_is_valid(deeper_old_related_object, new_related_object, already_created_fields)
+            # EnumItem and ParamItem have an additional connection to a specific table which has to be checked.
+            if isinstance(deeper_old_related_object, (Enum, Param)):
+                deeper_new_related_object = deepcopy(deeper_old_related_object)
+                deeper_new_related_object.pk = None
+                deeper_new_related_object.metadata_version = self.new_version
 
-                # EnumItem and ParamItem have an additional connection to a specific table.
-                if isinstance(deeper_old_related_object, (Enum, Param)):
-                    deeper_new_related_object = deepcopy(deeper_old_related_object)
-                    deeper_new_related_object.pk = None
-                    deeper_new_related_object.metadata_version = self.new_version
-
-                    if hasattr(deeper_new_related_object, "content_type_id"):
-                        related_model = deeper_new_related_object.content_type.model_class()
-                        if (
-                            related_model in [Property, Model, DatasetDistribution]
-                            and deeper_new_related_object.object not in already_created_fields
-                        ):
-                            error_field_name = (
-                                new_related_object.metadata.first().prepare or new_related_object.metadata.first()
+                if hasattr(deeper_new_related_object, "content_type_id"):
+                    if self._should_raise_unpublished_field_error_for_enum_param(
+                        deeper_new_related_object, already_created_fields
+                    ):
+                        error_field_name = (
+                            new_related_object.metadata.first().prepare or new_related_object.metadata.first()
+                        )
+                        error_msg = _(
+                            "Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje.".format(
+                                error_field_name
                             )
-                            error_msg = _(
-                                "Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje.".format(
-                                    error_field_name
-                                )
-                            )
-                            raise ValidationError(error_msg)
-                        deeper_new_related_object.object = already_created_fields[deeper_new_related_object.object]
+                        )
+                        raise ValidationError(error_msg)
 
-                    deeper_new_related_object.save()
+                    deeper_new_related_object.object = already_created_fields[deeper_new_related_object.object]
+                deeper_new_related_object.save()
 
-                    already_created_fields[deeper_old_related_object] = deeper_new_related_object
-                    setattr(new_related_object, field.name, deeper_new_related_object)
-                    new_related_object.save()
+                already_created_fields[deeper_old_related_object] = deeper_new_related_object
+                setattr(new_related_object, field.name, deeper_new_related_object)
+                new_related_object.save()
 
-                elif deeper_old_related_object and deeper_old_related_object in already_created_fields:
-                    value_to_set = already_created_fields[deeper_old_related_object]
-                    setattr(new_related_object, field.name, value_to_set)
-                    new_related_object.save()
+            elif deeper_old_related_object and deeper_old_related_object in already_created_fields:
+                value_to_set = already_created_fields[deeper_old_related_object]
+                setattr(new_related_object, field.name, value_to_set)
+                new_related_object.save()
 
         return already_created_fields
+
+    def _should_process_foreign_key(self, field: object, needed_relationships: list) -> bool:
+        return isinstance(field, ForeignKey) and field.related_model in needed_relationships
+
+    def _should_raise_unpublished_field_error_for_enum_param(
+        self, enum_param_obj: Union[Enum, Param], already_created_fields: dict
+    ) -> bool:
+        if not hasattr(enum_param_obj, "content_type_id"):
+            return False
+
+        related_model = type(enum_param_obj.object)
+        return (
+            related_model in [Property, Model, DatasetDistribution]
+            and enum_param_obj.object not in already_created_fields
+        )
 
     def check_if_field_has_same_dataset(self, field: RELATED_OBJECT_TYPE) -> bool:
         return field.metadata_version.dataset == self.dataset

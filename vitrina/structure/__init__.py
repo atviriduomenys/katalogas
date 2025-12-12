@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+
 class VersionStatus(models.TextChoices):
     DRAFT = "DRAFT", _("Juodraštis")
     PRE_RELEASE = "PRE_RELEASE", _("Išankstinis leidimas")

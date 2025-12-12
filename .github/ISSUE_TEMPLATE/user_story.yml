@@ -12,9 +12,9 @@ body:
         Jei kai kurie skyriai netaikomi (pvz. As-Is ar User Flow), juos galima praleisti.
 
   - type: textarea
-    id: formuluote
+    id: poreikis
     attributes:
-      label: "Rolė, tikslas, funkcionalumas"
+      label: "Poreikis"
       description: "Kaip <rolė>, tam, kad <tikslas>, noriu <funkcionalumas>."
       placeholder: |
         Kaip naudotojas,
@@ -26,7 +26,7 @@ body:
     attributes:
       value: |
         > [!NOTE]
-        > Ši formuluotė apibrėžia naudotojo poreikį ir funkcionalumo vertę.
+        > Apibrėžia naudotojo poreikį ir funkcionalumo vertę.
 
   - type: textarea
     id: aprasymas
@@ -38,14 +38,14 @@ body:
   - type: textarea
     id: asis
     attributes:
-      label: "As-Is (jei taikoma)"
+      label: "Dabartinė būsena"
       description: "Kaip ši vieta veikia dabar?"
       placeholder: "Aprašyk dabartinį veikimą"
 
   - type: textarea
     id: tobe
     attributes:
-      label: "To-Be (pagrindinis)"
+      label: "Reikiama būsena"
       description: "Aprašyk, kaip sistema turėtų veikti po pakeitimo."
       placeholder: "Norimas elgesys, UI reakcijos, būsenos keitimas."
 
@@ -54,19 +54,6 @@ body:
       value: |
         > [!TIP]
         > Jei To-Be ir Acceptance Criteria sutampa, galima rašyti tik vieną iš jų.
-
-  - type: markdown
-    attributes:
-      value: |
-        > [!TIP]
-        > Gali pasirinkti, ar User Flow aprašysi, ar įkelsi paveikslėlį.
-
-  - type: textarea
-    id: userflow
-    attributes:
-      label: "User Flow (jei taikoma)"
-      description: "Trumpas naudotojo veiksmų aprašas"
-      placeholder: "Aprašyk naudotojo veiksmus, arba įkelk naudotojo veiksmų diagramą (coy+paste)"
 
   - type: textarea
     id: wireframes

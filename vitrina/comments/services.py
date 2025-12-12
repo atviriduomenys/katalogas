@@ -12,6 +12,7 @@ from vitrina.comments.forms import (
 from vitrina.datasets.models import Dataset, DatasetStructure
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
+from vitrina.projects.services import visible_projects_filter
 from vitrina.requests.models import Request
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.models import Property, Model
@@ -40,14 +41,17 @@ def has_comment_permission(obj: models.Model = None, user: User = None) -> bool:
             dataset = obj.model.dataset
         else:
             dataset = obj
-        if dataset and hasattr(dataset, "is_public") and dataset.is_public:
-            return True
-        else:
-            return has_perm(user, Action.VIEW, dataset)
+
+        return has_perm(user, Action.VIEW, dataset)
+
     elif isinstance(obj, Task):
         user_tasks = get_active_tasks(user, all_tasks=True)
-        if user_tasks.filter(pk=obj.pk):
-            return True
-    elif isinstance(obj, (Request, Project)):
+        return user_tasks.filter(pk=obj.pk).exists()
+
+    elif isinstance(obj, Request):
         return True
+
+    elif isinstance(obj, Project):
+        return Project.objects.filter(pk=obj.pk).filter(visible_projects_filter(user)).exists()
+
     return False

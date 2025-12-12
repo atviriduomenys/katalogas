@@ -12,7 +12,7 @@ from django.urls import reverse
 from haystack.backends import SQ
 from haystack.query import SearchQuerySet
 
-from vitrina.datasets.models import Dataset, DCATResourceSubclass
+from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription

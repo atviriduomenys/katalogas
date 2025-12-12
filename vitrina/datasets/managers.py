@@ -41,7 +41,7 @@ class PermittedDatasetManager(TranslatableManager):
         return self._filter_datasets_for_user(user, base_queryset)
 
     def _filter_datasets_for_user(self, user: "User", datasets: QuerySet["Dataset"]) -> QuerySet["Dataset"]:
-        from vitrina.datasets.models import Dataset, Organization, Representative, DCATResourceSubclass
+        from vitrina.datasets.models import Dataset, Organization, Representative
 
         dataset_ct = ContentType.objects.get_for_model(Dataset)
         org_ct = ContentType.objects.get_for_model(Organization)

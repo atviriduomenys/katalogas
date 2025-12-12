@@ -1,13 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.datasets.structure import Enum, Base, Property, Model
-from vitrina.structure.models import ParamItem, Param, EnumItem
-
-
-RELATED_OBJECT_TYPE = Model | Property | Base | EnumItem | Enum | Param | ParamItem
-
-
 class VersionStatus(models.TextChoices):
     DRAFT = "DRAFT", _("Juodraštis")
     PRE_RELEASE = "PRE_RELEASE", _("Išankstinis leidimas")

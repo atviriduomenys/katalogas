@@ -4838,7 +4838,7 @@ msgid "Parametro redagavimas"
 msgstr "Edit parameter"
 
 msgid "Publikuota versija negali būti publikuota dar kartą."
-msgstr ""
+msgstr "Published version can not be published again"
 
 msgid "Privalote publikuoti duomenų rinkinį."
 msgstr "You must publish the dataset"

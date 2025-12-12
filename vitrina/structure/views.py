@@ -41,7 +41,7 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
-from vitrina.structure import spyna, RELATED_OBJECT_TYPE
+from vitrina.structure import spyna
 from vitrina.structure.forms import (
     EnumForm,
     ModelCreateForm,
@@ -81,6 +81,8 @@ from spinta.manifests.open_api.helpers import create_openapi_manifest
 from spinta.manifests.components import ManifestPath
 from vitrina.views import HistoryMixin, PlanMixin, HistoryView
 from copy import deepcopy
+
+RELATED_OBJECT_TYPE = Model | Property | Base | EnumItem | Enum | Param | ParamItem
 
 EXCLUDED_COLS = ["_type", "_revision", "_base"]
 

@@ -286,3 +286,184 @@ def test_task_list_with_owner_filter__all(app: DjangoTestApp):
     resp = app.get('%s?owner=all' % reverse("user-task-list", kwargs={'pk': user.pk}))
     assert sorted(list([int(task.pk) for task in resp.context["object_list"]])) == \
            sorted([task1.pk, task2.pk, task3.pk])
+
+
+@pytest.mark.django_db
+def test_task_list_regular_user_cannot_access_other_users_tasks(app: DjangoTestApp):
+    user1 = UserFactory()
+    user2 = UserFactory()
+    TaskFactory(user=user2)
+
+    app.set_user(user1)
+    url = reverse("user-task-list", kwargs={'pk': user2.pk})
+    resp = app.get(url, expect_errors=True)
+    assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_task_list_staff_can_access_other_users_tasks(app: DjangoTestApp):
+    staff_user = UserFactory(is_staff=True)
+    regular_user = UserFactory()
+    task = TaskFactory(user=regular_user)
+
+    app.set_user(staff_user)
+    url = reverse("user-task-list", kwargs={'pk': regular_user.pk})
+    resp = app.get(url)
+    assert resp.status_code == 200
+    assert task.pk in [t.pk for t in resp.context["object_list"]]
+
+
+@pytest.mark.django_db
+def test_task_list_superuser_can_access_other_users_tasks(app: DjangoTestApp):
+    superuser = UserFactory(is_superuser=True)
+    regular_user = UserFactory()
+    task = TaskFactory(user=regular_user)
+
+    app.set_user(superuser)
+    url = reverse("user-task-list", kwargs={'pk': regular_user.pk})
+    resp = app.get(url)
+    assert resp.status_code == 200
+    assert task.pk in [t.pk for t in resp.context["object_list"]]
+
+
+@pytest.mark.django_db
+def test_task_detail_staff_can_access_other_users_tasks(app: DjangoTestApp):
+    staff_user = UserFactory(is_staff=True)
+    regular_user = UserFactory()
+    task = TaskFactory(user=regular_user)
+
+    app.set_user(staff_user)
+    url = reverse("user-task-detail", args=[regular_user.pk, task.pk])
+    resp = app.get(url)
+    assert resp.status_code == 200
+    assert resp.context['object'].pk == task.pk
+
+
+@pytest.mark.django_db
+def test_task_detail_superuser_can_access_other_users_tasks(app: DjangoTestApp):
+    superuser = UserFactory(is_superuser=True)
+    regular_user = UserFactory()
+    task = TaskFactory(user=regular_user)
+
+    app.set_user(superuser)
+    url = reverse("user-task-detail", args=[regular_user.pk, task.pk])
+    resp = app.get(url)
+    assert resp.status_code == 200
+    assert resp.context['object'].pk == task.pk
+
+
+@pytest.mark.haystack
+def test_task_list_status_filter(app: DjangoTestApp):
+    user = UserFactory()
+    task_created = TaskFactory(user=user, status=Task.CREATED)
+    task_assigned = TaskFactory(user=user, status=Task.ASSIGNED)
+    TaskFactory(user=user, status=Task.COMPLETED)
+
+    app.set_user(user)
+
+    # Test CREATED filter
+    resp = app.get(f'{reverse("user-task-list", kwargs={"pk": user.pk})}?status={Task.CREATED}')
+    result_pks = [t.pk for t in resp.context["object_list"]]
+    assert task_created.pk in result_pks
+    assert task_assigned.pk not in result_pks
+
+    # Test ASSIGNED filter
+    resp = app.get(f'{reverse("user-task-list", kwargs={"pk": user.pk})}?status={Task.ASSIGNED}')
+    result_pks = [t.pk for t in resp.context["object_list"]]
+    assert task_assigned.pk in result_pks
+    assert task_created.pk not in result_pks
+
+
+@pytest.mark.haystack
+def test_task_list_type_filter(app: DjangoTestApp):
+    user = UserFactory()
+    task_request = TaskFactory(user=user, type=Task.REQUEST)
+    task_error = TaskFactory(user=user, type=Task.ERROR)
+    TaskFactory(user=user, type=Task.DATASET)
+
+    app.set_user(user)
+
+    # Test REQUEST filter
+    resp = app.get(f'{reverse("user-task-list", kwargs={"pk": user.pk})}?type={Task.REQUEST}')
+    result_pks = [t.pk for t in resp.context["object_list"]]
+    assert task_request.pk in result_pks
+    assert task_error.pk not in result_pks
+
+    # Test ERROR filter
+    resp = app.get(f'{reverse("user-task-list", kwargs={"pk": user.pk})}?type={Task.ERROR}')
+    result_pks = [t.pk for t in resp.context["object_list"]]
+    assert task_error.pk in result_pks
+    assert task_request.pk not in result_pks
+
+
+@pytest.mark.haystack
+def test_task_list_combined_filters(app: DjangoTestApp):
+    user = UserFactory()
+    task_match = TaskFactory(user=user, status=Task.CREATED, type=Task.REQUEST)
+    # Wrong status
+    TaskFactory(user=user, status=Task.COMPLETED, type=Task.REQUEST)
+    # Wrong type
+    TaskFactory(user=user, status=Task.CREATED, type=Task.ERROR)
+
+    app.set_user(user)
+    resp = app.get(
+        f'{reverse("user-task-list", kwargs={"pk": user.pk})}'
+        f'?status={Task.CREATED}&type={Task.REQUEST}'
+    )
+    result_pks = [t.pk for t in resp.context["object_list"]]
+    assert result_pks == [task_match.pk]
+
+
+@pytest.mark.haystack
+def test_task_list_filter_counts_are_accurate(app: DjangoTestApp):
+    user = UserFactory()
+    TaskFactory(user=user, status=Task.CREATED)
+    TaskFactory(user=user, status=Task.CREATED)
+    TaskFactory(user=user, status=Task.ASSIGNED)
+    TaskFactory(user=user, status=Task.COMPLETED)
+
+    app.set_user(user)
+    resp = app.get(reverse("user-task-list", kwargs={'pk': user.pk}))
+
+    status_filter = next(f for f in resp.context['filters'] if f['title'] == 'Būsena')
+
+    created_item = next(item for item in status_filter['items'] if item['title'] == Task.FILTER_STATUSES[Task.CREATED])
+    assert created_item['count'] == 2
+
+    assigned_item = next(
+        item for item in status_filter['items'] if item['title'] == Task.FILTER_STATUSES[Task.ASSIGNED])
+    assert assigned_item['count'] == 1
+
+    completed_item = next(
+        item for item in status_filter['items'] if item['title'] == Task.FILTER_STATUSES[Task.COMPLETED])
+    assert completed_item['count'] == 1
+
+
+@pytest.mark.haystack
+def test_task_list_owner_filter_counts_with_organization(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory(organization=organization)
+    RepresentativeFactory(
+        user=user,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk
+    )
+
+    # 2 tasks assigned to user
+    TaskFactory(user=user)
+    TaskFactory(user=user)
+    # 3 tasks assigned to organization (not directly to user)
+    TaskFactory(organization=organization)
+    TaskFactory(organization=organization)
+    TaskFactory(organization=organization)
+
+    app.set_user(user)
+    resp = app.get(reverse("user-task-list", kwargs={'pk': user.pk}))
+
+    owner_filter = next(f for f in resp.context['filters'] if f['title'] == 'Vykdytojas')
+
+    user_tasks = next(item for item in owner_filter['items'] if 'Mano užduotys' in item['title'])
+    all_tasks = next(item for item in owner_filter['items'] if 'Visos užduotys' in item['title'])
+
+    assert user_tasks['count'] == 2
+    assert all_tasks['count'] == 5  # 2 user tasks + 3 org tasks

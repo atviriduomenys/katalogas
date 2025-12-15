@@ -4,6 +4,12 @@ Changes
 v 1.11 (unreleased)
 ==================
 
+Bug fixes:
+
+<No ticket>
+
+- Make a boolean field non-nullable.
+
 
 
 v 1.10 (2025-12-11)

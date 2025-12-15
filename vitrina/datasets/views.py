@@ -1,6 +1,5 @@
 import itertools
 import json
-import secrets
 import uuid
 from datetime import datetime, date
 from functools import cached_property
@@ -85,8 +84,9 @@ from vitrina.datasets.services import (
     has_remove_from_request_perm,
     get_values_for_frequency,
     get_query_for_frequency,
-    manage_subscriptions_for_representative,
     DynamicResourceService,
+    DatasetRepresentativeService,
+    RepresentativeCreationError,
 )
 from vitrina.datasets.models import (
     Dataset,
@@ -1619,6 +1619,7 @@ class CreateMemberView(
         self.object: Representative = form.save(commit=False)
         self.object.content_type = ContentType.objects.get_for_model(Dataset)
         self.object.object_id = self.dataset.id
+        service = DatasetRepresentativeService(self.dataset, self.request)
 
         try:
             user = User.objects.get(email=self.object.email)

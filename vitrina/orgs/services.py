@@ -608,9 +608,7 @@ def has_perm(
                     )
         if where:
             where = functools.reduce(operator.or_, where)
-            if Representative.objects.filter(
-                where, user=user
-            ).exists():
+            if Representative.objects.filter(where, user=user).exists():
                 return True
 
             if (

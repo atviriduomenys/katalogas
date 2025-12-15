@@ -699,7 +699,7 @@ class DatasetCreateView(
 
         return has_perm(
             self.request.user,
-            Action.CREATE_RESOURCE_AT_GOV_ORG if self.organization.kind == Organization.GOV else Action.CREATE,
+            Action.CREATE,
             Dataset,
             self.organization,
         )

@@ -422,11 +422,11 @@ acl: ACL = (
         (User, Action.UPDATE): (Role.AUTHOR,),
         (User, Action.VIEW): (Role.AUTHOR,),
         (Task, Action.UPDATE): (Role.AUTHENTICATED,),
-        (Organization, Action.MANAGE_KEYS): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
+        (Organization, Action.MANAGE_KEYS): (Role.COORDINATOR, Role.MANAGER),
         (Project, Action.MANAGE_PROJECT_KEYS): (Role.AUTHOR, Role.SUPERVISOR),
         (RequestAssignment, Action.CREATE): (Role.COORDINATOR,),
         (RequestAssignment, Action.DELETE): (Role.COORDINATOR,),
-        (ApiExample, Action.CREATE): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
+        (ApiExample, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
         (Representative, Action.CREATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
         (Representative, Action.UPDATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
         (Representative, Action.DELETE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
@@ -609,7 +609,7 @@ def has_perm(
         if where:
             where = functools.reduce(operator.or_, where)
             if Representative.objects.filter(
-                where, user=user, information_system_representative=False, open_data_representative=False
+                where, user=user
             ).exists():
                 return True
 
@@ -618,8 +618,6 @@ def has_perm(
                 and Representative.objects.filter(
                     where,
                     organization=user_org,
-                    information_system_representative=False,
-                    open_data_representative=False,
                 ).exists()
             ):
                 return True

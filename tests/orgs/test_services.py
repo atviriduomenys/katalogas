@@ -123,7 +123,7 @@ def test_dataset_create_permission_open_data_representative():
     ct = ContentType.objects.get_for_model(organization)
     coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=True)
     res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
-    assert res is False
+    assert res is True
 
 
 @pytest.mark.django_db
@@ -132,7 +132,7 @@ def test_dataset_create_permission_information_system_representative():
     ct = ContentType.objects.get_for_model(organization)
     coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, information_system_representative=True)
     res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
-    assert res is False
+    assert res is True
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(

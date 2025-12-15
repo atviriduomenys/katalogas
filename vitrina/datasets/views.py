@@ -31,6 +31,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from haystack.backends import SQ
 from haystack.generic_views import FacetedSearchView
 from haystack.query import SearchQuerySet
 from itsdangerous import URLSafeSerializer
@@ -204,11 +205,30 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             queryset = queryset.facet(field, **options)
 
         if is_manager_dataset_list(self.request):
+            dataset_ct = ContentType.objects.get_for_model(Dataset)
+            org_ct = ContentType.objects.get_for_model(Organization)
+
+            # Get dataset IDs where user is a direct representative
+            dataset_ids = [
+                rep.object_id
+                for rep in self.request.user.representative_set.filter(
+                    role__in=[Representative.MANAGER, Representative.COORDINATOR], content_type=dataset_ct
+                )
+            ]
+
+            # Get organization IDs where user is a representative
             org_ids = [
                 rep.object_id
                 for rep in self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
             ]
-            queryset = queryset.filter(organization__in=org_ids)
+
+            query = SQ()
+            for dataset_id in dataset_ids:
+                query |= SQ(id=dataset_id)
+            for org_id in org_ids:
+                query |= SQ(organization=org_id)
+
+            queryset = queryset.filter(query)
 
         if is_org_dataset_list(self.request):
             queryset = queryset.filter(organization=self.organization.pk)

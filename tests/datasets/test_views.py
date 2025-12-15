@@ -561,7 +561,7 @@ class TestDatasetListView:
     def test_manager_datasets_are_shown_for_manager(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(organization=org)
-        ct = ContentType.objects.get_for_model(Dataset)
+        ct = ContentType.objects.get_for_model(Organization)
         rep = RepresentativeFactory(
             content_type=ct,
             object_id=org.pk,
@@ -584,7 +584,7 @@ class TestDatasetListView:
         org2 = OrganizationFactory()
         dataset = DatasetFactory(organization=org)
         dataset2 = DatasetFactory(organization=org2)
-        ct = ContentType.objects.get_for_model(Dataset)
+        ct = ContentType.objects.get_for_model(Organization)
         user = User.objects.create_user(email="test@test.com", password="test123")
         rep = RepresentativeFactory(content_type=ct, object_id=org.pk, role=role, user=user)
         rep2 = RepresentativeFactory(content_type=ct, object_id=org2.pk, role=role, user=user)

@@ -29,7 +29,7 @@ class LogoutMiddleware:
 
 class AutoRevisionCommentMiddleware(MiddlewareMixin):
     """
-    Automatically sets a default reversion comment based on the view
+    Automatically sets a default reversion comment for CUD operations based on the view
     and the view arguments, if a revision is active.
     """
 

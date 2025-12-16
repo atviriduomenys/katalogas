@@ -11,6 +11,7 @@ from reversion.models import Revision, Version
 from reversion.admin import VersionAdmin
 
 from vitrina.utils import RevisionComment, RevisionSource
+from django.utils.translation import gettext_lazy as _
 
 
 class VersionInline(admin.TabularInline):
@@ -32,7 +33,7 @@ class VersionInline(admin.TabularInline):
     def has_change_permission(self, request: HttpRequest, obj: Revision | None = None) -> bool:
         return False
 
-    @admin.display(description="Versijos duomenys")
+    @admin.display(description=_("Versijos duomenys"))
     def version_data(self, obj: Version) -> str:
         data = obj.field_dict
         data_json = json.dumps(data, indent=2, ensure_ascii=False, default=str)
@@ -61,11 +62,11 @@ class VersionInline(admin.TabularInline):
             escape(data_json),
         )
 
-    @admin.display(description="Modelis")
+    @admin.display(description=_("Modelis"))
     def column_content_type(self, obj: Version) -> Any:
         return obj.content_type
 
-    @admin.display(description="Objekto ID")
+    @admin.display(description=_("Objekto ID"))
     def column_object_id(self, obj: Version) -> str:
         try:
             url = reverse(
@@ -77,7 +78,7 @@ class VersionInline(admin.TabularInline):
 
         return format_html('<a href="{}">{}</a>', url, obj.object_id)
 
-    @admin.display(description="Objektas")
+    @admin.display(description=_("Objektas"))
     def column_object_repr(self, obj: Version) -> str:
         return obj.object_repr
 

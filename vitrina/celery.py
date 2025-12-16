@@ -80,12 +80,10 @@ class RevisionedTask(app.Task):
     def _accepts_kwarg(self, kwarg_name: str) -> bool:
         """Return True if `run()` accepts the given kwarg (directly or via `**kwargs`)."""
         signature = inspect.signature(self.run)
-        for parameter in signature.parameters.values():
-            if parameter.kind == inspect.Parameter.VAR_KEYWORD:
-                return True
-            if parameter.name == kwarg_name:
-                return True
-        return False
+        return any(
+            parameter.kind == inspect.Parameter.VAR_KEYWORD or parameter.name == kwarg_name
+            for parameter in signature.parameters.values()
+        )
 
 
 app.Task = RevisionedTask

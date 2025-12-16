@@ -51,28 +51,35 @@ def translate_text(text: str, field_name: str = "") -> str | None:
 
 
 def is_model_versioned(model: type[models.Model]) -> bool:
+    """Return whether the given Django model should be treated as versioned.
+
+    A model is considered versioned if:
+    - it belongs to an installed app whose dotted name starts with "vitrina" (via `get_all_models()`), and
+    - its fully-qualified name (<module>.<class>) does not match any pattern in
+      `settings.NOT_VERSIONED_MODELS`.
+    """
     if model not in get_all_models(app_prefix="vitrina"):
         return False
-    excluded_models_patterns = settings.NOT_VERSIONED_MODELS
+
     full_name = f"{model.__module__}.{model.__name__}"
-    return not any(fnmatchcase(full_name, pattern) for pattern in excluded_models_patterns)
+    return not any(fnmatchcase(full_name, pattern) for pattern in settings.NOT_VERSIONED_MODELS)
 
 
 def get_all_models(
     app_prefix: str | None = None, include_proxy: bool = True, include_unmanaged: bool = False
 ) -> set[type[models.Model]]:
+    """Return a set of Django model classes from installed apps, with optional filtering."""
     project_models = set()
-    for app_config in apps.get_app_configs():
-        if app_prefix and not app_config.name.startswith(app_prefix):
+    for model in apps.get_models():
+        if app_prefix and not model._meta.app_config.name.startswith(app_prefix):
             continue
 
-        for model in app_config.get_models():
-            if not include_proxy and model._meta.proxy:
-                continue
-            if not include_unmanaged and not model._meta.managed:
-                continue
+        if not include_proxy and model._meta.proxy:
+            continue
+        if not include_unmanaged and not model._meta.managed:
+            continue
 
-            project_models.add(model)
+        project_models.add(model)
     return project_models
 
 

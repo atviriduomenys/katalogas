@@ -2,6 +2,7 @@ import json
 import logging
 import pathlib
 from datetime import datetime
+from functools import cached_property
 from random import randrange
 
 import reversion
@@ -807,6 +808,10 @@ class Dataset(Resource):
             return sorted(set(self.formats + additional_formats), key=lambda x: x.title)
         return sorted(set(self.formats), key=lambda x: x.title)
 
+    @cached_property
+    def dataset_content_type(self):
+        return ContentType.objects.get_for_model(Dataset)
+
     def get_acl_parents(self):
         parents = [self]
         if self.organization:
@@ -840,6 +845,39 @@ class Dataset(Resource):
             .values_list("user_id", flat=True)
             .distinct()
         )
+
+    def get_resource_managers_queryset_specific_role(
+        self, include_information_system: bool = False, include_open_data: bool = False
+    ) -> QuerySet["Dataset"]:
+        datasets_ids = {self.id}
+        organization_ids = {self.organization_id}
+
+        for parent_dataset in self.get_ancestors().only("pk", "organization_id"):
+            datasets_ids.add(parent_dataset.pk)
+            organization_ids.add(parent_dataset.organization_id)
+
+        base_queryset = (
+            Q(
+                content_type=self.dataset_content_type,
+                object_id__in=datasets_ids,
+            )
+            | Q(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__in=organization_ids,
+            )
+            | Q(organization_id__in=organization_ids)
+        )
+        filters = {
+            "user__isnull": False,
+        }
+
+        if not include_information_system:
+            filters["information_system_representative"] = False
+
+        if not include_open_data:
+            filters["open_data_representative"] = False
+
+        return Representative.objects.filter(base_queryset, **filters).values_list("user_id", flat=True).distinct()
 
     def get_organization_special_representatives_queryset(self) -> QuerySet[int]:
         """

@@ -85,7 +85,7 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
 
         user = request.user
 
-        if self.organization.kind == Organization.GOV and user.is_open_data_representative_for(self.organization):
+        if user.is_open_data_representative_for(self.organization):
             self.fields["subclass"].queryset = DCATResourceSubclass.objects.exclude(
                 name=DCATResourceSubclass.INFORMATION_SYSTEM
             )
@@ -210,6 +210,12 @@ class BaseResourceForm(TranslatableModelForm):
 
         if self.language_code == "en":
             self.fields["description"].required = False
+        organization = self.organization if self.organization else instance.organization
+        if request.user.is_open_data_representative_for(organization):
+            self.fields["access_rights"].choices = [
+                (Dataset.PUBLIC, _("Vieši")),
+                (Dataset.RESTRICTED, _("Apriboti")),
+            ]
 
         if instance:
             self.initial["files"] = list(instance.dataset_files.values_list("file", flat=True))
@@ -346,7 +352,7 @@ class BaseResourceForm(TranslatableModelForm):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
             organization = self.organization or dataset_instance.organization
             whitelisted = organization.whitelisted_names or []
-            main_prefix = organization.name
+            main_prefix = organization.name or ""
             allowed_prefixes = [main_prefix] + list(whitelisted)
             matched_prefix = None
             for prefix in allowed_prefixes:

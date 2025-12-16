@@ -76,7 +76,7 @@ def test_organization_edit_permission_manager():
 def test_organization_edit_permission_open_data_representative():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=False)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=True)
     res = has_perm(manager.user, Action.UPDATE, organization)
     assert res is False
 
@@ -85,7 +85,7 @@ def test_organization_edit_permission_open_data_representative():
 def test_organization_edit_permission_information_system_representative():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, information_system_representative=False)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, information_system_representative=True)
     res = has_perm(manager.user, Action.UPDATE, organization)
     assert res is False
 
@@ -116,6 +116,23 @@ def test_dataset_create_permission_organization_coordinator():
     res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
     assert res is True
 
+
+@pytest.mark.django_db
+def test_dataset_create_permission_open_data_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, open_data_representative=True)
+    res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
+    assert res is True
+
+
+@pytest.mark.django_db
+def test_dataset_create_permission_information_system_representative():
+    organization = OrganizationFactory()
+    ct = ContentType.objects.get_for_model(organization)
+    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER, information_system_representative=True)
+    res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
+    assert res is True
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
@@ -194,6 +211,14 @@ def test_dataset_history_view_permission_manager():
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset)
     manager = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.MANAGER)
+    res = has_perm(manager.user, Action.HISTORY_VIEW, dataset)
+    assert res is True
+
+@pytest.mark.django_db
+def test_dataset_history_view_permission_information_system_representative():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+    manager = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.MANAGER, information_system_representative=True)
     res = has_perm(manager.user, Action.HISTORY_VIEW, dataset)
     assert res is True
 
@@ -279,8 +304,19 @@ def test_dataset_distribution_create_permission_organization_open_data_represent
     manager = RepresentativeFactory(
         content_type=ct, object_id=dataset.organization.pk, role=Representative.MANAGER, open_data_representative=True
     )
-    res = has_perm(manager.user, Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE, DatasetDistribution, dataset)
+    res = has_perm(manager.user, Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE, DatasetDistribution, dataset)
     assert res is False
+
+
+@pytest.mark.django_db
+def test_dataset_distribution_create_permission_organization_information_system_representative():
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    manager = RepresentativeFactory(
+        content_type=ct, object_id=dataset.organization.pk, role=Representative.MANAGER, information_system_representative=True
+    )
+    res = has_perm(manager.user, Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE, DatasetDistribution, dataset)
+    assert res is True
 
 
 @pytest.mark.django_db
@@ -677,12 +713,59 @@ def test_dataset_structure_create_permission_organization_manager():
 
 
 @pytest.mark.django_db
-def test_dataset_structure_create_permission_open_data_representative():
-    dataset = DatasetFactory()
-    ct = ContentType.objects.get_for_model(dataset.organization)
-    manager = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=Representative.MANAGER, open_data_representative=True)
-    res = has_perm(manager.user, Action.CREATE, DatasetStructure, dataset)
-    assert res is False
+@pytest.mark.parametrize(
+    "access_right,expected",
+    [
+        (Dataset.PUBLIC, True),
+        (Dataset.RESTRICTED, True),
+        (Dataset.NON_PUBLIC, False),
+        (Dataset.CONFIDENTIAL, False),
+    ]
+)
+def test_dataset_structure_create_permission_open_data_representative(access_right, expected):
+    org = DatasetFactory().organization
+    ct = ContentType.objects.get_for_model(org)
+
+    manager = RepresentativeFactory(
+        content_type=ct,
+        object_id=org.pk,
+        role=Representative.MANAGER,
+        open_data_representative=True,
+    )
+
+    dataset = DatasetFactory(organization=org, access_rights=access_right)
+
+    result = has_perm(manager.user, Action.UPDATE, DatasetStructure, dataset)
+
+    assert result == expected
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "access_right,expected",
+    [
+        (Dataset.PUBLIC, True),
+        (Dataset.RESTRICTED, True),
+        (Dataset.NON_PUBLIC, True),
+        (Dataset.CONFIDENTIAL, True),
+    ]
+)
+def test_dataset_structure_create_permission_information_system_representative(access_right, expected):
+    org = DatasetFactory().organization
+    ct = ContentType.objects.get_for_model(org)
+
+    manager = RepresentativeFactory(
+        content_type=ct,
+        object_id=org.pk,
+        role=Representative.MANAGER,
+        information_system_representative=True,
+        can_write=True
+    )
+
+    dataset = DatasetFactory(organization=org, access_rights=access_right)
+
+    result = has_perm(manager.user, Action.UPDATE, DatasetStructure, dataset)
+
+    assert result == expected
 
 
 @pytest.mark.django_db
@@ -828,7 +911,7 @@ def test_dataset_edit_permission_organization_publisher():
 
 
 @pytest.mark.django_db
-def test_dataset_edit_permission_organization_open_data_representative():
+def test_dataset_edit_permission_organization_open_data_representative_non_public():
     dataset = DatasetFactory(is_public=False)
     user = UserFactory()
     organization = OrganizationFactory()
@@ -849,7 +932,7 @@ def test_dataset_edit_permission_organization_open_data_representative():
 
 
 @pytest.mark.django_db
-def test_dataset_edit_permission_organization_information_system_representative():
+def test_dataset_edit_permission_organization_information_system_representative_non_public():
     dataset = DatasetFactory(is_public=False)
     user = UserFactory()
     organization = OrganizationFactory()
@@ -866,7 +949,67 @@ def test_dataset_edit_permission_organization_information_system_representative(
     )
 
     res = has_perm(user, Action.UPDATE, dataset)
-    assert res is False
+    assert res is True
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("access_right, expected", [
+    (Dataset.PUBLIC, True),
+    (Dataset.RESTRICTED, True),
+    (Dataset.NON_PUBLIC, False),
+    (Dataset.CONFIDENTIAL, False),
+])
+def test_dataset_edit_permission_organization_open_data_representative_access_rights(
+    access_right,
+    expected,
+):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    user.organization = organization
+    user.save()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.MANAGER,
+        open_data_representative=True,
+    )
+
+    dataset = DatasetFactory(organization=organization, access_rights=access_right)
+
+    res = has_perm(user, Action.UPDATE, dataset)
+    assert res == expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize("access_right, expected", [
+    (Dataset.PUBLIC, True),
+    (Dataset.RESTRICTED, True),
+    (Dataset.NON_PUBLIC, False),
+    (Dataset.CONFIDENTIAL, False),
+])
+def test_dataset_edit_permission_organization_information_system_representative_access_rights(
+    access_right,
+    expected,
+):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    user.organization = organization
+    user.save()
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.MANAGER,
+        open_data_representative=True,
+    )
+    dataset = DatasetFactory(organization=organization, access_rights=access_right)
+
+    res = has_perm(user, Action.UPDATE, dataset)
+    assert res == expected
 
 
 @pytest.mark.django_db
@@ -1048,41 +1191,3 @@ class TestHasDatasetPerm:
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, child_dataset, child_dataset)
 
-    def test_info_system_representative_permissions(self):
-        gov_org = OrganizationFactory(kind=Organization.GOV)
-        info_system_subclass = DCATResourceSubclass.objects.get(name=DCATResourceSubclass.INFORMATION_SYSTEM)
-        dataset_confidential = DatasetFactory(
-            access_rights=Dataset.CONFIDENTIAL,
-            organization=gov_org,
-            subclass=info_system_subclass,
-        )
-        dataset_public = DatasetFactory(
-            access_rights=Dataset.PUBLIC,
-            organization=gov_org,
-            subclass=info_system_subclass,
-        )
-        user = UserFactory()
-        RepresentativeFactory(
-            user=user,
-            content_type=ContentType.objects.get_for_model(gov_org),
-            object_id=gov_org.pk,
-            information_system_representative=True,
-            can_write=True
-        )
-        assert _has_dataset_perm(user, Action.VIEW, dataset_confidential, dataset_confidential) is True
-        assert _has_dataset_perm(user, Action.VIEW, dataset_public, dataset_public) is True
-        for action in WRITE_ACTIONS:
-            assert _has_dataset_perm(user, action, dataset_confidential, dataset_confidential) is True
-        user_no_write = UserFactory()
-        RepresentativeFactory(
-            user=user_no_write,
-            content_type=ContentType.objects.get_for_model(gov_org),
-            object_id=gov_org.pk,
-            information_system_representative=True,
-            can_write=False
-        )
-
-        for action in WRITE_ACTIONS:
-            assert _has_dataset_perm(user_no_write, action, dataset_confidential, dataset_confidential) is False
-        for action in WRITE_ACTIONS:
-            assert _has_dataset_perm(user_no_write, action, dataset_public, dataset_public) is True

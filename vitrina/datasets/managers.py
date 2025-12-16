@@ -41,7 +41,7 @@ class PermittedDatasetManager(TranslatableManager):
         return self._filter_datasets_for_user(user, base_queryset)
 
     def _filter_datasets_for_user(self, user: "User", datasets: QuerySet["Dataset"]) -> QuerySet["Dataset"]:
-        from vitrina.datasets.models import Dataset, Organization, Representative, DCATResourceSubclass
+        from vitrina.datasets.models import Dataset, Organization, Representative
 
         dataset_ct = ContentType.objects.get_for_model(Dataset)
         org_ct = ContentType.objects.get_for_model(Organization)
@@ -66,9 +66,12 @@ class PermittedDatasetManager(TranslatableManager):
             pk__in=Representative.objects.filter(
                 content_type=org_ct,
                 user_id=user.id,
-                information_system_representative=False,
-                open_data_representative=False,
-            ).values_list("object_id", flat=True)
+            )
+            .filter(
+                Q(information_system_representative=True)
+                | Q(information_system_representative=False, open_data_representative=False)
+            )
+            .values_list("object_id", flat=True)
         )
 
         datasets_in_represented_orgs = Dataset.objects.filter(organization__in=represented_orgs)
@@ -76,32 +79,6 @@ class PermittedDatasetManager(TranslatableManager):
 
         for ds_path in represented_dataset_paths:
             accessible_filter |= Q(path__startswith=ds_path)
-
-        info_system_orgs = Representative.objects.filter(
-            content_type=org_ct, user_id=user.id, information_system_representative=True
-        ).values_list("object_id", flat=True)
-
-        if info_system_orgs.all():
-            accessible_filter |= Q(
-                organization__in=info_system_orgs,
-                subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM,
-                is_public=True,
-                access_rights__in=(
-                    Dataset.PUBLIC,
-                    Dataset.RESTRICTED,
-                    Dataset.NON_PUBLIC,
-                    Dataset.CONFIDENTIAL,
-                ),
-            )
-            accessible_filter |= Q(
-                organization__in=info_system_orgs,
-                is_public=True,
-                access_rights__in=(
-                    Dataset.PUBLIC,
-                    Dataset.RESTRICTED,
-                    Dataset.NON_PUBLIC,
-                ),
-            ) & ~Q(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM)
 
         open_data_orgs = Representative.objects.filter(
             content_type=org_ct, user_id=user.id, open_data_representative=True
@@ -114,7 +91,7 @@ class PermittedDatasetManager(TranslatableManager):
                 access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED),
             )
 
-        if user.is_gov_organization_manager:
+        if user.is_gov_organization_manager or user.is_gov_organization_information_system_manager:
             accessible_filter |= Q(
                 is_public=True,
                 access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC),

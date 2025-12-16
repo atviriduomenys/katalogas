@@ -2,9 +2,11 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django_webtest import DjangoTestApp
+from unittest.mock import patch
 
 from vitrina import settings
 from vitrina.classifiers.models import Concept
+from vitrina.classifiers.factories import ApplicableLegislationFactory
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
@@ -97,6 +99,49 @@ def test_add_form_correct_login(app: DjangoTestApp):
     assert DatasetDistribution.objects.first().metadata.first().title == 'Added title'
     assert DatasetDistribution.objects.first().metadata.first().description == 'Added new resource description'
     assert DatasetDistribution.objects.first().metadata.first().level_given == 1
+
+
+@pytest.mark.django_db
+def test_create_dataset_distribution_with_applicable_legislation(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension='URL')
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    applicable_legislation_urls = ["http://www.google.com", "http://www.example.com"]
+    app.set_user(user) 
+    form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
+    form['format'] = file_format.id
+    form['download_url'] = "www.google.lt"
+    form["applicable_legislation"] = applicable_legislation_urls
+    with patch("vitrina.datasets.tasks.update_applicable_legislation_description.delay") as mocked_task:
+            resp = form.submit()
+
+    assert resp.status_code == 302
+    assert mocked_task.call_count == 2
+    assert DatasetDistribution.objects.filter().count() == 1
+    dataset_distribution = DatasetDistribution.objects.first()
+    assert set(dataset_distribution.applicable_legislation.values_list("url", flat=True)) == set(applicable_legislation_urls)
+
+
+@pytest.mark.django_db
+def test_update_dataset_distribution_with_applicable_legislation(app: DjangoTestApp):
+    resource = DatasetDistributionFactory(title='base title', description='base description')
+    resource.applicable_legislation.set(ApplicableLegislationFactory.create_batch(4))
+    user = UserFactory(is_staff=True, organization=resource.dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse('resource-change', kwargs={'pk': resource.id})).forms['resource-form']
+    new_urls = ("http://www.google.", "http://www.example.com")
+    for i, field in enumerate(form.fields["applicable_legislation"]):
+        field.value = new_urls[i] if i < len(new_urls) else ""
+
+    with patch("vitrina.datasets.tasks.update_applicable_legislation_description.delay") as mocked_task:
+        resp = form.submit()
+        
+    resource.refresh_from_db()
+    assert resp.status_code == 302
+    assert mocked_task.call_count == 2
+    assert DatasetDistribution.objects.filter().count() == 1
+    dataset_distribution = DatasetDistribution.objects.first()
+    assert set(dataset_distribution.applicable_legislation.values_list("url", flat=True)) == set(new_urls)
 
 
 @pytest.mark.django_db

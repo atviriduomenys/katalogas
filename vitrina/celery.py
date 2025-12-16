@@ -22,6 +22,7 @@ class RevisionedTask(app.Task):
     - Wraps task execution in a Reversion revision, attaching the user (when resolvable)
       and a structured JSON comment describing the task call.
     """
+
     abstract = True
 
     def apply_async(self, args: Any | None = None, kwargs: Any | None = None, **options) -> Any:

@@ -5,7 +5,6 @@ from parler.models import TranslatableModel, TranslatedFields
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.models import UUIDBaseModel
-from vitrina.services import fetch_page_title
 
 
 class Category(MP_Node):
@@ -263,9 +262,3 @@ class ApplicableLegislation(UUIDBaseModel):
 
     def __str__(self) -> str:
         return self.description or self.url
-
-    def update_description(self) -> str | None:
-        if title := fetch_page_title(self.url):
-            self.description = title
-            self.save(update_fields=["description"])
-        return title

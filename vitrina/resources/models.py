@@ -12,6 +12,7 @@ from parler.models import TranslatableModel, TranslatedFields
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
 from vitrina.utils import translate_text
 from vitrina.datasets.models import Dataset
+from vitrina.datasets.tasks import update_applicable_legislation_description
 
 
 def get_default_status() -> uuid.UUID:
@@ -379,14 +380,12 @@ class DatasetDistribution(TranslatableModel):
                 self.conditions = translate_text(lt_conditions, f"distribution {self.id} conditions")
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
-        existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
-        new_urls = [url for url in urls if url not in existing_urls]
+        legislations: list[ApplicableLegislation] = []
 
-        for url in new_urls:
-            ApplicableLegislation.objects.create(url=url)
+        for url in urls:
+            legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
+            if created:
+                update_applicable_legislation_description.delay(legislation.uuid)
+            legislations.append(legislation)
 
-        all_entries = ApplicableLegislation.objects.filter(url__in=urls)
-        self.applicable_legislation.set(all_entries)
-
-        for entry in all_entries.filter(url__in=new_urls):
-            entry.update_description()
+        self.applicable_legislation.set(legislations)

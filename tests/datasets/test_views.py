@@ -13,6 +13,7 @@ import pytest
 from filer.models import File
 from reversion.models import Version
 from webtest import Upload
+from unittest.mock import patch
 
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import (
@@ -1372,9 +1373,12 @@ class TestDatasetUpdateView:
         new_urls = ("http://www.google.", "http://www.example.com")
         for i, field in enumerate(form.fields["applicable_legislation"]):
             field.value = new_urls[i] if i < len(new_urls) else ""
-        response = form.submit()
-        dataset.refresh_from_db()
+        
+        with patch("vitrina.datasets.tasks.update_applicable_legislation_description.delay") as mocked_task:
+            response = form.submit()
 
+        dataset.refresh_from_db()
+        assert mocked_task.call_count == 2
         assert response.status_code == 302
         assert set(dataset.applicable_legislation.values_list("url", flat=True)) == set(new_urls)
 
@@ -1974,9 +1978,12 @@ class TestDatasetCreateView:
         form["description"] = "Added new dataset description"
         form["access_rights"] = Dataset.PUBLIC
         form["applicable_legislation"] = applicable_legislation_urls
-        response = form.submit()
+
+        with patch("vitrina.datasets.tasks.update_applicable_legislation_description.delay") as mocked_task:
+            response = form.submit()
 
         dataset = Dataset.objects.filter(translations__title="Added title").first()
+        assert mocked_task.call_count == 2
         assert response.status_code == 302
         assert set(dataset.applicable_legislation.values_list("url", flat=True)) == set(applicable_legislation_urls)
 

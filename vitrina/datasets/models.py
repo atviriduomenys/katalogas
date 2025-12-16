@@ -39,6 +39,7 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem
 from vitrina.users.models import User
+from vitrina.datasets.tasks import update_applicable_legislation_description
 
 logger = logging.getLogger(__name__)
 
@@ -1416,29 +1417,24 @@ class Dataset(Resource):
         return False
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
-        existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
-        new_urls = [url for url in urls if url not in existing_urls]
+        legislations: list[ApplicableLegislation] = []
 
-        for url in new_urls:
-            ApplicableLegislation.objects.create(url=url)
+        for url in urls:
+            legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
+            if created:
+                update_applicable_legislation_description.delay(legislation.uuid)
+            legislations.append(legislation)
 
-        all_entries = ApplicableLegislation.objects.filter(url__in=urls)
-        self.applicable_legislation.set(all_entries)
-
-        for entry in all_entries.filter(url__in=new_urls):
-            entry.update_description()
+        self.applicable_legislation.set(legislations)
 
     def update_documentation(self, urls: list[str]) -> None:
-        existing_urls = set(
-            Documentation.objects.filter(documentation_link__in=urls).values_list("documentation_link", flat=True)
-        )
-        new_urls = [url for url in urls if url not in existing_urls]
+        documentations: list[Documentation] = []
 
-        for url in new_urls:
-            Documentation.objects.create(documentation_link=url)
+        for url in urls:
+            documentation, created = Documentation.objects.get_or_create(documentation_link=url)
+            documentations.append(documentation)
 
-        all_entries = Documentation.objects.filter(documentation_link__in=urls)
-        self.documentation.set(all_entries)
+        self.documentation.set(documentations)
 
 
 class DatasetReport(Dataset):

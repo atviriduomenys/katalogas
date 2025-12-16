@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.forms import ModelForm
 from django.http import HttpRequest
+from django.db import transaction
 
 from vitrina.structure.models import Prefix, ManifestValidationEntry
 from vitrina.structure.tasks import validate_manifest_task
@@ -16,7 +17,7 @@ class ManifestValidationEntryAdmin(admin.ModelAdmin):
 
     def save_model(self, request: HttpRequest, obj: ManifestValidationEntry, form: ModelForm, change: bool) -> None:
         super().save_model(request, obj, form, change)
-        validate_manifest_task.delay(obj.uuid)
+        transaction.on_commit(lambda: validate_manifest_task.delay(obj.uuid))
 
 
 admin.site.register(Prefix, PrefixAdmin)

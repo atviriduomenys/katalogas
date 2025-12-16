@@ -1,16 +1,19 @@
 Changes
 #######
 
-v 1.11 (unreleased)
+v 1.12 (unreleased)
+==================
+
+
+
+v 1.11 (2025-12-16)
 ==================
 
 Bug fixes:
 
 <No ticket>
 
-- Make a boolean field non-nullable.
-
-
+- Make a `Representative.can_make_agreements` boolean field non-nullable.
 
 v 1.10 (2025-12-11)
 ==================

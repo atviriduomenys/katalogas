@@ -1761,6 +1761,14 @@ def test_model_create(app: DjangoTestApp):
     )
 
     url = reverse('model-create', args=[dataset.pk])
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="model-create",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={"pk": dataset.pk}
+    )
     form = app.get(url).forms['model-form']
     form['name'] = "Model"
     form['uri'] = 'dcat:model'
@@ -1793,16 +1801,9 @@ def test_model_create(app: DjangoTestApp):
     assert new_model.base.metadata.first().ref == 'prop'
 
     assert Version.objects.get_for_object(new_model).count() == 1
-    revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="model-create",
-        http_method="POST",
-        path=url,
-        args=(),
-        kwargs={"pk": dataset.pk}
-    )
-    assert Version.objects.get_for_object(new_model).first().revision.comment == revision_comment.to_json()
-    assert Version.objects.get_for_object(new_model).first().revision.user == user
+    version = (Version.objects.get_for_object(new_model).select_related("revision").first())
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == user
 
 
 @pytest.mark.django_db
@@ -1852,6 +1853,14 @@ def test_model_update(app: DjangoTestApp):
     )
     kwargs_dict = {"pk": dataset.pk, "model": model.name}
     url = reverse('model-update', kwargs=kwargs_dict)
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="model-update",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs=kwargs_dict
+    )
     form = app.get(url).forms['model-form']
     form['name'] = "UpdatedModel"
     form['prepare'] = "sort(prop1)"
@@ -1871,16 +1880,9 @@ def test_model_update(app: DjangoTestApp):
     assert model.base.metadata.first().ref == ''
 
     assert Version.objects.get_for_object(model).count() == 1
-    revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="model-update",
-        http_method="POST",
-        path=url,
-        args=(),
-        kwargs=kwargs_dict
-    )
-    assert Version.objects.get_for_object(model).first().revision.comment == revision_comment.to_json()
-    assert Version.objects.get_for_object(model).first().revision.user == user
+    version = Version.objects.get_for_object(model).select_related("revision").first()
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == user
 
 
 @pytest.mark.django_db

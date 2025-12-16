@@ -522,6 +522,14 @@ def test_create_dataset(app: DjangoTestApp):
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     url = reverse("api-dataset")
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="api-dataset",
+        http_method="POST",
+        path=url,
+        args=[],
+        kwargs={}
+    )
     res = app.post(url, {
         'title': 'Test dataset',
         'description': 'Test dataset',
@@ -546,16 +554,9 @@ def test_create_dataset(app: DjangoTestApp):
     assert list(dataset.category.all()) == [category]
     assert dataset.organization == organization
     assert Version.objects.get_for_object(dataset).count() == 1
-    revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="api-dataset",
-        http_method="POST",
-        path=url,
-        args=[],
-        kwargs={}
-    )
-    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
-    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
+    version = Version.objects.get_for_object(dataset).select_related("revision").first()
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == representative.user
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),
@@ -623,12 +624,6 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     url = reverse("api-single-dataset", kwargs={'datasetId': dataset.pk})
-    res = app.patch(url, {
-        'title': "Updated title",
-        'description': "Updated description"
-    })
-    dataset.refresh_from_db()
-    assert Version.objects.get_for_object(dataset).count() == 1
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="api-single-dataset",
@@ -637,8 +632,15 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         args=[],
         kwargs={'datasetId': dataset.pk}
     )
-    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
-    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
+    res = app.patch(url, {
+        'title': "Updated title",
+        'description': "Updated description"
+    })
+    dataset.refresh_from_db()
+    assert Version.objects.get_for_object(dataset).count() == 1
+    version = Version.objects.get_for_object(dataset).first()
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == representative.user
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),
@@ -677,12 +679,6 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     url = reverse("api-single-dataset-internal", kwargs={'internalId': dataset.internal_id})
-    res = app.patch(url, {
-        'title': "Updated title",
-        'description': "Updated description"
-    })
-    dataset.refresh_from_db()
-    assert Version.objects.get_for_object(dataset).count() == 1
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="api-single-dataset-internal",
@@ -691,8 +687,15 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         args=[],
         kwargs={'internalId': dataset.internal_id}
     )
-    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
-    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
+    res = app.patch(url, {
+        'title': "Updated title",
+        'description': "Updated description"
+    })
+    dataset.refresh_from_db()
+    assert Version.objects.get_for_object(dataset).count() == 1
+    version = Version.objects.get_for_object(dataset).select_related("revision").first()
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == representative.user
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),
@@ -759,13 +762,6 @@ def test_delete_dataset_with_dataset_id(app: DjangoTestApp):
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
     url = reverse('api-single-dataset', kwargs={'datasetId': dataset.pk})
-    app.delete(url)
-    dataset.refresh_from_db()
-    assert dataset.internal_id is None
-    assert dataset.slug is None
-    assert dataset.deleted is True
-    assert dataset.deleted_on is not None
-    assert Version.objects.get_for_object(dataset).count() == 1
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="api-single-dataset",
@@ -774,8 +770,16 @@ def test_delete_dataset_with_dataset_id(app: DjangoTestApp):
         args=[],
         kwargs={'datasetId': dataset.pk}
     )
-    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
-    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
+    app.delete(url)
+    dataset.refresh_from_db()
+    assert dataset.internal_id is None
+    assert dataset.slug is None
+    assert dataset.deleted is True
+    assert dataset.deleted_on is not None
+    assert Version.objects.get_for_object(dataset).count() == 1
+    version = Version.objects.get_for_object(dataset).select_related("revision").first()
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == representative.user
 
 
 @pytest.mark.django_db
@@ -795,13 +799,6 @@ def test_delete_dataset_with_internal_id(app: DjangoTestApp):
     })
     kwargs_dict = {'internalId': dataset.internal_id}
     url = reverse('api-single-dataset-internal', kwargs=kwargs_dict)
-    app.delete(url)
-    dataset.refresh_from_db()
-    assert dataset.internal_id is None
-    assert dataset.slug is None
-    assert dataset.deleted is True
-    assert dataset.deleted_on is not None
-    assert Version.objects.get_for_object(dataset).count() == 1
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="api-single-dataset-internal",
@@ -810,8 +807,16 @@ def test_delete_dataset_with_internal_id(app: DjangoTestApp):
         args=[],
         kwargs=kwargs_dict
     )
-    assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
-    assert Version.objects.get_for_object(dataset).first().revision.user == representative.user
+    app.delete(url)
+    dataset.refresh_from_db()
+    assert dataset.internal_id is None
+    assert dataset.slug is None
+    assert dataset.deleted is True
+    assert dataset.deleted_on is not None
+    assert Version.objects.get_for_object(dataset).count() == 1
+    version = Version.objects.get_for_object(dataset).select_related("revision").first()
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == representative.user
 
 
 @pytest.mark.django_db

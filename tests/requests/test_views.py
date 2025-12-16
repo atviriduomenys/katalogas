@@ -29,6 +29,14 @@ def test_request_create(app: DjangoTestApp):
     orgs = [OrganizationFactory(), OrganizationFactory()]
     app.set_user(user)
     url = reverse("request-create")
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="request-create",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={}
+    )
     form = app.get(url).forms['request-form']
     form['title'] = "Request"
     form['description'] = "Description"
@@ -38,14 +46,6 @@ def test_request_create(app: DjangoTestApp):
     assert resp.status_code == 302
     assert resp.url == Request.objects.filter(translations__title='Request').first().get_absolute_url()
     assert Version.objects.get_for_object(added_request.first()).count() == 1
-    revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="request-create",
-        http_method="POST",
-        path=url,
-        args=(),
-        kwargs={}
-    )
     assert Version.objects.get_for_object(added_request.first()).first().revision.comment == revision_comment.to_json()
 
 
@@ -66,6 +66,14 @@ def test_request_update_with_permitted_user(app: DjangoTestApp):
     request = RequestFactory(user=user)
     app.set_user(user)
     url = reverse("request-update", args=[request.pk])
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="request-update",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={"pk": request.pk}
+    )
     form = app.get(url).forms['request-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
@@ -76,14 +84,6 @@ def test_request_update_with_permitted_user(app: DjangoTestApp):
     assert updated_request.title == "Updated title"
     assert updated_request.description == "Updated description"
     assert Version.objects.get_for_object(request).count() == 1
-    revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="request-update",
-        http_method="POST",
-        path=url,
-        args=(),
-        kwargs={"pk": request.pk}
-    )
     assert Version.objects.get_for_object(request).first().revision.comment == revision_comment.to_json()
 
 
@@ -126,14 +126,6 @@ def test_request_history_view_with_permission(app: DjangoTestApp):
     app.set_user(user)
 
     url = reverse("request-update", args=[request.pk])
-    form = app.get(url).forms['request-form']
-    form['title'] = "Updated title"
-    form['description'] = "Updated description"
-    resp = form.submit().follow()
-    resp = resp.click(linkid="history-tab")
-    assert resp.context['detail_url_name'] == 'request-detail'
-    assert resp.context['history_url_name'] == 'request-history'
-    assert len(resp.context['history']) == 1
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="request-update",
@@ -142,6 +134,14 @@ def test_request_history_view_with_permission(app: DjangoTestApp):
         args=(),
         kwargs={"pk": request.pk}
     )
+    form = app.get(url).forms['request-form']
+    form['title'] = "Updated title"
+    form['description'] = "Updated description"
+    resp = form.submit().follow()
+    resp = resp.click(linkid="history-tab")
+    assert resp.context['detail_url_name'] == 'request-detail'
+    assert resp.context['history_url_name'] == 'request-history'
+    assert len(resp.context['history']) == 1
     assert resp.context['history'][0]['action'] == revision_comment.to_json()
     assert resp.context['history'][0]['user'] == user
 

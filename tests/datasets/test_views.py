@@ -1039,6 +1039,14 @@ class TestDatasetUpdateView:
         app.set_user(user)
         dataset.manager = user
         url = reverse("dataset-change", kwargs={"pk": dataset.id})
+        revision_comment = RevisionComment(
+            source=RevisionSource.VIEW,
+            action="dataset-change",
+            http_method="POST",
+            path=url,
+            args=(),
+            kwargs={"pk": dataset.id}
+        )
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Edited title"
         form["description"] = "edited dataset description"
@@ -1050,14 +1058,6 @@ class TestDatasetUpdateView:
         assert dataset.title == "Edited title"
         assert dataset.description == "edited dataset description"
         assert Version.objects.get_for_object(dataset).count() == 1
-        revision_comment = RevisionComment(
-            source=RevisionSource.VIEW,
-            action="dataset-change",
-            http_method="POST",
-            path=url,
-            args=(),
-            kwargs={"pk": dataset.id}
-        )
         assert Version.objects.get_for_object(dataset).first().revision.comment == revision_comment.to_json()
         assert dataset.metadata.count() == 1
         assert dataset.metadata.first().title == "Edited title"
@@ -1575,6 +1575,14 @@ class TestDatasetCreateView:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         url = reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+        revision_comment = RevisionComment(
+            source=RevisionSource.VIEW,
+            action="dataset-add",
+            http_method="POST",
+            path=url,
+            args=(),
+            kwargs={"pk": org.id, "subclass_uuid": subclass.pk}
+        )
         form = app.get(url).forms[
             "dataset-form"
         ]
@@ -1593,14 +1601,6 @@ class TestDatasetCreateView:
         assert str(added_dataset.id) in resp.url
         added_dataset = added_datasets.first()
         assert Version.objects.get_for_object(added_dataset).count() == 1
-        revision_comment = RevisionComment(
-            source=RevisionSource.VIEW,
-            action="dataset-add",
-            http_method="POST",
-            path=url,
-            args=(),
-            kwargs={"pk": org.id, "subclass_uuid": subclass.pk}
-        )
         assert Version.objects.get_for_object(added_dataset).first().revision.comment == revision_comment.to_json()
         assert added_dataset.metadata.count() == 1
         assert added_dataset.metadata.first().title == "Added title"
@@ -3055,10 +3055,6 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     dataset = DatasetFactory(organization=user.organization)
     app.set_user(user)
     url = reverse("dataset-change", args=[dataset.pk])
-    form = app.get(url).forms["dataset-form"]
-    form["title"] = "Updated title"
-    form["description"] = "Updated description"
-    resp = form.submit().follow()
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="dataset-change",
@@ -3067,6 +3063,10 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
         args=[],
         kwargs={"pk": dataset.pk}
     )
+    form = app.get(url).forms["dataset-form"]
+    form["title"] = "Updated title"
+    form["description"] = "Updated description"
+    resp = form.submit().follow()
     resp = resp.click(linkid="history-tab")
     assert resp.context["detail_url_name"] == "dataset-detail"
     assert resp.context["history_url_name"] == "dataset-history"

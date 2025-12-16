@@ -71,6 +71,15 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(dataset)
     app.set_user(user)
     form = app.get(dataset.get_absolute_url()).forms["comment-form"]
+    match = resolve(form.action)
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="comment",
+        http_method="POST",
+        path=form.action,
+        args=list(match.args),
+        kwargs=match.kwargs
+    )
     form["is_public"] = True
     form["register_request"] = True
     form["increase_frequency"] = frequency
@@ -92,15 +101,6 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     assert created_request.first().requestassignment_set.first().organization == dataset.organization
     assert created_request.first().periodicity == frequency.title
     assert Version.objects.get_for_object(created_request.first()).count() == 1
-    match = resolve(form.action)
-    revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="comment",
-        http_method="POST",
-        path=form.action,
-        args=list(match.args),
-        kwargs=match.kwargs
-    )
     assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
 
 
@@ -208,6 +208,15 @@ def test_model_comment_with_register_request(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(model)
     app.set_user(user)
     form = app.get(model.get_absolute_url()).forms["comment-form"]
+    match = resolve(form.action)
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="comment",
+        http_method="POST",
+        path=form.action,
+        args=list(match.args),
+        kwargs=match.kwargs
+    )
     form["is_public"] = True
     form["register_request"] = True
     form["body"] = "Test comment"
@@ -225,15 +234,6 @@ def test_model_comment_with_register_request(app: DjangoTestApp):
     assert created_request.first().title == model.title
     assert created_request.first().description == created_comment.first().body
     assert Version.objects.get_for_object(created_request.first()).count() == 1
-    match = resolve(form.action)
-    revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="comment",
-        http_method="POST",
-        path=form.action,
-        args=list(match.args),
-        kwargs=match.kwargs
-    )
     assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
 
 
@@ -266,6 +266,15 @@ def test_property_comment_with_register_request(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(prop)
     app.set_user(user)
     form = app.get(prop.get_absolute_url()).forms["comment-form"]
+    match = resolve(form.action)
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="comment",
+        http_method="POST",
+        path=form.action,
+        args=list(match.args),
+        kwargs=match.kwargs
+    )
     form["is_public"] = True
     form["register_request"] = True
     form["body"] = "Test comment"
@@ -283,15 +292,6 @@ def test_property_comment_with_register_request(app: DjangoTestApp):
     assert created_request.first().title == prop.title
     assert created_request.first().description == created_comment.first().body
     assert Version.objects.get_for_object(created_request.first()).count() == 1
-    match = resolve(form.action)
-    revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="comment",
-        http_method="POST",
-        path=form.action,
-        args=list(match.args),
-        kwargs=match.kwargs
-    )
     assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
 
 
@@ -331,6 +331,15 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         form = app.get(
             reverse("object-data", args=[dataset.pk, model.name, "c7d66fa2-a880-443d-8ab5-2ab7f9c79886"])
         ).forms["comment-form"]
+        match = resolve(form.action)
+        revision_comment = RevisionComment(
+            source=RevisionSource.VIEW,
+            action="external-comment",
+            http_method="POST",
+            path=form.action,
+            args=list(match.args),
+            kwargs=match.kwargs
+        )
         form["is_public"] = True
         form["register_request"] = True
         form["body"] = "Test comment"
@@ -350,15 +359,6 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         assert created_request.first().title == "c7d66fa2-a880-443d-8ab5-2ab7f9c79886"
         assert created_request.first().description == created_comment.first().body
         assert Version.objects.get_for_object(created_request.first()).count() == 1
-        match = resolve(form.action)
-        revision_comment = RevisionComment(
-            source=RevisionSource.VIEW,
-            action="external-comment",
-            http_method="POST",
-            path=form.action,
-            args=list(match.args),
-            kwargs=match.kwargs
-        )
         assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
 
 

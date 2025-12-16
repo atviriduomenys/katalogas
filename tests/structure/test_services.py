@@ -1674,6 +1674,45 @@ def test_structure_export__prefixes(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_structure_export__soap_parameters(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        '2,,get_data,,,,soap,,http://www.example.com,,,,,,,,,,\n'
+        '3,,,,,,param,action_type,input/ActionType,input(),,,,,,,,,\n'
+        '4,,,,Model,,,,,,,,,,open,,,,\n'
+        '5,,,,,test_property,,,,,,,,,,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    assert DatasetDistribution.objects.first()
+    
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '2,,get_data,,,,soap,,http://www.example.com,,,,,,,,,,,get_data,\r\n'
+        '4,,,,Model,,,,,,,,,,develop,,open,,,,\r\n'
+        '5,,,,,test_property,,,,,,,,,develop,,,,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+    )
+
+
+@pytest.mark.django_db
 def test_structure_export__models_and_props(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)

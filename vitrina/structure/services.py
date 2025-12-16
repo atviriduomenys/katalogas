@@ -1051,7 +1051,6 @@ def _has_soap_params_as_dataset_params(dataset: Dataset) -> bool:
         return False
 
     distributions = dataset.datasetdistribution_set.prefetch_related("metadata").all()
-
     if not distributions.exists():
         return False
 

@@ -1036,8 +1036,42 @@ def _dataset_to_tabular(dataset: Dataset, separator: bool = False):
         )
     yield from _prefixes_to_tabular(dataset, separator=separator)
     yield from _enums_to_tabular(dataset, separator=separator)
-    yield from _params_to_tabular(dataset, separator=separator)
+    if not _has_soap_params_as_dataset_params(dataset):
+        yield from _params_to_tabular(dataset, separator=separator)
     yield from _models_to_tabular(dataset, separator=separator)
+
+
+def _has_soap_params_as_dataset_params(dataset: Dataset) -> bool:
+    """
+    Check if a dataset has SOAP parameters defined at the dataset level rather than at the distribution level.
+    """
+    ct = ContentType.objects.get_for_model(dataset)
+    params = Param.objects.filter(content_type=ct, object_id=dataset.pk)
+    if not params.exists():
+        return False
+
+    distributions = dataset.datasetdistribution_set.prefetch_related("metadata").all()
+
+    if not distributions.exists():
+        return False
+
+    soap_distribution_ids = [
+        distribution.pk
+        for distribution in distributions
+        if distribution.metadata.exists() and distribution.metadata.first().type == "soap"
+    ]
+
+    if not soap_distribution_ids:
+        return False
+
+    content_type = ContentType.objects.get_for_model(DatasetDistribution)
+    distributions_with_params = set(
+        Param.objects.filter(content_type=content_type, object_id__in=soap_distribution_ids).values_list(
+            "object_id", flat=True
+        )
+    )
+
+    return True if not distributions_with_params else False
 
 
 def _enums_to_tabular(obj: models.Model, separator: bool = False):
@@ -1071,7 +1105,7 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False):
         yield to_row(DATASET, {})
 
 
-def _params_to_tabular(obj: models.Model, separator: bool = False):
+def _params_to_tabular(obj: models.Model | Dataset, separator: bool = False):
     ct = ContentType.objects.get_for_model(obj)
     params = Param.objects.filter(content_type=ct, object_id=obj.pk)
 

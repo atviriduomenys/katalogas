@@ -12,7 +12,7 @@ class ApiConfig(AppConfig):
     name = "vitrina"
     label = "vitrina"
 
-    def ready(self):
+    def ready(self) -> None:
         super().ready()
         eligable_models = get_all_models(app_prefix="vitrina")
         self._validate_not_versioned_patterns(eligable_models)
@@ -22,11 +22,8 @@ class ApiConfig(AppConfig):
     def _register_models_for_reversion(self, versioned_models: set[type[models.Model]]) -> None:
         try:
             for model in versioned_models:
-                try:
+                if not reversion.is_registered(model):
                     reversion.register(model)
-                except reversion.RegistrationError:
-                    # Already registered
-                    pass
 
         except (OperationalError, ProgrammingError):
             pass

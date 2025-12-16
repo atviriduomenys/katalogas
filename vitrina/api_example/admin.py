@@ -4,5 +4,5 @@ from vitrina.admin import RevisionCommentVersionAdmin
 
 
 @admin.register(ApiExample)
-class ApiExampleAmin(RevisionCommentVersionAdmin):
+class ApiExampleAdmin(RevisionCommentVersionAdmin):
     pass

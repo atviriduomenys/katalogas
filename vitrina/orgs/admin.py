@@ -70,7 +70,7 @@ class WhitelistedCodeNameInline(admin.TabularInline):
         return request.user.is_staff or request.user.is_superuser
 
 
-class OrganizationAdmin(TreeAdmin, RevisionCommentVersionAdmin):
+class OrganizationAdmin(RevisionCommentVersionAdmin, TreeAdmin):
     form = movenodeform_factory(Organization)
     list_display = [
         "title",

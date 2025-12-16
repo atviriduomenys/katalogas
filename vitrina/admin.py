@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 from django.contrib import admin
 from django.contrib.admin.models import LogEntry
@@ -20,22 +20,22 @@ class VersionInline(admin.TabularInline):
 
     fields = (
         "version_data",
-        "col_content_type",
-        "col_object_id",
-        "col_object_repr",
+        "column_content_type",
+        "column_object_id",
+        "column_object_repr",
     )
     readonly_fields = fields
 
-    def has_add_permission(self, request: HttpRequest, obj: Optional[Revision] = None) -> bool:
+    def has_add_permission(self, request: HttpRequest, obj: Revision | None = None) -> bool:
         return False
 
-    def has_change_permission(self, request: HttpRequest, obj: Optional[Revision] = None) -> bool:
+    def has_change_permission(self, request: HttpRequest, obj: Revision | None = None) -> bool:
         return False
 
     @admin.display(description="Versijos duomenys")
     def version_data(self, obj: Version) -> str:
         data = obj.field_dict
-        pretty = json.dumps(data, indent=2, ensure_ascii=False, default=str)
+        data_json = json.dumps(data, indent=2, ensure_ascii=False, default=str)
 
         element_id = f"snapshot-{obj.pk}"
 
@@ -58,15 +58,15 @@ class VersionInline(admin.TabularInline):
             ),
             element_id,
             element_id,
-            escape(pretty),
+            escape(data_json),
         )
 
     @admin.display(description="Modelis")
-    def col_content_type(self, obj: Version) -> Any:
+    def column_content_type(self, obj: Version) -> Any:
         return obj.content_type
 
     @admin.display(description="Objekto ID")
-    def col_object_id(self, obj: Version) -> str:
+    def column_object_id(self, obj: Version) -> str:
         try:
             url = reverse(
                 f"admin:{obj.content_type.app_label}_{obj.content_type.model}_change",
@@ -78,7 +78,7 @@ class VersionInline(admin.TabularInline):
         return format_html('<a href="{}">{}</a>', url, obj.object_id)
 
     @admin.display(description="Objektas")
-    def col_object_repr(self, obj: Version) -> str:
+    def column_object_repr(self, obj: Version) -> str:
         return obj.object_repr
 
 
@@ -92,10 +92,10 @@ class RevisionAdmin(admin.ModelAdmin):
     def has_add_permission(self, request: HttpRequest) -> bool:
         return False
 
-    def has_change_permission(self, request: HttpRequest, obj: Optional[Revision] = None) -> bool:
+    def has_change_permission(self, request: HttpRequest, obj: Revision | None = None) -> bool:
         return False
 
-    def has_delete_permission(self, request: HttpRequest, obj: Optional[Revision] = None) -> bool:
+    def has_delete_permission(self, request: HttpRequest, obj: Revision | None = None) -> bool:
         return False
 
     def get_actions(self, request: HttpRequest) -> Dict[str, Any]:

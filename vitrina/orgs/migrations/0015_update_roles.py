@@ -18,7 +18,7 @@ def migrate_roles_forward(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_orgs', '0013_remove_representative_information_system_representative_and_more'),
+        ('vitrina_orgs', '0014_remove_representative_information_system_representative_and_more'),
     ]
 
     operations = [

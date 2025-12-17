@@ -266,13 +266,12 @@ MODEL_VISIBILITY_ACL = {
     (Model, Metadata.UNDEFINED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.MANAGER,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
-        Role.INFORMATION_SYSTEM_MANAGER,
     },
     (Model, Metadata.VISIBILITY_PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,

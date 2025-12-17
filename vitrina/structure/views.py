@@ -3588,7 +3588,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                         )
                         raise ValidationError(error_msg)
 
-                    deeper_new_related_object.object = already_created_fields[deeper_new_related_object.object]
+                    if type(deeper_new_related_object.object) is not Dataset:
+                        deeper_new_related_object.object = already_created_fields[deeper_new_related_object.object]
+
                 deeper_new_related_object.save()
 
                 already_created_fields[deeper_old_related_object] = deeper_new_related_object
@@ -3608,8 +3610,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def _should_raise_unpublished_field_error_for_enum_param(
         self, enum_param_obj: Union[Enum, Param], already_created_fields: dict
     ) -> bool:
-        if not hasattr(enum_param_obj, "content_type_id"):
-            return False
 
         related_model = type(enum_param_obj.object)
         return (

@@ -40,15 +40,15 @@ def home(request):
     ]
 
     coordinator_count = (
-        User.objects.filter(representative__role__in=COORDINATOR_ROLES).distinct("representative__user").count()
+        User.objects.select_related("representative").filter(representative__role__in=COORDINATOR_ROLES).distinct("representative__user").count()
     )
     manager_count = (
-        User.objects.filter(representative__role__in=MANAGER_ROLES)
+        User.objects.select_related("representative").filter(representative__role__in=MANAGER_ROLES)
         .exclude(representative__role__in=COORDINATOR_ROLES)
         .distinct("representative__user")
         .count()
     )
-    user_count = User.objects.exclude(representative__role__in=COORDINATOR_ROLES + MANAGER_ROLES).distinct().count()
+    user_count = User.objects.exclude(representative__role__in=COORDINATOR_ROLES + MANAGER_ROLES).count()
 
     return render(
         request,

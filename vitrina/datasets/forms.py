@@ -228,12 +228,6 @@ class BaseResourceForm(TranslatableModelForm):
             if default_frequency := Frequency.objects.filter(is_default=True).first():
                 self.initial["frequency"] = default_frequency
 
-        if request.user.is_open_data_representative_for(organization):
-            self.fields["access_rights"].choices = [
-                (Dataset.PUBLIC, _("Vieši")),
-                (Dataset.RESTRICTED, _("Apriboti")),
-            ]
-
         if request.user and request.user.organization:
             """
             Publishers:

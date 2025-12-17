@@ -3736,7 +3736,7 @@ class DatasetChildResourceListView(
         descendants: list[int] = self.object.get_descendants().values_list("pk", flat=True)
         return super(DatasetChildResourceListView, self).get_queryset().filter(django_id__in=list(descendants))
 
-    def has_permission(self):
+    def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, get_object_or_404(Dataset, pk=self.parent_dataset_id))
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:

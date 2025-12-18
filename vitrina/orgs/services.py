@@ -311,14 +311,14 @@ MODEL_VISIBILITY_ACL = {
         Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
         Role.OPEN_DATA_COORDINATOR,
-        Role.OPEN_DATA_MANAGER
+        Role.OPEN_DATA_MANAGER,
     },
     (Model, Metadata.PACKAGE, Action.STRUCTURE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
         Role.OPEN_DATA_COORDINATOR,
-        Role.OPEN_DATA_MANAGER
+        Role.OPEN_DATA_MANAGER,
     },
     (Model, Metadata.PROTECTED, Action.STRUCTURE): {
         Role.GLOBAL_MANAGER,

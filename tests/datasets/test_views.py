@@ -469,33 +469,59 @@ class TestDatasetListView:
         resp = app.get(reverse("dataset-list"))
         assert resp.html.find(id="org-dataset-url")
 
-    def test_manager_dataset_url_is_shown_for_manager(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+    def test_manager_dataset_url_is_shown_for_managers(self, app: DjangoTestApp, role):
         org = OrganizationFactory()
         DatasetFactory(organization=org)
+
         ct = ContentType.objects.get_for_model(Dataset)
         rep = RepresentativeFactory(
             content_type=ct,
             object_id=org.pk,
-            role=Representative.OPEN_DATA_MANAGER,
+            role=role,
         )
+
         app.set_user(rep.user)
         resp = app.get(reverse("dataset-list"))
+
         assert resp.html.find(id="manager-dataset-url")
 
-    def test_org_datasets_are_shown_for_coordinator(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_org_datasets_are_shown_for_coordinator(self, app: DjangoTestApp, role):
         org = OrganizationFactory()
         dataset = DatasetFactory(title="testt", organization=org)
-        user = User.objects.create_user(email="test@test.com", password="test123", organization=org)
+
+        user = User.objects.create_user(
+            email="test@test.com",
+            password="test123",
+            organization=org,
+        )
+
         RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=org.pk,
-            role=Representative.OPEN_DATA_COORDINATOR,
+            role=role,
             user=user,
         )
+
         app.set_user(user)
+
         resp = app.get(reverse("dataset-list"))
         resp = resp.click(linkid="org-dataset-url")
-        assert [int(obj.pk) for obj in resp.context["object_list"]] == [dataset.pk]
+
+        assert list(resp.context["object_list"]) == [dataset]
 
     def test_manager_datasets_are_shown_for_manager(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -1343,7 +1369,7 @@ class TestDatasetUpdateView:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
-            role=Representative.OPEN_DATA_MANAGER,
+            role=Representative.RESOURCE_MANAGER,
         )
 
         app.set_user(user)
@@ -2336,25 +2362,6 @@ class TestDatasetMembers:
         assert rep.has_api_access is True
         assert rep.apikey_set.count() == 1
 
-    @pytest.mark.parametrize("can_write", [True, False])
-    def test_create_dataset_representative_with_can_write_flag(self, app: DjangoTestApp, can_write: bool) -> None:
-        dataset = DatasetFactory()
-        coordinator = RepresentativeFactory(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id=dataset.pk,
-            role=Representative.OPEN_DATA_COORDINATOR,
-        )
-        app.set_user(coordinator.user)
-
-        form = app.get(reverse("dataset-representative-create", kwargs={"pk": dataset.pk})).forms["representative-form"]
-        form["email"] = "test@example.com"
-        form["role"] = Representative.OPEN_DATA_MANAGER
-        form["can_write"] = can_write
-
-        response = form.submit()
-        assert response.headers["location"] == reverse("dataset-members", kwargs={"pk": dataset.pk})
-        representative = Representative.objects.get(email="test@example.com")
-        assert representative.can_write == can_write
 
     def test_dataset_members_update_member(self, app: DjangoTestApp):
         dataset = DatasetFactory()
@@ -2413,27 +2420,6 @@ class TestDatasetMembers:
         assert coordinator.has_api_access is True
         assert coordinator.apikey_set.count() == 1
 
-    @pytest.mark.parametrize("can_write", [True, False])
-    def test_update_dataset_representative_can_write_flag(self, app: DjangoTestApp, can_write: bool) -> None:
-        dataset = DatasetFactory()
-
-        representative = RepresentativeFactory(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id=dataset.pk,
-            role=Representative.OPEN_DATA_COORDINATOR,
-            can_write=can_write,
-        )
-        app.set_user(representative.user)
-
-        form = app.get(
-            reverse("dataset-representative-update", kwargs={"pk": dataset.pk, "representative_id": representative.pk}),
-        ).forms["representative-form"]
-        form["can_write"] = not can_write
-
-        response = form.submit()
-        assert response.headers["location"] == reverse("dataset-members", kwargs={"pk": dataset.pk})
-        representative.refresh_from_db()
-        assert representative.can_write == (not can_write)
 
     def test_dataset_members_delete_member(self, app: DjangoTestApp):
         dataset = DatasetFactory()
@@ -2525,7 +2511,7 @@ class TestDatasetMembers:
         resp = resp.click(linkid="add-member-btn")
         form = resp.forms["representative-form"]
         form["email"] = "new@gmail.com"
-        form["role"] = "manager"
+        form["role"] = "open_data_manager"
         form["phone"] = "123456"
         form.submit()
 
@@ -2827,6 +2813,7 @@ class TestDatasetPlans:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
+            role=Representative.RESOURCE_MANAGER
         )
         app.set_user(user)
         response = app.get(reverse("dataset-plans", args=[dataset.pk]))
@@ -2887,6 +2874,7 @@ class TestDatasetProject:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
+            role=Representative.RESOURCE_MANAGER
         )
         app.set_user(user)
         response = app.get(reverse("dataset-projects", args=[dataset.pk]))
@@ -3352,6 +3340,7 @@ def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=Representative.RESOURCE_MANAGERtest_subscribe_with_non_public_dataset_with_access
     )
     app.set_user(user)
     response = app.get(reverse("dataset-requests", args=[dataset.pk]))

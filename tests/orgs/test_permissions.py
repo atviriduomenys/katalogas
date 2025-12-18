@@ -15,7 +15,7 @@ class TestCanViewOrganizationAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization)
@@ -43,7 +43,7 @@ class TestCanViewOrganizationAgreements:
         RepresentativeFactory(
             user=user,
             organization=other_organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=other_organization.id,
             content_type=ContentType.objects.get_for_model(other_organization)
@@ -75,7 +75,7 @@ class TestCanViewOrganizationAgreement:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -92,7 +92,7 @@ class TestCanViewOrganizationAgreement:
         RepresentativeFactory(
             user=user,
             organization=assigner,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=assigner.id,
             content_type=ContentType.objects.get_for_model(assigner),
@@ -110,7 +110,7 @@ class TestCanViewOrganizationAgreement:
         RepresentativeFactory(
             user=user,
             organization=other_organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=other_organization.id,
             content_type=ContentType.objects.get_for_model(other_organization),

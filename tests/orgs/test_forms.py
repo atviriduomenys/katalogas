@@ -45,7 +45,7 @@ class TestRepresentativeCreateForm:
         form = RepresentativeCreateForm(
             data={
                 "email": "example@example.com",
-                "role": Representative.MANAGER,
+                "role": Representative.OPEN_DATA_MANAGER,
                 "phone": "",
                 "has_api_access": False,
                 "regenerate_api_key": False,
@@ -69,7 +69,7 @@ class TestRepresentativeCreateForm:
         form = RepresentativeCreateForm(
             data={
                 "email": "example@example.com",
-                "role": Representative.MANAGER,
+                "role": Representative.OPEN_DATA_MANAGER,
                 "phone": "",
                 "has_api_access": False,
                 "regenerate_api_key": False,
@@ -94,7 +94,7 @@ class TestRepresentativeUpdateForm:
         representative = RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
             can_make_agreements=False,
             content_type=content_type_user,
             object_id=user.pk,
@@ -127,7 +127,7 @@ class TestRepresentativeUpdateForm:
         representative = RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
             can_make_agreements=False,
             content_type=content_type_user,
             object_id=user.pk,

@@ -98,8 +98,7 @@ class User(AbstractUser):
             return Representative.OPEN_DATA_COORDINATOR
         if self.is_manager:
             return Representative.RESOURCE_MANAGER
-        if self.is_open_data_manager:
-            return Representative.OPEN_DATA_MANAGER
+        return Representative.OPEN_DATA_MANAGER
 
     @property
     def is_manager(self) -> bool:
@@ -145,8 +144,8 @@ class User(AbstractUser):
     def can_see_manager_dataset_list_url(self):
         from vitrina.datasets.models import Dataset
 
-        if self.is_manager:
-            org_ids = [rep.object_id for rep in self.representative_set.filter(role=Representative.RESOURCE_MANAGER)]
+        if self.is_manager or self.is_open_data_manager:
+            org_ids = [rep.object_id for rep in self.representative_set.filter(role__in=Representative.MANAGER_ROLES)]
             for org_id in org_ids:
                 if Dataset.objects.filter(organization=org_id):
                     return True

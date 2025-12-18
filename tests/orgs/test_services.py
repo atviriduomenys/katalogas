@@ -85,7 +85,7 @@ def test_organization_edit_permission_open_data_representative():
 def test_organization_edit_permission_coordinator():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.COORDINATOR)
+    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.RESOURCE_COORDINATOR)
     res = has_perm(coordinator.user, Action.UPDATE, organization)
     assert res is True
 
@@ -94,7 +94,7 @@ def test_organization_edit_permission_coordinator():
 def test_dataset_create_permission_organization_manager():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.MANAGER)
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.RESOURCE_MANAGER)
     res = has_perm(manager.user, Action.CREATE, Dataset, organization)
     assert res is True
 
@@ -103,7 +103,7 @@ def test_dataset_create_permission_organization_manager():
 def test_dataset_create_permission_organization_coordinator():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.COORDINATOR)
+    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.RESOURCE_COORDINATOR)
     res = has_perm(coordinator.user, Action.CREATE, Dataset, organization)
     assert res is True
 

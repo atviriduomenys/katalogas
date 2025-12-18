@@ -3042,7 +3042,7 @@ def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestA
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.OPEN_DATA_MANAGER
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('property-structure', args=[dataset.pk, model.name, prop.name]))
@@ -3108,7 +3108,7 @@ def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.OPEN_DATA_MANAGER
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('model-data', args=[dataset.pk, model.name]))
@@ -3174,7 +3174,7 @@ def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.OPEN_DATA_MANAGER
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('object-data', args=[dataset.pk, model.name, "123456789"]))
@@ -3240,7 +3240,7 @@ def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.OPEN_DATA_MANAGER
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(user)
     response = app.get(reverse('getall-api', args=[dataset.pk, model.name]))
@@ -3371,7 +3371,7 @@ def test_visibility_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_model_visibility_with_manager_access(app: DjangoTestApp):
+def test_model_visibility_with_resource_manager_access(app: DjangoTestApp):
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
@@ -3403,7 +3403,7 @@ def test_model_visibility_with_manager_access(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=structure.dataset.pk,
-        role=Representative.OPEN_DATA_MANAGER
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(representative.user)
 
@@ -3532,7 +3532,6 @@ def test_model_visibility_with_open_data_representative_access(app: DjangoTestAp
         content_type=ContentType.objects.get_for_model(structure.dataset.organization),
         object_id=structure.dataset.organization.pk,
         role=Representative.OPEN_DATA_MANAGER,
-        #open_data_representative=True
     )
     app.set_user(representative.user)
 

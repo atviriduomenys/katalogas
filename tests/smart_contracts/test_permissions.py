@@ -288,7 +288,13 @@ class TestCanViewAgreements:
         assert can_view_agreement(user, agreement)
 
     @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
-    def test_user_in_different_organization(self, app: DjangoTestApp, is_acting_user_assignee: bool):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ])
+    def test_user_in_different_organization(self, app: DjangoTestApp, is_acting_user_assignee: bool, role: Representative):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
         different_organization = OrganizationFactory()
@@ -298,7 +304,7 @@ class TestCanViewAgreements:
         RepresentativeFactory(
             user=user,
             organization=different_organization,
-            role=Representative.COORDINATOR,
+            role=role,
             object_id=different_organization.id,
             content_type=ContentType.objects.get_for_model(different_organization),
         )

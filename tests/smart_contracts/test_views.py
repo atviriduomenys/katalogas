@@ -2050,7 +2050,7 @@ class TestAgreementFileDownload:
         RepresentativeFactory(
             user=user,
             organization=assignee if is_acting_user_assignee else assigner,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             object_id=assignee.id if is_acting_user_assignee else assigner.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )
@@ -2076,7 +2076,7 @@ class TestAgreementFileDownload:
         RepresentativeFactory(
             user=user,
             organization=assignee,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             object_id=assignee.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )
@@ -2105,7 +2105,7 @@ class TestAgreementFileDownload:
         RepresentativeFactory(
             user=user,
             organization=assignee,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             object_id=assignee.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )
@@ -2138,7 +2138,7 @@ class TestAgreementFileDownload:
         RepresentativeFactory(
             user=user,
             organization=assignee,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             object_id=assignee.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )

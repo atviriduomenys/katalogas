@@ -881,7 +881,7 @@ def test_geoportal_import__existing_publisher(app: DjangoTestApp):
         company_code="305997589"
     )
     coordinator = RepresentativeFactory(
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk
     )
@@ -2611,7 +2611,7 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
 def test_geoportal_import__subscription_create(app: DjangoTestApp):
     organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ")
     coordinator = RepresentativeFactory(
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk
     )
@@ -2678,7 +2678,7 @@ def test_geoportal_import__subscription_create(app: DjangoTestApp):
 def test_geoportal_import__subscription_update(app: DjangoTestApp):
     organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ")
     coordinator = RepresentativeFactory(
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk
     )
@@ -2746,7 +2746,7 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp):
 def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp):
     organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ")
     coordinator = RepresentativeFactory(
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk
     )

@@ -23,7 +23,7 @@ class TestCanCreateAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -37,7 +37,7 @@ class TestCanCreateAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -51,7 +51,7 @@ class TestCanCreateAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -76,7 +76,7 @@ class TestCanSubmitAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -93,7 +93,7 @@ class TestCanSubmitAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -121,7 +121,7 @@ class TestCanApproveAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -138,7 +138,7 @@ class TestCanApproveAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -177,7 +177,7 @@ class TestCanFormAgreements:
         RepresentativeFactory(
             user=user,
             organization=assignee if is_acting_user_assignee else assigner,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=assignee.id if is_acting_user_assignee else assigner.id,
             content_type=ContentType.objects.get_for_model(assignee),
@@ -205,7 +205,7 @@ class TestCanFormAgreements:
         RepresentativeFactory(
             user=user,
             organization=assignee if is_acting_user_assignee else assigner,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=assignee.id if is_acting_user_assignee else assigner.id,
             content_type=ContentType.objects.get_for_model(assignee),
@@ -274,7 +274,7 @@ class TestCanViewAgreements:
         RepresentativeFactory(
             user=user,
             organization=assignee if is_acting_user_assignee else assigner,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             object_id=assignee.id if is_acting_user_assignee else assigner.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )

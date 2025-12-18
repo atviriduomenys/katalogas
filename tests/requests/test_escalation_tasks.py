@@ -122,11 +122,11 @@ class TestGetDatasetEditorsEmails:
         dataset_ct = ContentType.objects.get_for_model(dataset)
 
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor1@example.com", role=Representative.MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor1@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor2@example.com", role=Representative.MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor2@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         emails = get_dataset_managers(request_obj)
@@ -139,11 +139,11 @@ class TestGetDatasetEditorsEmails:
         dataset_ct = ContentType.objects.get_for_model(dataset)
 
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="coord@example.com", role=Representative.COORDINATOR
+            content_type=dataset_ct, object_id=dataset.pk, email="coord@example.com", role=Representative.OPEN_DATA_COORDINATOR
         )
 
         emails = get_dataset_managers(request_obj)
@@ -159,7 +159,7 @@ class TestGetDatasetEditorsEmails:
             content_type=dataset_ct,
             object_id=dataset.pk,
             email="deleted@example.com",
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
             deleted=True,
         )
 
@@ -174,11 +174,11 @@ class TestGetOrganizationCoordinatorsEmails:
         org_ct = ContentType.objects.get_for_model(organization)
 
         RepresentativeFactory(
-            content_type=org_ct, object_id=organization.pk, email="coord1@example.com", role=Representative.COORDINATOR
+            content_type=org_ct, object_id=organization.pk, email="coord1@example.com", role=Representative.OPEN_DATA_COORDINATOR
         )
 
         RepresentativeFactory(
-            content_type=org_ct, object_id=organization.pk, email="coord2@example.com", role=Representative.COORDINATOR
+            content_type=org_ct, object_id=organization.pk, email="coord2@example.com", role=Representative.OPEN_DATA_COORDINATOR
         )
 
         emails = get_organization_coordinators_emails(request_obj)
@@ -191,11 +191,11 @@ class TestGetOrganizationCoordinatorsEmails:
         org_ct = ContentType.objects.get_for_model(organization)
 
         RepresentativeFactory(
-            content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.COORDINATOR
+            content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.OPEN_DATA_COORDINATOR
         )
 
         RepresentativeFactory(
-            content_type=org_ct, object_id=organization.pk, email="manager@example.com", role=Representative.MANAGER
+            content_type=org_ct, object_id=organization.pk, email="manager@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         emails = get_organization_coordinators_emails(request_obj)
@@ -228,7 +228,7 @@ class TestGetRecipientsForLevel:
         dataset_ct = ContentType.objects.get_for_model(dataset)
 
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         escalation.escalation_level = RequestEscalation.LEVEL_MANAGER
@@ -241,7 +241,7 @@ class TestGetRecipientsForLevel:
         org_ct = ContentType.objects.get_for_model(organization)
 
         RepresentativeFactory(
-            content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.COORDINATOR
+            content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.OPEN_DATA_COORDINATOR
         )
 
         escalation.escalation_level = RequestEscalation.LEVEL_COORDINATOR
@@ -266,7 +266,7 @@ class TestEscalateToNextLevel:
         org_ct = ContentType.objects.get_for_model(organization)
 
         RepresentativeFactory(
-            content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.COORDINATOR
+            content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.OPEN_DATA_COORDINATOR
         )
 
         escalation.escalation_level = RequestEscalation.LEVEL_MANAGER
@@ -355,7 +355,7 @@ class TestEscalationPipelineFunctional:
     ):
         dataset_ct = ContentType.objects.get_for_model(dataset)
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         request_obj = RequestFactory(dataset=dataset)
@@ -402,7 +402,7 @@ class TestEscalationPipelineFunctional:
 
         # Level 0: Editors
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         # Level 1: Coordinators
@@ -410,7 +410,7 @@ class TestEscalationPipelineFunctional:
             content_type=org_ct,
             object_id=organization.pk,
             email="coordinator@example.com",
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         # Level 2: Organization (has email from fixture)
@@ -470,7 +470,7 @@ class TestEscalationPipelineFunctional:
             object_id=dataset.pk,
             user=editor_user,
             email="editor@example.com",
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
         )
 
         # Day 0: Create request
@@ -519,7 +519,7 @@ class TestEscalationPipelineFunctional:
         org_ct = ContentType.objects.get_for_model(organization)
 
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         coordinator_user = UserFactory(email="coordinator@example.com")
@@ -528,7 +528,7 @@ class TestEscalationPipelineFunctional:
             object_id=organization.pk,
             user=coordinator_user,
             email="coordinator@example.com",
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         # Day 0: Create request
@@ -583,14 +583,14 @@ class TestEscalationPipelineFunctional:
         org_ct = ContentType.objects.get_for_model(organization)
 
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         RepresentativeFactory(
             content_type=org_ct,
             object_id=organization.pk,
             email="coordinator@example.com",
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         # Day 0: Create request
@@ -633,7 +633,7 @@ class TestEscalationPipelineFunctional:
         """
         dataset_ct = ContentType.objects.get_for_model(dataset)
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor@example.com", role=Representative.OPEN_DATA_MANAGER
         )
 
         # Day 0: Create request

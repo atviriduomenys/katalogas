@@ -97,7 +97,6 @@ class TestDatasetViewPermissions:
             content_type=ContentType.objects.get_for_model(self.main_organization),
             object_id=self.main_organization.pk,
             user=self.open_data_rep,
-            open_data_representative=True,
         )
 
     @pytest.mark.parametrize(

@@ -561,7 +561,7 @@ def test_view_reply_to_comment_not_public_with_resource_permission(app: DjangoTe
     comment = CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False)
     CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False, parent=comment)
     representative = RepresentativeFactory(
-        content_type=ct, object_id=dataset.pk, user=UserFactory(organization=organization), role=Representative.MANAGER
+        content_type=ct, object_id=dataset.pk, user=UserFactory(organization=organization), role=Representative.RESOURCE_MANAGER
     )
     app.set_user(representative.user)
     resp = app.get(dataset.get_absolute_url())

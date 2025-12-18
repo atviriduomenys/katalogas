@@ -147,7 +147,6 @@ class ResourceSubclassForm:
             object_id=organization.pk,
             user=user,
             role=Representative.MANAGER,
-            open_data_representative = True
         )
         app.set_user(user)
 
@@ -173,7 +172,6 @@ class ResourceSubclassForm:
             object_id=organization.pk,
             user=user,
             role=Representative.MANAGER,
-            open_data_representative = True
         )
         app.set_user(user)
 

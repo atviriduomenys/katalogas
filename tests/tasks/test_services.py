@@ -48,13 +48,13 @@ def test_get_active_tasks_with_task_organization_supervisor_after_5_days():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         user=parent_organization_user
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization),
         object_id=child_organization.pk,
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         user=child_organization_user
     )
 
@@ -88,13 +88,13 @@ def test_get_active_tasks_with_task_organization_supervisor_after_5_work_days():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         user=parent_organization_user
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization),
         object_id=child_organization.pk,
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         user=child_organization_user
     )
 
@@ -127,13 +127,13 @@ def test_get_active_tasks_with_staff_after_10_days():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         user=parent_organization_user
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization1),
         object_id=child_organization1.pk,
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         user=child_organization_user
     )
 
@@ -183,13 +183,13 @@ def test_get_active_tasks_with_staff_after_10_work_days():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         user=parent_organization_user
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization1),
         object_id=child_organization1.pk,
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         user=child_organization_user
     )
 

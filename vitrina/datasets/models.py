@@ -840,8 +840,6 @@ class Dataset(Resource):
                 )
                 | Q(organization_id__in=organization_ids),
                 user__isnull=False,
-                information_system_representative=False,
-                open_data_representative=False,
             )
             .values_list("user_id", flat=True)
             .distinct()

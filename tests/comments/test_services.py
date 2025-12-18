@@ -45,7 +45,7 @@ def test_get_comment_form_class_for_request_with_manager_perm():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(resource.organization),
         object_id=resource.organization.pk,
-        role=Representative.OPEN_DATA_MANAGER,
+        role=Representative.RESOURCE_MANAGER,
         user=user,
     )
     res = get_comment_form_class(request, user)
@@ -61,7 +61,7 @@ def test_get_comment_form_class_for_request_with_coordinator_perm():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(resource.organization),
         object_id=resource.organization.pk,
-        role=Representative.COORDINATOR,
+        role=Representative.OPEN_DATA_COORDINATOR,
         user=user,
     )
     res = get_comment_form_class(request, user)

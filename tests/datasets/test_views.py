@@ -296,7 +296,7 @@ class TestDatasetDetailView:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
-            role=Representative.MANAGER,
+            role=Representative.RESOURCE_MANAGER,
         )
 
         app.set_user(user)
@@ -455,7 +455,7 @@ class TestDatasetListView:
         rep = RepresentativeFactory(
             content_type=ct,
             object_id=org.pk,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
         )
         app.set_user(rep.user)
         resp = app.get(reverse("dataset-list"))
@@ -476,7 +476,7 @@ class TestDatasetListView:
         rep = RepresentativeFactory(
             content_type=ct,
             object_id=org.pk,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
         )
         app.set_user(rep.user)
         resp = app.get(reverse("dataset-list"))
@@ -489,7 +489,7 @@ class TestDatasetListView:
         RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=org.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             user=user,
         )
         app.set_user(user)
@@ -504,7 +504,7 @@ class TestDatasetListView:
         rep = RepresentativeFactory(
             content_type=ct,
             object_id=org.pk,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
         )
         app.set_user(rep.user)
         resp = app.get(reverse("dataset-list"))
@@ -518,8 +518,8 @@ class TestDatasetListView:
         dataset2 = DatasetFactory(organization=org2)
         ct = ContentType.objects.get_for_model(Dataset)
         user = User.objects.create_user(email="test@test.com", password="test123")
-        rep = RepresentativeFactory(content_type=ct, object_id=org.pk, role=Representative.MANAGER, user=user)
-        rep2 = RepresentativeFactory(content_type=ct, object_id=org2.pk, role=Representative.MANAGER, user=user)
+        rep = RepresentativeFactory(content_type=ct, object_id=org.pk, role=Representative.OPEN_DATA_MANAGER, user=user)
+        rep2 = RepresentativeFactory(content_type=ct, object_id=org2.pk, role=Representative.OPEN_DATA_MANAGER, user=user)
         app.set_user(user)
         resp = app.get(reverse("dataset-list"))
         resp = resp.click(linkid="manager-dataset-url")
@@ -1343,7 +1343,7 @@ class TestDatasetUpdateView:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
         )
 
         app.set_user(user)
@@ -1845,7 +1845,7 @@ class TestDatasetCreateView:
         RepresentativeFactory(
             user=None,
             organization=publisher_org,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
             object_id=org.pk,
             content_type=ContentType.objects.get_for_model(org),
         )
@@ -1884,7 +1884,7 @@ class TestDatasetCreateView:
         RepresentativeFactory(
             user=None,
             organization=publisher_org,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
             object_id=org.pk,
             content_type=ContentType.objects.get_for_model(org),
         )
@@ -1923,7 +1923,7 @@ class TestDatasetCreateView:
             RepresentativeFactory(
                 user=None,
                 organization=publisher_org,
-                role=Representative.MANAGER,
+                role=Representative.OPEN_DATA_MANAGER,
                 object_id=org_instance.pk,
                 content_type=ContentType.objects.get_for_model(org),
             )
@@ -2155,7 +2155,7 @@ class TestDatasetMembers:
     def test_dataset_members_view_public_by_anyone_authenticated(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(dataset)
-        representative = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.MANAGER)
+        representative = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.OPEN_DATA_MANAGER)
         user = UserFactory()
         app.set_user(user)
         url = reverse(
@@ -2170,7 +2170,7 @@ class TestDatasetMembers:
     def test_dataset_members_cant_view_public_by_anyone_authenticated(self, app: DjangoTestApp):
         dataset = DatasetFactory(is_public=False, access_rights=Dataset.CONFIDENTIAL)
         ct = ContentType.objects.get_for_model(dataset)
-        representative = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.MANAGER)
+        representative = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.OPEN_DATA_MANAGER)
         user = UserFactory()
         app.set_user(user)
         url = reverse(
@@ -2185,7 +2185,7 @@ class TestDatasetMembers:
     def test_dataset_members_view_no_login(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(dataset)
-        RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.MANAGER)
+        RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=Representative.OPEN_DATA_MANAGER)
         user = UserFactory(is_staff=True)
         app.set_user(user)
         response = app.get(reverse("dataset-members", kwargs={"pk": dataset.pk}))
@@ -2196,7 +2196,7 @@ class TestDatasetMembers:
         ct = ContentType.objects.get_for_model(Dataset)
         coordinator_user = UserFactory()
         RepresentativeFactory(
-            content_type=ct, object_id=dataset.pk, role=Representative.COORDINATOR, user=coordinator_user
+            content_type=ct, object_id=dataset.pk, role=Representative.OPEN_DATA_COORDINATOR, user=coordinator_user
         )
         app.set_user(coordinator_user)
         url = reverse("dataset-members", kwargs={"pk": dataset.pk})
@@ -2206,7 +2206,7 @@ class TestDatasetMembers:
 
         form = resp.forms["representative-form"]
         form["email"] = "test@example.com"
-        form["role"] = Representative.MANAGER
+        form["role"] = Representative.OPEN_DATA_MANAGER
         resp = form.submit()
 
         assert resp.headers["location"] == url
@@ -2216,7 +2216,7 @@ class TestDatasetMembers:
             object_id=dataset.id,
             email="test@example.com",
         )
-        assert rep.role == Representative.MANAGER
+        assert rep.role == Representative.OPEN_DATA_MANAGER
         assert rep.user is None
         assert rep.has_api_access is False
         assert rep.apikey_set.count() == 0
@@ -2232,7 +2232,7 @@ class TestDatasetMembers:
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         app.set_user(coordinator.user)
@@ -2243,7 +2243,7 @@ class TestDatasetMembers:
 
         form = resp.forms["representative-form"]
         form["email"] = "test@example.com"
-        form["role"] = Representative.MANAGER
+        form["role"] = Representative.OPEN_DATA_MANAGER
         resp = form.submit()
 
         assert resp.headers["location"] == url
@@ -2255,7 +2255,7 @@ class TestDatasetMembers:
         )
         assert rep.user == user
         assert rep.user.organization == dataset.organization
-        assert rep.role == Representative.MANAGER
+        assert rep.role == Representative.OPEN_DATA_MANAGER
         assert rep.has_api_access is False
         assert rep.apikey_set.count() == 0
 
@@ -2272,7 +2272,7 @@ class TestDatasetMembers:
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         app.set_user(coordinator.user)
@@ -2283,7 +2283,7 @@ class TestDatasetMembers:
 
         form = resp.forms["representative-form"]
         form["email"] = "test@example.com"
-        form["role"] = Representative.MANAGER
+        form["role"] = Representative.OPEN_DATA_MANAGER
         form["subscribe"] = True
         resp = form.submit()
 
@@ -2296,7 +2296,7 @@ class TestDatasetMembers:
         )
         assert rep.user == user
         assert rep.user.organization == dataset.organization
-        assert rep.role == Representative.MANAGER
+        assert rep.role == Representative.OPEN_DATA_MANAGER
         assert rep.has_api_access is False
         assert rep.apikey_set.count() == 0
 
@@ -2314,7 +2314,7 @@ class TestDatasetMembers:
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         app.set_user(coordinator.user)
@@ -2323,7 +2323,7 @@ class TestDatasetMembers:
 
         form = resp.forms["representative-form"]
         form["email"] = "test@example.com"
-        form["role"] = Representative.MANAGER
+        form["role"] = Representative.OPEN_DATA_MANAGER
         form["has_api_access"] = True
         form.submit()
 
@@ -2342,13 +2342,13 @@ class TestDatasetMembers:
         coordinator = RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(Dataset),
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
         app.set_user(coordinator.user)
 
         form = app.get(reverse("dataset-representative-create", kwargs={"pk": dataset.pk})).forms["representative-form"]
         form["email"] = "test@example.com"
-        form["role"] = Representative.MANAGER
+        form["role"] = Representative.OPEN_DATA_MANAGER
         form["can_write"] = can_write
 
         response = form.submit()
@@ -2364,13 +2364,13 @@ class TestDatasetMembers:
         manager = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         app.set_user(coordinator.user)
@@ -2380,13 +2380,13 @@ class TestDatasetMembers:
         resp = resp.click(linkid=f"update-member-{manager.pk}-btn")
 
         form = resp.forms["representative-form"]
-        form["role"] = Representative.MANAGER
+        form["role"] = Representative.OPEN_DATA_MANAGER
         resp = form.submit()
 
         assert resp.headers["location"] == url
 
         manager.refresh_from_db()
-        assert manager.role == Representative.MANAGER
+        assert manager.role == Representative.OPEN_DATA_MANAGER
         assert manager.user.organization == dataset.organization
 
         assert len(mail.outbox) == 0
@@ -2398,7 +2398,7 @@ class TestDatasetMembers:
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         app.set_user(coordinator.user)
@@ -2420,7 +2420,7 @@ class TestDatasetMembers:
         representative = RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(Dataset),
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_write=can_write,
         )
         app.set_user(representative.user)
@@ -2443,13 +2443,13 @@ class TestDatasetMembers:
         manager = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
 
         app.set_user(coordinator.user)
@@ -2482,7 +2482,7 @@ class TestDatasetMembers:
         representative = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
             organization=organization,
         )
 
@@ -2504,7 +2504,7 @@ class TestDatasetMembers:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=None,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
         )
 
         app.set_user(user)
@@ -2518,7 +2518,7 @@ class TestDatasetMembers:
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=ds.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
         app.set_user(coordinator.user)
         resp = app.get(reverse("dataset-members", kwargs={"pk": ds.pk}))
@@ -2539,7 +2539,7 @@ class TestDatasetMembers:
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=ds.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
         app.set_user(coordinator.user)
         resp = app.get(reverse("dataset-members", kwargs={"pk": ds.pk}))
@@ -2575,7 +2575,7 @@ class TestDatasetMembers:
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=ds.pk,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
         )
         app.set_user(coordinator.user)
         resp = app.get(reverse("dataset-members", kwargs={"pk": ds.pk}))

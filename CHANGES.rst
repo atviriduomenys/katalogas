@@ -6,6 +6,17 @@ v 1.12 (unreleased)
 
 
 
+v 1.11.2 (2025-12-18)
+==================
+
+- Add missing 0012 migration for `vitrina_smart_contracts`.
+- Remove `vitrina_datasets` 0037 migration.
+
+v 1.11.1 (2025-12-18)
+==================
+
+- Add reverse function for 0037 migration in `vitrina_datasets`.
+
 v 1.11 (2025-12-16)
 ==================
 

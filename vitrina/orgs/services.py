@@ -265,49 +265,70 @@ _dataset_structure_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_
 MODEL_VISIBILITY_ACL = {
     (Model, Metadata.UNDEFINED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
         Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
         Role.OPEN_DATA_COORDINATOR,
         Role.OPEN_DATA_MANAGER,
+        Role.GLOBAL_RESOURCE_MANAGER,
+        Role.GLOBAL_OPEN_DATA_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
     },
     (Model, Metadata.VISIBILITY_PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
+        Role.GLOBAL_RESOURCE_MANAGER,
+        Role.GLOBAL_OPEN_DATA_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
     },
     (Model, Metadata.PACKAGE, Action.VIEW): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
+        Role.GLOBAL_RESOURCE_MANAGER,
+        Role.GLOBAL_OPEN_DATA_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
     },
     (Model, Metadata.PROTECTED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
     },
     (Model, Metadata.PRIVATE, Action.VIEW): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
     },
     (Model, Metadata.VISIBILITY_PUBLIC, Action.STRUCTURE): {
-        Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER
     },
     (Model, Metadata.PACKAGE, Action.STRUCTURE): {
-        Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER
     },
     (Model, Metadata.PROTECTED, Action.STRUCTURE): {
-        Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
     },
     (Model, Metadata.PRIVATE, Action.STRUCTURE): {
-        Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
     },
 }
 PROPERTY_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, Property)

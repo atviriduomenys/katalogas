@@ -9,9 +9,7 @@ from vitrina.orgs.models import Organization
 
 def update_dataset_names(apps, schema_editor):
     Metadata = apps.get_model("vitrina_structure", "Metadata")
-    metadata_qs = Metadata.objects.select_related("dataset__organization").filter(
-        name__isnull=False
-    ).exclude(name='')
+    metadata_qs = Metadata.objects.select_related("dataset__organization").filter(name__isnull=False).exclude(name="")
 
     slugify_ascii_lower = partial(slugify, lowercase=True, allow_unicode=False)
     updated_metadata = []
@@ -34,17 +32,44 @@ def update_dataset_names(apps, schema_editor):
         updated_metadata.append(metadata)
 
     if updated_metadata:
-        Metadata.objects.bulk_update(updated_metadata, ['name'])
+        Metadata.objects.bulk_update(updated_metadata, ["name"])
+
+
+def reverse_dataset_names(apps, schema_editor):
+    Metadata = apps.get_model("vitrina_structure", "Metadata")
+    metadata_qs = Metadata.objects.select_related("dataset__organization").filter(name__isnull=False).exclude(name="")
+
+    slugify_ascii_lower = partial(slugify, lowercase=True, allow_unicode=False)
+    updated_metadata = []
+
+    for metadata in metadata_qs:
+        dataset = metadata.dataset
+        org = dataset.organization
+        if org.name:
+            prefix = org.name
+        else:
+            organization_part = slugify_ascii_lower(org.slug or org.title)
+            organization_kind = "gov" if org.kind == Organization.GOV else "org"
+            prefix = f"datasets/{organization_kind}/{organization_part}/"
+
+        if not metadata.name.startswith(prefix):
+            continue
+
+        new_name = metadata.name[len(prefix) :]
+        metadata.name = new_name
+        updated_metadata.append(metadata)
+
+    if updated_metadata:
+        Metadata.objects.bulk_update(updated_metadata, ["name"])
 
 
 class Migration(migrations.Migration):
-
     dependencies = [
-        ('vitrina_orgs', '0012_generate_organization_name_with_prefix'),
-        ('vitrina_datasets', '0036_alter_contact_email_alter_contact_unique_together_and_more'),
-        ('vitrina_structure', '0009_version_external_version_version_major_version_minor_and_more')
+        ("vitrina_orgs", "0012_generate_organization_name_with_prefix"),
+        ("vitrina_datasets", "0036_alter_contact_email_alter_contact_unique_together_and_more"),
+        ("vitrina_structure", "0009_version_external_version_version_major_version_minor_and_more"),
     ]
 
     operations = [
-        migrations.RunPython(update_dataset_names),
+        migrations.RunPython(update_dataset_names, reverse_dataset_names),
     ]

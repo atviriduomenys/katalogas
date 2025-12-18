@@ -516,7 +516,7 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert Metadata.objects.count() == 9
+    assert Metadata.objects.count() == 10
 
     new_manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
@@ -534,7 +534,7 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert Metadata.objects.count() == 6
+    assert Metadata.objects.count() == 7
     assert Metadata.objects.get(uuid='2').name == 'datasets/gov/ivpk/adp2/updated'
     assert Metadata.objects.get(uuid='3').name == 'datasets/gov/ivpk/adp2/updated/CountryUpdated'
     assert Metadata.objects.get(uuid='4').type == 'string'
@@ -978,7 +978,7 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert Metadata.objects.count() == 14
+    assert Metadata.objects.count() == 15
     assert list(Enum.objects.values_list('name', flat=True)) == ['Size', 'Deprecated', 'Type']
     assert list(EnumItem.objects.filter(enum__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1007,7 +1007,7 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
         file=FileField(filename='file.csv', data=new_manifest)
     )
     create_structure_objects(structure)
-    assert Metadata.objects.count() == 9
+    assert Metadata.objects.count() == 10
     assert list(Enum.objects.values_list('name', flat=True)) == ['Size', 'Type']
     assert list(EnumItem.objects.filter(enum__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1038,7 +1038,7 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert Metadata.objects.count() == 7
+    assert Metadata.objects.count() == 8  # + 1 resource meta
     assert list(Param.objects.values_list('name', flat=True)) == ['Size', 'Deprecated']
     assert list(ParamItem.objects.filter(param__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1060,7 +1060,7 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert Metadata.objects.count() == 3
+    assert Metadata.objects.count() == 4
     assert list(Param.objects.values_list('name', flat=True)) == ['Size']
     assert list(ParamItem.objects.filter(param__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1404,7 +1404,7 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     structure.dataset.save()
     create_structure_objects(structure)
     assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
-    assert Metadata.objects.filter(dataset=structure.dataset).count() == 3
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 4
 
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
@@ -1659,7 +1659,10 @@ def test_structure_export__prefixes(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
+    
     create_structure_objects(structure)
+    distribution = DatasetDistribution.objects.first()
+    meta = distribution.metadata.first()
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -1670,6 +1673,7 @@ def test_structure_export__prefixes(app: DjangoTestApp):
         '3,,,,,,prefix,dcat,,,,,,,,,,http://www.w3.org/ns/dcat#,,,\r\n'
         '4,,,,,,,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,,,\r\n'
+        f'{meta.uuid},,adp,,,,,,https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns,,,,,,,,,,,adp,\r\n'
     )
 
 
@@ -2271,11 +2275,16 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
     assert structure.dataset.metadata.count() == 1
     assert structure.dataset.metadata.first().title == "Edited title"
     assert structure.dataset.metadata.first().description == "Edited description"
+    distribution = DatasetDistribution.objects.get(
+        dataset=structure.dataset
+    )
+    meta = distribution.metadata.first()
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
         f'1,{structure.dataset.organization.name + "edited_dataset"},,,,,,,,,,,,,,,,,,Edited title,Edited description\r\n'
+        f'{meta.uuid},,test_dataset,,,,,,https://get.data.gov.lt/test_dataset/:ns,,,,,,,,,,,Title,\r\n'
     )
 
 

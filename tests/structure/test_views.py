@@ -4030,6 +4030,47 @@ def test_manifest_export_openapi(app: DjangoTestApp):
         f"Paths mismatch. Missing: {expected_paths - actual_paths}, "
         f"Extra: {actual_paths - expected_paths}"
     )
+       
+
+@pytest.mark.django_db
+def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
+    """Test OpenAPI manifest export returns valid spec with correct metadata, schemas, tags, and paths."""
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,rc_wsdl,,,,wsdl,,https://test-data.data.gov.lt/api/v1/rc/get-data/?wsdl,,,,,,,,,,\n'
+        ',,get_data,,,,soap,,Get.GetPort.GetPort.GetData,wsdl(rc_wsdl),,,,,,,,,\n'
+        ',,,,,,param,action_type,input/ActionType,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+    resp = app.get(reverse('dataset-structure-export-openapi', args=[structure.dataset.pk]))
+
+    assert resp.status_code == 200
+    assert resp.content_type == 'application/json'
+    
+    openapi_spec = resp.json
+    
+    expected_keys = ['openapi', 'info', 'externalDocs', 'servers', 'tags', 'components', 'paths']
+    assert list(openapi_spec.keys()) == expected_keys, "OpenAPI spec missing required top-level fields"
+    
 
 @pytest.mark.django_db
 def test_imported_metadata_gets_develop_status(app: DjangoTestApp):

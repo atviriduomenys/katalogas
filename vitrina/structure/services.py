@@ -227,7 +227,7 @@ def _load_enums(dataset: Dataset, enums: Dict[str, List[struct.Enum]], obj: Unio
 def _load_params(
     dataset: Dataset,
     params: Dict[str, List[struct.Param]],
-    obj: Union[Dataset, Model],
+    obj: Union[Dataset, Model, DatasetDistribution],
 ):
     ct = ContentType.objects.get_for_model(obj)
     param_ct = ContentType.objects.get_for_model(ParamItem)
@@ -555,57 +555,57 @@ def _create_or_update_metadata(
 def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset):
     if dataset_meta.resources:
         for i, resource_meta in enumerate(dataset_meta.resources.values()):
-            if resource_meta.source:
-                title = resource_meta.title or dataset_meta.title or resource_meta.name
-                distribution = DatasetDistribution.objects.filter(
+            title = resource_meta.title or dataset_meta.title or resource_meta.name
+            distribution = DatasetDistribution.objects.filter(
+                dataset=dataset,
+                download_url=resource_meta.source,
+            ).first()
+            if not distribution:
+                if not dataset.datasetdistribution_set.exists() and dataset.is_public:
+                    dataset.status = Dataset.HAS_DATA
+                    dataset.save()
+                    sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+
+                    Comment.objects.create(
+                        content_type=ContentType.objects.get_for_model(dataset),
+                        object_id=dataset.pk,
+                        user=sys_user,
+                        type=Comment.STATUS,
+                        status=Comment.OPENED,
+                    )
+
+                distribution = DatasetDistribution.objects.create(
                     dataset=dataset,
                     download_url=resource_meta.source,
-                ).first()
-                if not distribution:
-                    if not dataset.datasetdistribution_set.exists() and dataset.is_public:
-                        dataset.status = Dataset.HAS_DATA
-                        dataset.save()
-                        sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
-
-                        Comment.objects.create(
-                            content_type=ContentType.objects.get_for_model(dataset),
-                            object_id=dataset.pk,
-                            user=sys_user,
-                            type=Comment.STATUS,
-                            status=Comment.OPENED,
-                        )
-
-                    distribution = DatasetDistribution.objects.create(
-                        dataset=dataset,
-                        download_url=resource_meta.source,
-                        title=resource_meta.name,
-                        description=resource_meta.description,
-                        type="URL",
-                    )
-                distribution.set_current_language("lt")
-                distribution.title = title
-                distribution.save()
-
-                if md := distribution.metadata.first():
-                    if not resource_meta.id:
-                        resource_meta.id = md.uuid
-
-                distribution, metadata = _create_or_update_metadata(
-                    dataset, resource_meta, distribution, i, use_existing_meta=True
+                    title=resource_meta.name,
+                    description=resource_meta.description,
+                    type="URL",
                 )
-                metadata.name = resource_meta.name
-                metadata.save()
+            distribution.set_current_language("lt")
+            distribution.title = title
+            distribution.save()
 
-                _clean_errors(distribution)
-                _load_comments(dataset, resource_meta.comments, distribution)
-                for model_meta in resource_meta.models.values():
-                    if model := Model.objects.filter(metadata__uuid=model_meta.id, dataset=dataset).first():
-                        model.distribution = distribution
-                        model.save()
+            if md := distribution.metadata.first():
+                if not resource_meta.id:
+                    resource_meta.id = md.uuid
 
-                distribution.save()
-                if errors := resource_meta.errors:
-                    _create_errors(errors, dataset.current_structure)
+            distribution, metadata = _create_or_update_metadata(
+                dataset, resource_meta, distribution, i, use_existing_meta=True
+            )
+            metadata.name = resource_meta.name
+            metadata.save()
+            _load_params(dataset, resource_meta.params, distribution)
+
+            _clean_errors(distribution)
+            _load_comments(dataset, resource_meta.comments, distribution)
+            for model_meta in resource_meta.models.values():
+                if model := Model.objects.filter(metadata__uuid=model_meta.id, dataset=dataset).first():
+                    model.distribution = distribution
+                    model.save()
+
+            distribution.save()
+            if errors := resource_meta.errors:
+                _create_errors(errors, dataset.current_structure)
     else:
         title = dataset_meta.title or dataset_meta.name.split("/")[-1]
         name = dataset_meta.name.split("/")[-1]
@@ -1037,7 +1037,14 @@ def _dataset_to_tabular(dataset: Dataset, separator: bool = False):
     yield from _prefixes_to_tabular(dataset, separator=separator)
     yield from _enums_to_tabular(dataset, separator=separator)
     yield from _params_to_tabular(dataset, separator=separator)
+    yield from _dataset_resources_to_tabular(dataset, separator=separator)
     yield from _models_to_tabular(dataset, separator=separator)
+
+
+def _dataset_resources_to_tabular(dataset: Dataset, separator: bool = False):
+    distributions = DatasetDistribution.objects.filter(dataset=dataset, model__isnull=True).order_by("metadata__order")
+    for distribution in distributions:
+        yield from _resource_to_tabular(distribution)
 
 
 def _enums_to_tabular(obj: models.Model, separator: bool = False):
@@ -1071,7 +1078,7 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False):
         yield to_row(DATASET, {})
 
 
-def _params_to_tabular(obj: models.Model, separator: bool = False):
+def _params_to_tabular(obj: models.Model | Dataset | DatasetDistribution, separator: bool = False):
     ct = ContentType.objects.get_for_model(obj)
     params = Param.objects.filter(content_type=ct, object_id=obj.pk)
 
@@ -1205,6 +1212,7 @@ def _resource_to_tabular(resource: DatasetDistribution):
                 "description": resource.description,
             },
         )
+        yield from _params_to_tabular(resource)
     yield from _comments_to_tabular(resource)
 
 

@@ -117,8 +117,7 @@ def test_create_dataset_distribution_with_applicable_legislation(app: DjangoTest
 
     assert resp.status_code == 302
     assert mocked_task.call_count == 2
-    assert DatasetDistribution.objects.filter().count() == 1
-    dataset_distribution = DatasetDistribution.objects.first()
+    dataset_distribution = DatasetDistribution.objects.get()
     assert set(dataset_distribution.applicable_legislation.values_list("url", flat=True)) == set(applicable_legislation_urls)
 
 
@@ -139,8 +138,7 @@ def test_update_dataset_distribution_with_applicable_legislation(app: DjangoTest
     resource.refresh_from_db()
     assert resp.status_code == 302
     assert mocked_task.call_count == 2
-    assert DatasetDistribution.objects.filter().count() == 1
-    dataset_distribution = DatasetDistribution.objects.first()
+    dataset_distribution = DatasetDistribution.objects.get()
     assert set(dataset_distribution.applicable_legislation.values_list("url", flat=True)) == set(new_urls)
 
 

@@ -46,8 +46,7 @@ def test_not_existing_model_in_not_versioned_models():
 )
 @pytest.mark.django_db
 def test_versioned_models_inherit_revision_comment_admin_class(versioned_model: type[models.Model]):
-    model_admin_instance = admin.site._registry.get(versioned_model)
-    if model_admin_instance:
+    if model_admin_instance:= admin.site._registry.get(versioned_model):
         assert isinstance(model_admin_instance, RevisionCommentVersionAdmin), (
             f"Model '{versioned_model.__module__}.{versioned_model.__name__}' is versioned and registered "
             f"with django admin, but does not inherit "

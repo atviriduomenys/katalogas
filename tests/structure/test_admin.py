@@ -42,7 +42,6 @@ def test_manifestvalidationentry_does_not_execute_task_without_commit(app: Djang
     with patch("vitrina.structure.admin.validate_manifest_task.delay") as mocked_task:
         response = form.submit(upload_files=[("manifest_file", "test.csv", b"0")])
 
-    response = form.submit(upload_files=[("manifest_file", "test.csv", b"0")])
     assert response.status_code == 302
 
     entry = ManifestValidationEntry.objects.latest("created_at")

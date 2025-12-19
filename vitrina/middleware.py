@@ -1,8 +1,10 @@
 from datetime import timedelta
+from typing import Any
 
 from django.contrib.auth import logout
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.timezone import now
+from django.http import HttpRequest
 import reversion
 from vitrina.utils import RevisionComment, RevisionSource
 
@@ -33,7 +35,9 @@ class AutoRevisionCommentMiddleware(MiddlewareMixin):
     and the view arguments, if a revision is active.
     """
 
-    def process_view(self, request, view_func, view_args, view_kwargs):
+    def process_view(
+        self, request: HttpRequest, view_func: Any, view_args: list[Any], view_kwargs: dict[str, Any]
+    ) -> None:
         if not reversion.is_active():
             return None
 

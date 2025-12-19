@@ -48,9 +48,8 @@ class RevisionedTask(app.Task):
             user_id = None
             if request:
                 headers = getattr(request, "headers", {}) or {}
-                user_id = headers.get("_reversion_user_id")
 
-            if user_id:
+            if user_id := headers.get("_reversion_user_id"):
                 User = get_user_model()
                 try:
                     user = User.objects.get(pk=user_id)

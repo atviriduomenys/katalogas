@@ -98,8 +98,8 @@ class DatasetIndex(SearchIndex, Indexable):
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):
     def setup(self):
-        models.signals.post_save.connect(self.handle_save)
-        models.signals.post_delete.connect(self.handle_delete)
+        models.signals.post_save.connect(self.handle_save, sender=Dataset)
+        models.signals.post_delete.connect(self.handle_delete, sender=Dataset)
 
         models.signals.post_save.connect(self.handle_representative, sender=Representative)
         models.signals.post_delete.connect(self.handle_representative, sender=Representative)
@@ -108,8 +108,8 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
         models.signals.post_delete.connect(self.handle_distribution, sender=DatasetDistribution)
 
     def teardown(self):
-        models.signals.post_save.disconnect(self.handle_save)
-        models.signals.post_delete.disconnect(self.handle_delete)
+        models.signals.post_save.disconnect(self.handle_save, sender=Dataset)
+        models.signals.post_delete.disconnect(self.handle_delete, sender=Dataset)
 
         models.signals.post_save.disconnect(self.handle_representative, sender=Representative)
         models.signals.post_delete.disconnect(self.handle_representative, sender=Representative)

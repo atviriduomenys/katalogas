@@ -18,7 +18,7 @@ class ManifestValidationEntryAdmin(RevisionCommentVersionAdmin):
 
     def save_model(self, request: HttpRequest, obj: ManifestValidationEntry, form: ModelForm, change: bool) -> None:
         super().save_model(request, obj, form, change)
-        transaction.on_commit(lambda: validate_manifest_task.delay(obj.uuid, user_id=request.user.id))
+        transaction.on_commit(lambda: validate_manifest_task.delay(obj.uuid, _reversion_user_id=request.user.id))
 
 
 admin.site.register(Prefix, PrefixAdmin)

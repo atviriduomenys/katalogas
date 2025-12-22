@@ -5824,11 +5824,7 @@ pyproj = [
 python-multipart = "*"
 pytz = "*"
 rdflib = "*"
-<<<<<<< HEAD
 redis = ">=6.4.0,<7.0.0"
-=======
-redis = "^6.4.0"
->>>>>>> 165d6caa ([1630]: use updated spinta branch)
 requests = "*"
 "ruamel.yaml" = "*"
 setuptools = "*"
@@ -5855,15 +5851,6 @@ all = ["alembic (>=1.11.0,<1.12.0)", "gunicorn", "uvicorn"]
 http = ["gunicorn", "uvicorn"]
 migrations = ["alembic (>=1.11.0,<1.12.0)"]
 
-<<<<<<< HEAD
-=======
-[package.source]
-type = "git"
-url = "https://git@github.com/atviriduomenys/spinta.git"
-reference = "bg/1630-error-exporting-openapi"
-resolved_reference = "f7db074c2869f6d99561b7216497f9a12f469f1b"
-
->>>>>>> 165d6caa ([1630]: use updated spinta branch)
 [[package]]
 name = "sqlalchemy"
 version = "1.4.54"
@@ -6030,23 +6017,14 @@ doc = ["sphinx"]
 
 [[package]]
 name = "starlette"
-<<<<<<< HEAD
 version = "0.51.0"
-=======
-version = "0.50.0"
->>>>>>> 165d6caa ([1630]: use updated spinta branch)
 description = "The little ASGI library that shines."
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-<<<<<<< HEAD
     {file = "starlette-0.51.0-py3-none-any.whl", hash = "sha256:fb460a3d6fd3c958d729fdd96aee297f89a51b0181f16401fe8fd4cb6129165d"},
     {file = "starlette-0.51.0.tar.gz", hash = "sha256:4c4fda9b1bc67f84037d3d14a5112e523509c369d9d47b111b2f984b0cc5ba6c"},
-=======
-    {file = "starlette-0.50.0-py3-none-any.whl", hash = "sha256:9e5391843ec9b6e472eed1365a78c8098cfceb7a74bfd4d6b1c0c0095efb3bca"},
-    {file = "starlette-0.50.0.tar.gz", hash = "sha256:a2a17b22203254bcbc2e1f926d2d55f3f9497f769416b3190768befe598fa3ca"},
->>>>>>> 165d6caa ([1630]: use updated spinta branch)
 ]
 
 [package.dependencies]
@@ -6896,12 +6874,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-<<<<<<< HEAD
-<<<<<<< HEAD
 content-hash = "419211ebc26ac1068485088d818427b223308eb3d3a43fc371371f4806feb3e1"
-=======
-content-hash = "ff6e7c9f767fcdcf9e543838269dc3a794f6404f51ea7f65fdc356df2fb3aeea"
->>>>>>> 165d6caa ([1630]: use updated spinta branch)
-=======
-content-hash = "ef101070ed2f484161593b49292cc2e247e118bd60c16e4795cf7a336665f8ad"
->>>>>>> dc0f42d6 ([1630]: update spinta dep)

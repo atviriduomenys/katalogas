@@ -868,7 +868,7 @@ def _read_param(
 
     last = None
     for node in state.stack:
-        if isinstance(node, (Dataset, Model, Resource)):
+        if isinstance(node, (Dataset, Resource, Model)):
             last = node
 
     _validate_name(name, param)

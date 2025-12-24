@@ -6104,3 +6104,36 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
+
+msgid "Atsiprašome, bet neturite leidimo pasiekti šio puslapio."
+msgstr "Sorry, you don't have permission to access this page."
+
+msgid "Atsiprašome, įvyko nenumatyta serverio klaida. Mūsų komanda jau informuota apie problemą."
+msgstr "Sorry, an unexpected server error occurred. Our team has been notified about the problem."
+
+msgid "Serveris negali apdoroti jūsų užklausos dėl klaidingos sintaksės."
+msgstr "The server cannot process your request due to invalid syntax."
+
+msgid "Atsiprašome, bet ieškomas puslapis neegzistuoja arba buvo perkeltas."
+msgstr "Sorry, the requested page does not exist or has been moved."
+
+msgid "Prieiga uždrausta"
+msgstr "Access Forbidden"
+
+msgid "Klaidinga užklausa"
+msgstr "Bad Request"
+
+msgid "Serverio klaida"
+msgstr "Server Error"
+
+msgid "Puslapis nerastas"
+msgstr "Page Not Found"
+
+msgid "Reikalinga pagalba?"
+msgstr "Need help?"
+
+msgid "Susisiekite su mumis: "
+msgstr "Contact us: "
+
+msgid "Grįžti į pradžią"
+msgstr "Back to Home"

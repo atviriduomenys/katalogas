@@ -90,3 +90,8 @@ urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 urlpatterns += [
     path("", include("cms.urls")),
 ]
+
+handler400 = "vitrina.status_codes.handler400"
+handler403 = "vitrina.status_codes.handler403"
+handler404 = "vitrina.status_codes.handler404"
+handler500 = "vitrina.status_codes.handler500"

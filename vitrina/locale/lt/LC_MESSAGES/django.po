@@ -5447,3 +5447,36 @@ msgstr ""
 
 msgid "Pasiektas maksimalus eskalacijos lygis."
 msgstr ""
+
+msgid "Atsiprašome, bet neturite leidimo pasiekti šio puslapio."
+msgstr ""
+
+msgid "Atsiprašome, įvyko nenumatyta serverio klaida. Mūsų komanda jau informuota apie problemą."
+msgstr ""
+
+msgid "Serveris negali apdoroti jūsų užklausos dėl klaidingos sintaksės."
+msgstr ""
+
+msgid "Atsiprašome, bet ieškomas puslapis neegzistuoja arba buvo perkeltas."
+msgstr ""
+
+msgid "Prieiga uždrausta"
+msgstr ""
+
+msgid "Klaidinga užklausa"
+msgstr ""
+
+msgid "Serverio klaida"
+msgstr ""
+
+msgid "Puslapis nerastas"
+msgstr ""
+
+msgid "Reikalinga pagalba?"
+msgstr ""
+
+msgid "Susisiekite su mumis: "
+msgstr ""
+
+msgid "Grįžti į pradžią"
+msgstr ""

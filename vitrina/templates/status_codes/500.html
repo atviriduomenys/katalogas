@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block pageTitle %} - 500{% endblock %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<div class="section">
+    <div class="container has-text-centered">
+        <h1 class="title is-1">500</h1>
+        <h2 class="subtitle is-3">{% trans "Serverio klaida" %}</h2>
+        <p class="mb-4">{% trans "Atsiprašome, įvyko nenumatyta serverio klaida. Mūsų komanda jau informuota apie problemą." %}</p>
+
+        <div class="buttons is-centered">
+            <a href="{% url 'home' %}" class="button is-primary">{% trans "Grįžti į pradžią" %}</a>
+        </div>
+
+        <div class="box mt-6" style="max-width: 600px; margin: 0 auto;">
+            <p class="has-text-weight-semibold">{% trans "Reikalinga pagalba?" %}</p>
+            <p>{% trans "Susisiekite su mumis: " %}<a href="mailto:atviriduomenys@data.gov.lt">atviriduomenys@data.gov.lt</a></p>
+        </div>
+    </div>
+</div>
+{% endblock %}

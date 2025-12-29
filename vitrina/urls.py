@@ -91,7 +91,7 @@ urlpatterns += [
     path("", include("cms.urls")),
 ]
 
-handler400 = "vitrina.status_codes.handler400"
-handler403 = "vitrina.status_codes.handler403"
-handler404 = "vitrina.status_codes.handler404"
-handler500 = "vitrina.status_codes.handler500"
+handler400 = "vitrina.status_codes_views.handler400"
+handler403 = "vitrina.status_codes_views.handler403"
+handler404 = "vitrina.status_codes_views.handler404"
+handler500 = "vitrina.status_codes_views.handler500"

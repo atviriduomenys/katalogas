@@ -28,10 +28,8 @@ class RevisionedTask(app.Task):
         """Enqueue the task, optionally embedding `_reversion_user_id` into message headers."""
         kwargs = kwargs or {}
 
-        user_id = kwargs.pop("_reversion_user_id", None)
-
         headers = options.pop("headers", {})
-        if user_id:
+        if user_id := kwargs.pop("_reversion_user_id", None):
             headers = {**headers, "_reversion_user_id": user_id}
 
         return super().apply_async(args=args, kwargs=kwargs, headers=headers, **options)
@@ -39,13 +37,12 @@ class RevisionedTask(app.Task):
     def __call__(self, *args, **kwargs) -> Any:
         """Execute the task inside a Reversion revision.
 
-        Tries to read `u_reversion_user_id` from Celery request headers, resolves it to a Django user,
+        Tries to read `_reversion_user_id` from Celery request headers, resolves it to a Django user,
         and sets Reversion's user accordingly. Always writes a JSON comment describing
         the invocation (task name + args/kwargs).
         """
         with reversion.create_revision():
             request = getattr(self, "request", None)
-            user_id = None
             if request:
                 headers = getattr(request, "headers", {}) or {}
 
@@ -53,11 +50,9 @@ class RevisionedTask(app.Task):
                 User = get_user_model()
                 try:
                     user = User.objects.get(pk=user_id)
-                except User.DoesNotExist:
-                    user = None
-
-                if user:
                     reversion.set_user(user)
+                except User.DoesNotExist:
+                    pass
 
             comment = RevisionComment(
                 source=RevisionSource.TASK,

@@ -19,13 +19,12 @@ class VersionInline(admin.TabularInline):
     extra = 0
     can_delete = False
 
-    fields = (
+    fields = readonly_fields = (
         "version_data",
         "column_content_type",
         "column_object_id",
         "column_object_repr",
     )
-    readonly_fields = fields
 
     def has_add_permission(self, request: HttpRequest, obj: Revision | None = None) -> bool:
         return False

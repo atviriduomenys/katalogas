@@ -31,7 +31,6 @@ class ApiConfig(AppConfig):
 
         except (OperationalError, ProgrammingError) as error:
             logger.warning(f"Error during django-reversion model registration: {error}")
-            pass
 
     def _validate_not_versioned_patterns(self, project_models: set[type[models.Model]]) -> None:
         patterns = settings.NOT_VERSIONED_MODELS

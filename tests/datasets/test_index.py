@@ -1,7 +1,10 @@
 import pytest
 from unittest.mock import patch
 
+from django.test.utils import CaptureQueriesContext
+
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.orgs.models import Representative
 from vitrina.requests.factories import RequestObjectFactory, RequestFactory
@@ -268,3 +271,26 @@ class TestDatasetRequestIndexUpdates:
         mock_request_index_update.reset_mock()
         dataset.save()
         # No crash = success
+
+@pytest.mark.django_db
+class TestDatasetIndexQuery:
+
+    def test_dataset_index_query_count(self):
+        from django.db import connection
+        from haystack import connections
+
+        DatasetFactory()
+        DatasetFactory()
+        DatasetFactory()
+        DatasetFactory()
+        DatasetFactory()
+        datasets = [ds for ds in Dataset.objects.order_by("-created")[:5]]
+        ui = connections["default"].get_unified_index()
+        index = ui.get_index(Dataset)
+        docs = []
+        with CaptureQueriesContext(connection) as ctx:
+            with patch("haystack.backends.elasticsearch_backend.ElasticsearchSearchBackend.update", autospec=True):
+                for ds in datasets:
+                    docs.append(index.full_prepare(ds))
+
+            assert len(ctx.captured_queries) <= 10, f"Too many queries: {len(ctx.captured_queries)}"

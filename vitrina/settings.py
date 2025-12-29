@@ -78,6 +78,9 @@ OAUTH_AGENT_DEFAULT_SCOPES = (
     "uapi:/datasets/gov/vssa/dcat/Distribution/:getall",
     "uapi:/datasets/gov/vssa/dcat/Distribution/:create",
     "uapi:/datasets/gov/vssa/dcat/Agreement/:patch",
+    "uapi:/datasets/gov/vssa/dcat/UseCase/:getall",
+    "uapi:/datasets/gov/vssa/dcat/UseCase/:getone",
+    "uapi:/datasets/gov/vssa/dcat/AgreementFile/:getone",
 )
 
 SPINTA_EXECUTABLE = BASE_DIR / env("SPINTA_EXECUTABLE")

@@ -96,6 +96,7 @@ class DatasetFactory(DjangoModelFactory):
     )
     access_rights = Dataset.PUBLIC
     subclass = factory.SubFactory(DCATResourceSubclassFactory)
+    uuid = factory.Faker("uuid4")
 
     @classmethod
     def _create(cls, model_class: type[Dataset], *args, **kwargs):

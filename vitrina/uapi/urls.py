@@ -1,5 +1,6 @@
 from django.urls import path
 
+from vitrina.uapi.views.agreement_file_views import AgreementFileDownloadUAPIView
 from vitrina.uapi.views.template_views import (
     AgentDeleteView,
     AgentUpdateView,
@@ -8,6 +9,7 @@ from vitrina.uapi.views.template_views import (
     AgentListView,
     RequestDetailView,
 )
+from vitrina.uapi.views.use_case_views import UseCaseViewSet
 from vitrina.uapi.views.views import (
     DatasetViewSet,
     DistributionViewSet,
@@ -70,8 +72,23 @@ urlpatterns = [
         name="uapi-distribution",
     ),
     path(
+        f"{STATIC_UAPI_BASE_PATH}UseCase/",
+        UseCaseViewSet.as_view({"get": "list"}),
+        name="uapi-usecase",
+    ),
+    path(
+        f"{STATIC_UAPI_BASE_PATH}UseCase/<uuid:use_case_uuid>/",
+        UseCaseViewSet.as_view({"get": "retrieve"}),
+        name="uapi-usecase-detail",
+    ),
+    path(
         f"{STATIC_UAPI_BASE_PATH}Agreement/<uuid:agreement_id>/sync-done/",
         AgentSyncDoneViewSet.as_view({"put": "update"}),
         name="uapi-agent-sync-done",
+    ),
+    path(
+        f"{STATIC_UAPI_BASE_PATH}AgreementFile/<uuid:agreement_file_uuid>/download/",
+        AgreementFileDownloadUAPIView.as_view(),
+        name="uapi-agreement-file-download",
     ),
 ]

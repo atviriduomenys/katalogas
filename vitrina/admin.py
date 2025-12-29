@@ -38,7 +38,7 @@ class VersionInline(admin.TabularInline):
 
     @admin.display(description=_("Versijos duomenys"))
     def version_data(self, obj: Version) -> str:
-        data = obj.field_dict
+        data = json.loads(obj.serialized_data)[0]["fields"]
         data_json = json.dumps(data, indent=2, ensure_ascii=False, default=str)
 
         element_id = f"snapshot-{obj.pk}"

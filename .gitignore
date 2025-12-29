@@ -27,3 +27,7 @@
 /docker/locale/
 /vitrina/static/
 /static/
+
+# Directories needed to run scripts
+/scripts/files_to_replace/
+/scripts/replaced_files/

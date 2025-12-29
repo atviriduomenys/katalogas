@@ -95,7 +95,7 @@ def main():
                     coordinator_emails = Representative.objects.filter(
                         content_type=ContentType.objects.get_for_model(organization),
                         object_id=organization.pk,
-                        role__in=[Representative.COORDINATOR_ROLES]
+                        role__in=Representative.COORDINATOR_ROLES
                     ).values_list('email', flat=True)
                 else:
                     parent_organization = organization.get_parent()
@@ -106,7 +106,7 @@ def main():
                     coordinator_emails = Representative.objects.filter(
                         content_type=ContentType.objects.get_for_model(parent_organization),
                         object_id=parent_organization.pk,
-                        role__in=[Representative.COORDINATOR_ROLES]
+                        role__in=Representative.COORDINATOR_ROLES
                     ).values_list('email', flat=True)
 
                 emails.extend(list(coordinator_emails))

@@ -540,11 +540,8 @@ def has_perm(
         and class_object in DATASET_RELATED_OBJECTS
         and (dataset := _get_dataset_instance(parent or obj))
     ):
-        print("ifas")
         return _has_dataset_perm(user, action, parent or obj, dataset)
     else:
-        print("elsas")
-        print(user.is_staff)
         if not user.is_authenticated:
             return False
 

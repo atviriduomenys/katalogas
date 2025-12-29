@@ -316,7 +316,7 @@ def main():
                         dataset.publisher = publisher
 
                         coordinator = publisher.representatives.filter(
-                            role__in=[Representative.COORDINATOR_ROLES],
+                            role__in=Representative.COORDINATOR_ROLES,
                         ).first()
                         if coordinator:
                             Representative.objects.create(

@@ -1,3 +1,4 @@
+import logging
 from django.apps import AppConfig
 import reversion
 from django.db.utils import OperationalError, ProgrammingError
@@ -6,6 +7,9 @@ from fnmatch import fnmatchcase
 from django.db import models
 from django.conf import settings
 from vitrina.utils import get_all_models, is_model_versioned
+
+
+logger = logging.getLogger(__name__)
 
 
 class ApiConfig(AppConfig):
@@ -25,7 +29,8 @@ class ApiConfig(AppConfig):
                 if not reversion.is_registered(model):
                     reversion.register(model)
 
-        except (OperationalError, ProgrammingError):
+        except (OperationalError, ProgrammingError) as error:
+            logger.warning(f"Error during django-reversion model registration: {error}")
             pass
 
     def _validate_not_versioned_patterns(self, project_models: set[type[models.Model]]) -> None:

@@ -4,6 +4,7 @@ import json
 from enum import StrEnum
 from typing import Any
 from dataclasses import dataclass, field, asdict
+from functools import cache
 from vitrina.settings import TRANSLATION_CLIENT_ID, TRANSLATION_URL, TRANSLATION_REQUEST_TIMEOUT
 from django.conf import settings
 from fnmatch import fnmatchcase
@@ -65,9 +66,10 @@ def is_model_versioned(model: type[models.Model]) -> bool:
     return not any(fnmatchcase(full_name, pattern) for pattern in settings.NOT_VERSIONED_MODELS)
 
 
+@cache
 def get_all_models(
     app_prefix: str | None = None, include_proxy: bool = True, include_unmanaged: bool = False
-) -> set[type[models.Model]]:
+) -> frozenset[type[models.Model]]:
     """Return a set of Django model classes from installed apps, with optional filtering."""
     project_models = set()
     for model in apps.get_models():
@@ -80,7 +82,7 @@ def get_all_models(
             continue
 
         project_models.add(model)
-    return project_models
+    return frozenset(project_models)
 
 
 class RevisionSource(StrEnum):

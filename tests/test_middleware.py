@@ -9,8 +9,10 @@ from vitrina.utils import RevisionComment, RevisionSource
 def test_noop_when_reversion_not_active(rf: RequestFactory):
 
     middleware = AutoRevisionCommentMiddleware(get_response=lambda r: None)
-    with patch("vitrina.middleware.reversion.is_active", return_value=False), \
-        patch("vitrina.middleware.reversion.set_comment") as set_comment_mock:
+    with (
+        patch("vitrina.middleware.reversion.is_active", return_value=False), 
+        patch("vitrina.middleware.reversion.set_comment") as set_comment_mock
+    ):
         middleware.process_view(rf.post(""), view_func=lambda r: None, view_args=[], view_kwargs={})
 
     set_comment_mock.assert_not_called()
@@ -19,9 +21,11 @@ def test_noop_when_reversion_not_active(rf: RequestFactory):
 def test_noop_when_comment_already_set(rf: RequestFactory):
 
     middleware = AutoRevisionCommentMiddleware(get_response=lambda r: None)
-    with patch("vitrina.middleware.reversion.is_active", return_value=True), \
-        patch("vitrina.middleware.reversion.get_comment", return_value="test"), \
-        patch("vitrina.middleware.reversion.set_comment") as set_comment_mock:
+    with (
+        patch("vitrina.middleware.reversion.is_active", return_value=True),
+        patch("vitrina.middleware.reversion.get_comment", return_value="test"),
+        patch("vitrina.middleware.reversion.set_comment") as set_comment_mock
+    ):
         middleware.process_view(rf.post(""), view_func=lambda r: None, view_args=[], view_kwargs={})
 
     set_comment_mock.assert_not_called()
@@ -35,9 +39,11 @@ def test_noop_for_admin_view(rf: RequestFactory):
     admin_view.model_admin = object()
 
     middleware = AutoRevisionCommentMiddleware(get_response=lambda r: None)
-    with patch("vitrina.middleware.reversion.is_active", return_value=True), \
-        patch("vitrina.middleware.reversion.get_comment", return_value=None), \
-        patch("vitrina.middleware.reversion.set_comment") as set_comment_mock:
+    with (
+        patch("vitrina.middleware.reversion.is_active", return_value=True),
+        patch("vitrina.middleware.reversion.get_comment", return_value=None),
+        patch("vitrina.middleware.reversion.set_comment") as set_comment_mock
+    ):
         middleware.process_view(rf.post(""), view_func=admin_view, view_args=[], view_kwargs={})
 
     set_comment_mock.assert_not_called()
@@ -59,9 +65,11 @@ def test_sets_comment(rf: RequestFactory):
         kwargs=view_kwargs,
     )
 
-    with patch("vitrina.middleware.reversion.is_active", return_value=True), \
-        patch("vitrina.middleware.reversion.get_comment", return_value=None), \
-        patch("vitrina.middleware.reversion.set_comment") as set_comment_mock:
+    with (
+        patch("vitrina.middleware.reversion.is_active", return_value=True),
+        patch("vitrina.middleware.reversion.get_comment", return_value=None),
+        patch("vitrina.middleware.reversion.set_comment") as set_comment_mock
+    ):
         middleware.process_view(request, view_func=lambda r: None, view_args=view_args, view_kwargs=view_kwargs)
 
     set_comment_mock.assert_called_once()

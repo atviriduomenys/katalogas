@@ -129,8 +129,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
 
         instance = Dataset(**dataset_data)
 
-        parent = Dataset.objects.filter(id=parent_id).first() if parent_id else None
-        if parent:
+        if parent_id and (parent := Dataset.objects.filter(id=parent_id).first()):
             parent.add_child(instance=instance)
         else:
             Dataset.add_root(instance=instance)

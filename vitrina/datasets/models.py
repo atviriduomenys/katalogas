@@ -1418,13 +1418,13 @@ class Dataset(Resource):
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
         legislations: list[ApplicableLegislation] = []
-
+        legislation_ids_to_update = []
         for url in urls:
             legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
             if created:
-                update_applicable_legislation_description.delay(legislation.uuid)
+                legislation_ids_to_update.append(legislation.uuid)
             legislations.append(legislation)
-
+        update_applicable_legislation_description.delay(legislation_ids_to_update)
         self.applicable_legislation.set(legislations)
 
     def update_documentation(self, urls: list[str]) -> None:

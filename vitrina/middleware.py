@@ -38,13 +38,7 @@ class AutoRevisionCommentMiddleware(MiddlewareMixin):
     def process_view(
         self, request: HttpRequest, view_func: Any, view_args: list[Any], view_kwargs: dict[str, Any]
     ) -> None:
-        if not reversion.is_active():
-            return None
-
-        if reversion.get_comment():
-            return None
-
-        if hasattr(view_func, "model_admin"):
+        if not reversion.is_active() or reversion.get_comment() or hasattr(view_func, "model_admin"):
             return None
 
         match = request.resolver_match

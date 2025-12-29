@@ -21,13 +21,9 @@ def test_reversion_model_registration(model: type[models.Model], should_be_regis
     path = f"{model.__module__}.{model.__name__}"
 
     if should_be_registered:
-        assert reversion.is_registered(model), (
-            f"Model '{path}' should be registered with reversion."
-        )
+        assert reversion.is_registered(model), (f"Model '{path}' should be registered with reversion.")
     else:
-        assert not reversion.is_registered(model), (
-            f"Model '{path}' should not be registered with reversion."
-        )
+        assert not reversion.is_registered(model), (f"Model '{path}' should not be registered with reversion.")
 
 
 @override_settings(NOT_VERSIONED_MODELS=["notExistingModel"])
@@ -46,7 +42,7 @@ def test_not_existing_model_in_not_versioned_models():
 )
 @pytest.mark.django_db
 def test_versioned_models_inherit_revision_comment_admin_class(versioned_model: type[models.Model]):
-    if model_admin_instance:= admin.site._registry.get(versioned_model):
+    if model_admin_instance := admin.site._registry.get(versioned_model):
         assert isinstance(model_admin_instance, RevisionCommentVersionAdmin), (
             f"Model '{versioned_model.__module__}.{versioned_model.__name__}' is versioned and registered "
             f"with django admin, but does not inherit "

@@ -5,8 +5,9 @@ from vitrina.classifiers.models import ApplicableLegislation
 
 
 @shared_task
-def update_applicable_legislation_description(legislation_id: UUID) -> None:
-    legislation = ApplicableLegislation.objects.get(pk=legislation_id)
-    if title := fetch_page_title(legislation.url):
-        legislation.description = title
-        legislation.save(update_fields=["description"])
+def update_applicable_legislation_description(legislation_ids: list[UUID]) -> None:
+    legislations = ApplicableLegislation.objects.filter(pk__in=legislation_ids)
+    for legislation in legislations:
+        if title := fetch_page_title(legislation.url):
+            legislation.description = title
+            legislation.save(update_fields=["description", "updated_at"])

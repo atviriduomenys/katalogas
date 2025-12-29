@@ -284,7 +284,7 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
         add_to_revision(resource)
         resource.delete()
 
-        if not DatasetDistribution.objects.filter(dataset=dataset) and dataset.is_public:
+        if not DatasetDistribution.objects.filter(dataset=dataset).exists() and dataset.is_public:
             if dataset.plandataset_set.exists():
                 dataset.status = Dataset.PLANNED
                 comment_status = Comment.PLANNED

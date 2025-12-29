@@ -24,7 +24,7 @@ class RevisionedTask(app.Task):
 
     abstract = True
 
-    def apply_async(self, args: Any | None = None, kwargs: Any | None = None, **options) -> Any:
+    def apply_async(self, args: Any = None, kwargs: Any = None, **options) -> Any:
         """Enqueue the task, optionally embedding `_reversion_user_id` into message headers."""
         kwargs = kwargs or {}
 

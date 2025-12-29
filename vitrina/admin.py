@@ -5,7 +5,7 @@ from django.contrib import admin
 from django.contrib.admin.models import LogEntry
 from django.http import HttpRequest
 from django.urls import reverse, NoReverseMatch
-from django.utils.html import format_html, escape
+from django.utils.html import format_html
 import reversion
 from reversion.models import Revision, Version
 from reversion.admin import VersionAdmin
@@ -31,6 +31,9 @@ class VersionInline(admin.TabularInline):
         return False
 
     def has_change_permission(self, request: HttpRequest, obj: Revision | None = None) -> bool:
+        return False
+
+    def has_delete_permission(self, request: HttpRequest, obj: Revision | None = None) -> bool:
         return False
 
     @admin.display(description=_("Versijos duomenys"))
@@ -59,7 +62,7 @@ class VersionInline(admin.TabularInline):
             ),
             element_id,
             element_id,
-            escape(data_json),
+            data_json,
         )
 
     @admin.display(description=_("Modelis"))

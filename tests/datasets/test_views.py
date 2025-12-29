@@ -1378,7 +1378,7 @@ class TestDatasetUpdateView:
             response = form.submit()
 
         dataset.refresh_from_db()
-        assert mocked_task.call_count == 2
+        assert mocked_task.call_count == 1
         assert response.status_code == 302
         assert set(dataset.applicable_legislation.values_list("url", flat=True)) == set(new_urls)
 
@@ -1983,7 +1983,7 @@ class TestDatasetCreateView:
             response = form.submit()
 
         dataset = Dataset.objects.filter(translations__title="Added title").first()
-        assert mocked_task.call_count == 2
+        assert mocked_task.call_count == 1
         assert response.status_code == 302
         assert set(dataset.applicable_legislation.values_list("url", flat=True)) == set(applicable_legislation_urls)
 

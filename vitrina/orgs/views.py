@@ -132,7 +132,7 @@ class OrganizationBaseViewMixin:
         context_data = super().get_context_data(**kwargs)
         context_data["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.organization)
         context_data["can_view_contacts"] = has_perm(self.request.user, Action.VIEW, Contact, self.organization)
-        context_data["can_update_organization"] = (
+        context_data["can_update_organization"] = self.request.user.is_superuser or (
             has_perm(self.request.user, Action.UPDATE, Representative, self.organization)
             and self.request.user.viisp_organization == self.organization
         )

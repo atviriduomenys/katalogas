@@ -74,7 +74,7 @@ from vitrina.structure.services import (
     get_srid,
     transform_coordinates,
     get_data_from_spinta_async,
-    get_allowed_visibilities,
+    get_allowed_visibilities, create_output_distribution,
 )
 from vitrina.tasks.models import Task
 from spinta.manifests.open_api.helpers import create_openapi_manifest
@@ -3508,7 +3508,9 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                         status=new_metadata_instance.status if new_metadata_instance.status else None,
                     )
 
-            already_created_fields = old_to_new_metadata_object_map
+            output_dataset_distributions_map = self.duplicate_output_dataset_distributions()
+            already_created_fields = old_to_new_metadata_object_map | output_dataset_distributions_map
+
             for old_related_instance, new_related_instance in list(old_to_new_metadata_object_map.items()):
                 try:
                     already_created_fields = self.duplicate_foreign_key_relationships(
@@ -3520,7 +3522,42 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     return self.form_invalid(form)
 
         version_pk = self.new_version.pk if self.new_version else self.metadata_version.pk
+        create_output_distribution(self.dataset, self.new_version)
         return redirect(reverse("dataset-structure", args=[self.dataset.pk, version_pk]))
+
+    def duplicate_output_dataset_distributions(self) -> dict:
+        output_dataset_distributions_map = {}
+        # all_dataset_distributions = DatasetDistribution.objects.filter(
+        #     dataset=self.dataset,
+        #     metadata_version=self.metadata_version
+        # )
+        #
+        # all_metadata_distributions = Metadata.objects.filter(dataset=self.dataset, metadata_version=self.metadata_version, content_type=ContentType.objects.get_for_model(DatasetDistribution)).values_list('object_id', flat=True)
+        #
+        # output_dataset_distributions = all_dataset_distributions.exclude(
+        #     id__in=all_metadata_distributions
+        # )
+
+        output_dataset_distributions = (
+            DatasetDistribution.objects
+            .select_related("format")
+            .filter(
+                dataset=self.dataset,
+                format__isnull=False,
+                format__extension="UAPI",
+            )
+        )
+
+        for distribution in output_dataset_distributions:
+            for distribution_metadata in distribution.metadata.all():
+                old_metadata_distribution, new_metadata_distribution = self.create_metadata_duplicate(distribution_metadata)
+                old_dataset_distribution, new_dataset_distribution = self.create_related_model_duplicate(old_metadata_distribution)
+
+                new_metadata_distribution.object = new_dataset_distribution
+                new_metadata_distribution.save()
+                output_dataset_distributions_map[old_dataset_distribution] = new_dataset_distribution
+
+        return output_dataset_distributions_map
 
     def create_related_model_duplicate(self, old_metadata_instance: Metadata) -> tuple | None:
         if isinstance(old_metadata_instance.object, Dataset):

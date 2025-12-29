@@ -459,6 +459,27 @@ class DatasetDetailView(
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.VIEW, dataset)
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        self.metadata_version = request.GET.get("resource_version")
+        if not self.metadata_version:
+            self.metadata_version = (
+                _Version.objects
+                .filter(dataset=self.object)
+                .order_by("version")
+                .last()
+            )
+
+            if self.metadata_version:
+                url = (
+                    reverse("dataset-detail", kwargs={"pk": self.object.pk})
+                    + f"?resource_version={self.metadata_version.pk}"
+                )
+                return redirect(url)
+
+        self.metadata_version = _Version.objects.filter(id=self.metadata_version).first()
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self) -> QuerySet[Dataset]:
         return (
             super()
@@ -470,6 +491,9 @@ class DatasetDetailView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get("dataset")
+        dataset_versions = _Version.objects.filter(dataset=dataset).order_by("version")
+        context_data["versions"] = dataset_versions
+        context_data["metadata_version"] = self.metadata_version
         organization = dataset.organization
 
         related_datasets = dataset.related_datasets.all()
@@ -492,7 +516,7 @@ class DatasetDetailView(
             ),
             "can_update_dataset": has_perm(self.request.user, Action.UPDATE, dataset),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
-            "resources": dataset.datasetdistribution_set.all().order_by("-period_start"),
+            "resources": dataset.datasetdistribution_set.filter(metadata_version=self.metadata_version).order_by("-period_start"),
             "org_logo": organization.image if organization else None,
             "attributions": dataset.datasetattribution_set.order_by("attribution"),
             "data_maturity": dataset.metadata_set.average_level(),
@@ -501,9 +525,8 @@ class DatasetDetailView(
             "child_resources_url": reverse("dataset-child-resources", kwargs={"pk": dataset.pk}),
             "licences": set([dist.licence for dist in dataset.datasetdistribution_set.filter(licence__isnull=False)]),
         }
-
         distributions_with_conditions_ids = (
-            dataset.datasetdistribution_set.filter(translations__conditions__isnull=False)
+            dataset.datasetdistribution_set.filter(translations__conditions__isnull=False, metadata_version=self.metadata_version)
             .exclude(translations__conditions="")
             .values_list("id", flat=True)
         )
@@ -516,7 +539,7 @@ class DatasetDetailView(
         part_of = itertools.groupby(part_of, lambda x: x.relation)
         extra_context_data["part_of"] = [(relation, list(values)) for relation, values in part_of]
 
-        dynamic_resource = DynamicResourceService(dataset)
+        dynamic_resource = DynamicResourceService(dataset, self.metadata_version)
         generated_resources = dynamic_resource.generate_resources()
         extra_context_data["dynamic_resources"] = generated_resources
 

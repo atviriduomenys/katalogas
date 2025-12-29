@@ -21,7 +21,7 @@ def assign_version_number_if_missing(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_structure', '0011_populate_version_of_new_tables'),
+        ('vitrina_structure', '0012_populate_version_of_new_tables'),
     ]
 
     operations = [

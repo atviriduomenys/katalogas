@@ -23,7 +23,7 @@ from vitrina.plans.models import Plan
 from vitrina.requests.models import Request
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
-from vitrina.structure.models import Metadata
+from vitrina.structure.models import Metadata, Version
 from vitrina.structure.views import DatasetStructureMixin, ModelCreateView
 from vitrina.views import HistoryMixin
 
@@ -138,6 +138,7 @@ class ResourceCreateView(
             title=form.cleaned_data.get("title"),
             description=form.cleaned_data.get("description"),
             level_given=form.cleaned_data.get("level"),
+            metadata_version=form.cleaned_data.get("metadata_version"),
         )
 
         if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():
@@ -315,6 +316,7 @@ class ResourceModelCreateView(ModelCreateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.resource = get_object_or_404(DatasetDistribution, pk=kwargs.get("resource_id"))
+        self.metadata_version = get_object_or_404(Version, pk=kwargs.get("version_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -324,7 +326,7 @@ class ResourceModelCreateView(ModelCreateView):
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
-            reverse("resource-detail", args=[self.dataset.pk, self.resource.pk]): self.resource.title,
+            reverse("resource-detail", args=[self.dataset.pk, self.metadata_version.pk, self.resource.pk]): self.resource.title,
         }
         return context
 
@@ -343,10 +345,11 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.VIEW, dataset)
 
-    def get_data(self, dataset_pk, model_name, distribution_format):
+    def get_data(self, dataset_pk, metadata_version_pk, model_name, distribution_format):
         dataset = get_object_or_404(Dataset, id=dataset_pk)
-        dynamic_resource = DynamicResourceService(dataset)
-        data = dynamic_resource.retrieve_data(dataset_pk, model_name, distribution_format)
+        metadata_version = get_object_or_404(Version, id=metadata_version_pk)
+        dynamic_resource = DynamicResourceService(dataset, metadata_version)
+        data = dynamic_resource.retrieve_data(dataset_pk, metadata_version, model_name, distribution_format)
         if not data:
             raise Http404("Data not found")
         return data
@@ -356,9 +359,10 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
 
     def get(self, request, *args, **kwargs):
         dataset_pk = self.kwargs.get("pk")
+        metadata_version_pk = self.kwargs.get("version_id")
         distribution_name = self.kwargs.get("distribution_name")
         distribution_format = self.kwargs.get("format").upper()
-        dynamic_resource = self.get_data(dataset_pk, distribution_name, distribution_format)
+        dynamic_resource = self.get_data(dataset_pk, metadata_version_pk, distribution_name, distribution_format)
 
         self.dataset = get_object_or_404(Dataset, id=dataset_pk)
         self.object = self.dataset
@@ -370,9 +374,9 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
             "format": distribution_format,
             "detail_url": self.get_detail_url(),
             "child_resources_url": self.get_child_resources_url(),
-            "structure_url": reverse("dataset-structure", args=[self.dataset.pk]),
-            "data_url": reverse("model-data", args=[self.dataset.pk, self.models[0].name]) if self.models else None,
-            "api_url": reverse("getall-api", args=[self.dataset.pk, self.models[0].name]) if self.models else None,
+            "structure_url": reverse("dataset-structure", args=[self.dataset.pk, metadata_version_pk]),
+            "data_url": reverse("model-data", args=[self.dataset.pk, metadata_version_pk, self.models[0].name]) if self.models else None,
+            "api_url": reverse("getall-api", args=[self.dataset.pk, metadata_version_pk, self.models[0].name]) if self.models else None,
             "can_view_members": has_perm(
                 self.request.user,
                 Action.VIEW,

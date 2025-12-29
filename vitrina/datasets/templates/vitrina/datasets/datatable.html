@@ -1,5 +1,8 @@
 {% load i18n %}
-{% include 'vitrina/datasets/add_resource.html' %}
+<div class="buttons is-right m-t-md">
+    {% include "version_picker.html" with version_as_query_param=True url_name="dataset-detail" dataset=dataset versions=versions selected_version=selected_version %}
+    {% include 'vitrina/datasets/add_resource.html' %}
+</div>
 <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
     <thead>
     <tr>
@@ -80,12 +83,12 @@
 
             {% if can_add_resource %}
             <td>
-                <a href="{%url 'resource-change' pk=r.id %}"
+                <a href="{%url 'resource-change' pk=r.id version_id=r.metadata_version.id %}"
                    class="button is-link is-small is-pulled-right"
                    id="change_resource">{% translate "Redaguoti" %}</a>
             </td>
             <td>
-                <form method="post" action="{% url 'resource-delete' pk=r.id %}">
+                <form method="post" action="{% url 'resource-delete' pk=r.id version_id=r.metadata_version.id %}">
                     {% csrf_token %}
                     <button type="submit"
                             class="button is-link is-small is-pulled-right"

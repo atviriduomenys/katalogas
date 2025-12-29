@@ -665,6 +665,8 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
                     status=Comment.OPENED,
                 )
 
+            if not check_if_structure_is_open(dataset_meta):
+                return
             format = create_or_get_uapi_format()
             distribution = DatasetDistribution.objects.create(
                 dataset=dataset,
@@ -1414,3 +1416,82 @@ def get_allowed_visibilities(
             allowed_visibilities.add(visibility)
 
     return allowed_visibilities
+
+
+def check_if_structure_is_open(meta: struct.Dataset) -> bool:
+    if hasattr(meta, 'access') and meta.access == 'open':
+        return True
+
+    if hasattr(meta, 'prefixes'):
+        for prefix in meta.prefixes.values():
+            if hasattr(prefix, 'access') and prefix.access == 'open':
+                return True
+
+    if hasattr(meta, 'enums'):
+        for enum_items in meta.enums.values():
+            for enum_item in enum_items:
+                if hasattr(enum_item, 'access') and enum_item.access == 'open':
+                    return True
+
+    if hasattr(meta, 'params'):
+        for param_items in meta.params.values():
+            for param_item in param_items:
+                if hasattr(param_item, 'access') and param_item.access == 'open':
+                    return True
+
+    if hasattr(meta, 'models'):
+        for model in meta.models.values():
+            if hasattr(model, 'access') and model.access == 'open':
+                return True
+
+            if hasattr(model, 'params'):
+                for param_items in model.params.values():
+                    for param_item in param_items:
+                        if hasattr(param_item, 'access') and param_item.access == 'open':
+                            return True
+
+            if hasattr(model, 'properties'):
+                for prop in model.properties.values():
+                    if hasattr(prop, 'access') and prop.access == 'open':
+                        return True
+
+                    if hasattr(prop, 'enums'):
+                        for enum_items in prop.enums.values():
+                            for enum_item in enum_items:
+                                if hasattr(enum_item, 'access') and enum_item.access == 'open':
+                                    return True
+
+    return False
+
+
+def create_output_distribution(dataset, metadata_version, ):
+    format = create_or_get_uapi_format()
+    url = f"https://get.data.gov.lt/{dataset.name}/:ns"
+    title = dataset.title or dataset.name.split("/")[-1]
+    name = dataset.name.split("/")[-1]
+    resource_meta = struct.Resource(name=name, source=url)
+
+    distribution = DatasetDistribution.objects.create(
+        dataset=dataset,
+        download_url=url,
+        format=format,
+        type="URL",
+        metadata_version=metadata_version,
+    )
+    distribution.set_current_language("lt")
+    distribution.title = title
+    distribution.save()
+
+    if md := distribution.metadata.first():
+        resource_meta.id = md.uuid
+
+    distribution, metadata = _create_or_update_metadata(
+        dataset,
+        resource_meta,
+        distribution,
+        1,
+        use_existing_meta=True,
+        metadata_version=metadata_version,
+    )
+    metadata.name = resource_meta.name
+    metadata.save()

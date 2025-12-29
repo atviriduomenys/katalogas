@@ -21,7 +21,7 @@
     <div class="dropdown-menu" id="dropdown-menu" role="menu">
         <div class="dropdown-content">
             {% for version in versions %}
-                <a href="{% url url_name dataset.pk version.pk %}" class="dropdown-item">
+                <a href="{% if version_as_query_param %}{% url url_name dataset.pk %}?resource_version={{ version.pk }}{% else %}{% url url_name dataset.pk version.pk %}{% endif %}" class="dropdown-item">
                     {% if version.external_version %}
                         {{ version.external_version }}
                     {% else %}

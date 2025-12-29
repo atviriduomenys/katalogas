@@ -43,7 +43,7 @@ def populate_version_field_for_models(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_structure', '0010_base_version_enum_version_enumitem_version_and_more'),
+        ('vitrina_structure', '0011_create_version_for_datasets_with_no_version'),
         ('vitrina_resources', '0011_datasetdistribution_metadata_version'),
     ]
 

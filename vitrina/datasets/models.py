@@ -1060,30 +1060,31 @@ class Dataset(Resource):
 
         for model in self.model_set.all():
             dataset_distribution_for_model = model.distribution
-            dataset_distribution_metadata = (
-                dataset_distribution_for_model.metadata.first() if dataset_distribution_for_model else None
-            )
-
-            is_metadata_inside_expected_distributions = False
-            is_version_draft = False
-
-            if dataset_distribution_metadata:
-                is_metadata_inside_expected_distributions = dataset_distribution_metadata.pk in dataset_distributions
-                metadata_version_status = getattr(dataset_distribution_metadata.metadata_version, "status", None)
-                is_version_draft = metadata_version_status == VersionStatus.DRAFT
-
-            if (
-                dataset_distribution_for_model
-                and dataset_distribution_metadata
-                and not is_metadata_inside_expected_distributions
-                and is_version_draft
-            ):
-                label = mark_safe(
-                    f"<a href={dataset_distribution_for_model.get_absolute_url()}>{dataset_distribution_metadata.name}</a> name: "
-                    f"<span class='tag is-success is-light is-medium'>{dataset_distribution_metadata.name}</span>"
+            if dataset_distribution_for_model and self._check_if_dataset_distribution_is_input(dataset_distribution_for_model):
+                dataset_distribution_metadata = (
+                    dataset_distribution_for_model.metadata.first() if dataset_distribution_for_model else None
                 )
-                dataset_distributions.add(dataset_distribution_metadata.pk)
-                meta_objects.append((dataset_distribution_metadata.pk, label))
+
+                is_metadata_inside_expected_distributions = False
+                is_version_draft = False
+
+                if dataset_distribution_metadata:
+                    is_metadata_inside_expected_distributions = dataset_distribution_metadata.pk in dataset_distributions
+                    metadata_version_status = getattr(dataset_distribution_metadata.metadata_version, "status", None)
+                    is_version_draft = metadata_version_status == VersionStatus.DRAFT
+
+                if (
+                    dataset_distribution_for_model
+                    and dataset_distribution_metadata
+                    and not is_metadata_inside_expected_distributions
+                    and is_version_draft
+                ):
+                    label = mark_safe(
+                        f"<a href={dataset_distribution_for_model.get_absolute_url()}>{dataset_distribution_metadata.name}</a> name: "
+                        f"<span class='tag is-success is-light is-medium'>{dataset_distribution_metadata.name}</span>"
+                    )
+                    dataset_distributions.add(dataset_distribution_metadata.pk)
+                    meta_objects.append((dataset_distribution_metadata.pk, label))
 
             metadata = model.metadata.first()
             if metadata and metadata.draft is True:
@@ -1311,6 +1312,12 @@ class Dataset(Resource):
                                 label = mark_safe(label_str)
                                 meta_objects.append((metadata.pk, label))
         return meta_objects
+
+    def _check_if_dataset_distribution_is_input(self, dataset_distribution):
+        return (
+                not (bool(dataset_distribution.format)
+                and dataset_distribution.format.extension == "UAPI"
+        ))
 
     def save_translations(self, *args, **kwargs):
         super(Dataset, self).save_translations(*args, **kwargs)

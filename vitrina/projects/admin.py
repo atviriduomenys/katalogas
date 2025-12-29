@@ -1,4 +1,5 @@
 from django.contrib import admin
+from django.core.handlers.wsgi import WSGIRequest
 from django.db.models import QuerySet
 from reversion.admin import VersionAdmin
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
@@ -7,7 +8,11 @@ from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 class ProjectAdmin(VersionAdmin):
     list_filter = ("status",)
     search_fields = ("title",)
-    readonly_fields = ("organization",)
+    readonly_fields = ("organization", "uuid")
+    autocomplete_fields = ("datasets",)
+
+    def get_queryset(self, request: WSGIRequest) -> QuerySet:
+        return super().get_queryset(request).select_related("user", "organization")
 
 
 @admin.register(UseCaseClient)

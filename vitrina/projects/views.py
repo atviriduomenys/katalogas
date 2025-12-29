@@ -834,11 +834,11 @@ class ClientScopeToggleView(PermissionRequiredMixin, View):
         return can_manage_clients(self.request.user, self.project)
 
     @transaction.atomic
-    def get(self, request, **kwargs) -> HttpResponse:
+    def post(self, request, **kwargs) -> HttpResponse:
         self.scope.is_active = not self.scope.is_active  # Toggle to the opposite status
-        self.scope.save(update_fields=["is_active", "updated_at"])
         OAuthClientManagement.update_oauth_client(
             client_id=self.client.client_id,
             new_scopes=list(self.client.scopes.filter(is_active=True).values_list("scope", flat=True)),
         )
+        self.scope.save(update_fields=["is_active", "updated_at"])
         return redirect(reverse("project-clients-detail", args=[self.project.pk, self.client.uuid]))

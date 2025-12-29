@@ -85,19 +85,6 @@ class TestDatasetViewPermissions:
             object_id=self.grand_organization.pk,
             user=self.grandpa_rep,
         )
-        self.repr_info_system = RepresentativeFactory(
-            content_type=ContentType.objects.get_for_model(self.main_organization),
-            object_id=self.main_organization.pk,
-            user=self.info_system_rep,
-            information_system_representative=True,
-        )
-
-        # Open-data representative for main_organization
-        self.repr_open_data = RepresentativeFactory(
-            content_type=ContentType.objects.get_for_model(self.main_organization),
-            object_id=self.main_organization.pk,
-            user=self.open_data_rep,
-        )
 
     @pytest.mark.parametrize(
         "user_attributes,dataset_attributes,is_public,access_rights,subclass,expected",
@@ -143,17 +130,6 @@ class TestDatasetViewPermissions:
             ("parent_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
             ("global_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
 
-            # info-system representative
-            ("info_system_rep", "grandchild", True, "PUBLIC", "information_system", True),
-            ("info_system_rep", "grandchild", True, "RESTRICTED", "information_system", True),
-            ("info_system_rep", "grandchild", True, "NON_PUBLIC", "information_system", True),
-            ("info_system_rep", "grandchild", True, "CONFIDENTIAL", "information_system", True),
-
-            # open-data representative
-            ("open_data_rep", "grandchild", True, "PUBLIC", "dataset", True),
-            ("open_data_rep", "grandchild", True, "RESTRICTED", "dataset", True),
-            ("open_data_rep", "grandchild", True, "NON_PUBLIC", "dataset", False),
-            ("open_data_rep", "grandchild", True, "CONFIDENTIAL", "dataset", False),
         ],
     )
     def test_view_permissions(

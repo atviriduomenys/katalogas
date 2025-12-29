@@ -158,7 +158,7 @@ def get_organization_coordinators_emails(request):
             coordinators = Representative.objects.filter(
                 content_type=org_content_type,
                 object_id=organization.id,
-                role=Representative.COORDINATOR,
+                role__in=Representative.COORDINATOR_ROLES,
                 deleted__isnull=True,
             )
 

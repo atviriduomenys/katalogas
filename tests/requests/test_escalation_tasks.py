@@ -191,11 +191,11 @@ class TestGetOrganizationCoordinatorsEmails:
         org_ct = ContentType.objects.get_for_model(organization)
 
         RepresentativeFactory(
-            content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.OPEN_DATA_COORDINATOR
+            content_type=org_ct, object_id=organization.pk, email="coord@example.com", role=Representative.RESOURCE_COORDINATOR
         )
 
         RepresentativeFactory(
-            content_type=org_ct, object_id=organization.pk, email="manager@example.com", role=Representative.OPEN_DATA_MANAGER
+            content_type=org_ct, object_id=organization.pk, email="manager@example.com", role=Representative.RESOURCE_MANAGER
         )
 
         emails = get_organization_coordinators_emails(request_obj)

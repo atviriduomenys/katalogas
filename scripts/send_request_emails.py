@@ -48,7 +48,7 @@ def main():
                         coordinator_emails = list(Representative.objects.filter(
                             content_type=ContentType.objects.get_for_model(dataset.organization),
                             object_id=dataset.organization.pk,
-                            role__in=[Representative.COORDINATOR_ROLES]
+                            role__in=Representative.COORDINATOR_ROLES
                         ).values_list('email', flat=True))
                 else:
                     if dataset.organization:
@@ -60,7 +60,7 @@ def main():
                         coordinator_emails = list(Representative.objects.filter(
                             content_type=ContentType.objects.get_for_model(parent_organization),
                             object_id=parent_organization.pk,
-                            role__in=[Representative.COORDINATOR_ROLES]
+                            role__in=Representative.COORDINATOR_ROLES
                         ).values_list('email', flat=True))
 
                 emails.extend(coordinator_emails)

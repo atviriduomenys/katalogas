@@ -2533,7 +2533,7 @@ class TestDatasetMembers:
         form = resp.forms["representative-form"]
 
         form["email"] = "new1@gmail.com"
-        form["role"] = "manager"
+        form["role"] = "open_data_manager"
         form["phone"] = "+37061234567"
         resp = form.submit()
         assert resp.status_code == 302
@@ -2546,7 +2546,7 @@ class TestDatasetMembers:
         form = resp.forms["representative-form"]
 
         form["email"] = "new2@gmail.com"
-        form["role"] = "manager"
+        form["role"] = "open_data_manager"
         form["phone"] = "061234567"
         resp = form.submit()
         assert resp.status_code == 302
@@ -3340,7 +3340,7 @@ def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.RESOURCE_MANAGERtest_subscribe_with_non_public_dataset_with_access
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(user)
     response = app.get(reverse("dataset-requests", args=[dataset.pk]))

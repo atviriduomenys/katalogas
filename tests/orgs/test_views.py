@@ -228,15 +228,29 @@ def test_filter_with_query_containing_special_characters(app: DjangoTestApp):
 
 @pytest.fixture
 def representative_data():
-    manager = User.objects.create_user(
+    open_data_manager = User.objects.create_user(
         email="manager@gmail.com",
         password="manager123",
         first_name="Manager",
         last_name="User",
         phone="861234567"
     )
-    coordinator = User.objects.create_user(
+    resource_manager = User.objects.create_user(
+        email="resource_manager@gmail.com",
+        password="manager123",
+        first_name="Manager",
+        last_name="User",
+        phone="861234567"
+    )
+    open_data_coordinator = User.objects.create_user(
         email="coordinator@gmail.com",
+        password="coordinator123",
+        first_name="Coordinator",
+        last_name="User",
+        phone="869876543"
+    )
+    resource_coordinator = User.objects.create_user(
+        email="resource_coordinator@gmail.com",
         password="coordinator123",
         first_name="Coordinator",
         last_name="User",
@@ -253,16 +267,27 @@ def representative_data():
         viisp_company_code=organization.company_code
     )
     content_type = ContentType.objects.get_for_model(Organization)
-    representative_manager = RepresentativeFactory(
-        role="manager",
+    open_data_representative_manager = RepresentativeFactory(
+        role="open_data_manager",
         content_type=content_type,
         object_id=organization.pk
     )
-    representative_coordinator = RepresentativeFactory(
-        role="coordinator",
+    resource_representative_manager = RepresentativeFactory(
+        role="resource_manager",
+        content_type=content_type,
+        object_id=organization.pk
+    )
+    open_data_representative_coordinator = RepresentativeFactory(
+        role="open_data_coordinator",
         content_type=content_type,
         object_id=organization.pk,
-        user=coordinator
+        user=open_data_coordinator
+    )
+    resource_representative_coordinator = RepresentativeFactory(
+        role="resource_coordinator",
+        content_type=content_type,
+        object_id=organization.pk,
+        user=resource_coordinator
     )
     representative_viisp_coordinator = RepresentativeFactory(
         role="coordinator",
@@ -271,18 +296,22 @@ def representative_data():
         user=viisp_coordinator
     )
     return {
-        'manager': manager,
-        'coordinator': coordinator,
+        'open_data_manager': open_data_manager,
+        'resource_manager': resource_manager,
+        'open_data_coordinator': open_data_coordinator,
+        'resource_coordinator': resource_coordinator,
         'viisp_coordinator': viisp_coordinator,
         'organization': organization,
-        'representative_manager': representative_manager,
-        'representative_coordinator': representative_coordinator,
+        'open_data_representative_manager': open_data_representative_manager,
+        'resource_representative_manager': resource_representative_manager,
+        'open_data_representative_coordinator': open_data_representative_coordinator,
+        'resource_representative_coordinator': resource_representative_coordinator,
         'representative_viisp_coordinator': representative_viisp_coordinator
     }
 
 
 def test_representative_create_without_permission(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['manager'])
+    app.set_user(representative_data['open_data_manager'])
     resp = app.get(reverse('representative-create', kwargs={
         'pk': representative_data['organization'].pk
     }), expect_errors=True)
@@ -290,12 +319,12 @@ def test_representative_create_without_permission(app: DjangoTestApp, representa
 
 
 def test_representative_create_with_existing_user(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['resource_coordinator'])
     form = app.get(reverse('representative-create', kwargs={
         'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "manager@gmail.com"
-    form['role'] = "coordinator"
+    form['role'] = "resource_manager"
     resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
@@ -309,13 +338,13 @@ def test_representative_create_with_existing_user(app: DjangoTestApp, representa
 
 
 def test_representative_create_can_make_agreements_disabled(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['resource_coordinator'])
     form = app.get(reverse('representative-create', kwargs={
         'pk': representative_data['organization'].pk
     })).forms['representative-form']
     assert 'disabled' in form["can_make_agreements"].attrs
     form['email'] = "manager@gmail.com"
-    form['role'] = "coordinator"
+    form['role'] = "resource_manager"
     form['can_make_agreements'] = True
     resp = form.submit()
     assert resp.status_code == 302
@@ -324,7 +353,7 @@ def test_representative_create_can_make_agreements_disabled(app: DjangoTestApp, 
     assert representative_qs.count() == 1
     representative = representative_qs.first()
     assert representative.content_object == representative_data['organization']
-    assert representative.user == representative_data['manager']
+    assert representative.user == representative_data['resource_manager']
     assert representative.user.organization == representative_data['organization']
     assert not representative.can_make_agreements
 
@@ -805,7 +834,7 @@ def test_click_edit_button(app: DjangoTestApp):
 
 
 def test_contact_tab_access_coordinator(app, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
 
     resp = app.get(reverse('organization-contacts', kwargs={
         'pk': representative_data['organization'].pk
@@ -817,7 +846,7 @@ def test_contact_tab_access_coordinator(app, representative_data):
 
 
 def test_contact_tab_access_denied_for_manager(app, representative_data):
-    app.set_user(representative_data['manager'])
+    app.set_user(representative_data['open_data_manager'])
 
     resp = app.get(reverse('organization-contacts', kwargs={
         'pk': representative_data['organization'].pk
@@ -849,9 +878,9 @@ def test_contact_tab_display_org_contacts(app, representative_data):
 
 
 def test_contact_tab_display_user_contacts(app, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     organization = representative_data['organization']
-    user = representative_data['manager']
+    user = representative_data['open_data_manager']
 
     Contact.objects.create(
         organization=organization,
@@ -872,7 +901,7 @@ def test_contact_tab_display_user_contacts(app, representative_data):
 
 
 def test_contact_tab_display_multiple_contacts(app, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     organization = representative_data['organization']
     user1 =  UserFactory(organization=organization)
     user2 = UserFactory(organization=organization)
@@ -917,7 +946,7 @@ def test_contact_tab_display_multiple_contacts(app, representative_data):
 
 
 def test_contact_tab_pagination(app, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     organization = representative_data['organization']
 
     for i in range(15):
@@ -955,7 +984,7 @@ def test_contact_tab_empty_state(app, representative_data):
 
 
 def test_contact_tab_actions_coordinator(app, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     organization = representative_data['organization']
 
     contact = Contact.objects.create(
@@ -976,7 +1005,7 @@ def test_contact_tab_actions_coordinator(app, representative_data):
 
 def test_contact_create_for_org(app, representative_data):
     org = representative_data['organization']
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     form = app.get(reverse('contact-create', kwargs={
         'pk': org.pk
     })).forms['contact-form']
@@ -1007,8 +1036,8 @@ def test_contact_create_for_org(app, representative_data):
 
 def test_contact_create_for_user_valid_data(app, representative_data):
     org = representative_data['organization']
-    app.set_user(representative_data['coordinator'])
-    coordinator = representative_data['coordinator']
+    app.set_user(representative_data['open_data_coordinator'])
+    coordinator = representative_data['open_data_coordinator']
     form = app.get(reverse('contact-create', kwargs={
         'pk': org.pk
     })).forms['contact-form']
@@ -1037,7 +1066,7 @@ def test_contact_create_for_user_valid_data(app, representative_data):
 
 def test_contact_create_for_non_registered_contact(app, representative_data):
     org = representative_data['organization']
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
 
     form = app.get(reverse('contact-create', kwargs={
         'pk': org.pk
@@ -1071,7 +1100,7 @@ def test_contact_create_for_non_registered_contact(app, representative_data):
 
 
 def test_contact_create_no_permission(app, representative_data):
-    app.set_user(representative_data['manager'])
+    app.set_user(representative_data['open_data_manager'])
     resp = app.get(reverse('contact-create', kwargs={
         'pk': representative_data['organization'].pk
     }), expect_errors=True)
@@ -1079,7 +1108,7 @@ def test_contact_create_no_permission(app, representative_data):
 
 
 def test_contact_update_org(app, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     org = representative_data['organization']
     contact = Contact.objects.create(
         organization=org,
@@ -1106,7 +1135,7 @@ def test_contact_update_org(app, representative_data):
 
 
 def test_contact_update_user(app, representative_data):
-    coordinator = representative_data['coordinator']
+    coordinator = representative_data['open_data_coordinator']
     app.set_user(coordinator)
     org = representative_data['organization']
     contact = Contact.objects.create(
@@ -1132,7 +1161,7 @@ def test_contact_update_user(app, representative_data):
 
 
 def test_contact_delete(app, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     org = representative_data['organization']
     contact = Contact.objects.create(
         organization=org,
@@ -1154,7 +1183,7 @@ def test_contact_delete(app, representative_data):
 
 
 def test_contact_delete_no_permission(app, representative_data):
-    app.set_user(representative_data['manager'])  # Manager shouldn't have permission
+    app.set_user(representative_data['open_data_manager'])  # Manager shouldn't have permission
     org = representative_data['organization']
     contact = Contact.objects.create(
         organization=org,
@@ -1174,7 +1203,7 @@ def test_contact_delete_no_permission(app, representative_data):
 @pytest.mark.django_db
 def test_contact_delete_blocked_if_assigned_to_agreements(app, representative_data):
     # Arrange
-    user = representative_data["coordinator"]
+    user = representative_data["open_data_coordinator"]
     organization = representative_data["organization"]
     app.set_user(user)
 

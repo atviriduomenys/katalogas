@@ -29,6 +29,11 @@ from vitrina.orgs.views import (
     ContactDeleteView,
     create_remote_organization,
     check_organization,
+    OrganizationBasedAgreementListView,
+    OrganizationBasedAgreementDetailView,
+    OrganizationBasedAgreementApproveView,
+    OrganizationBasedAgreementFormView,
+    OrganizationBasedAgreementSignView,
 )
 from vitrina.orgs.views import (
     OrganizationDetailView,
@@ -133,6 +138,31 @@ urlpatterns = [
         "orgs/<int:pk>/projects/",
         OrganizationProjectsView.as_view(),
         name="organization-projects",
+    ),
+    path(
+        "orgs/<int:pk>/agreements/",
+        OrganizationBasedAgreementListView.as_view(),
+        name="organization-agreement-list",
+    ),
+    path(
+        "orgs/<int:pk>/agreements/<uuid:agreement_id>/",
+        OrganizationBasedAgreementDetailView.as_view(),
+        name="organization-agreement-detail",
+    ),
+    path(
+        "orgs/<int:pk>/agreements/<uuid:agreement_id>/approve",
+        OrganizationBasedAgreementApproveView.as_view(),
+        name="organization-agreement-approve",
+    ),
+    path(
+        "orgs/<int:pk>/agreements/<uuid:agreement_id>/form",
+        OrganizationBasedAgreementFormView.as_view(),
+        name="organization-agreement-form",
+    ),
+    path(
+        "orgs/<int:pk>/agreements/<uuid:agreement_id>/sign",
+        OrganizationBasedAgreementSignView.as_view(),
+        name="organization-agreement-sign",
     ),
     path(
         "register/<token>/",

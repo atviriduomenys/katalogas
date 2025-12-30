@@ -161,3 +161,33 @@ class ResourceSubclassForm:
         subclass_names = {s.name for s in form.fields["subclass"].queryset}
         assert DCATResourceSubclass.INFORMATION_SYSTEM not in subclass_names
 
+    def test_resource_access_rights_non_public_confidential_excluded_if_user_open_data_representative(self, app: DjangoTestApp):
+        organization = OrganizationFactory(kind=Organization.GOV)
+        user = UserFactory()
+        user.organization = organization
+        user.save()
+
+        RepresentativeFactory(
+            organization=organization,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            user=user,
+            role=Representative.MANAGER,
+            open_data_representative = True
+        )
+        app.set_user(user)
+
+        form = app.get(
+            reverse(
+                "resource-subclass-add",
+                kwargs={"pk": organization.id},
+            )
+        ).context["form"]
+        assert isinstance(form, ResourceSubclassForm)
+
+        choices = [value for value, label in form.fields["access_rights"].choices]
+
+        assert Dataset.NON_PUBLIC not in choices
+        assert Dataset.CONFIDENTIAL not in choices
+        assert Dataset.PUBLIC in choices
+        assert Dataset.RESTRICTED in choices

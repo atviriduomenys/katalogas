@@ -69,6 +69,9 @@ services:
       - katalogas
 
   katalogas-${BRANCH}-celery:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
     image: katalogas-${BRANCH}:latest
     command: celery -A vitrina worker -l info
     environment:
@@ -84,14 +87,14 @@ services:
       - SPINTA_SERVER_URL=https://test.data.gov.lt
       - SPINTA_SERVER_NAME='Test Data Gov'
       - USE_OTP_VALIDATION=False
-    volumes:
-      - .:/app
     depends_on:
       - katalogas-${BRANCH}-redis
       - katalogas-${BRANCH}-database
     restart: always
     networks:
-      - katalogas
+      katalogas:
+        aliases:
+          - katalogas-${BRANCH}
 
 volumes:
   ${BRANCH}-postgres:

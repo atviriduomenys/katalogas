@@ -32,11 +32,11 @@
         {% endif %}
 
         {% if can_manage_structure %}
-            <a class="button is-primary" href="{% url 'dataset-structure-export' view.kwargs.pk %}">
+            <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-export' view.kwargs.pk %}">
                 {% translate "Eksportuoti" %}
             </a>
             {% if request.user.is_superuser %}
-                <a class="button is-primary" href="{% url 'dataset-structure-export-openapi' view.kwargs.pk %}">
+                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-export-openapi' view.kwargs.pk %}">
                     {% translate "Eksportuoti OpenAPI" %}
                 </a>
             {% endif %}

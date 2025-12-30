@@ -1,7 +1,8 @@
-from datetime import date
+from datetime import date, datetime
 from typing import Union
 
 import factory
+from django.utils.timezone import make_aware
 from factory.django import DjangoModelFactory
 
 from vitrina.classifiers.models import Concept
@@ -66,9 +67,13 @@ class DatasetDistributionFactory(DjangoModelFactory):
     type = "FILE"
     version = 1
     status = factory.LazyFunction(
-        lambda: Concept.objects.get(
+        lambda: Concept.objects.get_or_create(
             code="DEVELOP",
-        )
+            defaults={
+                "valid_since": make_aware(datetime(2020, 1, 1)),
+                "label": "Develop",
+            },
+        )[0]
     )
     metadata_version = None
 

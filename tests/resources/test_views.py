@@ -56,7 +56,7 @@ def test_click_edit_button(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id}))
+    response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id})).follow()
     response.click(linkid='change_resource')
     assert response.status_code == 200
 
@@ -142,7 +142,7 @@ def test_click_add_button(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id}))
+    response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id})).follow()
     response.click(linkid='add_resource')
     assert response.status_code == 200
 
@@ -277,7 +277,7 @@ def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTest
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=True)
-    resource = DatasetDistributionFactory( uapi_format=True)
+    resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -286,7 +286,7 @@ def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
     form.submit()
     assert resource.model_set.first().name == 'TestModel'
 
-    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.pk, "TestModel", "json"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.metadata_version.pk, resource.pk, "TestModel", "json"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/json'
@@ -342,7 +342,7 @@ def test_distribution_detail_dynamic_resource_csv(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_json_multiple_models(app: DjangoTestApp):
     version = VersionFactory()
-    resource = DatasetDistributionFactory(uapi_format=True, metadata_version=version)
+    resource = DatasetDistributionFactory(dataset=version.dataset, uapi_format=True, metadata_version=version)
     user = UserFactory(is_staff=True)
     app.set_user(user)
     for model_name in ["TestModel", "TestModel2", "TestModel3"]:
@@ -512,7 +512,6 @@ def test_distribution_with_compression_and_packaging_formats(app: DjangoTestApp)
     packaging_format = PackagingFormatFactory()
 
     form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
-    breakpoint()
     form['title'] = 'New resource'
     form['format'] = file_format.pk
     form['download_url'] = "http://www.test.com"

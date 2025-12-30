@@ -1068,9 +1068,7 @@ class Dataset(Resource):
             is_version_draft = False
 
             if dataset_distribution_metadata:
-                is_metadata_inside_expected_distributions = (
-                    dataset_distribution_metadata.pk in dataset_distributions
-                )
+                is_metadata_inside_expected_distributions = dataset_distribution_metadata.pk in dataset_distributions
                 metadata_version_status = getattr(dataset_distribution_metadata.metadata_version, "status", None)
                 is_version_draft = metadata_version_status == VersionStatus.DRAFT
 

@@ -3,7 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 import factory
 
 from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
-from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
+from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass, Contact
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, pre_representative_delete, _has_dataset_perm, WRITE_ACTIONS
@@ -1191,3 +1191,161 @@ class TestHasDatasetPerm:
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, child_dataset, child_dataset)
 
+
+@pytest.mark.django_db
+class TestViispOrganizationPermissions:
+    def test_superuser_bypasses_viisp_check_organization_update(self):
+        organization = OrganizationFactory()
+        other_org = OrganizationFactory()
+        superuser = UserFactory(
+            is_superuser=True,
+            is_viisp_login=True,
+            viisp_company_code=other_org.company_code
+        )
+
+        res = has_perm(superuser, Action.UPDATE, organization)
+        assert res is True
+
+    def test_staff_bypasses_viisp_check_organization_update(self):
+        organization = OrganizationFactory()
+        other_org = OrganizationFactory()
+        staff_user = UserFactory(
+            is_staff=True,
+            is_viisp_login=True,
+            viisp_company_code=other_org.company_code
+        )
+
+        res = has_perm(staff_user, Action.UPDATE, organization)
+        assert res is True
+
+    def test_coordinator_with_matching_viisp_org_can_update(self):
+        organization = OrganizationFactory()
+        user = UserFactory(
+            organization=organization,
+            is_viisp_login=True,
+            viisp_company_code=organization.company_code
+        )
+        ct = ContentType.objects.get_for_model(organization)
+        RepresentativeFactory(
+            organization=organization,
+            content_type=ct,
+            object_id=organization.pk,
+            user=None,
+            role=Representative.COORDINATOR
+        )
+
+        res = has_perm(user, Action.UPDATE, organization)
+        assert res is True
+
+    def test_coordinator_with_mismatched_viisp_org_cannot_update(self):
+        organization = OrganizationFactory()
+        other_org = OrganizationFactory()
+        user = UserFactory(
+            organization=organization,
+            is_viisp_login=True,
+            viisp_company_code=other_org.company_code
+        )
+        ct = ContentType.objects.get_for_model(organization)
+        RepresentativeFactory(
+            organization=organization,
+            content_type=ct,
+            object_id=organization.pk,
+            user=None,
+            role=Representative.COORDINATOR
+        )
+
+        res = has_perm(user, Action.UPDATE, organization)
+        assert res is False
+
+    def test_coordinator_without_viisp_org_cannot_update(self):
+        organization = OrganizationFactory()
+        user = UserFactory(
+            organization=organization,
+            is_viisp_login=False  # This makes viisp_organization None
+        )
+        ct = ContentType.objects.get_for_model(organization)
+        RepresentativeFactory(
+            organization=organization,
+            content_type=ct,
+            object_id=organization.pk,
+            user=None,
+            role=Representative.COORDINATOR
+        )
+
+        res = has_perm(user, Action.UPDATE, organization)
+        assert res is False
+
+    def test_direct_representative_bypasses_viisp_check(self):
+        organization = OrganizationFactory()
+        other_org = OrganizationFactory()
+        ct = ContentType.objects.get_for_model(organization)
+        coordinator = RepresentativeFactory(
+            content_type=ct,
+            object_id=organization.pk,
+            role=Representative.COORDINATOR
+        )
+        coordinator.user.is_viisp_login = True
+        coordinator.user.viisp_company_code = other_org.company_code
+        coordinator.user.save()
+
+        res = has_perm(coordinator.user, Action.UPDATE, organization)
+        assert res is True
+
+    def test_viisp_check_for_representative_update_with_org_parent(self):
+        organization = OrganizationFactory()
+        user = UserFactory(
+            organization=organization,
+            is_viisp_login=True,
+            viisp_company_code=organization.company_code
+        )
+        ct = ContentType.objects.get_for_model(organization)
+        RepresentativeFactory(
+            organization=organization,
+            content_type=ct,
+            object_id=organization.pk,
+            user=None,
+            role=Representative.COORDINATOR
+        )
+
+        res = has_perm(user, Action.UPDATE, Representative, organization)
+        assert res is True
+
+    def test_viisp_check_fails_for_representative_update_mismatched_org(self):
+        organization = OrganizationFactory()
+        other_org = OrganizationFactory()
+        user = UserFactory(
+            organization=organization,
+            is_viisp_login=True,
+            viisp_company_code=other_org.company_code
+        )
+        ct = ContentType.objects.get_for_model(organization)
+        RepresentativeFactory(
+            organization=organization,
+            content_type=ct,
+            object_id=organization.pk,
+            user=None,
+            role=Representative.COORDINATOR
+        )
+
+        res = has_perm(user, Action.UPDATE, Representative, organization)
+        assert res is False
+
+    def test_viisp_check_not_applied_to_dataset_create(self):
+        organization = OrganizationFactory()
+        other_org = OrganizationFactory()
+        user = UserFactory(
+            organization=organization,
+            is_viisp_login=True,
+            viisp_company_code=other_org.company_code
+        )
+        ct = ContentType.objects.get_for_model(organization)
+        RepresentativeFactory(
+            organization=organization,
+            content_type=ct,
+            object_id=organization.pk,
+            user=None,
+            role=Representative.MANAGER
+        )
+
+        res = has_perm(user, Action.CREATE, Dataset, organization)
+        assert res is True

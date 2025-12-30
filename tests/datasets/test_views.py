@@ -492,14 +492,7 @@ class TestDatasetListView:
 
         assert resp.html.find(id="manager-dataset-url")
 
-    @pytest.mark.parametrize(
-        "role",
-        [
-            Representative.OPEN_DATA_COORDINATOR,
-            Representative.RESOURCE_COORDINATOR,
-        ],
-    )
-    def test_org_datasets_are_shown_for_coordinator(self, app: DjangoTestApp, role):
+    def test_org_datasets_are_shown_for_coordinator(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(title="testt", organization=org)
 
@@ -512,7 +505,7 @@ class TestDatasetListView:
         RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=org.pk,
-            role=role,
+            role=Representative.RESOURCE_COORDINATOR,
             user=user,
         )
 

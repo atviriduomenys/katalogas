@@ -334,7 +334,7 @@ def test_organization_representative_create_permission_manager():
 def test_organization_representative_create_permission_coordinator():
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.OPEN_DATA_MANAGER)
+    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.OPEN_DATA_COORDINATOR)
     res = has_perm(coordinator.user, Action.CREATE, Representative, organization)
     assert res is True
 
@@ -858,23 +858,48 @@ def test_dataset_distribution_edit_permission_organization_publisher():
 
 
 class TestHasDatasetPerm:
-    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC])
-    def test_permissions_with_dataset_representative_when_dataset_not_confidential(self, access_rights: str):
+    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED])
+    def test_permissions_with_dataset_open_data_representative(self, access_rights: str):
         dataset = DatasetFactory(access_rights=access_rights)
         representative = RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
+            role=Representative.OPEN_DATA_MANAGER
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
 
-    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC])
-    def test_permissions_with_organization_representative_when_dataset_not_confidential(self, access_rights: str):
+    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+    def test_permissions_with_dataset_resource_representative(self, access_rights: str):
+        dataset = DatasetFactory(access_rights=access_rights)
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            role=Representative.RESOURCE_MANAGER
+        )
+
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
+
+    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED])
+    def test_permissions_with_organization_open_data_representative(self, access_rights: str):
         organization = OrganizationFactory()
         dataset = DatasetFactory(access_rights=access_rights, organization=organization)
         representative = RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
+            role=Representative.OPEN_DATA_MANAGER
+        )
+
+        assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
+
+    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+    def test_permissions_with_organization_resource_representative(self, access_rights: str):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(access_rights=access_rights, organization=organization)
+        representative = RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            role=Representative.RESOURCE_MANAGER
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True

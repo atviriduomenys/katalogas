@@ -9,6 +9,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 
 from vitrina.comments.models import Comment
+from vitrina.datasets.models import Dataset
 from vitrina.templatetags.markdown_tags import markdown
 from vitrina.users.models import Representative
 
@@ -250,6 +251,7 @@ def test_comment_xss_end_to_end_protection(client, user, organization, dataset, 
 
     # Make dataset public and give user permission to comment
     dataset.is_public = True
+    dataset.access_rights = Dataset.PUBLIC
     dataset.save()
 
     # Add user as representative to have permission

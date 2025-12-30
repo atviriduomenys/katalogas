@@ -286,15 +286,9 @@ def test_distribution_detail_with_non_public_dataset_without_access(app: DjangoT
     response = app.get(reverse('resource-detail', args=[dataset.pk, resource.pk]), expect_errors=True)
     assert response.status_code == 403
 
-@pytest.mark.parametrize(
-    "role",
-    [
-        Representative.RESOURCE_MANAGER,
-        Representative.OPEN_DATA_MANAGER,
-    ],
-)
+
 @pytest.mark.django_db
-def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTestApp, role: Representative):
+def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)
     resource = DatasetDistributionFactory(dataset=dataset)
     user = UserFactory()
@@ -302,7 +296,7 @@ def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTest
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=role
+        role=Representative.RESOURCE_MANAGER,
 
     )
     app.set_user(user)

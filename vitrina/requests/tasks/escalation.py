@@ -136,7 +136,7 @@ def get_dataset_managers(request):
         representatives = Representative.objects.filter(
             content_type_id=req_obj.content_type_id,
             object_id=req_obj.object_id,
-            role=Representative.MANAGER,
+            role__in=Representative.MANAGER_ROLES,
             deleted__isnull=True,
         )
 

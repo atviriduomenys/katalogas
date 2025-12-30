@@ -856,12 +856,12 @@ class Dataset(Resource):
                 Q(
                     content_type=ContentType.objects.get_for_model(Dataset),
                     object_id__in=datasets_ids,
-                    role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_COORDINATOR],
+                    role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER],
                 )
                 | Q(
                     content_type=ContentType.objects.get_for_model(Organization),
                     object_id__in=organization_ids,
-                    role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_COORDINATOR],
+                    role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER],
                 )
                 | Q(organization_id__in=organization_ids),
                 user__isnull=False,
@@ -873,6 +873,10 @@ class Dataset(Resource):
     @property
     def resource_managers(self) -> set[int]:
         return set(self.get_resource_managers_queryset())
+
+    @property
+    def open_data_managers(self) -> set[int]:
+        return set(self.get_open_data_managers_queryset())
 
     @property
     def language_array(self):

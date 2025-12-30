@@ -16,7 +16,7 @@ from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_filter_url
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.requests.models import Request, RequestObject
 from vitrina.resources.models import Format
@@ -246,11 +246,13 @@ def get_datasets_for_user(request: DrfRequest, datasets: SearchQuerySet) -> Sear
 
 
 def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet) -> SearchQuerySet:
-    public_filter: SQ = SQ(is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
-    combined_filter = public_filter | SQ(resource_managers__in=[user.pk])
+    public_filter = SQ(is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
+    combined_filter = public_filter | SQ(resource_managers__in=[user.pk]) | SQ(open_data_managers__in=[user.pk])
+
     if not user.is_authenticated:
         return datasets.filter(public_filter)
-    elif user.is_staff or user.is_superuser:
+
+    if user.is_staff or user.is_superuser:
         return datasets
 
     if user.is_gov_organization_resource_manager:
@@ -258,6 +260,25 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
             is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC)
         )
 
+    org_reps = Representative.objects.filter(
+        user=user,
+        content_type=ContentType.objects.get_for_model(Organization),
+    )
+
+    resource_org_ids = org_reps.filter(
+        role__in=(Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR)
+    ).values_list("object_id", flat=True)
+    if resource_org_ids.exists():
+        combined_filter |= SQ(organization__in=resource_org_ids)
+
+    open_data_org_ids = org_reps.filter(
+        role__in=(Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR)
+    ).values_list("object_id", flat=True)
+    if open_data_org_ids.exists():
+        combined_filter |= SQ(
+            organization__in=open_data_org_ids,
+            access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED),
+        )
     return datasets.filter(combined_filter)
 
 

@@ -14,7 +14,7 @@
         </li>
         {% if can_view_agreements and project.organization %}
             <li class="{%if request.resolver_match.url_name in agreement_subpages %} is-active {% endif %}">
-                <a href="{% url 'agreement-list' request.resolver_match.kwargs.pk %}">
+                <a href="{% url 'project-agreement-list' request.resolver_match.kwargs.pk %}">
                     {% translate "Sutartys" %}
                 </a>
             </li>

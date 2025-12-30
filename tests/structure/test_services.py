@@ -2277,6 +2277,7 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
     form = app.get(reverse('dataset-change', kwargs={'pk': structure.dataset.pk})).forms['dataset-form']
     form['title'] = 'Edited title'
     form['description'] = 'Edited description'
+    form['name'] = structure.dataset.organization.name + "edited_dataset"
     resp = form.submit()
     assert resp.url == reverse('dataset-detail', kwargs={'pk': structure.dataset.pk})
     assert structure.dataset.metadata.count() == 1
@@ -2286,7 +2287,7 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,test_dataset,,,,,,,,,,,,,,,,,,Edited title,Edited description\r\n'
+        f'1,{structure.dataset.organization.name + "edited_dataset"},,,,,,,,,,,,,,,,,,Edited title,Edited description\r\n'
     )
 
 

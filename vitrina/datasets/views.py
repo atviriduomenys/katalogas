@@ -375,7 +375,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             )
             extra_context["can_create_dataset"] = has_perm(
                 self.request.user,
-                Action.CREATE_RESOURCE_AT_GOV_ORG if self.organization.kind == Organization.GOV else Action.CREATE,
+                Action.CREATE,
                 Dataset,
                 self.organization,
             )
@@ -476,6 +476,7 @@ class DatasetDetailView(
         paginator = Paginator(related_datasets, 10)  # Show 10 relations per page
         page_number = self.request.GET.get("page")
         page_obj = paginator.get_page(page_number)
+        subclass = dataset.subclass
 
         extra_context_data = {
             "tags": dataset.get_tag_object_list(),
@@ -486,11 +487,19 @@ class DatasetDetailView(
             "harvested": "",
             "can_add_resource": has_perm(
                 self.request.user,
-                Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE if organization.kind == Organization.GOV else Action.CREATE,
+                Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+                if subclass and subclass.is_information_system
+                else Action.UPDATE,
                 Dataset,
-                organization,
+                dataset,
             ),
-            "can_update_dataset": has_perm(self.request.user, Action.UPDATE, dataset),
+            "can_update_dataset": has_perm(
+                self.request.user,
+                Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+                if subclass and subclass.is_information_system
+                else Action.UPDATE,
+                dataset,
+            ),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
             "resources": dataset.datasetdistribution_set.all().order_by("-period_start"),
             "org_logo": organization.image if organization else None,
@@ -692,7 +701,7 @@ class DatasetCreateView(
 
         return has_perm(
             self.request.user,
-            Action.CREATE_RESOURCE_AT_GOV_ORG if self.organization.kind == Organization.GOV else Action.CREATE,
+            Action.CREATE,
             Dataset,
             self.organization,
         )
@@ -976,12 +985,7 @@ class ResourceSubclassCreateView(
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
-        return has_perm(
-            self.request.user,
-            Action.CREATE_RESOURCE_AT_GOV_ORG if organization.kind == Organization.GOV else Action.CREATE,
-            Dataset,
-            organization,
-        )
+        return has_perm(self.request.user, Action.CREATE, Dataset, organization)
 
     def get_breadcrumbs(self) -> list[Crumb]:
         if parent_id := self.kwargs.get("parent_id"):
@@ -1070,7 +1074,14 @@ class DatasetUpdateView(
 
     def has_permission(self):
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
-        return has_perm(self.request.user, Action.UPDATE, dataset)
+        subclass = self.dataset.subclass
+        return has_perm(
+            self.request.user,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+            if subclass and subclass.is_information_system
+            else Action.UPDATE,
+            dataset,
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1462,9 +1473,9 @@ class DatasetStructureImportView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
             if subclass and subclass.is_information_system
-            else Action.CREATE,
+            else Action.UPDATE,
             DatasetStructure,
             self.dataset,
         )
@@ -1600,7 +1611,7 @@ class CreateMemberView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
             if subclass and subclass.is_information_system
             else Action.CREATE,
             Representative,
@@ -3338,7 +3349,14 @@ class DatasetPlanView(
             context["plans"] = self.dataset.plandataset_set.filter(plan__is_closed=True)
         else:
             context["plans"] = self.dataset.plandataset_set.filter(plan__is_closed=False)
-        context["can_manage_plans"] = has_perm(self.request.user, Action.UPDATE, self.dataset)
+        subclass = self.dataset.subclass
+        context["can_manage_plans"] = has_perm(
+            self.request.user,
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
+            if subclass and subclass.is_information_system
+            else Action.UPDATE,
+            self.dataset,
+        )
         context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
         context["selected_tab"] = status
         return context
@@ -3769,20 +3787,23 @@ class DatasetChildResourceListView(
         descendants: list[int] = self.object.get_descendants().values_list("pk", flat=True)
         return super(DatasetChildResourceListView, self).get_queryset().filter(django_id__in=list(descendants))
 
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, get_object_or_404(Dataset, pk=self.parent_dataset_id))
+
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         dataset = self.object
         subclass = dataset.subclass
         action = (
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
+            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
             if subclass and subclass.is_information_system
-            else Action.CREATE
+            else Action.UPDATE
         )
         return super().get_context_data(**kwargs) | {
             "can_create_dataset": has_perm(
                 self.request.user,
                 action,
                 Dataset,
-                self.object.organization,
+                self.object,
             ),
             "parent_dataset_id": self.parent_dataset_id,
             "organization_id": self.object.organization_id,

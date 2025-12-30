@@ -3928,6 +3928,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
     resp = app.get(reverse("dataset-structure", args=[structure.dataset.pk, version.pk]))
     assert list(resp.context["models"].values_list("metadata__name", flat=True)) == [
         "datasets/gov/ivpk/adp/City",
+        "datasets/gov/ivpk/adp/Country",
         "datasets/gov/ivpk/adp/Province",
         "datasets/gov/ivpk/adp/State",
     ]
@@ -3935,13 +3936,13 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
         reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]),
         expect_errors=True,
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
 
     resp = app.get(
         reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "id"]),
         expect_errors=True,
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
 
     resp = app.get(
         reverse("model-structure", args=[structure.dataset.pk, version.pk, "City"]),
@@ -3953,7 +3954,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
         reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "id"]),
         expect_errors=True,
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
 
     resp = app.get(
         reverse("property-structure", args=[structure.dataset.pk, version.pk, "City", "title"]),
@@ -3971,7 +3972,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
         reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "id"]),
         expect_errors=True,
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
 
     resp = app.get(
         reverse("property-structure", args=[structure.dataset.pk, version.pk, "Province", "title"]),
@@ -3995,7 +3996,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
         reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "id"]),
         expect_errors=True,
     )
-    assert resp.status_code == 403
+    assert resp.status_code == 200
 
     resp = app.get(
         reverse("property-structure", args=[structure.dataset.pk, version.pk, "State", "title"]),

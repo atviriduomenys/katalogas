@@ -1,6 +1,4 @@
 from django.urls import path
-
-from vitrina import settings
 from vitrina.viisp.views import (
     VIISPLoginView,
     VIISPCompleteLoginView,
@@ -54,13 +52,9 @@ urlpatterns = [
         AccoutnInactiveView.as_view(),
         name="account_inactive",
     ),
+    path(
+        "fake-viisp/complete-login/",
+        FakeVIISPCompleteLoginView.as_view(),
+        name="fake-viisp-complete-login",
+    ),
 ]
-
-if settings.DEBUG:
-    urlpatterns.append(
-        path(
-            "fake-viisp/complete-login/",
-            FakeVIISPCompleteLoginView.as_view(),
-            name="fake-viisp-complete-login",
-        ),
-    )

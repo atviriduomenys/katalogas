@@ -1255,7 +1255,8 @@ class TestDatasetUpdateView:
     def test_dataset_update_information_system(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name="information_system")
-        dataset = DatasetFactory(subclass=subclass)
+        dataset = DatasetFactory(subclass=subclass, organization=organization)
+        organization_name = organization.name
         catalog = CatalogFactory()
         frequency = FrequencyFactory(is_default=True)
         information_system_type_concept_schema = ConceptSchema.objects.get(
@@ -1281,7 +1282,7 @@ class TestDatasetUpdateView:
             "catalog": catalog.pk,
             "frequency": frequency.pk,
             "access_rights": Dataset.PUBLIC,
-            "name": "test/information/system",
+            "name": f"{organization_name}information_system_two",
             "landing_page": "https://www.test.test",
             "information_system_type": information_system_type_concept.pk,
             "information_system_importance": information_system_importance_concept.pk,
@@ -1300,7 +1301,7 @@ class TestDatasetUpdateView:
         assert dataset.catalog == catalog
         assert dataset.frequency == frequency
         assert dataset.access_rights == Dataset.PUBLIC
-        assert dataset.name == "test/information/system"
+        assert dataset.name == f"{organization_name}information_system_two"
         assert dataset.landing_page == "https://www.test.test"
         assert dataset.information_system_type == information_system_type_concept
         assert dataset.information_system_importance == information_system_importance_concept
@@ -1458,7 +1459,7 @@ class TestDatasetUpdateView:
 
     def test_update_dateset_generates_name(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
-        org = OrganizationFactory(name="Test Organization")
+        org = OrganizationFactory()
         user = UserFactory(is_staff=True, organization=org)
         app.set_user(user)
 
@@ -1475,7 +1476,7 @@ class TestDatasetUpdateView:
 
         assert response.status_code == 302
         dataset.refresh_from_db()
-        assert dataset.name == "datasets/gov/test-organization/updated-test-dataset"
+        assert dataset.name == f"{org.name}updated-test-dataset"
 
     def test_update_dateset_existing_name_cannot_be_removed(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
@@ -1648,7 +1649,7 @@ class TestDatasetCreateView:
             "catalog": catalog.pk,
             "frequency": frequency.pk,
             "access_rights": Dataset.PUBLIC,
-            "name": "test/information/system",
+            "name": f"{organization.name}test_information_system",
             "landing_page": "https://www.test.test",
             "information_system_type": information_system_type_concept.pk,
             "information_system_importance": information_system_importance_concept.pk,
@@ -1667,7 +1668,7 @@ class TestDatasetCreateView:
         assert dataset.catalog == catalog
         assert dataset.frequency == frequency
         assert dataset.access_rights == Dataset.PUBLIC
-        assert dataset.name == "test/information/system"
+        assert dataset.name == f"{organization.name}test_information_system"
         assert dataset.landing_page == "https://www.test.test"
         assert dataset.information_system_type == information_system_type_concept
         assert dataset.information_system_importance == information_system_importance_concept
@@ -1993,18 +1994,18 @@ class TestDatasetCreateView:
             (
                 None,
                 "Test Dataset",
-                "Test Organization",
+                "datasets/gov/test-organization/",
                 "",
                 "",
                 "datasets/gov/test-organization/test-dataset",
             ),  # generates automatically
             (
-                "test-organization/my-test-dataset",
+                "datasets/gov/test-organization/test-organization/my-test-dataset",
                 "Test Dataset",
-                "Test Organization",
+                "datasets/gov/test-organization/",
                 "",
                 "",
-                "test-organization/my-test-dataset",
+                "datasets/gov/test-organization/test-organization/my-test-dataset",
             ),  # uses provided name
             (
                 None,
@@ -2012,7 +2013,7 @@ class TestDatasetCreateView:
                 "",
                 "test-organization-slug",
                 "",
-                "datasets/gov/test-organization-slug/test-dataset",
+                "datasets/org/test-organization-slug/test-dataset",
             ),  # generates automatically
             (
                 None,
@@ -2020,7 +2021,7 @@ class TestDatasetCreateView:
                 "",
                 "",
                 "Test Organization Title",
-                "datasets/gov/test-organization-title/test-dataset",
+                "datasets/org/test-organization-title/test-dataset",
             ),  # generates automatically
         ],
     )
@@ -2056,21 +2057,21 @@ class TestDatasetCreateView:
     def test_create_dataset_without_name_generate_unique_name(self, app: DjangoTestApp):
         subclass = DCATResourceSubclassFactory()
         FrequencyFactory(is_default=True)
-        org = OrganizationFactory(name="Test Organization")
+        org = OrganizationFactory()
         user = UserFactory(is_staff=True, organization=org)
         app.set_user(user)
 
         dataset1 = DatasetFactory(organization=org, title="Test Dataset")
         MetadataFactory(
             content_type=ContentType.objects.get_for_model(Dataset),
-            name="datasets/gov/test-organization/test-dataset",
+            name=f"{org.name}test-dataset",
             dataset=dataset1,
             object_id=dataset1.pk,
         )
         dataset2 = DatasetFactory(organization=org, title="Second Test Dataset")
         MetadataFactory(
             content_type=ContentType.objects.get_for_model(Dataset),
-            name="datasets/gov/test-organization/test-dataset_3",
+            name=f"{org.name}test-dataset_3",
             dataset=dataset2,
             object_id=dataset2.pk,
         )
@@ -2086,13 +2087,13 @@ class TestDatasetCreateView:
         assert Dataset.objects.exclude(id=1).count() == 3
 
         dataset1.refresh_from_db()
-        assert dataset1.name == "datasets/gov/test-organization/test-dataset"
+        assert dataset1.name == f"{org.name}test-dataset"
 
         dataset2.refresh_from_db()
-        assert dataset2.name == "datasets/gov/test-organization/test-dataset_3"
+        assert dataset2.name == f"{org.name}test-dataset_3"
 
         dataset3 = Dataset.objects.exclude(id=1).last()
-        assert dataset3.name == "datasets/gov/test-organization/test-dataset_4"
+        assert dataset3.name == f"{org.name}test-dataset_4"
 
     def test_dataset_create_files(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)

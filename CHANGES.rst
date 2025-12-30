@@ -1,17 +1,83 @@
 Changes
 #######
 
-v 1.10 (unreleased)
+v 1.12 (unreleased)
+==================
+
+
+
+v 1.11.2 (2025-12-18)
+==================
+
+- Add missing 0012 migration for `vitrina_smart_contracts`.
+- Remove `vitrina_datasets` 0037 migration.
+
+v 1.11.1 (2025-12-18)
+==================
+
+- Add reverse function for 0037 migration in `vitrina_datasets`.
+
+v 1.11 (2025-12-16)
 ==================
 
 Bug fixes:
 
-- Return the mock for translation calling, vertimas.vu.lt is up and running, tests are breaking again, because the mock
-  was removed
+<No ticket>
 
+- Make a `Representative.can_make_agreements` boolean field non-nullable.
+
+v 1.10 (2025-12-11)
+==================
+
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2196
+
+- Return the mock for translation calling, vertimas.vu.lt is up and running, tests are breaking again, because the mock
+  was removed.
+
+<No ticket>
+
+- Adjust button spacing for dataset form.
+- Forbid deleting contacts assigned to agreements (protected attributes, throw a nicer error to the user).
+- Replace incorrect translation.
+
+https://github.com/atviriduomenys/katalogas/issues/1925
+
+- Remove `save()` from `Representative` model.
+- Update elasticsearch indices from `Representative` and `DataDistribution` model.
+Improvements:
+
+https://github.com/atviriduomenys/katalogas/issues/2040
+
+- Part 1-2: Organization-based detail & list agreement pages (previously only available under Projects).
+- Part 3: Refactor agreements to be easily extendable to other pages.
+- Part 4: Add separate agreement-negotiation views that are organization-based (reachable from organization tabs).
+- Part 5: Leftovers. Adding the PDF replace in ADOC's script.
+
+https://github.com/atviriduomenys/katalogas/issues/2075
+
+- OrganizationUpdateForm disables the name field when updating an existing organization to prevent edits.
+- OrganizationBaseForm now includes a clean method that automatically generates a dataset prefix based on the organization’s name and kind, and saves it to the database.
+- Uniqueness is enforced across WhitelistedCodeNames and the generated organization names.
+- Introduced WhitelistedCodeName, linked to Organization.
+- Added support in the Organization admin form to manage an array of WhitelistedCodeNames.
+- Made migrations to Organization and Dataset models, to generate organization name prefixes.
 
 v 1.9 (2025-12-04)
 ==================
+
+https://github.com/atviriduomenys/katalogas/issues/2124
+
+- Adds new "internal media" directory for non public uploaded files. It works same way as Django media files, but uses `INTERNAL_MEDIA_ROOT` and `INTERNAL_MEDIA_URL` settings.
+- Adds new endpoint for downloading uploaded smart contract files. In production, file is returned via `X-Accel-Redirect` header
+- Additional Nginx configuration is needed:
+    ```
+    location /internal-static {
+        internal;
+        alias /internal-static;
+    }
+    ```
 
 Security improvements:
 

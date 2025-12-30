@@ -3,6 +3,7 @@ import math
 import datetime
 import calendar
 import mimetypes
+from pathlib import Path
 from typing import Optional, List, Any
 from typing import Type
 from typing import Tuple
@@ -707,6 +708,14 @@ def validate_file(file):
         owner=None,
         mime_type=mime_type,
     )
+
+
+def get_file_extension(file_name: str, remove_dot=False) -> str:
+    extension = Path(file_name).suffix
+    if remove_dot:
+        extension = extension[1:]
+
+    return extension
 
 
 def build_page_title_context(

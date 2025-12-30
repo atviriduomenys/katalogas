@@ -11,6 +11,7 @@ from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
+from vitrina.helpers import get_file_extension
 from vitrina.utils import translate_text
 from vitrina.datasets.models import Dataset
 
@@ -288,8 +289,7 @@ class DatasetDistribution(TranslatableModel):
 
     def extension(self) -> str:
         if self.file and self.file.file:
-            path = pathlib.Path(self.file.file.name)
-            return path.suffix.lstrip(".").upper()
+            return get_file_extension(self.file.file.name, remove_dot=True).upper()
         else:
             return ""
 

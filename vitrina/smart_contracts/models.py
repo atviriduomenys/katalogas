@@ -11,6 +11,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from slugify import slugify
 
+from vitrina.helpers import get_file_extension
 from vitrina.models import UUIDBaseModel
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
@@ -137,11 +138,13 @@ class Agreement(UUIDBaseModel):
         self.files.create(
             file=ContentFile(json.dumps(odrl_jsonld), name=odrl_file_name),
             file_name=odrl_file_name,
+            file_extension=AgreementFile.AllowedFileTypes(get_file_extension(odrl_file_name, remove_dot=True)),
         )
 
         return self.files.create(
             file=ContentFile(pdf_buffer.read(), name=pdf_file_name),
             file_name=pdf_file_name,
+            file_extension=AgreementFile.AllowedFileTypes(get_file_extension(pdf_file_name, remove_dot=True)),
         )
 
     def generate_odrl_jsonld(self):
@@ -280,6 +283,7 @@ class AgreementFile(UUIDBaseModel):
         related_name="files",
     )
     file_name = models.CharField(max_length=255)
+    file_extension = models.CharField(max_length=100, choices=AllowedFileTypes.choices)
     file = models.FileField(
         storage=internal_media_storage,
         upload_to="data/files/agreements",
@@ -309,10 +313,6 @@ class AgreementFile(UUIDBaseModel):
 
     def __str__(self) -> str:
         return f"{self.agreement} - {self.file_name}"
-
-    @property
-    def file_type(self) -> AllowedFileTypes:
-        return self.AllowedFileTypes(self.file_name.split(".")[-1])
 
     def save(self, *args, **kwargs):
         if self.file and not self.checksum:

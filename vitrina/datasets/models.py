@@ -1060,7 +1060,9 @@ class Dataset(Resource):
 
         for model in self.model_set.all():
             dataset_distribution_for_model = model.distribution
-            if dataset_distribution_for_model and self._check_if_dataset_distribution_is_input(dataset_distribution_for_model):
+            if dataset_distribution_for_model and self._check_if_dataset_distribution_is_input(
+                dataset_distribution_for_model
+            ):
                 dataset_distribution_metadata = (
                     dataset_distribution_for_model.metadata.first() if dataset_distribution_for_model else None
                 )
@@ -1069,7 +1071,9 @@ class Dataset(Resource):
                 is_version_draft = False
 
                 if dataset_distribution_metadata:
-                    is_metadata_inside_expected_distributions = dataset_distribution_metadata.pk in dataset_distributions
+                    is_metadata_inside_expected_distributions = (
+                        dataset_distribution_metadata.pk in dataset_distributions
+                    )
                     metadata_version_status = getattr(dataset_distribution_metadata.metadata_version, "status", None)
                     is_version_draft = metadata_version_status == VersionStatus.DRAFT
 
@@ -1314,10 +1318,7 @@ class Dataset(Resource):
         return meta_objects
 
     def _check_if_dataset_distribution_is_input(self, dataset_distribution):
-        return (
-                not (bool(dataset_distribution.format)
-                and dataset_distribution.format.extension == "UAPI"
-        ))
+        return not (bool(dataset_distribution.format) and dataset_distribution.format.extension == "UAPI")
 
     def save_translations(self, *args, **kwargs):
         super(Dataset, self).save_translations(*args, **kwargs)

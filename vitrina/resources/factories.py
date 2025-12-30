@@ -71,10 +71,8 @@ class DatasetDistributionFactory(DjangoModelFactory):
             code="DEVELOP",
         )
     )
-    metadata_version = factory.SubFactory(
-        VersionFactory,
-        dataset=factory.SelfAttribute('..dataset')
-    )
+    metadata_version = factory.SubFactory(VersionFactory, dataset=factory.SelfAttribute("..dataset"))
+
     class Params:
         uapi_format = factory.Trait(
             format=factory.SubFactory(UapiFormat),

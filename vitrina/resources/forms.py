@@ -77,7 +77,10 @@ class DatasetResourceForm(TranslatableModelForm):
     description = TranslatedField(label=_("Aprašymas"), required=False)
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
     access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
-    metadata_version = forms.ModelChoiceField(queryset=Version.objects.none(), help_text=_("Juodraščio versija, kuriai bus priskirtas duomenų rinkinio šaltinis."))
+    metadata_version = forms.ModelChoiceField(
+        queryset=Version.objects.none(),
+        help_text=_("Juodraščio versija, kuriai bus priskirtas duomenų rinkinio šaltinis."),
+    )
     access_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'
         widget=forms.TextInput(),
@@ -170,7 +173,9 @@ class DatasetResourceForm(TranslatableModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
-        self.fields["metadata_version"].queryset = Version.objects.filter(dataset=self.dataset, status=VersionStatus.DRAFT)
+        self.fields["metadata_version"].queryset = Version.objects.filter(
+            dataset=self.dataset, status=VersionStatus.DRAFT
+        )
         self.fields["metadata_version"].label_from_instance = lambda obj: "Juodraštis"
         self.fields["status"].queryset = (
             Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)

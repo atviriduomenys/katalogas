@@ -326,7 +326,9 @@ class ResourceModelCreateView(ModelCreateView):
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
-            reverse("resource-detail", args=[self.dataset.pk, self.metadata_version.pk, self.resource.pk]): self.resource.title,
+            reverse(
+                "resource-detail", args=[self.dataset.pk, self.metadata_version.pk, self.resource.pk]
+            ): self.resource.title,
         }
         return context
 
@@ -376,8 +378,12 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
             "detail_url": self.get_detail_url(),
             "child_resources_url": self.get_child_resources_url(),
             "structure_url": reverse("dataset-structure", args=[self.dataset.pk, metadata_version_pk]),
-            "data_url": reverse("model-data", args=[self.dataset.pk, metadata_version_pk, self.models[0].name]) if self.models else None,
-            "api_url": reverse("getall-api", args=[self.dataset.pk, metadata_version_pk, self.models[0].name]) if self.models else None,
+            "data_url": reverse("model-data", args=[self.dataset.pk, metadata_version_pk, self.models[0].name])
+            if self.models
+            else None,
+            "api_url": reverse("getall-api", args=[self.dataset.pk, metadata_version_pk, self.models[0].name])
+            if self.models
+            else None,
             "can_view_members": has_perm(
                 self.request.user,
                 Action.VIEW,

@@ -342,7 +342,10 @@ class DatasetDistribution(TranslatableModel):
         return parents
 
     def get_absolute_url(self):
-        return reverse("resource-detail", kwargs={"pk": self.dataset.pk, "resource_id": self.pk, "version_id": self.metadata_version.pk})
+        return reverse(
+            "resource-detail",
+            kwargs={"pk": self.dataset.pk, "resource_id": self.pk, "version_id": self.metadata_version.pk},
+        )
 
     def lt_title(self):
         return self.safe_translation_getter("title", language_code="lt")

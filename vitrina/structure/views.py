@@ -3537,20 +3537,20 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         #     id__in=all_metadata_distributions
         # )
 
-        output_dataset_distributions = (
-            DatasetDistribution.objects
-            .select_related("format")
-            .filter(
-                dataset=self.dataset,
-                format__isnull=False,
-                format__extension="UAPI",
-            )
+        output_dataset_distributions = DatasetDistribution.objects.select_related("format").filter(
+            dataset=self.dataset,
+            format__isnull=False,
+            format__extension="UAPI",
         )
 
         for distribution in output_dataset_distributions:
             for distribution_metadata in distribution.metadata.all():
-                old_metadata_distribution, new_metadata_distribution = self.create_metadata_duplicate(distribution_metadata)
-                old_dataset_distribution, new_dataset_distribution = self.create_related_model_duplicate(old_metadata_distribution)
+                old_metadata_distribution, new_metadata_distribution = self.create_metadata_duplicate(
+                    distribution_metadata
+                )
+                old_dataset_distribution, new_dataset_distribution = self.create_related_model_duplicate(
+                    old_metadata_distribution
+                )
 
                 new_metadata_distribution.object = new_dataset_distribution
                 new_metadata_distribution.save()
@@ -3646,7 +3646,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def _should_raise_unpublished_field_error_for_enum_param(
         self, enum_param_obj: Union[Enum, Param], already_created_fields: dict
     ) -> bool:
-
         related_model = type(enum_param_obj.object)
         return (
             related_model in [Property, Model, DatasetDistribution]

@@ -24,7 +24,7 @@ class VersionFactory(DjangoModelFactory):
 
     dataset = factory.SubFactory(DatasetFactory)
     status = VersionStatus.DRAFT
-    version = factory.Sequence(lambda n: n + 1)
+    version = 1
 
 
 class MetadataFactory(DjangoModelFactory):

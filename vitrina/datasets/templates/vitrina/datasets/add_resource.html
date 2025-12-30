@@ -1,6 +1,6 @@
 {% load i18n %}
 {% if can_add_resource %}
-    <a href="{% url 'resource-add' pk=dataset.id %}" class="button is-primary is-normal is-size-6-mobile is-flex" id="add_resource">
+    <a href="{%url 'resource-add' pk=dataset.id %}" class="button is-primary is-normal m-t-md is-size-6-mobile is-flex" id="add_resource">
         {% translate "Naujas šaltinis" %}
     </a>
 {% endif %}

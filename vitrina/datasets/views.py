@@ -489,6 +489,7 @@ class DatasetDetailView(
         dataset_versions = _Version.objects.filter(dataset=dataset).order_by("version")
         context_data["versions"] = dataset_versions
         context_data["metadata_version"] = self.metadata_version
+        context_data["selected_version"] = self.metadata_version
         organization = dataset.organization
 
         related_datasets = dataset.related_datasets.all()

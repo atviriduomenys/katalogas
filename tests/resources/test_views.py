@@ -12,7 +12,7 @@ from vitrina.resources.factories import DatasetDistributionFactory, FileFormat, 
     PackagingFormatFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
-from vitrina.structure.factories import MetadataFactory
+from vitrina.structure.factories import MetadataFactory, VersionFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -22,24 +22,26 @@ def test_change_form_wrong_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory()
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    response = app.get(reverse('resource-change', kwargs={'pk': resource.id}))
+    response = app.get(reverse('resource-change', kwargs={'pk': resource.id, 'version_id': resource.metadata_version.pk}))
     assert response.status_code == 302
     assert str(resource.dataset_id) in response.location
 
 
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
-    resource = DatasetDistributionFactory(title='base title', description='base description')
+    version = VersionFactory()
+    resource = DatasetDistributionFactory(title='base title', description='base description', dataset=version.dataset, metadata_version=version)
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    form = app.get(reverse('resource-change', kwargs={'pk': resource.id})).forms['resource-form']
+    form = app.get(reverse('resource-change', kwargs={'pk': resource.id, 'version_id': version.pk})).forms['resource-form']
     form['title'] = "Edited title"
     form['description'] = "edited resource description"
     form['level'] = 2
+    form['metadata_version'] = version.pk
     resp = form.submit()
     resource.refresh_from_db()
     assert resp.status_code == 302
-    assert resp.url == reverse('resource-detail', args=[resource.dataset.pk, resource.pk])
+    assert resp.url == reverse('resource-detail', args=[resource.dataset.pk, version.pk, resource.pk])
     assert resource.title == 'Edited title'
     assert resource.description == 'edited resource description'
     assert resource.metadata.count() == 1
@@ -54,7 +56,7 @@ def test_click_edit_button(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id}))
+    response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id})).follow()
     response.click(linkid='change_resource')
     assert response.status_code == 200
 
@@ -80,6 +82,7 @@ def test_add_form_wrong_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_add_form_correct_login(app: DjangoTestApp):
     dataset = DatasetFactory()
+    version = VersionFactory(dataset=dataset)
     file_format = FileFormat(extension='URL')
     user = UserFactory(is_staff=True, organization=dataset.organization)
     app.set_user(user)
@@ -89,6 +92,7 @@ def test_add_form_correct_login(app: DjangoTestApp):
     form['format'] = file_format.id
     form['download_url'] = "www.google.lt"
     form['level'] = 1
+    form['metadata_version'] = version.pk
     resp = form.submit()
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 1
@@ -102,12 +106,14 @@ def test_add_form_correct_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_change_form_data_gov_url_upload_checked(app: DjangoTestApp):
     file_format = FileFormat(title='URL', extension='URL')
+    version = VersionFactory()
     resource = DatasetDistributionFactory(title='base title', description='base description',
-                                          format=file_format, file=None)
+                                          format=file_format, file=None, dataset=version.dataset, metadata_version=version)
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(reverse('resource-change', kwargs={'pk': resource.pk})).forms['resource-form']
+    form = app.get(reverse('resource-change', kwargs={'pk': resource.pk, 'version_id': version.pk})).forms['resource-form']
     form['download_url'] = 'get.data.gov.lt'
+    form['metadata_version'] = version.pk
     resp = form.submit()
     resource.refresh_from_db()
     assert resp.status_code == 302
@@ -117,11 +123,13 @@ def test_change_form_data_gov_url_upload_checked(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_change_form_upload_checked(app: DjangoTestApp):
-    resource = DatasetDistributionFactory(title='base title', description='base description')
+    version = VersionFactory()
+    resource = DatasetDistributionFactory(title='base title', description='base description', dataset=version.dataset, metadata_version=version)
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    form = app.get(reverse('resource-change', kwargs={'pk': resource.pk})).forms['resource-form']
+    form = app.get(reverse('resource-change', kwargs={'pk': resource.pk, 'version_id': version.pk})).forms['resource-form']
     form['upload_to_storage'] = True
+    form['metadata_version'] = version.pk
     resp = form.submit()
     resource.refresh_from_db()
     assert resp.status_code == 302
@@ -134,7 +142,7 @@ def test_click_add_button(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id}))
+    response = app.get(reverse('dataset-detail', kwargs={'pk': resource.dataset_id})).follow()
     response.click(linkid='add_resource')
     assert response.status_code == 200
 
@@ -142,7 +150,7 @@ def test_click_add_button(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_delete_no_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory()
-    response = app.get(reverse('resource-delete', kwargs={'pk': resource.id}))
+    response = app.get(reverse('resource-delete', kwargs={'pk': resource.id, 'version_id': resource.metadata_version.pk}))
     assert response.status_code == 302
     assert settings.LOGIN_URL in response.location
 
@@ -152,7 +160,7 @@ def test_delete_wrong_login(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
     resource = DatasetDistributionFactory()
-    response = app.post(reverse('resource-delete', kwargs={'pk': resource.id}))
+    response = app.post(reverse('resource-delete', kwargs={'pk': resource.id, 'version_id': resource.metadata_version.pk}))
     assert response.status_code == 302
     assert str(resource.dataset_id) in response.location
 
@@ -162,7 +170,7 @@ def test_delete_correct_login(app: DjangoTestApp):
     resource = DatasetDistributionFactory(title='base title', description='base description')
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    resp = app.post(reverse('resource-delete', kwargs={'pk': resource.pk}))
+    resp = app.post(reverse('resource-delete', kwargs={'pk': resource.pk, 'version_id': resource.metadata_version.pk}))
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 0
 
@@ -170,7 +178,7 @@ def test_delete_correct_login(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_detail_tab_from_resource_detail_view(app: DjangoTestApp):
     resource = DatasetDistributionFactory()
-    resp = app.get(reverse('resource-detail', args=[resource.dataset.pk, resource.pk]))
+    resp = app.get(reverse('resource-detail', args=[resource.dataset.pk, resource.metadata_version.pk, resource.pk]))
     resp = resp.click(linkid='detail_tab')
     assert resp.request.path == resource.dataset.get_absolute_url()
 
@@ -180,7 +188,7 @@ def test_create_resource_model(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     resource = DatasetDistributionFactory()
-    form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+    form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.metadata_version.pk, resource.pk])).forms['model-form']
     form['name'] = "TestModel"
     resp = form.submit()
     assert resp.url == resource.get_absolute_url()
@@ -192,7 +200,8 @@ def test_create_resource_model(app: DjangoTestApp):
 def test_create_resource_without_name(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    resource = DatasetDistributionFactory()
+    version = VersionFactory()
+    resource = DatasetDistributionFactory(dataset=version.dataset, metadata_version=version)
     dataset = resource.dataset
     MetadataFactory(
         dataset=dataset,
@@ -205,12 +214,14 @@ def test_create_resource_without_name(app: DjangoTestApp):
     form['title'] = 'New resource'
     form['format'] = format.pk
     form['download_url'] = "www.test.com"
+    form['metadata_version'] = version.pk
     resp = form.submit()
     new_resource = DatasetDistribution.objects.exclude(pk=resource.pk)
     assert resp.url == new_resource.first().get_absolute_url()
     assert new_resource.count() == 1
     assert new_resource.first().metadata.count() == 1
     assert new_resource.first().metadata.first().name == 'resource4'
+    assert new_resource.first().metadata.first().metadata_version == version
 
 
 @pytest.mark.django_db
@@ -218,6 +229,7 @@ def test_create_resource_with_existing_download_url(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+    version = VersionFactory(dataset=dataset)
     format = FileFormat(extension='URL')
     DatasetDistributionFactory(
         dataset=dataset,
@@ -228,6 +240,7 @@ def test_create_resource_with_existing_download_url(app: DjangoTestApp):
     form['title'] = 'New resource'
     form['format'] = format.pk
     form['download_url'] = "http://www.test.com"
+    form['metadata_version'] = version.pk
     resp = form.submit()
     assert list(resp.context['form'].errors.values()) == [[
         'Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja.'
@@ -240,7 +253,7 @@ def test_distribution_detail_with_non_public_dataset_without_access(app: DjangoT
     resource = DatasetDistributionFactory(dataset=dataset)
     user = UserFactory()
     app.set_user(user)
-    response = app.get(reverse('resource-detail', args=[dataset.pk, resource.pk]), expect_errors=True)
+    response = app.get(reverse('resource-detail', args=[dataset.pk, resource.pk, resource.metadata_version.pk]), expect_errors=True)
     assert response.status_code == 403
 
 
@@ -257,23 +270,23 @@ def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTest
 
     )
     app.set_user(user)
-    response = app.get(reverse('resource-detail', args=[dataset.pk, resource.pk]))
+    response = app.get(reverse('resource-detail', args=[dataset.pk, resource.metadata_version.pk, resource.pk]))
     assert response.context['object'] == resource
 
 
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=True)
-    resource = DatasetDistributionFactory( uapi_format=True)
+    resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(reverse('resource-model-create', args=[dataset.pk, resource.pk])).forms['model-form']
+    form = app.get(reverse('resource-model-create', args=[dataset.pk, resource.metadata_version.pk, resource.pk])).forms['model-form']
     form['name'] = "TestModel"
     form.submit()
     assert resource.model_set.first().name == 'TestModel'
 
-    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.pk, "TestModel", "json"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.metadata_version.pk, resource.pk, "TestModel", "json"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/json'
@@ -285,16 +298,17 @@ def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_jsonl(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=True)
-    resource = DatasetDistributionFactory( uapi_format=True)
+    version = VersionFactory(dataset=dataset)
+    resource = DatasetDistributionFactory(uapi_format=True, metadata_version=version)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(reverse('resource-model-create', args=[dataset.pk, resource.pk])).forms['model-form']
+    form = app.get(reverse('resource-model-create', args=[dataset.pk, version.pk, resource.pk])).forms['model-form']
     form['name'] = "TestModel"
     form.submit()
     assert resource.model_set.first().name == 'TestModel'
 
-    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.pk, "TestModel", "jsonl"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, version.pk, resource.pk, "TestModel", "jsonl"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/jsonl'
@@ -306,16 +320,17 @@ def test_distribution_detail_dynamic_resource_jsonl(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_csv(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=True)
-    resource = DatasetDistributionFactory( uapi_format=True)
+    version = VersionFactory(dataset=dataset)
+    resource = DatasetDistributionFactory(uapi_format=True, metadata_version=version)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(reverse('resource-model-create', args=[dataset.pk, resource.pk])).forms['model-form']
+    form = app.get(reverse('resource-model-create', args=[dataset.pk, version.pk, resource.pk])).forms['model-form']
     form['name'] = "TestModel"
     form.submit()
     assert resource.model_set.first().name == 'TestModel'
 
-    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.pk, "TestModel", "csv"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, version.pk, resource.pk, "TestModel", "csv"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:format/csv'
@@ -326,16 +341,17 @@ def test_distribution_detail_dynamic_resource_csv(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_json_multiple_models(app: DjangoTestApp):
-    resource = DatasetDistributionFactory( uapi_format=True)
+    version = VersionFactory()
+    resource = DatasetDistributionFactory(dataset=version.dataset, uapi_format=True, metadata_version=version)
     user = UserFactory(is_staff=True)
     app.set_user(user)
     for model_name in ["TestModel", "TestModel2", "TestModel3"]:
-        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, version.pk, resource.pk])).forms['model-form']
         form['name'] = model_name
         form.submit()
     assert resource.model_set.count() == 3
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel", "json"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, version.pk, resource.pk, "TestModel", "json"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/json'
@@ -346,17 +362,18 @@ def test_distribution_detail_dynamic_resource_json_multiple_models(app: DjangoTe
 
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_jsonl_multiple_models(app: DjangoTestApp):
-    resource = DatasetDistributionFactory( uapi_format=True)
+    version = VersionFactory()
+    resource = DatasetDistributionFactory(dataset=version.dataset, uapi_format=True, metadata_version=version)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
     for model_name in ["TestModel", "TestModel2", "TestModel3"]:
-        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, version.pk, resource.pk])).forms['model-form']
         form['name'] = model_name
         form.submit()
     assert resource.model_set.count() == 3
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel", "jsonl"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, version.pk, resource.pk, "TestModel", "jsonl"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/jsonl'
@@ -367,17 +384,18 @@ def test_distribution_detail_dynamic_resource_jsonl_multiple_models(app: DjangoT
 
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_csv_multiple_models(app: DjangoTestApp):
-    resource = DatasetDistributionFactory( uapi_format=True)
+    version = VersionFactory()
+    resource = DatasetDistributionFactory(dataset=version.dataset, uapi_format=True, metadata_version=version)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
     for model_name in ["TestModel", "TestModel2", "TestModel3"]:
-        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, resource.pk])).forms['model-form']
+        form = app.get(reverse('resource-model-create', args=[resource.dataset.pk, version.pk, resource.pk])).forms['model-form']
         form['name'] = model_name
         form.submit()
     assert resource.model_set.count() == 3
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel", "csv"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, version.pk, resource.pk, "TestModel", "csv"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:format/csv'
@@ -385,11 +403,11 @@ def test_distribution_detail_dynamic_resource_csv_multiple_models(app: DjangoTes
     assert response.context['format'] == 'CSV'
     assert response.context['resource']['dataset'] == resource.dataset
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel2", "csv"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, version.pk, resource.pk, "TestModel2", "csv"]))
     assert response.status_code == 200
     assert str(response.context['resource']['models'][0]) == "TestModel2"
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, resource.pk, "TestModel3", "csv"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, version.pk, resource.pk, "TestModel3", "csv"]))
     assert response.status_code == 200
     assert str(response.context['resource']['models'][0]) == "TestModel3"
 
@@ -412,6 +430,7 @@ def test_create_distribution_with_invalid_url(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_create_distribution__translation(app: DjangoTestApp):
     dataset = DatasetFactory()
+    version = VersionFactory(dataset=dataset)
     file_format = FileFormat(extension='URL')
     user = UserFactory(is_staff=True, organization=dataset.organization)
     app.set_user(user)
@@ -420,6 +439,7 @@ def test_create_distribution__translation(app: DjangoTestApp):
     form['description'] = 'Aprašymas'
     form['format'] = file_format.id
     form['download_url'] = "www.google.lt"
+    form['metadata_version'] = version.pk
     resp = form.submit()
     assert resp.status_code == 302
     assert DatasetDistribution.objects.count() == 1
@@ -434,12 +454,14 @@ def test_create_distribution__translation(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_update_distribution__translation(app: DjangoTestApp):
-    distribution = DatasetDistributionFactory(title="", description="")
+    version = VersionFactory()
+    distribution = DatasetDistributionFactory(dataset=version.dataset, title="", description="", metadata_version=version)
     user = UserFactory(is_staff=True, organization=distribution.dataset.organization)
     app.set_user(user)
-    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk}) + "?language=lt").forms['resource-form']
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk, 'version_id': version.pk}) + "?language=lt").forms['resource-form']
     form['title'] = 'Pavadinimas'
     form['description'] = 'Aprašymas'
+    form['metadata_version'] = version.pk
     resp = form.submit()
     distribution.refresh_from_db()
     assert resp.status_code == 302
@@ -456,15 +478,17 @@ def test_update_distribution__existing_translation(app: DjangoTestApp):
     distribution = DatasetDistributionFactory()
     user = UserFactory(is_staff=True, organization=distribution.dataset.organization)
     app.set_user(user)
-    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk}) + "?language=lt").forms['resource-form']
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk, 'version_id': distribution.metadata_version.pk}) + "?language=lt").forms['resource-form']
     form['title'] = 'Pavadinimas'
     form['description'] = 'Aprašymas'
+    form['metadata_version'] = distribution.metadata_version.pk
     resp = form.submit()
     assert resp.status_code == 302
 
-    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk}) + "?language=en").forms['resource-form']
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk, 'version_id': distribution.metadata_version.pk}) + "?language=en").forms['resource-form']
     form['title'] = 'Title'
     form['description'] = 'Description'
+    form['metadata_version'] = distribution.metadata_version.pk
     resp = form.submit()
 
     distribution.refresh_from_db()
@@ -482,6 +506,7 @@ def test_distribution_with_compression_and_packaging_formats(app: DjangoTestApp)
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+    version = VersionFactory(dataset=dataset)
     file_format = FileFormat()
     compression_format = CompressionFormatFactory()
     packaging_format = PackagingFormatFactory()
@@ -492,6 +517,7 @@ def test_distribution_with_compression_and_packaging_formats(app: DjangoTestApp)
     form['download_url'] = "http://www.test.com"
     form['compression_format'] = compression_format.pk
     form['packaging_format'] = packaging_format.pk
+    form['metadata_version'] = version.pk
     form.submit()
 
     assert DatasetDistribution.objects.count() == 1
@@ -505,11 +531,13 @@ def test_create_distribution_without_access_download_urls_and_file(app: DjangoTe
     user = UserFactory(is_staff=True)
     app.set_user(user)
     dataset = DatasetFactory()
+    version = VersionFactory(dataset=dataset)
     file_format = FileFormat()
 
     form = app.get(reverse('resource-add', kwargs={'pk': dataset.pk})).forms['resource-form']
     form['title'] = 'New resource'
     form['format'] = file_format.pk
+    form['metadata_version'] = version.pk
     resp = form.submit()
 
     assert len(resp.context['form'].errors) == 3
@@ -521,16 +549,17 @@ def test_create_distribution_without_access_download_urls_and_file(app: DjangoTe
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_rdf(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=True)
+    version = VersionFactory(dataset=dataset)
     resource = DatasetDistributionFactory(uapi_format=True)
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(reverse('resource-model-create', args=[dataset.pk, resource.pk])).forms['model-form']
+    form = app.get(reverse('resource-model-create', args=[dataset.pk, version.pk, resource.pk])).forms['model-form']
     form['name'] = "TestModel"
     form.submit()
     assert resource.model_set.first().name == 'TestModel'
 
-    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, resource.pk, "TestModel", "rdf"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, version.pk, resource.pk, "TestModel", "rdf"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/rdf'

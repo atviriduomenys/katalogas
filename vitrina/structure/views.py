@@ -74,7 +74,7 @@ from vitrina.structure.services import (
     get_srid,
     transform_coordinates,
     get_data_from_spinta_async,
-    get_allowed_visibilities, create_output_distribution,
+    get_allowed_visibilities,
 )
 from vitrina.tasks.models import Task
 from spinta.manifests.open_api.helpers import create_openapi_manifest
@@ -3522,7 +3522,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                     return self.form_invalid(form)
 
         version_pk = self.new_version.pk if self.new_version else self.metadata_version.pk
-        create_output_distribution(self.dataset, self.new_version)
         return redirect(reverse("dataset-structure", args=[self.dataset.pk, version_pk]))
 
     def duplicate_output_dataset_distributions(self) -> dict:

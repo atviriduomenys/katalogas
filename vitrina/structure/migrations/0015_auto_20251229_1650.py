@@ -46,7 +46,7 @@ def assign_metadata_version_to_dataset_distributions(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_structure', '0013_version_number_assigning'),
+        ('vitrina_structure', '0014_alter_metadata_name'),
     ]
 
     operations = [

@@ -334,6 +334,7 @@ class ResourceModelCreateView(ModelCreateView):
         super().form_valid(form)
         model = self.object.object
         model.distribution = self.resource
+        model.metadata_version = self.metadata_version
         model.save()
         return redirect(self.resource.get_absolute_url())
 

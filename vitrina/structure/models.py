@@ -75,7 +75,7 @@ class Metadata(models.Model):
     )
 
     uuid = models.CharField(_("Id"), max_length=255)
-    name = models.CharField(_("Vardas"), max_length=255, blank=True)
+    name = models.CharField(_("Vardas"), max_length=400, blank=True)
     type = models.CharField(_("Tipas"), max_length=255, blank=True)
     ref = models.CharField(_("Ryšys"), max_length=255, blank=True, null=True)
     source = models.CharField(_("Šaltinis"), max_length=255, blank=True, null=True)

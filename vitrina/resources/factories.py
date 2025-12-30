@@ -15,6 +15,7 @@ from vitrina.resources.models import (
     CompressionFormat,
     PackagingFormat,
 )
+from vitrina.structure.factories import VersionFactory
 
 
 class FileFormat(DjangoModelFactory):
@@ -70,8 +71,10 @@ class DatasetDistributionFactory(DjangoModelFactory):
             code="DEVELOP",
         )
     )
-    metadata_version = None
-
+    metadata_version = factory.SubFactory(
+        VersionFactory,
+        dataset=factory.SelfAttribute('..dataset')
+    )
     class Params:
         uapi_format = factory.Trait(
             format=factory.SubFactory(UapiFormat),

@@ -1,3 +1,4 @@
+from django.utils import timezone
 from django.contrib.contenttypes.fields import GenericForeignKey
 from parler.models import TranslatedFields, TranslatableModel
 from django.db import models
@@ -343,3 +344,87 @@ class RequestAssignment(models.Model):
 
     def get_acl_parents(self):
         return self.organization.get_acl_parents()
+
+
+class RequestEscalation(models.Model):
+    LEVEL_MANAGER = 0
+    LEVEL_COORDINATOR = 1
+    LEVEL_ORGANIZATION = 2
+
+    LEVEL_CHOICES = [
+        (LEVEL_MANAGER, _("Duomenų tvarkytojas")),
+        (LEVEL_COORDINATOR, _("Organizacijos koordinatorius")),
+        (LEVEL_ORGANIZATION, _("Organizacija")),
+    ]
+
+    STOP_REASON_RESPONDED = "RESPONDED"
+    STOP_REASON_MANUAL = "MANUAL"
+    STOP_REASON_MAX_LEVEL = "MAX_LEVEL"
+
+    STOP_REASON_CHOICES = [
+        (STOP_REASON_RESPONDED, _("Atsakymas gautas iš tvarkytojų/koordinatorių.")),
+        (STOP_REASON_MANUAL, _("Sustabdyta rankiniu būdu.")),
+        (STOP_REASON_MAX_LEVEL, _("Pasiektas maksimalus eskalacijos lygis.")),
+    ]
+
+    request = models.OneToOneField(
+        "Request",
+        on_delete=models.CASCADE,
+        related_name="escalation",
+    )
+
+    escalation_level = models.IntegerField(
+        default=LEVEL_MANAGER,
+        choices=LEVEL_CHOICES,
+    )
+
+    last_escalation_sent = models.DateTimeField()
+
+    recipients_at_current_level = models.JSONField(default=list)
+
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    manually_stopped = models.BooleanField(
+        default=False,
+    )
+
+    stopped_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    stopped_reason = models.CharField(
+        max_length=20,
+        blank=True,
+        choices=STOP_REASON_CHOICES,
+    )
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        db_table = "request_escalation"
+        verbose_name = _("Poreikio eskalacija")
+        verbose_name_plural = _("Poreikių eskalacija")
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"Eskalacija poreikiui #{self.request.pk} - Lygis {self.escalation_level}"
+
+    def stop_escalation(self, reason):
+        self.is_active = False
+        self.stopped_at = timezone.now()
+        self.stopped_reason = reason
+
+        if reason == self.STOP_REASON_MANUAL:
+            self.manually_stopped = True
+
+        self.save()
+
+    def can_escalate_further(self):
+        return self.escalation_level < self.LEVEL_ORGANIZATION
+
+    def get_level_display_name(self):
+        return dict(self.LEVEL_CHOICES).get(self.escalation_level, _("Nežinoma"))

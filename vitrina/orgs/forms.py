@@ -27,6 +27,7 @@ from django.forms import (
     Textarea,
     CheckboxInput,
     RegexField,
+    TextInput,
 )
 from django.forms.models import ModelChoiceIterator
 from django.urls import resolve, Resolver404
@@ -45,9 +46,10 @@ from vitrina.orgs.models import (
     Representative,
     RepresentativeRequest,
     Template,
+    WhitelistedCodeName,
 )
 from vitrina.orgs.services import get_coordinators_count
-from vitrina.orgs.helpers import get_kind_choices
+from vitrina.orgs.helpers import get_kind_choices, generate_dataset_prefix, validate_global_uniqueness
 from vitrina.plans.models import Plan
 from vitrina.structure.services import get_data_from_spinta
 from vitrina.structure.models import Metadata
@@ -162,7 +164,13 @@ class OrganizationWidget(ModelSelect2Widget):
 class OrganizationBaseForm(ModelForm):
     company_code = CharField(label=_("Registracijos numeris"), required=True)
     title = CharField(label=_("Pavadinimas"), required=True)
-    name = CharField(label=_("Kodinis pavadinimas"), required=True)
+    name = CharField(
+        label=_("Kodinis pavadinimas"),
+        required=True,
+        help_text=_(
+            "Organizacijos identifikatorius. Rekomenduojama šiai reikšmei naudoti organizacijos trumpinį, kad bendras modelio pavadinimas nebūtų per daug ilgas. Atitinka dct:identifier."
+        ),
+    )
     jurisdiction = ModelChoiceField(
         queryset=AreaOfManagement.objects.all(),
         label=_("Valdymo sritis"),
@@ -223,8 +231,10 @@ class OrganizationBaseForm(ModelForm):
             Submit("submit", self.submit_label, css_class="button is-primary"),
         )
 
-    def clean_name(self):
+    def clean_name(self) -> str:
         name = self.cleaned_data.get("name")
+        if self.instance and self.instance.pk:
+            return name
         if name:
             if not name.islower():
                 raise ValidationError(_("Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."))
@@ -250,6 +260,14 @@ class OrganizationBaseForm(ModelForm):
 class OrganizationUpdateForm(OrganizationBaseForm):
     submit_label = _("Redaguoti")
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            field = self.fields["name"]
+            field.disabled = True
+            field.widget.attrs["disabled"] = True
+            self.initial["name"] = self.instance.name
+
 
 class OrganizationCreateForm(OrganizationBaseForm):
     submit_label = _("Sukurti")
@@ -261,6 +279,21 @@ class OrganizationCreateForm(OrganizationBaseForm):
             self.fields["title"].widget.attrs["readonly"] = True
             self.fields["company_code"].widget.attrs["readonly"] = True
             self.fields["address"].widget.attrs["readonly"] = True
+
+    def clean(self) -> dict[str, object]:
+        cleaned_data = super().clean()
+        name = cleaned_data.get("name")
+        kind = cleaned_data.get("kind")
+
+        if name and kind:
+            final_name = generate_dataset_prefix(name, kind)
+            try:
+                validate_global_uniqueness(final_name, instance=self.instance)
+            except ValidationError as e:
+                self.add_error("name", e)
+            cleaned_data["name"] = final_name
+
+        return cleaned_data
 
 
 class OrganizationSearchForm(FacetedSearchForm):
@@ -1253,3 +1286,15 @@ class ContactUpdateForm(BaseContactForm):
                 self.initial["contact"] = f"user-{contact_id}"
             elif self.instance.content_type == ContentType.objects.get_for_model(Organization):
                 self.initial["contact"] = f"org-{contact_id}"
+
+
+class WhitelistedCodeNameInlineForm(ModelForm):
+    class Meta:
+        model = WhitelistedCodeName
+        fields = ["code_name"]
+        widgets = {"code_name": TextInput(attrs={"placeholder": "datasets/{form}/{org}/"})}
+
+    def clean_code_name(self) -> str:
+        code_name = self.cleaned_data.get("code_name")
+        validate_global_uniqueness(code_name, instance=self.instance)
+        return code_name

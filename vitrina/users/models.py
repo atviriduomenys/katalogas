@@ -105,13 +105,21 @@ class User(AbstractUser):
 
     @property
     def is_gov_organization_manager(self) -> bool:
-        gov_org_content_type = self.organization_content_type
         return Representative.objects.filter(
             user=self,
-            content_type=gov_org_content_type,
+            content_type=self.organization_content_type,
             object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
             information_system_representative=False,
             open_data_representative=False,
+        ).exists()
+
+    @property
+    def is_gov_organization_information_system_manager(self) -> bool:
+        return Representative.objects.filter(
+            user=self,
+            content_type=self.organization_content_type,
+            object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
+            information_system_representative=True,
         ).exists()
 
     @property

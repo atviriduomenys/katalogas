@@ -12,92 +12,49 @@ body:
         Jei kai kurie skyriai netaikomi (pvz. As-Is ar User Flow), juos galima praleisti.
 
   - type: textarea
-    id: formuluote
+    id: poreikis
     attributes:
-      label: "Rolė, tikslas, funkcionalumas"
-      description: "Kaip <rolė>, tam, kad <tikslas>, noriu <funkcionalumas>."
+      label: "Poreikis"
       placeholder: |
         Kaip naudotojas,
         tam, kad galėčiau patogiai redaguoti duomenis naršyklėje,
         noriu matyti patogų redagavimo langą.
       render: markdown
 
-  - type: markdown
-    attributes:
-      value: |
-        > [!NOTE]
-        > Ši formuluotė apibrėžia naudotojo poreikį ir funkcionalumo vertę.
-
-  - type: textarea
-    id: aprasymas
-    attributes:
-      label: "Aprašymas"
-      description: "Ką šis funkcionalumas turi daryti, kokią problemą sprendžia, ar yra priklausomybių?"
-      placeholder: "Paaiškink pokyčio kontekstą ir tikslą."
-
   - type: textarea
     id: asis
     attributes:
-      label: "As-Is (jei taikoma)"
-      description: "Kaip ši vieta veikia dabar?"
+      label: "Dabartinė būsena"
       placeholder: "Aprašyk dabartinį veikimą"
 
   - type: textarea
     id: tobe
     attributes:
-      label: "To-Be (pagrindinis)"
-      description: "Aprašyk, kaip sistema turėtų veikti po pakeitimo."
-      placeholder: "Norimas elgesys, UI reakcijos, būsenos keitimas."
-
-  - type: markdown
-    attributes:
-      value: |
-        > [!TIP]
-        > Jei To-Be ir Acceptance Criteria sutampa, galima rašyti tik vieną iš jų.
-
-  - type: markdown
-    attributes:
-      value: |
-        > [!TIP]
-        > Gali pasirinkti, ar User Flow aprašysi, ar įkelsi paveikslėlį.
-
-  - type: textarea
-    id: userflow
-    attributes:
-      label: "User Flow (jei taikoma)"
-      description: "Trumpas naudotojo veiksmų aprašas"
-      placeholder: "Aprašyk naudotojo veiksmus, arba įkelk naudotojo veiksmų diagramą (coy+paste)"
+      label: "Siekiama būsena"
+      placeholder: "Norimas elgesys, UI reakcijos."
 
   - type: textarea
     id: wireframes
     attributes:
       label: "Wireframes"
-      description: "Wireframe schema, geriausia iš screenshot, su atvaizduotais pakeitimais"
-      placeholder: "Įkelk Wireframes (coy+paste)"
+      placeholder: "Įkelk norimo veikimo Wireframes (pavyzdžiui, screenshotais) (coy+paste)"
 
   - type: textarea
     id: acceptance
     attributes:
       label: "Acceptance Criteria"
-      description: "Sąlygos, kurias įgyvendinus, istorija laikoma atlikta."
       placeholder: |
         - [ ] <UI elementas atvaizduojamas pagal dizainą>
         - [ ] <Veiksmas sukelia tinkamą reakciją>
         - [ ] <Duomenys teisingai išsaugomi>
 
-  - type: markdown
-    attributes:
-      value: |
-        > [!IMPORTANT]
-        > Acceptance Criteria turi būti konkretūs ir patikrinami.
-
   - type: textarea
     id: priedai
     attributes:
       label: "Priedai"
-      description: "Nuorodos į API, schemas, kitas užduotis, Task tipo užduotis techniniam įgyvendinimui ar kitus dokumentus."
       placeholder: |
         - [ ] API dokumentacija
+        - [ ] DSA Specifikacija
         - [ ] Dizaino nuoroda
         - [ ] Susijusi užduotis #123
         - [ ] Techninio įgyvendinimo užduotis (Task tipo) #123
@@ -106,12 +63,8 @@ body:
     id: definition_of_done
     attributes:
       label: 📋 Definition of Done
-      description: "Checklist, kuris visada turi būti pažymėtas prieš uždarant istoriją"
       value: |
         - [ ] **Testai** parašyti / atnaujinti
         - [ ] **Dokumentacija atnaujinta** (jei reikia)
         - [ ] Padeployinta ir ištestuota **Laikinojoj testinėj** aplinkoj
-        - [ ] Acceptance Criteria įvykdyti
         - [ ] CHANGES.rst
-        - [ ] Pademonstruota per Sprint Review
-        - [ ] PO (ar atsakingas asmuo) peržiūrėjo ir patvirtino

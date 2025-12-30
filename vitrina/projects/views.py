@@ -76,9 +76,9 @@ class ProjectViewBaseMixin:
                 "can_view_clients": can_view_clients(self.request.user, self.project),
                 "can_view_history": can_view_history(self.request.user, self.project),
                 "agreement_subpages": [
-                    "agreement-list",
-                    "agreement-create",
-                    "agreement-detail",
+                    "project-agreement-create",
+                    "project-agreement-list",
+                    "project-agreement-detail",
                     "agreement-generate-pdf",
                     "agreement-upload-signed-adoc",
                 ],

@@ -6,7 +6,9 @@
 {% load comment_tags %}
 {% block pageTitle %}| {{ dataset.title }}{% endblock %}
 {% block pageDescription %}{{ dataset.description | escape }}{% endblock %}
-{% block pageAuthor %}{{ organization.title }}{% endblock %}
+{% if dataset.organization %}
+    {% block pageAuthor %}{{ dataset.organization.title }}{% endblock %}
+{% endif %}
 {% block pageOgTitle %}| {{ dataset.title }}{% endblock %}
 {% block pageOgDescription %}{{ dataset.description | escape }}{% endblock %}
 {% block parent_links %}

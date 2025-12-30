@@ -15,6 +15,8 @@ class UserFactory(DjangoModelFactory):
     phone = factory.Sequence(lambda n: "+3706%07d" % n)
     version = 1
     status = User.ACTIVE
+    is_viisp_login = False
+    viisp_company_code = None
 
 
 class ManagerFactory(DjangoModelFactory):

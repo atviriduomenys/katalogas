@@ -1,11 +1,41 @@
 from typing import Union
 
+from django.core.exceptions import ValidationError
+from slugify import slugify
+from functools import partial
+
 from django.utils.translation import gettext_lazy as _
 from rest_framework.request import Request
 
 from vitrina.classifiers.models import AreaOfManagement
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, WhitelistedCodeName
 from vitrina.users.models import User
+
+
+def validate_global_uniqueness(value: str, instance: WhitelistedCodeName | Organization | None = None) -> None:
+    org_qs = Organization.objects.all()
+    code_qs = WhitelistedCodeName.objects.all()
+    if instance:
+        if isinstance(instance, Organization):
+            org_qs = org_qs.exclude(pk=instance.pk)
+        elif isinstance(instance, WhitelistedCodeName):
+            code_qs = code_qs.exclude(pk=instance.pk)
+    if org_qs.filter(name__iexact=value).exists() or code_qs.filter(code_name__iexact=value).exists():
+        raise ValidationError(_("Toks Organizacijos kodinis pavadinimas jau egzistuoja."))
+
+
+def generate_dataset_prefix(organization_name: str, organization_kind: Organization.ORGANIZATION_KINDS) -> str:
+    """
+    Generates the dataset prefix based on the organization's kind and name.
+    Returns a string like:
+        - "datasets/gov/vssa/"
+        - "datasets/org/test-org/"
+    """
+    slugify_ascii_lower = partial(slugify, lowercase=True, allow_unicode=False)
+    organization_part = slugify_ascii_lower(organization_name)
+
+    prefix = "datasets/gov" if organization_kind == Organization.GOV else "datasets/org"
+    return f"{prefix}/{organization_part}/"
 
 
 def is_org_dataset_list(request: Request):

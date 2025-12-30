@@ -1,0 +1,36 @@
+{% extends "vitrina/agreements/base_agreement_detail.html" %}
+{% load i18n %}
+
+{% block parent_tabs %}
+    {% include 'vitrina/orgs/tabs.html' %}
+{% endblock %}
+
+{% block back_link_url %}
+    {% url 'organization-agreement-list' organization.pk %}
+{% endblock %}
+
+{% block agreement_buttons %}
+    <div class="buttons is-right">
+        {% if agreement.status == "CREATED" %}
+            <button class="button is-primary m-t-xs m-b-lg" disabled>
+                {% translate "Laukiama gavėjo veiksmų" %}
+            </button>
+        {% elif agreement.status == "SUBMITTED" and can_approve_agreements %}
+            <a href="{% url "organization-agreement-approve" organization.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                {% translate "Peržiūrėti pateiktą pasiūlymą" %}
+            </a>
+        {% elif can_form_agreements and agreement.status == "APPROVED" %}
+            <a href="{% url "organization-agreement-form" organization.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                {% translate "Formuoti sutartį" %}
+            </a>
+        {% elif agreement.status == "FORMED" %}
+            <button class="button is-primary m-t-xs m-b-lg" disabled>
+                {% translate "Laukiama kol gavėjas įkels pasirašytą dokumentą" %}
+            </button>
+        {% elif agreement.status == "INITIATED" and can_sign_agreements %}
+            <a href="{% url "organization-agreement-sign" organization.pk agreement.pk %}" class="button is-primary m-t-xs m-b-lg">
+                {% translate "Įkelti pasirašytą dokumentą (Teikėjo)" %}
+            </a>
+        {% endif %}
+    </div>
+{% endblock %}

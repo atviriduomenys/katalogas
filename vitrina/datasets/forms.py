@@ -85,7 +85,7 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
 
         user = request.user
 
-        if self.organization.kind == Organization.GOV and user.is_open_data_representative_for(self.organization):
+        if user.is_open_data_representative_for(self.organization):
             self.fields["subclass"].queryset = DCATResourceSubclass.objects.exclude(
                 name=DCATResourceSubclass.INFORMATION_SYSTEM
             )
@@ -197,6 +197,7 @@ class BaseResourceForm(TranslatableModelForm):
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-form"
         self.helper.form_tag = False
+        self.organization = organization
 
         if parent_id := request.resolver_match.kwargs.get("parent_id"):
             self.fields["parent"].initial = parent_id
@@ -209,6 +210,12 @@ class BaseResourceForm(TranslatableModelForm):
 
         if self.language_code == "en":
             self.fields["description"].required = False
+        organization = self.organization if self.organization else instance.organization
+        if request.user.is_open_data_representative_for(organization):
+            self.fields["access_rights"].choices = [
+                (Dataset.PUBLIC, _("Vieši")),
+                (Dataset.RESTRICTED, _("Apriboti")),
+            ]
 
         if instance:
             self.initial["files"] = list(instance.dataset_files.values_list("file", flat=True))
@@ -343,6 +350,28 @@ class BaseResourceForm(TranslatableModelForm):
 
             if any(ch.isupper() for ch in name):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
+            organization = self.organization or dataset_instance.organization
+            whitelisted = organization.whitelisted_names or []
+            main_prefix = organization.name or ""
+            allowed_prefixes = [main_prefix] + list(whitelisted)
+            matched_prefix = None
+            for prefix in allowed_prefixes:
+                if name.startswith(prefix):
+                    matched_prefix = prefix
+                    break
+            if not matched_prefix:
+                if whitelisted:
+                    message = _(
+                        "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
+                    ) % {"expected": main_prefix, "whitelisted": ", ".join(whitelisted)}
+                else:
+                    message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": main_prefix}
+
+                raise ValidationError(message)
+            suffix = name[len(matched_prefix) :]
+
+            if not suffix:
+                raise ValidationError(_("Po „%(prefix)s“ turi būti bent vienas simbolis.") % {"prefix": matched_prefix})
 
             metadata_qs = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Dataset),

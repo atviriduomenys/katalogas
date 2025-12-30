@@ -1,5 +1,5 @@
 import pytest
-from django.urls import reverse, NoReverseMatch
+from django.urls import reverse
 from django.test import override_settings
 from django_webtest import DjangoTestApp
 from django.contrib.auth.hashers import make_password
@@ -47,7 +47,7 @@ def test_form_submit_with_correct_data(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.viisp.urls_fake_viisp")
+@override_settings(DEBUG=True)
 def test_fake_viisp_logs_in_existing_user(app: DjangoTestApp):
     user = UserFactory(email="existing@test.com", is_viisp_login=False)
     user.set_password("abc")
@@ -64,7 +64,7 @@ def test_fake_viisp_logs_in_existing_user(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.viisp.urls_fake_viisp")
+@override_settings(DEBUG=True)
 def test_fake_viisp_logs_in_existing_user_no_company_code(app: DjangoTestApp):
     user = UserFactory(email="existing@test.com", is_viisp_login=False, viisp_company_code="123")
     user.set_password("abc")
@@ -81,7 +81,7 @@ def test_fake_viisp_logs_in_existing_user_no_company_code(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-@override_settings(ROOT_URLCONF="tests.viisp.urls_fake_viisp")
+@override_settings(DEBUG=True)
 def test_fake_viisp_logs_in_wrong_password(app: DjangoTestApp):
     user = UserFactory(email="existing@test.com", is_viisp_login=False)
     user.set_password("abc")
@@ -99,13 +99,8 @@ def test_fake_viisp_logs_in_wrong_password(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-@override_settings(DEBUG=False, ROOT_URLCONF="vitrina.urls")
-def test_fake_viisp_not_available_when_debug_false():
-    """
-    Patikrina, kad su DEBUG=False, tikrame projekto URLConfe
-    nėra 'fake-viisp-complete-login' maršruto.
-    """
-    from vitrina import urls as vitrina_urls
+@override_settings(DEBUG=False)
+def test_fake_viisp_returns_http_404_if_debug_false(app: DjangoTestApp):
+    response = app.post(reverse("fake-viisp-complete-login"), params={}, expect_errors=True)
 
-    with pytest.raises(NoReverseMatch):
-        reverse("fake-viisp-complete-login")
+    assert response.status_code == 404

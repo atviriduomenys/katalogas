@@ -4,7 +4,7 @@ import pytest
 from django.test import RequestFactory
 from django.utils.translation import gettext as _
 
-from vitrina.helpers import get_selected_value, get_filter_url
+from vitrina.helpers import get_selected_value, get_filter_url, get_file_extension
 from vitrina.helpers import prepare_email_by_identifier, build_page_title_context
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory
@@ -92,3 +92,22 @@ def test_dataset_only():
     assert result["root_name"] == "Parent Organization"
     assert "info_system_label" not in result
     assert "info_system_name" not in result
+
+
+@pytest.mark.parametrize(
+    "file_name, remove_dot, result",
+    [
+        ("test.txt", False, ".txt"),
+        ("test.txt", True, "txt"),
+        ("test.json", False, ".json"),
+        ("test.json", True, "json"),
+        ("test.tar.gz", False, ".gz"),
+        ("test.tar.gz", True, "gz"),
+        ("test", False, ""),
+        ("test", True, ""),
+        ("", False, ""),
+        ("", True, ""),
+    ]
+)
+def test_get_file_extension(file_name: str, remove_dot: bool, result: str):
+    assert get_file_extension(file_name, remove_dot=remove_dot) == result

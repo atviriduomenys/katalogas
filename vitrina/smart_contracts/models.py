@@ -138,13 +138,13 @@ class Agreement(UUIDBaseModel):
         self.files.create(
             file=ContentFile(json.dumps(odrl_jsonld), name=odrl_file_name),
             file_name=odrl_file_name,
-            file_extension=AgreementFile.AllowedFileTypes(get_file_extension(odrl_file_name, remove_dot=True)),
+            file_extension=AgreementFile.AllowedFileTypes(get_file_extension(odrl_file_name)),
         )
 
         return self.files.create(
             file=ContentFile(pdf_buffer.read(), name=pdf_file_name),
             file_name=pdf_file_name,
-            file_extension=AgreementFile.AllowedFileTypes(get_file_extension(pdf_file_name, remove_dot=True)),
+            file_extension=AgreementFile.AllowedFileTypes(get_file_extension(pdf_file_name)),
         )
 
     def generate_odrl_jsonld(self):

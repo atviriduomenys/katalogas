@@ -289,7 +289,7 @@ class DatasetDistribution(TranslatableModel):
 
     def extension(self) -> str:
         if self.file and self.file.file:
-            return get_file_extension(self.file.file.name, remove_dot=True).upper()
+            return get_file_extension(self.file.file.name).upper()
         else:
             return ""
 

@@ -95,19 +95,14 @@ def test_dataset_only():
 
 
 @pytest.mark.parametrize(
-    "file_name, remove_dot, result",
+    "file_name, result",
     [
-        ("test.txt", False, ".txt"),
-        ("test.txt", True, "txt"),
-        ("test.json", False, ".json"),
-        ("test.json", True, "json"),
-        ("test.tar.gz", False, ".gz"),
-        ("test.tar.gz", True, "gz"),
-        ("test", False, ""),
-        ("test", True, ""),
-        ("", False, ""),
-        ("", True, ""),
+        ("test.txt", "txt"),
+        ("test.json", "json"),
+        ("test.tar.gz", "gz"),
+        ("test", ""),
+        ("", ""),
     ]
 )
-def test_get_file_extension(file_name: str, remove_dot: bool, result: str):
-    assert get_file_extension(file_name, remove_dot=remove_dot) == result
+def test_get_file_extension(file_name: str, result: str):
+    assert get_file_extension(file_name) == result

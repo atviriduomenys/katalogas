@@ -172,7 +172,7 @@ class AgreementUploadSignedFileMixin(AgreementActionMixin):
             agreement=self.agreement,
             file_name=uploaded_file.name,
             file=uploaded_file,
-            file_extension=AgreementFile.AllowedFileTypes(get_file_extension(uploaded_file.name, remove_dot=True)),
+            file_extension=AgreementFile.AllowedFileTypes(get_file_extension(uploaded_file.name)),
         )
 
 
@@ -232,7 +232,7 @@ class AgreementFormMixin(AgreementActionMixin):
                 file=ContentFile(content=file.read(), name=copy_file_name),
                 is_template=True,
                 file_name=copy_file_name,
-                file_extension=AgreementFile.AllowedFileTypes(get_file_extension(copy_file_name, remove_dot=True)),
+                file_extension=AgreementFile.AllowedFileTypes(get_file_extension(copy_file_name)),
             )
 
 

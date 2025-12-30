@@ -710,12 +710,8 @@ def validate_file(file):
     )
 
 
-def get_file_extension(file_name: str, remove_dot=False) -> str:
-    extension = Path(file_name).suffix
-    if remove_dot:
-        extension = extension[1:]
-
-    return extension
+def get_file_extension(file_name: str) -> str:
+    return Path(file_name).suffix[1:]
 
 
 def build_page_title_context(

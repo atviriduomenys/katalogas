@@ -152,9 +152,10 @@ def test_structure_datasets(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    metadata_version = create_structure_objects(structure)
     metadata = Metadata.objects.filter(
-        content_type=ContentType.objects.get_for_model(Dataset)
+        content_type=ContentType.objects.get_for_model(Dataset),
+        metadata_version=metadata_version
     )
     assert metadata.count() == 2
     assert sorted(list(metadata.values_list('name', flat=True))) == [
@@ -184,16 +185,18 @@ def test_structure_models_and_props(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    metadata_version = create_structure_objects(structure)
     metadata = Metadata.objects.filter(
-        content_type=ContentType.objects.get_for_model(Dataset)
+        content_type=ContentType.objects.get_for_model(Dataset),
+        metadata_version=metadata_version
     )
     assert metadata.count() == 1
     assert list(metadata.values_list('name', flat=True)) == ['datasets/gov/ivpk/adp']
 
-    models = Model.objects.all()
+    models = Model.objects.filter(metadata_version=metadata_version)
     metadata = Metadata.objects.filter(
-        content_type=ContentType.objects.get_for_model(Model)
+        content_type=ContentType.objects.get_for_model(Model),
+        metadata_version=metadata_version
     ).order_by('order')
     assert models.count() == 2
     assert models[0].dataset == structure.dataset
@@ -215,10 +218,11 @@ def test_structure_models_and_props(app: DjangoTestApp):
         ('datasets/gov/ivpk/adp/Catalog', 'id', '', {}, 'Catalog'),
     ]
 
-    props = Property.objects.filter(model=models[0])
+    props = Property.objects.filter(model=models[0], metadata_version=metadata_version)
     metadata = Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Property),
-        object_id__in=props.values_list('pk', flat=True)
+        object_id__in=props.values_list('pk', flat=True),
+        metadata_version=metadata_version
     ).order_by('order')
     assert props.count() == 2
     assert metadata.count() == 2
@@ -234,10 +238,11 @@ def test_structure_models_and_props(app: DjangoTestApp):
         ('title', 'string', 2, Metadata.OPEN, 'dct:title', ''),
     ]
 
-    props = Property.objects.filter(model=models[1])
+    props = Property.objects.filter(model=models[1],metadata_version=metadata_version)
     metadata = Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Property),
-        object_id__in=props.values_list('pk', flat=True)
+        object_id__in=props.values_list('pk', flat=True),
+        metadata_version=metadata_version
     )
     assert props.count() == 1
     assert metadata.count() == 1
@@ -516,8 +521,8 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
-    assert Metadata.objects.count() == 9
+    metadata_version = create_structure_objects(structure)
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 9
 
     new_manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
@@ -534,8 +539,8 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
-    assert Metadata.objects.count() == 6
+    metadata_version = create_structure_objects(structure, metadata_version)
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 6
     assert Metadata.objects.get(uuid='2').name == 'datasets/gov/ivpk/adp2/updated'
     assert Metadata.objects.get(uuid='3').name == 'datasets/gov/ivpk/adp2/updated/CountryUpdated'
     assert Metadata.objects.get(uuid='4').type == 'string'
@@ -989,8 +994,8 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
-    assert Metadata.objects.count() == 14
+    metadata_version = create_structure_objects(structure)
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 14
     assert list(Enum.objects.values_list('name', flat=True)) == ['Size', 'Deprecated', 'Type']
     assert list(EnumItem.objects.filter(enum__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1018,8 +1023,8 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
     structure.file = FilerFileFactory(
         file=FileField(filename='file.csv', data=new_manifest)
     )
-    create_structure_objects(structure, version)
-    assert Metadata.objects.count() == 9
+    metadata_version = create_structure_objects(structure, metadata_version)
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 9
     assert list(Enum.objects.values_list('name', flat=True)) == ['Size', 'Type']
     assert list(EnumItem.objects.filter(enum__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1049,8 +1054,8 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
-    assert Metadata.objects.count() == 7
+    metadata_version = create_structure_objects(structure)
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 7
     assert list(Param.objects.values_list('name', flat=True)) == ['Size', 'Deprecated']
     assert list(ParamItem.objects.filter(param__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1071,8 +1076,8 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
-    assert Metadata.objects.count() == 3
+    metadata_version = create_structure_objects(structure, metadata_version)
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 3
     assert list(Param.objects.values_list('name', flat=True)) == ['Size']
     assert list(ParamItem.objects.filter(param__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -2030,9 +2035,10 @@ def test_import_structure_with_wrong_datasets_name(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    metadata_version = create_structure_objects(structure)
     metadata = Metadata.objects.filter(
-        content_type=ContentType.objects.get_for_model(Dataset)
+        content_type=ContentType.objects.get_for_model(Dataset),
+        metadata_version=metadata_version,
     )
     assert metadata.count() == 0
     comments = Comment.objects.filter(
@@ -2317,12 +2323,12 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
     dist_format = FileFormat()
 
     distribution = DatasetDistribution.objects.first()
-    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk})).forms['resource-form']
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk, 'version_id': distribution.metadata_version.pk})).forms['resource-form']
     form['title'] = 'Edited title'
     form['description'] = 'Edited description'
     form['format'] = dist_format.pk
     resp = form.submit()
-    assert resp.url == reverse('resource-detail', args=[structure.dataset.pk, distribution.pk])
+    assert resp.url == reverse('resource-detail', args=[structure.dataset.pk, distribution.metadata_version.pk, distribution.pk])
     assert distribution.metadata.count() == 1
     assert distribution.metadata.first().title == "Edited title"
     assert distribution.metadata.first().description == "Edited description"
@@ -2363,11 +2369,11 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
     dist_format = FileFormat()
 
     distribution = DatasetDistribution.objects.first()
-    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk})).forms['resource-form']
+    form = app.get(reverse('resource-change', kwargs={'pk': distribution.pk, 'version_id': distribution.metadata_version.pk})).forms['resource-form']
     form['level'] = 2
     form['format'] = dist_format.pk
     resp = form.submit()
-    assert resp.url == reverse('resource-detail', args=[structure.dataset.pk, distribution.pk])
+    assert resp.url == reverse('resource-detail', args=[structure.dataset.pk, distribution.metadata_version.pk, distribution.pk])
     assert distribution.metadata.count() == 1
     assert distribution.metadata.first().level_given == 2
 
@@ -2672,9 +2678,10 @@ def test_structure_with_origin_source_type_headers(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    metadata_version = create_structure_objects(structure)
     metadata = Metadata.objects.filter(
-        content_type=ContentType.objects.get_for_model(Dataset)
+        content_type=ContentType.objects.get_for_model(Dataset),
+        metadata_version=metadata_version,
     )
     assert metadata.count() == 1
     assert sorted(list(metadata.values_list('name', flat=True))) == [

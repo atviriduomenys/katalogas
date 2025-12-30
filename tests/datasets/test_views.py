@@ -2060,20 +2060,23 @@ class TestDatasetCreateView:
         org = OrganizationFactory()
         user = UserFactory(is_staff=True, organization=org)
         app.set_user(user)
-
         dataset1 = DatasetFactory(organization=org, title="Test Dataset")
+        metadata_version1 = VersionFactory(dataset=dataset1)
         MetadataFactory(
             content_type=ContentType.objects.get_for_model(Dataset),
             name=f"{org.name}test-dataset",
             dataset=dataset1,
             object_id=dataset1.pk,
+            metadata_version=metadata_version1,
         )
         dataset2 = DatasetFactory(organization=org, title="Second Test Dataset")
+        metadata_version2 = VersionFactory(dataset=dataset2)
         MetadataFactory(
             content_type=ContentType.objects.get_for_model(Dataset),
             name=f"{org.name}test-dataset_3",
             dataset=dataset2,
             object_id=dataset2.pk,
+            metadata_version=metadata_version2,
         )
 
         form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[

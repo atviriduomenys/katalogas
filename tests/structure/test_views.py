@@ -2209,7 +2209,7 @@ def test_new_version_with_new_structure(app: DjangoTestApp):
     form['description'] = "Add new structure to version"
     form.submit()
 
-    assert _Version.objects.count() == 2
+    assert _Version.objects.filter(dataset=dataset).count() == 2
     assert _Version.objects.exclude(status=VersionStatus.DRAFT).first().dataset == dataset
     assert len(list(_Version.objects.exclude(status=VersionStatus.DRAFT).first().metadata_set.values_list(
         'pk', flat=True
@@ -5076,9 +5076,9 @@ def test_publishing_dataset_duplicates_metadata_but_not_dataset(app: DjangoTestA
         metadata_version=version
     )
 
-    assert Metadata.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == 1
     assert Dataset.objects.count() - 1 == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5086,9 +5086,9 @@ def test_publishing_dataset_duplicates_metadata_but_not_dataset(app: DjangoTestA
     form['metadata'] = dataset_meta.pk
     form.submit()
 
-    assert Metadata.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == 2
     assert Dataset.objects.count() - 1 == 1
-    assert _Version.objects.count() == 2
+    assert _Version.objects.filter(dataset=dataset).count() == 2
 
 
 def test_if_dataset_not_published_error(app: DjangoTestApp):
@@ -5104,9 +5104,9 @@ def test_if_dataset_not_published_error(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    assert Metadata.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == 1
     assert Dataset.objects.count() - 1 == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5140,9 +5140,9 @@ def test_publishing_model_duplicates_metadata_and_model(app: DjangoTestApp):
         metadata_version=version
     )
 
-    assert Metadata.objects.count() == 2
-    assert Model.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == 2
+    assert Model.objects.filter(dataset=dataset).count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5150,9 +5150,9 @@ def test_publishing_model_duplicates_metadata_and_model(app: DjangoTestApp):
     form['metadata'] = [dataset_meta.pk, model_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
+    assert Model.objects.filter(dataset=dataset).count() == 2
+    assert _Version.objects.filter(dataset=dataset).count() == 2
 
 
 def test_publishing_model_duplicates_metadata_and_dataset_distribution(app: DjangoTestApp):
@@ -5184,10 +5184,10 @@ def test_publishing_model_duplicates_metadata_and_dataset_distribution(app: Djan
         metadata_version=version
     )
 
-    assert Metadata.objects.count() == 3
-    assert Model.objects.count() == 1
-    assert DatasetDistribution.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == 3
+    assert Model.objects.filter(dataset=dataset).count() == 1
+    assert DatasetDistribution.objects.filter(dataset=dataset).count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5195,10 +5195,10 @@ def test_publishing_model_duplicates_metadata_and_dataset_distribution(app: Djan
     form['metadata'] = [dataset_meta.pk, distribution_meta.pk, model_meta.pk]
     response = form.submit()
 
-    assert Metadata.objects.count() == 6
-    assert Model.objects.count() == 2
-    assert DatasetDistribution.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == 6
+    assert Model.objects.filter(dataset=dataset).count() == 2
+    assert DatasetDistribution.objects.filter(dataset=dataset).count() == 2
+    assert _Version.objects.filter(dataset=dataset).count() == 2
 
 
 def test_publishing_model_without_resource_error(app: DjangoTestApp):
@@ -5230,10 +5230,10 @@ def test_publishing_model_without_resource_error(app: DjangoTestApp):
         metadata_version=version
     )
 
-    assert Metadata.objects.count() == 3
-    assert Model.objects.count() == 1
-    assert DatasetDistribution.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == 3
+    assert Model.objects.filter(dataset=dataset).count() == 1
+    assert DatasetDistribution.objects.filter(dataset=dataset).count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5245,10 +5245,10 @@ def test_publishing_model_without_resource_error(app: DjangoTestApp):
     assert response.context['form'].errors
     assert "laukas TestModel turi nuorodą į jį" in response.context['form'].errors['__all__'][0]
 
-    assert Metadata.objects.count() == 3
-    assert Model.objects.count() == 1
-    assert DatasetDistribution.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == 3
+    assert Model.objects.filter(dataset=dataset).count() == 1
+    assert DatasetDistribution.objects.filter(dataset=dataset).count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
 
 def test_publishing_property_duplicates_metadata_and_property(app: DjangoTestApp):
@@ -5281,9 +5281,9 @@ def test_publishing_property_duplicates_metadata_and_property(app: DjangoTestApp
         metadata_version=version
     )
 
-    assert Metadata.objects.count() == 3
+    assert Metadata.objects.filter(dataset=dataset).count() == 3
     assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5291,9 +5291,9 @@ def test_publishing_property_duplicates_metadata_and_property(app: DjangoTestApp
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 6
+    assert Metadata.objects.filter(dataset=dataset).count() == 6
     assert Property.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert _Version.objects.filter(dataset=dataset).count() == 2
 
 
 def test_publishing_property_without_model_error(app: DjangoTestApp):
@@ -5326,9 +5326,9 @@ def test_publishing_property_without_model_error(app: DjangoTestApp):
         metadata_version=version
     )
 
-    assert Metadata.objects.count() == 3
+    assert Metadata.objects.filter(dataset=dataset).count() == 3
     assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5340,9 +5340,9 @@ def test_publishing_property_without_model_error(app: DjangoTestApp):
     assert response.context['form'].errors
     assert "laukas prop turi nuorodą į jį" in response.context['form'].errors['__all__'][0]
 
-    assert Metadata.objects.count() == 3
+    assert Metadata.objects.filter(dataset=dataset).count() == 3
     assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
 
 def test_publishing_enum_duplicates_enum_item_and_enum(app: DjangoTestApp):
@@ -5393,10 +5393,10 @@ def test_publishing_enum_duplicates_enum_item_and_enum(app: DjangoTestApp):
         metadata_version=version
     )
 
-    assert Metadata.objects.count() == 4
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
     assert EnumItem.objects.count() == 1
     assert Enum.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5404,10 +5404,10 @@ def test_publishing_enum_duplicates_enum_item_and_enum(app: DjangoTestApp):
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 8
+    assert Metadata.objects.filter(dataset=dataset).count() == 8
     assert EnumItem.objects.count() == 2
     assert Enum.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert _Version.objects.filter(dataset=dataset).count() == 2
 
 
 def test_publishing_enum_without_property_error(app: DjangoTestApp):
@@ -5458,10 +5458,10 @@ def test_publishing_enum_without_property_error(app: DjangoTestApp):
         metadata_version=version
     )
 
-    assert Metadata.objects.count() == 4
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
     assert EnumItem.objects.count() == 1
     assert Enum.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5473,10 +5473,10 @@ def test_publishing_enum_without_property_error(app: DjangoTestApp):
     assert response.context['form'].errors
     assert response.context['form'].errors['__all__'][0] == "Laukas 1 turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje."
 
-    assert Metadata.objects.count() == 4
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
     assert EnumItem.objects.count() == 1
     assert Enum.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
 
 def test_publishing_model_with_base_duplicates_model_and_base(app: DjangoTestApp):
@@ -5521,10 +5521,10 @@ def test_publishing_model_with_base_duplicates_model_and_base(app: DjangoTestApp
     model.base = base
     model.save()
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
+    assert Model.objects.filter(dataset=dataset).count() == 2
     assert Base.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5532,10 +5532,10 @@ def test_publishing_model_with_base_duplicates_model_and_base(app: DjangoTestApp
     form['metadata'] = [dataset_meta.pk, base_model_meta.pk, model_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 8
-    assert Model.objects.count() == 4
+    assert Metadata.objects.filter(dataset=dataset).count() == 8
+    assert Model.objects.filter(dataset=dataset).count() == 4
     assert Base.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert _Version.objects.filter(dataset=dataset).count() == 2
 
 
 def test_publishing_model_with_without_base_error(app: DjangoTestApp):
@@ -5580,10 +5580,10 @@ def test_publishing_model_with_without_base_error(app: DjangoTestApp):
     model.base = base
     model.save()
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
+    assert Model.objects.filter(dataset=dataset).count() == 2
     assert Base.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5595,10 +5595,10 @@ def test_publishing_model_with_without_base_error(app: DjangoTestApp):
     assert response.context['form'].errors
     assert "laukas test/dataset/BaseModel turi nuorodą į jį." in response.context['form'].errors['__all__'][0]
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
+    assert Model.objects.filter(dataset=dataset).count() == 2
     assert Base.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
 
 def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
@@ -5621,11 +5621,11 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
     structure.dataset.save()
     version = create_structure_objects(structure)
 
-    assert Metadata.objects.count() == 5
-    assert Model.objects.count() == 2
-    assert DatasetDistribution.objects.count() == 1
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 5
+    assert Model.objects.filter(dataset=structure.dataset).count() == 2
+    assert DatasetDistribution.objects.filter(dataset=structure.dataset).count() == 1
     assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=structure.dataset).count() == 1
 
     publish_metadata = list(
         Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "adp", "datasets/govsssss/ivpk/adp/City", "id"]).values_list('pk', flat=True)
@@ -5640,11 +5640,11 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
     assert response.context['form'].errors
     assert response.context['form'].errors['__all__'][0] == "Laukas Country privalo būti publikuojamas, nes laukas id turi nuorodą į jį."
 
-    assert Metadata.objects.count() == 5
-    assert Model.objects.count() == 2
-    assert DatasetDistribution.objects.count() == 1
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 5
+    assert Model.objects.filter(dataset=structure.dataset).count() == 2
+    assert DatasetDistribution.objects.filter(dataset=structure.dataset).count() == 1
     assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=structure.dataset).count() == 1
 
 
 def test_publishing_property_with_ref_to_another_property(app: DjangoTestApp):
@@ -5668,11 +5668,11 @@ def test_publishing_property_with_ref_to_another_property(app: DjangoTestApp):
     structure.dataset.save()
     version = create_structure_objects(structure)
 
-    assert Metadata.objects.count() == 6
-    assert Model.objects.count() == 2
-    assert DatasetDistribution.objects.count() == 1
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 6
+    assert Model.objects.filter(dataset=structure.dataset).count() == 2
+    assert DatasetDistribution.objects.filter(dataset=structure.dataset).count() == 1
     assert Property.objects.count() == 2
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=structure.dataset).count() == 1
 
     publish_metadata = list(
         Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "adp", "datasets/govsssss/ivpk/adp/City", "datasets/govsssss/ivpk/adp/Country", "country.id"]).values_list('pk', flat=True)
@@ -5706,8 +5706,8 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     structure.dataset.save()
     version = create_structure_objects(structure)
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 4
+    assert Model.objects.filter(dataset=structure.dataset).count() == 2
     assert Base.objects.count() == 0
 
     publish_metadata = list(
@@ -5719,8 +5719,8 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     form['metadata'] = publish_metadata
     form.submit()
 
-    assert Metadata.objects.count() == 7
-    assert Model.objects.count() == 3
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 7
+    assert Model.objects.filter(dataset=structure.dataset).count() == 3
     assert Base.objects.count() == 0
 
     published_version = _Version.objects.filter(dataset=structure.dataset).order_by("-created").first()
@@ -5730,7 +5730,7 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     form['base'].force_value(str(base_model.pk))
     form.submit()
 
-    assert Metadata.objects.count() == 8
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 8
     assert Base.objects.count() == 1
 
     publish_metadata = list(
@@ -5746,8 +5746,8 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     published_model = Model.objects.filter(dataset=structure.dataset, metadata_version=published_version).first()
 
     assert base_model.pk == published_model.base.model.pk
-    assert Metadata.objects.count() == 12
-    assert Model.objects.count() == 4
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 12
+    assert Model.objects.filter(dataset=structure.dataset).count() == 4
     assert Base.objects.count() == 2
 
 
@@ -5789,9 +5789,9 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
         metadata_version=second_version,
     )
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
     assert Base.objects.count() == 0
 
     form = app.get(reverse('version-create', args=[first_dataset.pk, first_version.pk])).forms['version-form']
@@ -5800,9 +5800,9 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
     form['metadata'] = [first_dataset_meta.pk, first_model_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 6
-    assert Model.objects.count() == 3
-    assert _Version.objects.count() == 3
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 6
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
     assert Base.objects.count() == 0
 
     first_published_version = _Version.objects.filter(dataset=first_dataset).order_by("-created").first()
@@ -5812,9 +5812,9 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
     form['base'].force_value(str(first_published_model.pk))
     form.submit()
 
-    assert Metadata.objects.count() == 7
-    assert Model.objects.count() == 3
-    assert _Version.objects.count() == 3
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 7
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
     assert Base.objects.count() == 1
 
     form = app.get(reverse('version-create', args=[second_dataset.pk, second_version.pk])).forms['version-form']
@@ -5826,9 +5826,9 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
     published_model_with_base = Model.objects.filter(dataset=second_dataset, metadata_version=published_version).first()
 
     assert first_published_model.pk == published_model_with_base.base.model.pk
-    assert Metadata.objects.count() == 10
-    assert Model.objects.count() == 4
-    assert _Version.objects.count() == 4
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 10
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
     assert Base.objects.count() == 2
 
 
@@ -5868,9 +5868,9 @@ def test_publishing_model_with_base_from_draft_version_different_dataset(app: Dj
         name="test/dataset/TestModel2",
         metadata_version=second_version,
     )
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
     assert Base.objects.count() == 0
 
     form = app.get(reverse('model-update', args=[second_dataset.pk, second_version.pk, "TestModel2"])).forms['model-form']
@@ -5878,9 +5878,9 @@ def test_publishing_model_with_base_from_draft_version_different_dataset(app: Dj
     form.submit()
     second_model.refresh_from_db()
 
-    assert Metadata.objects.count() == 5
-    assert Model.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 5
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
     assert Base.objects.count() == 1
 
     form = app.get(reverse('version-create', args=[second_dataset.pk, second_version.pk])).forms['version-form']
@@ -5932,9 +5932,9 @@ def test_publishing_property_with_published_model_ref_same_dataset(app: DjangoTe
         metadata_version=version,
     )
 
-    assert Metadata.objects.count() == 4
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 2
+    assert Model.objects.filter(dataset=dataset).count() == 2
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5944,9 +5944,9 @@ def test_publishing_property_with_published_model_ref_same_dataset(app: DjangoTe
     published_version = _Version.objects.filter(dataset=dataset).order_by("-created").first()
     first_published_model = Model.objects.filter(metadata_version=published_version).first()
 
-    assert Metadata.objects.count() == 6
+    assert Metadata.objects.filter(dataset=dataset).count() == 6
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 3
+    assert Model.objects.filter(dataset=dataset).count() == 3
 
     property_form = app.get(reverse('property-update', args=[dataset.pk, version.pk, "TestModel2", "prop2"])).forms['property-form']
     property_form['ref'].force_value(str(first_published_model.pk))
@@ -5963,9 +5963,9 @@ def test_publishing_property_with_published_model_ref_same_dataset(app: DjangoTe
     second_published_property = Property.objects.filter(metadata_version=published_version).first()
 
     assert first_published_model.pk == second_published_property.ref_model_id
-    assert Metadata.objects.count() == 9
+    assert Metadata.objects.filter(dataset=dataset).count() == 9
     assert Property.objects.count() == 2
-    assert Model.objects.count() == 4
+    assert Model.objects.filter(dataset=dataset).count() == 4
 
 
 def test_publishing_property_with_published_model_ref_different_dataset(app: DjangoTestApp):
@@ -6015,9 +6015,9 @@ def test_publishing_property_with_published_model_ref_different_dataset(app: Dja
         metadata_version=second_version,
     )
 
-    assert Metadata.objects.count() == 5
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 5
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 2
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
 
     form = app.get(reverse('version-create', args=[first_dataset.pk, first_version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -6027,9 +6027,9 @@ def test_publishing_property_with_published_model_ref_different_dataset(app: Dja
     published_version = _Version.objects.filter(dataset=first_dataset).order_by("-created").first()
     first_published_model = Model.objects.filter(metadata_version=published_version).first()
 
-    assert Metadata.objects.count() == 7
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 7
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 3
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
 
     property_form = app.get(reverse('property-update', args=[second_dataset.pk, second_version.pk, "TestModel2", "prop2"])).forms['property-form']
     property_form['ref'].force_value(str(first_published_model.pk))
@@ -6047,9 +6047,9 @@ def test_publishing_property_with_published_model_ref_different_dataset(app: Dja
     second_published_property = Property.objects.filter(metadata_version=published_version).first()
 
     assert first_published_model.pk == second_published_property.ref_model_id
-    assert Metadata.objects.count() == 10
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 10
     assert Property.objects.count() == 2
-    assert Model.objects.count() == 4
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
 
 
 def test_publishing_property_with_draft_model_ref_same_dataset(app: DjangoTestApp):
@@ -6091,9 +6091,9 @@ def test_publishing_property_with_draft_model_ref_same_dataset(app: DjangoTestAp
         metadata_version=version,
     )
 
-    assert Metadata.objects.count() == 4
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 2
+    assert Model.objects.filter(dataset=dataset).count() == 2
 
     property_form = app.get(reverse('property-update', args=[dataset.pk, version.pk, "TestModel2", "prop2"])).forms['property-form']
     property_form['ref'].force_value(str(first_model.pk))
@@ -6159,9 +6159,9 @@ def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoT
         metadata_version=second_version,
     )
 
-    assert Metadata.objects.count() == 5
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 5
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 2
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
 
     property_form = app.get(reverse('property-update', args=[second_dataset.pk, second_version.pk, "TestModel2", "prop2"])).forms['property-form']
     property_form['ref'].force_value(str(first_model.pk))

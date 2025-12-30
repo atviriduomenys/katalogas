@@ -673,9 +673,7 @@ class PropertyStructureView(
             self.models = (
                 Model.objects.filter(dataset=self.object, metadata_version=self.metadata_version)
                 .filter(Q(metadata__visibility__in=allowed_visibilities_model) | Q(metadata__visibility__isnull=True))
-                .order_by(
-                "metadata__name"
-            )
+                .order_by("metadata__name")
             )
             self.props = (
                 self.model.get_given_props()
@@ -1949,7 +1947,7 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             Property.objects.filter(visibility_filter_property),
             model=self.model_obj,
             metadata__name=prop_name,
-            metadata_version=self.metadata_version
+            metadata_version=self.metadata_version,
         )
         if not self.property:
             raise Http404("No Property matches the given query.")
@@ -2161,9 +2159,9 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         # Filter by version?
         if has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset):
             self.models = (
-                Model.objects.filter(dataset=self.dataset, metadata_version=self.metadata_version).filter(visibility_filter).order_by(
-                "metadata__name"
-            )
+                Model.objects.filter(dataset=self.dataset, metadata_version=self.metadata_version)
+                .filter(visibility_filter)
+                .order_by("metadata__name")
             )
         else:
             self.models = (
@@ -2654,7 +2652,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
             Property.objects.filter(visibility_filter_property),
             model=self.model_obj,
             metadata__name=prop_name,
-            metadata_version=self.metadata_version
+            metadata_version=self.metadata_version,
         )
         return super().dispatch(request, *args, **kwargs)
 
@@ -3728,7 +3726,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def _should_raise_unpublished_field_error_for_enum_param(
         self, enum_param_obj: Union[Enum, Param], already_created_fields: dict
     ) -> bool:
-
         related_model = type(enum_param_obj.object)
         return (
             related_model in [Property, Model, DatasetDistribution]

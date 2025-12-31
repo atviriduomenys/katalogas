@@ -3639,7 +3639,7 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         </dcat:contactPoint>
         <dcat:landingPage rdf:resource="https://landing-page.com"/>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist1.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/versions/{dist1.metadata_version.id}/resource/{dist1.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 1</dct:title>
                 <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
@@ -3662,7 +3662,7 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
             </dcat:Distribution>
         </dcat:distribution>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist2.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/versions/{dist2.metadata_version.id}/resource/{dist2.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 2</dct:title>
                 <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>
@@ -3795,7 +3795,7 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
             </vcard:Kind>
         </dcat:contactPoint>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist1.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/versions/{dist1.metadata_version.id}/resource/{dist1.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 1</dct:title>
                 <dct:description xml:lang="lt">Failas su prieigos nuoroda</dct:description>
@@ -3818,7 +3818,7 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
             </dcat:Distribution>
         </dcat:distribution>
         <dcat:distribution>
-            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/resource/{dist2.id}">
+            <dcat:Distribution rdf:about="http://localhost/datasets/{dataset.id}/versions/{dist2.metadata_version.id}/resource/{dist2.id}">
                 <dct:type rdf:resource="http://publications.europa.eu/resource/authority/distribution-type/DOWNLOADABLE_FILE"/>
                 <dct:title xml:lang="lt">Failas 2</dct:title>
                 <dct:description xml:lang="lt">Failas be prieigos nuorodos</dct:description>

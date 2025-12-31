@@ -15,7 +15,7 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.models import Organization, Representative
 from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
 from vitrina.requests.models import Request
-from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory
+from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory, VersionFactory
 from vitrina.users.factories import UserFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 

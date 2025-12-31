@@ -39,7 +39,7 @@ def non_public_but_public_access_dataset():
 @pytest.fixture
 def representative_on_dataset(public_dataset):
     ct = ContentType.objects.get_for_model(public_dataset)
-    return RepresentativeFactory(content_type=ct, object_id=public_dataset.pk, role=Representative.COORDINATOR)
+    return RepresentativeFactory(content_type=ct, object_id=public_dataset.pk, role=Representative.OPEN_DATA_COORDINATOR)
 
 
 @pytest.mark.django_db
@@ -154,8 +154,10 @@ def test_dataset_permissions(role, can_write, action, dataset_fixture, expected,
 @pytest.mark.parametrize(
     "role,action,obj_fixture,expected",
     [
-        ("coordinator", Action.UPDATE, "representative_on_dataset", True),
+        ("resource_coordinator", Action.UPDATE, "representative_on_dataset", True),
+        ("open_data_coordinator", Action.UPDATE, "representative_on_dataset", True),
         ("resource_manager", Action.UPDATE, "representative_on_dataset", False),
+        ("open_data_manager", Action.UPDATE, "representative_on_dataset", False),
         ("global_manager", Action.UPDATE, "representative_on_dataset", True),
         ("authenticated", Action.UPDATE, "representative_on_dataset", False),
     ],
@@ -164,12 +166,12 @@ def test_representative_update_permissions_fixed(role, action, obj_fixture, expe
     obj = request.getfixturevalue(obj_fixture)
     dataset = Dataset.objects.get(pk=obj.object_id) if obj.content_type.model_class() == Dataset else None
     user = UserFactory(is_staff=(role == "global_manager"))
-    if role == "coordinator" and dataset is not None:
+    if (role in Representative.MANAGER_ROLES or role in Representative.COORDINATOR_ROLES) and dataset is not None:
         ct = ContentType.objects.get_for_model(dataset)
         RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.OPEN_DATA_COORDINATOR,
+            role=role,
             user=user,
         )
     assert has_perm(user, action, obj) is expected

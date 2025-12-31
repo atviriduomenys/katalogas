@@ -319,32 +319,32 @@ def test_representative_create_without_permission(app: DjangoTestApp, representa
 
 
 def test_representative_create_with_existing_user(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['resource_coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     form = app.get(reverse('representative-create', kwargs={
         'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "manager@gmail.com"
-    form['role'] = "resource_manager"
+    form['role'] = "open_data_coordinator"
     resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
     assert Representative.objects.filter(email="manager@gmail.com").count() == 1
     assert Representative.objects.filter(email="manager@gmail.com").first().content_object == \
            representative_data['organization']
-    assert Representative.objects.filter(email="manager@gmail.com").first().user == representative_data['manager']
+    assert Representative.objects.filter(email="manager@gmail.com").first().user == representative_data['open_data_manager']
     assert Representative.objects.filter(
         email="manager@gmail.com"
     ).first().user.organization == representative_data['organization']
 
 
 def test_representative_create_can_make_agreements_disabled(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['resource_coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     form = app.get(reverse('representative-create', kwargs={
         'pk': representative_data['organization'].pk
     })).forms['representative-form']
     assert 'disabled' in form["can_make_agreements"].attrs
     form['email'] = "manager@gmail.com"
-    form['role'] = "resource_manager"
+    form['role'] = "open_data_coordinator"
     form['can_make_agreements'] = True
     resp = form.submit()
     assert resp.status_code == 302
@@ -353,7 +353,7 @@ def test_representative_create_can_make_agreements_disabled(app: DjangoTestApp, 
     assert representative_qs.count() == 1
     representative = representative_qs.first()
     assert representative.content_object == representative_data['organization']
-    assert representative.user == representative_data['resource_manager']
+    assert representative.user == representative_data['open_data_manager']
     assert representative.user.organization == representative_data['organization']
     assert not representative.can_make_agreements
 
@@ -364,7 +364,7 @@ def test_representative_create_with_can_make_agreements_rights(app: DjangoTestAp
         'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "manager@gmail.com"
-    form['role'] = "coordinator"
+    form['role'] = "open_data_coordinator"
     form['can_make_agreements'] = True
     resp = form.submit()
     assert resp.status_code == 302
@@ -373,18 +373,18 @@ def test_representative_create_with_can_make_agreements_rights(app: DjangoTestAp
     assert representative_qs.count() == 1
     representative = representative_qs.first()
     assert representative.content_object == representative_data['organization']
-    assert representative.user == representative_data['manager']
+    assert representative.user == representative_data['open_data_manager']
     assert representative.user.organization == representative_data['organization']
     assert representative.can_make_agreements
 
 
 def test_representative_create_without_user(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     form = app.get(reverse('representative-create', kwargs={
         'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "new@gmail.com"
-    form['role'] = "manager"
+    form['role'] = "open_data_manager"
     resp = form.submit()
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
@@ -406,14 +406,14 @@ def test_representative_create_without_user_for_two_organizations(app: DjangoTes
         'pk': organization1.pk
     })).forms['representative-form']
     form['email'] = "new@gmail.com"
-    form['role'] = "manager"
+    form['role'] = "open_data_manager"
     form.submit()
 
     form = app.get(reverse('representative-create', kwargs={
         'pk': organization2.pk
     })).forms['representative-form']
     form['email'] = "new@gmail.com"
-    form['role'] = "manager"
+    form['role'] = "open_data_manager"
     form.submit()
 
     assert Representative.objects.filter(email="new@gmail.com").count() == 2
@@ -422,12 +422,12 @@ def test_representative_create_without_user_for_two_organizations(app: DjangoTes
 
 
 def test_representative_create_invalid_phone(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     form = app.get(reverse('representative-create', kwargs={
         'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "new@gmail.com"
-    form['role'] = "manager"
+    form['role'] = "open_data_manager"
     form['phone'] = "123456"
     resp = form.submit()
     assert resp.status_code == 200
@@ -436,13 +436,13 @@ def test_representative_create_invalid_phone(app: DjangoTestApp, representative_
 
 
 def test_representative_create_valid_phone(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
 
     form = app.get(reverse('representative-create', kwargs={
         'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "new1@gmail.com"
-    form['role'] = "manager"
+    form['role'] = "open_data_manager"
     form['phone'] = "+37061234567"
     resp = form.submit()
     assert resp.status_code == 302
@@ -454,7 +454,7 @@ def test_representative_create_valid_phone(app: DjangoTestApp, representative_da
         'pk': representative_data['organization'].pk
     })).forms['representative-form']
     form['email'] = "new2@gmail.com"
-    form['role'] = "manager"
+    form['role'] = "open_data_manager"
     form['phone'] = "061234567"
     resp = form.submit()
     assert resp.status_code == 302
@@ -501,7 +501,7 @@ def test_representative_subscription(app: DjangoTestApp, representative_data):
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == ["manager@gmail.com"]
 
-    subscription = Subscription.objects.get(user=representative_data['manager'])
+    subscription = Subscription.objects.get(user=representative_data['open_data_manager'])
     assert subscription.sub_type == Subscription.ORGANIZATION
 
 
@@ -543,20 +543,20 @@ def test_representative_update_without_permission(app: DjangoTestApp, representa
 
 
 def test_representative_update_no_coordinators(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    representative_data['representative_viisp_coordinator'].role = 'open_data_manager'
+    app.set_user(representative_data['resource_coordinator'])
+    representative_data['representative_viisp_coordinator'].role = 'resource_manager'
     representative_data['representative_viisp_coordinator'].save()
     form = app.get(reverse('representative-update', kwargs={
         'pk': representative_data['organization'].pk,
-        'representative_id': representative_data['representative_coordinator'].pk
+        'representative_id': representative_data['representative_viisp_coordinator'].pk
     })).forms['representative-form']
-    form['role'] = "open_data_manager"
+    form['role'] = "resource_manager"
     resp = form.submit()
     assert len(resp.context['form'].errors) == 1
 
 
 def test_representative_update_with_correct_data(app: DjangoTestApp, representative_data):
-    representative_data['open_data_representative_manager'].user = representative_data['open_data_representative_manager']
+    representative_data['open_data_representative_manager'].user = representative_data['open_data_manager']
     representative_data['open_data_representative_manager'].save()
     app.set_user(representative_data['open_data_coordinator'])
     form = app.get(reverse('representative-update', kwargs={
@@ -568,22 +568,22 @@ def test_representative_update_with_correct_data(app: DjangoTestApp, representat
     representative_data['open_data_representative_manager'].refresh_from_db()
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
-    assert representative_data['representative_manager'].role == "open_data_coordinator"
-    assert representative_data['representative_manager'].user.organization == representative_data['organization']
+    assert representative_data['open_data_representative_manager'].role == "open_data_coordinator"
+    assert representative_data['open_data_representative_manager'].user.organization == representative_data['organization']
 
 
 def test_representative_update_can_make_agreements(app: DjangoTestApp, representative_data):
     app.set_user(representative_data['viisp_coordinator'])
     form = app.get(reverse('representative-update', kwargs={
         'pk': representative_data['organization'].pk,
-        'representative_id': representative_data['resource_representative_manager'].pk
+        'representative_id': representative_data['open_data_representative_manager'].pk
     })).forms['representative-form']
     form['can_make_agreements'] = True
     resp = form.submit()
-    representative_data['resource_representative_manager'].refresh_from_db()
+    representative_data['open_data_representative_manager'].refresh_from_db()
     assert resp.status_code == 302
     assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
-    assert representative_data['resource_representative_manager'].can_make_agreements
+    assert representative_data['open_data_representative_manager'].can_make_agreements
 
 
 def test_organization_plan_create_with_no_publisher(app: DjangoTestApp):

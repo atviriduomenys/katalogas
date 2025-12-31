@@ -271,9 +271,9 @@ def test_property_comment_with_register_request(app: DjangoTestApp):
 def test_object_data_comment_with_register_request(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
-    model = ModelFactory()
-    dataset = model.dataset
-    metadata_version = VersionFactory(dataset=dataset)
+    metadata_version = VersionFactory()
+    model = ModelFactory(dataset=metadata_version.dataset, metadata_version=metadata_version)
+    dataset = metadata_version.dataset
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,

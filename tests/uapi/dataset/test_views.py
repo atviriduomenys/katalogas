@@ -967,6 +967,7 @@ def test_action_get_dataset_structure(
     url_dataset_structure: str,
     valid_token: str,
 ):
+    Metadata.objects.all().delete()
     structure = DatasetStructureFactory(
         dataset=dataset,
         file=FilerFileFactory(

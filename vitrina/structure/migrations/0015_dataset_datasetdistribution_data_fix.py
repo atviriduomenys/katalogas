@@ -43,6 +43,48 @@ def assign_metadata_version_to_dataset_distributions(apps, schema_editor):
             dataset_distributions_with_no_version.update(metadata_version=draft_metadata_version)
 
 
+def create_metadata_rows_for_dataset_distribution(apps, schema_editor):
+    DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Metadata = apps.get_model("vitrina_structure", "Metadata")
+    dataset_distribution_content_type = ContentType.objects.get_for_model(DatasetDistribution)
+
+    for dataset_distribution in DatasetDistribution.objects.all():
+        if not Metadata.objects.filter(dataset=dataset_distribution.dataset, content_type=dataset_distribution_content_type).exists():
+            name = (
+                Metadata.objects.filter(
+                    dataset=dataset_distribution.dataset,
+                    content_type=ContentType.objects.get_for_model(DatasetDistribution),
+                    name__iregex=r"resource[0-9]+",
+                )
+                .order_by("name")
+                .values_list("name", flat=True)
+                .last()
+            )
+            if not name:
+                name = "resource1"
+            else:
+                n = name.replace("resource", "")
+                try:
+                    n = int(n)
+                except ValueError:
+                    n = 0
+                n += 1
+                name = f"resource{n}"
+
+            Metadata.objects.create(
+            uuid=str(uuid.uuid4()),
+            dataset=dataset_distribution.dataset,
+            content_type=dataset_distribution_content_type,
+            object_id=dataset_distribution.pk,
+            name=name,
+            prepare_ast={},
+            access=None,
+            version=1,
+            metadata_version=dataset_distribution.metadata_version,
+        )
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -52,14 +94,5 @@ class Migration(migrations.Migration):
     operations = [
         migrations.RunPython(create_metadata_rows_for_datasets, migrations.RunPython.noop),
         migrations.RunPython(assign_metadata_version_to_dataset_distributions, migrations.RunPython.noop),
+        migrations.RunPython(create_metadata_rows_for_dataset_distribution, migrations.RunPython.noop),
     ]
-
-
-
-
-
-
-
-
-
-

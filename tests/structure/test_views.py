@@ -407,9 +407,9 @@ def test_structure_tab_from_dataset_detail(app: DjangoTestApp):
         metadata_version=version,
     )
 
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     resp = resp.click(linkid='structure_tab')
-    assert resp.request.path == reverse('dataset-structure-no-version', args=[dataset.pk]) # By default takes to no version page
+    assert resp.request.path == reverse('dataset-structure', args=[dataset.pk, version.pk])
 
 
 @pytest.mark.django_db
@@ -5159,9 +5159,9 @@ def test_publishing_model_duplicates_metadata_and_dataset_distribution(app: Djan
     user = UserFactory(is_staff=True)
     app.set_user(user)
     version = VersionFactory()
-    distribution = DatasetDistributionFactory(is_parameterized=True, metadata_version=version)
-    model = ModelFactory(dataset=version.dataset, metadata_version=version, distribution=distribution)
     dataset = version.dataset
+    distribution = DatasetDistributionFactory(dataset=dataset, is_parameterized=True, metadata_version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version, distribution=distribution)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5205,9 +5205,9 @@ def test_publishing_model_without_resource_error(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     version = VersionFactory()
-    distribution = DatasetDistributionFactory(is_parameterized=True, metadata_version=version)
-    model = ModelFactory(dataset=version.dataset, metadata_version=version, distribution=distribution)
     dataset = version.dataset
+    distribution = DatasetDistributionFactory(dataset=dataset, is_parameterized=True, metadata_version=version)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version, distribution=distribution)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,

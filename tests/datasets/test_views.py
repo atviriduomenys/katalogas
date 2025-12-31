@@ -239,7 +239,7 @@ def parse_table(html: str) -> list:
 
 class TestDatasetDetailView:
     def test_dataset_detail_without_tags(self, app: DjangoTestApp, dataset_detail_data: dict):
-        resp = app.get(dataset_detail_data["dataset"].get_absolute_url())
+        resp = app.get(dataset_detail_data["dataset"].get_absolute_url()).follow()
         assert resp.context["tags"] == []
 
     def test_dataset_detail_tags(self, app: DjangoTestApp, dataset_detail_data: dict):
@@ -253,11 +253,11 @@ class TestDatasetDetailView:
         ]
 
     def test_dataset_detail_status(self, app: DjangoTestApp, dataset_detail_data: dict):
-        resp = app.get(dataset_detail_data["dataset"].get_absolute_url())
+        resp = app.get(dataset_detail_data["dataset"].get_absolute_url()).follow()
         assert resp.context["status"] == "Atvertas"
 
     def test_dataset_detail_resources(self, app: DjangoTestApp, dataset_detail_data: dict):
-        resp = app.get(dataset_detail_data["dataset"].get_absolute_url())
+        resp = app.get(dataset_detail_data["dataset"].get_absolute_url()).follow()
         assert list(resp.context["resources"]) == [dataset_detail_data["dataset_distribution"]]
 
     def test_dataset_resource_create_button(self, app: DjangoTestApp):
@@ -3054,9 +3054,9 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
 def test_dataset_structure_import_without_permission(app: DjangoTestApp):
     user = UserFactory()
     dataset = DatasetFactory()
-
+    metadata_version = VersionFactory(dataset=dataset)
     app.set_user(user)
-    url = reverse("dataset-structure-import", args=[dataset.pk])
+    url = reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk])
     resp = app.get(url, expect_errors=True)
 
     assert resp.status_code == 403
@@ -3065,9 +3065,10 @@ def test_dataset_structure_import_without_permission(app: DjangoTestApp):
 def test_dataset_structure_import_not_standardized(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     dataset = DatasetFactory()
+    metadata_version = VersionFactory(dataset=dataset)
 
     app.set_user(user)
-    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk]))
+    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
     form = resp.forms["dataset-structure-form"]
     form["file"] = Upload("manifest.csv", b"Column\nValue")
     form.submit()
@@ -3082,9 +3083,10 @@ def test_dataset_structure_import_not_standardized(app: DjangoTestApp):
 def test_dataset_structure_import_standardized(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     dataset = DatasetFactory()
+    metadata_version = VersionFactory(dataset=dataset)
 
     app.set_user(user)
-    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk]))
+    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
     form = resp.forms["dataset-structure-form"]
     form["file"] = Upload("file.csv", MANIFEST.encode())
     form.submit()

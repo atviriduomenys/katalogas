@@ -273,25 +273,29 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
     app.set_user(user)
     model = ModelFactory()
     dataset = model.dataset
+    metadata_version = VersionFactory(dataset=dataset)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
+        metadata_version=metadata_version
     )
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         dataset=dataset,
         name="test/dataset",
+        metadata_version=metadata_version
     )
-    prop = PropertyFactory(model=model)
+    prop = PropertyFactory(model=model, metadata_version=metadata_version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
         name="prop",
         type="string",
+        metadata_version=metadata_version
     )
 
     with patch("vitrina.structure.services.requests.get") as mock_get:
@@ -301,7 +305,7 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         }
         mock_get.return_value = Mock(content=json.dumps(data))
         form = app.get(
-            reverse("object-data", args=[dataset.pk, model.name, "c7d66fa2-a880-443d-8ab5-2ab7f9c79886"])
+            reverse("object-data", args=[dataset.pk, metadata_version.pk, model.name, "c7d66fa2-a880-443d-8ab5-2ab7f9c79886"])
         ).forms["comment-form"]
         form["is_public"] = True
         form["register_request"] = True

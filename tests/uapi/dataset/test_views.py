@@ -53,13 +53,12 @@ def test_create(
 
     assert response.status_code == status.HTTP_201_CREATED
 
-    assert Metadata.objects.count() == 1
     dataset = Dataset.objects.filter(
         metadata__name=data["name"],
         access_rights=Dataset.NON_PUBLIC,
         organization=organization,
     ).first()
-
+    assert Metadata.objects.filter(dataset=dataset).count() == 1
     assert dataset
     assert dataset.path is not None
     assert dataset.is_child_of(dataset_parent) is True  # Parent is set.
@@ -202,12 +201,12 @@ def test_create_specific_scope(
 
     assert response.status_code == status.HTTP_201_CREATED
 
-    assert Metadata.objects.count() == 1
     dataset = Dataset.objects.filter(
         metadata__name=data["name"],
         access_rights=Dataset.NON_PUBLIC,
         organization=organization,
     ).first()
+    assert Metadata.objects.filter(dataset=dataset).count() == 1
     assert dataset
     assert response.json == {
         "@context": "",
@@ -308,7 +307,7 @@ def test_create_serialization_validation_error(
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert Dataset.objects.filter(organization=organization).count() == 0
-    assert Metadata.objects.count() == 0
+    assert Metadata.objects.count() - 1 == 0
     assert response.json == {
         "code": "validation_error",
         "type": "ValidationError",
@@ -358,7 +357,7 @@ def test_create_unexpected_exception_raised_and_rollback_executed(
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert Dataset.objects.filter(organization=organization).count() == 0
-    assert Metadata.objects.count() == 0
+    assert Metadata.objects.count() - 1 == 0
     response_json = response.json
     response_json.pop("context")  # Context stores the full traceback, we skip this check in tests.
     assert response_json == {

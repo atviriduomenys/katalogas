@@ -279,7 +279,8 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
     assert resp.context['detail_url_name'] == 'project-detail'
     assert resp.context['history_url_name'] == 'project-history'
     assert len(resp.context['history']) == 1
-    assert resp.context['history'][0]['action'] == revision_comment.to_json()
+    history_action = resp.context['history'][0]['action']
+    assert history_action["comment"] == f"{revision_comment.action}({revision_comment.kwargs})"
     assert resp.context['history'][0]['user'] == user
 
 
@@ -685,7 +686,7 @@ def test_client_scope_toggle(app: DjangoTestApp, oauth_settings):
         url = reverse(
             "project-clients-scopes-detail-toggle", args=[project.pk, client.pk, scope.pk]
         )
-        resp = app.get(url)
+        resp = app.post(url)
 
         assert resp.status_code == 302
 

@@ -3078,7 +3078,8 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     assert resp.context["detail_url_name"] == "dataset-detail"
     assert resp.context["history_url_name"] == "dataset-history"
     assert len(resp.context["history"]) == 1
-    assert resp.context["history"][0]["action"] == revision_comment.to_json()
+    history_action = resp.context["history"][0]["action"]
+    assert history_action["comment"] == f"{revision_comment.action}({revision_comment.kwargs})"
     assert resp.context["history"][0]["user"] == user
 
 

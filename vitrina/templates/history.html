@@ -21,7 +21,22 @@
                         <tr>
                             <td>{{ h.date|date:"SHORT_DATETIME_FORMAT" }}</td>
                             <td>{{ h.user|default_if_none:"-" }}</td>
-                            <td>{{ h.action|default_if_none:"-" }}</td>
+                            <td>
+                                {{ h.action.comment|default_if_none:"-" }}
+                                <div class="content">
+                                    <ul>
+                                        {% for repr, url in h.action.objects %}
+                                            <li>
+                                                {% if url %}
+                                                    <a href="{{url}}">{{ repr }}</a>
+                                                {% else %}
+                                                    {{ repr }}
+                                                {% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>

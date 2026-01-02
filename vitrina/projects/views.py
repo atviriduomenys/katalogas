@@ -21,6 +21,7 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from reversion.models import Version
 
 import requests
 
@@ -35,7 +36,7 @@ from vitrina.projects.forms import ProjectForm, ClientCreateForm, ClientScopeCre
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.models import AgreementScope
+from vitrina.smart_contracts.models import AgreementScope, Agreement, AgreementFile
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView
@@ -50,6 +51,7 @@ from vitrina.projects.services import (
     can_manage_datasets,
 )
 from vitrina.smart_contracts.permissions import can_view_agreements
+from vitrina.reversion_utils import get_version_ids
 
 
 logger = logging.getLogger()
@@ -253,6 +255,19 @@ class ProjectHistoryView(ProjectViewBaseMixin, HistoryView):
         context["can_view_agreements"] = can_view_agreements(self.request.user, self.object)
         context["parent_links"].update({None: _("Istorija")})
         return context
+
+    def get_history_objects(self):
+        agreement_children = [
+            {"model": AgreementFile, "relation": AgreementFile.agreement},
+            {"model": AgreementScope, "relation": AgreementScope.agreement},
+        ]
+        client_children = [{"model": UseCaseClientScope, "relation": UseCaseClientScope.use_case_client}]
+        project_children = [
+            {"model": Agreement, "relation": Agreement.project, "children": agreement_children},
+            {"model": UseCaseClient, "relation": UseCaseClient.use_case, "children": client_children},
+        ]
+        history_objects_ids = get_version_ids(self.project, project_children)
+        return Version.objects.filter(id__in=history_objects_ids)
 
 
 class ProjectDatasetsView(ProjectViewBaseMixin, PermissionRequiredMixin, ListView):

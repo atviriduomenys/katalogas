@@ -122,13 +122,15 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
             self._update_single_dataset(instance.dataset_id)
 
     def handle_representative(self, sender, instance, **kwargs):
-        dataset_ids = set()
-        dataset_ids.update(self._get_direct_datasets(instance))
-        dataset_ids.update(self._get_org_generic_fk_datasets(instance))
-        dataset_ids.update(self._get_org_direct_fk_datasets(instance))
-
-        affected_datasets = Dataset.objects.filter(pk__in=dataset_ids)
+        affected_datasets = self._get_affected_datasets(instance)
         self._update_dataset_indexes(affected_datasets)
+
+    def _get_affected_datasets(self, representative):
+        dataset_ids = set()
+        dataset_ids.update(self._get_direct_datasets(representative))
+        dataset_ids.update(self._get_org_generic_fk_datasets(representative))
+        dataset_ids.update(self._get_org_direct_fk_datasets(representative))
+        return Dataset.objects.filter(pk__in=dataset_ids)
 
     def _get_direct_datasets(self, representative):
         dataset_ids = set()

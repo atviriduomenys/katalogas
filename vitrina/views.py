@@ -3,6 +3,7 @@ from importlib.metadata import version, PackageNotFoundError
 import json
 
 from django.core.exceptions import ImproperlyConfigured
+from django.core.paginator import Paginator
 from django.db.models import Model, QuerySet, Prefetch
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms import BaseFormSet
@@ -107,6 +108,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     detail_url_name = None
     history_url_name = None
     tabs_template_name: str
+    paginate_by = 20
 
     object: Model
 
@@ -120,6 +122,9 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        paginator = Paginator(self.get_revisions(), self.paginate_by)
+        page_obj = paginator.get_page(self.request.GET.get("page"))
+
         context.update(
             {
                 "detail_url_name": self.get_detail_url_name(),
@@ -127,22 +132,23 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                 "detail_url": self.get_detail_url(),
                 "child_resources_url": self.get_child_resources_url(),
                 "history_url": self.get_history_url(),
-                "history": self.get_history_list(),
+                "history": self.get_history_list(page_obj.object_list),
                 "can_manage_history": has_perm(
                     self.request.user,
                     Action.HISTORY_VIEW,
                     self.get_history_object(),
                 ),
                 "tabs_template_name": self.tabs_template_name,
+                "page_obj": page_obj,
             }
         )
 
         return context
 
-    def get_history_list(self) -> list[dict[str, Any]]:
+    def get_history_list(self, revisions: QuerySet[Revision]) -> list[dict[str, Any]]:
         history = []
 
-        for revision in self.get_revisions():
+        for revision in revisions:
             entry = {
                 "date": revision.date_created,
                 "user": revision.user,

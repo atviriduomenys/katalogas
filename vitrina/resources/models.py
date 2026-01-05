@@ -3,6 +3,7 @@ from enum import StrEnum
 import uuid
 import reversion
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -11,6 +12,8 @@ from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
+from vitrina.structure import AccessType
+from vitrina.structure.models import Metadata, Version
 from vitrina.utils import translate_text
 
 
@@ -288,6 +291,15 @@ class DatasetDistribution(TranslatableModel):
         null=True,
     )
 
+    access = models.IntegerField(
+        _("Prieiga"),
+        choices=AccessType.choices,
+        blank=True,
+        null=True,
+    )
+    name = models.CharField(_("Vardas"), max_length=255, blank=True)
+    level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
+
     class Meta:
         db_table = "dataset_distribution"
 
@@ -411,3 +423,56 @@ class DatasetDistribution(TranslatableModel):
 
         for entry in all_entries.filter(url__in=new_urls):
             entry.update_description()
+
+    def create_metadata_instance_and_assign_version(self, metadata_version: int) -> Metadata:
+        self.metadata_version = Version.objects.get(pk=metadata_version)
+        if metadata_instance := self.metadata.first():
+            metadata_instance.metadata_version = self.metadata_version
+            metadata_instance.save()
+        else:
+            name = self.name
+            if not name:
+                name = (
+                    Metadata.objects.filter(
+                        dataset=self.dataset,
+                        content_type=ContentType.objects.get_for_model(DatasetDistribution),
+                        name__iregex=r"resource[0-9]+",
+                    )
+                    .order_by("name")
+                    .values_list("name", flat=True)
+                    .last()
+                )
+                if not name:
+                    name = "resource1"
+                else:
+                    n = name.replace("resource", "")
+                    try:
+                        n = int(n)
+                    except ValueError:
+                        n = 0
+                    n += 1
+                    name = f"resource{n}"
+                self.name = name
+            self.save()
+            metadata_instance = Metadata.objects.create(
+                uuid=str(uuid.uuid4()),
+                dataset=self.dataset,
+                content_type=ContentType.objects.get_for_model(DatasetDistribution),
+                object_id=self.pk,
+                name=name,
+                prepare_ast={},
+                access=self.access or None,
+                version=1,
+                title=self.title,
+                description=self.description,
+                level_given=self.level,
+                metadata_version=self.metadata_version,
+            )
+
+        return metadata_instance
+
+    def check_if_resource_should_be_versioned(self):
+        if not self.model_set.exists():
+            self.metadata_version = None
+            self.save()
+            self.metadata.all().delete()

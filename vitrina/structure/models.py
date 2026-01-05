@@ -5,7 +5,6 @@ import operator
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db.models import Q, Max, Avg
@@ -14,8 +13,7 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Status
 from vitrina.models import UUIDBaseModel
-from vitrina.resources.models import DatasetDistribution
-from vitrina.structure import VersionStatus, VersionType
+from vitrina.structure import VersionStatus, VersionType, AccessType
 from vitrina.structure.helpers import get_type_repr
 from enum import Enum
 
@@ -68,13 +66,6 @@ class Metadata(models.Model):
     OPEN = 3
     PACKAGE = 2
     VISIBILITY_PUBLIC = 3
-    ACCESS_TYPES = (
-        (UNDEFINED, _("nepasirinkta")),
-        (PRIVATE, _("private")),
-        (PROTECTED, _("protected")),
-        (PUBLIC, _("public")),
-        (OPEN, _("open")),
-    )
 
     uuid = models.CharField(_("Id"), max_length=255)
     name = models.CharField(_("Vardas"), max_length=400, blank=True)
@@ -86,7 +77,12 @@ class Metadata(models.Model):
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
     average_level = models.IntegerField(_("Apskaičiuotas brandos lygis"), null=True, blank=True)
-    access = models.IntegerField(_("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True)
+    access = models.IntegerField(
+        _("Prieiga"),
+        choices=AccessType.choices,
+        blank=True,
+        null=True,
+    )
     visibility = models.PositiveIntegerField(
         _("Metaduomenų matomumas"), null=True, blank=True, validators=[MaxValueValidator(3)]
     )
@@ -306,13 +302,22 @@ class Model(models.Model):
     def access_display_value(self):
         access = Model.objects.annotate(access=Max("model_properties__metadata__access")).get(pk=self.pk).access
         if access is not None:
-            for type in Metadata.ACCESS_TYPES:
+            for type in AccessType.choices:
                 if type[0] == access:
                     return type[1]
         return ""
 
     def is_opened(self):
         return self.dataset.is_opened()
+
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        if self.distribution:
+            if self.distribution.metadata_version and self.distribution.metadata_version != self.metadata_version:
+                return
+            self.distribution.create_metadata_instance_and_assign_version(self.metadata_version.pk)
+            self.distribution.metadata_version = self.metadata_version
+            self.distribution.save(update_fields=["metadata_version"])
 
 
 @reversion.register()
@@ -541,13 +546,6 @@ class MetadataVersion(models.Model):
     PROTECTED = 1
     PUBLIC = 2
     OPEN = 3
-    ACCESS_TYPES = (
-        (UNDEFINED, _("nepasirinkta")),
-        (PRIVATE, _("private")),
-        (PROTECTED, _("protected")),
-        (PUBLIC, _("public")),
-        (OPEN, _("open")),
-    )
 
     version = models.ForeignKey(Version, verbose_name=_("Versija"), on_delete=models.CASCADE)
     metadata = models.ForeignKey(Metadata, verbose_name=_("Metaduomenys"), on_delete=models.CASCADE)
@@ -562,7 +560,7 @@ class MetadataVersion(models.Model):
     source = models.CharField(_("Šaltinis"), max_length=255, blank=True, null=True)
     prepare = models.CharField(_("Formulė"), max_length=255, blank=True, null=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
-    access = models.IntegerField(_("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True)
+    access = models.IntegerField(_("Prieiga"), choices=AccessType.choices, blank=True, null=True)
     base = models.ForeignKey(
         "Base",
         models.SET_NULL,

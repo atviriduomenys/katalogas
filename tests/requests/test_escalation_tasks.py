@@ -126,7 +126,7 @@ class TestGetDatasetEditorsEmails:
         )
 
         RepresentativeFactory(
-            content_type=dataset_ct, object_id=dataset.pk, email="editor2@example.com", role=Representative.OPEN_DATA_MANAGER
+            content_type=dataset_ct, object_id=dataset.pk, email="editor2@example.com", role=Representative.RESOURCE_MANAGER
         )
 
         emails = get_dataset_managers(request_obj)
@@ -178,7 +178,7 @@ class TestGetOrganizationCoordinatorsEmails:
         )
 
         RepresentativeFactory(
-            content_type=org_ct, object_id=organization.pk, email="coord2@example.com", role=Representative.OPEN_DATA_COORDINATOR
+            content_type=org_ct, object_id=organization.pk, email="coord2@example.com", role=Representative.RESOURCE_COORDINATOR
         )
 
         emails = get_organization_coordinators_emails(request_obj)

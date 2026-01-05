@@ -32,7 +32,14 @@ def test_get_active_tasks():
 
 
 @pytest.mark.django_db
-def test_get_active_tasks_with_task_organization_supervisor_after_5_days():
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_get_active_tasks_with_task_organization_supervisor_after_5_days(role: str):
     parent_organization = OrganizationFactory()
     child_organization = parent_organization.add_child(instance=OrganizationFactory.build())
 
@@ -48,13 +55,13 @@ def test_get_active_tasks_with_task_organization_supervisor_after_5_days():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
-        role=Representative.OPEN_DATA_COORDINATOR,
+        role=role,
         user=parent_organization_user
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization),
         object_id=child_organization.pk,
-        role=Representative.OPEN_DATA_COORDINATOR,
+        role=role,
         user=child_organization_user
     )
 
@@ -72,7 +79,14 @@ def test_get_active_tasks_with_task_organization_supervisor_after_5_days():
 
 
 @pytest.mark.django_db
-def test_get_active_tasks_with_task_organization_supervisor_after_5_work_days():
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_get_active_tasks_with_task_organization_supervisor_after_5_work_days(role: str):
     parent_organization = OrganizationFactory()
     child_organization = parent_organization.add_child(instance=OrganizationFactory.build())
 
@@ -88,13 +102,13 @@ def test_get_active_tasks_with_task_organization_supervisor_after_5_work_days():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
-        role=Representative.OPEN_DATA_COORDINATOR,
+        role=role,
         user=parent_organization_user
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization),
         object_id=child_organization.pk,
-        role=Representative.OPEN_DATA_COORDINATOR,
+        role=role,
         user=child_organization_user
     )
 
@@ -115,7 +129,14 @@ def test_get_active_tasks_with_task_organization_supervisor_after_5_work_days():
 
 
 @pytest.mark.django_db
-def test_get_active_tasks_with_staff_after_10_days():
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_get_active_tasks_with_staff_after_10_days(role: str):
     parent_organization = OrganizationFactory()
     child_organization1 = parent_organization.add_child(instance=OrganizationFactory.build())
     child_organization2 = child_organization1.add_child(instance=OrganizationFactory.build())
@@ -127,13 +148,13 @@ def test_get_active_tasks_with_staff_after_10_days():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
-        role=Representative.OPEN_DATA_COORDINATOR,
+        role=role,
         user=parent_organization_user
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization1),
         object_id=child_organization1.pk,
-        role=Representative.OPEN_DATA_COORDINATOR,
+        role=role,
         user=child_organization_user
     )
 
@@ -171,7 +192,14 @@ def test_get_active_tasks_with_staff_after_10_days():
 
 
 @pytest.mark.django_db
-def test_get_active_tasks_with_staff_after_10_work_days():
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_get_active_tasks_with_staff_after_10_work_days(role: str):
     parent_organization = OrganizationFactory()
     child_organization1 = parent_organization.add_child(instance=OrganizationFactory.build())
     child_organization2 = child_organization1.add_child(instance=OrganizationFactory.build())
@@ -183,13 +211,13 @@ def test_get_active_tasks_with_staff_after_10_work_days():
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
-        role=Representative.OPEN_DATA_COORDINATOR,
+        role=role,
         user=parent_organization_user
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization1),
         object_id=child_organization1.pk,
-        role=Representative.OPEN_DATA_COORDINATOR,
+        role=role,
         user=child_organization_user
     )
 

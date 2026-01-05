@@ -554,14 +554,21 @@ def test_view_reply_to_comment_not_public_without_permission(app: DjangoTestApp)
 
 
 @pytest.mark.django_db
-def test_view_reply_to_comment_not_public_with_resource_permission(app: DjangoTestApp):
+@pytest.mark.parametrize(
+    "role",
+    [
+        (Representative.OPEN_DATA_MANAGER),
+        (Representative.RESOURCE_MANAGER),
+    ]
+)
+def test_view_reply_to_comment_not_public_with_resource_permission(app: DjangoTestApp, role: str):
     dataset = DatasetFactory()
     organization = OrganizationFactory(kind=Organization.GOV)
     ct = ContentType.objects.get_for_model(dataset)
     comment = CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False)
     CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False, parent=comment)
     representative = RepresentativeFactory(
-        content_type=ct, object_id=dataset.pk, user=UserFactory(organization=organization), role=Representative.RESOURCE_MANAGER
+        content_type=ct, object_id=dataset.pk, user=UserFactory(organization=organization), role=role
     )
     app.set_user(representative.user)
     resp = app.get(dataset.get_absolute_url())

@@ -284,7 +284,14 @@ class TestDatasetDetailView:
         response.click(linkid="change_dataset")
         assert response.status_code == 200
 
-    def test_view_non_public_dataset_with_org_representative(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            (Representative.OPEN_DATA_MANAGER),
+            (Representative.RESOURCE_MANAGER),
+        ]
+    )
+    def test_view_non_public_dataset_with_org_representative(self, app: DjangoTestApp, role: str):
         dataset = DatasetFactory(is_public=False)
         user = UserFactory()
         organization = OrganizationFactory()
@@ -296,7 +303,7 @@ class TestDatasetDetailView:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
-            role=Representative.RESOURCE_MANAGER,
+            role=role,
         )
 
         app.set_user(user)
@@ -449,13 +456,20 @@ class TestDatasetListView:
         resp = app.get(reverse("dataset-list"))
         assert not resp.html.find(id="manager-dataset-url")
 
-    def test_manager_dataset_url_is_hidden_for_manager_if_no_datasets(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+    def test_manager_dataset_url_is_hidden_for_manager_if_no_datasets(self, app: DjangoTestApp, role: str):
         org = OrganizationFactory()
         ct = ContentType.objects.get_for_model(Dataset)
         rep = RepresentativeFactory(
             content_type=ct,
             object_id=org.pk,
-            role=Representative.OPEN_DATA_MANAGER,
+            role=role,
         )
         app.set_user(rep.user)
         resp = app.get(reverse("dataset-list"))
@@ -557,15 +571,22 @@ class TestDatasetListView:
         resp = resp.click(linkid="manager-dataset-url")
         assert [int(obj.pk) for obj in resp.context["object_list"]] == [dataset.pk]
 
-    def test_datasets_from_multiple_orgs_are_shown_for_manager(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+    def test_datasets_from_multiple_orgs_are_shown_for_manager(self, app: DjangoTestApp, role: str):
         org = OrganizationFactory()
         org2 = OrganizationFactory()
         dataset = DatasetFactory(organization=org)
         dataset2 = DatasetFactory(organization=org2)
         ct = ContentType.objects.get_for_model(Dataset)
         user = User.objects.create_user(email="test@test.com", password="test123")
-        rep = RepresentativeFactory(content_type=ct, object_id=org.pk, role=Representative.OPEN_DATA_MANAGER, user=user)
-        rep2 = RepresentativeFactory(content_type=ct, object_id=org2.pk, role=Representative.OPEN_DATA_MANAGER, user=user)
+        rep = RepresentativeFactory(content_type=ct, object_id=org.pk, role=role, user=user)
+        rep2 = RepresentativeFactory(content_type=ct, object_id=org2.pk, role=role, user=user)
         app.set_user(user)
         resp = app.get(reverse("dataset-list"))
         resp = resp.click(linkid="manager-dataset-url")
@@ -1377,7 +1398,14 @@ class TestDatasetUpdateView:
             ["Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."]
         ]
 
-    def test_edit_non_public_dataset_with_org_representative(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+    def test_edit_non_public_dataset_with_org_representative(self, app: DjangoTestApp, role: str):
         dataset = DatasetFactory(is_public=False)
         user = UserFactory()
         organization = OrganizationFactory()
@@ -1389,7 +1417,7 @@ class TestDatasetUpdateView:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
-            role=Representative.RESOURCE_MANAGER,
+            role=role,
         )
 
         app.set_user(user)
@@ -1882,7 +1910,14 @@ class TestDatasetCreateView:
         response = form.submit(expect_errors=True)
         assert "Žymėjimas turi atitikti šabloną" in response.text
 
-    def test_create_dataset_change_creator(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+    def test_create_dataset_change_creator(self, app: DjangoTestApp, role: str):
         frequency = FrequencyFactory(is_default=True)
 
         org = OrganizationFactory()
@@ -1891,7 +1926,7 @@ class TestDatasetCreateView:
         RepresentativeFactory(
             user=None,
             organization=publisher_org,
-            role=Representative.OPEN_DATA_MANAGER,
+            role=role,
             object_id=org.pk,
             content_type=ContentType.objects.get_for_model(org),
         )
@@ -1921,7 +1956,14 @@ class TestDatasetCreateView:
         assert ds.organization == org
         assert ds.publisher == publisher_org
 
-    def test_create_dataset_change_publisher(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+    def test_create_dataset_change_publisher(self, app: DjangoTestApp, role: str):
         frequency = FrequencyFactory(is_default=True)
 
         org = OrganizationFactory()
@@ -1930,7 +1972,7 @@ class TestDatasetCreateView:
         RepresentativeFactory(
             user=None,
             organization=publisher_org,
-            role=Representative.OPEN_DATA_MANAGER,
+            role=role,
             object_id=org.pk,
             content_type=ContentType.objects.get_for_model(org),
         )
@@ -1959,7 +2001,14 @@ class TestDatasetCreateView:
         assert ds.organization == org
         assert ds.publisher == publisher_org
 
-    def test_create_dataset_creator_options(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+    def test_create_dataset_creator_options(self, app: DjangoTestApp, role: str):
         org = OrganizationFactory()
         org2 = OrganizationFactory()
         org3 = OrganizationFactory()
@@ -1969,7 +2018,7 @@ class TestDatasetCreateView:
             RepresentativeFactory(
                 user=None,
                 organization=publisher_org,
-                role=Representative.OPEN_DATA_MANAGER,
+                role=role,
                 object_id=org_instance.pk,
                 content_type=ContentType.objects.get_for_model(org),
             )
@@ -2833,7 +2882,7 @@ class TestDatasetPlans:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
-            role=Representative.RESOURCE_MANAGER
+            role=Representative.OPEN_DATA_MANAGER
         )
         app.set_user(user)
         response = app.get(reverse("dataset-plans", args=[dataset.pk]))
@@ -2894,7 +2943,7 @@ class TestDatasetProject:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
-            role=Representative.RESOURCE_MANAGER
+            role=Representative.OPEN_DATA_MANAGER
         )
         app.set_user(user)
         response = app.get(reverse("dataset-projects", args=[dataset.pk]))
@@ -3360,7 +3409,7 @@ def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.RESOURCE_MANAGER
+        role=Representative.OPEN_DATA_MANAGER
     )
     app.set_user(user)
     response = app.get(reverse("dataset-requests", args=[dataset.pk]))

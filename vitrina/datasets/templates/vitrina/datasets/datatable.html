@@ -83,12 +83,22 @@
 
             {% if can_add_resource %}
             <td>
-                <a href="{%url 'resource-change' pk=r.id version_id=r.metadata_version.id %}"
-                   class="button is-link is-small is-pulled-right"
-                   id="change_resource">{% translate "Redaguoti" %}</a>
+                {% if r.metadata_version %}
+                    <a href="{% url 'resource-change' pk=r.id version_id=r.metadata_version.id %}"
+                       class="button is-link is-small is-pulled-right"
+                       id="change_resource">{% translate "Redaguoti" %}</a>
+                {% else %}
+                    <a href="{% url 'resource-change-no-version' pk=r.id %}"
+                       class="button is-link is-small is-pulled-right"
+                       id="change_resource">{% translate "Redaguoti" %}</a>
+                {% endif %}
             </td>
             <td>
-                <form method="post" action="{% url 'resource-delete' pk=r.id version_id=r.metadata_version.id %}">
+                {% if r.metadata_version %}
+                    <form method="post" action="{% url 'resource-delete' pk=r.id version_id=r.metadata_version.id %}">
+                {% else %}
+                    <form method="post" action="{% url 'resource-delete-no-version' pk=r.id %}">
+                {% endif %}
                     {% csrf_token %}
                     <button type="submit"
                             class="button is-link is-small is-pulled-right"

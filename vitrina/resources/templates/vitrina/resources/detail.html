@@ -20,9 +20,15 @@
          <div class="column is-full">
             {% if can_update %}
                 <div class="buttons is-right">
-                    <a href="{%url 'resource-change' resource.pk resource.metadata_version.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
-                        {% translate "Redaguoti" %}
-                    </a>
+                    {% if resource.metadata_version %}
+                        <a href="{% url 'resource-change' pk=resource.pk version_id=resource.metadata_version.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                            {% translate "Redaguoti" %}
+                        </a>
+                    {% else %}
+                        <a href="{% url 'resource-change-no-version' pk=resource.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
+                            {% translate "Redaguoti" %}
+                        </a>
+                    {% endif %}
                 </div>
             {% endif %}
 
@@ -245,10 +251,18 @@
                                 {% translate "Nuskaityti struktūrą" %}
                             </a>
                         {% endif %}
-                        <a href="{% url 'resource-model-create' resource.dataset.pk resource.metadata_version.pk resource.pk %}"
-                           class="button is-primary is-normal m-t-md is-size-6-mobile">
-                            {% translate "Naujas modelis" %}
-                        </a>
+
+                        {% if resource.metadata_version %}
+                            <a href="{% url 'resource-model-create' resource.dataset.pk resource.metadata_version.pk resource.pk %}"
+                               class="button is-primary is-normal m-t-md is-size-6-mobile">
+                                {% translate "Naujas modelis" %}
+                            </a>
+                        {% else %}
+                            <a href="{% url 'resource-model-create-no-version' resource.dataset.pk resource.pk %}"
+                               class="button is-primary is-normal m-t-md is-size-6-mobile">
+                                {% translate "Naujas modelis" %}
+                            </a>
+                        {% endif %}
                     </div>
                 {% endif %}
              </div>

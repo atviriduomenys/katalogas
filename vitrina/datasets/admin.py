@@ -10,7 +10,7 @@ from django.db.models import QuerySet, Q
 from django.http import StreamingHttpResponse
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
 from django.utils.translation import gettext_lazy as _
 from parler.admin import TranslatableAdmin
 
@@ -232,7 +232,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
     title_display.short_description = _("Duomenų rinkinys")
     title_display.allow_tags = True
 
-    def coordinators_display(self, obj):
+    def coordinators_display(self, obj: Dataset) -> SafeString | str:
         coordinators = obj.representatives.filter(role__in=Representative.COORDINATOR_ROLES).values_list(
             "email", flat=True
         )
@@ -243,7 +243,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
     coordinators_display.short_description = _("Koordinatoriai")
     coordinators_display.allow_tags = True
 
-    def managers_display(self, obj):
+    def managers_display(self, obj: Dataset) -> SafeString | str:
         managers = obj.representatives.filter(role__in=Representative.MANAGER_ROLES).values_list("email", flat=True)
         if managers:
             return mark_safe("<br/>".join(managers))

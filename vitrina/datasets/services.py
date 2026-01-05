@@ -246,7 +246,7 @@ def get_datasets_for_user(request: DrfRequest, datasets: SearchQuerySet) -> Sear
 
 
 def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet) -> SearchQuerySet:
-    public_filter = SQ(
+    public_filter: SQ = SQ(
         is_public="true",
         access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED),
     )

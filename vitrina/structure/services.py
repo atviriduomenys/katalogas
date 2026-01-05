@@ -665,7 +665,14 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
                     status=Comment.OPENED,
                 )
 
-            return
+            format = create_or_get_uapi_format()
+            distribution = DatasetDistribution.objects.create(
+                dataset=dataset,
+                download_url=url,
+                format=format,
+                type="URL",
+                metadata_version=metadata_version,
+            )
         elif distribution.download_url:
             resource_meta.source = distribution.download_url
 

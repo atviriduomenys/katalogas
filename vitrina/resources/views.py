@@ -138,6 +138,7 @@ class ResourceCreateView(
             title=form.cleaned_data.get("title"),
             description=form.cleaned_data.get("description"),
             level_given=form.cleaned_data.get("level"),
+            metadata_version=form.cleaned_data.get("metadata_version"),
         )
 
         if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():

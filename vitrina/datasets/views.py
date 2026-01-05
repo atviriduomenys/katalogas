@@ -524,9 +524,9 @@ class DatasetDetailView(
                 dataset,
             ),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
-            "resources": dataset.datasetdistribution_set.filter(
-                Q(metadata_version=metadata_version) | Q(metadata_version__isnull=True)
-            ).order_by("-period_start"),
+            "resources": dataset.datasetdistribution_set.filter(metadata_version=metadata_version).order_by(
+                "-period_start"
+            ),
             "org_logo": organization.image if organization else None,
             "attributions": dataset.datasetattribution_set.order_by("attribution"),
             "data_maturity": dataset.metadata_set.average_level(),

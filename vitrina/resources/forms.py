@@ -12,7 +12,8 @@ from vitrina.classifiers.models import Licence, Concept
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField, StringListField
 from vitrina.resources.models import DatasetDistribution, Format
-from vitrina.structure.models import Metadata
+from vitrina.structure import VersionStatus
+from vitrina.structure.models import Metadata, Version
 from django.db.models import Case, When, IntegerField
 
 CODE_ORDER = ["COMPLETED", "DEVELOP", "PLANNED", "DEPRECATED", "WITHDRAWN"]
@@ -76,6 +77,10 @@ class DatasetResourceForm(TranslatableModelForm):
     description = TranslatedField(label=_("Aprašymas"), required=False)
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
     access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
+    metadata_version = forms.ModelChoiceField(
+        queryset=Version.objects.none(),
+        help_text=_("Juodraščio versija, kuriai bus priskirtas duomenų rinkinio šaltinis."),
+    )
     access_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'
         widget=forms.TextInput(),
@@ -157,6 +162,7 @@ class DatasetResourceForm(TranslatableModelForm):
             "applicable_legislation",
             "status",
             "is_hvd",
+            "metadata_version",
         )
 
     def __init__(self, dataset, *args, **kwargs):
@@ -167,6 +173,10 @@ class DatasetResourceForm(TranslatableModelForm):
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "resource-form"
+        self.fields["metadata_version"].queryset = Version.objects.filter(
+            dataset=self.dataset, status=VersionStatus.DRAFT
+        )
+        self.fields["metadata_version"].label_from_instance = lambda obj: "Juodraštis"
         self.fields["status"].queryset = (
             Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
             .distinct()
@@ -191,6 +201,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("temporal_resolution"),
             Field("spatial_resolution"),
             Field("access"),
+            Field("metadata_version"),
             Field("level"),
             Field("is_parameterized"),
             Field("geo_location", placeholder=_("Pateikitę geografinę padėtį")),

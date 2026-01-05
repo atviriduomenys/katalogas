@@ -16,7 +16,6 @@ from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from lark import ParseError
 
 from vitrina.classifiers.models import Status
-from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna
 from vitrina.structure.helpers import is_time_unit, is_si_unit
 from vitrina.structure.models import (
@@ -464,12 +463,6 @@ class ModelCreateForm(forms.ModelForm):
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
-    distribution = forms.ModelChoiceField(
-        label=_("Duomenų distribucija"),
-        required=True,
-        queryset=DatasetDistribution.objects.none(),
-        help_text=_("Savybė nurodanti modelio duomenų distribuciją."),
-    )
     visibility = forms.ChoiceField(
         label=_("Metaduomenų matomumas"),
         required=False,
@@ -592,7 +585,6 @@ class ModelCreateForm(forms.ModelForm):
             Field("visibility"),
             Field("eli"),
             Field("title"),
-            Field("distribution"),
             Field("description"),
             Field("is_parameterized"),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Modelio bazė")}</h4>'),
@@ -603,7 +595,7 @@ class ModelCreateForm(forms.ModelForm):
             Field("comment"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
-        self.fields["distribution"].queryset = DatasetDistribution.objects.filter(dataset=dataset)
+
         self.initial["level"] = "None"
         self.initial["base_level"] = "None"
         self.initial["visibility"] = "None"
@@ -759,7 +751,6 @@ class ModelUpdateForm(ModelCreateForm):
             Field("visibility"),
             Field("eli"),
             Field("title"),
-            Field("distribution"),
             Field("description"),
             Field("is_parameterized"),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Modelio bazė")}</h4>'),
@@ -783,7 +774,6 @@ class ModelUpdateForm(ModelCreateForm):
             self.initial["visibility"] = instance.visibility if instance.visibility is not None else "None"
             self.initial["status"] = instance.status if instance.status is not None else default_status
             self.initial["eli"] = instance.eli
-            self.initial["distribution"] = model.distribution_id
             if model.base:
                 self.initial["base"] = model.base.model
                 self.initial["base_ref"] = model.base.property_list.order_by("order").values_list("property", flat=True)

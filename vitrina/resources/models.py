@@ -12,6 +12,8 @@ from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
 from vitrina.utils import translate_text
+from vitrina.datasets.models import Dataset
+from vitrina.structure.models import Version
 
 
 def get_default_status() -> uuid.UUID:
@@ -127,7 +129,7 @@ class DatasetDistribution(TranslatableModel):
     version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    dataset = models.ForeignKey("vitrina_datasets.Dataset", models.CASCADE)
+    dataset = models.ForeignKey(Dataset, models.CASCADE)
     translations = TranslatedFields(
         title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
         description=models.TextField(_("Aprašymas"), blank=True),
@@ -203,9 +205,7 @@ class DatasetDistribution(TranslatableModel):
 
     issued = models.CharField(max_length=255, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
-    data_service = models.ForeignKey(
-        "vitrina_datasets.Dataset", models.SET_NULL, null=True, related_name="data_service_distributions"
-    )
+    data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
     is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
     upload_to_storage = models.BooleanField(default=False, verbose_name=_("Įkėlimas į saugyklą"))
     imported = models.BooleanField(default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas"))
@@ -282,7 +282,7 @@ class DatasetDistribution(TranslatableModel):
     objects = TranslatableManager()
 
     metadata_version = models.ForeignKey(
-        "vitrina_structure.Version",
+        Version,
         models.SET_NULL,
         blank=True,
         null=True,
@@ -342,17 +342,9 @@ class DatasetDistribution(TranslatableModel):
         return parents
 
     def get_absolute_url(self):
-        if self.metadata_version and self.metadata_version.pk:
-            return reverse(
-                "resource-detail",
-                kwargs={"pk": self.dataset.pk, "resource_id": self.pk, "version_id": self.metadata_version.pk},
-            )
         return reverse(
-            "resource-detail-no-version",
-            kwargs={
-                "pk": self.dataset.pk,
-                "resource_id": self.pk,
-            },
+            "resource-detail",
+            kwargs={"pk": self.dataset.pk, "resource_id": self.pk, "version_id": self.metadata_version.pk},
         )
 
     def lt_title(self):

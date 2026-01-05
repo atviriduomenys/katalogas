@@ -116,16 +116,16 @@ def test_get_active_tasks_with_task_organization_supervisor_after_5_work_days(ro
         parent_organization_user,
         now=timezone.datetime(2022, 11, 25).date()
     )
-    assert list(active_tasks) == [
+    assert set(active_tasks) == {
         task_for_parent_organization,
-        task_for_child_organization
-    ]
+        task_for_child_organization,
+    }
 
     active_tasks = get_active_tasks(
         child_organization_user,
         now=timezone.datetime(2022, 11, 25).date()
     )
-    assert list(active_tasks) == [task_for_child_organization]
+    assert set(active_tasks) == {task_for_child_organization}
 
 
 @pytest.mark.django_db

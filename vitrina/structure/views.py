@@ -2189,6 +2189,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
             dataset=self.dataset,
             is_parameterized=form.cleaned_data.get("is_parameterized", False),
             metadata_version=self.metadata_version,
+            distribution=form.cleaned_data.get("distribution"),
         )
         self.object.metadata_version = self.metadata_version
         self.object.object = model

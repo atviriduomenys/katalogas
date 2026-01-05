@@ -5,6 +5,7 @@ import operator
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db.models import Q, Max, Avg
@@ -13,6 +14,7 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Status
 from vitrina.models import UUIDBaseModel
+from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import VersionStatus, VersionType
 from vitrina.structure.helpers import get_type_repr
 from enum import Enum

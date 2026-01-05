@@ -81,7 +81,7 @@ def create_metadata_rows_for_dataset_distribution(apps, schema_editor):
             prepare_ast={},
             access=None,
             version=1,
-            metadata_version=dataset_distribution.metadata_version,
+            # metadata_version=dataset_distribution.metadata_version,
         )
 
 
@@ -93,6 +93,6 @@ class Migration(migrations.Migration):
 
     operations = [
         migrations.RunPython(create_metadata_rows_for_datasets, migrations.RunPython.noop),
-        migrations.RunPython(assign_metadata_version_to_dataset_distributions, migrations.RunPython.noop),
+        # migrations.RunPython(assign_metadata_version_to_dataset_distributions, migrations.RunPython.noop),
         migrations.RunPython(create_metadata_rows_for_dataset_distribution, migrations.RunPython.noop),
     ]

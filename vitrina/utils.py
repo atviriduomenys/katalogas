@@ -108,11 +108,8 @@ class RevisionComment:
         return json.dumps(data, cls=DjangoJSONEncoder)
 
     @classmethod
-    def from_json(cls, raw_json: str) -> "RevisionComment | None":
-        try:
-            data = json.loads(raw_json)
-        except json.JSONDecodeError:
-            return None
+    def from_json(cls, raw_json: str) -> "RevisionComment":
+        data = json.loads(raw_json)
 
         if "source" not in data:
             raise ValueError("Missing 'source' in revision comment")

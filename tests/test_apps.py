@@ -26,7 +26,7 @@ def test_reversion_model_registration(model: type[models.Model], should_be_regis
         assert not reversion.is_registered(model), (f"Model '{path}' should not be registered with reversion.")
 
 
-@override_settings(NOT_VERSIONED_MODELS=["notExistingModel"])
+@override_settings(NOT_VERSIONED_MODELS=["notExistingModel"], DEBUG=True)
 def test_not_existing_model_in_not_versioned_models():
     api_config = apps.get_app_config("vitrina")
 

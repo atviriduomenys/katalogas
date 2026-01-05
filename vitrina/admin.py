@@ -1,5 +1,6 @@
 import json
 from typing import Any, Dict
+import logging
 
 from django.contrib import admin
 from django.contrib.admin.models import LogEntry
@@ -12,6 +13,9 @@ from reversion.admin import VersionAdmin
 
 from vitrina.utils import RevisionComment, RevisionSource
 from django.utils.translation import gettext_lazy as _
+
+
+logger = logging.getLogger(__name__)
 
 
 class VersionInline(admin.TabularInline):
@@ -37,7 +41,18 @@ class VersionInline(admin.TabularInline):
 
     @admin.display(description=_("Versijos duomenys"))
     def version_data(self, obj: Version) -> str:
-        data = json.loads(obj.serialized_data)[0]["fields"]
+        try:
+            data = json.loads(obj.serialized_data)[0]["fields"]
+        except (json.JSONDecodeError, IndexError, KeyError):
+            logger.exception(
+                "Failed to parse Version.serialized_data",
+                extra={
+                    "version_id": obj.pk,
+                    "serialized_data": obj.serialized_data,
+                },
+            )
+            return format_html(_("Nepavyko nuskaityti versijos duomenų"))
+
         data_json = json.dumps(data, indent=2, ensure_ascii=False, default=str)
 
         element_id = f"snapshot-{obj.pk}"

@@ -43,6 +43,9 @@ class AutoRevisionCommentMiddleware(MiddlewareMixin):
 
         match = request.resolver_match
 
+        if not match:
+            return None
+
         comment = RevisionComment(
             source=RevisionSource.VIEW,
             action=match.url_name or match.view_name,

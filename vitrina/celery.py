@@ -42,8 +42,8 @@ class RevisionedTask(app.Task):
         the invocation (task name + args/kwargs).
         """
         with reversion.create_revision():
-            request = getattr(self, "request", None)
-            if request:
+            headers = {}
+            if request := getattr(self, "request", None):
                 headers = getattr(request, "headers", {}) or {}
 
             if user_id := headers.get("_reversion_user_id"):

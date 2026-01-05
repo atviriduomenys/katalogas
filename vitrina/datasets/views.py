@@ -484,17 +484,13 @@ class DatasetDetailView(
             "harvested": "",
             "can_add_resource": has_perm(
                 self.request.user,
-                Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
-                if subclass and subclass.is_information_system
-                else Action.CREATE,
+                Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE,
                 Dataset,
                 organization,
             ),
             "can_update_dataset": has_perm(
                 self.request.user,
-                Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
-                if subclass and subclass.is_information_system
-                else Action.UPDATE,
+                Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.UPDATE,
                 dataset,
             ),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
@@ -1059,9 +1055,7 @@ class DatasetUpdateView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
-            if subclass and subclass.is_information_system
-            else Action.UPDATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.UPDATE,
             dataset,
         )
 
@@ -1453,9 +1447,7 @@ class DatasetStructureImportView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
-            if subclass and subclass.is_information_system
-            else Action.CREATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE,
             DatasetStructure,
             self.dataset,
         )
@@ -1543,15 +1535,13 @@ class DatasetMembersView(
         subclass = self.object.subclass
         context["has_permission"] = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
-            if subclass and subclass.is_information_system
-            else Action.CREATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE,
             Representative,
             self.object,
         )
         context["can_view_members"] = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE if subclass and subclass.is_information_system else Action.VIEW,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.VIEW,
             Representative,
             self.object,
         )
@@ -1577,9 +1567,7 @@ class CreateMemberView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
-            if subclass and subclass.is_information_system
-            else Action.CREATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE,
             Representative,
             self.dataset,
         )
@@ -3305,9 +3293,7 @@ class DatasetPlanView(
         subclass = self.dataset.subclass
         context["can_manage_plans"] = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
-            if subclass and subclass.is_information_system
-            else Action.UPDATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.UPDATE,
             self.dataset,
         )
         context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
@@ -3742,11 +3728,7 @@ class DatasetChildResourceListView(
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         dataset = self.object
         subclass = dataset.subclass
-        action = (
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE
-            if subclass and subclass.is_information_system
-            else Action.CREATE
-        )
+        action = Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE
         return super().get_context_data(**kwargs) | {
             "can_create_dataset": has_perm(
                 self.request.user,

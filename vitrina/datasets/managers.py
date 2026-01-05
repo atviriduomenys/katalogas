@@ -46,33 +46,49 @@ class PermittedDatasetManager(TranslatableManager):
         dataset_ct = ContentType.objects.get_for_model(Dataset)
         org_ct = ContentType.objects.get_for_model(Organization)
 
-        accessible_filter: Q = Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
+        public_filter: Q = Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
 
         if not user.is_authenticated:
-            return datasets.filter(accessible_filter)
+            return datasets.filter(public_filter)
         if user.is_staff or user.is_superuser:
             return datasets
 
-        # Collect all dataset paths the user directly represents
-        represented_dataset_paths = list(
+        resource_roles = (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR)
+
+        resource_representatives = Representative.objects.filter(user_id=user.id, role__in=resource_roles)
+
+        represented_dataset_ids = resource_representatives.filter(content_type=dataset_ct).values_list(
+            "object_id", flat=True
+        )
+        represented_org_ids = resource_representatives.filter(content_type=org_ct).values_list("object_id", flat=True)
+
+        represented_paths = set(
             Dataset.objects.filter(
-                pk__in=Representative.objects.filter(content_type=dataset_ct, user_id=user.id).values_list(
-                    "object_id", flat=True
-                )
+                Q(pk__in=represented_dataset_ids) | Q(organization_id__in=represented_org_ids)
             ).values_list("path", flat=True)
         )
 
-        represented_orgs = Organization.objects.filter(
-            pk__in=Representative.objects.filter(content_type=org_ct, user_id=user.id).values_list(
-                "object_id", flat=True
-            )
+        accessible_filter = public_filter
+
+        for path in represented_paths:
+            accessible_filter |= Q(path__startswith=path)
+
+        open_data_roles = (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR)
+        open_data_representatives = Representative.objects.filter(user_id=user.id, role__in=open_data_roles)
+
+        open_data_dataset_ids = open_data_representatives.filter(content_type=dataset_ct).values_list(
+            "object_id", flat=True
+        )
+        open_data_org_ids = open_data_representatives.filter(content_type=org_ct).values_list("object_id", flat=True)
+
+        open_data_paths = set(
+            Dataset.objects.filter(
+                Q(pk__in=open_data_dataset_ids) | Q(organization_id__in=open_data_org_ids)
+            ).values_list("path", flat=True)
         )
 
-        datasets_in_represented_orgs = Dataset.objects.filter(organization__in=represented_orgs)
-        represented_dataset_paths += list(datasets_in_represented_orgs.values_list("path", flat=True))
-
-        for ds_path in represented_dataset_paths:
-            accessible_filter |= Q(path__startswith=ds_path)
+        for path in open_data_paths:
+            accessible_filter |= Q(path__startswith=path, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
 
         if user.is_gov_organization_resource_manager:
             accessible_filter |= Q(

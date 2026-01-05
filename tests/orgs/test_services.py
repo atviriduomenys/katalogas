@@ -110,42 +110,62 @@ def test_dataset_create_permission_organization_coordinator():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "role,can_write,action,dataset_fixture,expected",
+    "role,action,dataset_fixture,expected",
     [
-        ("global_manager", None, Action.CREATE, "public_dataset", True),
-        ("global_manager", None, Action.UPDATE, "public_dataset", True),
-        ("global_manager", None, Action.DELETE, "public_dataset", True),
-        ("global_manager", None, Action.COMMENT, "public_dataset", True),
-        ("global_manager", None, Action.STRUCTURE, "public_dataset", True),
-        ("global_manager", None, Action.VIEW, "public_dataset", True),
-        ("global_manager", None, Action.HISTORY_VIEW, "public_dataset", True),
-        ("global_manager", None, Action.CREATE, "non_public_dataset", True),
-        ("global_manager", None, Action.UPDATE, "non_public_dataset", True),
-        ("global_manager", None, Action.VIEW, "confidential_dataset", True),
-        ("global_manager", None, Action.DELETE, "non_public_but_public_access_dataset", True),
-        ("resource_coordinator", True, Action.UPDATE, "confidential_dataset", True),
-        ("resource_coordinator", False, Action.UPDATE, "confidential_dataset", False),
-        ("resource_coordinator", None, Action.VIEW, "public_dataset", True),
-        ("resource_coordinator", None, Action.VIEW, "non_public_dataset", True),
-        ("resource_coordinator", None, Action.CREATE, "public_dataset", True),
-        ("resource_manager", True, Action.UPDATE, "confidential_dataset", True),
-        ("resource_manager", False, Action.UPDATE, "confidential_dataset", False),
-        ("resource_manager", None, Action.VIEW, "public_dataset", True),
-        ("authenticated", None, Action.VIEW, "public_dataset", True),
-        ("authenticated", None, Action.VIEW, "non_public_dataset", False),
-        ("authenticated", None, Action.VIEW, "confidential_dataset", False),
-        ("authenticated", None, Action.UPDATE, "public_dataset", False),
-        ("authenticated", None, Action.CREATE, "public_dataset", False),
+        ("global_manager", Action.CREATE, "public_dataset", True),
+        ("global_manager", Action.UPDATE, "public_dataset", True),
+        ("global_manager", Action.DELETE, "public_dataset", True),
+        ("global_manager", Action.COMMENT, "public_dataset", True),
+        ("global_manager", Action.STRUCTURE, "public_dataset", True),
+        ("global_manager", Action.VIEW, "public_dataset", True),
+        ("global_manager", Action.HISTORY_VIEW, "public_dataset", True),
+        ("global_manager", Action.CREATE, "non_public_dataset", True),
+        ("global_manager", Action.UPDATE, "non_public_dataset", True),
+        ("global_manager", Action.VIEW, "confidential_dataset", True),
+        ("global_manager", Action.DELETE, "non_public_but_public_access_dataset", True),
+        ("resource_manager", Action.CREATE, "public_dataset", True),
+        ("resource_manager", Action.CREATE, "non_public_dataset", True),
+        ("resource_manager", Action.CREATE, "confidential_dataset", True),
+        ("resource_manager", Action.UPDATE, "public_dataset", True),
+        ("resource_manager", Action.UPDATE, "non_public_dataset", True),
+        ("resource_manager", Action.UPDATE, "confidential_dataset", True),
+        ("resource_manager", Action.VIEW, "public_dataset", True),
+        ("resource_manager", Action.VIEW, "non_public_dataset", True),
+        ("resource_manager", Action.VIEW, "confidential_dataset", True),
+        ("resource_manager", Action.DELETE, "public_dataset", True),
+        ("resource_manager", Action.DELETE, "non_public_dataset", True),
+        ("resource_manager", Action.DELETE, "confidential_dataset", True),
+        ("open_data_manager", Action.CREATE, "public_dataset", True),
+        ("open_data_manager", Action.CREATE, "non_public_dataset", True),
+        ("open_data_manager", Action.CREATE, "confidential_dataset", True),
+        ("open_data_manager", Action.UPDATE, "public_dataset", True),
+        ("open_data_manager", Action.UPDATE, "non_public_dataset", False),
+        ("open_data_manager", Action.UPDATE, "confidential_dataset", False),
+        ("open_data_manager", Action.VIEW, "public_dataset", True),
+        ("open_data_manager", Action.VIEW, "non_public_dataset", False),
+        ("open_data_manager", Action.VIEW, "confidential_dataset", False),
+        ("open_data_manager", Action.DELETE, "public_dataset", True),
+        ("open_data_manager", Action.DELETE, "non_public_dataset", False),
+        ("open_data_manager", Action.DELETE, "confidential_dataset", False),
+        ("authenticated", Action.VIEW, "public_dataset", True),
+        ("authenticated", Action.VIEW, "non_public_dataset", False),
+        ("authenticated", Action.VIEW, "confidential_dataset", False),
+        ("authenticated", Action.UPDATE, "public_dataset", False),
+        ("authenticated", Action.CREATE, "public_dataset", False),
     ],
 )
-def test_dataset_permissions(role, can_write, action, dataset_fixture, expected, request):
+def test_dataset_permissions(role, action, dataset_fixture, expected, request):
     dataset = request.getfixturevalue(dataset_fixture)
     user = UserFactory(is_staff=(role == "global_manager"))
     ct = ContentType.objects.get_for_model(dataset)
-    rep_role = {"open_data_coordinator": Representative.OPEN_DATA_COORDINATOR, "open_data_manager": Representative.OPEN_DATA_MANAGER, "resource_coordinator": Representative.RESOURCE_COORDINATOR, "resource_manager": Representative.RESOURCE_MANAGER}
-    RepresentativeFactory(
-        content_type=ct, object_id=dataset.pk, role=rep_role, user=user
-    )
+    rep_roles = {"open_data_manager": Representative.OPEN_DATA_MANAGER, "resource_manager": Representative.RESOURCE_MANAGER}
+    if role in rep_roles:
+        RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=rep_roles[role],
+            user=user,
+        )
 
     assert has_perm(user, action, dataset) is expected
 
@@ -727,7 +747,7 @@ def test_dataset_edit_permission_organization_publisher():
 
 @pytest.mark.django_db
 def test_dataset_edit_permission_organization_open_data_representative_non_public():
-    dataset = DatasetFactory(is_public=False)
+    dataset = DatasetFactory(is_public=False, access_rights=Dataset.NON_PUBLIC)
     user = UserFactory()
     organization = OrganizationFactory()
     user.organization = organization

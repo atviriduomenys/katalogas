@@ -513,8 +513,35 @@ class TestDatasetListView:
 
         resp = app.get(reverse("dataset-list"))
         resp = resp.click(linkid="org-dataset-url")
+        assert [int(obj.pk) for obj in resp.context["object_list"]] == [dataset.pk]
 
-        assert list(resp.context["object_list"]) == [dataset]
+    def test_org_datasets_are_shown_for_open_data_coordinator(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        public_dataset = DatasetFactory(title="public_ds", organization=org, access_rights=Dataset.PUBLIC)
+        restricted_dataset = DatasetFactory(title="restricted_ds", organization=org, access_rights=Dataset.RESTRICTED)
+        confidential_dataset = DatasetFactory(title="confidential_ds", organization=org,
+                                              access_rights=Dataset.NON_PUBLIC)
+
+        user = User.objects.create_user(
+            email="opendata@test.com",
+            password="test123",
+            organization=org,
+        )
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=org.pk,
+            role=Representative.OPEN_DATA_COORDINATOR,
+            user=user,
+        )
+
+        app.set_user(user)
+
+        resp = app.get(reverse("dataset-list"))
+        resp = resp.click(linkid="org-dataset-url")
+        visible_dataset_ids = [int(obj.pk) for obj in resp.context["object_list"]]
+        assert public_dataset.pk in visible_dataset_ids
+        assert restricted_dataset.pk in visible_dataset_ids
+        assert confidential_dataset.pk not in visible_dataset_ids
 
     def test_manager_datasets_are_shown_for_manager(self, app: DjangoTestApp):
         org = OrganizationFactory()

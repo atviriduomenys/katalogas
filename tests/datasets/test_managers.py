@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
 
 
@@ -46,12 +46,6 @@ class TestDatasetViewPermissions:
         )
         self.global_representative = User.objects.create_user(
             email="vssa@vssa.com", password="vssa123", status=User.ACTIVE, is_staff=True
-        )
-        self.info_system_rep = User.objects.create_user(
-            email="info@system.com", password="test123", status=User.ACTIVE
-        )
-        self.open_data_rep = User.objects.create_user(
-            email="open@data.com", password="test123", status=User.ACTIVE
         )
         self.grandpa_rep = User.objects.create_user(email="vssa2@vssa.com", password="vssa123", status=User.ACTIVE)
 
@@ -116,6 +110,74 @@ class TestDatasetViewPermissions:
 
             # non-public
             ("regular_user", "grandchild", True, "NON_PUBLIC", "dataset", False),
+            ("random_org_representative", "grandchild", True, "NON_PUBLIC", "dataset", False),
+            ("org_representative", "grandchild", True, "NON_PUBLIC", "dataset", False),
+            ("data_set_representative", "grandchild", True, "NON_PUBLIC", "dataset", False),
+            ("parent_representative", "grandchild", True, "NON_PUBLIC", "dataset", False),
+            ("global_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
+
+            # confidential
+            ("regular_user", "grandchild", True, "CONFIDENTIAL", "dataset", False),
+            ("random_org_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
+            ("org_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
+            ("data_set_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
+            ("parent_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
+            ("global_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
+
+        ],
+    )
+    def test_view_permissions_open_data_managers(
+            self,
+            user_attributes: str,
+            dataset_attributes: str,
+            is_public: bool,
+            access_rights: str,
+            subclass: str,
+            expected: bool,
+    ):
+        user = getattr(self, user_attributes)
+        dataset = getattr(self, dataset_attributes)
+
+        dataset.is_public = is_public
+        dataset.access_rights = access_rights
+        dataset.subclass_id = DCATResourceSubclass.objects.get(name=subclass).pk
+        dataset.save()
+
+        queryset = Dataset.restricted.for_user(user)
+        result = dataset in queryset
+
+        assert result is expected
+
+    @pytest.mark.parametrize(
+        "user_attributes,dataset_attributes,is_public,access_rights,subclass,expected",
+        [
+            # not public dataset
+            ("regular_user", "grandchild", False, "PUBLIC", "dataset", False),
+            ("random_org_representative", "grandchild", False, "PUBLIC", "dataset", False),
+            ("org_representative", "grandchild", False, "PUBLIC", "dataset", True),
+            ("data_set_representative", "grandchild", False, "PUBLIC", "dataset", True),
+            ("parent_representative", "grandchild", False, "PUBLIC", "dataset", True),
+            ("global_representative", "grandchild", False, "PUBLIC", "dataset", True),
+
+            # public datasets
+            ("regular_user", "grandchild", True, "PUBLIC", "dataset", True),
+            ("random_org_representative", "grandchild", True, "PUBLIC", "dataset", True),
+            ("org_representative", "grandchild", True, "PUBLIC", "dataset", True),
+            ("data_set_representative", "grandchild", True, "PUBLIC", "dataset", True),
+            ("parent_representative", "grandchild", True, "PUBLIC", "dataset", True),
+            ("global_representative", "grandchild", True, "PUBLIC", "dataset", True),
+            ("grandpa_rep", "grandchild", True, "PUBLIC", "dataset", True),
+
+            # restricted
+            ("regular_user", "grandchild", True, "RESTRICTED", "dataset", True),
+            ("random_org_representative", "grandchild", True, "RESTRICTED", "dataset", True),
+            ("org_representative", "grandchild", True, "RESTRICTED", "dataset", True),
+            ("data_set_representative", "grandchild", True, "RESTRICTED", "dataset", True),
+            ("parent_representative", "grandchild", True, "RESTRICTED", "dataset", True),
+            ("global_representative", "grandchild", True, "RESTRICTED", "dataset", True),
+
+            # non-public
+            ("regular_user", "grandchild", True, "NON_PUBLIC", "dataset", False),
             ("random_org_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
             ("org_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
             ("data_set_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
@@ -132,7 +194,7 @@ class TestDatasetViewPermissions:
 
         ],
     )
-    def test_view_permissions(
+    def test_view_permissions_resource_managers(
             self,
             user_attributes: str,
             dataset_attributes: str,
@@ -141,6 +203,15 @@ class TestDatasetViewPermissions:
             subclass: str,
             expected: bool,
     ):
+        for repr_ in (
+                self.repr_random_org,
+                self.repr_org,
+                self.repr_ds,
+                self.repr_parent,
+                self.repr_grand_org,
+        ):
+            repr_.role = Representative.RESOURCE_MANAGER
+            repr_.save(update_fields=["role"])
         user = getattr(self, user_attributes)
         dataset = getattr(self, dataset_attributes)
 

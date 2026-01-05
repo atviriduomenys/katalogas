@@ -290,7 +290,7 @@ def representative_data():
         user=resource_coordinator
     )
     representative_viisp_coordinator = RepresentativeFactory(
-        role="open_data_coordinator",
+        role="resource_coordinator",
         content_type=content_type,
         object_id=organization.pk,
         user=viisp_coordinator
@@ -543,14 +543,16 @@ def test_representative_update_without_permission(app: DjangoTestApp, representa
 
 
 def test_representative_update_no_coordinators(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['resource_coordinator'])
+    app.set_user(representative_data['open_data_coordinator'])
     representative_data['representative_viisp_coordinator'].role = 'resource_manager'
     representative_data['representative_viisp_coordinator'].save()
+    representative_data['resource_representative_coordinator'].role = 'resource_manager'
+    representative_data['resource_representative_coordinator'].save()
     form = app.get(reverse('representative-update', kwargs={
         'pk': representative_data['organization'].pk,
-        'representative_id': representative_data['representative_viisp_coordinator'].pk
+        'representative_id': representative_data['open_data_representative_coordinator'].pk
     })).forms['representative-form']
-    form['role'] = "resource_manager"
+    form['role'] = "open_data_manager"
     resp = form.submit()
     assert len(resp.context['form'].errors) == 1
 

@@ -36,9 +36,7 @@ class Action(Enum):
     UPDATE = "update"
     DELETE = "delete"
     REQUEST_UPDATE = "request_update"
-    INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE = "information_system_at_gov_org_update"
-    INFORMATION_SYSTEM_AT_GOV_ORG_CREATE = "information_system_at_gov_org_create"
-    CREATE_RESOURCE_AT_GOV_ORG = "create_resource_at_gov_org"
+    INFORMATION_SYSTEM_UPDATE = "information_system_update"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
@@ -55,7 +53,6 @@ class Role(Enum):
     OPEN_DATA_COORDINATOR = Representative.OPEN_DATA_COORDINATOR
     OPEN_DATA_MANAGER = Representative.OPEN_DATA_MANAGER
     GLOBAL_RESOURCE_MANAGER = "global_resource_manager"  # All resource managers
-    GLOBAL_OPEN_DATA_MANAGER = "global_open_data_manager"  # All open data managers
     SUPERVISOR = Representative.SUPERVISOR
     AUTHOR = "author"
     GLOBAL_MANAGER = "global_manager"  # Global Manager (is staff)
@@ -73,7 +70,7 @@ WRITE_ACTIONS: set[Action] = {
     Action.MANAGE_KEYS,
     Action.MANAGE_PROJECT_KEYS,
     Action.ASSIGN,
-    Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE,
+    Action.INFORMATION_SYSTEM_UPDATE,
 }
 DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
@@ -88,7 +85,7 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.PLAN,
     Action.REQUEST_UPDATE,
-    Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE,
+    Action.INFORMATION_SYSTEM_UPDATE,
 }
 
 DATASET_IS_PUBLIC = True
@@ -158,11 +155,15 @@ _dataset_update_acl: ACL = {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
         Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
@@ -185,7 +186,6 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.OPEN_DATA_COORDINATOR,
         Role.OPEN_DATA_MANAGER,
         Role.GLOBAL_RESOURCE_MANAGER,
-        Role.GLOBAL_OPEN_DATA_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.VIEW): {
         Role.AUTHENTICATED,
@@ -196,7 +196,6 @@ _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW
         Role.OPEN_DATA_COORDINATOR,
         Role.OPEN_DATA_MANAGER,
         Role.GLOBAL_RESOURCE_MANAGER,
-        Role.GLOBAL_OPEN_DATA_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.VIEW): {
         Role.RESOURCE_COORDINATOR,
@@ -217,18 +216,10 @@ _dataset_create_acl: ACL = {
 }
 _information_system_update_acl: ACL = inherit_acl(
     _dataset_update_acl,
-    new_action=Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE,
+    new_action=Action.INFORMATION_SYSTEM_UPDATE,
     new_roles={Role.RESOURCE_COORDINATOR, Role.GLOBAL_MANAGER, Role.RESOURCE_MANAGER},
 )
-_information_system_create_acl: ACL = inherit_acl(
-    _dataset_create_acl,
-    new_action=Action.INFORMATION_SYSTEM_AT_GOV_ORG_CREATE,
-    new_roles={
-        Role.RESOURCE_COORDINATOR,
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-    },
-)
+
 _dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.COMMENT)
 _dataset_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.DELETE)
 _dataset_history_view_acl: ACL = inherit_acl(_dataset_view_acl, new_action=Action.HISTORY_VIEW)
@@ -270,7 +261,6 @@ MODEL_VISIBILITY_ACL = {
         Role.OPEN_DATA_COORDINATOR,
         Role.OPEN_DATA_MANAGER,
         Role.GLOBAL_RESOURCE_MANAGER,
-        Role.GLOBAL_OPEN_DATA_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
     },
@@ -281,7 +271,6 @@ MODEL_VISIBILITY_ACL = {
         Role.OPEN_DATA_COORDINATOR,
         Role.OPEN_DATA_MANAGER,
         Role.GLOBAL_RESOURCE_MANAGER,
-        Role.GLOBAL_OPEN_DATA_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
     },
@@ -292,7 +281,6 @@ MODEL_VISIBILITY_ACL = {
         Role.OPEN_DATA_COORDINATOR,
         Role.OPEN_DATA_MANAGER,
         Role.GLOBAL_RESOURCE_MANAGER,
-        Role.GLOBAL_OPEN_DATA_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
     },
@@ -486,8 +474,6 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.OPEN_DATA_COORDINATOR if user.is_open_data_coordinator else Role.OPEN_DATA_MANAGER
     if user.is_gov_organization_resource_manager:
         return Role.GLOBAL_RESOURCE_MANAGER
-    if user.is_gov_organization_open_data_manager:
-        return Role.GLOBAL_OPEN_DATA_MANAGER
     return Role.AUTHENTICATED
 
 

@@ -2,9 +2,29 @@
 {{ object.status }}
 {{ object.get_organization_titles }}
 {{ object.dataset_statuses }}
-{{ object.dataset.organization.title }}
-{{ object.dataset.organization.jurisdiction }}
-{{ object.dataset.category.title }}
-{{ object.dataset.groups }}
-{{ object.dataset.tags }}
+{% if object.dataset and object.dataset.organization %}
+    {{ object.dataset.organization.title }}
+    {{ object.dataset.organization.jurisdiction }}
+{% endif %}
+
+{% if object.dataset and object.dataset.category %}
+    {% for category in object.dataset.category.all %}
+        {{ category.title }}
+    {% endfor %}
+{% endif %}
+
+{% if object.dataset %}
+    {% if object.dataset.groups %}
+        {% for group in object.dataset.groups.all %}
+            {{ group }}
+        {% endfor %}
+    {% endif %}
+
+    {% if object.dataset.tags %}
+        {% for tag in object.dataset.tags.all %}
+            {{ tag }}
+        {% endfor %}
+    {% endif %}
+{% endif %}
+
 {{ object.created }}

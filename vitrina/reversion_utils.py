@@ -1,9 +1,17 @@
 import json
 from typing import Any
 from uuid import UUID
+from dataclasses import dataclass
 from django.db import models
 from reversion.models import Version
 from django.db.models import Q
+
+
+@dataclass
+class ChildVersionModel:
+    model: type[models.Model]
+    relation: models.ForeignKey
+    children: list["ChildVersionModel"] | None = None
 
 
 def extract_fields_from_version_serialized_data(serialized_data: str) -> dict[str, Any]:
@@ -11,12 +19,12 @@ def extract_fields_from_version_serialized_data(serialized_data: str) -> dict[st
     return payload[0].get("fields", {})
 
 
-def get_child_version_ids(parent_id: int | str | UUID, children: list[dict[str, Any]]) -> set[int]:
+def get_child_version_ids(parent_id: int | str | UUID, children: list[ChildVersionModel]) -> set[int]:
     matching_versions: set[int] = set()
     for child in children:
-        child_model: type[models.Model] = child["model"]
-        relation_field: str = child["relation"].field.name
-        grand_children = child.get("children")
+        child_model: type[models.Model] = child.model
+        relation_field: str = child.relation.field.name
+        grand_children = child.children
 
         candidate_versions = Version.objects.get_for_model(child_model).filter(
             Q(serialized_data__contains=f'"{relation_field}": {parent_id}')
@@ -32,7 +40,7 @@ def get_child_version_ids(parent_id: int | str | UUID, children: list[dict[str, 
     return matching_versions
 
 
-def get_version_ids(instance: models.Model, children: list[dict[str, Any]] | None = None) -> set[int]:
+def get_version_ids(instance: models.Model, children: list[ChildVersionModel] | None = None) -> set[int]:
     """
     Collect django-reversion Version IDs for an instance and optionally its related (child) objects.
 
@@ -44,17 +52,6 @@ def get_version_ids(instance: models.Model, children: list[dict[str, Any]] | Non
             Model instance that Versions IDs are needed.
         children:
             Optional traversal specification for related models.
-
-            Structure:
-                children = [
-                    {
-                        "model": <Django model class>,
-                        "relation": <relation on the child model pointing to the parent>,
-                        "children": [<same structure for grand-children>],  # optional
-                    },
-                    ...
-                ]
-
             Notes:
                 - "relation" must be a Django relation (e.g. ForeignKey descriptor),
                 and `relation.field.name` is used to read the FK value from

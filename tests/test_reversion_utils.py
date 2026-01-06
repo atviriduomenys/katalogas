@@ -2,14 +2,13 @@ import reversion
 from reversion.models import Version
 from vitrina.smart_contracts.factories import AgreementPDFFileFactory
 from vitrina.smart_contracts.models import Agreement, AgreementFile
-from vitrina.reversion_utils import get_version_ids
+from vitrina.reversion_utils import get_version_ids, ChildVersionModel
 
 
 
 def test_get_version_ids():
     with reversion.create_revision():
         agreement_file = AgreementPDFFileFactory()
-
  
     agreement_file_version_ids = Version.objects.get_for_object(agreement_file).values_list("id", flat=True)
     agreement_version_ids = Version.objects.get_for_object(agreement_file.agreement).values_list("id", flat=True)
@@ -18,10 +17,10 @@ def test_get_version_ids():
     version_ids =  list(agreement_file_version_ids) + list(agreement_version_ids) + list(project_version_ids)
 
     agreement_children = [
-        {"model": AgreementFile, "relation": AgreementFile.agreement},
+        ChildVersionModel(model=AgreementFile, relation=AgreementFile.agreement),
     ]
     project_children = [
-        {"model": Agreement, "relation": Agreement.project, "children": agreement_children}
+        ChildVersionModel(model=Agreement, relation=Agreement.project, children=agreement_children)
     ]
 
     assert len(version_ids) == 3

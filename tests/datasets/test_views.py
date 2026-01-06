@@ -58,7 +58,7 @@ from vitrina.requests.factories import RequestObjectFactory, RequestFactory
 from vitrina.requests.models import RequestObject
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.settings import SPINTA_SERVER_URL
-from vitrina.structure.factories import ModelFactory, MetadataFactory, VersionFactory
+from vitrina.structure.factories import ModelFactory, MetadataFactory
 from vitrina.testing.templates import strip_empty_lines
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
@@ -3240,10 +3240,9 @@ def test_delete_last_distribution_from_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True, organization=organization)
     app.set_user(user)
     dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
-    metadata_version = VersionFactory(dataset=dataset)
     resource = DatasetDistributionFactory(dataset=dataset)
 
-    app.post(reverse("resource-delete", args=[resource.pk, metadata_version.pk]))
+    app.post(reverse("resource-delete", args=[resource.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 0
@@ -3258,11 +3257,10 @@ def test_delete_non_last_distribution_from_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True, organization=organization)
     app.set_user(user)
     dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
-    metadata_version = VersionFactory(dataset=dataset)
-    resource1 = DatasetDistributionFactory(dataset=dataset, metadata_version=metadata_version)
-    resource2 = DatasetDistributionFactory(dataset=dataset, metadata_version=metadata_version)
+    resource1 = DatasetDistributionFactory(dataset=dataset)
+    resource2 = DatasetDistributionFactory(dataset=dataset)
 
-    app.post(reverse("resource-delete", args=[resource2.pk, metadata_version.pk]))
+    app.post(reverse("resource-delete", args=[resource2.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 1
@@ -3275,10 +3273,9 @@ def test_delete_last_distribution_from_non_public_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True, organization=organization)
     app.set_user(user)
     dataset = DatasetFactory(organization=organization, status=Dataset.UNASSIGNED, is_public=False)
-    metadata_version = VersionFactory(dataset=dataset)
-    resource = DatasetDistributionFactory(dataset=dataset, metadata_version=metadata_version)
+    resource = DatasetDistributionFactory(dataset=dataset)
 
-    app.post(reverse("resource-delete", args=[resource.pk, metadata_version.pk]))
+    app.post(reverse("resource-delete", args=[resource.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 0
@@ -3291,12 +3288,11 @@ def test_delete_last_distribution_from_dataset_with_plans(app: DjangoTestApp):
     user = UserFactory(is_staff=True, organization=organization)
     app.set_user(user)
     dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
-    metadata_version = VersionFactory(dataset=dataset)
-    resource = DatasetDistributionFactory(dataset=dataset, metadata_version=metadata_version)
+    resource = DatasetDistributionFactory(dataset=dataset)
     plan = PlanFactory()
     PlanDataset.objects.create(dataset=dataset, plan=plan)
 
-    app.post(reverse("resource-delete", args=[resource.pk, metadata_version.pk]))
+    app.post(reverse("resource-delete", args=[resource.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 0
@@ -3330,14 +3326,13 @@ def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
 def test_dataset_dynamic_resources(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    metadata_version = VersionFactory()
-    resource = DatasetDistributionFactory(dataset=metadata_version.dataset, uapi_format=True, metadata_version=metadata_version)
-    form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, metadata_version.pk, resource.pk])).forms["model-form"]
+    resource = DatasetDistributionFactory(uapi_format=True)
+    form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.pk])).forms["model-form"]
     form["name"] = "TestModel"
     form.submit()
     assert resource.model_set.first().name == "TestModel"
 
-    response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
+    response = app.get(reverse("dataset-detail", args=[resource.dataset.pk]))
     html = response.text
     table_data = parse_table(html)
     expected_data = [
@@ -3418,15 +3413,14 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
 def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    metadata_version = VersionFactory()
-    resource = DatasetDistributionFactory(dataset=metadata_version.dataset, uapi_format=True, metadata_version=metadata_version)
+    resource = DatasetDistributionFactory(uapi_format=True)
     for model_name in ["TestModel", "TestModel2", "TestModel3"]:
-        form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, metadata_version.pk,  resource.pk])).forms["model-form"]
+        form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.pk])).forms["model-form"]
         form["name"] = model_name
         form.submit()
     assert resource.model_set.count() == 3
 
-    response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
+    response = app.get(reverse("dataset-detail", args=[resource.dataset.pk]))
     html = response.text
     table_data = parse_table(html)
     expected_data = [

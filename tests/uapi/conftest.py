@@ -19,7 +19,7 @@ from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import OAUTH_AGENT_DEFAULT_SCOPES
 from vitrina.smart_contracts.models import Agreement
-from vitrina.structure.factories import MetadataFactory, VersionFactory
+from vitrina.structure.factories import MetadataFactory
 from vitrina.uapi.factories import AgentFactory
 from vitrina.uapi.models import Agent
 from vitrina.users.factories import UserFactory
@@ -101,13 +101,11 @@ def dataset(organization: Organization) -> Dataset:
         title="Title of the Dataset",
         description="Description of the Dataset."
     )
-    metadata_version = VersionFactory(dataset=dataset)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(Dataset),
         object_id=dataset.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=metadata_version
     )
     return dataset
 

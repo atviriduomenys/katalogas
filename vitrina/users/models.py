@@ -121,16 +121,6 @@ class User(AbstractUser):
         return bool(self.representative_set.filter(role=Representative.SUPERVISOR))
 
     @property
-    def is_gov_organization_open_data_manager(self) -> bool:
-        gov_org_content_type = self.organization_content_type
-        return Representative.objects.filter(
-            user=self,
-            content_type=gov_org_content_type,
-            object_id__in=Organization.objects.filter(kind=Organization.GOV).values_list("pk", flat=True),
-            role__in=[Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR],
-        ).exists()
-
-    @property
     def is_gov_organization_resource_manager(self) -> bool:
         gov_org_content_type = self.organization_content_type
         return Representative.objects.filter(

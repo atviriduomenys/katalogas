@@ -418,7 +418,7 @@ acl: ACL = (
         (User, Action.UPDATE): (Role.AUTHOR,),
         (User, Action.VIEW): (Role.AUTHOR,),
         (Task, Action.UPDATE): (Role.AUTHENTICATED,),
-        (Organization, Action.MANAGE_KEYS): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
+        (Organization, Action.MANAGE_KEYS): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
         (Project, Action.MANAGE_PROJECT_KEYS): (Role.AUTHOR, Role.SUPERVISOR),
         (RequestAssignment, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
         (RequestAssignment, Action.DELETE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
@@ -576,10 +576,15 @@ def has_perm(
         if where:
             where = functools.reduce(operator.or_, where)
             if Representative.objects.filter(where, user=user).exists():
+                if isinstance(obj, Representative) and action in (Action.UPDATE, Action.DELETE):
+                    return obj.can_be_updated_by(user)
                 return True
 
             if user_org and Representative.objects.filter(where, organization=user_org).exists():
+                if isinstance(obj, Representative) and action in (Action.UPDATE, Action.DELETE):
+                    return obj.can_be_updated_by(user)
                 return True
+
         return False
 
 

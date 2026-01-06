@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load representative_tags %}
 
 {% block parent_links %}
     <ul class="p-t-sm">
@@ -77,22 +78,28 @@
                         {% if m.organization and not can_delete_publishers %}
                         <td></td>
                         {% else %}
-                        <td>
-                            <a href="{% url 'representative-update' pk=request.resolver_match.kwargs.pk representative_id=m.pk %}" class="button is-primary is-small">
-                                {% translate "Redaguoti" %}
-                            </a>
-                        </td>
+                            {% can_update_representative m request.user as can_update %}
+                            {% if can_update %}
+                                <td>
+                                    <a href="{% url 'representative-update' pk=request.resolver_match.kwargs.pk representative_id=m.pk %}" class="button is-primary is-small">
+                                        {% translate "Redaguoti" %}
+                                    </a>
+                                </td>
+                            {% endif %}
                         {% endif %}
 
 
                         {% if m.organization and not can_delete_publishers %}
                         <td></td>
                         {% else %}
-                        <td>
-                            <a href="{% url 'representative-delete' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-link is-small">
-                                {% translate "Pašalinti" %}
-                            </a>
-                        </td>
+                            {% can_update_representative m request.user as can_delete %}
+                            {% if can_delete %}
+                                <td>
+                                    <a href="{% url 'representative-delete' organization_id=request.resolver_match.kwargs.pk pk=m.pk %}" class="button is-link is-small">
+                                        {% translate "Pašalinti" %}
+                                    </a>
+                                </td>
+                            {% endif %}
                         {% endif %}
                     {% endif %}
                 </tr>

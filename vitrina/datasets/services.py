@@ -12,7 +12,7 @@ from django.urls import reverse
 from haystack.backends import SQ
 from haystack.query import SearchQuerySet
 
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.helpers import get_filter_url
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription
@@ -64,7 +64,12 @@ def get_requests(user, dataset):
     if user.is_staff or user.is_superuser:
         requests = Request.public.all()
     else:
-        if has_perm(user, Action.UPDATE, dataset):
+        action = (
+            Action.INFORMATION_SYSTEM_UPDATE
+            if dataset.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM
+            else Action.UPDATE
+        )
+        if has_perm(user, action, dataset):
             user_orgs = []
             if user.organization:
                 user_orgs.append(user.organization.pk)

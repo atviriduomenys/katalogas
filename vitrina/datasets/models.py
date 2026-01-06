@@ -199,6 +199,8 @@ class Dataset(Resource):
         CONFIDENTIAL: _("Konfidencialūs"),
     }
 
+    PUBLIC_ACCESS_RIGHTS = (PUBLIC, RESTRICTED)
+
     API_ORIGIN = "api"
 
     INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"

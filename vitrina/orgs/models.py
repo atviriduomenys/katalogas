@@ -168,6 +168,13 @@ class Representative(models.Model):
         (OPEN_DATA_MANAGER, _("Atvirų duomenų tvarkytojas")),
     )
 
+    OPEN_DATA_ROLES = (
+        (OPEN_DATA_COORDINATOR, _("Atvirų duomenų koordinatorius")),
+        (OPEN_DATA_MANAGER, _("Atvirų duomenų tvarkytojas")),
+    )
+
+    OPEN_DATA_ROLE_KEYS = {role[0] for role in OPEN_DATA_ROLES}
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)
@@ -204,6 +211,27 @@ class Representative(models.Model):
         if isinstance(self.content_object, Organization):
             if organization in self.content_object.get_descendants():
                 return True
+        return False
+
+    def can_be_updated_by(self, user: "User") -> bool:
+        if user.is_superuser:
+            return True
+
+        user_rep = user.representative_set.filter(organization=self.organization).first()
+        if not user_rep:
+            return False
+
+        if user_rep.role == Representative.OPEN_DATA_COORDINATOR:
+            return self.role in Representative.OPEN_DATA_ROLE_KEYS
+
+        if user_rep.role == Representative.RESOURCE_COORDINATOR:
+            return self.role in (
+                Representative.RESOURCE_COORDINATOR,
+                Representative.RESOURCE_MANAGER,
+                Representative.OPEN_DATA_COORDINATOR,
+                Representative.OPEN_DATA_MANAGER,
+            )
+
         return False
 
 

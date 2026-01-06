@@ -2,8 +2,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
-from vitrina.orgs.forms import OrganizationUpdateForm, OrganizationCreateForm, RepresentativeUpdateForm, \
-    RepresentativeCreateForm
+from vitrina.orgs.forms import (
+    OrganizationUpdateForm,
+    OrganizationCreateForm,
+    RepresentativeUpdateForm,
+    RepresentativeCreateForm,
+)
 from django_webtest import DjangoTestApp
 
 from vitrina.orgs.models import Organization, Representative
@@ -119,8 +123,9 @@ class TestRepresentativeUpdateForm:
         assert form.is_valid()
         assert form.cleaned_data["can_make_agreements"] is False  # Should default to False in the end
 
-
-    def test_can_make_agreements_defaults_to_false_if_user_is_not_authorized_to_adjust_the_field_value(self, app: DjangoTestApp):
+    def test_can_make_agreements_defaults_to_false_if_user_is_not_authorized_to_adjust_the_field_value(
+        self, app: DjangoTestApp
+    ):
         organization = OrganizationFactory(name="Org", kind=Organization.GOV)
         user = UserFactory(is_viisp_login=False, viisp_company_code="<some_invalid_code>")
         content_type_user = ContentType.objects.get_for_model(User)
@@ -151,3 +156,59 @@ class TestRepresentativeUpdateForm:
 
         assert form.is_valid()
         assert form.cleaned_data["can_make_agreements"] is False  # Should default to False in the end
+
+    def test_open_data_coordinator_cannot_create_resource_manager(self, app: DjangoTestApp):
+        organization = OrganizationFactory(name="Org", kind=Organization.GOV)
+
+        user = UserFactory()
+        app.set_user(user)
+
+        RepresentativeFactory(
+            user=user,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            role=Representative.OPEN_DATA_COORDINATOR,
+        )
+
+        form = RepresentativeCreateForm(
+            data={
+                "email": "invalid@example.com",
+                "role": Representative.RESOURCE_MANAGER,
+                "phone": "",
+                "has_api_access": False,
+                "regenerate_api_key": False,
+                "can_write": False,
+                "can_make_agreements": None,
+            },
+            user=user,
+            object=organization,
+        )
+
+        assert not form.is_valid()
+        assert "role" in form.errors
+
+    def test_open_data_coordinator_does_not_see_resource_roles(self, app: DjangoTestApp):
+        organization = OrganizationFactory(name="Org", kind=Organization.GOV)
+
+        user = UserFactory()
+        app.set_user(user)
+
+        RepresentativeFactory(
+            user=user,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            role=Representative.OPEN_DATA_COORDINATOR,
+        )
+
+        form = RepresentativeCreateForm(
+            user=user,
+            object=organization,
+        )
+
+        role_choices = dict(form.fields["role"].choices)
+
+        assert Representative.RESOURCE_MANAGER not in role_choices
+        assert Representative.RESOURCE_COORDINATOR not in role_choices
+
+        assert Representative.OPEN_DATA_MANAGER in role_choices
+        assert Representative.OPEN_DATA_COORDINATOR in role_choices

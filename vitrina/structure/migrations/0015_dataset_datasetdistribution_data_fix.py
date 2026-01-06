@@ -32,15 +32,31 @@ def create_metadata_rows_for_datasets(apps, schema_editor):
             )
 
 
-def assign_metadata_version_to_dataset_distributions(apps, schema_editor):
+def fix_dataset_distributions(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
-    Version = apps.get_model("vitrina_structure", "Version")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Metadata = apps.get_model("vitrina_structure", "Metadata")
+
+    dd_ct = ContentType.objects.get_for_model(DatasetDistribution)
+
     for dataset in Dataset.objects.all():
-        draft_metadata_version = Version.objects.filter(dataset=dataset, status=VersionStatus.DRAFT).first()
-        dataset_distributions_with_no_version = DatasetDistribution.objects.filter(dataset=dataset, metadata_version__isnull=True)
-        if dataset_distributions_with_no_version:
-            dataset_distributions_with_no_version.update(metadata_version=draft_metadata_version)
+        dataset_models = dataset.model_set.select_related("distribution__format")
+        for model in dataset_models.all():
+            dist = model.distribution
+            if not dist:
+                continue
+            if dist.format.extension != "UAPI":
+                continue
+
+            if getattr(dist, "metadata_version_id", None):
+                dist.metadata_version = None
+                dist.save(update_fields=["metadata_version"])
+
+            Metadata.objects.filter(content_type=dd_ct, object_id=dist.pk).delete()
+
+            model.distribution = None
+            model.save(update_fields=["distribution"])
 
 
 def create_metadata_rows_for_dataset_distribution(apps, schema_editor):

@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -8,6 +10,9 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.orgs.managers import PublicOrganizationManager
+
+if TYPE_CHECKING:
+    from vitrina.users.models import User
 
 
 class Region(models.Model):

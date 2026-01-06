@@ -323,8 +323,6 @@ class Model(models.Model):
                 raise ValidationError(
                     _("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją.")
                 )
-            if self.distribution.metadata_version and self.distribution.metadata_version != self.metadata_version:
-                raise ValidationError(_("Distribucija jau priskirta kitai versijai. Pasirinkite kitą distribuciją."))
 
         super().save(*args, **kwargs)
 

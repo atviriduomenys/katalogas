@@ -17,7 +17,7 @@ from lark import ParseError
 
 from vitrina.classifiers.models import Status
 from vitrina.resources.models import DatasetDistribution
-from vitrina.structure import spyna
+from vitrina.structure import spyna, AccessType
 from vitrina.structure.helpers import is_time_unit, is_si_unit
 from vitrina.structure.models import (
     EnumItem,
@@ -104,7 +104,7 @@ class EnumForm(forms.ModelForm):
     )
     access = forms.ChoiceField(
         label=_("Prieigos lygmuo"),
-        choices=Metadata.ACCESS_TYPES,
+        choices=AccessType.choices,
         required=False,
         help_text=_("Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės elementams."),
     )
@@ -466,7 +466,7 @@ class ModelCreateForm(forms.ModelForm):
     )
     distribution = forms.ModelChoiceField(
         label=_("Duomenų distribucija"),
-        required=True,
+        required=False,
         queryset=DatasetDistribution.objects.none(),
         help_text=_("Savybė nurodanti modelio duomenų distribuciją."),
     )
@@ -603,7 +603,11 @@ class ModelCreateForm(forms.ModelForm):
             Field("comment"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
-        self.fields["distribution"].queryset = DatasetDistribution.objects.filter(dataset=dataset)
+        self.fields["distribution"].queryset = (
+            DatasetDistribution.objects.exclude(format__extension="UAPI")
+            .filter(dataset=dataset)
+            .filter(Q(metadata_version=self.metadata_version) | Q(metadata_version__isnull=True))
+        )
         self.initial["level"] = "None"
         self.initial["base_level"] = "None"
         self.initial["visibility"] = "None"
@@ -733,6 +737,7 @@ class ModelUpdateForm(ModelCreateForm):
             "is_parameterized",
             "level",
             "status",
+            "distribution",
             "visibility",
             "eli",
             "title",
@@ -974,7 +979,7 @@ class PropertyForm(forms.ModelForm):
     access = forms.ChoiceField(
         label=_("Prieigos lygis"),
         required=False,
-        choices=Metadata.ACCESS_TYPES,
+        choices=AccessType.choices,
         help_text=_("Nurodo prieigos prie duomenų lygį."),
     )
     eli = forms.URLField(

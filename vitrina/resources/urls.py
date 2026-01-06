@@ -48,9 +48,4 @@ urlpatterns = [
         ResourceModelCreateView.as_view(),
         name="resource-model-create",
     ),
-    path(
-        "datasets/<int:pk>/resource/<int:resource_id>/models/add/",
-        ResourceModelCreateView.as_view(),
-        name="resource-model-create-no-version",
-    ),
 ]

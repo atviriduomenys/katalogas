@@ -2184,12 +2184,13 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
                 dataset=self.dataset, status=VersionStatus.DRAFT, version=version_number
             )
             self.metadata_version = new_draft_version
+        distribution = form.cleaned_data.get("distribution")
 
         model = Model.objects.create(
             dataset=self.dataset,
             is_parameterized=form.cleaned_data.get("is_parameterized", False),
             metadata_version=self.metadata_version,
-            distribution=form.cleaned_data.get("distribution"),
+            distribution=distribution,
         )
         self.object.metadata_version = self.metadata_version
         self.object.object = model
@@ -2332,10 +2333,15 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
     def form_valid(self, form):
         self.object: Metadata = form.save(commit=False)
         old_object = self.get_object()
-
         model = self.object.object
+        old_model_distribution = model.distribution
         model.is_parameterized = form.cleaned_data.get("is_parameterized", False)
+        model.distribution = form.cleaned_data.get("distribution")
         model.save()
+
+        if old_model_distribution and old_model_distribution != model.distribution:
+            old_model_distribution.check_if_resource_should_be_versioned()
+
         model_ref = form.cleaned_data.get("ref")
         self.object.status = form.cleaned_data.get("status") or form.initial.get("status")
         self.object.version += 1
@@ -3647,6 +3653,30 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         new_related_instance.pk = None
         new_related_instance.metadata_version = self.new_version
         new_related_instance.save()
+
+        if isinstance(old_related_instance, DatasetDistribution):
+            for trans in old_related_instance.translations.all():
+                lang = trans.language_code
+                title = getattr(trans, "title", "") or ""
+                description = getattr(trans, "description", "") or ""
+                conditions = getattr(trans, "conditions", "") or ""
+
+                if hasattr(new_related_instance, "has_translation") and new_related_instance.has_translation(lang):
+                    new_related_instance.set_current_language(lang)
+                    if hasattr(new_related_instance, "title"):
+                        new_related_instance.title = title
+                    if hasattr(new_related_instance, "description"):
+                        new_related_instance.description = description
+                    if hasattr(new_related_instance, "conditions"):
+                        new_related_instance.conditions = conditions
+                    new_related_instance.save()
+                else:
+                    new_related_instance.create_translation(
+                        language_code=lang,
+                        title=title,
+                        description=description,
+                        conditions=conditions,
+                    )
 
         return old_related_instance, new_related_instance
 

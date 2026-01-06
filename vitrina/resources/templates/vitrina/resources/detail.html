@@ -246,19 +246,17 @@
                  {% if can_update %}
                     <div class="buttons is-right">
                         {% if structure_acceptable %}
-                            <a href="{% url 'resource-model-create' resource.dataset.pk resource.pk %}"
-                               class="button is-primary is-normal m-t-md is-size-6-mobile">
-                                {% translate "Nuskaityti struktūrą" %}
-                            </a>
+                            {% if resource.metadata_version %}
+
+                                <a href="{% url 'resource-model-create' resource.dataset.pk resource.metadata_version.pk resource.pk %}"
+                                   class="button is-primary is-normal m-t-md is-size-6-mobile">
+                                    {% translate "Nuskaityti struktūrą" %}
+                                </a>
+                            {% endif %}
                         {% endif %}
 
                         {% if resource.metadata_version %}
                             <a href="{% url 'resource-model-create' resource.dataset.pk resource.metadata_version.pk resource.pk %}"
-                               class="button is-primary is-normal m-t-md is-size-6-mobile">
-                                {% translate "Naujas modelis" %}
-                            </a>
-                        {% else %}
-                            <a href="{% url 'resource-model-create-no-version' resource.dataset.pk resource.pk %}"
                                class="button is-primary is-normal m-t-md is-size-6-mobile">
                                 {% translate "Naujas modelis" %}
                             </a>

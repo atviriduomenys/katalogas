@@ -1,5 +1,3 @@
-import uuid
-
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
@@ -104,42 +102,6 @@ class ResourceCreateView(
         resource.dataset = self.dataset
         resource.save()
 
-        name = form.cleaned_data.get("name")
-        if not name:
-            name = (
-                Metadata.objects.filter(
-                    dataset=self.dataset,
-                    content_type=ContentType.objects.get_for_model(DatasetDistribution),
-                    name__iregex=r"resource[0-9]+",
-                )
-                .order_by("name")
-                .values_list("name", flat=True)
-                .last()
-            )
-            if not name:
-                name = "resource1"
-            else:
-                n = name.replace("resource", "")
-                try:
-                    n = int(n)
-                except ValueError:
-                    n = 0
-                n += 1
-                name = f"resource{n}"
-        Metadata.objects.create(
-            uuid=str(uuid.uuid4()),
-            dataset=self.dataset,
-            content_type=ContentType.objects.get_for_model(resource),
-            object_id=resource.pk,
-            name=name,
-            prepare_ast={},
-            access=form.cleaned_data.get("access") or None,
-            version=1,
-            title=form.cleaned_data.get("title"),
-            description=form.cleaned_data.get("description"),
-            level_given=form.cleaned_data.get("level"),
-        )
-
         if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():
             dataset_plans = Plan.objects.filter(plandataset__dataset=self.dataset)
             for plan in dataset_plans:
@@ -239,20 +201,6 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMi
             metadata.level_given = form.cleaned_data.get("level")
             metadata.version += 1
             metadata.save()
-        else:
-            Metadata.objects.create(
-                uuid=str(uuid.uuid4()),
-                dataset=resource.dataset,
-                content_type=ContentType.objects.get_for_model(resource),
-                object_id=resource.pk,
-                name=name,
-                prepare_ast={},
-                access=form.cleaned_data.get("access") or None,
-                version=1,
-                title=form.cleaned_data.get("title"),
-                description=form.cleaned_data.get("description"),
-                level_given=form.cleaned_data.get("level"),
-            )
 
         if "applicable_legislation" in form.changed_data:
             resource.update_applicable_legislation(applicable_legislation_urls)

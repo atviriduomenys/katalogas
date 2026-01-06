@@ -326,8 +326,7 @@ class DynamicResourceService:
         self.dataset: Dataset = dataset
         self.metadata_version: Version = metadata_version
         self.dataset_service = Dataset.objects.filter(service=True, endpoint_url=SPINTA_SERVER_URL).first()
-        self.uapi_distribution = self.dataset.datasetdistribution_set.filter(
-            format__extension="UAPI").first()
+        self.uapi_distribution = self.dataset.datasetdistribution_set.filter(format__extension="UAPI").first()
 
     def generate_resources(self, is_for_rdf_export=False):
         if not self.dataset.is_part_of_dataservice():

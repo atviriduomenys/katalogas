@@ -3,6 +3,21 @@
 from django.db import migrations, models
 
 
+def populate_new_distribution_fields(apps, schema_editor):
+    DatasetDistribution = apps.get_model('vitrina_resources', 'DatasetDistribution')
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Metadata = apps.get_model('vitrina_structure', 'Metadata')
+    dd_ct = ContentType.objects.get_for_model(DatasetDistribution)
+
+    for dataset_distribution in DatasetDistribution.objects.all():
+        metadata_instance = Metadata.objects.filter(content_type=dd_ct, object_id=dataset_distribution.id).first()
+        if metadata_instance:
+            dataset_distribution.name = metadata_instance.name
+            dataset_distribution.access = metadata_instance.access
+            dataset_distribution.level = metadata_instance.level
+            dataset_distribution.save()
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -25,4 +40,5 @@ class Migration(migrations.Migration):
             name='name',
             field=models.CharField(blank=True, max_length=255, verbose_name='Vardas'),
         ),
+        migrations.RunPython(populate_new_distribution_fields, migrations.RunPython.noop),
     ]

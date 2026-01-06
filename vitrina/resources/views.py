@@ -2,7 +2,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
 from django.forms import BaseForm
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -228,16 +228,22 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
             return redirect(settings.LOGIN_URL)
         else:
             resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
+            if resource.metadata_version:
+                url = reverse("dataset-detail", kwargs={"pk": resource.dataset.pk})
+                return HttpResponseRedirect(f"{url}?resource_version={resource.metadata_version.pk}")
             return redirect(resource.dataset)
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
+        version_id = self.kwargs.get("version_id")
+
         with create_revision():
             add_to_revision(resource)
             set_user(self.request.user)
             set_comment((f'Ištrintas duomenų šaltinis "{resource.lt_title()}".'))
             resource.delete()
+            resource.metadata.all().delete()
 
             if not DatasetDistribution.objects.filter(dataset=dataset) and dataset.is_public:
                 if dataset.plandataset_set.exists():
@@ -255,6 +261,11 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
                     user=self.request.user,
                 )
                 dataset.save()
+
+        if version_id:
+            url = reverse("dataset-detail", kwargs={"pk": dataset.pk})
+            return HttpResponseRedirect(f"{url}?resource_version={version_id}")
+
         return redirect(dataset)
 
 

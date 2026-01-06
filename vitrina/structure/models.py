@@ -5,6 +5,7 @@ import operator
 import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
 from django.db.models import Q, Max, Avg
@@ -311,13 +312,35 @@ class Model(models.Model):
         return self.dataset.is_opened()
 
     def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
+        old_distribution = None
+
+        if self.pk:
+            old_instance = Model.objects.get(pk=self.pk)
+            old_distribution = old_instance.distribution
+
         if self.distribution:
+            if self.distribution.format.extension == "UAPI":
+                raise ValidationError(
+                    _("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją.")
+                )
             if self.distribution.metadata_version and self.distribution.metadata_version != self.metadata_version:
-                return
+                raise ValidationError(_("Distribucija jau priskirta kitai versijai. Pasirinkite kitą distribuciją."))
+
+        super().save(*args, **kwargs)
+
+        if self.distribution:
             self.distribution.create_metadata_instance_and_assign_version(self.metadata_version.pk)
             self.distribution.metadata_version = self.metadata_version
             self.distribution.save(update_fields=["metadata_version"])
+
+        if old_distribution:
+            old_distribution.check_if_resource_should_be_versioned()
+
+    def delete(self, *args, **kwargs):
+        distribution = self.distribution
+        super().delete(*args, **kwargs)
+        if distribution:
+            distribution.check_if_resource_should_be_versioned()
 
 
 @reversion.register()

@@ -29,30 +29,22 @@ from vitrina.utils import RevisionComment
 
 
 def home(request):
-    COORDINATOR_ROLES = [
-        Representative.RESOURCE_COORDINATOR,
-        Representative.OPEN_DATA_COORDINATOR,
-    ]
-
-    MANAGER_ROLES = [
-        Representative.RESOURCE_MANAGER,
-        Representative.OPEN_DATA_MANAGER,
-    ]
-
     coordinator_count = (
         User.objects.select_related("representative")
-        .filter(representative__role__in=COORDINATOR_ROLES)
+        .filter(representative__role__in=Representative.COORDINATOR_ROLES)
         .distinct("representative__user")
         .count()
     )
     manager_count = (
         User.objects.select_related("representative")
-        .filter(representative__role__in=MANAGER_ROLES)
-        .exclude(representative__role__in=COORDINATOR_ROLES)
+        .filter(representative__role__in=Representative.MANAGER_ROLES)
+        .exclude(representative__role__in=Representative.COORDINATOR_ROLES)
         .distinct("representative__user")
         .count()
     )
-    user_count = User.objects.exclude(representative__role__in=COORDINATOR_ROLES + MANAGER_ROLES).count()
+    user_count = User.objects.exclude(
+        representative__role__in=Representative.COORDINATOR_ROLES + Representative.MANAGER_ROLES
+    ).count()
 
     return render(
         request,

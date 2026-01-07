@@ -157,14 +157,14 @@ class Representative(models.Model):
     OPEN_DATA_COORDINATOR = "open_data_coordinator"
     OPEN_DATA_MANAGER = "open_data_manager"
 
-    COORDINATOR_ROLES = [
+    COORDINATOR_ROLES = (
         RESOURCE_COORDINATOR,
         OPEN_DATA_COORDINATOR,
-    ]
-    MANAGER_ROLES = [
+    )
+    MANAGER_ROLES = (
         RESOURCE_MANAGER,
         OPEN_DATA_MANAGER,
-    ]
+    )
 
     ROLES = (
         (RESOURCE_COORDINATOR, _("Duomenų išteklių koordinatorius")),

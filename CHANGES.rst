@@ -4,6 +4,12 @@ Changes
 v 1.12 (unreleased)
 ==================
 
+Improvements
+
+- https://github.com/atviriduomenys/katalogas/issues/2155
+
+Corrected some texts
+
 https://github.com/atviriduomenys/katalogas/issues/2172
 
 Security: Update katalogas to automatically record all data changes made through UI, django-admin or celery tasks:

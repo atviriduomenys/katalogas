@@ -85,7 +85,6 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.PLAN,
     Action.REQUEST_UPDATE,
-    Action.INFORMATION_SYSTEM_UPDATE,
 }
 
 DATASET_IS_PUBLIC = True

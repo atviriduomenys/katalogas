@@ -6,6 +6,12 @@ v 1.12 (unreleased)
 
 Improvements
 
+https://github.com/atviriduomenys/katalogas/issues/2070
+
+- Update `HistoryView` to list history rows per `Revision`
+- Display list of modified related objects next to each history row.
+- Add `Agreement`, `AgreementFile`, `UseCaseClient` and `UseCaseClientScope` model changes to be included in `Project` history tab.
+
 - https://github.com/atviriduomenys/katalogas/issues/2155
 
 Corrected some texts

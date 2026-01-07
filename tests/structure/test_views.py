@@ -30,6 +30,7 @@ from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionTyp
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
+from vitrina.utils import RevisionComment, RevisionSource
 
 
 @pytest.mark.django_db
@@ -1759,7 +1760,16 @@ def test_model_create(app: DjangoTestApp):
         type='integer',
     )
 
-    form = app.get(reverse('model-create', args=[dataset.pk])).forms['model-form']
+    url = reverse('model-create', args=[dataset.pk])
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="model-create",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={"pk": dataset.pk}
+    )
+    form = app.get(url).forms['model-form']
     form['name'] = "Model"
     form['uri'] = 'dcat:model'
     form['source'] = "MODEL"
@@ -1791,8 +1801,9 @@ def test_model_create(app: DjangoTestApp):
     assert new_model.base.metadata.first().ref == 'prop'
 
     assert Version.objects.get_for_object(new_model).count() == 1
-    assert Version.objects.get_for_object(new_model).first().revision.comment == 'Sukurtas "Model" modelis. Added Model'
-    assert Version.objects.get_for_object(new_model).first().revision.user == user
+    version = (Version.objects.get_for_object(new_model).select_related("revision").first())
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == user
 
 
 @pytest.mark.django_db
@@ -1840,8 +1851,17 @@ def test_model_update(app: DjangoTestApp):
         dataset=dataset,
         name="test/dataset/BaseModel"
     )
-
-    form = app.get(reverse('model-update', args=[dataset.pk, model.name])).forms['model-form']
+    kwargs_dict = {"pk": dataset.pk, "model": model.name}
+    url = reverse('model-update', kwargs=kwargs_dict)
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="model-update",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs=kwargs_dict
+    )
+    form = app.get(url).forms['model-form']
     form['name'] = "UpdatedModel"
     form['prepare'] = "sort(prop1)"
     form['ref'].force_value([prop2.pk, prop1.pk])
@@ -1860,9 +1880,9 @@ def test_model_update(app: DjangoTestApp):
     assert model.base.metadata.first().ref == ''
 
     assert Version.objects.get_for_object(model).count() == 1
-    assert Version.objects.get_for_object(model).first().revision.comment == \
-           'Redaguotas "UpdatedModel" modelis. Updated Model'
-    assert Version.objects.get_for_object(model).first().revision.user == user
+    version = Version.objects.get_for_object(model).select_related("revision").first()
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == user
 
 
 @pytest.mark.django_db

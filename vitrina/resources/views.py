@@ -10,8 +10,7 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DeleteView, DetailView
 from parler.views import TranslatableCreateView, TranslatableUpdateView
-from reversion import set_comment, set_user, create_revision, add_to_revision
-from reversion.views import RevisionMixin
+from reversion import add_to_revision
 
 from vitrina import settings
 from vitrina.comments.models import Comment
@@ -68,7 +67,6 @@ class ResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetStructure
 class ResourceCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
-    RevisionMixin,
     TranslatableCreateView,
 ):
     model = DatasetDistribution
@@ -171,7 +169,6 @@ class ResourceCreateView(
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
             resource.update_applicable_legislation(applicable_legislation_urls)
 
-        set_comment((f'Pridėtas naujas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
 
@@ -181,7 +178,7 @@ class ResourceCreateView(
         return kwargs
 
 
-class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, TranslatableUpdateView):
+class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableUpdateView):
     model = DatasetDistribution
     template_name = "vitrina/resources/form.html"
     context_object_name = "datasetdistribution"
@@ -257,7 +254,6 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMi
         if "applicable_legislation" in form.changed_data:
             resource.update_applicable_legislation(applicable_legislation_urls)
 
-        set_comment((f'Redaguotas duomenų šaltinis "{resource.lt_title()}".'))
         resource.save()
         return redirect(resource.get_absolute_url())
 
@@ -285,28 +281,25 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
     def form_valid(self, form: BaseForm) -> HttpResponse:
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
-        with create_revision():
-            add_to_revision(resource)
-            set_user(self.request.user)
-            set_comment((f'Ištrintas duomenų šaltinis "{resource.lt_title()}".'))
-            resource.delete()
+        add_to_revision(resource)
+        resource.delete()
 
-            if not DatasetDistribution.objects.filter(dataset=dataset) and dataset.is_public:
-                if dataset.plandataset_set.exists():
-                    dataset.status = Dataset.PLANNED
-                    comment_status = Comment.PLANNED
-                else:
-                    dataset.status = Dataset.INVENTORED
-                    comment_status = Comment.INVENTORED
+        if not DatasetDistribution.objects.filter(dataset=dataset).exists() and dataset.is_public:
+            if dataset.plandataset_set.exists():
+                dataset.status = Dataset.PLANNED
+                comment_status = Comment.PLANNED
+            else:
+                dataset.status = Dataset.INVENTORED
+                comment_status = Comment.INVENTORED
 
-                Comment.objects.create(
-                    content_type=ContentType.objects.get_for_model(dataset),
-                    object_id=dataset.pk,
-                    type=Comment.STATUS,
-                    status=comment_status,
-                    user=self.request.user,
-                )
-                dataset.save()
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(dataset),
+                object_id=dataset.pk,
+                type=Comment.STATUS,
+                status=comment_status,
+                user=self.request.user,
+            )
+            dataset.save()
         return redirect(dataset)
 
 

@@ -33,7 +33,6 @@ from django.views.generic.edit import FormView
 from haystack.generic_views import SearchView
 from itsdangerous import URLSafeSerializer, BadSignature
 from requests import Response
-from reversion import set_comment
 from reversion.models import Version
 
 from vitrina.classifiers.models import AreaOfManagement
@@ -58,7 +57,6 @@ from vitrina.statistics.helpers import get_start_date_based_on_frequency
 from vitrina.messages.models import SentMail
 from vitrina.orgs.helpers import get_or_create_parent_org
 from vitrina.requests.models import RequestAssignment
-from reversion.views import RevisionMixin
 from vitrina.helpers import get_stats_filter_options_based_on_model, build_page_title_context
 from vitrina.api.services import get_auth_session
 from vitrina.helpers import (
@@ -876,7 +874,7 @@ class OrganizationBasedAgreementSignView(AgreementSignMixin, OrganizationBasedAg
     """Organization-based agreement form view responsible for moving the agreement to status `SIGNED`"""
 
 
-class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Organization
     form_class = OrganizationUpdateForm
     template_name = "base_form.html"
@@ -1495,7 +1493,7 @@ class OrganizationPlanView(PermissionRequiredMixin, PlanMixin, OrganizationBaseV
         return self.organization
 
 
-class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, OrganizationBaseViewMixin, CreateView):
+class OrganizationPlanCreateView(PermissionRequiredMixin, OrganizationBaseViewMixin, CreateView):
     model = Plan
     form_class = OrganizationPlanForm
     template_name = "vitrina/plans/form.html"
@@ -1526,7 +1524,6 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, RevisionMixin, Organiz
         self.object = form.save(commit=False)
         self.object.receiver = self.organization
         self.object.save()
-        set_comment(_(f'Pridėtas terminas "{self.object}".'))
         return redirect(reverse("organization-plans", args=[self.organization.pk]))
 
 
@@ -2846,7 +2843,7 @@ class OrganizationMergeView(PermissionRequiredMixin, OrganizationBaseViewMixin, 
             return render(request, self.template_name, context)
 
 
-class ConfirmOrganizationMergeView(RevisionMixin, PermissionRequiredMixin, TemplateView):
+class ConfirmOrganizationMergeView(PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/orgs/confirm_merge.html"
 
     organization: Organization

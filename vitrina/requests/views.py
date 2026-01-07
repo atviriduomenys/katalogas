@@ -31,9 +31,7 @@ from django.views.generic import (
     UpdateView,
 )
 from haystack.generic_views import FacetedSearchView
-from reversion import set_comment
 from reversion.models import Version
-from reversion.views import RevisionMixin
 from typing import List
 from urllib.parse import urlencode
 
@@ -636,7 +634,7 @@ class RequestDetailView(HistoryMixin, PlanMixin, DetailView):
         return context_data
 
 
-class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
+class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Request
     form_class = RequestForm
     template_name = "vitrina/requests/request_create_form.html"
@@ -650,7 +648,6 @@ class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         self.object.user = self.request.user
         self.object.status = Request.CREATED
         self.object.save()
-        set_comment(Request.CREATED)
         for org in orgs:
             self.object.organizations.add(org)
             requestA = RequestAssignment.objects.create(
@@ -792,7 +789,7 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
         return self.request_obj
 
 
-class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Request
     form_class = RequestEditOrgForm
     template_name = "base_form.html"
@@ -880,7 +877,6 @@ class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMi
             )
 
         self.object.save()
-        set_comment(Request.EDITED)
         return HttpResponseRedirect(reverse("request-organizations", kwargs={"pk": self.object.id}))
 
     def has_permission(self):
@@ -907,7 +903,7 @@ class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMi
         return context_data
 
 
-class RequestOrgDeleteView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, DeleteView):
+class RequestOrgDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = RequestAssignment
     template_name = "confirm_delete.html"
 
@@ -948,7 +944,7 @@ class RequestOrgDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Revision
         return context
 
 
-class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Request
     form_class = RequestForm
     template_name = "base_form.html"
@@ -956,7 +952,6 @@ class RequestUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
 
     def form_valid(self, form):
         self.object = form.save()
-        set_comment(Request.EDITED)
 
         org_subs = Subscription.objects.none()
         if self.object.organizations.exists():
@@ -1067,7 +1062,7 @@ class RequestPlanView(HistoryMixin, PlanMixin, TemplateView):
         return self.request_obj
 
 
-class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView):
+class RequestCreatePlanView(PermissionRequiredMixin, TemplateView):
     template_name = "vitrina/plans/plan_form.html"
 
     request_obj: Request
@@ -1129,7 +1124,6 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                     datasets = Dataset.objects.filter(pk__in=request_object_ids).order_by("-created")
                     for dataset in datasets:
                         PlanDataset.objects.create(plan=plan, dataset=dataset)
-                set_comment(_(f'Pridėtas terminas "{plan}". Į terminą įtrauktas poreikis "{self.request_obj}".'))
 
             else:
                 plan_request = form.save(commit=False)
@@ -1137,7 +1131,6 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
                 plan_request.save()
                 plan = plan_request.plan
                 plan.save()
-                set_comment(_(f'Į terminą "{plan}" įtrauktas poreikis "{self.request_obj}".'))
 
             Comment.objects.create(
                 content_type=ContentType.objects.get_for_model(self.request_obj),
@@ -1163,7 +1156,7 @@ class RequestCreatePlanView(PermissionRequiredMixin, RevisionMixin, TemplateView
             return render(request=request, template_name=self.template_name, context=context)
 
 
-class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
+class RequestDeletePlanView(PermissionRequiredMixin, DeleteView):
     model = PlanRequest
     template_name = "confirm_delete.html"
 
@@ -1178,7 +1171,6 @@ class RequestDeletePlanView(PermissionRequiredMixin, RevisionMixin, DeleteView):
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš termino "{plan}" pašalintas poreikis "{request_obj}".'))
         return redirect(reverse("request-plans", args=[request_obj.pk]))
 
     def get_context_data(self, **kwargs):
@@ -1234,11 +1226,9 @@ class RequestDeletePlanDetailView(RequestDeletePlanView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         plan = self.object.plan
-        request_obj = self.object.request
         self.object.delete()
 
         plan.save()
-        set_comment(_(f'Iš termino "{plan}" pašalintas poreikis "{request_obj}".'))
         return redirect(reverse("plan-detail", args=[plan.receiver.pk, plan.pk]))
 
 
@@ -1329,7 +1319,7 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
         return self.request_obj
 
 
-class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Request
     form_class = RequestDatasetsEditForm
     template_name = "vitrina/requests/request_dataset_add.html"

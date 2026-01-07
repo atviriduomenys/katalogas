@@ -39,7 +39,13 @@
             </td>
             <td><b>{{ r.period_start|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
             <td><b>{{ r.period_end|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
-            <td>{{ r.size|default:"-" }}</td>
+            <td>
+                {% if r.size %}
+                    {{ r.size }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
             <td class="has-text-centered">
                 {{ r.get_format|default:"-" }}
             </td>
@@ -116,7 +122,13 @@
             </td>
             <td><b>{{ r.period_start|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
             <td><b>{{ r.period_end|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
-            <td>{{ r.size|default:"-" }}</td>
+            <td>
+                {% if r.size %}
+                    {{ r.size }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
             <td class="has-text-centered">
                 {{ r.format|default:"-" }}
             </td>

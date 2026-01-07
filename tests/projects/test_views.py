@@ -4,6 +4,7 @@ from urllib.parse import parse_qs
 
 import pytest
 import requests_mock
+import reversion
 from PIL import Image
 from django.urls import reverse, resolve
 from django_webtest import DjangoTestApp
@@ -12,10 +13,10 @@ from webtest import Upload
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.comments.models import Comment
-from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory
+from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory, UseCaseClientScopeFactory
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory
 from vitrina.smart_contracts.models import AgreementScope
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
@@ -275,12 +276,34 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
     form['title'] = "Updated title"
     form['description'] = "Updated description"
     resp = form.submit().follow()
+    with reversion.create_revision():
+        agreement_file = AgreementPDFFileFactory(agreement__project=project)
+        scope = UseCaseClientScopeFactory(use_case_client__use_case=project)
+    
+    action_objects = [
+        (str(agreement_file.agreement), None),
+        (str(agreement_file), None),
+        (str(scope.use_case_client), None),
+        (str(scope), None)
+    ]
+
     resp = resp.click(linkid="history-tab")
+    project.refresh_from_db()
     assert resp.context['detail_url_name'] == 'project-detail'
     assert resp.context['history_url_name'] == 'project-history'
-    assert len(resp.context['history']) == 1
-    assert resp.context['history'][0]['action'] == revision_comment.to_json()
-    assert resp.context['history'][0]['user'] == user
+    assert len(resp.context['history']) == 2
+
+    entry1 = resp.context['history'][0]
+    assert entry1["action"]["comment"] == ""
+    assert len(entry1["action"]["objects"]) == 4
+    assert set(entry1["action"]["objects"]) == set(action_objects)
+    assert entry1['user'] is None
+
+    entry2 = resp.context['history'][1]
+    assert entry2["action"]["comment"] == f"{revision_comment.action}({revision_comment.kwargs})"
+    assert len(entry2["action"]["objects"]) == 1
+    assert entry2["action"]["objects"][0] == (str(project), project.get_absolute_url())
+    assert entry2['user'] == user
 
 
 def test_request_comment_with_status(app: DjangoTestApp):
@@ -685,7 +708,7 @@ def test_client_scope_toggle(app: DjangoTestApp, oauth_settings):
         url = reverse(
             "project-clients-scopes-detail-toggle", args=[project.pk, client.pk, scope.pk]
         )
-        resp = app.get(url)
+        resp = app.post(url)
 
         assert resp.status_code == 302
 

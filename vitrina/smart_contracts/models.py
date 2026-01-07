@@ -265,6 +265,9 @@ class AgreementScope(UUIDBaseModel):
         verbose_name = _("Sutarties leidimas")
         verbose_name_plural = _("Sutarties leidimai")
 
+    def __str__(self):
+        return self.scope
+
 
 class AgreementFile(UUIDBaseModel):
     class AllowedFileTypes(models.TextChoices):

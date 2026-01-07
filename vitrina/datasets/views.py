@@ -912,19 +912,13 @@ class DatasetCreateView(
                     )
 
         creator = form.cleaned_data.get("creator")
-        access_rights = form.cleaned_data.get("access_rights")
         if creator:
             if self.object.organization:
-                role = (
-                    Representative.RESOURCE_MANAGER
-                    if access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
-                    else Representative.OPEN_DATA_MANAGER
-                )
                 Representative.objects.create(
                     content_type=ContentType.objects.get_for_model(self.object),
                     object_id=self.object.pk,
                     organization=self.object.organization,
-                    role=role,
+                    role=Representative.OPEN_DATA_MANAGER,
                 )
 
                 self.object.publisher = self.object.organization if self.object.organization != creator else None
@@ -934,14 +928,11 @@ class DatasetCreateView(
         publisher = form.cleaned_data.get("publisher")
         if publisher:
             self.object.publisher = publisher
-            role = Representative.OPEN_DATA_MANAGER
-            if access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS:
-                role = Representative.RESOURCE_MANAGER
             rep = Representative.objects.create(
                 object_id=self.object.pk,
                 content_type=ContentType.objects.get_for_model(Dataset),
                 organization=publisher,
-                role=role,
+                role=Representative.OPEN_DATA_MANAGER,
             )
             rep.save()
             self.object.save()
@@ -1284,48 +1275,22 @@ class DatasetUpdateView(
             creator = form.cleaned_data.get("creator")
             if creator:
                 if self.request.user.organization.publisher:
-                    if "access_rights" in form.changed_data:
-                        access_rights = form.cleaned_data.get("access_rights")
-                        role = (
-                            Representative.RESOURCE_MANAGER
-                            if access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
-                            else Representative.OPEN_DATA_MANAGER
-                        )
-                    else:
-                        role = (
-                            Representative.RESOURCE_MANAGER
-                            if self.object.access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
-                            else Representative.OPEN_DATA_MANAGER
-                        )
                     Representative.objects.create(
                         content_type=ContentType.objects.get_for_model(self.object),
                         object_id=self.object.pk,
                         organization=self.request.user.organization,
-                        role=role,
+                        role=Representative.OPEN_DATA_MANAGER,
                     )
 
                     self.object.publisher = self.request.user.organization
                 self.object.organization = creator
 
                 if creator == self.request.user.organization and self.request.user.organization.publisher:
-                    if "access_rights" in form.changed_data:
-                        access_rights = form.cleaned_data.get("access_rights")
-                        role = (
-                            Representative.RESOURCE_MANAGER
-                            if access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
-                            else Representative.OPEN_DATA_MANAGER
-                        )
-                    else:
-                        role = (
-                            Representative.RESOURCE_MANAGER
-                            if self.object.access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
-                            else Representative.OPEN_DATA_MANAGER
-                        )
                     self.object.publisher = None
                     Representative.objects.filter(
                         object_id=self.object.pk,
                         content_type=ContentType.objects.get_for_model(Dataset),
-                        role=role,
+                        role=Representative.OPEN_DATA_MANAGER,
                         organization__isnull=False,
                     ).delete()
 
@@ -1333,26 +1298,13 @@ class DatasetUpdateView(
 
         if "managed_by_publisher" in form.changed_data and self.request.user.organization:
             managed_by_publisher = form.cleaned_data.get("managed_by_publisher")
-            if "access_rights" in form.changed_data:
-                access_rights = form.cleaned_data.get("access_rights")
-                role = (
-                    Representative.RESOURCE_MANAGER
-                    if access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
-                    else Representative.OPEN_DATA_MANAGER
-                )
-            else:
-                role = (
-                    Representative.RESOURCE_MANAGER
-                    if self.object.access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
-                    else Representative.OPEN_DATA_MANAGER
-                )
             if managed_by_publisher and self.request.user.organization.publisher:
                 self.object.publisher = self.request.user.organization
                 rep = Representative.objects.create(
                     object_id=self.object.pk,
                     content_type=ContentType.objects.get_for_model(Dataset),
                     organization=self.request.user.organization,
-                    role=role,
+                    role=Representative.OPEN_DATA_MANAGER,
                 )
                 rep.save()
             else:
@@ -1360,25 +1312,12 @@ class DatasetUpdateView(
                 Representative.objects.filter(
                     object_id=self.object.pk,
                     content_type=ContentType.objects.get_for_model(Dataset),
-                    role=role,
+                    role=Representative.OPEN_DATA_MANAGER,
                     organization__isnull=False,
                 ).delete()
             self.object.save()
 
         if "publisher" in form.changed_data:
-            if "access_rights" in form.changed_data:
-                access_rights = form.cleaned_data.get("access_rights")
-                role = (
-                    Representative.RESOURCE_MANAGER
-                    if access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
-                    else Representative.OPEN_DATA_MANAGER
-                )
-            else:
-                role = (
-                    Representative.RESOURCE_MANAGER
-                    if self.object.access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
-                    else Representative.OPEN_DATA_MANAGER
-                )
             publisher = form.cleaned_data.get("publisher")
             if publisher:
                 self.object.publisher = publisher
@@ -1386,7 +1325,7 @@ class DatasetUpdateView(
                     object_id=self.object.pk,
                     content_type=ContentType.objects.get_for_model(Dataset),
                     organization=publisher,
-                    role=role,
+                    role=Representative.OPEN_DATA_MANAGER,
                 )
                 rep.save()
             else:
@@ -1394,7 +1333,7 @@ class DatasetUpdateView(
                 Representative.objects.filter(
                     object_id=self.object.pk,
                     content_type=ContentType.objects.get_for_model(Dataset),
-                    role=role,
+                    role=Representative.OPEN_DATA_MANAGER,
                     organization__isnull=False,
                 ).delete()
             self.object.save()

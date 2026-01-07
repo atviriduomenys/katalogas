@@ -8,10 +8,10 @@ from django.db.models import Q
 
 
 @dataclass
-class ChildVersionModel:
-    model: type[models.Model]
-    relation: models.ForeignKey
-    children: list["ChildVersionModel"] | None = None
+class VersionRelationSpec:
+    target_model: type[models.Model]
+    parent_fk: models.ForeignKey
+    nested: list["VersionRelationSpec"] | None = None
 
 
 def extract_fields_from_version_serialized_data(serialized_data: str) -> dict[str, Any]:
@@ -19,12 +19,12 @@ def extract_fields_from_version_serialized_data(serialized_data: str) -> dict[st
     return payload[0].get("fields", {})
 
 
-def get_child_version_ids(parent_id: int | str | UUID, children: list[ChildVersionModel]) -> set[int]:
+def get_child_version_ids(parent_id: int | str | UUID, children: list[VersionRelationSpec]) -> set[int]:
     matching_versions: set[int] = set()
     for child in children:
-        child_model: type[models.Model] = child.model
-        relation_field: str = child.relation.field.name
-        grand_children = child.children
+        child_model: type[models.Model] = child.target_model
+        relation_field: str = child.parent_fk.field.name
+        grand_children = child.nested
 
         candidate_versions = Version.objects.get_for_model(child_model).filter(
             Q(serialized_data__contains=f'"{relation_field}": {parent_id}')
@@ -40,7 +40,7 @@ def get_child_version_ids(parent_id: int | str | UUID, children: list[ChildVersi
     return matching_versions
 
 
-def get_version_ids(instance: models.Model, children: list[ChildVersionModel] | None = None) -> set[int]:
+def get_version_ids(instance: models.Model, children: list[VersionRelationSpec] | None = None) -> set[int]:
     """
     Collect django-reversion Version IDs for an instance and optionally its related (child) objects.
 

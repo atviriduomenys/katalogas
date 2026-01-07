@@ -51,7 +51,7 @@ from vitrina.projects.services import (
     can_manage_datasets,
 )
 from vitrina.smart_contracts.permissions import can_view_agreements
-from vitrina.reversion_utils import get_version_ids, ChildVersionModel
+from vitrina.reversion_utils import get_version_ids, VersionRelationSpec
 
 
 logger = logging.getLogger()
@@ -258,13 +258,15 @@ class ProjectHistoryView(ProjectViewBaseMixin, HistoryView):
 
     def get_history_objects(self):
         agreement_children = [
-            ChildVersionModel(model=AgreementFile, relation=AgreementFile.agreement),
-            ChildVersionModel(model=AgreementScope, relation=AgreementScope.agreement),
+            VersionRelationSpec(target_model=AgreementFile, parent_fk=AgreementFile.agreement),
+            VersionRelationSpec(target_model=AgreementScope, parent_fk=AgreementScope.agreement),
         ]
-        client_children = [ChildVersionModel(model=UseCaseClientScope, relation=UseCaseClientScope.use_case_client)]
+        client_children = [
+            VersionRelationSpec(target_model=UseCaseClientScope, parent_fk=UseCaseClientScope.use_case_client)
+        ]
         project_children = [
-            ChildVersionModel(model=Agreement, relation=Agreement.project, children=agreement_children),
-            ChildVersionModel(model=UseCaseClient, relation=UseCaseClient.use_case, children=client_children),
+            VersionRelationSpec(target_model=Agreement, parent_fk=Agreement.project, nested=agreement_children),
+            VersionRelationSpec(target_model=UseCaseClient, parent_fk=UseCaseClient.use_case, nested=client_children),
         ]
         history_objects_ids = get_version_ids(self.project, project_children)
         return Version.objects.filter(id__in=history_objects_ids)

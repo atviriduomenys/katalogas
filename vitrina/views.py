@@ -163,15 +163,9 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     def prep_versions_for_display(self, versions: QuerySet[Version]) -> list[tuple[str, str | None]]:
         objects = []
         for version_obj in versions:
-            model = version_obj.content_type.model_class()
-            try:
-                object = model.objects.get(pk=version_obj.object_id)
-            except model.DoesNotExist:
-                object = None
-
             url = None
 
-            if object and hasattr(object, "get_absolute_url"):
+            if (object := version_obj.object) and hasattr(object, "get_absolute_url"):
                 url = object.get_absolute_url()
 
             objects.append((version_obj.object_repr, url))

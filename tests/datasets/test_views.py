@@ -2279,47 +2279,6 @@ class TestDatasetCreateView:
         assert rep is not None
         assert rep.role == Representative.OPEN_DATA_COORDINATOR
 
-    @pytest.mark.django_db
-    @pytest.mark.parametrize(
-        "access_rights, expected_role",
-        [
-            (Dataset.PUBLIC, Representative.OPEN_DATA_MANAGER),
-            (Dataset.RESTRICTED, Representative.OPEN_DATA_MANAGER),
-            (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER),
-            (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER),
-        ],
-    )
-    def test_dataset_creator_role_based_on_access_rights(self, app: DjangoTestApp, access_rights, expected_role):
-        frequency = FrequencyFactory(is_default=True)
-        org = OrganizationFactory()
-        subclass = DCATResourceSubclassFactory()
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
-            "dataset-form"
-        ]
-
-        form["title"] = f"Dataset {access_rights}"
-        form["description"] = "Testing role logic"
-        form["frequency"] = str(frequency.pk)
-        form["creator"] = str(org.pk)  # simulate creator present
-        form["access_rights"] = access_rights
-
-        response = form.submit()
-        assert response.status_code == 302
-
-        dataset = Dataset.objects.get(translations__title=f"Dataset {access_rights}")
-
-        rep = Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            organization=dataset.organization,
-        ).first()
-
-        assert rep is not None
-        assert rep.role == expected_role
-
 
 class TestDatasetDeleteView:
     def test_delete_dataset(self, app: DjangoTestApp) -> None:

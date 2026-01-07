@@ -1,15 +1,15 @@
 from django.contrib import admin
-from reversion.admin import VersionAdmin
 
 from vitrina.plans.forms import PlanAdminForm
 from vitrina.plans.models import Project, Plan
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
-class ProjectAdmin(admin.ModelAdmin):
+class ProjectAdmin(RevisionCommentVersionAdmin):
     list_display = ("title",)
 
 
-class PlanAdmin(VersionAdmin):
+class PlanAdmin(RevisionCommentVersionAdmin):
     list_display = ("title",)
     form = PlanAdminForm
 

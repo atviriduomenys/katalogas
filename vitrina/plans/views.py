@@ -4,9 +4,7 @@ from django.urls import reverse
 from django.views import View
 from django.views.generic import DetailView, UpdateView, DeleteView
 from django.utils.translation import gettext_lazy as _
-from reversion import set_comment
 from reversion.models import Version
-from reversion.views import RevisionMixin
 
 from vitrina.orgs.forms import OrganizationPlanForm
 from vitrina.orgs.models import Representative, Organization
@@ -51,7 +49,7 @@ class PlanDetailView(PlanMixin, DetailView):
         return context
 
 
-class PlanUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
+class PlanUpdateView(PermissionRequiredMixin, UpdateView):
     model = Plan
     form_class = OrganizationPlanForm
     template_name = "vitrina/plans/form.html"
@@ -84,11 +82,10 @@ class PlanUpdateView(PermissionRequiredMixin, RevisionMixin, UpdateView):
 
     def form_valid(self, form):
         resp = super().form_valid(form)
-        set_comment(_(f'Redaguotas terminas "{self.object}"'))
         return resp
 
 
-class PlanDeleteView(PermissionRequiredMixin, RevisionMixin, DeleteView):
+class PlanDeleteView(PermissionRequiredMixin, DeleteView):
     model = Plan
     pk_url_kwarg = "plan_id"
     template_name = "confirm_delete.html"

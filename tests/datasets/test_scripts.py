@@ -2859,8 +2859,9 @@ def test_geoportal_import__history_create(app: DjangoTestApp):
     assert Dataset.objects.exclude(id=1).count() == 1
     dataset = Dataset.objects.filter(geoportal_id="1").first()
     assert Version.objects.get_for_object(dataset).count() == 1
-    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.CREATED
-    assert Version.objects.get_for_object(dataset).first().revision.user == sys_user
+    version = Version.objects.get_for_object(dataset).select_related("revision").first()
+    assert version.revision.comment == Dataset.CREATED
+    assert version.revision.user == sys_user
 
 
 @pytest.mark.django_db
@@ -2911,8 +2912,9 @@ def test_geoportal_import__history_update(app: DjangoTestApp):
     dataset.refresh_from_db()
     assert Dataset.objects.exclude(id=1).count() == 1
     assert Version.objects.get_for_object(dataset).count() == 1
-    assert Version.objects.get_for_object(dataset).first().revision.comment == Dataset.EDITED
-    assert Version.objects.get_for_object(dataset).first().revision.user == sys_user
+    version = Version.objects.get_for_object(dataset).select_related("revision").first()
+    assert version.revision.comment == Dataset.EDITED
+    assert version.revision.user == sys_user
 
 
 @pytest.mark.django_db

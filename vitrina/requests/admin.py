@@ -1,18 +1,18 @@
 from django.contrib import admin
 
 from vitrina.requests.models import Request, RequestAssignment, RequestEscalation
-from reversion.admin import VersionAdmin
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
-class RequestAdmin(VersionAdmin):
+class RequestAdmin(RevisionCommentVersionAdmin):
     list_filter = ("organizations",)
 
 
-class RequestAssignmentAdmin(VersionAdmin):
+class RequestAssignmentAdmin(RevisionCommentVersionAdmin):
     list_filter = ("organization",)
 
 
-class RequestEscalationAdmin(VersionAdmin):
+class RequestEscalationAdmin(RevisionCommentVersionAdmin):
     list_filter = ("request",)
 
 

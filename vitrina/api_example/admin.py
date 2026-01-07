@@ -1,4 +1,8 @@
 from django.contrib import admin
 from .models import ApiExample
+from vitrina.admin import RevisionCommentVersionAdmin
 
-admin.site.register(ApiExample)
+
+@admin.register(ApiExample)
+class ApiExampleAdmin(RevisionCommentVersionAdmin):
+    pass

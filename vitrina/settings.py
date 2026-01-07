@@ -187,6 +187,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django_otp.middleware.OTPMiddleware",
+    "reversion.middleware.RevisionMiddleware",
+    "vitrina.middleware.AutoRevisionCommentMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -545,3 +547,10 @@ LANGUAGE_COOKIE_SECURE = True
 OTP_EMAIL_TOKEN_VALIDITY = 600
 
 USE_OTP_VALIDATION = env.bool("USE_OTP_VALIDATION", default=True)
+
+# Set of model paths to exclude from versioning.
+# Supports exact model paths or wildcards.
+# Examples:
+#   "vitrina.users.models.*"          → excludes all models in that module
+#   "vitrina.comments.models.Comment" → excludes a specific model
+NOT_VERSIONED_MODELS = {}

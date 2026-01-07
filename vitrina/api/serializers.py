@@ -5,7 +5,7 @@ from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
 
 from django.utils.translation import gettext_lazy as _
-from reversion import set_comment, set_user
+from reversion import set_user
 
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Licence, Category, Frequency
@@ -243,7 +243,6 @@ class PostDatasetSerializer(DatasetSerializer):
         for tag in keywords:
             instance.tags.add(tag)
         instance.save()
-        set_comment(Dataset.CREATED)
         set_user(self.context.get("user"))
         return instance
 
@@ -282,7 +281,6 @@ class PatchDatasetSerializer(PostDatasetSerializer):
             for tag in keywords:
                 instance.tags.add(tag)
         instance.save()
-        set_comment(Dataset.EDITED)
         set_user(self.context.get("user"))
         return instance
 

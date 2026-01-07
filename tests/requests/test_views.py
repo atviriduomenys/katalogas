@@ -10,6 +10,7 @@ from reversion.models import Version
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Representative
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan
@@ -449,6 +450,7 @@ def test_open_data_coordinator_cannot_see_non_public_datasets(app: "DjangoTestAp
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         role=Representative.OPEN_DATA_COORDINATOR,
+        object_id=org.pk
     )
 
     request = RequestFactory()
@@ -460,7 +462,7 @@ def test_open_data_coordinator_cannot_see_non_public_datasets(app: "DjangoTestAp
     non_public_ds = DatasetFactory(organization=org, access_rights=Dataset.NON_PUBLIC)
 
     for ds in [public_ds, restricted_ds, non_public_ds]:
-        RequestObject.objects.create(
+        RequestObjectFactory(
             request=request, content_type=ContentType.objects.get_for_model(Dataset), object_id=ds.pk
         )
 

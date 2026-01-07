@@ -484,13 +484,13 @@ class DatasetDetailView(
             "harvested": "",
             "can_add_resource": has_perm(
                 self.request.user,
-                Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE,
+                Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE,
                 Dataset,
                 organization,
             ),
             "can_update_dataset": has_perm(
                 self.request.user,
-                Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.UPDATE,
+                Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.UPDATE,
                 dataset,
             ),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
@@ -915,9 +915,11 @@ class DatasetCreateView(
         access_rights = form.cleaned_data.get("access_rights")
         if creator:
             if self.object.organization:
-                role = Representative.OPEN_DATA_MANAGER
-                if access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS:
-                    role = Representative.RESOURCE_MANAGER
+                role = (
+                    Representative.RESOURCE_MANAGER
+                    if access_rights not in Dataset.PUBLIC_ACCESS_RIGHTS
+                    else Representative.OPEN_DATA_MANAGER
+                )
                 Representative.objects.create(
                     content_type=ContentType.objects.get_for_model(self.object),
                     object_id=self.object.pk,
@@ -1069,7 +1071,7 @@ class DatasetUpdateView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.UPDATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.UPDATE,
             dataset,
         )
 
@@ -1513,7 +1515,7 @@ class DatasetStructureImportView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE,
             DatasetStructure,
             self.dataset,
         )
@@ -1601,13 +1603,13 @@ class DatasetMembersView(
         subclass = self.object.subclass
         context["has_permission"] = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE,
             Representative,
             self.object,
         )
         context["can_view_members"] = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.VIEW,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.VIEW,
             Representative,
             self.object,
         )
@@ -1633,7 +1635,7 @@ class CreateMemberView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE,
             Representative,
             self.dataset,
         )
@@ -3359,7 +3361,7 @@ class DatasetPlanView(
         subclass = self.dataset.subclass
         context["can_manage_plans"] = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.UPDATE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.UPDATE,
             self.dataset,
         )
         context["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.dataset)
@@ -3794,7 +3796,7 @@ class DatasetChildResourceListView(
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         dataset = self.object
         subclass = dataset.subclass
-        action = Action.INFORMATION_SYSTEM_UPDATE if subclass and subclass.is_information_system else Action.CREATE
+        action = Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE
         return super().get_context_data(**kwargs) | {
             "can_create_dataset": has_perm(
                 self.request.user,

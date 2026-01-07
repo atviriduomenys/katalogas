@@ -468,9 +468,28 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.VISITOR
     if user.is_staff:
         return Role.GLOBAL_MANAGER
-    if resource.get_resource_managers_queryset().filter(user=user).exists():
+    if (
+        resource.get_managers_queryset(
+            [
+                Representative.RESOURCE_COORDINATOR,
+                Representative.RESOURCE_MANAGER,
+            ]
+        )
+        .filter(user=user)
+        .exists()
+    ):
         return Role.RESOURCE_COORDINATOR if user.is_resource_coordinator else Role.RESOURCE_MANAGER
-    if resource.get_open_data_managers_queryset().filter(user=user).exists():
+
+    if (
+        resource.get_managers_queryset(
+            [
+                Representative.OPEN_DATA_COORDINATOR,
+                Representative.OPEN_DATA_MANAGER,
+            ]
+        )
+        .filter(user=user)
+        .exists()
+    ):
         return Role.OPEN_DATA_COORDINATOR if user.is_open_data_coordinator else Role.OPEN_DATA_MANAGER
     if user.is_gov_organization_resource_manager:
         return Role.GLOBAL_RESOURCE_MANAGER
@@ -576,12 +595,12 @@ def has_perm(
         if where:
             where = functools.reduce(operator.or_, where)
             if Representative.objects.filter(where, user=user).exists():
-                if isinstance(obj, Representative) and action in (Action.UPDATE, Action.DELETE):
+                if isinstance(obj, Representative):
                     return obj.can_be_updated_by(user)
                 return True
 
             if user_org and Representative.objects.filter(where, organization=user_org).exists():
-                if isinstance(obj, Representative) and action in (Action.UPDATE, Action.DELETE):
+                if isinstance(obj, Representative):
                     return obj.can_be_updated_by(user)
                 return True
 

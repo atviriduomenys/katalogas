@@ -46,10 +46,10 @@ class PermittedDatasetManager(TranslatableManager):
         dataset_ct = ContentType.objects.get_for_model(Dataset)
         org_ct = ContentType.objects.get_for_model(Organization)
 
-        public_filter: Q = Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
+        accessible_filter: Q = Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
 
         if not user.is_authenticated:
-            return datasets.filter(public_filter)
+            return datasets.filter(accessible_filter)
         if user.is_staff or user.is_superuser:
             return datasets
 
@@ -67,8 +67,6 @@ class PermittedDatasetManager(TranslatableManager):
                 Q(pk__in=represented_dataset_ids) | Q(organization_id__in=represented_org_ids)
             ).values_list("path", flat=True)
         )
-
-        accessible_filter = public_filter
 
         for path in represented_paths:
             accessible_filter |= Q(path__startswith=path)

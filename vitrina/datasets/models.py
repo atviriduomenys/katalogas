@@ -822,50 +822,27 @@ class Dataset(Resource):
     def get_members_url(self):
         return reverse("dataset-members", kwargs={"pk": self.pk})
 
-    def get_resource_managers_queryset(self) -> QuerySet["Dataset"]:
-        datasets_ids = {self.id}
-        organization_ids = {self.organization_id}
-        for parent_dataset in self.get_ancestors().only("pk", "organization_id"):
-            datasets_ids.add(parent_dataset.pk)
-            organization_ids.add(parent_dataset.organization_id)
-        return (
-            Representative.objects.filter(
-                Q(
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    object_id__in=datasets_ids,
-                    role__in=[Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER],
-                )
-                | Q(
-                    content_type=ContentType.objects.get_for_model(Organization),
-                    object_id__in=organization_ids,
-                    role__in=[Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER],
-                )
-                | Q(organization_id__in=organization_ids),
-                user__isnull=False,
-            )
-            .values_list("user_id", flat=True)
-            .distinct()
-        )
+    def get_managers_queryset(self, roles: list[str]) -> QuerySet["Dataset"]:
+        dataset_ct = ContentType.objects.get_for_model(Dataset)
+        organization_ct = ContentType.objects.get_for_model(Organization)
 
-    def get_open_data_managers_queryset(self) -> QuerySet["Dataset"]:
-        datasets_ids = {self.id}
+        dataset_ids = {self.id}
         organization_ids = {self.organization_id}
-        for parent_dataset in self.get_ancestors().only("pk", "organization_id"):
-            datasets_ids.add(parent_dataset.pk)
-            organization_ids.add(parent_dataset.organization_id)
+        for parent in self.get_ancestors().only("pk", "organization_id"):
+            dataset_ids.add(parent.pk)
+            organization_ids.add(parent.organization_id)
         return (
             Representative.objects.filter(
                 Q(
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    object_id__in=datasets_ids,
-                    role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER],
+                    content_type=dataset_ct,
+                    object_id__in=dataset_ids,
+                    role__in=roles,
                 )
                 | Q(
-                    content_type=ContentType.objects.get_for_model(Organization),
+                    content_type=organization_ct,
                     object_id__in=organization_ids,
-                    role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER],
-                )
-                | Q(organization_id__in=organization_ids),
+                    role__in=roles,
+                ),
                 user__isnull=False,
             )
             .values_list("user_id", flat=True)
@@ -874,11 +851,25 @@ class Dataset(Resource):
 
     @property
     def resource_managers(self) -> set[int]:
-        return set(self.get_resource_managers_queryset())
+        return set(
+            self.get_managers_queryset(
+                [
+                    Representative.RESOURCE_COORDINATOR,
+                    Representative.RESOURCE_MANAGER,
+                ]
+            )
+        )
 
     @property
     def open_data_managers(self) -> set[int]:
-        return set(self.get_open_data_managers_queryset())
+        return set(
+            self.get_managers_queryset(
+                [
+                    Representative.OPEN_DATA_COORDINATOR,
+                    Representative.OPEN_DATA_MANAGER,
+                ]
+            )
+        )
 
     @property
     def language_array(self):

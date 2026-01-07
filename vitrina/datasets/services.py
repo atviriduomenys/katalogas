@@ -267,44 +267,50 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
     org_ct = ContentType.objects.get_for_model(Organization)
     dataset_ct = ContentType.objects.get_for_model(Dataset)
 
-    reps = Representative.objects.filter(user=user)
+    representatives_qs = Representative.objects.filter(
+        user=user,
+        role__in=(
+            Representative.RESOURCE_MANAGER,
+            Representative.RESOURCE_COORDINATOR,
+            Representative.OPEN_DATA_MANAGER,
+            Representative.OPEN_DATA_COORDINATOR,
+        ),
+        content_type__in=[org_ct, dataset_ct],
+    ).values_list("content_type_id", "role", "object_id")
 
-    resource_org_ids = reps.filter(
-        content_type=org_ct, role__in=(Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR)
-    ).values_list("object_id", flat=True)
+    resource_org_ids = set()
+    resource_dataset_ids = set()
+    open_data_org_ids = set()
+    open_data_dataset_ids = set()
 
-    resource_dataset_ids = reps.filter(
-        content_type=dataset_ct, role__in=(Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR)
-    ).values_list("object_id", flat=True)
+    for ct_id, role, obj_id in representatives_qs:
+        if ct_id == org_ct.id:
+            if role in (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR):
+                resource_org_ids.add(obj_id)
+            elif role in (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR):
+                open_data_org_ids.add(obj_id)
+        elif ct_id == dataset_ct.id:
+            if role in (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR):
+                resource_dataset_ids.add(obj_id)
+            elif role in (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR):
+                open_data_dataset_ids.add(obj_id)
 
-    if resource_org_ids.exists():
+    if resource_org_ids:
         combined_filter |= SQ(organization__in=resource_org_ids)
 
-    if resource_dataset_ids.exists():
+    if resource_dataset_ids:
         combined_filter |= SQ(id__in=resource_dataset_ids)
 
-    open_data_org_ids = reps.filter(
-        content_type=org_ct, role__in=(Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR)
-    ).values_list("object_id", flat=True)
-
-    open_data_dataset_ids = reps.filter(
-        content_type=dataset_ct, role__in=(Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR)
-    ).values_list("object_id", flat=True)
-
-    if open_data_org_ids.exists():
+    if open_data_org_ids:
         combined_filter |= SQ(
             organization__in=open_data_org_ids, is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
         )
+        combined_filter |= SQ(organization__in=open_data_org_ids, is_public="false")
 
-    if open_data_dataset_ids.exists():
+    if open_data_dataset_ids:
         combined_filter |= SQ(
             id__in=open_data_dataset_ids, is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
         )
-
-    if open_data_org_ids.exists():
-        combined_filter |= SQ(organization__in=open_data_org_ids, is_public="false")
-
-    if open_data_dataset_ids.exists():
         combined_filter |= SQ(id__in=open_data_dataset_ids, is_public="false")
 
     if user.is_gov_organization_resource_manager:

@@ -151,8 +151,8 @@ class PublisherOrganization(Organization):
 
 
 class Representative(models.Model):
-    RESOURCE_COORDINATOR = "resource_coordinator"  # Manager + manages other Representatives
-    RESOURCE_MANAGER = "resource_manager"  # Resource Manager
+    RESOURCE_COORDINATOR = "resource_coordinator"
+    RESOURCE_MANAGER = "resource_manager"
     SUPERVISOR = "supervisor"
     OPEN_DATA_COORDINATOR = "open_data_coordinator"
     OPEN_DATA_MANAGER = "open_data_manager"

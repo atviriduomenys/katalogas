@@ -2589,7 +2589,7 @@ msgstr "Data open service providers"
 msgid "Duomenų išteklių koordinatorius"
 msgstr "Resource coordinator"
 
-msgid "Resource tvarkytojas"
+msgid "Duomenų išteklių tvarkytojas"
 msgstr "Resource manager"
 
 msgid "Atvirų duomenų koordinatorius"

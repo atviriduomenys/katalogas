@@ -306,7 +306,7 @@ def test_project_edit_permission_author():
     "role,expected",
     [
         (Representative.RESOURCE_MANAGER, True),
-        # (Representative.OPEN_DATA_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
     ]
 )
 def test_dataset_distribution_create_permission_organization_manager(role: str, expected: bool):
@@ -461,29 +461,15 @@ def test_organization_representative_create_permission_manager(role: str, expect
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
-)
-def test_organization_representative_create_permission_coordinator(role: str, expected: bool):
-    organization = OrganizationFactory()
-    ct = ContentType.objects.get_for_model(organization)
-    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
-    res = has_perm(coordinator.user, Action.CREATE, Representative, organization)
-    assert res is expected
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize(
-    "role,expected",
-    [
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
     ]
 )
-def test_organization_representative_edit_permission_manager(role: str, expected: bool):
+def test_organization_representative_create_permission_representative(role: str, expected: bool):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
-    res = has_perm(manager.user, Action.UPDATE, manager)
+    representative = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
+    res = has_perm(representative.user, Action.CREATE, Representative, organization)
     assert res is expected
 
 
@@ -493,13 +479,15 @@ def test_organization_representative_edit_permission_manager(role: str, expected
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
+        (Representative.RESOURCE_MANAGER, False),
+        (Representative.OPEN_DATA_MANAGER, False),
     ]
 )
-def test_organization_representative_edit_permission_coordinator(role: str, expected: bool):
+def test_organization_representative_edit_permission_representative(role: str, expected: bool):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    coordinator = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
-    res = has_perm(coordinator.user, Action.UPDATE, coordinator)
+    representative = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
+    res = has_perm(representative.user, Action.UPDATE, Representative, organization)
     assert res is expected
 
 

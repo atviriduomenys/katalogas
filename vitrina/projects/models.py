@@ -140,3 +140,6 @@ class UseCaseClientScope(UUIDBaseModel):
     class Meta:
         verbose_name = _("Kliento leidimas")
         verbose_name_plural = _("Kliento leidimai")
+
+    def __str__(self):
+        return self.scope

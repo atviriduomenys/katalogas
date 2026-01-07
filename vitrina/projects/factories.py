@@ -5,7 +5,7 @@ from factory.django import DjangoModelFactory
 
 from vitrina.cms.factories import FilerImageFactory
 from vitrina.datasets.models import Dataset
-from vitrina.projects.models import Project, UseCaseClient
+from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 
 
 class ProjectFactory(DjangoModelFactory):
@@ -35,3 +35,14 @@ class UseCaseClientFactory(DjangoModelFactory):
     use_case = factory.SubFactory(ProjectFactory)
     name = factory.Faker("catch_phrase")
     client_id = factory.Faker("uuid4")
+
+
+class UseCaseClientScopeFactory(DjangoModelFactory):
+    class Meta:
+        model = UseCaseClientScope
+
+    resource = factory.Faker("uri")
+    action = "getall"
+    scope = factory.Faker("uri")
+    use_case_client = factory.SubFactory(UseCaseClientFactory)
+    is_active = True

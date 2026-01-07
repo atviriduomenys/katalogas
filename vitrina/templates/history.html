@@ -24,15 +24,31 @@
                         <th>{% translate "Naudotojas" %}</th>
                         <th>{% translate "Veiksmas" %}</th>
                     </tr>
-                    {% for h in history %}
+                    {% for history_row in history %}
                         <tr>
-                            <td>{{ h.date|date:"SHORT_DATETIME_FORMAT" }}</td>
-                            <td>{{ h.user|default_if_none:"-" }}</td>
-                            <td>{{ h.action|default_if_none:"-" }}</td>
+                            <td>{{ history_row.date|date:"SHORT_DATETIME_FORMAT" }}</td>
+                            <td>{{ history_row.user|default_if_none:"-" }}</td>
+                            <td>
+                                {{ history_row.action.comment|default_if_none:"-" }}
+                                <div class="content">
+                                    <ul>
+                                        {% for repr, url in history_row.action.objects %}
+                                            <li>
+                                                {% if url %}
+                                                    <a href="{{url}}">{{ repr }}</a>
+                                                {% else %}
+                                                    {{ repr }}
+                                                {% endif %}
+                                            </li>
+                                        {% endfor %}
+                                    </ul>
+                                </div>
+                            </td>
                         </tr>
                     {% endfor %}
                     </tbody>
                 </table>
+                {% include "vitrina/common/pagination.html" %}
             {% endif %}
         </div>
     </div>

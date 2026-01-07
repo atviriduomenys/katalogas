@@ -1,8 +1,10 @@
 from typing import Type, Any
 from importlib.metadata import version, PackageNotFoundError
+import json
 
 from django.core.exceptions import ImproperlyConfigured
-from django.db.models import Model
+from django.core.paginator import Paginator
+from django.db.models import Model, QuerySet, Prefetch
 from django.contrib.auth.mixins import PermissionRequiredMixin
 from django.forms import BaseFormSet
 from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, JsonResponse
@@ -13,7 +15,7 @@ from django.db.models import Count
 from django.views.generic.base import TemplateResponseMixin, ContextMixin
 from django.views.generic.edit import ProcessFormView
 
-from reversion.models import Version
+from reversion.models import Version, Revision
 
 from vitrina.classifiers.models import Category
 from vitrina.datasets.models import Dataset
@@ -23,6 +25,7 @@ from vitrina.statistics.models import StatRoute
 from vitrina.users.models import User
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
+from vitrina.utils import RevisionComment
 
 
 def home(request):
@@ -105,6 +108,7 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     detail_url_name = None
     history_url_name = None
     tabs_template_name: str
+    paginate_by = 20
 
     object: Model
 
@@ -118,6 +122,9 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        paginator = Paginator(self.get_revisions(), self.paginate_by)
+        page_obj = paginator.get_page(self.request.GET.get("page"))
+
         context.update(
             {
                 "detail_url_name": self.get_detail_url_name(),
@@ -125,38 +132,64 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
                 "detail_url": self.get_detail_url(),
                 "child_resources_url": self.get_child_resources_url(),
                 "history_url": self.get_history_url(),
-                "history": [
-                    {
-                        "date": version.revision.date_created,
-                        "user": version.revision.user,
-                        "action": self.model.HISTORY_MESSAGES.get(
-                            version.revision.comment,
-                        )
-                        if (
-                            hasattr(self.model, "HISTORY_MESSAGES")
-                            and self.model.HISTORY_MESSAGES.get(version.revision.comment)
-                        )
-                        else version.revision.comment,
-                    }
-                    for version in self.get_history_objects()
-                ],
+                "history": self.get_history_list(page_obj.object_list),
                 "can_manage_history": has_perm(
                     self.request.user,
                     Action.HISTORY_VIEW,
                     self.get_history_object(),
                 ),
                 "tabs_template_name": self.tabs_template_name,
+                "page_obj": page_obj,
             }
         )
-        context["history"] = self._deduplicate_and_sort_history(context["history"])
 
         return context
 
-    def _deduplicate_and_sort_history(self, history: list[dict]) -> list[dict]:
-        unique_entries = {tuple(entry.items()) for entry in history}
-        unique_history = [dict(entry) for entry in unique_entries]
+    def get_history_list(self, revisions: QuerySet[Revision]) -> list[dict[str, Any]]:
+        history = []
 
-        return sorted(unique_history, key=lambda x: x["date"], reverse=True)
+        for revision in revisions:
+            entry = {
+                "date": revision.date_created,
+                "user": revision.user,
+                "action": {
+                    "comment": self.prep_comment_for_display(revision.comment),
+                    "objects": self.prep_versions_for_display(revision.version_set.all()),
+                },
+            }
+            history.append(entry)
+        return history
+
+    def prep_versions_for_display(self, versions: QuerySet[Version]) -> list[tuple[str, str | None]]:
+        objects = []
+        for version_obj in versions:
+            url = None
+
+            if (object := version_obj.object) and hasattr(object, "get_absolute_url"):
+                url = object.get_absolute_url()
+
+            objects.append((version_obj.object_repr, url))
+        return objects
+
+    def prep_comment_for_display(self, comment: str) -> str:
+        try:
+            revision_comment = RevisionComment.from_json(comment)
+            return f"{revision_comment.action}({revision_comment.kwargs})"
+        except (json.JSONDecodeError, ValueError, TypeError):
+            return (
+                self.model.HISTORY_MESSAGES.get(comment)
+                if (hasattr(self.model, "HISTORY_MESSAGES") and self.model.HISTORY_MESSAGES.get(comment))
+                else comment
+            )
+
+    def get_revisions(self) -> QuerySet[Revision]:
+        versions = self.get_history_objects()
+        return (
+            Revision.objects.filter(version__in=self.get_history_objects())
+            .distinct()
+            .order_by("-date_created")
+            .prefetch_related(Prefetch("version_set", queryset=versions))
+        )
 
     def get_detail_url_name(self):
         return self.detail_url_name
@@ -184,8 +217,8 @@ class HistoryView(PermissionRequiredMixin, TemplateView):
     def get_detail_object(self):
         return self.object
 
-    def get_history_objects(self):
-        return Version.objects.get_for_object(self.get_history_object()).order_by("-revision__date_created")
+    def get_history_objects(self) -> QuerySet[Version]:
+        return Version.objects.get_for_object(self.get_history_object())
 
 
 class HistoryMixin:

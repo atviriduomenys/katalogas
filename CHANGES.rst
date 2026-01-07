@@ -53,8 +53,6 @@ https://github.com/atviriduomenys/katalogas/issues/2196
 
 https://github.com/atviriduomenys/katalogas/issues/1925
 
-Corrected some texts.
-
 - Remove `save()` from `Representative` model.
 - Update elasticsearch indices from `Representative` and `DataDistribution` model.
 Improvements:

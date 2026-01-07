@@ -219,7 +219,7 @@ class Representative(models.Model):
         return False
 
     def can_be_updated_by(self, user: "User") -> bool:
-        if user.is_superuser:
+        if user.is_superuser or user.is_staff:
             return True
 
         user_rep = user.representative_set.filter(organization=self.organization).first()

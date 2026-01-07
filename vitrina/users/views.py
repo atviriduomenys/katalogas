@@ -422,28 +422,32 @@ class UserStatsView(TemplateView):
                 created_date = make_aware(created_date)
                 if user_type == "Koordinatoriai":
                     dataset["data"].append(
-                        User.objects.select_related("representative")
-                        .filter(representative__role="coordinator", created__lt=created_date)
+                        User.objects.filter(
+                            representative__role__in=["resource_coordinator", "open_data_coordinator"],
+                            created__lt=created_date,
+                        )
                         .distinct("representative__user")
                         .count()
                     )
                 elif user_type == "Tvarkytojai":
                     dataset["data"].append(
-                        User.objects.select_related("representative")
-                        .filter(
-                            representative__role="manager",
-                            created__lt=created_date,
+                        User.objects.filter(
+                            representative__role__in=["resource_manager", "open_data_manager"], created__lt=created_date
                         )
-                        .exclude(representative__role="coordinator")
                         .distinct("representative__user")
                         .count()
                     )
                 elif user_type == "Registruoti naudotojai":
                     dataset["data"].append(
-                        User.objects.select_related("representative")
+                        User.objects.exclude(
+                            representative__role__in=[
+                                "resource_coordinator",
+                                "open_data_coordinator",
+                                "resource_manager",
+                                "open_data_manager",
+                            ]
+                        )
                         .filter(created__lt=created_date)
-                        .exclude(representative__role="manager")
-                        .exclude(representative__role="coordinator")
                         .count()
                     )
                     # TODO: If it is possible, it would be nice, to get

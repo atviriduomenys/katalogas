@@ -472,7 +472,6 @@ class DatasetDetailView(
                 )
                 return redirect(url)
 
-        metadata_version = _Version.objects.filter(id=metadata_version).first()
         return super().get(request, *args, **kwargs)
 
     def get_queryset(self) -> QuerySet[Dataset]:
@@ -524,9 +523,6 @@ class DatasetDetailView(
                 dataset,
             ),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
-            "resources": dataset.datasetdistribution_set.filter(
-                Q(metadata_version=metadata_version) | Q(metadata_version__isnull=True)
-            ).order_by("-period_start"),
             "org_logo": organization.image if organization else None,
             "attributions": dataset.datasetattribution_set.order_by("attribution"),
             "data_maturity": dataset.metadata_set.average_level(),
@@ -535,6 +531,16 @@ class DatasetDetailView(
             "child_resources_url": reverse("dataset-child-resources", kwargs={"pk": dataset.pk}),
             "licences": set([dist.licence for dist in dataset.datasetdistribution_set.filter(licence__isnull=False)]),
         }
+
+        if metadata_version.status == VersionStatus.DRAFT:
+            extra_context_data["resources"] = dataset.datasetdistribution_set.filter(
+                Q(metadata_version=metadata_version) | Q(metadata_version__isnull=True) | Q(format__extension="UAPI")
+            ).order_by("-period_start")
+        else:
+            extra_context_data["resources"] = dataset.datasetdistribution_set.filter(
+                Q(metadata_version=metadata_version) | Q(format__extension="UAPI")
+            ).order_by("-period_start")
+
         distributions_with_conditions_ids = (
             dataset.datasetdistribution_set.filter(
                 translations__conditions__isnull=False, metadata_version=metadata_version

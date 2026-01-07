@@ -425,9 +425,9 @@ class DatasetDistribution(TranslatableModel):
             entry.update_description()
 
     def create_metadata_instance_and_assign_version(self, metadata_version: int) -> Metadata:
-        self.metadata_version = Version.objects.get(pk=metadata_version)
+        metadata_version = Version.objects.get(pk=metadata_version)
         if metadata_instance := self.metadata.first():
-            metadata_instance.metadata_version = self.metadata_version
+            metadata_instance.metadata_version = metadata_version
             metadata_instance.save()
         else:
             name = self.name
@@ -466,7 +466,7 @@ class DatasetDistribution(TranslatableModel):
                 title=self.title,
                 description=self.description,
                 level_given=self.level,
-                metadata_version=self.metadata_version,
+                metadata_version=metadata_version,
             )
 
         return metadata_instance

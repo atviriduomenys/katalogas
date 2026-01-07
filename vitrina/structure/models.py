@@ -327,6 +327,8 @@ class Model(models.Model):
         super().save(*args, **kwargs)
 
         if self.distribution:
+            if self.distribution.metadata_version and self.distribution.metadata_version != self.metadata_version:
+                return
             self.distribution.create_metadata_instance_and_assign_version(self.metadata_version.pk)
             self.distribution.metadata_version = self.metadata_version
             self.distribution.save(update_fields=["metadata_version"])

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-11 10:05+0200\n"
+"POT-Creation-Date: 2026-01-05 15:58+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,24 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
+
+msgid "Versijos duomenys"
+msgstr "Version data"
+
+msgid "Nepavyko nuskaityti versijos duomenų"
+msgstr "Failed to read Version data"
+
+msgid "Modelis"
+msgstr "Model"
+
+msgid "Objekto ID"
+msgstr "Object ID"
+
+msgid "Objektas"
+msgstr "Object"
 
 msgid "kliento id"
 msgstr "client id"
@@ -37,9 +55,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -667,12 +682,19 @@ msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
 msgstr ""
 "This property specifies a related resource. Corresponds to dct:relation."
 
+msgid "Vieši"
+msgstr "Public"
+
+msgid "Apriboti"
+msgstr "Restricted"
+
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr "Code name can only include latin characters."
 
 msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
 msgstr "Code name can only include lowercase letters."
 
+#, python-format
 msgid ""
 "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
 "leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
@@ -680,9 +702,11 @@ msgstr ""
 "The code name must begin with „%(expected)s“ or one of the following "
 "whitelisted code name prefixes: %(whitelisted)s"
 
+#, python-format
 msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“"
 msgstr "The code name must begin with „%(expected)s“"
 
+#, python-format
 msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
 msgstr "There must be at least one character after „%(prefix)s“."
 
@@ -936,12 +960,6 @@ msgstr "Added to organization"
 
 msgid "Pašalinta iš organizacijos"
 msgstr "Removed from organization"
-
-msgid "Vieši"
-msgstr "Public"
-
-msgid "Apriboti"
-msgstr "Restricted"
 
 msgid "Nevieši"
 msgstr "Non Public"
@@ -1965,9 +1983,6 @@ msgstr "Manager count"
 msgid "Modelio laukas"
 msgstr "Model field."
 
-msgid "Modelis"
-msgstr "Model"
-
 msgid "Identifikatoriai"
 msgstr "Identifiers"
 
@@ -2425,9 +2440,6 @@ msgstr ""
 
 msgid "Naujas slaptažodis"
 msgstr "New password"
-
-msgid "Objektas"
-msgstr "Object"
 
 msgid "Skaityti"
 msgstr "Read"
@@ -2893,6 +2905,7 @@ msgstr "Contact editing"
 msgid "Šio kontakto ištrinti negalima, nes jis yra naudojamas sutartyse."
 msgstr "This contact can not be deleted, because it is used in agreements."
 
+#, python-brace-format
 msgid "Ar tikrai norite ištrinti kontaktą \"{contact}\"?"
 msgstr "Are you sure you want to delete the contact \"{contact}\"?"
 
@@ -3848,6 +3861,7 @@ msgstr "Upload document signed by data receiver"
 msgid "Veiksmas įvykdytas sėkmingai."
 msgstr "Action was executed successfully"
 
+#, python-brace-format
 msgid ""
 "Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
 "{expected_status}.Dabartinė būsena: {current_status}."

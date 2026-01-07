@@ -5,9 +5,10 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.messages.models import Subscription, EmailTemplate, SentMail
 from django.template import Template
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
-class SubscriptionAdmin(admin.ModelAdmin):
+class SubscriptionAdmin(RevisionCommentVersionAdmin):
     list_display = ("user", "content_object", "created")
 
     @admin.display()
@@ -26,7 +27,7 @@ class NotValidKeyException(Exception):
     pass
 
 
-class EmailTemplateAdmin(admin.ModelAdmin):
+class EmailTemplateAdmin(RevisionCommentVersionAdmin):
     list_display = ("title", "subject", "created")
 
     def add_view(self, request, form_url="", extra_context=None):
@@ -55,7 +56,7 @@ class EmailTemplateAdmin(admin.ModelAdmin):
         return super(EmailTemplateAdmin, self).change_view(request, object_id)
 
 
-class SentMailAdmin(admin.ModelAdmin):
+class SentMailAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "recipient_list",
         "email_subject",

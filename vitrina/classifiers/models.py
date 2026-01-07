@@ -3,13 +3,10 @@ from django.utils.translation import gettext_lazy as _, get_language
 
 from parler.models import TranslatableModel, TranslatedFields
 from treebeard.mp_tree import MP_Node, MP_NodeManager
-import reversion
 
 from vitrina.models import UUIDBaseModel
-from vitrina.services import fetch_page_title
 
 
-@reversion.register()
 class Category(MP_Node):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -265,9 +262,3 @@ class ApplicableLegislation(UUIDBaseModel):
 
     def __str__(self) -> str:
         return self.description or self.url
-
-    def update_description(self) -> str | None:
-        if title := fetch_page_title(self.url):
-            self.description = title
-            self.save(update_fields=["description"])
-        return title

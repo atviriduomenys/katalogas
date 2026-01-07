@@ -17,7 +17,7 @@
         <p class="control is-expanded">
             <label class="visually-hidden" for="search-input">{% translate 'Duomenų paieška' %}</label>
             <input name="q" class="input search-input is-large"
-                   type="text" value="{{ q | escape }}"
+                   type="text" value="{% if q %}{{ q | escape }}{% endif %}"
                    placeholder="{% translate 'Ieškoti duomenų...' %}"
                    id="search-input" title="{% translate 'Ieškoti duomenų...' %}">
         </p>

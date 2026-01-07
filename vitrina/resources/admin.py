@@ -4,9 +4,10 @@ from django.utils.translation import gettext_lazy as _
 
 from vitrina.resources.forms import FormatAdminForm
 from vitrina.resources.models import Format, GeoportalFormat, GeoportalFormatValue, CompressionFormat, PackagingFormat
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
-class FormatAdmin(admin.ModelAdmin):
+class FormatAdmin(RevisionCommentVersionAdmin):
     form = FormatAdminForm
 
 
@@ -15,7 +16,7 @@ class GeoportalFormatValueInline(admin.TabularInline):
     extra = 0
 
 
-class GeoportalFormatAdmin(admin.ModelAdmin):
+class GeoportalFormatAdmin(RevisionCommentVersionAdmin):
     inlines = [GeoportalFormatValueInline]
     list_display = (
         "format",
@@ -28,11 +29,11 @@ class GeoportalFormatAdmin(admin.ModelAdmin):
     values_display.short_description = _("Geoportalo reikšmės")
 
 
-class CompressionFormatAdmin(admin.ModelAdmin):
+class CompressionFormatAdmin(RevisionCommentVersionAdmin):
     fields = ("title", "extension", "uri")
 
 
-class PackagingFormatAdmin(admin.ModelAdmin):
+class PackagingFormatAdmin(RevisionCommentVersionAdmin):
     fields = ("title", "extension", "uri")
 
 

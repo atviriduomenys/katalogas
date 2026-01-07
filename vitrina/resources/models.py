@@ -1,7 +1,6 @@
 import pathlib
 from enum import StrEnum
 import uuid
-import reversion
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db import models
 from django.urls import reverse
@@ -13,6 +12,7 @@ from parler.models import TranslatableModel, TranslatedFields
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
 from vitrina.utils import translate_text
 from vitrina.datasets.models import Dataset
+from vitrina.datasets.tasks import update_applicable_legislation_description
 
 
 def get_default_status() -> uuid.UUID:
@@ -119,7 +119,6 @@ class PackagingFormat(models.Model):
         return self.title
 
 
-@reversion.register()
 class DatasetDistribution(TranslatableModel):
     DISTRIBUTION_STATUS_URI = "http://publications.europa.eu/resource/authority/distribution-status"
     UPLOAD_TO = "data"
@@ -381,14 +380,14 @@ class DatasetDistribution(TranslatableModel):
                 self.conditions = translate_text(lt_conditions, f"distribution {self.id} conditions")
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
-        existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
-        new_urls = [url for url in urls if url not in existing_urls]
+        legislations: list[ApplicableLegislation] = []
 
-        if new_urls:
-            ApplicableLegislation.objects.bulk_create([ApplicableLegislation(url=url) for url in new_urls])
+        legislation_ids_to_update = []
+        for url in urls:
+            legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
+            if created:
+                legislation_ids_to_update.append(legislation.uuid)
+            legislations.append(legislation)
 
-        all_entries = ApplicableLegislation.objects.filter(url__in=urls)
-        self.applicable_legislation.set(all_entries)
-
-        for entry in all_entries.filter(url__in=new_urls):
-            entry.update_description()
+        update_applicable_legislation_description.delay(legislation_ids_to_update)
+        self.applicable_legislation.set(legislations)

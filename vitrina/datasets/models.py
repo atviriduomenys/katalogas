@@ -5,7 +5,6 @@ from datetime import datetime
 from functools import cached_property
 from random import randrange
 
-import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -40,6 +39,7 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem
 from vitrina.users.models import User
+from vitrina.datasets.tasks import update_applicable_legislation_description
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,6 @@ class Resource(MP_Node, TranslatableModel):
         self.fix_tree(fix_paths=True)
 
 
-@reversion.register(follow=["category", "part_of"])
 class Dataset(Resource):
     node_order_by = ("subclass",)
 
@@ -1418,29 +1417,24 @@ class Dataset(Resource):
         return False
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
-        existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
-        new_urls = [url for url in urls if url not in existing_urls]
-
-        if new_urls:
-            ApplicableLegislation.objects.bulk_create([ApplicableLegislation(url=url) for url in new_urls])
-
-        all_entries = ApplicableLegislation.objects.filter(url__in=urls)
-        self.applicable_legislation.set(all_entries)
-
-        for entry in all_entries.filter(url__in=new_urls):
-            entry.update_description()
+        legislations: list[ApplicableLegislation] = []
+        legislation_ids_to_update = []
+        for url in urls:
+            legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
+            if created:
+                legislation_ids_to_update.append(legislation.uuid)
+            legislations.append(legislation)
+        update_applicable_legislation_description.delay(legislation_ids_to_update)
+        self.applicable_legislation.set(legislations)
 
     def update_documentation(self, urls: list[str]) -> None:
-        existing_urls = set(
-            Documentation.objects.filter(documentation_link__in=urls).values_list("documentation_link", flat=True)
-        )
-        new_urls = [url for url in urls if url not in existing_urls]
+        documentations: list[Documentation] = []
 
-        if new_urls:
-            Documentation.objects.bulk_create([Documentation(documentation_link=url) for url in new_urls])
+        for url in urls:
+            documentation, created = Documentation.objects.get_or_create(documentation_link=url)
+            documentations.append(documentation)
 
-        all_entries = Documentation.objects.filter(documentation_link__in=urls)
-        self.documentation.set(all_entries)
+        self.documentation.set(documentations)
 
 
 class DatasetReport(Dataset):
@@ -1657,7 +1651,6 @@ class DatasetStructureLink(models.Model):
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
-@reversion.register()
 class DatasetStructure(models.Model):
     UPLOAD_TO = "data/structure"
 
@@ -1779,7 +1772,6 @@ class Attribution(models.Model):
         return self.title if self.title else self.name
 
 
-@reversion.register()
 class DatasetAttribution(models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     attribution = models.ForeignKey(Attribution, on_delete=models.PROTECT, verbose_name=_("Priskyrimo rūšis"))
@@ -1891,7 +1883,6 @@ class Relation(TranslatableModel):
         return self.safe_translation_getter("title", language_code=self.get_current_language())
 
 
-@reversion.register()
 class DatasetRelation(models.Model):
     relation = models.ForeignKey(Relation, verbose_name=_("Ryšio tipas"), on_delete=models.PROTECT)
     dataset = models.ForeignKey(

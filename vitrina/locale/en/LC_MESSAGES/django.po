@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-27 14:56+0200\n"
+"POT-Creation-Date: 2025-12-11 10:05+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -448,11 +448,17 @@ msgstr "Comment for object:"
 msgid "Registruoti kaip prašymą"
 msgstr "Register as request"
 
+msgid "Poreikio pavadinimas"
+msgstr "Request title"
+
 msgid "Pageidaujamas duomenų atnaujinimo periodiškumas"
 msgstr "Preferred frequency of data updates"
 
 msgid "Jei komentaras registruojamas kaip prašymas, jis privalo būti viešas"
 msgstr "If the comment is registered as a request, it must be public"
+
+msgid "Įrašykite poreikio pavadinimą."
+msgstr "Please input request title."
 
 msgid "Šis laukas yra privalomas"
 msgstr "This field is required"
@@ -496,11 +502,14 @@ msgstr "Evaluated"
 msgid "Viešas komentaras"
 msgstr "Public comment"
 
-msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
-msgstr "Your organization was added to request organization list"
+msgid "Negalima atmesti — patvirtinti/atidaryti priskyrimai egzistuoja."
+msgstr "Cannot reject - approved/opened assignments exist"
 
 msgid "Jūsų organizaciją nėra įtraukta į poreikių organizacijų sąrašą"
 msgstr "Your organization was not added to request organization list"
+
+msgid "Jūsų organizaciją įtraukta į poreikių organizacijų sąrašą"
+msgstr "Your organization was added to request organization list"
 
 msgid "Vėluoja"
 msgstr "Is late"
@@ -663,6 +672,19 @@ msgstr "Code name can only include latin characters."
 
 msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
 msgstr "Code name can only include lowercase letters."
+
+msgid ""
+"Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
+"leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
+msgstr ""
+"The code name must begin with „%(expected)s“ or one of the following "
+"whitelisted code name prefixes: %(whitelisted)s"
+
+msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“"
+msgstr "The code name must begin with „%(expected)s“"
+
+msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
+msgstr "There must be at least one character after „%(prefix)s“."
 
 msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
 msgstr "Dataset with this code name already exists."
@@ -1337,6 +1359,14 @@ msgstr "Harvested"
 
 msgid "Atlikto darbo būsena"
 msgstr "Harvesting status"
+
+msgid "Licencija"
+msgstr "License"
+
+msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
+msgstr ""
+"This property specifies the license under which the data service is "
+"distributed."
 
 msgid ""
 "Nurodoma konkreti informacinė sistema - valstybės informacinė sistema ar "
@@ -2230,6 +2260,12 @@ msgstr "An error occurred trying to confirm the subscription."
 msgid "organizacija"
 msgstr "organization"
 
+msgid "Leistinas kodinis pavadinimas"
+msgstr "Allowed code name"
+
+msgid "Leistini kodiniai pavadinimai"
+msgstr "Allowed code names"
+
 msgid ""
 "Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos "
 "teikėjo rolė."
@@ -2275,6 +2311,15 @@ msgstr "Organizations"
 
 msgid "Registracijos numeris"
 msgstr "Registration number"
+
+msgid ""
+"Organizacijos identifikatorius. Rekomenduojama šiai reikšmei naudoti "
+"organizacijos trumpinį, kad bendras modelio pavadinimas nebūtų per daug "
+"ilgas. Atitinka dct:identifier."
+msgstr ""
+"Organization identifier. It is recommended to use the abbreviation of the "
+"organization for this value so that the overall model name is not too long. "
+"Corresponds to dct:identifier."
 
 msgid "Paveiksliukas"
 msgstr "Picture"
@@ -2484,6 +2529,9 @@ msgstr "A position must be specified for the contact person."
 msgid "Organizacijai negali būti nurodytos pareigos."
 msgstr "A position cannot be specified for an organization"
 
+msgid "Toks Organizacijos kodinis pavadinimas jau egzistuoja."
+msgstr "This code name for the Organization already exists."
+
 msgid "Neteisingas objekto tipas. Turi būti AreaOfManagement arba int"
 msgstr "Incorrect object type. It must be AreaOfManagement or int."
 
@@ -2540,6 +2588,10 @@ msgstr "Modified"
 
 msgid "Tekstas"
 msgstr "Rejected"
+
+msgid ""
+"Unikalus kodinis pavadinimas, kurį galima naudoti kuriant duomenų išteklius."
+msgstr "The unique codename, which can be used while creating data resources."
 
 msgid "Galimi duomenų ištekliai"
 msgstr "Available resources"
@@ -2684,6 +2736,12 @@ msgstr "Organization members list"
 msgid "Pridėti kontaktą"
 msgstr "Add contact"
 
+msgid "Organizacijos vietinė rinkinio vardų erdvė"
+msgstr "Local namespace of the organization"
+
+msgid "Organizacijos vietinių rinkinių leidžiamų vardų erdvių sąrašas."
+msgstr "List of namespaces allowed by the organization's local collections."
+
 msgid "Redaguoti organizaciją"
 msgstr "Edit organization"
 
@@ -2704,6 +2762,33 @@ msgstr "Search for organization"
 
 msgid "Nauja organizacija"
 msgstr "New organization"
+
+msgid "Sukūrimo data"
+msgstr "Creation date"
+
+msgid "Duomenis gaunanti organizacija"
+msgstr "Data receiver organization"
+
+msgid "Panaudojimo atvejis"
+msgstr "Use case"
+
+msgid "Paskutinės sinchronizacijos data"
+msgstr "Date of last synchronization"
+
+msgid "Laukiama gavėjo veiksmų"
+msgstr "Awaiting for the recipient's actions"
+
+msgid "Peržiūrėti pateiktą pasiūlymą"
+msgstr "Review proposal"
+
+msgid "Formuoti sutartį"
+msgstr "Form agreement"
+
+msgid "Laukiama kol gavėjas įkels pasirašytą dokumentą"
+msgstr "Awaiting for signed document upload by data recipient (assignee)"
+
+msgid "Įkelti pasirašytą dokumentą (Teikėjo)"
+msgstr "Upload document signed by data receiver"
 
 msgid "Informacija duomenų teikėjo registravimui"
 msgstr "Data provider information for registration"
@@ -2778,6 +2863,9 @@ msgid ""
 "Šios registravimosi nuorodos galiojimas baigėsi arba nuoroda yra klaidinga."
 msgstr "This registration link has expired or the link is incorrect."
 
+msgid "Sutartys"
+msgstr "Agreements"
+
 msgid "Agentai"
 msgstr "Agents"
 
@@ -2801,6 +2889,18 @@ msgstr "Add contact"
 
 msgid "Kontaktų redagavimas"
 msgstr "Contact editing"
+
+msgid "Šio kontakto ištrinti negalima, nes jis yra naudojamas sutartyse."
+msgstr "This contact can not be deleted, because it is used in agreements."
+
+msgid "Ar tikrai norite ištrinti kontaktą \"{contact}\"?"
+msgstr "Are you sure you want to delete the contact \"{contact}\"?"
+
+msgid "Organizacijos sutartys"
+msgstr "Organization agreements"
+
+msgid "Sutartis"
+msgstr "Agreement"
 
 msgid "Organizacijos redagavimas"
 msgstr "Edit organization"
@@ -3010,9 +3110,6 @@ msgstr "Select a scope"
 msgid "Leidimai"
 msgstr "Permissions"
 
-msgid "Panaudojimo atvejis"
-msgstr "Use case"
-
 msgid "Kliento ID"
 msgstr "Client ID"
 
@@ -3104,9 +3201,6 @@ msgstr "Key title"
 msgid "Šiuo metu raktas leidimų neturi"
 msgstr "Currently the key does not have permissions"
 
-msgid "Sutartys"
-msgstr "Agreements"
-
 msgid "Panaudojimo atvejo registracija"
 msgstr "Use case registration"
 
@@ -3124,10 +3218,9 @@ msgstr "API key will be shown only one time, so you must copy it. Created key:"
 msgid "Kurti klientą"
 msgstr "Create client"
 
-#, fuzzy, python-brace-format
-#| msgid "Klientas \"{0}\" sukurtas sėkmingai"
+#, python-brace-format
 msgid "Klientas \"{0}\" sukurtas sėkmingai."
-msgstr "Client \"{0}\" created successfully"
+msgstr "Client \"{0}\" created successfully."
 
 #, python-brace-format
 msgid "Kliento raktas - {0}. Butinai išsisaugokite raktą, jis nebebus rodomas!"
@@ -3211,6 +3304,27 @@ msgstr "A free-text account of the record. Corresponds to dct:description."
 
 msgid "Klaidų duomenyse pataisymas"
 msgstr "Data error fix"
+
+msgid "Organizacijos koordinatorius"
+msgstr "Organization coordinator"
+
+msgid "Atsakymas gautas iš tvarkytojų/koordinatorių."
+msgstr "Response received from data editors/coordinators."
+
+msgid "Sustabdyta rankiniu būdu."
+msgstr "Stopped manually."
+
+msgid "Pasiektas maksimalus eskalacijos lygis."
+msgstr "Reached maximum level of escalation."
+
+msgid "Poreikio eskalacija"
+msgstr "Request escalation"
+
+msgid "Poreikių eskalacija"
+msgstr "Requests escalation"
+
+msgid "Nežinoma"
+msgstr "Unknown"
 
 msgid "Gauti poreikiai duomenų rinkiniams"
 msgstr "Received requests for datasets"
@@ -3603,9 +3717,6 @@ msgstr "Upload to storage"
 msgid "Importuojamas išorinis metaduomenų katalogas"
 msgstr "Importing external metadata catalog"
 
-msgid "Licencija"
-msgstr "License"
-
 msgid "Statusas"
 msgstr "Status"
 
@@ -3627,11 +3738,6 @@ msgstr "Open dataset distribution"
 
 msgid "Publikuojamas saugykloje"
 msgstr "Published in storage"
-
-msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
-msgstr ""
-"This property specifies the license under which the data service is "
-"distributed."
 
 msgid "Modeliai"
 msgstr "Models"
@@ -3726,9 +3832,6 @@ msgstr "Submit proposal"
 msgid "Patvirtinti pasiūlymą"
 msgstr "Confirm proposal"
 
-msgid "Formuoti sutartį"
-msgstr "Form agreement"
-
 msgid "Dokumentas turi būti adoc formato."
 msgstr "The document must be in adoc format."
 
@@ -3742,8 +3845,44 @@ msgstr "The attached file is not a ZIP archive."
 msgid "Įkelti pasirašytą dokumentą (Gavėjo)"
 msgstr "Upload document signed by data receiver"
 
-msgid "Įkelti pasirašytą dokumentą (Teikėjo)"
-msgstr "Upload document signed by data receiver"
+msgid "Veiksmas įvykdytas sėkmingai."
+msgstr "Action was executed successfully"
+
+msgid ""
+"Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
+"{expected_status}.Dabartinė būsena: {current_status}."
+msgstr ""
+"The action can only be executed when the agreement has the status "
+"{expected_status}. Current status: {current_status}"
+
+msgid "PDF failas sutarčiai nėra sukurtas."
+msgstr "PDF file for the agreement is not created."
+
+msgid "Rasti keli PDF failai. Susisiekite su administratoriumi."
+msgstr ""
+"Multiple PDF files were found related to the agreement. Please contact the "
+"administrator."
+
+msgid "Pasiūlymas sėkmingai pateiktas duomenų teikėjui."
+msgstr "The proposal has been successfully submitted to the data provider."
+
+msgid "Pasiūlymas sėkmingai patvirtintas."
+msgstr "Proposal was successfully confirmed."
+
+msgid "Sutarties dokumentas sukurtas sėkmingai."
+msgstr "Agreement document created successfully"
+
+msgid "Įkelti pasirašytą sutartį"
+msgstr "Upload signed document"
+
+msgid "Sutarties dokumentas įkeltas sėkmingai."
+msgstr "Agreement document uploaded successfully"
+
+msgid "Šią sutartį šiuo metu turi pasirašyti duomenų gavėjo atstovas."
+msgstr "Agreement document needs to be signed by data recipient first."
+
+msgid "Šią sutartį šiuo metu turi pasirašyti duomenų teikėjo atstovas."
+msgstr "Agreement document needs to be signed by data provider."
 
 msgid "Failas turi būti Markdown formato (.md)."
 msgstr "File must be in Markdown format (.md)."
@@ -3754,9 +3893,6 @@ msgstr "Specifies the organization to which the template is assigned."
 msgid "Duomenų teikėjo atstovas"
 msgstr "Data provider representative"
 
-msgid "Duomenis gaunanti organizacija"
-msgstr "Data receiver organization"
-
 msgid "Duomenų gavėjo atstovas"
 msgstr "Data receiver representative"
 
@@ -3766,9 +3902,6 @@ msgstr "Agreement template"
 msgid "Agento sinchronizacija įjungta"
 msgstr "Agent synchronization is enabled"
 
-msgid "Paskutinės sinchronizacijos data"
-msgstr "Date of last synchronization"
-
 msgid "Sutarties iniciatorius"
 msgstr "Creator of an agreement"
 
@@ -3777,9 +3910,6 @@ msgstr "Legal basis for data provision (obligation)"
 
 msgid "Mokėjimo sąlygos"
 msgstr "Payment terms"
-
-msgid "Sutartis"
-msgstr "Agreement"
 
 #, python-brace-format
 msgid "Sutartis: {organization}"
@@ -3880,53 +4010,11 @@ msgstr "Invalid ADOC file: {error}"
 msgid "Generuoti sutartis"
 msgstr "Generate agreements"
 
-msgid "Grįžti į sutartis"
-msgstr "Go back to agreements"
-
-msgid "Laukiama gavėjo veiksmų"
-msgstr "Awaiting for the recipient's actions"
-
-msgid "Peržiūrėti pateiktą pasiūlymą"
-msgstr "Review proposal"
-
 msgid "Laukiama teikėjo patvirtinimo"
 msgstr "Waiting for confirmation from the provider"
 
-msgid "Laukiama kol gavėjas įkels pasirašytą dokumentą"
-msgstr "Awaiting for signed document upload by data recipient (assignee)"
-
 msgid "Laukiama kol teikėjas įkels pasirašytą dokumentą"
 msgstr "Awaiting for signed document upload by data provider (assigner)"
-
-msgid "Sutarties identifikatorius"
-msgstr "Agreement id"
-
-msgid "Sukūrimo data"
-msgstr "Creation date"
-
-msgid "Nėra sutarčių dokumentų."
-msgstr "No agreement documents."
-
-msgid "Nėra sutarčių."
-msgstr "No agreements."
-
-msgid "Sutarties derinimo informacija"
-msgstr "Agreement negotation information"
-
-msgid "Nėra susietų duomenų išteklių."
-msgstr "No related datasets found."
-
-msgid "Duomenų gavimo tikslas"
-msgstr "Purpose of data acquisition"
-
-msgid "Nėra pasirinktas duomenų gavėjo atstovas."
-msgstr "Data receiver representative is not selected."
-
-msgid "Nėra pasirinktas duomenų teikėjo atstovas."
-msgstr "Data provider representative is not selected."
-
-msgid "Šablono failas nepridėtas."
-msgstr "Template file is not added."
 
 msgid ""
 "Panaudojimo atvejis registruotas fizinio asmens vardu negali turėti sutarčių."
@@ -3944,43 +4032,6 @@ msgstr "Agreements generated successfully"
 
 msgid "Sutarčių generavime kilo klaidų"
 msgstr "Errors occurred while generating agreements"
-
-#, python-brace-format
-msgid ""
-"Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
-"{expected_status}.Dabartinė būsena: {current_status}."
-msgstr ""
-"The action can only be executed when the agreement has the status "
-"{expected_status}. Current status: {current_status}"
-
-msgid "Pasiūlymas sėkmingai pateiktas duomenų teikėjui."
-msgstr "The proposal has been successfully submitted to the data provider."
-
-msgid "Pasiūlymas sėkmingai patvirtintas."
-msgstr "Proposal was successfully confirmed."
-
-msgid "Sutarties dokumentas sukurtas"
-msgstr "Agreement document is created"
-
-msgid "PDF failas sutarčiai nėra sukurtas."
-msgstr "PDF file for the agreement is not created."
-
-
-msgid ""
-"Rasti keli PDF failai susieti su sutartimi. Susisiekite su administratoriumi."
-msgstr "Multiple PDF files were found related to the agreement. Please contact the administrator."
-
-msgid "Įkelti pasirašytą sutartį"
-msgstr "Upload signed document"
-
-msgid "Šią sutartį šiuo metu turi pasirašyti duomenų gavėjo atstovas"
-msgstr "Agreement document needs to be signed by data recipient first."
-
-msgid "Sutarties dokumentas įkeltas sėkmingai"
-msgstr "Agreement document uploaded successfully"
-
-msgid "Šią sutartį šiuo metu turi pasirašyti duomenų teikėjo atstovas."
-msgstr "Agreement document needs to be signed by data provider."
 
 msgid "Rodoma tituliniame puslapyje"
 msgstr "Shown in home page"
@@ -4830,9 +4881,6 @@ msgstr "Edit parameter"
 msgid "Vyr. koordinatorius"
 msgstr "Senior coordinator"
 
-msgid "Organizacijos koordinatorius"
-msgstr "Organization coordinator"
-
 msgid "Organizacijos tvarkytojas"
 msgstr "Data editor"
 
@@ -4896,6 +4944,9 @@ msgstr "All tasks"
 msgid "Užduoties uždarymas"
 msgstr "Close task"
 
+msgid "Užduoties priskyrimas"
+msgstr "Assign task"
+
 msgid "VIISP API Klaida"
 msgstr "VIISP API error"
 
@@ -4958,11 +5009,32 @@ msgstr "Answer to"
 msgid "Komentaras pašalintas"
 msgstr "Comment deleted"
 
+msgid "ištrinta"
+msgstr "deleted"
+
+msgid "redaguotas"
+msgstr "edited"
+
 msgid "(neviešinamas komentaras)"
 msgstr "(private comment)"
 
 msgid "Atsakyti"
 msgstr "Answer"
+
+msgid "Atsakyti į komentarą"
+msgstr "Submit comment"
+
+msgid "Redaguoti komentarą"
+msgstr "Edit comment"
+
+msgid "Ištrinti komentarą"
+msgstr "Delete comment"
+
+msgid "Ištrinti komentarą?"
+msgstr "Delete comment?"
+
+msgid "Šis veiksmas negrąžinamas."
+msgstr "This action is irreversible."
 
 msgid "Komentarai"
 msgstr "Comments"
@@ -5083,6 +5155,36 @@ msgstr "Register request to open data"
 
 msgid "Statistika"
 msgstr "Statistics"
+
+msgid "Grįžti į sutartis"
+msgstr "Go back to agreements"
+
+msgid "Sutarties identifikatorius"
+msgstr "Agreement id"
+
+msgid "Nėra sutarčių dokumentų."
+msgstr "No agreement documents."
+
+msgid "Nėra sutarčių."
+msgstr "No agreements."
+
+msgid "Sutarties derinimo informacija"
+msgstr "Agreement negotation information"
+
+msgid "Nėra susietų duomenų išteklių."
+msgstr "No related datasets found."
+
+msgid "Duomenų gavimo tikslas"
+msgstr "Purpose of data acquisition"
+
+msgid "Nėra pasirinktas duomenų gavėjo atstovas."
+msgstr "Data receiver representative is not selected."
+
+msgid "Nėra pasirinktas duomenų teikėjo atstovas."
+msgstr "Data provider representative is not selected."
+
+msgid "Šablono failas nepridėtas."
+msgstr "Template file is not added."
 
 msgid "Pradinis"
 msgstr "First"
@@ -5698,7 +5800,8 @@ msgid ""
 "Nurodomas įmonės kodas organizacijos, kurios vardu vartotojas yra "
 "prisijungęs per VIISP."
 msgstr ""
-"The company code of the organization the user is logged in on behalf of via VIISP."
+"The company code of the organization the user is logged in on behalf of via "
+"VIISP."
 
 msgid "Visi naudotojai"
 msgstr "All users"
@@ -5950,7 +6053,8 @@ msgid ""
 "Elektroninis paštas ir/arba slaptažodis yra neteisingas. Atkreipkite dėmesį, "
 "kad abu laukai yra jautrūs raidžių dydžiui (mažosios ir didžiosios raidės)."
 msgstr ""
-"The email and/or the password is incorrect. Note that both fields are case-sensitive."
+"The email and/or the password is incorrect. Note that both fields are case-"
+"sensitive."
 
 msgid "key_content"
 msgstr "key_content"
@@ -6000,9 +6104,3 @@ msgid ""
 "Prisijunkite su šiuo elektroniniu paštu ir bandykite viisp autentifikaciją "
 "iš naujo"
 msgstr "Log in with this e-mail address and try viisp authentication again"
-
-msgid "Poreikio pavadinimas"
-msgstr "Request title"
-
-msgid "Įrašykite poreikio pavadinimą."
-msgstr "Please input request title."

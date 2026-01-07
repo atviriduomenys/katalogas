@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from vitrina.requests.models import Request, RequestAssignment
+from vitrina.requests.models import Request, RequestAssignment, RequestEscalation
 from reversion.admin import VersionAdmin
 
 
@@ -12,5 +12,10 @@ class RequestAssignmentAdmin(VersionAdmin):
     list_filter = ("organization",)
 
 
+class RequestEscalationAdmin(VersionAdmin):
+    list_filter = ("request",)
+
+
 admin.site.register(Request, RequestAdmin)
 admin.site.register(RequestAssignment, RequestAssignmentAdmin)
+admin.site.register(RequestEscalation, RequestEscalationAdmin)

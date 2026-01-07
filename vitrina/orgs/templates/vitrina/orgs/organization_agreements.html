@@ -1,0 +1,61 @@
+{% extends "vitrina/agreements/base_agreement_list.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block agreement_tabs %}
+    {% include "vitrina/orgs/tabs.html" %}
+{% endblock %}
+
+{% block agreement_table_head %}
+    <tr>
+        <th>{% translate "Sukūrimo data" %}</th>
+        <th>{% translate "Duomenis gaunanti organizacija" %}</th>
+        <th>{% translate "Panaudojimo atvejis" %}</th>
+        <th>{% translate "Būsena" %}</th>
+        <th>{% translate "Paskutinės sinchronizacijos data" %}</th>
+        <th>{% translate "Veiksmai" %}</th>
+    </tr>
+{% endblock %}
+
+{% block agreement_table_row %}
+    <tr>
+        <td>{{ agreement.created_at|date:"Y-m-d H:i" }}</td>
+        <td>{{ agreement.assignee|truncatechars:50 }}</td>
+
+        <td>
+            <a href="{% url 'project-detail' agreement.project.pk %}">
+                {{ agreement.project|truncatechars:30 }}
+            </a>
+        </td>
+
+        <td>
+            {{ agreement.get_status_display }}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{{ agreement_status_descriptions|get_item:agreement.status }}">
+                <i class="fas fa-info-circle
+                    {% if agreement.status in 'SUBMITTED,APPROVED,INITIATED' %}
+                        has-text-warning
+                    {% elif agreement.status in 'ACTIVE,SIGNED' %}
+                        has-text-success
+                    {% else %}
+                        has-text-black
+                    {% endif %}
+                "></i>
+            </span>
+        </td>
+
+        <td>
+            {% if agent.last_sync_data %}
+                {{ agent.last_sync_data|date:"Y-m-d H:i" }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+
+        <td>
+            <a href="{% url 'organization-agreement-detail' agreement.assigner.pk agreement.pk %}">
+                {% translate "Peržiūrėti" %}
+            </a>
+        </td>
+    </tr>
+{% endblock %}

@@ -1,4 +1,3 @@
-from django.apps import apps
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -134,6 +133,10 @@ class Organization(MP_Node):
                     tags.append(tag)
         return tags
 
+    @property
+    def whitelisted_names(self) -> list[str]:
+        return [whitelisted_code.code_name for whitelisted_code in self.whitelisted_code_names.all()]
+
 
 class PublisherOrganization(Organization):
     class Meta:
@@ -166,7 +169,7 @@ class Representative(models.Model):
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey("content_type", "object_id")
     can_write = models.BooleanField(default=False, verbose_name=_("Leidžiama keisti duomenis"))
-    can_make_agreements = models.BooleanField(default=False, blank=True, null=True)
+    can_make_agreements = models.BooleanField(default=False)
     information_system_representative = models.BooleanField(
         default=False, verbose_name=_("Informacinės sistemos tvarkytojas")
     )
@@ -191,14 +194,6 @@ class Representative(models.Model):
             if organization in self.content_object.get_descendants():
                 return True
         return False
-
-    def save(self, *args, **kwargs):
-        super().save(*args, **kwargs)
-
-        # save related datasets to update search index
-        Dataset = apps.get_model("vitrina_datasets", "Dataset")
-        if isinstance(self.content_object, Dataset):
-            self.content_object.save()
 
 
 class PublishedReport(models.Model):
@@ -302,3 +297,26 @@ class Template(models.Model):
 
     def __str__(self):
         return self.document.name
+
+
+class WhitelistedCodeName(models.Model):
+    organization = models.ForeignKey(
+        Organization,
+        on_delete=models.CASCADE,
+        related_name="whitelisted_code_names",
+        verbose_name=_("Organizacija"),
+    )
+    code_name = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name=_("Kodinis pavadinimas"),
+        help_text=_("Unikalus kodinis pavadinimas, kurį galima naudoti kuriant duomenų išteklius."),
+    )
+
+    class Meta:
+        verbose_name = _("Leistinas kodinis pavadinimas")
+        verbose_name_plural = _("Leistini kodiniai pavadinimai")
+        ordering = ["code_name"]
+
+    def __str__(self):
+        return self.code_name

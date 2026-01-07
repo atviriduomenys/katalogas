@@ -1,61 +1,55 @@
-{% extends "base.html" %}
+{% extends "vitrina/agreements/base_agreement_list.html" %}
 {% load i18n %}
 {% load util_tags %}
 
-{% block current_title %}
-    {% translate "Sutartys" %}
+{% block agreement_tabs %}
+    {% include 'vitrina/projects/tabs.html' %}
 {% endblock %}
 
-{% block content %}
-
-    {% include 'vitrina/projects/tabs.html' %}
+{% block agreement_actions %}
     {% if can_create_agreements %}
-    <div class="buttons is-right">
-        <a class="button is-primary m-t-xs m-b-lg" href="{% url 'agreement-create' project.pk %}">{% translate "Generuoti sutartis" %}</a>
-    </div>
+        <div class="buttons is-right">
+            <a class="button is-primary m-t-xs m-b-lg"
+               href="{% url 'project-agreement-create' project.pk %}">
+                {% translate "Generuoti sutartis" %}
+            </a>
+        </div>
     {% endif %}
-    {% if agreements %}
-        <table class="table is-fullwidth">
-            <thead>
-                <tr>
-                    <th>{% translate "Duomenis teikianti organizacija" %}</th>
-                    <th>{% translate "Būsena" %}</th>
-                    <th>{% translate "Paskutinės sinchronizacijos data" %}</th>
-                    <th colspan="1">{% translate "Veiksmai" %}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for agreement in agreements %}
-                    <tr>
-                        <td>
-                            {{ agreement.assigner }}
-                        </td>
-                        <td>
-                            {{ agreement.get_status_display }}
-                            <span class="icon info-icon has-tooltip-multiline is-middle"
-                                data-tooltip="{{ agreement_status_descriptions|get_item:agreement.status }}">
-                                <i class="fas fa-info-circle"></i>
-                            </span>
-                        </td>
-                        <td>
-                            {% if agent.last_sync_data %}
-                                {{ agent.last_sync_data|date:"Y-m-d H:i" }}
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="{% url 'agreement-detail' project.pk agreement.pk %}">
-                                {% translate "Peržiūrėti" %}
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% include "vitrina/common/pagination.html" %}
-    {% else %}
-        <p>{% translate "Nėra sutarčių." %}</p>
-    {% endif %}
+{% endblock %}
 
+{% block agreement_table_head %}
+    <tr>
+        <th>{% translate "Duomenis teikianti organizacija" %}</th>
+        <th>{% translate "Būsena" %}</th>
+        <th>{% translate "Paskutinės sinchronizacijos data" %}</th>
+        <th>{% translate "Veiksmai" %}</th>
+    </tr>
+{% endblock %}
+
+{% block agreement_table_row %}
+    <tr>
+        <td>{{ agreement.assigner }}</td>
+
+        <td>
+            {{ agreement.get_status_display }}
+            <span class="icon info-icon has-tooltip-multiline is-middle"
+                  data-tooltip="{{ agreement_status_descriptions|get_item:agreement.status }}">
+                <i class="fas fa-info-circle"></i>
+            </span>
+        </td>
+
+        <td>
+            {% if agent.last_sync_data %}
+                {{ agent.last_sync_data|date:"Y-m-d H:i" }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+
+        <td>
+            <a href="{% url 'project-agreement-detail' project.pk agreement.pk %}">
+                {% translate "Peržiūrėti" %}
+            </a>
+        </td>
+    </tr>
 {% endblock %}

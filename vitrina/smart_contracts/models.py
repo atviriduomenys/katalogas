@@ -18,6 +18,7 @@ from vitrina.smart_contracts.utils import (
     format_lithuanian_datetime,
     generate_checksum,
 )
+from vitrina.storages import internal_media_storage
 from vitrina.users.models import User
 
 
@@ -280,6 +281,7 @@ class AgreementFile(UUIDBaseModel):
     )
     file_name = models.CharField(max_length=255)
     file = models.FileField(
+        storage=internal_media_storage,
         upload_to="data/files/agreements",
         verbose_name=_("Sutarties dokumentas"),
         validators=[

@@ -2,6 +2,7 @@ import json
 import logging
 import pathlib
 from datetime import datetime
+from functools import cached_property
 from random import randrange
 
 import reversion
@@ -807,6 +808,10 @@ class Dataset(Resource):
             return sorted(set(self.formats + additional_formats), key=lambda x: x.title)
         return sorted(set(self.formats), key=lambda x: x.title)
 
+    @cached_property
+    def dataset_content_type(self):
+        return ContentType.objects.get_for_model(Dataset)
+
     def get_acl_parents(self):
         parents = [self]
         if self.organization:
@@ -840,6 +845,39 @@ class Dataset(Resource):
             .values_list("user_id", flat=True)
             .distinct()
         )
+
+    def get_resource_managers_queryset_specific_role(
+        self, include_information_system: bool = False, include_open_data: bool = False
+    ) -> QuerySet["Dataset"]:
+        datasets_ids = {self.id}
+        organization_ids = {self.organization_id}
+
+        for parent_dataset in self.get_ancestors().only("pk", "organization_id"):
+            datasets_ids.add(parent_dataset.pk)
+            organization_ids.add(parent_dataset.organization_id)
+
+        base_queryset = (
+            Q(
+                content_type=self.dataset_content_type,
+                object_id__in=datasets_ids,
+            )
+            | Q(
+                content_type=ContentType.objects.get_for_model(Organization),
+                object_id__in=organization_ids,
+            )
+            | Q(organization_id__in=organization_ids)
+        )
+        filters = {
+            "user__isnull": False,
+        }
+
+        if not include_information_system:
+            filters["information_system_representative"] = False
+
+        if not include_open_data:
+            filters["open_data_representative"] = False
+
+        return Representative.objects.filter(base_queryset, **filters).values_list("user_id", flat=True).distinct()
 
     def get_organization_special_representatives_queryset(self) -> QuerySet[int]:
         """
@@ -1014,7 +1052,7 @@ class Dataset(Resource):
             if metadata_model == "prefix":
                 label = mark_safe(
                     f"Prefix ref: "
-                    f"<span class='tag is-success is-light is-medium prop_metadata'>{metadata_instance.name}</span>"
+                    f"<span class='tag is-success is-light is-medium model_metadata'>{metadata_instance.name}</span>"
                 )
 
                 meta_objects.append((metadata_instance.pk, label))
@@ -1032,7 +1070,7 @@ class Dataset(Resource):
                             if metadata_instance.ref:
                                 dataset_param_item_metadata_ref = metadata_instance.ref
                             label = mark_safe(
-                                f"Param ref:  <span class='tag is-success is-light is-medium prop_metadata'>{dataset_param_item_metadata_ref}</span>"
+                                f"Param ref:  <span class='tag is-success is-light is-medium model_metadata'>{dataset_param_item_metadata_ref}</span>"
                                 f" prepare: <span class='tag is-success is-light is-medium'>{metadata_instance.prepare}</span>"
                             )
                             meta_objects.append((metadata_instance.pk, label))
@@ -1048,7 +1086,7 @@ class Dataset(Resource):
                             if metadata_instance.ref:
                                 dataset_enum_item_metadata_ref = metadata_instance.ref
                             label = mark_safe(
-                                f"Enum ref:  <span class='tag is-success is-light is-medium prop_metadata'>{dataset_enum_item_metadata_ref}</span> "
+                                f"Enum ref:  <span class='tag is-success is-light is-medium model_metadata'>{dataset_enum_item_metadata_ref}</span> "
                                 f" prepare: <span class='tag is-success is-light is-medium'>{metadata_instance.prepare}</span>"
                             )
                             meta_objects.append((metadata_instance.pk, label))
@@ -1147,7 +1185,7 @@ class Dataset(Resource):
                             f"Param ref:  <span class='tag is-success is-light is-medium prop_metadata'>{model_param_item_metadata_ref}</span>"
                             f" prepare: <span class='tag is-success is-light is-medium'>{metadata.prepare}</span>"
                         )
-                        meta_objects.append((metadata_instance.pk, label))
+                        meta_objects.append((metadata.pk, label))
 
             for prop in model.model_properties.all():
                 metadata = prop.metadata.first()

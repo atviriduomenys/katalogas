@@ -3,7 +3,7 @@ from django.utils import timezone
 from factory.django import DjangoModelFactory
 from faker import Faker
 
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization, Representative, WhitelistedCodeName
 from vitrina.users.factories import UserFactory
 
 
@@ -22,7 +22,7 @@ class OrganizationFactory(DjangoModelFactory):
 
     title = factory.Faker("company")
     kind = factory.Faker("word")
-    name = factory.Sequence(lambda n: f"{Faker().last_name()}_{n:04d}".lower())
+    name = factory.Sequence(lambda n: f"datasets/gov/test/{n:04d}/")
     company_code = factory.Faker("bothify", text="?????????", letters="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789")
     email = factory.Faker("email")
     phone = Faker().phone_number()
@@ -71,3 +71,11 @@ class ViispRepresentativeFactory(RepresentativeFactory):
         viisp_company_code=factory.SelfAttribute("..content_object.company_code"),
     )
     content_object = factory.SubFactory(OrganizationFactory)
+
+
+class WhitelistedCodeNameFactory(DjangoModelFactory):
+    class Meta:
+        model = WhitelistedCodeName
+
+    organization = factory.SubFactory(OrganizationFactory)
+    code_name = factory.Sequence(lambda n: f"datasets/gov/test/{n:04d}/")

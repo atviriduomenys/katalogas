@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% load i18n %}
+{% load util_tags %}
+
+{% block current_title %}
+    {{ page_title }}
+{% endblock %}
+
+{% block content %}
+    {% block parent_tabs %}{% endblock %}
+
+    <p>
+        <a href="{% block back_link_url %}{% endblock %}">
+            ← {% translate "Grįžti į sutartis" %}
+        </a>
+    </p>
+    <br>
+
+    {% block agreement_buttons %}{% endblock %}
+
+    <div class="box is-max-desktop has-background-light">
+        <div class="is-flex is-align-items-center mb-4">
+            <div>
+                <p class="is-size-7 has-text-grey">
+                    {% translate "Sukurta" %}: <strong>{{ agreement.created_at|date:"Y-m-d H:i" }}</strong> |
+                    {% translate "Atnaujinta" %}: <strong>{{ agreement.updated_at|date:"Y-m-d H:i" }}</strong>
+                </p>
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Sutarties identifikatorius" %}:</div>
+            <div class="column is-7">{{ agreement.pk }}</div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Panaudojimo atvejis" %}:</div>
+            <div class="column is-7">
+                <a href="{% url 'project-detail' project.pk %}" class="has-text-link" target="_blank">
+                    {{ project }} <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
+                </a>
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Duomenis teikianti organizacija" %}:</div>
+            <div class="column is-7">
+                <a href="{% url 'organization-detail' agreement.assigner_id %}" class="has-text-link" target="_blank">
+                    {{ agreement.assigner }} <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
+                </a>
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Duomenų teikėjo atstovas" %}:</div>
+            <div class="column is-7">
+                {% if agreement.assigner_representative %}
+                    {{ agreement.assigner_representative }}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Duomenis gaunanti organizacija" %}:</div>
+            <div class="column is-7">
+                <a href="{% url 'organization-detail' agreement.assignee.id %}" class="has-text-link" target="_blank">
+                    {{ agreement.assignee }} <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
+                </a>
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Duomenų gavėjo atstovas" %}:</div>
+            <div class="column is-7">
+                {% if agreement.assignee_representative %}
+                    {{ agreement.assignee_representative }}
+                {% else %}
+                    -
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Būsena" %}:</div>
+            <div class="column is-7">
+                {{ agreement.get_status_display }}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                    data-tooltip="{{ agreement_status_descriptions|get_item:agreement.status }}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Sutarties leidimai" %}:</div>
+            <div class="column is-7">
+                {% for scope in agreement.scopes.all %}
+                    {{ scope.scope }}<br>
+                {% empty %}
+                    <span class="has-text-grey">—</span>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos data" %}:</div>
+            <div class="column is-7">
+                {% if agreement.last_sync_date %}
+                    {{ agreement.last_sync_date|date:"Y-m-d H:i" }}
+                {% else %}
+                    <span class="has-text-grey">—</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    <h6 class="custom-title is-size-6-mobile">{% translate "Sutarties dokumentai" %}</h6>
+    {% if agreement_files %}
+        <table class="table is-fullwidth">
+            <thead>
+                <tr>
+                    <th>{% translate "Sukūrimo data" %}</th>
+                    <th>{% translate "Sutarties dokumentas" %}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for file in agreement_files %}
+                    <tr>
+                        <td>{{ file.created_at|date:"Y-m-d H:i" }}</td>
+                        <td><a href="{% url "agreement-file-download" agreement.pk file.pk %}" target="_blank">{{ file.file_name }}</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        {% translate "Nėra sutarčių dokumentų." %}
+    {% endif %}
+{% endblock %}

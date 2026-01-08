@@ -44,6 +44,10 @@ RUN pip install gunicorn==20.1.0 poetry --no-cache-dir
 RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --only main
 
+# Until https://github.com/atviriduomenys/spinta/pull/1663 is released
+RUN sed -i 's/^setup_logging()$/# setup_logging()/' \
+    $(python -c "import spinta; print(spinta.__file__)")
+
 WORKDIR /app/webpack
 RUN npm install
 

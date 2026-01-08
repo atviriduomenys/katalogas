@@ -285,7 +285,9 @@ class ProjectDatasetsView(ProjectViewBaseMixin, PermissionRequiredMixin, ListVie
         return can_view_project(self.request.user, self.project)
 
     def get_queryset(self):
-        return Dataset.public.filter(project=self.project).select_related("organization")
+        return (
+            Dataset.restricted.for_user(self.request.user).filter(project=self.project).select_related("organization")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

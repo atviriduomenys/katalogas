@@ -12,6 +12,15 @@ Security: Update katalogas to automatically record all data changes made through
 - Update celery default task to wrap each task execution with revision context
 - Automatically add custom JSON context to revision comment to be able to calculate origin of a change that was made.
 
+https://github.com/atviriduomenys/katalogas/issues/2168
+
+Refactored representative role model to split coordinator and manager roles into:
+
+- OPEN_DATA_COORDINATOR, OPEN_DATA_MANAGER, RESOURCE_COORDINATOR, RESOURCE_MANAGER
+- Enforced validation rules preventing Open Data representatives from creating non_public and confidential resources
+- Creating and updating Information systems
+- Ensured backward compatibility by updating all role checks and queryset filters referencing legacy roles
+- Added logic to not let OPEN_DATA_COORDINATORS add/update/delete RESOURCE_MANAGERS and RESOURCE_COORDINATORS
 
 v 1.11.3 (2026-01-05)
 ==================

@@ -1,5 +1,6 @@
 {% extends "base.html" %}
 {% load i18n %}
+{% load representative_tags %}
 
 {% block pageTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Narių sąrašas" %}{% endblock %}
@@ -79,18 +80,24 @@
                             {% if m.organization and not can_delete_publishers %}
                             <a></a>
                             {% else %}
-                            <a id="update-member-{{ m.pk }}-btn" class="button is-primary is-small"
-                               href="{% url 'dataset-representative-update' dataset.pk m.pk %}">
-                                {% translate "Redaguoti" %}
-                            </a>
+                                {% can_update_representative m request.user as can_update %}
+                                {% if can_update %}
+                                    <a id="update-member-{{ m.pk }}-btn" class="button is-primary is-small"
+                                       href="{% url 'dataset-representative-update' dataset.pk m.pk %}">
+                                        {% translate "Redaguoti" %}
+                                    </a>
+                                {% endif %}
                             {% endif %}
                             {% if m.organization and not can_delete_publishers %}
                             <a></a>
                             {% else %}
-                            <a id="delete-member-{{ m.pk }}-btn"  class="button is-link is-small"
-                               href="{% url 'dataset-representative-delete' dataset.pk m.pk %}">
-                                {% translate "Pašalinti" %}
-                            </a>
+                                {% can_update_representative m request.user as can_update %}
+                                {% if can_update %}
+                                    <a id="delete-member-{{ m.pk }}-btn"  class="button is-link is-small"
+                                       href="{% url 'dataset-representative-delete' dataset.pk m.pk %}">
+                                        {% translate "Pašalinti" %}
+                                    </a>
+                                {% endif %}
                             {% endif %}
                         </div>
                     </td>

@@ -307,9 +307,7 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
         )
 
     if open_data_dataset_ids:
-        combined_filter |= SQ(
-            id__in=open_data_dataset_ids, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
-        )
+        combined_filter |= SQ(id__in=open_data_dataset_ids, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
 
     if user.is_gov_organization_resource_manager:
         combined_filter |= SQ(

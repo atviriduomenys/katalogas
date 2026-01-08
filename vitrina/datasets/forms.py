@@ -573,6 +573,10 @@ class InformationSystemResourceForm(CatalogResourceForm):
             "conditions",
             "rights_relation",
         )
+        widgets = {
+            "information_system_publisher": Select2Widget,
+            "information_system_creator": Select2Widget,
+        }
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
         super().__init__(request, organization, *args, **kwargs)
@@ -609,10 +613,13 @@ class InformationSystemResourceForm(CatalogResourceForm):
         self.fields["landing_page"].help_text = _(
             "Ši savybė nurodo tinklalapį, kuris yra pagrindinis katalogo puslapis. Atitinka foaf:homepage."
         )
+        organization_qs = Organization.objects.all().order_by("title")
+        self.fields["information_system_publisher"].queryset = organization_qs
         self.fields["information_system_publisher"].required = True
         self.fields["information_system_publisher"].help_text = _(
             "Ši savybė nurodo subjektą (organizaciją), atsakingą už IS prieinamumą. Atitinka dct:publisher"
         )
+        self.fields["information_system_creator"].queryset = organization_qs
         self.fields["information_system_creator"].required = True
         self.fields["information_system_creator"].help_text = _(
             "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"

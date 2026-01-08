@@ -608,6 +608,14 @@ def has_perm(
             if user_org and Representative.objects.filter(where, organization=user_org).exists():
                 if isinstance(obj, Representative):
                     return obj.can_be_updated_by(user)
+
+                user_viisp_org = getattr(user, "viisp_organization", None)
+
+                if model == Organization and action == Action.UPDATE:
+                    return user_viisp_org == obj
+
+                if model == Representative and action == Action.UPDATE and parent and isinstance(parent, Organization):
+                    return user_viisp_org == parent
                 return True
 
         return False

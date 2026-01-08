@@ -54,7 +54,6 @@ class TestRepresentativeCreateForm:
                 "phone": "",
                 "has_api_access": False,
                 "regenerate_api_key": False,
-                "can_write": False,
                 "can_make_agreements": None,  # Boolean field sent as None to form
             },
             user=user,
@@ -78,7 +77,6 @@ class TestRepresentativeCreateForm:
                 "phone": "",
                 "has_api_access": False,
                 "regenerate_api_key": False,
-                "can_write": False,
                 "can_make_agreements": None,  # User tries to force it
             },
             user=user,
@@ -97,8 +95,9 @@ class TestRepresentativeCreateForm:
             (Representative.OPEN_DATA_COORDINATOR, True),
         ],
     )
-    def test_representative_create_can_make_agreements_field_access_for_coordinators(self, app: DjangoTestApp,
-                                                                                     role: str, expected: bool):
+    def test_representative_create_can_make_agreements_field_access_for_coordinators(
+        self, app: DjangoTestApp, role: str, expected: bool
+    ):
         organization = OrganizationFactory(kind=Organization.GOV)
         user = UserFactory(
             is_viisp_login=True,
@@ -143,7 +142,6 @@ class TestRepresentativeUpdateForm:
                 "phone": "",
                 "has_api_access": False,
                 "regenerate_api_key": False,
-                "can_write": False,
                 "can_make_agreements": None,  # Boolean field sent as None to form
             },
             user=user,
@@ -177,7 +175,6 @@ class TestRepresentativeUpdateForm:
                 "phone": "",
                 "has_api_access": False,
                 "regenerate_api_key": False,
-                "can_write": False,
                 "can_make_agreements": None,  # Boolean field sent as None to form
             },
             user=user,
@@ -208,7 +205,6 @@ class TestRepresentativeUpdateForm:
                 "phone": "",
                 "has_api_access": False,
                 "regenerate_api_key": False,
-                "can_write": False,
                 "can_make_agreements": None,
             },
             user=user,
@@ -251,8 +247,9 @@ class TestRepresentativeUpdateForm:
             (Representative.OPEN_DATA_COORDINATOR, True),
         ],
     )
-
-    def test_representative_update_can_make_agreements_field_access_for_coordinators(self, app: DjangoTestApp, role: str, expected: bool):
+    def test_representative_update_can_make_agreements_field_access_for_coordinators(
+        self, app: DjangoTestApp, role: str, expected: bool
+    ):
         organization = OrganizationFactory(kind=Organization.GOV)
         user = UserFactory(
             is_viisp_login=True,
@@ -273,4 +270,3 @@ class TestRepresentativeUpdateForm:
         )
 
         assert form.fields["can_make_agreements"].disabled is expected
-

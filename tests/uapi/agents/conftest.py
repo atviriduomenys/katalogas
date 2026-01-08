@@ -17,7 +17,7 @@ from vitrina.users.models import User
 def representative_user(organization: Organization) -> User:
     user = UserFactory(is_staff=True)
     content_type = ContentType.objects.get_for_model(organization)
-    RepresentativeFactory(user=user, content_type=content_type, object_id=organization.pk, role=Role.COORDINATOR)
+    RepresentativeFactory(user=user, content_type=content_type, object_id=organization.pk, role=Role.OPEN_DATA_COORDINATOR)
     return user
 
 

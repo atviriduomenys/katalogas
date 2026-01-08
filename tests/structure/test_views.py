@@ -674,6 +674,7 @@ def test_private_model_with_access(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=structure.dataset.pk,
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(representative.user)
 
@@ -1886,14 +1887,21 @@ def test_model_update(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_create_for_resource(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+)
+def test_param_create_for_resource(app: DjangoTestApp, role: str):
     distribution = DatasetDistributionFactory(is_parameterized=True)
     dataset = distribution.dataset
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(representative.user)
 
@@ -1917,7 +1925,14 @@ def test_param_create_for_resource(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_create_for_model(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_param_create_for_model(app: DjangoTestApp, role: str):
     model = ModelFactory(is_parameterized=True)
     dataset = model.dataset
     MetadataFactory(
@@ -1936,7 +1951,7 @@ def test_param_create_for_model(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(representative.user)
 
@@ -1962,14 +1977,21 @@ def test_param_create_for_model(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_update(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_param_update(app: DjangoTestApp, role: str):
     distribution = DatasetDistributionFactory(is_parameterized=True)
     dataset = distribution.dataset
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role,
     )
     app.set_user(representative.user)
     ct = ContentType.objects.get_for_model(distribution)
@@ -1997,14 +2019,21 @@ def test_param_update(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_delete(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_param_delete(app: DjangoTestApp, role: str):
     distribution = DatasetDistributionFactory(is_parameterized=True)
     dataset = distribution.dataset
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(representative.user)
     ct = ContentType.objects.get_for_model(distribution)
@@ -2851,14 +2880,21 @@ def test_structure_tab_with_non_public_dataset_without_access(app: DjangoTestApp
 
 
 @pytest.mark.django_db
-def test_structure_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_structure_tab_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     user = UserFactory()
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER,
+        role=role,
     )
     app.set_user(user)
     response = app.get(reverse('dataset-structure', args=[dataset.pk]))
@@ -2876,7 +2912,14 @@ def test_version_list_with_non_public_dataset_without_access(app: DjangoTestApp)
 
 
 @pytest.mark.django_db
-def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     user = UserFactory()
@@ -2884,7 +2927,7 @@ def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('version-list', args=[dataset.pk]))
@@ -2902,7 +2945,14 @@ def test_version_detail_with_non_public_dataset_without_access(app: DjangoTestAp
 
 
 @pytest.mark.django_db
-def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     user = UserFactory()
@@ -2910,7 +2960,7 @@ def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('version-detail', args=[dataset.pk, version.pk]))
@@ -2948,7 +2998,14 @@ def test_model_structure_with_non_public_dataset_without_access(app: DjangoTestA
 
 
 @pytest.mark.django_db
-def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     model = ModelFactory(dataset=dataset)
     MetadataFactory(
@@ -2976,7 +3033,7 @@ def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp)
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('model-structure', args=[dataset.pk, model.name]))
@@ -3014,7 +3071,14 @@ def test_property_structure_with_non_public_dataset_without_access(app: DjangoTe
 
 
 @pytest.mark.django_db
-def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     model = ModelFactory(dataset=dataset)
     MetadataFactory(
@@ -3042,7 +3106,7 @@ def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestA
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('property-structure', args=[dataset.pk, model.name, prop.name]))
@@ -3080,7 +3144,14 @@ def test_model_data_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     model = ModelFactory(dataset=dataset)
     MetadataFactory(
@@ -3108,7 +3179,7 @@ def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('model-data', args=[dataset.pk, model.name]))
@@ -3146,7 +3217,14 @@ def test_object_data_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     model = ModelFactory(dataset=dataset)
     MetadataFactory(
@@ -3174,7 +3252,7 @@ def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('object-data', args=[dataset.pk, model.name, "123456789"]))
@@ -3212,7 +3290,14 @@ def test_api_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_api_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     model = ModelFactory(dataset=dataset)
     MetadataFactory(
@@ -3240,7 +3325,7 @@ def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('getall-api', args=[dataset.pk, model.name]))
@@ -3371,7 +3456,7 @@ def test_visibility_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_model_visibility_with_manager_access(app: DjangoTestApp):
+def test_model_visibility_with_resource_manager_access(app: DjangoTestApp):
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
@@ -3403,7 +3488,7 @@ def test_model_visibility_with_manager_access(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=structure.dataset.pk,
-        role=Representative.MANAGER
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(representative.user)
 
@@ -3531,8 +3616,7 @@ def test_model_visibility_with_open_data_representative_access(app: DjangoTestAp
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(structure.dataset.organization),
         object_id=structure.dataset.organization.pk,
-        role=Representative.MANAGER,
-        open_data_representative=True
+        role=Representative.OPEN_DATA_MANAGER,
     )
     app.set_user(representative.user)
 
@@ -3659,8 +3743,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(structure.dataset.organization),
         object_id=structure.dataset.organization.pk,
-        role=Representative.MANAGER,
-        information_system_representative=True
+        role=Representative.RESOURCE_MANAGER,
     )
     app.set_user(representative.user)
 

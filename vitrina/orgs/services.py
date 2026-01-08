@@ -36,8 +36,8 @@ class Action(Enum):
     UPDATE = "update"
     DELETE = "delete"
     REQUEST_UPDATE = "request_update"
-    INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE = "information_system_at_gov_org_update"
-    CREATE_RESOURCE_AT_GOV_ORG = "create_resource_at_gov_org"
+    INFORMATION_SYSTEM_UPDATE = "information_system_update"
+    INFORMATION_SYSTEM_REPRESENTATIVE_CREATE = "information_system_representative_create"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
@@ -49,17 +49,16 @@ class Action(Enum):
 
 
 class Role(Enum):
-    COORDINATOR = Representative.COORDINATOR
-    MANAGER = Representative.MANAGER  # All Managers
-    RESOURCE_MANAGER = Representative.RESOURCE_MANAGER  # Resource Manager
+    RESOURCE_COORDINATOR = Representative.RESOURCE_COORDINATOR
+    RESOURCE_MANAGER = Representative.RESOURCE_MANAGER
+    OPEN_DATA_COORDINATOR = Representative.OPEN_DATA_COORDINATOR
+    OPEN_DATA_MANAGER = Representative.OPEN_DATA_MANAGER
+    GLOBAL_RESOURCE_MANAGER = "global_resource_manager"  # All resource managers
     SUPERVISOR = Representative.SUPERVISOR
     AUTHOR = "author"
     GLOBAL_MANAGER = "global_manager"  # Global Manager (is staff)
     AUTHENTICATED = "all"  # All authenticated users
     VISITOR = "visitor"  # All unauthenticated users
-    INFORMATION_SYSTEM_REPRESENTATIVE = "information_system_representative"
-    OPEN_DATA_REPRESENTATIVE = "open_data_representative"
-    INFORMATION_SYSTEM_MANAGER = "information_system_manager"
 
 
 WRITE_ACTIONS: set[Action] = {
@@ -72,8 +71,8 @@ WRITE_ACTIONS: set[Action] = {
     Action.MANAGE_KEYS,
     Action.MANAGE_PROJECT_KEYS,
     Action.ASSIGN,
-    Action.CREATE_RESOURCE_AT_GOV_ORG,
-    Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE,
+    Action.INFORMATION_SYSTEM_UPDATE,
+    Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
 }
 DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
@@ -88,7 +87,7 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.PLAN,
     Action.REQUEST_UPDATE,
-    Action.CREATE_RESOURCE_AT_GOV_ORG,
+    Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
 }
 
 DATASET_IS_PUBLIC = True
@@ -132,121 +131,97 @@ def inherit_structure_acl(
 _dataset_update_acl: ACL = {
     (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Dataset, not DATASET_IS_PUBLIC, Dataset.CONFIDENTIAL, Action.UPDATE): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
 }
 _dataset_view_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.VIEW) | {
     (Dataset, DATASET_IS_PUBLIC, Dataset.PUBLIC, Action.VIEW): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
-        Role.INFORMATION_SYSTEM_MANAGER,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
+        Role.GLOBAL_RESOURCE_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.RESTRICTED, Action.VIEW): {
-        Role.GLOBAL_MANAGER,
-        Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
-        Role.INFORMATION_SYSTEM_MANAGER,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
+        Role.GLOBAL_RESOURCE_MANAGER,
     },
     (Dataset, DATASET_IS_PUBLIC, Dataset.NON_PUBLIC, Action.VIEW): {
-        Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.INFORMATION_SYSTEM_MANAGER,
+        Role.GLOBAL_MANAGER,
+        Role.GLOBAL_RESOURCE_MANAGER,
     },
 }
 
 _dataset_create_acl: ACL = {
     (Dataset, Action.CREATE): (
-        Role.COORDINATOR,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
-        Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     )
 }
-_dataset_create_resource_at_gov_acl: ACL = inherit_acl(
-    _dataset_create_acl,
-    new_action=Action.CREATE_RESOURCE_AT_GOV_ORG,
-    new_roles={
-        Role.COORDINATOR,
-        Role.RESOURCE_MANAGER,
-        Role.GLOBAL_MANAGER,
-        Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
-    },
-)
 _information_system_update_acl: ACL = inherit_acl(
     _dataset_update_acl,
-    new_action=Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE,
-    new_roles={
-        Role.COORDINATOR,
-        Role.GLOBAL_MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.MANAGER,
-        Role.RESOURCE_MANAGER,
-    },
+    new_action=Action.INFORMATION_SYSTEM_UPDATE,
+    new_roles={Role.RESOURCE_COORDINATOR, Role.GLOBAL_MANAGER, Role.RESOURCE_MANAGER},
 )
+
 _dataset_comment_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.COMMENT)
 _dataset_delete_acl: ACL = inherit_acl(_dataset_update_acl, new_action=Action.DELETE)
 _dataset_history_view_acl: ACL = inherit_acl(_dataset_view_acl, new_action=Action.HISTORY_VIEW)
@@ -283,86 +258,74 @@ _dataset_structure_create_acl: ACL = inherit_acl(_dataset_create_acl, new_model_
 MODEL_VISIBILITY_ACL = {
     (Model, Metadata.UNDEFINED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
+        Role.GLOBAL_RESOURCE_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
-        Role.INFORMATION_SYSTEM_MANAGER,
     },
     (Model, Metadata.VISIBILITY_PUBLIC, Action.VIEW): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
+        Role.GLOBAL_RESOURCE_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
-        Role.INFORMATION_SYSTEM_MANAGER,
     },
     (Model, Metadata.PACKAGE, Action.VIEW): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
+        Role.GLOBAL_RESOURCE_MANAGER,
         Role.AUTHENTICATED,
         Role.VISITOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
-        Role.INFORMATION_SYSTEM_MANAGER,
     },
     (Model, Metadata.PROTECTED, Action.VIEW): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.MANAGER,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.PRIVATE, Action.VIEW): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
     },
     (Model, Metadata.UNDEFINED, Action.STRUCTURE): {
         Role.GLOBAL_MANAGER,
+        Role.RESOURCE_COORDINATOR,
         Role.RESOURCE_MANAGER,
-        Role.COORDINATOR,
-        Role.MANAGER,
-        Role.AUTHENTICATED,
-        Role.VISITOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
-        Role.INFORMATION_SYSTEM_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     },
     (Model, Metadata.VISIBILITY_PUBLIC, Action.STRUCTURE): {
-        Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     },
     (Model, Metadata.PACKAGE, Action.STRUCTURE): {
-        Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
-        Role.OPEN_DATA_REPRESENTATIVE,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
+        Role.OPEN_DATA_COORDINATOR,
+        Role.OPEN_DATA_MANAGER,
     },
     (Model, Metadata.PROTECTED, Action.STRUCTURE): {
-        Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
     },
     (Model, Metadata.PRIVATE, Action.STRUCTURE): {
-        Role.RESOURCE_MANAGER,
         Role.GLOBAL_MANAGER,
-        Role.COORDINATOR,
-        Role.INFORMATION_SYSTEM_REPRESENTATIVE,
+        Role.RESOURCE_COORDINATOR,
+        Role.RESOURCE_MANAGER,
     },
 }
 PROPERTY_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, Property)
@@ -372,7 +335,6 @@ ENUM_VISIBILITY_ACL = inherit_structure_acl(MODEL_VISIBILITY_ACL, StructureEnum)
 acl: ACL = (
     _dataset_view_acl
     | _dataset_create_acl
-    | _dataset_create_resource_at_gov_acl
     | _information_system_update_acl
     | _dataset_update_acl
     | _dataset_comment_acl
@@ -395,26 +357,62 @@ acl: ACL = (
     | _dataset_structure_acl
     | _dataset_structure_create_acl
     | {
-        (Organization, Action.UPDATE): (Role.COORDINATOR,),
-        (Organization, Action.PLAN): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
-        (Organization, Action.HISTORY_VIEW): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
-        (Agent, Action.CREATE): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
-        (Agent, Action.VIEW): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
-        (Agent, Action.UPDATE): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
-        (Agent, Action.DELETE): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
+        (Organization, Action.UPDATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
+        (Organization, Action.PLAN): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
+        (Organization, Action.HISTORY_VIEW): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
+        (Agent, Action.CREATE): (Role.RESOURCE_COORDINATOR,),
+        (Agent, Action.VIEW): (Role.RESOURCE_COORDINATOR,),
+        (Agent, Action.UPDATE): (Role.RESOURCE_COORDINATOR,),
+        (Agent, Action.DELETE): (Role.RESOURCE_COORDINATOR,),
         (Agreement, Action.CREATE): (Role.AUTHOR,),
         (Agreement, Action.VIEW): (Role.AUTHOR,),
-        (Contact, Action.CREATE): (Role.COORDINATOR,),
-        (Contact, Action.UPDATE): (Role.COORDINATOR,),
-        (Contact, Action.DELETE): (Role.COORDINATOR,),
-        (Contact, Action.VIEW): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
+        (Contact, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
+        (Contact, Action.UPDATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
+        (Contact, Action.DELETE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
+        (Contact, Action.VIEW): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
         (Request, Action.CREATE): (Role.AUTHENTICATED,),
         (Request, Action.REQUEST_UPDATE): (Role.AUTHOR,),
         (Request, Action.DELETE): (Role.AUTHOR,),
-        (Request, Action.COMMENT): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
-        (Request, Action.VIEW): (Role.AUTHOR, Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
-        (Request, Action.PLAN): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
-        (Request, Action.ASSIGN): (Role.COORDINATOR, Role.MANAGER, Role.INFORMATION_SYSTEM_REPRESENTATIVE),
+        (Request, Action.COMMENT): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
+        (Request, Action.VIEW): (
+            Role.AUTHOR,
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
+        (Request, Action.PLAN): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
+        (Request, Action.ASSIGN): (
+            Role.RESOURCE_COORDINATOR,
+            Role.RESOURCE_MANAGER,
+            Role.OPEN_DATA_COORDINATOR,
+            Role.OPEN_DATA_MANAGER,
+        ),
         (Project, Action.CREATE): (Role.AUTHENTICATED,),
         (Project, Action.UPDATE): (Role.AUTHOR,),
         (Project, Action.DELETE): (Role.AUTHOR,),
@@ -422,15 +420,19 @@ acl: ACL = (
         (User, Action.UPDATE): (Role.AUTHOR,),
         (User, Action.VIEW): (Role.AUTHOR,),
         (Task, Action.UPDATE): (Role.AUTHENTICATED,),
-        (Organization, Action.MANAGE_KEYS): (Role.COORDINATOR, Role.MANAGER),
+        (Organization, Action.MANAGE_KEYS): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
         (Project, Action.MANAGE_PROJECT_KEYS): (Role.AUTHOR, Role.SUPERVISOR),
-        (RequestAssignment, Action.CREATE): (Role.COORDINATOR,),
-        (RequestAssignment, Action.DELETE): (Role.COORDINATOR,),
-        (ApiExample, Action.CREATE): (Role.COORDINATOR, Role.MANAGER),
-        (Representative, Action.CREATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
-        (Representative, Action.UPDATE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
-        (Representative, Action.DELETE): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
-        (Representative, Action.VIEW): (Role.COORDINATOR, Role.GLOBAL_MANAGER),
+        (RequestAssignment, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
+        (RequestAssignment, Action.DELETE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
+        (ApiExample, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
+        (Representative, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE): (
+            Role.RESOURCE_COORDINATOR,
+            Role.GLOBAL_MANAGER,
+        ),
+        (Representative, Action.UPDATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.DELETE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.VIEW): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR, Role.GLOBAL_MANAGER),
     }
 )
 
@@ -472,20 +474,31 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.VISITOR
     if user.is_staff:
         return Role.GLOBAL_MANAGER
-    if resource.get_resource_managers_queryset().filter(user=user).exists():
-        return Role.COORDINATOR if user.is_coordinator else Role.RESOURCE_MANAGER
     if (
-        resource.get_resource_managers_queryset_specific_role(include_information_system=True)
+        resource.get_managers_queryset(
+            [
+                Representative.RESOURCE_COORDINATOR,
+                Representative.RESOURCE_MANAGER,
+            ]
+        )
         .filter(user=user)
         .exists()
     ):
-        return Role.INFORMATION_SYSTEM_REPRESENTATIVE
-    if resource.get_resource_managers_queryset_specific_role(include_open_data=True).filter(user=user).exists():
-        return Role.OPEN_DATA_REPRESENTATIVE
-    if user.is_gov_organization_manager:
-        return Role.MANAGER
-    if user.is_gov_organization_information_system_manager:
-        return Role.INFORMATION_SYSTEM_MANAGER
+        return Role.RESOURCE_COORDINATOR if user.is_resource_coordinator else Role.RESOURCE_MANAGER
+
+    if (
+        resource.get_managers_queryset(
+            [
+                Representative.OPEN_DATA_COORDINATOR,
+                Representative.OPEN_DATA_MANAGER,
+            ]
+        )
+        .filter(user=user)
+        .exists()
+    ):
+        return Role.OPEN_DATA_COORDINATOR if user.is_open_data_coordinator else Role.OPEN_DATA_MANAGER
+    if user.is_gov_organization_resource_manager:
+        return Role.GLOBAL_RESOURCE_MANAGER
     return Role.AUTHENTICATED
 
 
@@ -507,24 +520,6 @@ def _get_dataset_instance(obj: Model) -> Dataset | None:
 
 
 def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) -> bool:
-    datasets_to_check: set[Dataset] = {
-        dataset,
-        *dataset.get_ancestors(),
-        *(d for d in get_parents(dataset) if isinstance(d, Dataset)),
-    }
-
-    organizations_to_check: set[Organization] = {d.organization for d in datasets_to_check if d.organization}
-
-    representatives: list[Representative] = list(
-        Representative.objects.filter(user_id=user.id).filter(
-            Q(content_type=ContentType.objects.get_for_model(Dataset), object_id__in=[d.pk for d in datasets_to_check])
-            | Q(
-                content_type=ContentType.objects.get_for_model(Organization),
-                object_id__in=[o.pk for o in organizations_to_check],
-            )
-        )
-    )
-    can_write_representative: bool = any(r.can_write for r in representatives)
     for current_dataset in [dataset, *dataset.get_ancestors()]:
         rule: EXISTING_DATASET_ACL_RULE = (
             obj.__class__,
@@ -535,10 +530,7 @@ def _has_dataset_perm(user: User, action: Action, obj: Model, dataset: Dataset) 
         user_role: Role = determine_user_role(user, current_dataset)
         allowed_roles = acl.get(rule)
         has_perm: bool = allowed_roles and user_role in allowed_roles
-        is_confidential_dataset: bool = dataset.access_rights == Dataset.CONFIDENTIAL
         if has_perm and action in WRITE_ACTIONS:
-            if is_confidential_dataset and current_dataset == dataset:
-                return can_write_representative
             return True
 
         if has_perm and current_dataset == dataset:
@@ -609,16 +601,15 @@ def has_perm(
         if where:
             where = functools.reduce(operator.or_, where)
             if Representative.objects.filter(where, user=user).exists():
+                if isinstance(obj, Representative):
+                    return obj.can_be_updated_by(user)
                 return True
 
-            if (
-                user_org
-                and Representative.objects.filter(
-                    where,
-                    organization=user_org,
-                ).exists()
-            ):
+            if user_org and Representative.objects.filter(where, organization=user_org).exists():
+                if isinstance(obj, Representative):
+                    return obj.can_be_updated_by(user)
                 return True
+
         return False
 
 
@@ -627,7 +618,7 @@ def get_coordinators_count(model: Type[Model], object_id: int) -> int:
     return Representative.objects.filter(
         content_type=ct,
         object_id=object_id,
-        role=Representative.COORDINATOR,
+        role__in=Representative.COORDINATOR_ROLES,
     ).count()
 
 

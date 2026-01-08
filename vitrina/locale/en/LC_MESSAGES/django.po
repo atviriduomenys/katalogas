@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-05 15:58+0200\n"
+"POT-Creation-Date: 2026-01-07 13:09+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,9 +26,6 @@ msgstr "Version data"
 
 msgid "Nepavyko nuskaityti versijos duomenų"
 msgstr "Failed to read Version data"
-
-msgid "Modelis"
-msgstr "Model"
 
 msgid "Objekto ID"
 msgstr "Object ID"
@@ -682,12 +679,6 @@ msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
 msgstr ""
 "This property specifies a related resource. Corresponds to dct:relation."
 
-msgid "Vieši"
-msgstr "Public"
-
-msgid "Apriboti"
-msgstr "Restricted"
-
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr "Code name can only include latin characters."
 
@@ -960,6 +951,12 @@ msgstr "Added to organization"
 
 msgid "Pašalinta iš organizacijos"
 msgstr "Removed from organization"
+
+msgid "Vieši"
+msgstr "Public"
+
+msgid "Apriboti"
+msgstr "Restricted"
 
 msgid "Nevieši"
 msgstr "Non Public"
@@ -1983,6 +1980,9 @@ msgstr "Manager count"
 msgid "Modelio laukas"
 msgstr "Model field."
 
+msgid "Modelis"
+msgstr "Model"
+
 msgid "Identifikatoriai"
 msgstr "Identifiers"
 
@@ -2398,6 +2398,9 @@ msgstr ""
 msgid "Narys su šiuo el. pašto adresu jau egzistuoja."
 msgstr "User with this e-mail already exists"
 
+msgid "Jūs neturite teisės priskirti šios rolės."
+msgstr "You don't have permission to assign this representative role."
+
 msgid "Prašymas"
 msgstr "Request"
 
@@ -2577,17 +2580,17 @@ msgstr "Alternative titles"
 msgid "Duomenų atvėrimo paslaugų teikėjai"
 msgstr "Data open service providers"
 
-msgid "Koordinatorius"
-msgstr "Coordinator"
+msgid "Duomenų išteklių koordinatorius"
+msgstr "Resource coordinator"
 
-msgid "Tvarkytojas"
-msgstr "Data editor"
+msgid "Duomenų išteklių tvarkytojas"
+msgstr "Resource manager"
 
-msgid "Leidžiama keisti duomenis"
-msgstr "Can edit data"
+msgid "Atvirų duomenų koordinatorius"
+msgstr "Open data coordinator"
 
 msgid "Atvirų duomenų tvarkytojas"
-msgstr "Open data representative"
+msgstr "Open data manager"
 
 msgid "Ataskaita"
 msgstr "Report"

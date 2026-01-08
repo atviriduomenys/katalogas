@@ -42,18 +42,22 @@
                 </a>
             </li>
         {% endif %}
-        <li class="{% if request.resolver_match.url_name == 'agent-list' %} is-active {% endif %}">
-            <a href="{% url 'agent-list' organization.id %}">
-                {% translate "Agentai" %}
-            </a>
-        </li>
-        <li class="{% if request.resolver_match.url_name == 'organization-apikeys' %} is-active {% endif %}">
-            <a href="{% url 'organization-apikeys' organization.id %}">
-                <span class="has-tooltip-right" data-tooltip="{% translate 'Raktas duomenų įkėlimui į saugyklą' %}">
-                    {% translate "Raktai" %}
-                </span>
-            </a>
-        </li>
+        {% if can_view_agents %}
+            <li class="{% if request.resolver_match.url_name == 'agent-list' %} is-active {% endif %}">
+                <a href="{% url 'agent-list' organization.id %}">
+                    {% translate "Agentai" %}
+                </a>
+            </li>
+        {% endif %}
+        {% if can_view_keys %}
+            <li class="{% if request.resolver_match.url_name == 'organization-apikeys' %} is-active {% endif %}">
+                <a href="{% url 'organization-apikeys' organization.id %}">
+                    <span class="has-tooltip-right" data-tooltip="{% translate 'Raktas duomenų įkėlimui į saugyklą' %}">
+                        {% translate "Raktai" %}
+                    </span>
+                </a>
+            </li>
+        {% endif %}
         {% if can_manage_history and history_url %}
             <li class="{% if request.resolver_match.url_name == history_url_name %} is-active {% endif %}">
                 <a href="{{ history_url }}">

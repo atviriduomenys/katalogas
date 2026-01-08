@@ -110,6 +110,7 @@ from vitrina.projects.services import get_projects
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import get_data_from_spinta
+from vitrina.uapi.models import Agent
 from vitrina.users.forms import RepresentativeRegisterForm
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
@@ -134,6 +135,8 @@ class OrganizationBaseViewMixin:
             has_perm(self.request.user, Action.UPDATE, Representative, self.organization)
             and self.request.user.viisp_organization == self.organization
         )
+        context_data["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
+        context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
         context_data["organization"] = self.organization
         return context_data
 
@@ -171,7 +174,7 @@ class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
                 last_name=user.last_name,
                 phone=self.representative_request.phone,
                 object_id=org.id,
-                role=Representative.COORDINATOR,
+                role=Representative.OPEN_DATA_COORDINATOR,
                 user=user,
                 content_type=ContentType.objects.get_for_model(org),
             )
@@ -293,7 +296,7 @@ class RepresentativeRequestSuspendView(PermissionRequiredMixin, TemplateView):
             content_type=ContentType.objects.get_for_model(Organization),
             object_id=self.representative_request.organization.id,
             user=self.representative_request.user,
-            role=Representative.COORDINATOR,
+            role__in=Representative.COORDINATOR_ROLES,
         ).first()
         user_to_grant_coordiantor_rights = self.request.POST.get("user")
         user_to_grant_coordiantor_rights = User.objects.filter(email=user_to_grant_coordiantor_rights).first()
@@ -407,7 +410,7 @@ class OrganizationManagementsView(OrganizationListView):
                 items = (
                     Representative.objects.filter(
                         content_type=ContentType.objects.get_for_model(Organization),
-                        role=Representative.COORDINATOR,
+                        role__in=Representative.COORDINATOR_ROLES,
                         object_id__in=jurisdiction_orgs.values_list("pk", flat=True),
                     )
                     .values(*values)
@@ -419,7 +422,7 @@ class OrganizationManagementsView(OrganizationListView):
                 items = (
                     Representative.objects.filter(
                         content_type=ContentType.objects.get_for_model(Organization),
-                        role=Representative.MANAGER,
+                        role__in=Representative.MANAGER_ROLES,
                         object_id__in=jurisdiction_orgs.values_list("pk", flat=True),
                     )
                     .values(*values)
@@ -1089,7 +1092,7 @@ class RepresentativeCreateView(
         subscribe = form.cleaned_data.get("subscribe")
         try:
             user = User.objects.get(email=self.object.email)
-            if self.object.role == Representative.COORDINATOR:
+            if self.object.role in Representative.COORDINATOR_ROLES:
                 user.organization = self.organization
                 user.save()
         except ObjectDoesNotExist:
@@ -1111,7 +1114,7 @@ class RepresentativeCreateView(
             )
             manage_subscriptions_for_representative(subscribe, user, self.organization, link)
         elif organization and self.request.user.is_superuser:
-            if self.object.role == Representative.COORDINATOR:
+            if self.object.role in Representative.COORDINATOR_ROLES:
                 form.add_error("role", _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
                 return self.form_invalid(form)
             self.object.organization = organization
@@ -1265,7 +1268,7 @@ class RepresentativeDeleteView(LoginRequiredMixin, PermissionRequiredMixin, Dele
         obj = self.get_object()
         role = (
             "koordinatorių"
-            if obj.role == Representative.COORDINATOR
+            if obj.role in Representative.COORDINATOR_ROLES
             else "tvarkytojų"
             if obj.organization
             else "tvarkytoją"
@@ -3081,7 +3084,7 @@ def create_remote_organization(request):
                 content_type=content_type,
                 object_id=org.id,
                 organization=publisher.first(),
-                role=Representative.MANAGER,
+                role=Representative.OPEN_DATA_MANAGER,
             )
         if coordinator_id:
             coordinator = User.objects.filter(pk=coordinator_id).first()
@@ -3090,7 +3093,7 @@ def create_remote_organization(request):
                 object_id=org.id,
                 user=coordinator,
                 email=coordinator.email,
-                role=Representative.COORDINATOR,
+                role=Representative.OPEN_DATA_COORDINATOR,
             )
 
     return JsonResponse({"organization": org.pk if org else None})

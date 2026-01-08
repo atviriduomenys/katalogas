@@ -120,9 +120,7 @@ class DatasetStructureMixin(StructureMixin):
         subclass = self.dataset.subclass
         self.can_manage_structure = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
-            if subclass and subclass.is_information_system
-            else Action.STRUCTURE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.STRUCTURE,
             Dataset,
             self.dataset,
         )
@@ -183,9 +181,7 @@ class DatasetStructureView(
         subclass = self.object.subclass
         self.can_manage_structure = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
-            if subclass and subclass.is_information_system
-            else Action.STRUCTURE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.STRUCTURE,
             Dataset,
             self.object,
         )

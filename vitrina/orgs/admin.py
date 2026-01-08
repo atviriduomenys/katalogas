@@ -140,14 +140,14 @@ class PublisherAdmin(RevisionCommentVersionAdmin):
             obj,
             set(form.cleaned_data["datasets"].values_list("id", flat=True)),
             Dataset,
-            Representative.MANAGER,
+            Representative.OPEN_DATA_MANAGER,
         )
 
         self._update_assignments(
             obj,
             set(form.cleaned_data["creator_assignment"].values_list("id", flat=True)),
             Organization,
-            Representative.MANAGER,
+            Representative.OPEN_DATA_MANAGER,
         )
 
     def _update_assignments(self, obj, new_assignments, model, role):

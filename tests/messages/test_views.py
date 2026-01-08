@@ -16,7 +16,7 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.messages.models import Subscription, NewsletterSubscriber
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory, ViispRepresentativeFactory
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.projects.models import Project
 from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestFactory
@@ -550,7 +550,14 @@ def test_subscribe_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_subscribe_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_subscribe_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     ct = ContentType.objects.get_for_model(dataset)
     user = UserFactory()
@@ -558,6 +565,7 @@ def test_subscribe_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=role,
     )
     app.set_user(user)
     response = app.get(reverse('subscribe-form', args=[ct.pk, dataset.pk, user.pk]))
@@ -575,7 +583,14 @@ def test_unsubscribe_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_unsubscribe_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_unsubscribe_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     ct = ContentType.objects.get_for_model(dataset)
     user = UserFactory()
@@ -583,6 +598,7 @@ def test_unsubscribe_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
+        role=role
     )
     app.set_user(user)
     response = app.post(reverse('unsubscribe', args=[ct.pk, dataset.pk, user.pk]))

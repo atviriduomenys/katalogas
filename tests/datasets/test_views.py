@@ -2395,10 +2395,10 @@ class TestDatasetMembers:
 
         app.set_user(user)
 
-        members_url = reverse("dataset-members", kwargs={"pk": dataset.pk})
-        resp = app.get(members_url)
-
-        add_member_url = resp.html.find(id="add-member-btn")["href"]
+        add_member_url = reverse(
+            "dataset-representative-create",
+            kwargs={"pk": dataset.pk},
+        )
 
         resp = app.get(add_member_url, expect_errors=True)
 
@@ -2406,7 +2406,7 @@ class TestDatasetMembers:
 
         assert not Representative.objects.filter(
             content_type=ct,
-            object_id=dataset.id,
+            object_id=dataset.pk,
             email="test@example.com",
         ).exists()
 

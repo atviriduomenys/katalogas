@@ -455,20 +455,24 @@ ACCOUNT_UNIQUE_EMAIL = True
 ACCOUNT_EMAIL_VERIFICATION = "mandatory"
 ACCOUNT_SIGNUP_REDIRECT_URL = "password-set"
 
-LOGGING = {
-    "version": 1,
-    "disable_existing_loggers": False,
-    "handlers": {
-        "console": {
-            "level": "INFO",
-            "class": "logging.StreamHandler",
+LOGGING = env.json(
+    "DJANGO_LOGGING",
+    default={
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "console": {
+                "level": "INFO",
+                "class": "logging.StreamHandler",
+            },
+        },
+        "root": {
+            "handlers": ["console"],
+            "level": "WARNING",
         },
     },
-    "root": {
-        "handlers": ["console"],
-        "level": "WARNING",
-    },
-}
+)
+
 CORS_ALLOWED_ORIGINS = ["https://test.epaslaugos.lt"]
 ACCOUNT_AUTHENTICATED_LOGIN_REDIRECT = False
 

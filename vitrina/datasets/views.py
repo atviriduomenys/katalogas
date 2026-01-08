@@ -971,6 +971,9 @@ class ResourceSubclassCreateView(
                     request_obj = get_object_or_404(Request, pk=request_id)
                     return has_perm(self.request.user, Action.ASSIGN, request_obj)
         organization = get_object_or_404(Organization, id=self.kwargs.get("pk"))
+        if parent_id := self.kwargs.get("parent_id"):
+            parent_dataset = get_object_or_404(Dataset, pk=parent_id)
+            return has_perm(self.request.user, Action.CREATE, Dataset, parent_dataset)
         return has_perm(self.request.user, Action.CREATE, Dataset, organization)
 
     def get_breadcrumbs(self) -> list[Crumb]:
@@ -3755,7 +3758,7 @@ class DatasetChildResourceListView(
                 self.request.user,
                 action,
                 Dataset,
-                self.object.organization,
+                self.object,
             ),
             "parent_dataset_id": self.parent_dataset_id,
             "organization_id": self.object.organization_id,
@@ -3765,7 +3768,7 @@ class DatasetChildResourceListView(
 class DatasetChildResourceCreateView(DatasetCreateView):
     @property
     def parent_dataset_id(self) -> int:
-        return self.kwargs["pk"]
+        return self.kwargs["parent_id"]
 
     @cached_property
     def parent_dataset(self) -> Dataset:
@@ -3778,3 +3781,8 @@ class DatasetChildResourceCreateView(DatasetCreateView):
     @property
     def organization_id(self) -> int:
         return self.parent_dataset.organization_id
+
+    def has_permission(self):
+        subclass = self.parent_dataset.subclass
+        action = Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE
+        return has_perm(self.request.user, action, Dataset, self.parent_dataset)

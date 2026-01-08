@@ -6,7 +6,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_orgs', '0013_alter_representative_can_make_agreements'),
+        ('vitrina_orgs', '0014_alter_organization_kind'),
     ]
 
     operations = [

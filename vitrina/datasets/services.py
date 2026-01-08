@@ -303,15 +303,13 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
 
     if open_data_org_ids:
         combined_filter |= SQ(
-            organization__in=open_data_org_ids, is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
+            organization__in=open_data_org_ids, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
         )
-        combined_filter |= SQ(organization__in=open_data_org_ids, is_public="false")
 
     if open_data_dataset_ids:
         combined_filter |= SQ(
-            id__in=open_data_dataset_ids, is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
+            id__in=open_data_dataset_ids, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
         )
-        combined_filter |= SQ(id__in=open_data_dataset_ids, is_public="false")
 
     if user.is_gov_organization_resource_manager:
         combined_filter |= SQ(

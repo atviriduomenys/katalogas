@@ -2368,6 +2368,50 @@ class TestDatasetMembers:
         assert len(mail.outbox) == 1
         assert "/register/" in mail.outbox[0].body
 
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+    def test_dataset_members_create_member_in_information_system_forbidden_for_roles(
+            self,
+            app: DjangoTestApp,
+            role: str,
+    ):
+        subclass = DCATResourceSubclassFactory(name="information_system")
+        dataset = DatasetFactory(subclass=subclass)
+        ct = ContentType.objects.get_for_model(Dataset)
+
+        user = UserFactory()
+        RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=role,
+            user=user,
+        )
+
+        app.set_user(user)
+
+        members_url = reverse("dataset-members", kwargs={"pk": dataset.pk})
+        resp = app.get(members_url)
+
+        add_member_url = resp.html.find(id="add-member-btn")["href"]
+
+        resp = app.get(add_member_url, expect_errors=True)
+
+        assert resp.status_code == 403
+
+        assert not Representative.objects.filter(
+            content_type=ct,
+            object_id=dataset.id,
+            email="test@example.com",
+        ).exists()
+
+        assert len(mail.outbox) == 0
+
     def test_dataset_members_add_member(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)
@@ -2550,6 +2594,83 @@ class TestDatasetMembers:
         else:
             assert len(update_links) == 0
 
+    @pytest.mark.django_db
+    @pytest.mark.parametrize(
+        "coordinator_role,target_role,new_role,can_update",
+        [
+            (
+                    Representative.OPEN_DATA_COORDINATOR,
+                    Representative.OPEN_DATA_MANAGER,
+                    Representative.OPEN_DATA_MANAGER,
+                    False,
+            ),
+            (
+                    Representative.OPEN_DATA_COORDINATOR,
+                    Representative.RESOURCE_MANAGER,
+                    Representative.RESOURCE_MANAGER,
+                    False,
+            ),
+            (
+                    Representative.RESOURCE_COORDINATOR,
+                    Representative.OPEN_DATA_MANAGER,
+                    Representative.OPEN_DATA_MANAGER,
+                    True,
+            ),
+            (
+                    Representative.RESOURCE_COORDINATOR,
+                    Representative.RESOURCE_MANAGER,
+                    Representative.RESOURCE_MANAGER,
+                    True,
+            ),
+            (
+                    Representative.RESOURCE_MANAGER,
+                    Representative.RESOURCE_MANAGER,
+                    Representative.OPEN_DATA_MANAGER,
+                    False,
+            ),
+        ],
+    )
+    def test_dataset_members_update_member_subclass_information_system(
+            self, app: DjangoTestApp, coordinator_role, target_role, new_role, can_update
+    ):
+        subclass = DCATResourceSubclassFactory(name="information_system")
+        dataset = DatasetFactory(subclass=subclass)
+        ct = ContentType.objects.get_for_model(Dataset)
+        url = reverse("dataset-members", kwargs={"pk": dataset.pk})
+
+        target_rep = RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=target_role,
+        )
+
+        coordinator = RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=coordinator_role,
+        )
+
+        app.set_user(coordinator.user)
+
+        resp = app.get(url)
+
+        update_links = [
+            link for link in resp.html.find_all("a") if f"update-member-{target_rep.pk}" in link.get("id", "")
+        ]
+
+        if can_update:
+            assert len(update_links) == 1
+            resp = resp.click(linkid=f"update-member-{target_rep.pk}-btn")
+            form = resp.forms["representative-form"]
+            form["role"] = new_role
+            resp = form.submit()
+
+            target_rep.refresh_from_db()
+            assert target_rep.role == new_role
+            assert target_rep.user.organization == dataset.organization
+        else:
+            assert len(update_links) == 0
+
     def test_dataset_members_update_with_api_access(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)
@@ -2584,6 +2705,51 @@ class TestDatasetMembers:
     )
     def test_dataset_members_delete_member(self, app: DjangoTestApp, coordinator_role, target_role, can_delete):
         dataset = DatasetFactory()
+        ct = ContentType.objects.get_for_model(Dataset)
+        url = reverse("dataset-members", kwargs={"pk": dataset.pk})
+
+        target_rep = RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=target_role,
+        )
+
+        coordinator = RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=coordinator_role,
+        )
+
+        app.set_user(coordinator.user)
+        resp = app.get(url)
+
+        delete_links = [
+            link for link in resp.html.find_all("a") if f"delete-member-{target_rep.pk}" in link.get("id", "")
+        ]
+
+        if can_delete:
+            resp = resp.click(linkid=f"delete-member-{target_rep.pk}-btn")
+            form = resp.forms["delete-form"]
+            resp = form.submit()
+            assert not Representative.objects.filter(pk=target_rep.pk).exists()
+        else:
+            assert len(delete_links) == 0
+
+    @pytest.mark.django_db
+    @pytest.mark.parametrize(
+        "coordinator_role,target_role,can_delete",
+        [
+            (Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER, False),
+            (Representative.OPEN_DATA_COORDINATOR, Representative.RESOURCE_MANAGER, False),
+            (Representative.RESOURCE_COORDINATOR, Representative.OPEN_DATA_MANAGER, True),
+            (Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER, True),
+            (Representative.RESOURCE_MANAGER, Representative.RESOURCE_MANAGER, False),
+            (Representative.RESOURCE_MANAGER, Representative.OPEN_DATA_MANAGER, False),
+        ],
+    )
+    def test_dataset_members_delete_member_subclass_information_system(self, app: DjangoTestApp, coordinator_role, target_role, can_delete):
+        subclass = DCATResourceSubclassFactory(name="information_system")
+        dataset = DatasetFactory(subclass=subclass)
         ct = ContentType.objects.get_for_model(Dataset)
         url = reverse("dataset-members", kwargs={"pk": dataset.pk})
 

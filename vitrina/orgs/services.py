@@ -37,6 +37,7 @@ class Action(Enum):
     DELETE = "delete"
     REQUEST_UPDATE = "request_update"
     INFORMATION_SYSTEM_UPDATE = "information_system_update"
+    INFORMATION_SYSTEM_REPRESENTATIVE_CREATE = "information_system_representative_create"
     VIEW = "view"
     HISTORY_VIEW = "history_view"
     COMMENT = "comment_with_status"
@@ -71,6 +72,7 @@ WRITE_ACTIONS: set[Action] = {
     Action.MANAGE_PROJECT_KEYS,
     Action.ASSIGN,
     Action.INFORMATION_SYSTEM_UPDATE,
+    Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
 }
 DATASET_RELATED_OBJECTS: set[Type[Model]] = {
     Dataset,
@@ -85,6 +87,7 @@ EXCLUDED_ACTIONS: set[Action] = {
     Action.ASSIGN,
     Action.PLAN,
     Action.REQUEST_UPDATE,
+    Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE,
 }
 
 DATASET_IS_PUBLIC = True
@@ -367,10 +370,10 @@ acl: ACL = (
             Role.OPEN_DATA_COORDINATOR,
             Role.OPEN_DATA_MANAGER,
         ),
-        (Agent, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
-        (Agent, Action.VIEW): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
-        (Agent, Action.UPDATE): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
-        (Agent, Action.DELETE): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
+        (Agent, Action.CREATE): (Role.RESOURCE_COORDINATOR,),
+        (Agent, Action.VIEW): (Role.RESOURCE_COORDINATOR,),
+        (Agent, Action.UPDATE): (Role.RESOURCE_COORDINATOR,),
+        (Agent, Action.DELETE): (Role.RESOURCE_COORDINATOR,),
         (Agreement, Action.CREATE): (Role.AUTHOR,),
         (Agreement, Action.VIEW): (Role.AUTHOR,),
         (Contact, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
@@ -423,6 +426,10 @@ acl: ACL = (
         (RequestAssignment, Action.DELETE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),
         (ApiExample, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.RESOURCE_MANAGER),
         (Representative, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR, Role.GLOBAL_MANAGER),
+        (Representative, Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE): (
+            Role.RESOURCE_COORDINATOR,
+            Role.GLOBAL_MANAGER,
+        ),
         (Representative, Action.UPDATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR, Role.GLOBAL_MANAGER),
         (Representative, Action.DELETE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR, Role.GLOBAL_MANAGER),
         (Representative, Action.VIEW): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR, Role.GLOBAL_MANAGER),

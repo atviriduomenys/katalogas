@@ -423,7 +423,10 @@ class UserStatsView(TemplateView):
                 if user_type == "Koordinatoriai":
                     dataset["data"].append(
                         User.objects.filter(
-                            representative__role__in=["resource_coordinator", "open_data_coordinator"],
+                            representative__role__in=[
+                                Representative.RESOURCE_COORDINATOR,
+                                Representative.OPEN_DATA_COORDINATOR,
+                            ],
                             created__lt=created_date,
                         )
                         .distinct("representative__user")
@@ -432,7 +435,11 @@ class UserStatsView(TemplateView):
                 elif user_type == "Tvarkytojai":
                     dataset["data"].append(
                         User.objects.filter(
-                            representative__role__in=["resource_manager", "open_data_manager"], created__lt=created_date
+                            representative__role__in=[
+                                Representative.RESOURCE_MANAGER,
+                                Representative.OPEN_DATA_MANAGER,
+                            ],
+                            created__lt=created_date,
                         )
                         .distinct("representative__user")
                         .count()
@@ -441,10 +448,10 @@ class UserStatsView(TemplateView):
                     dataset["data"].append(
                         User.objects.exclude(
                             representative__role__in=[
-                                "resource_coordinator",
-                                "open_data_coordinator",
-                                "resource_manager",
-                                "open_data_manager",
+                                Representative.RESOURCE_COORDINATOR,
+                                Representative.OPEN_DATA_COORDINATOR,
+                                Representative.RESOURCE_MANAGER,
+                                Representative.OPEN_DATA_MANAGER,
                             ]
                         )
                         .filter(created__lt=created_date)

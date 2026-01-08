@@ -359,7 +359,7 @@ class RepresentativeUpdateForm(ModelForm):
         self.object = kwargs.pop("object", None)
         super().__init__(*args, **kwargs)
         if self.object_model == Organization:
-            if self.user.viisp_organization == self.object:
+            if self.user.viisp_organization == self.object and self.user.is_resource_coordinator_for(self.object):
                 self.fields["can_make_agreements"].disabled = False
         else:
             self.fields.pop("can_make_agreements")
@@ -456,7 +456,7 @@ class RepresentativeCreateForm(ModelForm):
         self.fields["role"].choices = allowed_roles
 
         if self.object_model == Organization:
-            if self.user.viisp_organization == self.object:
+            if self.user.viisp_organization == self.object and self.user.is_resource_coordinator_for(self.object):
                 self.fields["can_make_agreements"].disabled = False
         else:
             self.fields.pop("can_make_agreements")

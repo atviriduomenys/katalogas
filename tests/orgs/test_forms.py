@@ -1,3 +1,4 @@
+import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 
@@ -88,6 +89,36 @@ class TestRepresentativeCreateForm:
         assert form.cleaned_data["can_make_agreements"] is False
         representative = form.save(commit=False)
         assert representative.can_make_agreements is False
+
+    @pytest.mark.parametrize(
+        "role,expected",
+        [
+            (Representative.RESOURCE_COORDINATOR, False),
+            (Representative.OPEN_DATA_COORDINATOR, True),
+        ],
+    )
+    def test_representative_create_can_make_agreements_field_access_for_coordinators(self, app: DjangoTestApp,
+                                                                                     role: str, expected: bool):
+        organization = OrganizationFactory(kind=Organization.GOV)
+        user = UserFactory(
+            is_viisp_login=True,
+            viisp_company_code=organization.company_code,
+        )
+        app.set_user(user)
+
+        RepresentativeFactory(
+            user=user,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            role=role,
+        )
+
+        form = RepresentativeCreateForm(
+            user=user,
+            object=organization,
+        )
+
+        assert form.fields["can_make_agreements"].disabled is expected
 
 
 class TestRepresentativeUpdateForm:
@@ -212,3 +243,34 @@ class TestRepresentativeUpdateForm:
 
         assert Representative.OPEN_DATA_MANAGER in role_choices
         assert Representative.OPEN_DATA_COORDINATOR in role_choices
+
+    @pytest.mark.parametrize(
+        "role,expected",
+        [
+            (Representative.RESOURCE_COORDINATOR, False),
+            (Representative.OPEN_DATA_COORDINATOR, True),
+        ],
+    )
+
+    def test_representative_update_can_make_agreements_field_access_for_coordinators(self, app: DjangoTestApp, role: str, expected: bool):
+        organization = OrganizationFactory(kind=Organization.GOV)
+        user = UserFactory(
+            is_viisp_login=True,
+            viisp_company_code=organization.company_code,
+        )
+        app.set_user(user)
+
+        RepresentativeFactory(
+            user=user,
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            role=role,
+        )
+
+        form = RepresentativeUpdateForm(
+            user=user,
+            object=organization,
+        )
+
+        assert form.fields["can_make_agreements"].disabled is expected
+

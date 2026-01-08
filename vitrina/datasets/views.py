@@ -1542,7 +1542,7 @@ class DatasetMembersView(
         subclass = self.object.subclass
         context["has_permission"] = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE,
+            Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE if subclass.is_information_system else Action.CREATE,
             Representative,
             self.object,
         )
@@ -1574,7 +1574,7 @@ class CreateMemberView(
         subclass = self.dataset.subclass
         return has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.CREATE,
+            Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE if subclass.is_information_system else Action.CREATE,
             Representative,
             self.dataset,
         )
@@ -1751,11 +1751,16 @@ class UpdateMemberView(
     history_url_name = "dataset-history"
 
     def has_permission(self):
+        subclass = self.dataset.subclass
         representative = get_object_or_404(
             Representative,
             pk=self.kwargs.get("representative_id"),
         )
-        return has_perm(self.request.user, Action.UPDATE, representative)
+        return has_perm(
+            self.request.user,
+            Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE if subclass.is_information_system else Action.UPDATE,
+            representative,
+        )
 
     def get_success_url(self):
         return reverse(
@@ -1861,7 +1866,16 @@ class DeleteMemberView(
             Representative,
             pk=self.kwargs.get("pk"),
         )
-        return has_perm(self.request.user, Action.DELETE, representative)
+        dataset = get_object_or_404(
+            Dataset,
+            pk=self.kwargs.get("dataset_id"),
+        )
+        subclass = dataset.subclass
+        return has_perm(
+            self.request.user,
+            Action.INFORMATION_SYSTEM_REPRESENTATIVE_CREATE if subclass.is_information_system else Action.DELETE,
+            representative,
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

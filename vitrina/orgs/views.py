@@ -110,6 +110,7 @@ from vitrina.projects.services import get_projects
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import get_data_from_spinta
+from vitrina.uapi.models import Agent
 from vitrina.users.forms import RepresentativeRegisterForm
 from vitrina.users.models import User
 from vitrina.users.views import RegisterView
@@ -134,6 +135,8 @@ class OrganizationBaseViewMixin:
             has_perm(self.request.user, Action.UPDATE, Representative, self.organization)
             and self.request.user.viisp_organization == self.organization
         )
+        context_data["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
+        context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
         context_data["organization"] = self.organization
         return context_data
 

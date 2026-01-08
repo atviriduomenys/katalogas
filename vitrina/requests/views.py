@@ -1350,6 +1350,7 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
     form_class = RequestDatasetsEditForm
     template_name = "vitrina/requests/request_dataset_add.html"
     context_object_name = "request_object"
+    dataset_query_limit = 20
 
     def form_valid(self, form):
         super().form_valid(form)
@@ -1383,11 +1384,11 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
         if role in Representative.OPEN_DATA_ROLE_KEYS:
             queryset = Dataset.objects.filter(
                 organization=self.request.user.organization, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
-            )[:20]
+            )[: self.dataset_query_limit]
         else:
             queryset = Dataset.objects.filter(
                 organization=self.request.user.organization,
-            )[:20]
+            )[: self.dataset_query_limit]
         form.fields.get("datasets").queryset = queryset
 
         context_data["current_title"] = _("Poreikio duomenų rinkinių redagavimas")
@@ -1396,6 +1397,7 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
 
 class RequestDatasetsEditUpdateView(RequestDatasetsEditView):
     template_name = "vitrina/requests/request_dataset_add_items.html"
+    queryset_limit = 20
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
@@ -1408,7 +1410,7 @@ class RequestDatasetsEditUpdateView(RequestDatasetsEditView):
             queryset = queryset.filter(access_rights__in=[Dataset.PUBLIC, Dataset.RESTRICTED])
         if term:
             queryset = queryset.filter(translations__title__istartswith=term)
-        queryset = queryset.order_by("translations__title")[:20]
+        queryset = queryset.order_by("translations__title")[: self.queryset_limit]
         form.fields["datasets"].queryset = queryset
         return context_data
 

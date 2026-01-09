@@ -461,15 +461,10 @@ class DatasetDetailView(
 
     def get(self, request, *args, **kwargs):
         self.object = self.get_object()
-        metadata_version = request.GET.get("resource_version")
-        if not metadata_version:
-            metadata_version = _Version.objects.filter(dataset=self.object).order_by("version").last()
 
-            if metadata_version:
-                url = (
-                    reverse("dataset-detail", kwargs={"pk": self.object.pk})
-                    + f"?resource_version={metadata_version.pk}"
-                )
+        if not request.GET.get("resource_version"):
+            if metadata_version := _Version.objects.filter(dataset=self.object).order_by("version").last():
+                url = f'{reverse("dataset-detail", kwargs={"pk": self.object.pk})}?resource_version={metadata_version.pk}'
                 return redirect(url)
 
         return super().get(request, *args, **kwargs)
@@ -485,11 +480,9 @@ class DatasetDetailView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get("dataset")
-        dataset_versions = _Version.objects.filter(dataset=dataset).order_by("version")
-        context_data["versions"] = dataset_versions
-        metadata_version_id = self.request.GET.get("resource_version")
+        context_data["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
         metadata_version = None
-        if metadata_version_id:
+        if metadata_version_id := self.request.GET.get("resource_version"):
             metadata_version = _Version.objects.filter(id=metadata_version_id).first()
             context_data["selected_version"] = metadata_version
         organization = dataset.organization

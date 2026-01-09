@@ -318,11 +318,10 @@ class Model(models.Model):
             old_instance = Model.objects.get(pk=self.pk)
             old_distribution = old_instance.distribution
 
-        if self.distribution:
-            if self.distribution.format.extension == "UAPI":
-                raise ValidationError(
-                    _("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją.")
-                )
+        if self.distribution and self.distribution.format.extension == "UAPI":
+            raise ValidationError(
+                _("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją.")
+            )
 
         super().save(*args, **kwargs)
 

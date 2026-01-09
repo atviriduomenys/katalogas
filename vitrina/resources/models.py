@@ -353,7 +353,7 @@ class DatasetDistribution(TranslatableModel):
             parents.extend(self.dataset.get_acl_parents())
         return parents
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str:
         if self.metadata_version and self.metadata_version.pk:
             return reverse(
                 "resource-detail",
@@ -432,7 +432,7 @@ class DatasetDistribution(TranslatableModel):
         else:
             name = self.name
             if not name:
-                name = (
+                latest_metadata_name = (
                     Metadata.objects.filter(
                         dataset=self.dataset,
                         content_type=ContentType.objects.get_for_model(DatasetDistribution),
@@ -442,10 +442,10 @@ class DatasetDistribution(TranslatableModel):
                     .values_list("name", flat=True)
                     .last()
                 )
-                if not name:
+                if not latest_metadata_name:
                     name = "resource1"
                 else:
-                    n = name.replace("resource", "")
+                    n = latest_metadata_name.replace("resource", "")
                     try:
                         n = int(n)
                     except ValueError:

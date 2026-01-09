@@ -10,8 +10,7 @@ def populate_new_distribution_fields(apps, schema_editor):
     dd_ct = ContentType.objects.get_for_model(DatasetDistribution)
 
     for dataset_distribution in DatasetDistribution.objects.all():
-        metadata_instance = Metadata.objects.filter(content_type=dd_ct, object_id=dataset_distribution.id).first()
-        if metadata_instance:
+        if metadata_instance := Metadata.objects.filter(content_type=dd_ct, object_id=dataset_distribution.id).first():
             dataset_distribution.name = metadata_instance.name
             dataset_distribution.access = metadata_instance.access
             dataset_distribution.level = metadata_instance.level

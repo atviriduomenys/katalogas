@@ -435,7 +435,7 @@ class DynamicResourceService:
 
         return download_url, distribution_name
 
-    def retrieve_data(self, dataset_pk, metadata_version, resource_name, distribution_format):
+    def retrieve_data(self, dataset_pk: int, metadata_version: Version, resource_name: str, distribution_format: str) -> dict:
         dataset = Dataset.objects.get(pk=dataset_pk)
         models = dataset.model_set.filter(metadata_version=metadata_version)
 

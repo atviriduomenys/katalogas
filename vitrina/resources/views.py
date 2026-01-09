@@ -306,7 +306,7 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.VIEW, dataset)
 
-    def get_data(self, dataset_pk, metadata_version_pk, model_name, distribution_format):
+    def get_data(self, dataset_pk: int, metadata_version_pk: int, model_name: str, distribution_format: str) -> dict:
         dataset = get_object_or_404(Dataset, id=dataset_pk)
         metadata_version = get_object_or_404(Version, id=metadata_version_pk)
         dynamic_resource = DynamicResourceService(dataset, metadata_version)

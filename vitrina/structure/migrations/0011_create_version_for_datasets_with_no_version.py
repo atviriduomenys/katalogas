@@ -9,8 +9,7 @@ def create_version_for_datasets_with_no_version(apps, schema_editor):
     Dataset = apps.get_model('vitrina_datasets', 'Dataset')
     Version = apps.get_model('vitrina_structure', 'Version')
 
-    for dataset in Dataset.objects.all():
-        if not dataset.dataset_version.exists():
+    for dataset in Dataset.objects.filter(dataset_version__isnull=True).prefetch_related("metadata_set"):
             created_draft_version = Version.objects.create(dataset=dataset, version=1, status=VersionStatus.DRAFT)
             created_draft_version.save()
             for metadata in dataset.metadata_set.all():

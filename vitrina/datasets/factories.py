@@ -23,6 +23,7 @@ from vitrina.datasets.models import (
     DCATResourceSubclass,
     DatasetGroupCategoryUri,
 )
+from vitrina.structure.factories import MetadataFactory
 from vitrina.uapi.models import Agent
 
 MANIFEST = """\
@@ -125,6 +126,15 @@ class DatasetFactory(DjangoModelFactory):
             for category in extracted:
                 self.category.add(category)
 
+    @factory.post_generation
+    def metadata(self, create, extracted, **kwargs):
+        if not create:
+            return
+        MetadataFactory.create(
+            dataset=self,
+            content_type=ContentType.objects.get_for_model(self),
+            object_id=self.pk
+        )
 
 def _get_language_value(lang: str, value: Union[str | dict]) -> str:
     if isinstance(value, str):

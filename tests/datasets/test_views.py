@@ -3342,11 +3342,9 @@ def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
 def test_dataset_dynamic_resources(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    resource = DatasetDistributionFactory(uapi_format=False)
-    form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.metadata_version.pk, resource.pk])).forms["model-form"]
-    form["name"] = "TestModel"
-    form.submit()
-    assert resource.model_set.first().name == "TestModel"
+    resource = DatasetDistributionFactory(uapi_format=True)
+    version = VersionFactory(dataset=resource.dataset)
+    model = ModelFactory(metadata_version=version)
 
     response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
     html = response.text
@@ -3429,12 +3427,11 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
 def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    resource = DatasetDistributionFactory(uapi_format=False)
-    for model_name in ["TestModel", "TestModel2", "TestModel3"]:
-        form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.metadata_version.pk, resource.pk])).forms["model-form"]
-        form["name"] = model_name
-        form.submit()
-    assert resource.model_set.count() == 3
+    resource = DatasetDistributionFactory(uapi_format=True)
+    version = VersionFactory(dataset=resource.dataset)
+    ModelFactory(metadata_version=version, metadata="TestModel")
+    ModelFactory(metadata_version=version, metadata="TestModel2")
+    ModelFactory(metadata_version=version, metadata="TestModel3")
 
     response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
     html = response.text
@@ -3894,13 +3891,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         licence=LicenceFactory(url=f"{po}/licence/CC_BY_4_0"),
         conditions="platinimo sąlygos",
     )
-    model = ModelFactory(dataset=dataset, distribution=dist)
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(model),
-        object_id=model.pk,
-        dataset=dataset,
-        name="test/dataset/TestModel",
-    )
+    ModelFactory(metadata_version=dataset.metadata.first().metadata_version, metadata="test/dataset/TestModel")
     (
         FileFormat(
             title="JSON",

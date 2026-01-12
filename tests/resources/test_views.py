@@ -14,41 +14,61 @@ from vitrina.resources.factories import DatasetDistributionFactory, FileFormat, 
     PackagingFormatFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
-from vitrina.structure.factories import MetadataFactory
+from vitrina.structure.factories import MetadataFactory, ModelFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
 
 @pytest.mark.django_db
-def test_change_form_wrong_login(app: DjangoTestApp):
+@pytest.mark.parametrize("is_versioned", [True, False])
+def test_change_form_wrong_login(app: DjangoTestApp, is_versioned: bool):
     resource = DatasetDistributionFactory()
+    if is_versioned:
+        ModelFactory(dataset=resource.dataset, distribution=resource)
+        url = reverse('resource-change', kwargs={'pk': resource.id, 'version_id': resource.metadata_version.pk})
+    else:
+        url = reverse('resource-change-no-version', kwargs={'pk': resource.id})
+
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    response = app.get(reverse('resource-change', kwargs={'pk': resource.id}))
+    response = app.get(url)
     assert response.status_code == 302
     assert str(resource.dataset_id) in response.location
 
 
 @pytest.mark.django_db
-def test_change_form_correct_login(app: DjangoTestApp):
+@pytest.mark.parametrize("is_versioned", [True, False])
+def test_change_form_correct_login(app: DjangoTestApp, is_versioned: bool):
     resource = DatasetDistributionFactory(title='base title', description='base description')
+    if is_versioned:
+        ModelFactory(dataset=resource.dataset, distribution=resource)
+        resource_change_url = reverse('resource-change', kwargs={'pk': resource.id, 'version_id': resource.metadata_version.pk})
+        expected_url = reverse('resource-detail', args=[resource.dataset.pk, resource.metadata_version.pk, resource.pk])
+        expected_metadata_rows = 1
+        expected_name = "resource1"
+    else:
+        resource_change_url = reverse('resource-change-no-version', kwargs={'pk': resource.id})
+        expected_url = reverse('resource-detail-no-version', args=[resource.dataset.pk, resource.pk])
+        expected_metadata_rows = 0
+        expected_name = "resource2"
+
     user = UserFactory(is_staff=True, organization=resource.dataset.organization)
     app.set_user(user)
-    form = app.get(reverse('resource-change', kwargs={'pk': resource.id})).forms['resource-form']
+    form = app.get(resource_change_url).forms['resource-form']
     form['title'] = "Edited title"
     form['description'] = "edited resource description"
     form['level'] = 2
     resp = form.submit()
     resource.refresh_from_db()
     assert resp.status_code == 302
-    assert resp.url == reverse('resource-detail', args=[resource.dataset.pk, resource.pk])
+    assert resp.url == expected_url
     assert resource.title == 'Edited title'
     assert resource.description == 'edited resource description'
-    assert resource.metadata.count() == 1
-    assert resource.metadata.first().name == 'resource1'
-    assert resource.metadata.first().title == "Edited title"
-    assert resource.metadata.first().description == "edited resource description"
-    assert resource.metadata.first().level_given == 2
+    assert resource.metadata.count() == expected_metadata_rows
+    assert resource.name == expected_name
+    assert resource.title == "Edited title"
+    assert resource.description == "edited resource description"
+    assert resource.level_given == 2
 
 
 @pytest.mark.django_db
@@ -94,11 +114,11 @@ def test_add_form_correct_login(app: DjangoTestApp):
     resp = form.submit()
     assert resp.status_code == 302
     assert DatasetDistribution.objects.filter().count() == 1
-    assert DatasetDistribution.objects.first().metadata.count() == 1
-    assert DatasetDistribution.objects.first().metadata.first().name == 'resource1'
-    assert DatasetDistribution.objects.first().metadata.first().title == 'Added title'
-    assert DatasetDistribution.objects.first().metadata.first().description == 'Added new resource description'
-    assert DatasetDistribution.objects.first().metadata.first().level_given == 1
+    assert DatasetDistribution.objects.first().metadata.count() == 0
+    assert DatasetDistribution.objects.name == 'resource1'
+    assert DatasetDistribution.objects.title == 'Added title'
+    assert DatasetDistribution.objects.description == 'Added new resource description'
+    assert DatasetDistribution.objects.level_given == 1
 
 
 @pytest.mark.django_db

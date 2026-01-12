@@ -200,7 +200,7 @@ def test_request_update_subscription_email(app: DjangoTestApp, subscription_data
 
 @pytest.mark.django_db
 def test_dataset_subscribe_without_user(app: DjangoTestApp, subscription_data):
-    resp = app.get(subscription_data['dataset'].get_absolute_url())
+    resp = app.get(subscription_data['dataset'].get_absolute_url()).follow()
     assert Subscription.objects.count() == 0
 
     elem = resp.html.find(id='number-of-subscribers')
@@ -209,7 +209,7 @@ def test_dataset_subscribe_without_user(app: DjangoTestApp, subscription_data):
 
 @pytest.mark.django_db
 def test_dataset_subscribe_url_no_login(app: DjangoTestApp, subscription_data):
-    resp = app.get(subscription_data['dataset'].get_absolute_url())
+    resp = app.get(subscription_data['dataset'].get_absolute_url()).follow()
     elem = resp.html.find(id='dataset_subscription')
     form_url = elem.find('a', {'id': 'subscribe-form'})
     assert form_url is None
@@ -239,7 +239,7 @@ def test_dataset_subscribe_form_with_user(app: DjangoTestApp, subscription_data)
 
     assert len(mail.outbox) == 1
 
-    resp = app.get(subscription_data['dataset'].get_absolute_url())
+    resp = app.get(subscription_data['dataset'].get_absolute_url()).follow()
 
     elem = resp.html.find(id='number-of-subscribers')
     assert elem.get_text().strip() == '1'
@@ -249,7 +249,7 @@ def test_dataset_subscribe_form_with_user(app: DjangoTestApp, subscription_data)
     assert attr == "Atsisakyti prenumeratos"
 
     resp.forms['unsubscribe-form'].submit()
-    resp = app.get(subscription_data['dataset'].get_absolute_url())
+    resp = app.get(subscription_data['dataset'].get_absolute_url()).follow()
     assert Subscription.objects.count() == 0
 
     assert len(mail.outbox) == 2

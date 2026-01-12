@@ -64,18 +64,18 @@ def test_request_unlike(app: DjangoTestApp, like_data):
 
 @pytest.mark.django_db
 def test_dataset_like_without_user(app: DjangoTestApp, like_data):
-    resp = app.get(like_data["dataset"].get_absolute_url())
+    resp = app.get(like_data["dataset"].get_absolute_url()).follow()
     assert list(resp.html.find(id="dataset_likes").stripped_strings) == ["0"]
 
 
 @pytest.mark.django_db
 def test_dataset_like_with_user(app: DjangoTestApp, like_data):
     app.set_user(like_data["user"])
-    resp = app.get(like_data["dataset"].get_absolute_url())
+    resp = app.get(like_data["dataset"].get_absolute_url()).follow()
     assert list(resp.html.find(id="dataset_likes").stripped_strings) == ["0"]
     assert resp.html.find(id="dataset_likes").find("input", {"type": "submit"}).attrs["value"] == "Patinka"
     resp.forms["like-form"].submit()
-    resp = app.get(like_data["dataset"].get_absolute_url())
+    resp = app.get(like_data["dataset"].get_absolute_url()).follow()
     assert list(resp.html.find(id="dataset_likes").stripped_strings) == ["1"]
     assert resp.html.find(id="dataset_likes").find("input", {"type": "submit"}).attrs["value"] == "Nepatinka"
 
@@ -88,12 +88,12 @@ def test_dataset_unlike(app: DjangoTestApp, like_data):
         user=like_data["user"],
     )
     app.set_user(like_data["user"])
-    resp = app.get(like_data["dataset"].get_absolute_url())
+    resp = app.get(like_data["dataset"].get_absolute_url()).follow()
     assert Like.objects.count() == 1
     assert list(resp.html.find(id="dataset_likes").stripped_strings) == ["1"]
     assert resp.html.find(id="dataset_likes").find("input", {"type": "submit"}).attrs["value"] == "Nepatinka"
     resp.forms["like-form"].submit()
-    resp = app.get(like_data["dataset"].get_absolute_url())
+    resp = app.get(like_data["dataset"].get_absolute_url()).follow()
     assert Like.objects.count() == 0
     assert list(resp.html.find(id="dataset_likes").stripped_strings) == ["0"]
     assert resp.html.find(id="dataset_likes").find("input", {"type": "submit"}).attrs["value"] == "Patinka"

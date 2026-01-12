@@ -34,6 +34,9 @@ Refactored representative role model to split coordinator and manager roles into
 - Ensured backward compatibility by updating all role checks and queryset filters referencing legacy roles
 - Added logic to not let OPEN_DATA_COORDINATORS add/update/delete RESOURCE_MANAGERS and RESOURCE_COORDINATORS
 
+<No ticket>
+- Make django `LOGGING` configurable from `.env`.
+
 v 1.11.3 (2026-01-05)
 ==================
 

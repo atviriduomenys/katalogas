@@ -1,7 +1,11 @@
 {% extends "base.html" %}
 {% load i18n %}
 
-{% block current_title %}{{ current_title }}{% endblock %}
+{% block current_title %}
+    {% if current_title %}
+        {{ current_title }}
+    {% endif %}
+{% endblock %}
 
 {% block content %}
     <div class="columns">

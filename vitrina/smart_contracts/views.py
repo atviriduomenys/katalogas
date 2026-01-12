@@ -302,14 +302,13 @@ class AgreementCreateView(
             for scope in form.cleaned_data["scopes"]:
                 resource, action = scope.rsplit("/:", 1)
                 agreement_scopes.append(
-                    AgreementScope(
+                    AgreementScope.objects.create(
                         agreement=agreement,
                         scope=scope,
                         resource=resource,
                         action=action,
                     )
                 )
-            AgreementScope.objects.bulk_create(agreement_scopes)
 
         messages.success(self.request, _("Sutartys sėkmingai sugeneruotos"))
         return super().formset_valid(formset)

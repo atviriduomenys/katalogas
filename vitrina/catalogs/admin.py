@@ -1,9 +1,10 @@
 from django.contrib import admin
 from .models import Catalog
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 @admin.register(Catalog)
-class CatalogAdmin(admin.ModelAdmin):
+class CatalogAdmin(RevisionCommentVersionAdmin):
     list_display = ("title", "identifier", "slug", "created", "modified")
     list_filter = ("created", "modified", "deleted", "licence")
     search_fields = ("title", "title_en", "identifier", "slug", "description")

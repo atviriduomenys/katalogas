@@ -9,9 +9,6 @@ from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.views import View
 
-from reversion import set_comment
-from reversion.views import RevisionMixin
-
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.helpers import (
     create_task,
@@ -35,7 +32,7 @@ from vitrina.tasks.models import Task
 from django.utils.translation import gettext_lazy as _
 
 
-class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, View):
+class CommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
     content_type: ContentType
     obj: Model
 
@@ -114,7 +111,6 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
             object_id=self.obj.pk,
             content_type=self.content_type,
         )
-        set_comment(Request.CREATED)
 
         # Link comment to request
         comment.type = Comment.REQUEST
@@ -208,7 +204,6 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
         save_request_comment(self.obj, status, comment.body, request.user)
         self.obj.status = status
         self.obj.save()
-        set_comment(type(self.obj).STATUS_CHANGED)
         comment.save()
         self._finalize_comment(comment, request)
         return redirect(self.obj.get_absolute_url())
@@ -225,7 +220,6 @@ class CommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, Vi
         save_request_comment(self.obj, status, comment.body, request.user)
         self.obj.status = status
         self.obj.save()
-        set_comment(type(self.obj).STATUS_CHANGED)
 
         # Handle assignment
         user_org = request.user.organization
@@ -334,7 +328,7 @@ class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
         return redirect(obj.get_absolute_url())
 
 
-class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, View):
+class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
     dataset: Dataset
 
     def dispatch(self, request, *args, **kwargs):
@@ -375,7 +369,6 @@ class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, RevisionM
                         organization=self.dataset.organization,
                         status=Request.CREATED,
                     )
-                set_comment(Request.CREATED)
                 comment.rel_content_type = ContentType.objects.get_for_model(new_request)
                 comment.rel_object_id = new_request.pk
                 comment.type = Comment.REQUEST

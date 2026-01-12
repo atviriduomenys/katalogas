@@ -4,7 +4,25 @@ Changes
 v 1.12 (unreleased)
 ==================
 
+Improvements
 
+- https://github.com/atviriduomenys/katalogas/issues/2155
+
+Corrected some texts
+
+https://github.com/atviriduomenys/katalogas/issues/2172
+
+Security: Update katalogas to automatically record all data changes made through UI, django-admin or celery tasks:
+
+- Update katalogas to use django-reversion middleware to wrap each request in revision context.
+- Update celery default task to wrap each task execution with revision context
+- Automatically add custom JSON context to revision comment to be able to calculate origin of a change that was made.
+
+
+v 1.11.3 (2026-01-05)
+==================
+
+- Revert `CustomSignalProcessor`.
 
 v 1.11.2 (2025-12-18)
 ==================

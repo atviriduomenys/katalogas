@@ -16,7 +16,7 @@ import logging
 import markdown
 from jinja2 import Template
 from pdfminer.high_level import extract_text
-from weasyprint import HTML
+# from weasyprint import HTML
 
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.utils import (

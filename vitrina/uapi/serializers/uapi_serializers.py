@@ -36,6 +36,7 @@ class BaseObjectMixin(serializers.Serializer):
         return self.context.get("_type", "")
 
     def get__revision(self, obj: Model) -> str:
+        # TODO: Logic needs to be updated. https://github.com/atviriduomenys/katalogas/issues/2177
         latest_version = Version.objects.get_for_object(obj).first()
         return str(latest_version.revision_id) if latest_version else ""
 

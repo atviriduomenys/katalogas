@@ -15,6 +15,7 @@ from vitrina.cms.models import (
     LearningMaterialFile,
 )
 from vitrina.orgs.models import PublishedReport
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 class LearningMaterialFileInline(admin.TabularInline):
@@ -23,7 +24,7 @@ class LearningMaterialFileInline(admin.TabularInline):
     fields = ("file", "name")
 
 
-class LearningMaterialAdmin(admin.ModelAdmin):
+class LearningMaterialAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "topic",
         "published",
@@ -42,7 +43,7 @@ class LearningMaterialAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class FaqAdmin(admin.ModelAdmin):
+class FaqAdmin(RevisionCommentVersionAdmin):
     list_display = ("question",)
     form = FaqAdminForm
 
@@ -55,7 +56,7 @@ class FaqAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class ExternalSiteAdmin(admin.ModelAdmin):
+class ExternalSiteAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "title",
         "type",
@@ -71,7 +72,7 @@ class ExternalSiteAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class PublishedReportAdmin(admin.ModelAdmin):
+class PublishedReportAdmin(RevisionCommentVersionAdmin):
     list_display = ("title",)
     form = PublishedReportAdminForm
 
@@ -84,7 +85,7 @@ class PublishedReportAdmin(admin.ModelAdmin):
         super().save_model(request, obj, form, change)
 
 
-class DeploymentAdmin(admin.ModelAdmin):
+class DeploymentAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "message_lt_display",
         "message_en_display",

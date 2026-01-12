@@ -1,8 +1,12 @@
 from datetime import timedelta
+from typing import Any
 
 from django.contrib.auth import logout
 from django.utils.deprecation import MiddlewareMixin
 from django.utils.timezone import now
+from django.http import HttpRequest
+import reversion
+from vitrina.utils import RevisionComment, RevisionSource
 
 
 class NoAutoLocaleMiddleware(MiddlewareMixin):
@@ -23,3 +27,32 @@ class LogoutMiddleware:
                 logout(request)
         response = self.get_response(request)
         return response
+
+
+class AutoRevisionCommentMiddleware(MiddlewareMixin):
+    """
+    Automatically sets a default reversion comment for CUD operations based on the view
+    and the view arguments, if a revision is active.
+    """
+
+    def process_view(
+        self, request: HttpRequest, view_func: Any, view_args: list[Any], view_kwargs: dict[str, Any]
+    ) -> None:
+        if not reversion.is_active() or reversion.get_comment() or hasattr(view_func, "model_admin"):
+            return None
+
+        match = request.resolver_match
+
+        if not match:
+            return None
+
+        comment = RevisionComment(
+            source=RevisionSource.VIEW,
+            action=match.url_name or match.view_name,
+            http_method=request.method,
+            path=request.path,
+            args=list(view_args),
+            kwargs=view_kwargs,
+        )
+        reversion.set_comment(comment.to_json())
+        return None

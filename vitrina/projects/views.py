@@ -23,8 +23,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
 
 import requests
-from reversion import set_comment
-from reversion.views import RevisionMixin
 
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.api.oauth import OAuthClientManagement
@@ -134,7 +132,7 @@ class ProjectDetailView(ProjectViewBaseMixin, PermissionRequiredMixin, DetailVie
         return can_view_project(self.request.user, self.project)
 
 
-class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
+class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "base_form.html"
@@ -152,7 +150,6 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         self.object.user = self.request.user
         self.object.status = Project.CREATED
         self.object.save()
-        set_comment(Project.CREATED)
         Task.objects.create(
             title=f"Užregistruotas naujas panaudojimo atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
             description="Portale užregistruotas naujas panaudojimo atvejis.",
@@ -180,7 +177,7 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         return context_data
 
 
-class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Project
     form_class = ProjectForm
     template_name = "base_form.html"
@@ -208,7 +205,6 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         super().form_valid(form)
         self.object = form.save(commit=True)
         self.object.save()
-        set_comment(Project.EDITED)
         sub_ct = ContentType.objects.get_for_model(self.object)
         subs = Subscription.objects.filter(
             sub_type=Subscription.PROJECT,
@@ -653,7 +649,7 @@ class ClientListView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequire
         return context
 
 
-class ClientCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
+class ClientCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, CreateView):
     model = UseCaseClient
     form_class = ClientCreateForm
     template_name = "base_form.html"
@@ -688,7 +684,7 @@ class ClientCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequi
         return context_data
 
 
-class ClientUpdateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class ClientUpdateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, UpdateView):
     model = UseCaseClient
     form_class = ClientCreateForm
     template_name = "base_form.html"
@@ -754,9 +750,7 @@ class ClientDetailView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequi
         return context
 
 
-class ClientScopeCreateView(
-    LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, RevisionMixin, CreateView
-):
+class ClientScopeCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, CreateView):
     model = UseCaseClientScope
     form_class = ClientScopeCreateForm
     template_name = "base_form.html"

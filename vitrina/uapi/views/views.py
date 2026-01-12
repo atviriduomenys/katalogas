@@ -15,7 +15,6 @@ from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from reversion import create_revision
 
 from vitrina.api.oauth import (
     OAuth2Authentication,
@@ -118,30 +117,28 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         )
         serializer.is_valid(raise_exception=True)
 
-        with create_revision():
-            dataset_data = serializer.validated_data | {
-                "subclass": self.dcat_resource_subclass,
-                "access_rights": Dataset.NON_PUBLIC,
-                "organization_id": organization.id,
-            }
+        dataset_data = serializer.validated_data | {
+            "subclass": self.dcat_resource_subclass,
+            "access_rights": Dataset.NON_PUBLIC,
+            "organization_id": organization.id,
+        }
 
-            title = dataset_data.get("title", None)
-            description = dataset_data.get("description", None)
-            parent_id = dataset_data.pop("parent_id", None)
+        title = dataset_data.get("title", None)
+        description = dataset_data.get("description", None)
+        parent_id = dataset_data.pop("parent_id", None)
 
-            instance = Dataset(**dataset_data)
+        instance = Dataset(**dataset_data)
 
-            parent = Dataset.objects.filter(id=parent_id).first() if parent_id else None
-            if parent:
-                parent.add_child(instance=instance)
-            else:
-                Dataset.add_root(instance=instance)
+        if parent_id and (parent := Dataset.objects.filter(id=parent_id).first()):
+            parent.add_child(instance=instance)
+        else:
+            Dataset.add_root(instance=instance)
 
-            language = getattr(request, "LANGUAGE_CODE", "lt")
-            instance.set_current_language(language)
-            instance.title = title or instance.title
-            instance.description = description or instance.description
-            instance.save()
+        language = getattr(request, "LANGUAGE_CODE", "lt")
+        instance.set_current_language(language)
+        instance.title = title or instance.title
+        instance.description = description or instance.description
+        instance.save()
 
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
@@ -309,8 +306,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
             },
         )
         serializer.is_valid(raise_exception=True)
-        with create_revision():
-            instance = serializer.save()
+        instance = serializer.save()
 
         response_serializer = UAPIDistributionSerializer(
             instance,

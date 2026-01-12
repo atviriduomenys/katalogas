@@ -194,12 +194,22 @@ urlpatterns = [
     path(
         "datasets/<int:pk>/structure/export/",
         DatasetStructureExportView.as_view(),
+        name="dataset-structure-export-no-version",
+    ),
+    path(
+        "datasets/<int:pk>/versions/<int:version_id>/structure/export/",
+        DatasetStructureExportView.as_view(),
         name="dataset-structure-export",
+    ),
+    path(
+        "datasets/<int:pk>/versions/<int:version_id>/structure/export/openapi/",
+        DatasetStructureExportOpenAPIView.as_view(),
+        name="dataset-structure-export-openapi",
     ),
     path(
         "datasets/<int:pk>/structure/export/openapi/",
         DatasetStructureExportOpenAPIView.as_view(),
-        name="dataset-structure-export-openapi",
+        name="dataset-structure-export-openapi-no-version",
     ),
     path(
         "datasets/<int:pk>/versions/<int:version_id>/<str:model>/<str:prop>/enum/add/",

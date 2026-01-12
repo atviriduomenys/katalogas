@@ -130,10 +130,12 @@ class DatasetFactory(DjangoModelFactory):
     def metadata(self, create, extracted, **kwargs):
         if not create:
             return
+        name = extracted if extracted is not None else self.organization.name + "/abcd"
         MetadataFactory.create(
             dataset=self,
             content_type=ContentType.objects.get_for_model(self),
-            object_id=self.pk
+            object_id=self.pk,
+            name=name
         )
 
 def _get_language_value(lang: str, value: Union[str | dict]) -> str:

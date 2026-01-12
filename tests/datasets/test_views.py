@@ -246,7 +246,7 @@ class TestDatasetDetailView:
 
     def test_dataset_detail_tags(self, app: DjangoTestApp, dataset_detail_data: dict):
         dataset = DatasetFactory(tags=("tag-1", "tag-2", "tag-3"), status="HAS_DATA")
-        resp = app.get(dataset.get_absolute_url())
+        resp = app.get(dataset.get_absolute_url()).follow()
         assert len(resp.context["tags"]) == 3
         assert resp.context["tags"] == [
             {"name": "tag-1", "pk": dataset.tags.get(name="tag-1").pk},
@@ -266,7 +266,7 @@ class TestDatasetDetailView:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset = DatasetFactory()
-        resp = app.get(dataset.get_absolute_url())
+        resp = app.get(dataset.get_absolute_url()).follow()
         resp = resp.click(linkid="add_resource")
         assert resp.request.path == reverse("resource-add", args=[dataset.pk])
 
@@ -280,7 +280,7 @@ class TestDatasetDetailView:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset.manager = user
-        response = app.get(reverse("dataset-detail", kwargs={"pk": dataset.id}))
+        response = app.get(reverse("dataset-detail", kwargs={"pk": dataset.id})).follow()
         response.click(linkid="change_dataset")
         assert response.status_code == 200
 
@@ -300,7 +300,7 @@ class TestDatasetDetailView:
         )
 
         app.set_user(user)
-        response = app.get(reverse("dataset-detail", args=[dataset.pk]))
+        response = app.get(reverse("dataset-detail", args=[dataset.pk])).follow()
         assert response.status_code == 200
         assert response.context["dataset"] == dataset
 
@@ -314,7 +314,7 @@ class TestDatasetDetailView:
         ds = DatasetFactory(organization=organization, publisher=publisher_org, frequency=frequency)
 
         app.set_user(user)
-        response = app.get(reverse("dataset-detail", kwargs={"pk": ds.pk}))
+        response = app.get(reverse("dataset-detail", kwargs={"pk": ds.pk})).follow()
         assert response.status_code == 200
         assert publisher_org.title in response.text
         assert publisher_org.email in response.text
@@ -326,7 +326,7 @@ class TestDatasetDetailView:
         user = UserFactory(is_staff=True, organization=org)
         ds = DatasetFactory(organization=org, publisher=publisher_org)
         app.set_user(user)
-        response = app.get(reverse("dataset-detail", args=[ds.pk]))
+        response = app.get(reverse("dataset-detail", args=[ds.pk])).follow()
         assert response.status_code == 200
 
         assert org.title in response.text
@@ -352,7 +352,7 @@ class TestDatasetDetailView:
 
         app.set_user(user)
 
-        response = app.get(reverse("dataset-detail", args=[ds.pk]))
+        response = app.get(reverse("dataset-detail", args=[ds.pk])).follow()
         assert response.status_code == 200
 
         assert org.title in response.text
@@ -380,7 +380,7 @@ class TestDatasetDetailView:
 
         app.set_user(user)
 
-        response = app.get(reverse("dataset-detail", args=[ds.pk]))
+        response = app.get(reverse("dataset-detail", args=[ds.pk])).follow()
         assert response.status_code == 200
 
         assert org.title in response.text
@@ -1477,10 +1477,7 @@ class TestDatasetUpdateView:
         user = UserFactory(is_staff=True, organization=org)
         app.set_user(user)
 
-        dataset = DatasetFactory(organization=org, title="Test Dataset")
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(Dataset), name="", dataset=dataset, object_id=dataset.pk
-        )
+        dataset = DatasetFactory(organization=org, title="Test Dataset", metadata="")
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
         form["title"] = "Updated Test Dataset"
@@ -1498,13 +1495,7 @@ class TestDatasetUpdateView:
         user = UserFactory(is_staff=True, organization=org)
         app.set_user(user)
 
-        dataset = DatasetFactory(organization=org, title="Test Dataset")
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            name="test-organization/test-dataset",
-            dataset=dataset,
-            object_id=dataset.pk,
-        )
+        dataset = DatasetFactory(organization=org, title="Test Dataset", metadata="test-organization/test-dataset")
 
         form = app.get(reverse("dataset-change", kwargs={"pk": dataset.id})).forms["dataset-form"]
         form["title"] = "Updated Test Dataset"
@@ -2086,24 +2077,10 @@ class TestDatasetCreateView:
         org = OrganizationFactory()
         user = UserFactory(is_staff=True, organization=org)
         app.set_user(user)
-        dataset1 = DatasetFactory(organization=org, title="Test Dataset")
+        dataset1 = DatasetFactory(organization=org, title="Test Dataset", metadata=f"{org.name}test-dataset")
         metadata_version1 = VersionFactory(dataset=dataset1)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            name=f"{org.name}test-dataset",
-            dataset=dataset1,
-            object_id=dataset1.pk,
-            metadata_version=metadata_version1,
-        )
-        dataset2 = DatasetFactory(organization=org, title="Second Test Dataset")
+        dataset2 = DatasetFactory(organization=org, title="Second Test Dataset", metadata=f"{org.name}test-dataset_3")
         metadata_version2 = VersionFactory(dataset=dataset2)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            name=f"{org.name}test-dataset_3",
-            dataset=dataset2,
-            object_id=dataset2.pk,
-            metadata_version=metadata_version2,
-        )
 
         form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
             "dataset-form"
@@ -3076,7 +3053,7 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     form = app.get(url).forms["dataset-form"]
     form["title"] = "Updated title"
     form["description"] = "Updated description"
-    resp = form.submit().follow()
+    resp = form.submit().follow().follow()
     resp = resp.click(linkid="history-tab")
     assert resp.context["detail_url_name"] == "dataset-detail"
     assert resp.context["history_url_name"] == "dataset-history"
@@ -3281,7 +3258,7 @@ def test_delete_last_distribution_from_dataset(app: DjangoTestApp):
     dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
     resource = DatasetDistributionFactory(dataset=dataset)
 
-    app.post(reverse("resource-delete", args=[resource.pk]))
+    app.post(reverse("resource-delete", args=[resource.pk, resource.metadata_version.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 0
@@ -3299,7 +3276,7 @@ def test_delete_non_last_distribution_from_dataset(app: DjangoTestApp):
     resource1 = DatasetDistributionFactory(dataset=dataset)
     resource2 = DatasetDistributionFactory(dataset=dataset)
 
-    app.post(reverse("resource-delete", args=[resource2.pk]))
+    app.post(reverse("resource-delete", args=[resource2.pk, resource2.metadata_version.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 1
@@ -3314,7 +3291,7 @@ def test_delete_last_distribution_from_non_public_dataset(app: DjangoTestApp):
     dataset = DatasetFactory(organization=organization, status=Dataset.UNASSIGNED, is_public=False)
     resource = DatasetDistributionFactory(dataset=dataset)
 
-    app.post(reverse("resource-delete", args=[resource.pk]))
+    app.post(reverse("resource-delete", args=[resource.pk, resource.metadata_version.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 0
@@ -3331,7 +3308,7 @@ def test_delete_last_distribution_from_dataset_with_plans(app: DjangoTestApp):
     plan = PlanFactory()
     PlanDataset.objects.create(dataset=dataset, plan=plan)
 
-    app.post(reverse("resource-delete", args=[resource.pk]))
+    app.post(reverse("resource-delete", args=[resource.pk, resource.metadata_version.pk]))
 
     dataset.refresh_from_db()
     assert dataset.datasetdistribution_set.count() == 0
@@ -3365,13 +3342,13 @@ def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
 def test_dataset_dynamic_resources(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    resource = DatasetDistributionFactory(uapi_format=True)
-    form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.pk])).forms["model-form"]
+    resource = DatasetDistributionFactory(uapi_format=False)
+    form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.metadata_version.pk, resource.pk])).forms["model-form"]
     form["name"] = "TestModel"
     form.submit()
     assert resource.model_set.first().name == "TestModel"
 
-    response = app.get(reverse("dataset-detail", args=[resource.dataset.pk]))
+    response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
     html = response.text
     table_data = parse_table(html)
     expected_data = [
@@ -3452,14 +3429,14 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
 def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    resource = DatasetDistributionFactory(uapi_format=True)
+    resource = DatasetDistributionFactory(uapi_format=False)
     for model_name in ["TestModel", "TestModel2", "TestModel3"]:
-        form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.pk])).forms["model-form"]
+        form = app.get(reverse("resource-model-create", args=[resource.dataset.pk, resource.metadata_version.pk, resource.pk])).forms["model-form"]
         form["name"] = model_name
         form.submit()
     assert resource.model_set.count() == 3
 
-    response = app.get(reverse("dataset-detail", args=[resource.dataset.pk]))
+    response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
     html = response.text
     table_data = parse_table(html)
     expected_data = [
@@ -3912,7 +3889,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         title="Duomenys",
         description="Duomenys iš spintos",
         format=FileFormat(title="Saugyklos API", extension="UAPI"),
-        uapi_format=True,
+        uapi_format=False,
         data_service=data_service,
         licence=LicenceFactory(url=f"{po}/licence/CC_BY_4_0"),
         conditions="platinimo sąlygos",

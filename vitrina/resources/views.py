@@ -102,6 +102,29 @@ class ResourceCreateView(
         resource.dataset = self.dataset
         resource.save()
 
+        name = form.cleaned_data.get("name")
+        if not name:
+            name = (
+                DatasetDistribution.objects.filter(
+                    dataset=self.dataset,
+                    name__iregex=r"resource[0-9]+",
+                )
+                .order_by("name")
+                .values_list("name", flat=True)
+                .last()
+            )
+            if not name:
+                name = "resource1"
+            else:
+                n = name.replace("resource", "")
+                try:
+                    n = int(n)
+                except ValueError:
+                    n = 0
+                n += 1
+                name = f"resource{n}"
+        resource.name = name
+
         if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():
             dataset_plans = Plan.objects.filter(plandataset__dataset=self.dataset)
             for plan in dataset_plans:
@@ -172,27 +195,7 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMi
         applicable_legislation_urls = form.cleaned_data.pop("applicable_legislation")
         resource: DatasetDistribution = form.save()
         name = form.cleaned_data.get("name")
-        if not name:
-            name = (
-                Metadata.objects.filter(
-                    dataset=resource.dataset,
-                    content_type=ContentType.objects.get_for_model(DatasetDistribution),
-                    name__iregex=r"resource[0-9]+",
-                )
-                .order_by("name")
-                .values_list("name", flat=True)
-                .last()
-            )
-            if not name:
-                name = "resource1"
-            else:
-                n = name.replace("resource", "")
-                try:
-                    n = int(n)
-                except ValueError:
-                    n = 0
-                n += 1
-                name = f"resource{n}"
+
         if metadata := resource.metadata.first():
             metadata.name = name
             metadata.access = form.cleaned_data.get("access") or None

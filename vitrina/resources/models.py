@@ -430,36 +430,12 @@ class DatasetDistribution(TranslatableModel):
             metadata_instance.metadata_version = metadata_version
             metadata_instance.save()
         else:
-            name = self.name
-            if not name:
-                latest_metadata_name = (
-                    Metadata.objects.filter(
-                        dataset=self.dataset,
-                        content_type=ContentType.objects.get_for_model(DatasetDistribution),
-                        name__iregex=r"resource[0-9]+",
-                    )
-                    .order_by("name")
-                    .values_list("name", flat=True)
-                    .last()
-                )
-                if not latest_metadata_name:
-                    name = "resource1"
-                else:
-                    n = latest_metadata_name.replace("resource", "")
-                    try:
-                        n = int(n)
-                    except ValueError:
-                        n = 0
-                    n += 1
-                    name = f"resource{n}"
-                self.name = name
-            self.save()
             metadata_instance = Metadata.objects.create(
                 uuid=str(uuid.uuid4()),
                 dataset=self.dataset,
                 content_type=ContentType.objects.get_for_model(DatasetDistribution),
                 object_id=self.pk,
-                name=name,
+                name=self.name,
                 prepare_ast={},
                 access=self.access or None,
                 version=1,

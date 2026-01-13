@@ -841,12 +841,8 @@ def test_structure_without_resource_and_distribution(app: DjangoTestApp):
     structure.dataset.save()
     create_structure_objects(structure)
 
-    assert DatasetDistribution.objects.count() == 1
-    distribution = DatasetDistribution.objects.first()
-    assert distribution.metadata.count() == 1
-    assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
-    assert Model.objects.get(metadata__uuid='1').distribution == distribution
-    assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert DatasetDistribution.objects.count() == 0
+    assert Model.objects.count() == 2
     assert structure.dataset.status == Dataset.HAS_DATA
 
 
@@ -1419,7 +1415,7 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    create_structure_objects(structure)
     assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
     assert Metadata.objects.filter(dataset=structure.dataset).count() == 3
 
@@ -1437,8 +1433,7 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
-
+    create_structure_objects(structure)
     assert list(Comment.objects.filter(
         type=Comment.STRUCTURE_ERROR,
         content_type=ContentType.objects.get_for_model(structure),
@@ -2149,34 +2144,7 @@ def test_structure_without_resource__dataset_title(app: DjangoTestApp):
     structure.dataset.save()
     create_structure_objects(structure)
 
-    distribution = DatasetDistribution.objects.first()
-    assert distribution.title == "Test dataset"
-
-
-@pytest.mark.django_db
-def test_structure_without_resource__dataset_name(app: DjangoTestApp):
-    manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
-        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
-        ',,,,,,,,,,,,,,,,,,\n'
-        '1,,,,City,,,,,,,,,,,,,,\n'
-        '2,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
-        '3,,,,,title,string,,,,5,,,open,dct:title,,,,\n'
-        '4,,,,Country,,,,,,,,,,,,,,\n'
-        '5,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
-    )
-    structure = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename='file.csv', data=manifest)
-        )
-    )
-    structure.dataset.current_structure = structure
-    structure.dataset.save()
-    create_structure_objects(structure)
-
-    distribution = DatasetDistribution.objects.first()
-    assert distribution.title == "adp"
+    assert DatasetDistribution.objects.count() == 0
 
 
 @pytest.mark.django_db

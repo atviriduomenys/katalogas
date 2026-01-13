@@ -3257,6 +3257,7 @@ def test_delete_last_distribution_from_dataset(app: DjangoTestApp):
     app.set_user(user)
     dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
     resource = DatasetDistributionFactory(dataset=dataset)
+    ModelFactory(dataset=resource.dataset, distribution=resource)
 
     app.post(reverse("resource-delete", args=[resource.pk, resource.metadata_version.pk]))
 
@@ -3275,6 +3276,7 @@ def test_delete_non_last_distribution_from_dataset(app: DjangoTestApp):
     dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
     resource1 = DatasetDistributionFactory(dataset=dataset)
     resource2 = DatasetDistributionFactory(dataset=dataset)
+    ModelFactory(dataset=resource2.dataset, distribution=resource2)
 
     app.post(reverse("resource-delete", args=[resource2.pk, resource2.metadata_version.pk]))
 
@@ -3290,6 +3292,7 @@ def test_delete_last_distribution_from_non_public_dataset(app: DjangoTestApp):
     app.set_user(user)
     dataset = DatasetFactory(organization=organization, status=Dataset.UNASSIGNED, is_public=False)
     resource = DatasetDistributionFactory(dataset=dataset)
+    ModelFactory(dataset=resource.dataset, distribution=resource)
 
     app.post(reverse("resource-delete", args=[resource.pk, resource.metadata_version.pk]))
 
@@ -3305,6 +3308,7 @@ def test_delete_last_distribution_from_dataset_with_plans(app: DjangoTestApp):
     app.set_user(user)
     dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
     resource = DatasetDistributionFactory(dataset=dataset)
+    ModelFactory(dataset=resource.dataset, distribution=resource)
     plan = PlanFactory()
     PlanDataset.objects.create(dataset=dataset, plan=plan)
 

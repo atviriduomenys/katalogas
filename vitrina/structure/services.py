@@ -117,14 +117,14 @@ def create_or_get_uapi_format():
 def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version):
     ct = ContentType.objects.get_for_model(dataset)
     existing_metadata = Metadata.objects.filter(
-        content_type=ct, object_id=dataset.pk, metadata_version=metadata_version
+        content_type=ct, object_id=dataset.pk
     )
     loaded_metadata = []
 
     _clean_errors(dataset.current_structure)
     for order, meta in enumerate(state.manifest.datasets.values(), 1):
         if (
-            metadata := Metadata.objects.filter(content_type=ct, name=meta.name, metadata_version=metadata_version)
+            metadata := Metadata.objects.filter(content_type=ct, name=meta.name)
             .exclude(dataset=dataset)
             .first()
         ):
@@ -140,7 +140,7 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
             loaded_metadata.append(metadata)
             metadata_version.delete()
         else:
-            if md := dataset.metadata.filter(name=meta.name, metadata_version=metadata_version).first():
+            if md := dataset.metadata.filter(name=meta.name).first():
                 if not meta.id:
                     meta.id = md.uuid
 

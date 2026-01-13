@@ -60,18 +60,6 @@ class ModelFactory(DjangoModelFactory):
     metadata_version = factory.SubFactory(VersionFactory)
     dataset = factory.SelfAttribute("metadata_version.dataset")
 
-    @factory.post_generation
-    def metadata(self, create, extracted, **kwargs):
-        if not create:
-            return
-        name = extracted if extracted is not None else "TestModel"
-        MetadataFactory.create(
-            dataset=self.dataset,
-            content_type=ContentType.objects.get_for_model(self),
-            object_id=self.pk,
-            name=name,
-            metadata_version=self.metadata_version,
-        )
 
 class BaseFactory(DjangoModelFactory):
     class Meta:

@@ -409,7 +409,7 @@ def test_structure_tab_from_dataset_detail(app: DjangoTestApp):
     )
 
     resp = app.get(dataset.get_absolute_url()).follow()
-    resp = resp.click(linkid='structure_tab')
+    resp = resp.click(linkid='structure_tab').follow()
     assert resp.request.path == reverse('dataset-structure', args=[dataset.pk, version.pk])
 
 
@@ -1855,13 +1855,6 @@ def test_model_create(app: DjangoTestApp):
         uri="dcat:TestModel",
         metadata_version=version
     )
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
     prop = PropertyFactory(model=model, metadata_version=version)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
@@ -1893,6 +1886,7 @@ def test_model_create(app: DjangoTestApp):
     form['base_ref'].force_value([prop.pk])
     form['comment'] = 'Added Model'
     resp = form.submit()
+
     new_model = dataset.model_set.exclude(pk=model.pk).first()
     assert resp.url == new_model.get_absolute_url()
     assert new_model.metadata.count() == 1

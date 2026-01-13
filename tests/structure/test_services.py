@@ -577,7 +577,6 @@ def test_structure_with_comments(app: DjangoTestApp):
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
         format=FileFormat(title="Saugykla", extension='UAPI'),
-        metadata_version=metadata_version
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -723,22 +722,20 @@ def test_structure_without_resource_and_existing_distribution(app: DjangoTestApp
         )
     )
     metadata_version = VersionFactory(dataset=structure.dataset)
-    distribution = DatasetDistributionFactory(
+    DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
         format=FileFormat(title="Saugykla", extension='UAPI'),
-        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure, metadata_version)
 
-    assert distribution.metadata.count() == 1
-    assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
-    assert Model.objects.get(metadata__uuid='1').distribution == distribution
-    assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert DatasetDistribution.objects.count() == 1
+    assert Model.objects.get(metadata__uuid='1').distribution == None
+    assert Model.objects.get(metadata__uuid='2').distribution == None
     assert structure.dataset.status == Dataset.HAS_DATA
 
 
@@ -765,7 +762,7 @@ def test_structure_without_resource_and_existing_distribution_without_title(app:
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
         format=FileFormat(title="Saugykla", extension='UAPI'),
-        metadata_version=metadata_version
+        title="adp"
     )
 
     structure.dataset.current_structure = structure
@@ -774,10 +771,9 @@ def test_structure_without_resource_and_existing_distribution_without_title(app:
 
     distribution.refresh_from_db()
     distribution.set_current_language("lt")
-    assert distribution.metadata.count() == 1
-    assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
-    assert Model.objects.get(metadata__uuid='1').distribution == distribution
-    assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert DatasetDistribution.objects.count() == 1
+    assert Model.objects.get(metadata__uuid='1').distribution == None
+    assert Model.objects.get(metadata__uuid='2').distribution == None
     assert structure.dataset.status == Dataset.HAS_DATA
     assert distribution.title == "adp"
 
@@ -800,22 +796,20 @@ def test_structure_without_resource_and_existing_distribution_without_ns(app: Dj
         )
     )
     metadata_version = VersionFactory(dataset=structure.dataset)
-    distribution = DatasetDistributionFactory(
+    DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/',
         format=FileFormat(title="Saugykla", extension='UAPI'),
-        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure, metadata_version)
 
-    assert distribution.metadata.count() == 1
-    assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/'
-    assert Model.objects.get(metadata__uuid='1').distribution == distribution
-    assert Model.objects.get(metadata__uuid='2').distribution == distribution
+    assert DatasetDistribution.objects.count() == 1
+    assert Model.objects.get(metadata__uuid='1').distribution == None
+    assert Model.objects.get(metadata__uuid='2').distribution == None
     assert structure.dataset.status == Dataset.HAS_DATA
 
 

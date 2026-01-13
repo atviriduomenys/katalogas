@@ -40,7 +40,7 @@ def _generate_test_token(
     oauth_client_id = None
     if organization:
         agent = AgentFactory(organization=organization, oauth_client_id=str(uuid.uuid4()), is_enabled=agent_is_enabled)
-        oauth_client_id =agent.oauth_client_id
+        oauth_client_id = agent.oauth_client_id
     now = datetime.utcnow()
     claims = {
         "iss": "test-issuer",

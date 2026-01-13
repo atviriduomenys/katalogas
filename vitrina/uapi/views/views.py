@@ -320,7 +320,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, view
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class AgentSyncDoneViewSet(AgentAuthViewSetMixin, viewsets.ModelViewSet):
+class AgentSyncDoneViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
     required_scopes = {"update": ["uapi:/datasets/gov/vssa/dcat/Agreement/:patch"]}
 
     lookup_url_kwarg = "agreement_id"

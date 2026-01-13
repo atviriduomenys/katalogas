@@ -146,7 +146,11 @@ def test_sync_agent_is_disabled(
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json == {
-        "detail": "The agent is disabled. Enable the agent in the Data catalog to access this API."
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
+        "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+        "additionalProperties": None,
     }
 
 

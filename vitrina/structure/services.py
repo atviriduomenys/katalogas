@@ -1067,11 +1067,14 @@ def _dataset_to_tabular(dataset: Dataset, separator: bool = False, version: Vers
     if version is not None:
         meta_query = meta_query.filter(metadata_version=version)
     if meta := meta_query.first():
+        dataset_name = meta.name
+        if version is not None and version.status != VersionStatus.DRAFT and version.major is not None:
+            dataset_name = f"{meta.name}/{version.major}"
         yield to_row(
             DATASET,
             {
                 "id": meta.uuid,
-                "dataset": meta.name,
+                "dataset": dataset_name,
                 "level": meta.level_given,
                 "access": _get_access(meta.access),
                 "title": dataset.title,

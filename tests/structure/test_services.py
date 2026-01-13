@@ -12,6 +12,7 @@ from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
+from vitrina.structure import VersionStatus
 from vitrina.structure.factories import VersionFactory
 from vitrina.structure.models import (
     Metadata,
@@ -1493,6 +1494,39 @@ def test_uri_prefix(app: DjangoTestApp):
             type=Comment.STRUCTURE_ERROR,
         ).values_list("body", flat=True)
     ) == ['Prefiksas "spinta" duomenų ištekliuje neegzistuoja.']
+
+
+@pytest.mark.django_db
+def test_structure_export__dataset_name(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
+        '1,,,,,,prefix,spinta,,,,,,,,https://github.com/atviriduomenys/spinta/issues/,,,\n'
+        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        '3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\n'
+        '4,,,,,,,dct,,,,,,,,http://purl.org/dc/terms/,,,'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = VersionFactory(dataset=structure.dataset, major=3, status=VersionStatus.PRE_RELEASE)
+    create_structure_objects(structure, version)
+    resp = app.get(
+        reverse(
+            "dataset-structure-export",
+            args=[structure.dataset.pk, version.pk]
+        )
+    )
+    assert "datasets/gov/ivpk/adp/3" in resp.text
 
 
 @pytest.mark.django_db

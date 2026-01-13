@@ -11,7 +11,6 @@ from django_webtest import DjangoTestApp
 from factory.django import FileField
 from rest_framework import status
 from rest_framework.exceptions import ErrorDetail
-from reversion.models import Version
 
 from tests.conftest import _normalize_csv
 from tests.uapi.conftest import _generate_test_token, _build_reverse_uapi_url
@@ -236,6 +235,39 @@ def test_create_specific_scope(
         "service": False,
         "series": False,
         "subclass": DCATResourceSubclass.DATASET,
+    }
+
+
+def test_create_agent_is_disabled(
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset: str,
+    domain: str,
+    valid_token_disabled_agent: str,
+):
+    dataset_parent = DatasetFactory()
+    data = {
+        "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
+        "title": "DataSet 1",
+        "description": "DataSet 1 description",
+        "service": True,
+        "subclass": DCATResourceSubclass.SERVICE,
+        "parent_id": dataset_parent.pk,
+    }
+    response = app.post(
+        url_dataset,
+        data,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json == {
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
+        "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+        "additionalProperties": None,
     }
 
 
@@ -470,6 +502,29 @@ def test_list_specific_scope(
                 "subclass": DCATResourceSubclass.DATASET,
             }
         ]
+    }
+
+
+def test_list_agent_is_disabled(
+    app: DjangoTestApp,
+    organization: Organization,
+    url_dataset: str,
+    domain: str,
+    valid_token_disabled_agent: str,
+):
+    response = app.get(
+        url_dataset,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json == {
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
+        "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+        "additionalProperties": None,
     }
 
 
@@ -792,6 +847,33 @@ def test_action_upload_dataset_structure_specific_scope(
     assert file.label == f"dataset_{dataset.id}_structure.csv"
 
 
+def test_action_upload_agent_is_disabled(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    test_jwk: RSAKey,
+    valid_token_disabled_agent: str,
+):
+    response = app.post(
+        url_dataset_structure,
+        dsa,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
+        content_type="text/csv",
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json == {
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
+        "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+        "additionalProperties": None,
+    }
+
+
 @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
 def test_action_upload_dataset_structure_token_does_not_have_necessary_scopes(
     invalid_scopes: Iterable[str],
@@ -1021,7 +1103,43 @@ def test_action_get_dataset_structure_no_dataset(
         "message": "No Dataset matches the given query.",
         "additionalProperties": None,
     }
-def test_action_cant_get_dataset_invalid_token(
+
+
+def test_action_get_agent_is_disabled(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    valid_token_disabled_agent: str,
+):
+    structure = DatasetStructureFactory(
+        dataset=dataset,
+        file=FilerFileFactory(
+            file=FileField(filename=f"dataset_{dataset.id}_structure.csv", data=dsa)
+        )
+    )
+    dataset.current_structure = structure
+    dataset.save()
+    create_structure_objects(structure)
+
+    response = app.get(
+        url_dataset_structure,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json == {
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
+        "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+        "additionalProperties": None,
+    }
+
+
+def test_action_get_invalid_token(
     app: DjangoTestApp,
     organization: Organization,
     url_dataset_structure: str,
@@ -1104,6 +1222,32 @@ def test_action_update_dataset_structure_specific_scope(
     )
 
     assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
+
+
+def test_action_update_agent_is_disabled(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    dsa: str,
+    url_dataset_structure: str,
+    valid_token_disabled_agent: str,
+):
+    response = app.put(
+        url_dataset_structure,
+        dsa,
+        content_type="text/csv",
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json == {
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
+        "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+        "additionalProperties": None,
+    }
 
 
 @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])

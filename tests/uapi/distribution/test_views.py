@@ -131,6 +131,38 @@ def test_create_specific_scope(
     }
 
 
+def test_create_agent_is_disabled(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    url_distribution: str,
+    domain: str,
+    valid_token_disabled_agent: str,
+):
+    file_content = b"Sample CSV content"
+    data = {
+        "dataset": str(dataset.id),
+        "title": "Title",
+    }
+
+    response = app.post(
+        url_distribution,
+        data,
+        upload_files=[("file", "test.csv", file_content)],
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json == {
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
+        "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+        "additionalProperties": None,
+    }
+
+
 @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
 def test_create_token_does_not_have_necessary_scopes(
     invalid_scopes: Iterable[str],
@@ -256,7 +288,6 @@ def test_create_unexpected_exception_raised(
     }
 
 
-
 def test_list(
     app: DjangoTestApp,
     organization: Organization,
@@ -339,6 +370,30 @@ def test_list_specific_scope(
                 "upload_to_storage": distribution.upload_to_storage,
             }
         ]
+    }
+
+
+def test_list_agent_is_disabled(
+    app: DjangoTestApp,
+    organization: Organization,
+    dataset: Dataset,
+    url_distribution: str,
+    domain: str,
+    valid_token_disabled_agent: str,
+):
+    response = app.get(
+        url_distribution,
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json == {
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
+        "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+        "additionalProperties": None,
     }
 
 

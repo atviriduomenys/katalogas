@@ -987,6 +987,8 @@ class IterableFile:
 
 
 def export_dataset_structure(dataset: Dataset, version: Version | None=None) -> StringIO:
+    if not version:
+        version = dataset.latest_version()
     cols = DATASET
     rows = datasets_to_tabular(dataset, version=version)
     rows = ({c: row[c] for c in cols} for row in rows)

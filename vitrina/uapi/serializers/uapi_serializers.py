@@ -42,7 +42,6 @@ class BaseObjectMixin(serializers.Serializer):
 
 
 class BaseObjectListSerializer(serializers.Serializer):
-    _type = serializers.CharField()
     _data = serializers.ListField(child=serializers.DictField())
 
     def __init__(self, *args: Any, **kwargs: Any):
@@ -61,7 +60,6 @@ class BaseObjectListSerializer(serializers.Serializer):
         data_serializer = self.data_serializer_class(instance, many=True, context=context)
 
         return {
-            "_type": self._type_value,
             "_data": data_serializer.data,
         }
 

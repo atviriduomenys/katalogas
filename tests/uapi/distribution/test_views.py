@@ -311,7 +311,6 @@ class TestList:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.json == {
-            "_type": url_distribution.rstrip("/"),
             "_data": [
                 {
                     "@context": "",
@@ -357,7 +356,6 @@ class TestList:
 
         assert response.status_code == status.HTTP_200_OK
         assert response.json == {
-            "_type": url_distribution.rstrip("/"),
             "_data": [
                 {
                     "@context": "",
@@ -508,7 +506,6 @@ class TestList:
         assert response.status_code == status.HTTP_200_OK
         assert DatasetDistribution.objects.count() == 2
         assert response.json == {
-            "_type": url_distribution.rstrip("/"),
             "_data": [
                 {
                     "@context": "",

@@ -426,7 +426,6 @@ class TestList:
         assert response.status_code == status.HTTP_200_OK
         assert Dataset.objects.filter(organization=organization).count() == 1
         assert response.json == {
-            "_type": url_dataset.rstrip("/"),
             "_data": [
                 {
                     "@context": "",
@@ -481,7 +480,6 @@ class TestList:
         assert response.status_code == status.HTTP_200_OK
         assert Dataset.objects.filter(organization=organization).count() == 1
         assert response.json == {
-            "_type": url_dataset.rstrip("/"),
             "_data": [
                 {
                     "@context": "",
@@ -620,7 +618,6 @@ class TestList:
         assert response.status_code == status.HTTP_200_OK
         assert Dataset.objects.filter(organization=organization).count() == 2
         assert response.json == {
-            "_type": url_dataset.rstrip("/"),
             "_data": [
                 {
                     "@context": "",

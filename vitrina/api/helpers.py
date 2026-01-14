@@ -29,7 +29,7 @@ def get_datasets_for_rdf(qs):
             ]
 
             if dataset.is_part_of_dataservice():
-                dataset_resources = DynamicResourceService(dataset)
+                dataset_resources = DynamicResourceService(dataset, None)
                 dynamic_distributions = dataset_resources.generate_resources(is_for_rdf_export=True)
                 distributions.extend(dynamic_distributions)
 

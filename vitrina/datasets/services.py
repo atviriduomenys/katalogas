@@ -322,9 +322,9 @@ class DynamicResourceService:
     CSV_FORMAT = "CSV"
     RDF_FORMAT = "RDF"
 
-    def __init__(self, dataset: Dataset, metadata_version: Version):
+    def __init__(self, dataset: Dataset, metadata_version: Version | None):
         self.dataset: Dataset = dataset
-        self.metadata_version: Version = metadata_version
+        self.metadata_version: Version | None = metadata_version
         self.dataset_service = Dataset.objects.filter(service=True, endpoint_url=SPINTA_SERVER_URL).first()
         self.uapi_distribution = self.dataset.datasetdistribution_set.filter(format__extension="UAPI").first()
 
@@ -332,7 +332,10 @@ class DynamicResourceService:
         if not self.dataset.is_part_of_dataservice():
             return []
 
-        models = self.dataset.model_set.filter(metadata_version=self.metadata_version)
+        if is_for_rdf_export:
+            models = self.dataset.model_set.filter()
+        else:
+            models = self.dataset.model_set.filter(metadata_version=self.metadata_version)
         if not models:
             return []
         return [
@@ -351,10 +354,9 @@ class DynamicResourceService:
             )
             return {
                 "uri": reverse(
-                    "dynamic-resource-detail",
+                    "dynamic-resource-detail-no-version",
                     args=[
                         self.dataset.pk,
-                        self.metadata_version.pk,
                         self.uapi_distribution.pk,
                         distribution_name,
                         distribution_format.lower(),
@@ -435,7 +437,9 @@ class DynamicResourceService:
 
         return download_url, distribution_name
 
-    def retrieve_data(self, dataset_pk: int, metadata_version: Version, resource_name: str, distribution_format: str) -> dict:
+    def retrieve_data(
+        self, dataset_pk: int, metadata_version: Version, resource_name: str, distribution_format: str
+    ) -> dict:
         dataset = Dataset.objects.get(pk=dataset_pk)
         models = dataset.model_set.filter(metadata_version=metadata_version)
 

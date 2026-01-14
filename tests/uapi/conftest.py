@@ -111,9 +111,7 @@ def organization() -> Organization:
 @pytest.fixture
 def dataset(organization: Organization) -> Dataset:
     dataset = DatasetFactory(
-        organization=organization,
-        title="Title of the Dataset",
-        description="Description of the Dataset."
+        organization=organization, title="Title of the Dataset", description="Description of the Dataset."
     )
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(Dataset),
@@ -143,9 +141,7 @@ def domain() -> str:
 def distribution(organization: Organization, dataset: Dataset) -> DatasetDistribution:
     with reversion.create_revision():
         distribution = DatasetDistributionFactory(
-            dataset=dataset,
-            title="Title of the Distribution",
-            description="Description of the Distribution."
+            dataset=dataset, title="Title of the Distribution", description="Description of the Distribution."
         )
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(DatasetDistribution),

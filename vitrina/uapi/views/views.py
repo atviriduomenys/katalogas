@@ -33,8 +33,7 @@ from vitrina.uapi.serializers.serializers import (
     UAPIDatasetCreateSerializer,
 )
 from vitrina.uapi.utils.utils import extract_type_from_url
-from vitrina.uapi.utils.views import UAPIExceptionHandlerMixin
-from vitrina.uapi.views.mixins import AgentAuthViewSetMixin
+from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandlerMixin
 
 
 class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):

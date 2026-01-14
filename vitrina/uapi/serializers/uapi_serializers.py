@@ -15,6 +15,9 @@ from rest_framework import serializers
 from reversion.models import Version
 
 
+TYPE_PREFIX_TO_REMOVE = "/uapi/"
+
+
 class BaseObjectMixin(serializers.Serializer):
     _context = serializers.CharField(default="")
     _type = serializers.SerializerMethodField()
@@ -33,7 +36,7 @@ class BaseObjectMixin(serializers.Serializer):
         return representation
 
     def get__type(self, obj: Model) -> str:
-        return self.context.get("_type", "")
+        return (self.context.get("_type", "") or "").removeprefix(TYPE_PREFIX_TO_REMOVE)
 
     def get__revision(self, obj: Model) -> str:
         # TODO: Logic needs to be updated. https://github.com/atviriduomenys/katalogas/issues/2177

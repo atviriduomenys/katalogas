@@ -23,6 +23,7 @@ from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import create_structure_objects
+from vitrina.uapi.serializers.uapi_serializers import TYPE_PREFIX_TO_REMOVE
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -67,7 +68,7 @@ class TestCreate:
 
         assert response.json == {
             "@context": "",
-            "_type": url_dataset.rstrip("/"),
+            "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
             "_id": str(dataset.id),
             "_revision": "",
             "_txn": "",
@@ -214,7 +215,7 @@ class TestCreate:
         assert dataset
         assert response.json == {
             "@context": "",
-            "_type": url_dataset.rstrip("/"),
+            "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
             "_id": str(dataset.id),
             "_revision": "",
             "_txn": "",
@@ -429,7 +430,7 @@ class TestList:
             "_data": [
                 {
                     "@context": "",
-                    "_type": url_dataset.rstrip("/"),
+                    "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
                     "_id": str(dataset.id),
                     "_revision": "",
                     "_txn": "",
@@ -483,7 +484,7 @@ class TestList:
             "_data": [
                 {
                     "@context": "",
-                    "_type": url_dataset.rstrip("/"),
+                    "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
                     "_id": str(dataset.id),
                     "_revision": "",
                     "_txn": "",
@@ -621,7 +622,7 @@ class TestList:
             "_data": [
                 {
                     "@context": "",
-                    "_type": url_dataset.rstrip("/"),
+                    "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
                     "_id": str(dataset.id),
                     "_revision": "",
                     "_txn": "",

@@ -18,7 +18,7 @@ from vitrina.orgs.models import Organization
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.factories import MetadataFactory
-
+from vitrina.uapi.serializers.uapi_serializers import TYPE_PREFIX_TO_REMOVE
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -56,7 +56,7 @@ class TestCreate:
         assert distribution
         assert response.json == {
             "@context": "",
-            "_type": url_distribution.rstrip("/"),
+            "_type": url_distribution.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
             "_id": str(distribution.id),
             "_revision": "",
             "_txn": "",
@@ -113,7 +113,7 @@ class TestCreate:
         assert distribution
         assert response.json == {
             "@context": "",
-            "_type": url_distribution.rstrip("/"),
+            "_type": url_distribution.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
             "_id": str(distribution.id),
             "_revision": "",
             "_txn": "",
@@ -314,7 +314,7 @@ class TestList:
             "_data": [
                 {
                     "@context": "",
-                    "_type": url_distribution.rstrip("/"),
+                    "_type": url_distribution.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
                     "_id": str(distribution.id),
                     "_revision": str(Version.objects.get_for_object(distribution).first().revision_id),
                     "_txn": "",
@@ -359,7 +359,7 @@ class TestList:
             "_data": [
                 {
                     "@context": "",
-                    "_type": url_distribution.rstrip("/"),
+                    "_type": url_distribution.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
                     "_id": str(distribution.id),
                     "_revision": str(Version.objects.get_for_object(distribution).first().revision_id),
                     "_txn": "",
@@ -509,7 +509,7 @@ class TestList:
             "_data": [
                 {
                     "@context": "",
-                    "_type": url_distribution.rstrip("/"),
+                    "_type": url_distribution.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
                     "_id": str(distribution.id),
                     "_revision": str(Version.objects.get_for_object(distribution).first().revision_id),
                     "_txn": "",

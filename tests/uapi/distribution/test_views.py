@@ -20,7 +20,6 @@ from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.factories import MetadataFactory
 from vitrina.uapi.serializers.uapi_serializers import TYPE_PREFIX_TO_REMOVE
 
-
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
 

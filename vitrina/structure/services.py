@@ -1272,7 +1272,9 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Versi
                 yield to_row(DATASET, {})
 
 
-def _resource_models_to_tabular(resource: DatasetDistribution, separator: bool = False, version: Version | None = None) -> Generator:
+def _resource_models_to_tabular(
+    resource: DatasetDistribution, separator: bool = False, version: Version | None = None
+) -> Generator:
     model_filter = {"distribution": resource, "dataset": resource.dataset}
     model_metadata_filter = {}
     property_list_filter = {}

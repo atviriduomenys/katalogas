@@ -37,6 +37,7 @@ Refactored representative role model to split coordinator and manager roles into
 https://github.com/atviriduomenys/spinta/issues/1647
 
 - Adding an API permission to check if Agent is enabled (in Catalog) before performing any requests coming from the Agent (spinta/other(custom) implementations).
+- Adjusting Sync-done API endpoint to return errors in UDTS format.
 
 v 1.11.3 (2026-01-05)
 ==================

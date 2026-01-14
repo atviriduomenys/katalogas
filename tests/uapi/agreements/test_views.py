@@ -31,6 +31,13 @@ def test_sync_done_update_404_when_agreement_does_not_exist(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json == {
+        "code": "not_found",
+        "type": "NotFound",
+        "template": "The requested resource was not found.",
+        "message": "No Agreement matches the given query.",
+        "additionalProperties": None,
+    }
 
 
 def test_sync_done_update_404_when_different_organization_in_token(
@@ -51,6 +58,13 @@ def test_sync_done_update_404_when_different_organization_in_token(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json == {
+        "code": "not_found",
+        "type": "NotFound",
+        "template": "The requested resource was not found.",
+        "message": "No Agreement matches the given query.",
+        "additionalProperties": None,
+    }
 
 
 def test_sync_done_update_404_when_agreement_sync_disabled(
@@ -73,6 +87,13 @@ def test_sync_done_update_404_when_agreement_sync_disabled(
     )
 
     assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.json == {
+        "code": "not_found",
+        "type": "NotFound",
+        "template": "The requested resource was not found.",
+        "message": "No Agreement matches the given query.",
+        "additionalProperties": None,
+    }
 
 
 def test_sync_agent_is_disabled(
@@ -96,7 +117,11 @@ def test_sync_agent_is_disabled(
 
     assert response.status_code == status.HTTP_403_FORBIDDEN
     assert response.json == {
-        "detail": "The agent is disabled. Enable the agent in the Data catalog to access this API."
+        "code": "Forbidden",
+        "type": "system",
+        "template": "Access is forbidden.",
+        "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+        "additionalProperties": None,
     }
 
 

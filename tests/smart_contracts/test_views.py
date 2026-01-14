@@ -218,28 +218,10 @@ class TestAgreementCreateView:
     def test_creates_multiple_agreements_and_scopes(
         self, app: DjangoTestApp, organization: Organization
     ) -> None:
-        dataset1 = DatasetFactory(organization=organization)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(dataset1),
-            object_id=dataset1.pk,
-            dataset=dataset1,
-            name="test/dataset1",
-        )
-        dataset2 = DatasetFactory(organization=organization)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(dataset2),
-            object_id=dataset2.pk,
-            dataset=dataset2,
-            name="test/dataset2",
-        )
+        dataset1 = DatasetFactory(organization=organization, metadata="test/dataset1")
+        dataset2 = DatasetFactory(organization=organization, metadata="test/dataset2")
         diff_organization = OrganizationFactory()
-        diff_dataset = DatasetFactory(organization=diff_organization)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(diff_dataset),
-            object_id=diff_dataset.pk,
-            dataset=diff_dataset,
-            name="datasets/gov/org/dataset",
-        )
+        diff_dataset = DatasetFactory(organization=diff_organization, metadata="datasets/gov/org/dataset")
         representative = ViispRepresentativeFactory(content_object=organization, can_make_agreements=True)
         user = representative.user
         project = ProjectFactory(datasets=[dataset1, dataset2, diff_dataset], organization=organization)

@@ -396,9 +396,15 @@ def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTest
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=True)
+    metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
-    metadata_version = VersionFactory(dataset=resource.dataset)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel", metadata_version=metadata_version)
+    model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    model_metadata = MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model),
+                                     object_id=model.pk,
+                                     name="TestModel",
+                                     metadata_version=metadata_version)
+
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -406,6 +412,7 @@ def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/json'
+    assert list(response.context['resource']['models']) == list(dataset.model_set.all())
     assert response.context['format'] == 'JSON'
     assert response.context['resource']['dataset'] == dataset
 
@@ -413,9 +420,15 @@ def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_jsonl(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=True)
+    metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
-    metadata_version = VersionFactory(dataset=resource.dataset)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel", metadata_version=metadata_version)
+    model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    model_metadata = MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model),
+                                     object_id=model.pk,
+                                     name="TestModel",
+                                     metadata_version=metadata_version)
+
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -423,6 +436,7 @@ def test_distribution_detail_dynamic_resource_jsonl(app: DjangoTestApp):
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/jsonl'
+    assert list(response.context['resource']['models']) == list(dataset.model_set.all())
     assert response.context['format'] == 'JSONL'
     assert response.context['resource']['dataset'] == dataset
 
@@ -430,9 +444,15 @@ def test_distribution_detail_dynamic_resource_jsonl(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_csv(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=True)
-    resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
-    metadata_version = VersionFactory(dataset=resource.dataset)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel", metadata_version=metadata_version)
+    metadata_version = dataset.metadata.first().metadata_version
+    resource = DatasetDistributionFactory(uapi_format=True)
+    model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    model_metadata = MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model),
+                                     object_id=model.pk,
+                                     name="TestModel",
+                                     metadata_version=metadata_version)
+
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -440,60 +460,111 @@ def test_distribution_detail_dynamic_resource_csv(app: DjangoTestApp):
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:format/csv'
+    assert list(response.context['resource']['models']) == list(dataset.model_set.all())
     assert response.context['format'] == 'CSV'
     assert response.context['resource']['dataset'] == dataset
 
 
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_json_multiple_models(app: DjangoTestApp):
-    resource = DatasetDistributionFactory(uapi_format=True)
-    metadata_version = VersionFactory(dataset=resource.dataset)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel", metadata_version=metadata_version)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel2", metadata_version=metadata_version)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel3", metadata_version=metadata_version)
+    dataset = DatasetFactory(is_public=True)
+    metadata_version = dataset.metadata.first().metadata_version
+    resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
+    model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model),
+                                     object_id=model.pk,
+                                     name="TestModel",
+                                     metadata_version=metadata_version)
+    model2 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model2),
+                                     object_id=model2.pk,
+                                     name="TestModel2",
+                                     metadata_version=metadata_version)
+    model3 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model3),
+                                     object_id=model3.pk,
+                                     name="TestModel3",
+                                     metadata_version=metadata_version)
 
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, metadata_version.pk, resource.pk, "TestModel", "json"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, metadata_version.pk, resource.pk, "TestModel", "json"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/json'
+    assert list(response.context['resource']['models']) == list(dataset.model_set.all())
     assert response.context['format'] == 'JSON'
     assert response.context['resource']['dataset'] == resource.dataset
 
 
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_jsonl_multiple_models(app: DjangoTestApp):
-    resource = DatasetDistributionFactory(uapi_format=True)
-    metadata_version = VersionFactory(dataset=resource.dataset)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel", metadata_version=metadata_version)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel2", metadata_version=metadata_version)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel3", metadata_version=metadata_version)
+    dataset = DatasetFactory(is_public=True)
+    metadata_version = dataset.metadata.first().metadata_version
+    resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
+    model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model),
+                                     object_id=model.pk,
+                                     name="TestModel",
+                                     metadata_version=metadata_version)
+    model2 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model2),
+                                     object_id=model2.pk,
+                                     name="TestModel2",
+                                     metadata_version=metadata_version)
+    model3 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model3),
+                                     object_id=model3.pk,
+                                     name="TestModel3",
+                                     metadata_version=metadata_version)
 
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, metadata_version.pk, resource.pk, "TestModel", "jsonl"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, metadata_version.pk, resource.pk, "TestModel", "jsonl"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/jsonl'
+    assert list(response.context['resource']['models']) == list(dataset.model_set.all())
     assert response.context['format'] == 'JSONL'
     assert response.context['resource']['dataset'] == resource.dataset
 
 
 @pytest.mark.django_db
 def test_distribution_detail_dynamic_resource_csv_multiple_models(app: DjangoTestApp):
-    resource = DatasetDistributionFactory( uapi_format=True)
-    metadata_version = VersionFactory(dataset=resource.dataset)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel", metadata_version=metadata_version)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel2", metadata_version=metadata_version)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel3", metadata_version=metadata_version)
+    dataset = DatasetFactory(is_public=True)
+    metadata_version = dataset.metadata.first().metadata_version
+    resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
+    model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model),
+                                     object_id=model.pk,
+                                     name="TestModel",
+                                     metadata_version=metadata_version)
+    model2 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model2),
+                                     object_id=model2.pk,
+                                     name="TestModel2",
+                                     metadata_version=metadata_version)
+    model3 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model3),
+                                     object_id=model3.pk,
+                                     name="TestModel3",
+                                     metadata_version=metadata_version)
 
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, metadata_version.pk, resource.pk, "TestModel", "csv"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, metadata_version.pk, resource.pk, "TestModel", "csv"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:format/csv'
@@ -501,11 +572,11 @@ def test_distribution_detail_dynamic_resource_csv_multiple_models(app: DjangoTes
     assert response.context['format'] == 'CSV'
     assert response.context['resource']['dataset'] == resource.dataset
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, metadata_version.pk, resource.pk, "TestModel2", "csv"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, metadata_version.pk, resource.pk, "TestModel2", "csv"]))
     assert response.status_code == 200
     assert str(response.context['resource']['models'][0]) == "TestModel2"
 
-    response = app.get(reverse('dynamic-resource-detail', args=[resource.dataset.pk, metadata_version.pk, resource.pk, "TestModel3", "csv"]))
+    response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, metadata_version.pk, resource.pk, "TestModel3", "csv"]))
     assert response.status_code == 200
     assert str(response.context['resource']['models'][0]) == "TestModel3"
 
@@ -653,14 +724,20 @@ def test_create_distribution_without_access_download_urls_and_file(app: DjangoTe
 def test_distribution_detail_dynamic_resource_rdf(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=True)
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
-    metadata_version = VersionFactory(dataset=resource.dataset)
-    ModelFactory(dataset=resource.dataset, metadata="TestModel", metadata_version=metadata_version)
+    metadata_version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                                     content_type=ContentType.objects.get_for_model(model),
+                                     object_id=model.pk,
+                                     name="TestModel",
+                                     metadata_version=metadata_version)
     user = UserFactory(is_staff=True)
     app.set_user(user)
     response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, metadata_version.pk, resource.pk, "TestModel", "rdf"]))
     assert response.status_code == 200
     assert response.context['resource']['title'] == "TestModel"
     assert response.context['resource']['get_download_url'] == f'{SPINTA_SERVER_URL}/TestModel/:all/:format/rdf'
+    assert list(response.context['resource']['models']) == list(dataset.model_set.all())
     assert response.context['format'] == 'RDF'
     assert response.context['resource']['dataset'] == dataset
 

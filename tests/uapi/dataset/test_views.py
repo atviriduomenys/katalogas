@@ -307,7 +307,7 @@ def test_create_serialization_validation_error(
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
     assert Dataset.objects.filter(organization=organization).count() == 0
-    assert Metadata.objects.count() - 1 == 0
+    assert Metadata.objects.count() - 1 == 1
     assert response.json == {
         "code": "validation_error",
         "type": "ValidationError",
@@ -357,7 +357,7 @@ def test_create_unexpected_exception_raised_and_rollback_executed(
 
     assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
     assert Dataset.objects.filter(organization=organization).count() == 0
-    assert Metadata.objects.count() - 1 == 0
+    assert Metadata.objects.count() - 1 == 1
     response_json = response.json
     response_json.pop("context")  # Context stores the full traceback, we skip this check in tests.
     assert response_json == {
@@ -680,12 +680,7 @@ def test_list_with_query_parameters_archived_dataset(
         title="Title of the Dataset",
         description="Description of the Dataset.",
         deleted=True,
-    )
-    metadata = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset/TestModel",
+        metadata="test/dataset/TestModel",
     )
 
     response = app.get(
@@ -703,7 +698,7 @@ def test_list_with_query_parameters_archived_dataset(
         "template": "The requested Dataset could not be found.",
         "message": (
             f"No dataset matched the provided query — "
-            f"http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/?name={quote(metadata.name, safe='')}."
+            f"http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/?name={quote(dataset.metadata.first().name, safe='')}."
         ),
         "additionalProperties": None
     }

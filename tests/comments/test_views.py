@@ -38,10 +38,10 @@ def test_comment_is_not_public_user_staff(app: DjangoTestApp):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset)
     app.set_user(user)
-    form = app.get(dataset.get_absolute_url()).forms["comment-form"]
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
-    resp = form.submit().follow()
+    resp = form.submit().follow().follow()
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert Comment.objects.filter(content_type=ct, object_id=dataset.pk).count() == 1
     assert created_comment.first() in list(resp.context["comments"])[0]
@@ -53,10 +53,10 @@ def test_comment_is_public(app: DjangoTestApp):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset)
     app.set_user(user)
-    form = app.get(dataset.get_absolute_url()).forms["comment-form"]
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = True
     form["body"] = "Test comment"
-    resp = form.submit().follow()
+    resp = form.submit().follow().follow()
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert created_comment.count() == 1
     assert created_comment.first() in list(resp.context["comments"])[0]
@@ -70,7 +70,7 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     frequency = FrequencyFactory()
     ct = ContentType.objects.get_for_model(dataset)
     app.set_user(user)
-    form = app.get(dataset.get_absolute_url()).forms["comment-form"]
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     match = resolve(form.action)
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
@@ -85,7 +85,7 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     form["increase_frequency"] = frequency
     form["request_title"] = "Test request title"
     form["body"] = "Test comment"
-    resp = form.submit().follow()
+    resp = form.submit().follow().follow()
     created_request = Request.objects.filter(requestobject__object_id=dataset.pk, requestobject__content_type=ct)
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
 
@@ -141,7 +141,7 @@ def test_reply_is_not_public(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(dataset)
     comment = CommentFactory(content_type=ct, object_id=dataset.pk)
     app.set_user(user)
-    form = app.get(comment.content_object.get_absolute_url()).forms[f"reply-form-{comment.pk}"]
+    form = app.get(comment.content_object.get_absolute_url()).follow().forms[f"reply-form-{comment.pk}"]
     form["body"] = "test"
     form["is_public"] = False
     form.submit()
@@ -158,10 +158,10 @@ def test_reply_is_public(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(dataset)
     comment = CommentFactory(content_type=ct, object_id=dataset.pk)
     app.set_user(user)
-    form = app.get(comment.content_object.get_absolute_url()).forms[f"reply-form-{comment.pk}"]
+    form = app.get(comment.content_object.get_absolute_url()).follow().forms[f"reply-form-{comment.pk}"]
     form["is_public"] = True
     form["body"] = "Test comment"
-    resp = form.submit().follow()
+    resp = form.submit().follow().follow()
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     reply = Comment.objects.filter(content_type=comment.content_type, parent=comment).first()
     assert comments.count() == 2
@@ -178,7 +178,7 @@ def test_reply_for_reply(app: DjangoTestApp):
     reply = CommentFactory(parent=comment, content_type=ct, object_id=dataset.pk)
 
     app.set_user(user)
-    form = app.get(comment.content_object.get_absolute_url()).forms[f"reply-form-{comment.pk}"]
+    form = app.get(comment.content_object.get_absolute_url()).follow().forms[f"reply-form-{comment.pk}"]
     form.fields["is_public"][0].value = True
     form.fields["body"][0].value = "Test reply"
     form.submit()
@@ -484,10 +484,10 @@ def test_view_author_comment_not_public(app: DjangoTestApp):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset)
     app.set_user(user)
-    form = app.get(dataset.get_absolute_url()).forms["comment-form"]
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
-    resp = form.submit().follow()
+    resp = form.submit().follow().follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk, user=user)
     assert comments.count() == 1
     assert [comment for comment, _, _ in resp.context["comments"]] == list(comments)
@@ -500,12 +500,12 @@ def test_view_comment_not_public_without_permission(app: DjangoTestApp):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset)
     app.set_user(user)
-    form = app.get(dataset.get_absolute_url()).forms["comment-form"]
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
     form.submit()
     app.set_user(user2)
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk, user=user)
     assert comments.count() == 1
     assert [comment for comment, _, _ in resp.context["comments"]] == []
@@ -519,12 +519,12 @@ def test_view_comment_not_public_with_permission(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(dataset)
     RepresentativeFactory(user=user2, content_type=ct, object_id=dataset.pk)
     app.set_user(user)
-    form = app.get(dataset.get_absolute_url()).forms["comment-form"]
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
     form.submit()
     app.set_user(user2)
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk, user=user)
     assert comments.count() == 1
     assert [comment for comment, _, _ in resp.context["comments"]] == list(comments)
@@ -537,7 +537,7 @@ def test_view_reply_to_author_comment_not_public(app: DjangoTestApp):
     comment = CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False)
     CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False, parent=comment)
     app.set_user(comment.user)
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 2
     assert sorted([comment.pk for comment, _, _ in resp.context["comments"]]) == sorted(
@@ -551,7 +551,7 @@ def test_view_reply_to_comment_not_public_without_permission(app: DjangoTestApp)
     ct = ContentType.objects.get_for_model(dataset)
     comment = CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False)
     CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False, parent=comment)
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 2
     assert sorted([comment.pk for comment, _, _ in resp.context["comments"]]) == []
@@ -568,7 +568,7 @@ def test_view_reply_to_comment_not_public_with_resource_permission(app: DjangoTe
         content_type=ct, object_id=dataset.pk, user=UserFactory(organization=organization), role=Representative.MANAGER
     )
     app.set_user(representative.user)
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 2
     assert sorted([comment.pk for comment, _, _ in resp.context["comments"]]) == sorted(
@@ -584,7 +584,7 @@ def test_view_reply_to_author_reply_not_public(app: DjangoTestApp):
     reply = CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False, parent=comment)
     CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False, parent=reply)
     app.set_user(reply.user)
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 3
     assert sorted([comment.pk for comment, _, _ in resp.context["comments"]]) == sorted(
@@ -605,7 +605,7 @@ def test_view_reply_to_author_not_public_without_permission(app: DjangoTestApp):
         parent=comment,
     )
     app.set_user(reply.user)
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 3
     assert sorted([comment.pk for comment, _, _ in resp.context["comments"]]) == sorted([comment.pk, reply.pk])
@@ -620,7 +620,7 @@ def test_view_reply_to_reply_not_public_without_permission(app: DjangoTestApp):
     CommentFactory(content_type=ct, object_id=dataset.pk, is_public=False, parent=reply)
     user = UserFactory()
     app.set_user(user)
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 3
     assert [comment for comment, _, _ in resp.context["comments"]] == [comment]
@@ -638,7 +638,7 @@ def test_view_reply_to_reply_not_public_with_permission(app: DjangoTestApp):
         object_id=dataset.pk,
     )
     app.set_user(representative.user)
-    resp = app.get(dataset.get_absolute_url())
+    resp = app.get(dataset.get_absolute_url()).follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 3
     assert sorted([comment.pk for comment, _, _ in resp.context["comments"]]) == sorted(
@@ -664,10 +664,10 @@ def test_subscription_about_comment(app: DjangoTestApp):
 
     user = UserFactory()
     app.set_user(user)
-    form = app.get(dataset.get_absolute_url()).forms["comment-form"]
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
-    resp = form.submit().follow()
+    resp = form.submit().follow().follow()
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 1
     assert [comment for comment, _, _ in resp.context["comments"]] == [comments.first()]

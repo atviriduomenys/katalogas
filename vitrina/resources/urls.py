@@ -31,6 +31,11 @@ urlpatterns = [
         name="dynamic-resource-detail",
     ),
     path(
+        "datasets/<int:pk>/resource/<int:resource_id>/<str:distribution_name>/<str:format>",
+        DynamicResourceDetailView.as_view(),
+        name="dynamic-resource-detail-no-version",
+    ),
+    path(
         "datasets/<int:pk>/versions/<int:version_id>/resource/<int:resource_id>/models/add/",
         ResourceModelCreateView.as_view(),
         name="resource-model-create",

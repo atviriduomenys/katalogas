@@ -21,7 +21,7 @@ from vitrina.plans.models import Plan
 from vitrina.requests.models import Request
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
-from vitrina.structure.models import Metadata, Version
+from vitrina.structure.models import Version
 from vitrina.structure.views import DatasetStructureMixin, ModelCreateView
 from vitrina.views import HistoryMixin
 
@@ -309,9 +309,14 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.VIEW, dataset)
 
-    def get_data(self, dataset_pk: int, metadata_version_pk: int, model_name: str, distribution_format: str) -> dict:
+    def get_data(
+        self, dataset_pk: int, metadata_version_pk: int | None, model_name: str, distribution_format: str
+    ) -> dict:
         dataset = get_object_or_404(Dataset, id=dataset_pk)
-        metadata_version = get_object_or_404(Version, id=metadata_version_pk)
+        metadata_version = None
+        if metadata_version_pk:
+            metadata_version = get_object_or_404(Version, id=metadata_version_pk)
+
         dynamic_resource = DynamicResourceService(dataset, metadata_version)
         data = dynamic_resource.retrieve_data(dataset_pk, metadata_version, model_name, distribution_format)
         if not data:

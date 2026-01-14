@@ -464,7 +464,9 @@ class DatasetDetailView(
 
         if not request.GET.get("resource_version"):
             if metadata_version := _Version.objects.filter(dataset=self.object).order_by("version").last():
-                url = f'{reverse("dataset-detail", kwargs={"pk": self.object.pk})}?resource_version={metadata_version.pk}'
+                url = (
+                    f"{reverse('dataset-detail', kwargs={'pk': self.object.pk})}?resource_version={metadata_version.pk}"
+                )
                 return redirect(url)
 
         return super().get(request, *args, **kwargs)

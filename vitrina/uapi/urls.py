@@ -14,7 +14,7 @@ from vitrina.uapi.views.views import (
     AgentSyncDoneViewSet,
 )
 
-STATIC_UAPI_BASE_PATH = "uapi/datasets/org/vssa/isris/dcat/"
+STATIC_UAPI_BASE_PATH = "uapi/datasets/gov/vssa/isris/dcat/"
 
 
 urlpatterns = [

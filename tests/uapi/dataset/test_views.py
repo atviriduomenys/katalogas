@@ -702,7 +702,7 @@ class TestList:
             "type": "DatasetNotFound",
             "template": "The requested Dataset could not be found.",
             "message": (
-                f"No dataset matched the provided query — http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/."
+                f"No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/isris/dcat/Dataset/."
             ),
             "additionalProperties": None
         }
@@ -737,7 +737,7 @@ class TestList:
             "type": "DatasetNotFound",
             "template": "The requested Dataset could not be found.",
             "message": (
-                f"No dataset matched the provided query — http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/."
+                f"No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/isris/dcat/Dataset/."
             ),
             "additionalProperties": None
         }
@@ -778,7 +778,7 @@ class TestList:
             "template": "The requested Dataset could not be found.",
             "message": (
                 f"No dataset matched the provided query — "
-                f"http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/?name={quote(metadata.name, safe='')}."
+                f"http://testserver/uapi/datasets/gov/vssa/isris/dcat/Dataset/?name={quote(metadata.name, safe='')}."
             ),
             "additionalProperties": None
         }
@@ -808,7 +808,7 @@ class TestList:
             "message": (
                 f"No dataset matched the provided query — "
                 f"http://testserver/uapi/datasets/"
-                f"org/vssa/isris/dcat/Dataset/?name={quote('dataset/that/does/not/exist', safe='')}."
+                f"gov/vssa/isris/dcat/Dataset/?name={quote('dataset/that/does/not/exist', safe='')}."
             ),
             "additionalProperties": None
         }

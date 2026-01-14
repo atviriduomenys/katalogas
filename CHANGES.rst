@@ -34,6 +34,10 @@ Refactored representative role model to split coordinator and manager roles into
 - Ensured backward compatibility by updating all role checks and queryset filters referencing legacy roles
 - Added logic to not let OPEN_DATA_COORDINATORS add/update/delete RESOURCE_MANAGERS and RESOURCE_COORDINATORS
 
+https://github.com/atviriduomenys/spinta/issues/1647
+
+- Adding an API permission to check if Agent is enabled (in Catalog) before performing any requests coming from the Agent (spinta/other(custom) implementations).
+
 v 1.11.3 (2026-01-05)
 ==================
 

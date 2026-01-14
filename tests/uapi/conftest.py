@@ -34,11 +34,12 @@ def _generate_test_token(
     jwk: RSAKey,
     scopes: Iterable[str] = ("datasets:write",),
     organization: Organization = None,
-    expires_in: int = 900
+    expires_in: int = 900,
+    agent_is_enabled: bool = True,
 ):
     oauth_client_id = None
     if organization:
-        agent = AgentFactory(organization=organization, oauth_client_id=str(uuid.uuid4()))
+        agent = AgentFactory(organization=organization, oauth_client_id=str(uuid.uuid4()), is_enabled=agent_is_enabled)
         oauth_client_id =agent.oauth_client_id
     now = datetime.utcnow()
     claims = {
@@ -87,6 +88,19 @@ def valid_token(
     organization: Organization,
 ) -> str:
     return _generate_test_token(test_jwk, organization=organization, scopes=OAUTH_AGENT_DEFAULT_SCOPES)
+
+
+@pytest.fixture()
+def valid_token_disabled_agent(
+    test_jwk: RSAKey,
+    organization: Organization,
+) -> str:
+    return _generate_test_token(
+        test_jwk,
+        organization=organization,
+        scopes=OAUTH_AGENT_DEFAULT_SCOPES,
+        agent_is_enabled=False,
+    )
 
 
 @pytest.fixture

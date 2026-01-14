@@ -75,6 +75,31 @@ def test_sync_done_update_404_when_agreement_sync_disabled(
     assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
+def test_sync_agent_is_disabled(
+    app: DjangoTestApp,
+    organization: Organization,
+    project: Project,
+    valid_token_disabled_agent: str,
+):
+    agreement = AgreementFactory(
+        project=project,
+        assigner=organization,
+        assignee=organization,
+        is_agent_sync_enabled=True,
+    )
+
+    response = app.put(
+        reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
+        extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
+        expect_errors=True,
+    )
+
+    assert response.status_code == status.HTTP_403_FORBIDDEN
+    assert response.json == {
+        "detail": "The agent is disabled. Enable the agent in the Data catalog to access this API."
+    }
+
+
 def test_sync_done_updates_last_sync_date_and_status_to_active(
     app: DjangoTestApp,
     organization: Organization,

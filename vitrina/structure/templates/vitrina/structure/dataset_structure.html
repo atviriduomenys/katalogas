@@ -33,11 +33,11 @@
 
         {% if can_manage_structure %}
             {% if version_id %}
-                {% url 'dataset-structure-export' view.kwargs.pk version_id as export_url %}
-                {% url 'dataset-structure-export-openapi' view.kwargs.pk version_id as export_openapi_url %}
+                {% url "dataset-structure-export" view.kwargs.pk version_id as export_url %}
+                {% url "dataset-structure-export-openapi" view.kwargs.pk version_id as export_openapi_url %}
             {% else %}
-                {% url 'dataset-structure-export-no-version' view.kwargs.pk as export_url %}
-                {% url 'dataset-structure-export-openapi-no-version' view.kwargs.pk as export_openapi_url %}
+                {% url "dataset-structure-export-no-version" view.kwargs.pk as export_url %}
+                {% url "dataset-structure-export-openapi-no-version" view.kwargs.pk as export_openapi_url %}
             {% endif %}
             <a class="button is-primary mb-5 ml-2" href="{{export_url}}">
                 {% translate "Eksportuoti" %}

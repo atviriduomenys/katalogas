@@ -1012,7 +1012,7 @@ def _export_dataset_structure_to_stringio(dataset: Dataset, version: Version) ->
     return result
 
 
-def datasets_to_tabular(dataset: Dataset, version: Version | None = None):
+def datasets_to_tabular(dataset: Dataset, version: Version | None = None) -> Generator:
     if dataset.current_structure:
         yield from _prefixes_to_tabular(dataset.current_structure, separator=True, version=version)
     yield from _dataset_to_tabular(dataset, separator=True, version=version)
@@ -1026,14 +1026,13 @@ def _end_marker(name):
     yield to_row(DATASET, {name: "/"})
 
 
-def _prefixes_to_tabular(obj: models.Model, separator: bool = False, version: Version | None = None):
+def _prefixes_to_tabular(obj: models.Model, separator: bool = False, version: Version | None = None) -> Generator:
     ct = ContentType.objects.get_for_model(obj)
     prefix_filter = {"content_type": ct, "object_id": obj.pk}
+    metadata_queryset = Metadata.objects.all()
+
     if version is not None:
         prefix_filter["metadata_version"] = version
-
-    metadata_queryset = Metadata.objects.all()
-    if version is not None:
         metadata_queryset = metadata_queryset.filter(metadata_version=version)
 
     prefixes = (
@@ -1062,7 +1061,7 @@ def _prefixes_to_tabular(obj: models.Model, separator: bool = False, version: Ve
         yield to_row(DATASET, {})
 
 
-def _dataset_to_tabular(dataset: Dataset, separator: bool = False, version: Version | None = None):
+def _dataset_to_tabular(dataset: Dataset, separator: bool = False, version: Version | None = None) -> Generator:
     if lang := get_language():
         dataset.set_current_language(lang)
     meta_query = dataset.metadata.all()
@@ -1096,27 +1095,25 @@ def _dataset_resources_to_tabular(dataset: Dataset, separator: bool = False) -> 
         yield from _resource_to_tabular(distribution)
 
 
-def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Version | None = None):
+def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Version | None = None) -> Generator:
     ct = ContentType.objects.get_for_model(obj)
     enum_filter = {"content_type": ct, "object_id": obj.pk}
+    metadata_queryset = Metadata.objects.all()
+    enum_item_filter = {}
+
     if version is not None:
         enum_filter["metadata_version"] = version
-
-    metadata_queryset = Metadata.objects.all()
-    if version is not None:
         metadata_queryset = metadata_queryset.filter(metadata_version=version)
+        enum_item_filter["metadata_version"] = version
 
-    enumitem_filter = {}
-    if version is not None:
-        enumitem_filter["metadata_version"] = version
-    enumitem_queryset = EnumItem.objects.filter(**enumitem_filter).prefetch_related(
+    enum_item_queryset = EnumItem.objects.filter(**enum_item_filter).prefetch_related(
         Prefetch("metadata", queryset=metadata_queryset.order_by("order"))
     )
-    enums = Enum.objects.filter(**enum_filter).prefetch_related(Prefetch("enumitem_set", queryset=enumitem_queryset))
+    enums = Enum.objects.filter(**enum_filter).prefetch_related(Prefetch("enumitem_set", queryset=enum_item_queryset))
     for enum in enums:
         first = True
-        enumitems = list(enum.enumitem_set.all())
-        for item in enumitems:
+        enum_items = list(enum.enumitem_set.all())
+        for item in enum_items:
             if meta := item.metadata.first():
                 yield to_row(
                     DATASET,
@@ -1141,31 +1138,30 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Versi
         yield to_row(DATASET, {})
 
 
-def _params_to_tabular(obj: models.Model | Dataset | DatasetDistribution, separator: bool = False, version: Version | None = None):
+def _params_to_tabular(obj: models.Model | Dataset | DatasetDistribution,
+                       separator: bool = False, version: Version | None = None) -> Generator:
     ct = ContentType.objects.get_for_model(obj)
     param_filter = {"content_type": ct, "object_id": obj.pk}
+    metadata_queryset = Metadata.objects.all()
+    param_item_filter = {}
+
     if version is not None:
         param_filter["metadata_version"] = version
-
-    metadata_queryset = Metadata.objects.all()
-    if version is not None:
         metadata_queryset = metadata_queryset.filter(metadata_version=version)
+        param_item_filter["metadata_version"] = version
 
-    paramitem_filter = {}
-    if version is not None:
-        paramitem_filter["metadata_version"] = version
-    paramitem_queryset = ParamItem.objects.filter(**paramitem_filter).prefetch_related(
+    param_item_queryset = ParamItem.objects.filter(**param_item_filter).prefetch_related(
         Prefetch("metadata", queryset=metadata_queryset.order_by("order"))
     )
 
     params = Param.objects.filter(**param_filter).prefetch_related(
-        Prefetch("paramitem_set", queryset=paramitem_queryset)
+        Prefetch("paramitem_set", queryset=param_item_queryset)
     )
 
     for param in params:
         first = True
-        paramitems = list(param.paramitem_set.all())
-        for item in paramitems:
+        param_items = list(param.paramitem_set.all())
+        for item in param_items:
             if meta := item.metadata.first():
                 yield to_row(
                     DATASET,
@@ -1190,30 +1186,24 @@ def _params_to_tabular(obj: models.Model | Dataset | DatasetDistribution, separa
         yield to_row(DATASET, {})
 
 
-def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Version | None = None):
+def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Version | None = None) -> Generator:
     model_filter = {"dataset": dataset}
+    model_metadata_filter = {}
+    property_list_filter = {}
+    metadata_queryset = Metadata.objects.all()
+    property_metadata_queryset = Metadata.objects.all()
+    distribution_metadata_queryset = Metadata.objects.all()
+    base_metadata_queryset = Metadata.objects.all()
+
     if version is not None:
         model_filter["metadata_version"] = version
-
-    metadata_queryset = Metadata.objects.all()
-    if version is not None:
+        model_metadata_filter["metadata_version"] = version
+        property_list_filter["metadata_version"] = version
         metadata_queryset = metadata_queryset.filter(metadata_version=version)
-
-    property_metadata_queryset = Metadata.objects.all()
-    if version is not None:
         property_metadata_queryset = property_metadata_queryset.filter(metadata_version=version)
-
-    distribution_metadata_queryset = Metadata.objects.all()
-    if version is not None:
         distribution_metadata_queryset = distribution_metadata_queryset.filter(metadata_version=version)
-
-    base_metadata_queryset = Metadata.objects.all()
-    if version is not None:
         base_metadata_queryset = base_metadata_queryset.filter(metadata_version=version)
 
-    property_list_filter = {}
-    if version is not None:
-        property_list_filter["metadata_version"] = version
     property_list_queryset = (
         PropertyList.objects.filter(**property_list_filter)
         .select_related("property")
@@ -1250,10 +1240,10 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Versi
             base = None
 
         if meta := model.metadata.first():
-            prop_names = []
+            prop_names = set()
             for prop_list_item in model.property_list.all():
                 if prop_meta := prop_list_item.property.metadata.first():
-                    prop_names.append(prop_meta.name)
+                    prop_names.add(prop_meta.name)
 
             yield to_row(
                 DATASET,
@@ -1271,7 +1261,7 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Versi
                     "count": meta.count,
                     "eli": meta.eli,
                     "prepare": meta.prepare,
-                    "ref": ", ".join(prop_names) if prop_names else "",
+                    "ref": ", ".join(sorted(prop_names)) if prop_names else "",
                 },
             )
 
@@ -1282,30 +1272,24 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Versi
                 yield to_row(DATASET, {})
 
 
-def _resource_models_to_tabular(resource: DatasetDistribution, separator: bool = False, version: Version | None = None):
+def _resource_models_to_tabular(resource: DatasetDistribution, separator: bool = False, version: Version | None = None) -> Generator:
     model_filter = {"distribution": resource, "dataset": resource.dataset}
+    model_metadata_filter = {}
+    property_list_filter = {}
+    metadata_queryset = Metadata.objects.all()
+    property_metadata_queryset = Metadata.objects.all()
+    distribution_metadata_queryset = Metadata.objects.all()
+    base_metadata_queryset = Metadata.objects.all()
+
     if version is not None:
         model_filter["metadata_version"] = version
-
-    metadata_queryset = Metadata.objects.all()
-    if version is not None:
+        model_metadata_filter["metadata_version"] = version
+        property_list_filter["metadata_version"] = version
         metadata_queryset = metadata_queryset.filter(metadata_version=version)
-
-    property_metadata_queryset = Metadata.objects.all()
-    if version is not None:
         property_metadata_queryset = property_metadata_queryset.filter(metadata_version=version)
-
-    distribution_metadata_queryset = Metadata.objects.all()
-    if version is not None:
         distribution_metadata_queryset = distribution_metadata_queryset.filter(metadata_version=version)
-
-    base_metadata_queryset = Metadata.objects.all()
-    if version is not None:
         base_metadata_queryset = base_metadata_queryset.filter(metadata_version=version)
 
-    property_list_filter = {}
-    if version is not None:
-        property_list_filter["metadata_version"] = version
     property_list_queryset = (
         PropertyList.objects.filter(**property_list_filter)
         .select_related("property")
@@ -1334,10 +1318,10 @@ def _resource_models_to_tabular(resource: DatasetDistribution, separator: bool =
             base = None
 
         if meta := model.metadata.first():
-            prop_names = []
+            prop_names = set()
             for prop_list_item in model.property_list.all():
                 if prop_meta := prop_list_item.property.metadata.first():
-                    prop_names.append(prop_meta.name)
+                    prop_names.add(prop_meta.name)
 
             yield to_row(
                 DATASET,
@@ -1351,7 +1335,7 @@ def _resource_models_to_tabular(resource: DatasetDistribution, separator: bool =
                     "uri": meta.uri,
                     "source": meta.source,
                     "prepare": meta.prepare,
-                    "ref": ", ".join(prop_names) if prop_names else "",
+                    "ref": ", ".join(sorted(prop_names)) if prop_names else "",
                 },
             )
             yield from _params_to_tabular(model, version=version)
@@ -1360,7 +1344,7 @@ def _resource_models_to_tabular(resource: DatasetDistribution, separator: bool =
                 yield to_row(DATASET, {})
 
 
-def _resource_to_tabular(resource: DatasetDistribution, version: Version | None = None):
+def _resource_to_tabular(resource: DatasetDistribution, version: Version | None = None) -> Generator:
     if lang := get_language():
         resource.set_current_language(lang)
     meta = resource.metadata.first() if version is None else resource.metadata.filter(metadata_version=version).first()
@@ -1384,7 +1368,7 @@ def _resource_to_tabular(resource: DatasetDistribution, version: Version | None 
     yield from _comments_to_tabular(resource)
 
 
-def _comments_to_tabular(obj: models.Model):
+def _comments_to_tabular(obj: models.Model) -> Generator:
     ct = ContentType.objects.get_for_model(obj)
     comments = Comment.objects.filter(content_type=ct, object_id=obj.pk, type=Comment.STRUCTURE).prefetch_related(
         Prefetch("metadata", queryset=Metadata.objects.all().order_by("order"))
@@ -1408,7 +1392,7 @@ def _comments_to_tabular(obj: models.Model):
             first = False
 
 
-def _base_to_tabular(base: Base, version: Version | None = None):
+def _base_to_tabular(base: Base, version: Version | None = None) -> Generator:
     meta_query = base.metadata.all()
     if version is not None:
         meta_query = meta_query.filter(metadata_version=version)
@@ -1423,13 +1407,12 @@ def _base_to_tabular(base: Base, version: Version | None = None):
         )
 
 
-def _properties_to_tabular(model: Model, version: Version | None = None):
+def _properties_to_tabular(model: Model, version: Version | None = None) -> Generator:
     prop_filter = {"model": model, "given": True}
+    property_metadata_queryset = Metadata.objects.all()
+
     if version is not None:
         prop_filter["metadata_version"] = version
-
-    property_metadata_queryset = Metadata.objects.all()
-    if version is not None:
         property_metadata_queryset = property_metadata_queryset.filter(metadata_version=version)
 
     props = Property.objects.filter(**prop_filter).prefetch_related(

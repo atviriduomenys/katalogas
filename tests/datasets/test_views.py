@@ -3494,6 +3494,24 @@ def test_dataset_structure_import_standardized(app: DjangoTestApp):
     assert structure.file.original_filename == "file.csv"
 
 
+def test_dataset_structure_import_with_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    dataset = DatasetFactory()
+    version = VersionFactory(dataset=dataset, status=VersionStatus.DRAFT)
+
+    app.set_user(user)
+    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, version.pk]))
+    form = resp.forms["dataset-structure-form"]
+    form["file"] = Upload("file.csv", MANIFEST.encode())
+    form.submit()
+
+    dataset.refresh_from_db()
+    structure = DatasetStructure.objects.get(dataset=dataset)
+    assert dataset.current_structure == structure
+    assert File.objects.count() == 1
+    assert structure.file.original_filename == "file.csv"
+
+
 def test_dataset_assign_new_category_without_permission(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)

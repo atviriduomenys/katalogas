@@ -65,7 +65,7 @@ urlpatterns = [
                 "put": "update_dataset_structure",
             }
         ),
-        name="uapi-dataset-structure",
+        name="uapi-dataset-structure-no-version",
     ),
     path(
         f"{STATIC_UAPI_BASE_PATH}Distribution/",

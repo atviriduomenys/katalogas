@@ -1767,9 +1767,9 @@ class DatasetStructureExportView(DatasetStructureMixin, PermissionRequiredMixin,
     def get(self, request, *args, **kwargs):
         version = self.metadata_version or self.dataset.latest_version()
         stream = export_dataset_structure(self.dataset, version=version)
-        
+
         filename = (
-            "dsa_manifest_draft.csv" 
+            "dsa_manifest_draft.csv"
             if version.status == VersionStatus.DRAFT
             else f"dsa_manifest_{version.external_version}.csv"
             if version

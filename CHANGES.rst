@@ -44,6 +44,10 @@ https://github.com/atviriduomenys/katalogas/issues/2227
 
 - Fix landing page cards height
 
+https://github.com/atviriduomenys/katalogas/issues/2244
+
+- Display maturity level for all Dataset cards.
+
 <No ticket>
 
 - Add custom error pages for 400, 403, 404, 500.

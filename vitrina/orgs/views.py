@@ -131,9 +131,8 @@ class OrganizationBaseViewMixin:
         context_data = super().get_context_data(**kwargs)
         context_data["can_view_members"] = has_perm(self.request.user, Action.VIEW, Representative, self.organization)
         context_data["can_view_contacts"] = has_perm(self.request.user, Action.VIEW, Contact, self.organization)
-        context_data["can_update_organization"] = (
-            has_perm(self.request.user, Action.UPDATE, Representative, self.organization)
-            and self.request.user.viisp_organization == self.organization
+        context_data["can_update_organization"] = has_perm(
+            self.request.user, Action.UPDATE, Representative, self.organization
         )
         context_data["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
         context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
@@ -886,7 +885,7 @@ class OrganizationUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Update
 
     def has_permission(self):
         org = self.get_object()
-        return has_perm(self.request.user, Action.UPDATE, org) and self.request.user.viisp_organization == org
+        return has_perm(self.request.user, Action.UPDATE, org)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:

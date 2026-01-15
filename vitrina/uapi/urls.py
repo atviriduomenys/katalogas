@@ -1,5 +1,6 @@
 from django.urls import path
 
+from vitrina.uapi.views.agreement_file_views import AgreementFileDownloadUAPIView
 from vitrina.uapi.views.template_views import (
     AgentDeleteView,
     AgentUpdateView,
@@ -86,5 +87,10 @@ urlpatterns = [
         f"{STATIC_UAPI_BASE_PATH}Agent/",
         AgentViewSet.as_view({"get": "list"}),
         name="uapi-agent",
+    ),
+    path(
+        f"{STATIC_UAPI_BASE_PATH}AgreementFile/<uuid:agreement_file_uuid>/file/",
+        AgreementFileDownloadUAPIView.as_view(),
+        name="uapi-agreement-file-download",
     ),
 ]

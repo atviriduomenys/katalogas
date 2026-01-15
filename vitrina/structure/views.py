@@ -261,6 +261,7 @@ class DatasetStructureView(
         dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         structure = dataset.current_structure
         context["selected_version"] = self.metadata_version
+        context["is_disabled"] = self.metadata_version.status != VersionStatus.DRAFT
         context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
         context["errors"] = []
         context["manifest"] = None
@@ -434,6 +435,9 @@ class ModelStructureView(
             self.object,
         )
         context["can_manage_structure"] = self.can_manage_structure
+        context["is_disabled"] = (
+            self.metadata_version is not None and self.metadata_version.status != VersionStatus.DRAFT
+        )
         context["base_props"] = self.model.get_base_props()
         context["params"] = self.model.params.all().order_by("name")
         context["page_title"] = build_page_title_context(
@@ -734,6 +738,9 @@ class PropertyStructureView(
             self.object,
         )
         context["can_manage_structure"] = self.can_manage_structure
+        context["is_disabled"] = (
+            self.metadata_version is not None and self.metadata_version.status != VersionStatus.DRAFT
+        )
 
         allowed_enum_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Enum
@@ -1811,6 +1818,8 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
+        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+            raise Http404("Only allowed on Draft version.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(
             Property, model=self.model_obj, metadata__name=prop_name, metadata_version=self.metadata_version
@@ -1936,6 +1945,8 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
+        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+            raise Http404("Only allowed on Draft version.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(
             Property.objects.filter(visibility_filter_property),
@@ -2068,6 +2079,8 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
         )
         if not self.model:
             raise Http404("No Model matches the given query.")
+        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+            raise Http404("Only allowed on Draft version.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(
             Property, model=self.model_obj, metadata__name=prop_name, metadata_version=self.metadata_version
@@ -2144,6 +2157,9 @@ class ModelCreateView(PermissionRequiredMixin, CreateView):
             )
         else:
             self.metadata_version = None
+
+        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+            raise Http404("Only allowed on Draft version.")
 
         # Filter by version?
         if has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset):
@@ -2280,6 +2296,8 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateVi
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.dataset)
+        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+            raise Http404("Only allowed on Draft version.")
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
@@ -2520,6 +2538,8 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Creat
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
+        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+            raise Http404("Only allowed on Draft version.")
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -2627,6 +2647,8 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Updat
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
+        if self.metadata_version and self.metadata_version != VersionStatus.DRAFT:
+            raise Http404("Only allowed on Draft version.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(
             Property.objects.filter(visibility_filter_property),
@@ -3443,6 +3465,10 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"))
+
+        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+            raise Http404("Only allowed on Draft version.")
+
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):

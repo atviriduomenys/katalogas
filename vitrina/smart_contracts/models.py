@@ -1,6 +1,7 @@
 import json
 import os
 from datetime import datetime
+from functools import cached_property
 from io import BytesIO
 
 from django.core.files.base import ContentFile
@@ -251,6 +252,17 @@ class Agreement(UUIDBaseModel):
 
         json_file.file.seek(0)
         return json.loads(json_file.file.read())
+
+    @cached_property
+    def latest_agreement_adoc(self) -> "AgreementFile | None":
+        agreement_adocs = [
+            agreement_file
+            for agreement_file in self.files.all()
+            if agreement_file.file_extension == AgreementFile.AllowedFileTypes.ADOC
+        ]
+        agreement_adocs = sorted(agreement_adocs, key=lambda file: file.created_at, reverse=True)
+
+        return agreement_adocs[0] if agreement_adocs else None
 
 
 class AgreementScope(UUIDBaseModel):

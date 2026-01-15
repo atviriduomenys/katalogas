@@ -1,4 +1,5 @@
 from datetime import datetime
+from unittest.mock import patch
 from uuid import uuid4
 
 import pytest
@@ -11,15 +12,24 @@ from rest_framework import status
 from django.conf import settings
 
 from tests.uapi.conftest import _generate_test_token
+from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
+from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.exceptions import InvalidAdocError
+from vitrina.smart_contracts.factories import AgreementFactory, AgreementFileFactory
+from vitrina.uapi.models import Agent
 
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
+
+
+def agreement_url() -> str:
+    return reverse("uapi-agreement")
 
 
 class TestSyncDone:
@@ -29,7 +39,6 @@ class TestSyncDone:
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
-
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json == {
             "code": "not_found",
@@ -205,3 +214,369 @@ class TestSyncDone:
         assert response.status_code == status.HTTP_204_NO_CONTENT
         agreement.refresh_from_db()
         assert agreement.updated_at == creation_date
+
+
+class TestAgreementViewSetAuthorization:
+    def test_401_if_unauthorized(self, app: DjangoTestApp):
+        response = app.get(agreement_url(), expect_errors=True)
+        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+
+    def test_403_if_token_has_no_organization(self, app: DjangoTestApp, organization: Organization, test_jwk: RSAKey):
+        token = _generate_test_token(test_jwk, organization=None, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+            expect_errors=True,
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+    @pytest.mark.parametrize(
+        "invalid_scopes", [
+            tuple(),
+            ("", ),
+            ("invalid_scope1", "invalid_scope2"),
+        ])
+    def test_403_if_list_authorized_with_incorrect_scopes(
+        self, app: DjangoTestApp, organization: Organization, test_jwk: RSAKey, invalid_scopes: tuple[str]
+    ):
+        token = _generate_test_token(test_jwk, organization=organization, scopes=invalid_scopes)
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+            expect_errors=True,
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+
+
+class TestAgreementViewSetList:
+    def test_404_if_agreement_is_in_different_organization(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str
+    ):
+        different_organization = OrganizationFactory()
+        agent = Agent.objects.get(organization=organization)
+        use_case = ProjectFactory(datasets=[agent.service])
+        AgreementFactory(project=use_case, assigner=different_organization, status=AgreementStatuses.SIGNED)
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+            expect_errors=True,
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_404_if_agreement_does_not_exist(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str
+    ):
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+            expect_errors=True,
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.parametrize(
+        "incorrect_status", [
+            AgreementStatuses.CREATED,
+            AgreementStatuses.SUBMITTED,
+            AgreementStatuses.APPROVED,
+            AgreementStatuses.FORMED,
+            AgreementStatuses.INITIATED,
+            AgreementStatuses.TERMINATED,
+        ]
+    )
+    def test_404_if_agreement_with_incorrect_status(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str, incorrect_status: AgreementStatuses
+    ):
+        agent = Agent.objects.get(organization=organization)
+        use_case = ProjectFactory(datasets=[agent.service])
+        AgreementFactory(project=use_case, assigner=organization, status=incorrect_status)
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+            expect_errors=True,
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    def test_404_if_agreement_dataset_is_not_related_to_agent_service(
+        self, app: DjangoTestApp, organization: Organization, dataset: Dataset, valid_token: str
+    ):
+        use_case = ProjectFactory(datasets=[dataset])
+        AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+            expect_errors=True,
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+
+    @pytest.mark.parametrize("correct_status", [
+        AgreementStatuses.SIGNED,
+        AgreementStatuses.ACTIVE
+    ])
+    def test_success(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str, correct_status: AgreementStatuses
+    ):
+        agent = Agent.objects.get(organization=organization)
+        use_case = ProjectFactory(datasets=[agent.service])
+        agreement = AgreementFactory(project=use_case, assigner=organization, status=correct_status)
+        agreement_file = AgreementFileFactory(agreement=agreement)
+        use_case_client = UseCaseClientFactory(use_case=use_case)
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json == {
+            "_data": [
+                {
+                    "_type": "datasets/gov/vssa/ror/dcat/Agreement",
+                    "_id": str(agreement.uuid),
+                    "_revision": "",
+                    "_txn": "",
+                    "_created": agreement.created_at.astimezone(timezone).isoformat(),
+                    "_updated": agreement.updated_at.astimezone(timezone).isoformat(),
+                    "@context": "",
+                    "agreement_file_url": reverse(
+                        "uapi-agreement-file-download", kwargs={"agreement_file_uuid": agreement_file.uuid}
+                    ),
+                    "agreement_scopes": [
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getall",
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getone",
+                    ],
+                    "clients": [
+                        {
+                            # TODO: Fix this in https://github.com/atviriduomenys/katalogas/issues/2287.
+                            #  Should be: datasets/gov/vssa/isris/dcat/Client
+                            "_type": "",
+                            "_id": str(use_case_client.uuid),
+                            "_revision": "",
+                            "_txn": "",
+                            "_created": use_case_client.created_at.astimezone(timezone).isoformat(),
+                            "_updated": use_case_client.updated_at.astimezone(timezone).isoformat(),
+                            "@context": "",
+                        }
+                    ]
+                }
+            ]
+        }
+
+    def test_success_when_dataset_is_agent_service_child(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str
+    ):
+        agent = Agent.objects.get(organization=organization)
+        child_dataset = DatasetFactory(organization=organization)
+        child_dataset.move(agent.service, pos="sorted-child")
+        use_case = ProjectFactory(datasets=[child_dataset])
+        agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        agreement_file = AgreementFileFactory(agreement=agreement)
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json == {
+            "_data": [
+                {
+                    "_type": "datasets/gov/vssa/ror/dcat/Agreement",
+                    "_id": str(agreement.uuid),
+                    "_revision": "",
+                    "_txn": "",
+                    "_created": agreement.created_at.astimezone(timezone).isoformat(),
+                    "_updated": agreement.updated_at.astimezone(timezone).isoformat(),
+                    "@context": "",
+                    "agreement_file_url": reverse(
+                        "uapi-agreement-file-download", kwargs={"agreement_file_uuid": agreement_file.uuid}
+                    ),
+                    "agreement_scopes": [
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getall",
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getone",
+                    ],
+                    "clients": [],
+                }
+            ]
+        }
+
+    def test_400_when_given_dataset_uuid_is_not_related_to_agent_service(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str
+    ):
+        non_existig_dataset_uuid = str(uuid4())
+        agent = Agent.objects.get(organization=organization)
+        use_case = ProjectFactory(datasets=[agent.service])
+        AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        response = app.get(
+            f"{agreement_url()}?dataset._id={non_existig_dataset_uuid}",
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+            expect_errors=True,
+        )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json["message"] == f"dataset._id values: {non_existig_dataset_uuid} are invalid."
+
+    def test_filter_dataset_by_dataset_uuid(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str
+    ):
+        agent = Agent.objects.get(organization=organization)
+        child_dataset = DatasetFactory(organization=organization)
+        child_dataset.move(agent.service, pos="sorted-child")
+
+        use_case = ProjectFactory(datasets=[agent.service])
+        use_case2 = ProjectFactory(datasets=[child_dataset])
+        agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        agreement2 = AgreementFactory(project=use_case2, assigner=organization, status=AgreementStatuses.SIGNED)
+        agreement_file = AgreementFileFactory(agreement=agreement)
+        AgreementFileFactory(agreement=agreement2)
+
+        response = app.get(
+            f"{agreement_url()}?dataset._id={agent.service.uuid}",
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json == {
+            "_data": [
+                {
+                    "_type": "datasets/gov/vssa/ror/dcat/Agreement",
+                    "_id": str(agreement.uuid),
+                    "_revision": "",
+                    "_txn": "",
+                    "_created": agreement.created_at.astimezone(timezone).isoformat(),
+                    "_updated": agreement.updated_at.astimezone(timezone).isoformat(),
+                    "@context": "",
+                    "agreement_file_url": reverse(
+                        "uapi-agreement-file-download", kwargs={"agreement_file_uuid": agreement_file.uuid}
+                    ),
+                    "agreement_scopes": [
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getall",
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getone",
+                    ],
+                    "clients": [],
+                }
+            ]
+        }
+
+    def test_filter_dataset_by_multiple_dataset_uuids(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str
+    ):
+        agent = Agent.objects.get(organization=organization)
+        child_dataset = DatasetFactory(organization=organization)
+        child_dataset2 = DatasetFactory(organization=organization)
+        child_dataset.move(agent.service, pos="sorted-child")
+        child_dataset.refresh_from_db()
+        child_dataset2.move(child_dataset, pos="sorted-child")
+        child_dataset2.refresh_from_db()
+
+        use_case = ProjectFactory(datasets=[agent.service])
+        use_case2 = ProjectFactory(datasets=[child_dataset])
+        use_case3 = ProjectFactory(datasets=[child_dataset])
+        agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        agreement2 = AgreementFactory(project=use_case2, assigner=organization, status=AgreementStatuses.SIGNED)
+        agreement3 = AgreementFactory(project=use_case3, assigner=organization, status=AgreementStatuses.SIGNED)
+        AgreementFileFactory(agreement=agreement)
+        agreement_file2 = AgreementFileFactory(agreement=agreement2)
+        agreement_file3 = AgreementFileFactory(agreement=agreement3)
+
+        response = app.get(
+            f"{agreement_url()}?dataset._id={child_dataset.uuid}&dataset._id={child_dataset2.uuid}",
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json == {
+            "_data": [
+                {
+                    "_type": "datasets/gov/vssa/ror/dcat/Agreement",
+                    "_id": str(agreement3.uuid),
+                    "_revision": "",
+                    "_txn": "",
+                    "_created": agreement3.created_at.astimezone(timezone).isoformat(),
+                    "_updated": agreement3.updated_at.astimezone(timezone).isoformat(),
+                    "@context": "",
+                    "agreement_file_url": reverse(
+                        "uapi-agreement-file-download", kwargs={"agreement_file_uuid": agreement_file3.uuid}
+                    ),
+                    "agreement_scopes": [
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getall",
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getone",
+                    ],
+                    "clients": [],
+                },
+                {
+                    "_type": "datasets/gov/vssa/ror/dcat/Agreement",
+                    "_id": str(agreement2.uuid),
+                    "_revision": "",
+                    "_txn": "",
+                    "_created": agreement2.created_at.astimezone(timezone).isoformat(),
+                    "_updated": agreement2.updated_at.astimezone(timezone).isoformat(),
+                    "@context": "",
+                    "agreement_file_url": reverse(
+                        "uapi-agreement-file-download", kwargs={"agreement_file_uuid": agreement_file2.uuid}
+                    ),
+                    "agreement_scopes": [
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getall",
+                        "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getone",
+                    ],
+                    "clients": [],
+                },
+            ]
+        }
+
+    def test_returns_latest_agreement_adoc_file(self, app: DjangoTestApp, organization: Organization, valid_token: str):
+        agent = Agent.objects.get(organization=organization)
+        use_case = ProjectFactory(datasets=[agent.service])
+        agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        AgreementFileFactory(agreement=agreement)
+        agreement_file2 = AgreementFileFactory(agreement=agreement)
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json["_data"][0]["agreement_file_url"] == (
+            reverse("uapi-agreement-file-download", kwargs={"agreement_file_uuid": agreement_file2.uuid})
+        )
+
+    def test_400_if_agreement_file_scopes_cannot_be_extracted(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str
+    ):
+        agent = Agent.objects.get(organization=organization)
+        use_case = ProjectFactory(datasets=[agent.service])
+        agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        agreement_file = AgreementFileFactory(agreement=agreement)
+
+        with patch(
+            "vitrina.uapi.views.agreement_views.extract_elements_from_adoc",
+            side_effect=InvalidAdocError("Test error")
+        ):
+            response = app.get(
+                agreement_url(),
+                extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+                expect_errors=True,
+            )
+
+        assert response.status_code == status.HTTP_400_BAD_REQUEST
+        assert response.json["message"] == (
+            f"Scopes cannot be extracted from Agreement file (_id={agreement_file.uuid}). Error: Test error"
+        )
+
+    def test_returns_agreement_adoc_null_if_agreement_adoc_does_not_exist(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str
+    ):
+        agent = Agent.objects.get(organization=organization)
+        use_case = ProjectFactory(datasets=[agent.service])
+        AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        response = app.get(
+            agreement_url(),
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json["_data"][0]["agreement_file_url"] is None
+        assert response.json["_data"][0]["agreement_scopes"] is None

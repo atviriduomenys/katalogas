@@ -1,9 +1,9 @@
 from typing import Iterable, Any
 from unittest.mock import patch, PropertyMock
 from urllib.parse import quote
+from zoneinfo import ZoneInfo
 
 import pytest
-import pytz
 from authlib.jose import RSAKey
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
@@ -27,7 +27,7 @@ from vitrina.uapi.serializers.uapi_serializers import TYPE_PREFIX_TO_REMOVE
 
 
 pytestmark = pytest.mark.django_db
-timezone = pytz.timezone(settings.TIME_ZONE)
+timezone = ZoneInfo(settings.TIME_ZONE)
 
 
 class TestCreate:

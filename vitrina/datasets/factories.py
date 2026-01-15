@@ -73,6 +73,7 @@ class DatasetFactory(DjangoModelFactory):
         django_get_or_create = ("organization", "is_public")
 
     organization = factory.SubFactory(OrganizationFactory)
+    uuid = factory.Faker("uuid4")
     is_public = True
     version = 1
     will_be_financed = False

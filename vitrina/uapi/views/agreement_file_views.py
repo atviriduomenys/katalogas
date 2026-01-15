@@ -9,8 +9,7 @@ from rest_framework.views import APIView
 from vitrina.exceptions import UAPIException
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import AgreementFile
-from vitrina.uapi.utils.views import UAPIExceptionHandlerMixin
-from vitrina.uapi.views.mixins import AgentAuthViewSetMixin
+from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandlerMixin
 
 
 class AgreementFileDownloadUAPIView(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, APIView):

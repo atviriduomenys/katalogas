@@ -32,11 +32,15 @@ def get_projects(
     user: User | AnonymousUser,
     limit: int | None = None,
     require_images: bool = False,
+    approved_only: bool = True,
 ) -> QuerySet["Project"]:
     queryset = Project.objects.filter(visible_projects_filter(user))
 
     if require_images:
         queryset = queryset.filter(image__isnull=False)
+
+    if approved_only:
+        queryset = queryset.filter(status=Project.APPROVED)
 
     queryset = queryset.order_by("-created")
 

@@ -25,11 +25,11 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.statistics.models import StatRoute
 from vitrina.users.models import User
 from vitrina.orgs.services import has_perm, Action
-from vitrina.projects.models import Project
 from vitrina.utils import RevisionComment
 
 
 def home(request):
+    cards_limit = 3
     coordinator_count = (
         User.objects.select_related("representative")
         .filter(representative__role__in=Representative.COORDINATOR_ROLES)
@@ -61,17 +61,19 @@ def home(request):
             },
             "categories": (Category.objects.filter(featured=True).order_by("title")),
             "datasets": (
-                Dataset.restricted.for_user(request.user).select_related("organization").order_by("-published")[:3]
+                Dataset.restricted.for_user(request.user)
+                .select_related("organization")
+                .order_by("-published")[:cards_limit]
             ),
-            "requests": (Request.public.prefetch_related("organizations").order_by("-created")[:3]),
-            "projects": get_projects(request.user, 3, True),
+            "requests": (Request.public.prefetch_related("organizations").order_by("-created")[:cards_limit]),
+            "projects": get_projects(request.user, limit=cards_limit, require_images=True),
             "orgs": (
                 Organization.public.filter(
                     numchild=0,
                     image__isnull=False,
                 )
                 .annotate(datasets=Count("dataset"))
-                .order_by("-datasets")[:3]
+                .order_by("-datasets")[:cards_limit]
             ),
             "stat_routes": (StatRoute.objects.filter(featured=True).order_by("order")),
         },

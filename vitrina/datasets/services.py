@@ -17,7 +17,7 @@ from haystack.backends import SQ
 from haystack.query import SearchQuerySet
 from itsdangerous import URLSafeSerializer
 
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.helpers import get_filter_url, get_current_domain
 from vitrina.api.models import ApiKey
 from vitrina.helpers import email

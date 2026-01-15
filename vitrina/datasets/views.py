@@ -1,4 +1,5 @@
 import itertools
+import secrets
 import json
 import uuid
 from datetime import datetime, date
@@ -86,8 +87,7 @@ from vitrina.datasets.services import (
     get_values_for_frequency,
     get_query_for_frequency,
     DynamicResourceService,
-    DatasetRepresentativeService,
-    RepresentativeCreationError,
+    manage_subscriptions_for_representative,
 )
 from vitrina.datasets.models import (
     Dataset,
@@ -205,15 +205,10 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             queryset = queryset.facet(field, **options)
 
         if is_manager_dataset_list(self.request):
-            dataset_ct = ContentType.objects.get_for_model(Dataset)
-            org_ct = ContentType.objects.get_for_model(Organization)
-
             # Get dataset IDs where user is a direct representative
             dataset_ids = [
                 rep.object_id
-                for rep in self.request.user.representative_set.filter(
-                    role__in=[Representative.MANAGER, Representative.COORDINATOR], content_type=dataset_ct
-                )
+                for rep in self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
             ]
 
             # Get organization IDs where user is a representative
@@ -1639,7 +1634,6 @@ class CreateMemberView(
         self.object: Representative = form.save(commit=False)
         self.object.content_type = ContentType.objects.get_for_model(Dataset)
         self.object.object_id = self.dataset.id
-        service = DatasetRepresentativeService(self.dataset, self.request)
 
         try:
             user = User.objects.get(email=self.object.email)
@@ -1654,9 +1648,6 @@ class CreateMemberView(
             self.object.user = user
             self.object.save()
 
-            if not user.organization:
-                user.organization = self.dataset.organization
-                user.save()
             link = "%s%s" % (
                 get_current_domain(self.request),
                 reverse("dataset-detail", kwargs={"pk": self.object.object_id}),
@@ -1821,10 +1812,6 @@ class UpdateMemberView(
 
     def form_valid(self, form):
         self.object: Representative = form.save()
-
-        if self.object.user and not self.object.user.organization:
-            self.object.user.organization = self.dataset.organization
-            self.object.user.save()
 
         self.dataset.save()
         link = "%s%s" % (

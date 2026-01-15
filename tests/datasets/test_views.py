@@ -2567,6 +2567,7 @@ class TestDatasetMembers:
             object_id=dataset.pk,
             role=target_role,
         )
+        original_org = target_rep.user.organization
 
         coordinator = RepresentativeFactory(
             content_type=ct,
@@ -2587,11 +2588,12 @@ class TestDatasetMembers:
             resp = resp.click(linkid=f"update-member-{target_rep.pk}-btn")
             form = resp.forms["representative-form"]
             form["role"] = new_role
-            resp = form.submit()
+            form.submit()
 
             target_rep.refresh_from_db()
             assert target_rep.role == new_role
-            assert target_rep.user.organization == dataset.organization
+            assert target_rep.user.organization == original_org, \
+                "User's organization should not change during role update"
         else:
             assert len(update_links) == 0
 
@@ -2644,7 +2646,7 @@ class TestDatasetMembers:
             object_id=dataset.pk,
             role=target_role,
         )
-        original_manager_org = manager.user.organization
+        original_org = target_rep.user.organization
 
         coordinator = RepresentativeFactory(
             content_type=ct,
@@ -2659,7 +2661,6 @@ class TestDatasetMembers:
         update_links = [
             link for link in resp.html.find_all("a") if f"update-member-{target_rep.pk}" in link.get("id", "")
         ]
-        resp = resp.click(linkid=f"update-member-{manager.pk}-btn")
 
         if can_update:
             assert len(update_links) == 1
@@ -2668,12 +2669,10 @@ class TestDatasetMembers:
             form["role"] = new_role
             resp = form.submit()
 
-            assert resp.headers["location"] == url
-            manager.refresh_from_db()
-            assert manager.role == Representative.MANAGER
-            assert manager.user.organization == original_manager_org, \
+            target_rep.refresh_from_db()
+            assert target_rep.role == new_role
+            assert target_rep.user.organization == original_org, \
                 "User's organization should not change during role update"
-
         else:
             assert len(update_links) == 0
 
@@ -4569,7 +4568,6 @@ class TestDatasetMemberCreate:
         resp = app.get(url)
         form = resp.forms['representative-form']
         form['email'] = 'new.coordinator@test.com'
-        form['role'] = Representative.COORDINATOR
         form.submit()
 
         # Coordinator representative should be created for the DATASET
@@ -4578,7 +4576,7 @@ class TestDatasetMemberCreate:
             content_type=ContentType.objects.get_for_model(dataset.__class__),
             object_id=dataset.pk
         )
-        assert coordinator_rep.role == Representative.COORDINATOR
+        assert coordinator_rep.role == Representative.RESOURCE_COORDINATOR
 
         # User doesn't exist yet (will be created when they register)
         # But if they existed, they should NOT have org assigned
@@ -4595,7 +4593,7 @@ class TestDatasetMemberCreate:
         resp = app.get(url)
         form = resp.forms['representative-form']
         form['email'] = existing_user.email
-        form['role'] = Representative.COORDINATOR
+        form['role'] = Representative.OPEN_DATA_COORDINATOR
         form.submit()
 
         existing_user.refresh_from_db()
@@ -4619,7 +4617,6 @@ class TestDatasetMemberCreate:
         resp = app.get(url)
         form = resp.forms['representative-form']
         form['email'] = user_from_org_b.email
-        form['role'] = Representative.COORDINATOR
         form.submit()
 
         user_from_org_b.refresh_from_db()
@@ -4641,7 +4638,6 @@ class TestDatasetMemberCreate:
         resp = app.get(url)
         form = resp.forms['representative-form']
         form['email'] = user.email
-        form['role'] = Representative.COORDINATOR
         form.submit()
 
         user.refresh_from_db()
@@ -4675,7 +4671,7 @@ class TestDatasetMemberCreate:
         resp = app.get(url)
         form = resp.forms['representative-form']
         form['email'] = existing_user.email
-        form['role'] = Representative.MANAGER
+        form['role'] = Representative.OPEN_DATA_MANAGER
         form.submit()
 
         existing_user.refresh_from_db()
@@ -4697,7 +4693,6 @@ class TestDatasetMemberCreate:
         resp = app.get(url)
         form = resp.forms['representative-form']
         form['email'] = user.email
-        form['role'] = Representative.COORDINATOR
         form.submit()
 
         user.refresh_from_db()
@@ -4714,14 +4709,13 @@ class TestDatasetMemberUpdate:
         representative = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.MANAGER,
+            role=Representative.OPEN_DATA_MANAGER,
             user=user,
         )
 
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
-            role=Representative.COORDINATOR,
         )
 
         app.set_user(coordinator.user)

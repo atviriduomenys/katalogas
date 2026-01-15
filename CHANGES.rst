@@ -40,6 +40,15 @@ https://github.com/atviriduomenys/spinta/issues/1647
 - Adjusting Sync-done API endpoint to return errors in UDTS format.
 - Minimal cleanup for tests & mixins.
 
+https://github.com/atviriduomenys/katalogas/issues/2227
+
+- Fix landing page cards height
+
+<No ticket>
+
+- Add custom error pages for 400, 403, 404, 500.
+- Fix django translations file.
+
 v 1.11.3 (2026-01-05)
 ==================
 

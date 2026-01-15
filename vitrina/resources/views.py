@@ -20,7 +20,8 @@ from vitrina.plans.models import Plan
 from vitrina.requests.models import Request
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
-from vitrina.structure.models import Version
+from vitrina.structure import VersionStatus
+from vitrina.structure.models import Metadata, Version
 from vitrina.structure.views import DatasetStructureMixin, ModelCreateView
 from vitrina.views import HistoryMixin
 
@@ -59,6 +60,9 @@ class ResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetStructure
         context["structure_acceptable"] = False
         context["params"] = self.object.params.all().order_by("name")
         context["models"] = self.object.model_set.all()
+        context["is_disabled"] = (
+            self.object.metadata_version is not None and self.object.metadata_version.status != VersionStatus.DRAFT
+        )
         return context
 
 
@@ -169,6 +173,22 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
     context_object_name = "datasetdistribution"
     form_class = DatasetResourceForm
 
+    def dispatch(self, request, *args, **kwargs):
+        self.resource = get_object_or_404(
+            DatasetDistribution,
+            pk=kwargs["pk"],
+        )
+        self.metadata_version = None
+        version_id = kwargs.get("version_id")
+        if version_id is not None:
+            self.metadata_version = get_object_or_404(
+                Version,
+                pk=version_id,
+            )
+            if self.metadata_version.status != VersionStatus.DRAFT:
+                raise Http404("Only allowed on Draft version.")
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.UPDATE, resource)
@@ -217,6 +237,22 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
 
 class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = DatasetDistribution
+
+    def dispatch(self, request, *args, **kwargs):
+        self.resource = get_object_or_404(
+            DatasetDistribution,
+            pk=kwargs["pk"],
+        )
+        self.metadata_version = None
+        version_id = kwargs.get("version_id")
+        if version_id is not None:
+            self.metadata_version = get_object_or_404(
+                Version,
+                pk=version_id,
+            )
+            if self.metadata_version.status != VersionStatus.DRAFT:
+                raise Http404("Only allowed on Draft version.")
+        return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])

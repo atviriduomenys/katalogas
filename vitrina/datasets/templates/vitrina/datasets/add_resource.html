@@ -1,6 +1,17 @@
 {% load i18n %}
 {% if can_add_resource %}
-    <a href="{% url 'resource-add' pk=dataset.id %}" class="button is-primary is-normal is-size-6-mobile is-flex" id="add_resource">
-        {% translate "Naujas šaltinis" %}
-    </a>
+    {% if not selected_version.external_version %}
+        <a href="{% url 'resource-add' pk=dataset.id %}"
+           class="button is-primary is-normal is-size-6-mobile is-flex"
+           id="add_resource">
+            {% translate "Naujas šaltinis" %}
+        </a>
+    {% else %}
+        <a class="button is-primary is-normal is-size-6-mobile is-flex is-disabled"
+           style="pointer-events: none; opacity: 0.5;"
+           id="add_resource"
+           aria-disabled="true">
+            {% translate "Naujas šaltinis" %}
+        </a>
+    {% endif %}
 {% endif %}

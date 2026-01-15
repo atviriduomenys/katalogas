@@ -23,7 +23,7 @@ from django.db import models
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
 from django.forms import BaseForm
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
-from django.http.response import HttpResponsePermanentRedirect
+from django.http.response import HttpResponsePermanentRedirect, Http404
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy, resolve
@@ -1487,6 +1487,19 @@ class DatasetStructureImportView(
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-structure-history"
     plan_url_name = "dataset-plans"
+
+    def dispatch(self, request, *args, **kwargs):
+        version_id = kwargs.get("version_id")
+        if version_id is not None:
+            self.metadata_version = get_object_or_404(
+                _Version, pk=version_id, dataset=get_object_or_404(Dataset, pk=kwargs.get("pk"))
+            )
+        else:
+            self.metadata_version = None
+
+        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+            raise Http404("Only allowed on Draft version.")
+        return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
         subclass = self.dataset.subclass

@@ -260,6 +260,7 @@ class Resource(Metadata):
     comments: list[Comment] = field(default_factory=list, init=False)
     models: dict[str, Model] = field(default_factory=dict, init=False)
     errors: list[str] = field(default_factory=list, init=False)
+    params: dict[str, list[Param]] = field(default_factory=dict, init=False)
 
 
 @dataclass
@@ -867,7 +868,7 @@ def _read_param(
 
     last = None
     for node in state.stack:
-        if isinstance(node, Dataset) or isinstance(node, Model):
+        if isinstance(node, (Dataset, Resource, Model)):
             last = node
 
     _validate_name(name, param)

@@ -4,6 +4,11 @@ Changes
 v 1.13.0 (unreleased)
 ==================
 
+Bug fixes:
+
+https://github.com/atviriduomenys/spinta/issues/1630
+
+- Fix import logic when resource params were imported as dataset params.
 
 v 1.12.0 (2026-01-15)
 ==================

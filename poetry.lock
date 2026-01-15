@@ -4975,14 +4975,14 @@ orjson = ["orjson (>=3.9.14,<4)"]
 
 [[package]]
 name = "redis"
-version = "6.2.0"
+version = "6.4.0"
 description = "Python client for Redis database and key-value store"
 optional = false
 python-versions = ">=3.9"
 groups = ["main"]
 files = [
-    {file = "redis-6.2.0-py3-none-any.whl", hash = "sha256:c8ddf316ee0aab65f04a11229e94a64b2618451dab7a67cb2f77eb799d872d5e"},
-    {file = "redis-6.2.0.tar.gz", hash = "sha256:e821f129b75dde6cb99dd35e5c76e8c49512a5a0d8dfdc560b2fbd44b85ca977"},
+    {file = "redis-6.4.0-py3-none-any.whl", hash = "sha256:f0544fa9604264e9464cdf4814e7d4830f74b165d52f2a330a760a88dd248b7f"},
+    {file = "redis-6.4.0.tar.gz", hash = "sha256:b01bc7282b8444e28ec36b261df5375183bb47a07eb9c603f284e89cbc5ef010"},
 ]
 
 [package.dependencies]
@@ -5762,13 +5762,15 @@ files = [
 
 [[package]]
 name = "spinta"
-version = "0.2.dev6"
+version = "0.2.dev13"
 description = "A platform for describing, extracting, transforming, loading and serving open data."
 optional = false
-python-versions = "^3.9"
+python-versions = "<4.0,>=3.10"
 groups = ["main"]
-files = []
-develop = false
+files = [
+    {file = "spinta-0.2.dev13-py3-none-any.whl", hash = "sha256:4e27cae86efa189cdf558b750b44498742cc0745059ddec9bc8b07f63bb14979"},
+    {file = "spinta-0.2.dev13.tar.gz", hash = "sha256:702fd4be71763991c2723052075d1462ab757d9273ae389e16126f2543c60dba"},
+]
 
 [package.dependencies]
 aiofiles = "*"
@@ -5778,7 +5780,7 @@ authlib = ">=1.0.0"
 cachetools = "*"
 click = "*"
 dask = {version = "*", extras = ["dataframe"]}
-docutils = "^0.21.2"
+docutils = ">=0.21.2,<0.22.0"
 fsspec = "*"
 GeoAlchemy2 = "*"
 jinja2 = "*"
@@ -5802,16 +5804,17 @@ pyproj = [
 python-multipart = "*"
 pytz = "*"
 rdflib = "*"
+redis = ">=6.4.0,<7.0.0"
 requests = "*"
 "ruamel.yaml" = "*"
 setuptools = "*"
 setuptools-scm = "*"
 Shapely = "*"
-sqlalchemy = "~1.4"
+sqlalchemy = ">=1.4,<1.5"
 sqlalchemy-utils = "<=0.41.2"
 sqlean-py = "<=3.49.1"
 sqlparse = "*"
-starlette = ">=0.40"
+starlette = ">=0.49.1"
 tabulate = "*"
 toposort = "*"
 tqdm = "*"
@@ -5821,18 +5824,12 @@ unidecode = "*"
 xlrd = "*"
 XlsxWriter = "*"
 xmltodict = "*"
-zeep = "^4.3.1"
+zeep = ">=4.3.1,<5.0.0"
 
 [package.extras]
 all = ["alembic (>=1.11.0,<1.12.0)", "gunicorn", "uvicorn"]
 http = ["gunicorn", "uvicorn"]
 migrations = ["alembic (>=1.11.0,<1.12.0)"]
-
-[package.source]
-type = "git"
-url = "https://github.com/atviriduomenys/spinta.git"
-reference = "0.2dev6"
-resolved_reference = "d282956940bde399d23a01ae1125aa842bf6c628"
 
 [[package]]
 name = "sqlalchemy"
@@ -6000,14 +5997,14 @@ doc = ["sphinx"]
 
 [[package]]
 name = "starlette"
-version = "0.48.0"
+version = "0.51.0"
 description = "The little ASGI library that shines."
 optional = false
-python-versions = ">=3.9"
+python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "starlette-0.48.0-py3-none-any.whl", hash = "sha256:0764ca97b097582558ecb498132ed0c7d942f233f365b86ba37770e026510659"},
-    {file = "starlette-0.48.0.tar.gz", hash = "sha256:7e8cee469a8ab2352911528110ce9088fdc6a37d9876926e73da7ce4aa4c7a46"},
+    {file = "starlette-0.51.0-py3-none-any.whl", hash = "sha256:fb460a3d6fd3c958d729fdd96aee297f89a51b0181f16401fe8fd4cb6129165d"},
+    {file = "starlette-0.51.0.tar.gz", hash = "sha256:4c4fda9b1bc67f84037d3d14a5112e523509c369d9d47b111b2f984b0cc5ba6c"},
 ]
 
 [package.dependencies]
@@ -6857,4 +6854,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "2eb6de5e4de23777be65b28c425c286716c2ae814889a67bbda3bb31e410fdd8"
+content-hash = "419211ebc26ac1068485088d818427b223308eb3d3a43fc371371f4806feb3e1"

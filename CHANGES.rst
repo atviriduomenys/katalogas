@@ -57,6 +57,10 @@ https://github.com/atviriduomenys/katalogas/issues/2244
 
 - Update `has_perm` to allow update organization for super users.
 
+<No ticket>
+
+- Bump `spinta` version to latest 0.2dev13.
+
 v 1.11.3 (2026-01-05)
 ==================
 

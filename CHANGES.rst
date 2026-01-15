@@ -1,7 +1,11 @@
 Changes
 #######
 
-v 1.12 (unreleased)
+v 1.13.0 (unreleased)
+==================
+
+
+v 1.12.0 (2026-01-15)
 ==================
 
 Improvements

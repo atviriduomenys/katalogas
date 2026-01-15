@@ -21,7 +21,7 @@ from vitrina.requests.models import Request
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import VersionStatus
-from vitrina.structure.models import Metadata, Version
+from vitrina.structure.models import Version
 from vitrina.structure.views import DatasetStructureMixin, ModelCreateView
 from vitrina.views import HistoryMixin
 

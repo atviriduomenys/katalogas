@@ -16,6 +16,7 @@ from vitrina.orgs.models import Organization
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.uapi.enums import UdtsCatalogEnum
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -24,7 +25,10 @@ timezone = pytz.timezone(settings.TIME_ZONE)
 class TestSyncDone:
     def test_update_404_when_agreement_does_not_exist(self, app: DjangoTestApp, valid_token: str) -> None:
         response = app.put(
-            reverse("uapi-agent-sync-done", kwargs={"agreement_id": str(uuid4())}),
+            reverse(
+                "uapi-agent-sync-done",
+                kwargs={"catalog": UdtsCatalogEnum.ISRIS, "agreement_id": str(uuid4())}
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
@@ -52,7 +56,10 @@ class TestSyncDone:
         )
 
         response = app.put(
-            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
+            reverse(
+                "uapi-agent-sync-done",
+                kwargs={"catalog": UdtsCatalogEnum.ISRIS, "agreement_id": agreement.pk}
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
@@ -82,7 +89,10 @@ class TestSyncDone:
         )
 
         response = app.put(
-            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
+            reverse(
+                "uapi-agent-sync-done",
+                kwargs={"catalog": UdtsCatalogEnum.ISRIS, "agreement_id": agreement.pk}
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
@@ -112,7 +122,10 @@ class TestSyncDone:
         )
 
         response = app.put(
-            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
+            reverse(
+                "uapi-agent-sync-done",
+                kwargs={"catalog": UdtsCatalogEnum.ISRIS, "agreement_id": agreement.pk}
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
             expect_errors=True,
         )
@@ -142,7 +155,10 @@ class TestSyncDone:
         )
 
         response = app.put(
-            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
+            reverse(
+                "uapi-agent-sync-done",
+                kwargs={"catalog": UdtsCatalogEnum.ISRIS, "agreement_id": agreement.pk}
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
             expect_errors=True,
         )
@@ -172,7 +188,10 @@ class TestSyncDone:
         )
 
         response = app.put(
-            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
+            reverse(
+                "uapi-agent-sync-done",
+                kwargs={"catalog": UdtsCatalogEnum.ISRIS, "agreement_id": agreement.pk}
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
         )
 
@@ -205,7 +224,10 @@ class TestSyncDone:
                 scopes=["uapi:/datasets/gov/vssa/dcat/Agreement/:patch"],
             )
             response = app.put(
-                reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
+                reverse(
+                    "uapi-agent-sync-done",
+                    kwargs={"catalog": UdtsCatalogEnum.ISRIS, "agreement_id": agreement.pk}
+                ),
                 extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
             )
 

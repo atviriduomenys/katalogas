@@ -18,8 +18,10 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import OAUTH_AGENT_DEFAULT_SCOPES
+from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.factories import MetadataFactory
+from vitrina.uapi.enums import UdtsCatalogEnum
 from vitrina.uapi.factories import AgentFactory
 from vitrina.uapi.models import Agent
 from vitrina.users.factories import UserFactory
@@ -123,6 +125,11 @@ def dataset(organization: Organization) -> Dataset:
 
 
 @pytest.fixture
+def agreement() -> Agreement:
+    return AgreementFactory()
+
+
+@pytest.fixture
 def user(organization: Organization) -> User:
     return UserFactory(organization=organization)
 
@@ -153,17 +160,17 @@ def distribution(organization: Organization, dataset: Dataset) -> DatasetDistrib
 
 @pytest.fixture
 def url_dataset() -> str:
-    return _build_reverse_uapi_url("uapi-dataset")
+    return _build_reverse_uapi_url("uapi-dataset", catalog=UdtsCatalogEnum.ISRIS)
 
 
 @pytest.fixture
 def url_distribution() -> str:
-    return _build_reverse_uapi_url("uapi-distribution")
+    return _build_reverse_uapi_url("uapi-distribution", catalog=UdtsCatalogEnum.ISRIS)
 
 
 @pytest.fixture
 def url_dataset_structure(dataset: Dataset) -> str:
-    return _build_reverse_uapi_url("uapi-dataset-structure", dataset_id=dataset.id)
+    return _build_reverse_uapi_url("uapi-dataset-structure", catalog=UdtsCatalogEnum.ISRIS, pk=dataset.id)
 
 
 @pytest.fixture

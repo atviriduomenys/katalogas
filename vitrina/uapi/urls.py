@@ -1,5 +1,6 @@
-from django.urls import path
+from django.urls import path, register_converter
 
+from vitrina.uapi.converters import CatalogConverter
 from vitrina.uapi.views.template_views import (
     AgentDeleteView,
     AgentUpdateView,
@@ -14,7 +15,11 @@ from vitrina.uapi.views.views import (
     AgentSyncDoneViewSet,
 )
 
-STATIC_UAPI_BASE_PATH = "uapi/datasets/gov/vssa/isris/dcat/"
+
+register_converter(CatalogConverter, "catalog")
+
+
+STATIC_UAPI_BASE_PATH = "uapi/datasets/gov/vssa/<catalog:catalog>/dcat/"
 
 
 urlpatterns = [
@@ -54,7 +59,7 @@ urlpatterns = [
         name="uapi-dataset",
     ),
     path(
-        f"{STATIC_UAPI_BASE_PATH}Dataset/<str:dataset_id>/dsa/",
+        f"{STATIC_UAPI_BASE_PATH}Dataset/<str:pk>/dsa/",
         DatasetViewSet.as_view(
             {
                 "post": "upload_dataset_structure",

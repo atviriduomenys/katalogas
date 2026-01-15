@@ -23,6 +23,7 @@ from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import create_structure_objects
+from vitrina.uapi.enums import UdtsCatalogEnum
 from vitrina.uapi.serializers.uapi_serializers import TYPE_PREFIX_TO_REMOVE
 
 pytestmark = pytest.mark.django_db
@@ -965,7 +966,7 @@ class TestActionUploadDatasetStructure:
         dsa: str,
         valid_token: str,
     ):
-        url = reverse("uapi-dataset-structure", kwargs={"dataset_id": 1})
+        url = reverse("uapi-dataset-structure", kwargs={"catalog": UdtsCatalogEnum.ISRIS, "pk": 1})
 
         response = app.post(
             url,
@@ -1121,7 +1122,11 @@ class TestActionGetDatasetStructure:
         valid_token: str
     ):
         response = app.get(
-            _build_reverse_uapi_url("uapi-dataset-structure", dataset_id=1_000_000),
+            _build_reverse_uapi_url(
+                "uapi-dataset-structure",
+                catalog=UdtsCatalogEnum.ISRIS,
+                pk=1_000_000
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
@@ -1181,7 +1186,11 @@ class TestActionGetDatasetStructure:
         token_parts = valid_token.split(".")
         invalid_token = f"{token_parts[0]}.{token_parts[1]}"
         response = app.get(
-            _build_reverse_uapi_url("uapi-dataset-structure", dataset_id=1_000_000),
+            _build_reverse_uapi_url(
+                "uapi-dataset-structure",
+                catalog=UdtsCatalogEnum.ISRIS,
+                pk=1_000_000
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {invalid_token}"},
             expect_errors=True,
         )

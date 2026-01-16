@@ -45,7 +45,7 @@ class ResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetStructure
     def get_detail_url(self):
         return self.object.dataset.get_absolute_url()
 
-    def get_child_resources_url(self):
+    def get_child_resources_url(self) -> str:
         return reverse(
             "dataset-child-resources",
             args=[self.object.dataset.pk],

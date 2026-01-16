@@ -278,7 +278,7 @@ def test_dataset_comment_subscription_email(app: DjangoTestApp, subscription_dat
     comment_user = UserFactory()
     app.set_user(comment_user)
     ct = ContentType.objects.get_for_model(subscription_data['dataset'])
-    form = app.get(subscription_data['dataset'].get_absolute_url()).forms['comment-form']
+    form = app.get(subscription_data['dataset'].get_absolute_url()).follow().forms['comment-form']
     form['is_public'] = True
     form['body'] = "Test comment"
     form.submit()
@@ -470,7 +470,7 @@ def test_project_update_subscription_email(app: DjangoTestApp, subscription_data
 def test_auto_subscribe_for_comment_and_reply_mail(app: DjangoTestApp, subscription_data):
     app.set_user(subscription_data['user'])
     ct = ContentType.objects.get_for_model(subscription_data['dataset'])
-    form = app.get(subscription_data['dataset'].get_absolute_url()).forms['comment-form']
+    form = app.get(subscription_data['dataset'].get_absolute_url()).follow().forms['comment-form']
     form['is_public'] = True
     form['body'] = "Test comment"
     form.submit()
@@ -482,10 +482,10 @@ def test_auto_subscribe_for_comment_and_reply_mail(app: DjangoTestApp, subscript
     reply_user = UserFactory()
     comment = created_comment.first()
     app.set_user(reply_user)
-    form = app.get(comment.content_object.get_absolute_url()).forms[f'reply-form-{comment.pk}']
+    form = app.get(comment.content_object.get_absolute_url()).follow().forms[f'reply-form-{comment.pk}']
     form['is_public'] = True
     form['body'] = "Test reply"
-    resp = form.submit().follow()
+    resp = form.submit().follow().follow()
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     reply = Comment.objects.filter(content_type=comment.content_type, parent=comment).first()
     assert comments.count() == 2

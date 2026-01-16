@@ -32,7 +32,7 @@ class MetadataFactory(DjangoModelFactory):
     class Meta:
         model = Metadata
 
-    uuid = str(uuid.uuid4())
+    uuid = factory.LazyFunction(uuid.uuid4)
     dataset = factory.SubFactory("vitrina.datasets.factories.DatasetFactory")
     name = factory.Faker("word")
     title = factory.Faker("catch_phrase")

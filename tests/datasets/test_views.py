@@ -3054,7 +3054,7 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     form["title"] = "Updated title"
     form["description"] = "Updated description"
     resp = form.submit().follow().follow()
-    resp = resp.click(linkid="history-tab")
+    resp = resp.click(linkid="history-tab").click(linkid="history-tab")
     assert resp.context["detail_url_name"] == "dataset-detail"
     assert resp.context["history_url_name"] == "dataset-history"
     assert len(resp.context["history"]) == 1
@@ -3346,11 +3346,18 @@ def test_request_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
 def test_dataset_dynamic_resources(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    resource = DatasetDistributionFactory(uapi_format=True)
-    version = VersionFactory(dataset=resource.dataset)
-    model = ModelFactory(metadata_version=version)
-
-    response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
+    dataset = DatasetFactory(metadata="TestModel")
+    resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
+    metadata_version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="TestModel",
+        metadata_version=metadata_version,
+    )
+    response = app.get(reverse("dataset-detail", args=[dataset.pk])).follow()
     html = response.text
     table_data = parse_table(html)
     expected_data = [
@@ -3431,11 +3438,27 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
 def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    resource = DatasetDistributionFactory(uapi_format=True)
-    version = VersionFactory(dataset=resource.dataset)
-    ModelFactory(metadata_version=version, metadata="TestModel")
-    ModelFactory(metadata_version=version, metadata="TestModel2")
-    ModelFactory(metadata_version=version, metadata="TestModel3")
+    dataset = DatasetFactory(metadata="TestModel")
+    resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
+    metadata_version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                    content_type=ContentType.objects.get_for_model(model),
+                    object_id=model.pk,
+                    name="TestModel",
+                    metadata_version=metadata_version)
+    model2 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                    content_type=ContentType.objects.get_for_model(model2),
+                    object_id=model2.pk,
+                    name="TestModel2",
+                    metadata_version=metadata_version)
+    model3 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(dataset=dataset,
+                    content_type=ContentType.objects.get_for_model(model3),
+                    object_id=model3.pk,
+                    name="TestModel3",
+                    metadata_version=metadata_version)
 
     response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
     html = response.text
@@ -3594,6 +3617,8 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         licence=LicenceFactory(url=f"{po}/licence/CC_BY_4_0"),
         conditions="platinimo sąlygos",
     )
+    ModelFactory(dataset=dataset, distribution=dist1, metadata_version=dataset.metadata.first().metadata_version)
+    ModelFactory(dataset=dataset, distribution=dist2, metadata_version=dataset.metadata.first().metadata_version)
 
     res = app.get(reverse("dataset-rdf-download", args=[dataset.pk]))
 
@@ -3751,6 +3776,8 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         licence=LicenceFactory(url=f"{po}/licence/CC_BY_4_0"),
         conditions="platinimo sąlygos",
     )
+    ModelFactory(dataset=dataset, distribution=dist1, metadata_version=dataset.metadata.first().metadata_version)
+    ModelFactory(dataset=dataset, distribution=dist2, metadata_version=dataset.metadata.first().metadata_version)
 
     res = app.get(reverse("dataset-rdf-download", args=[dataset.pk]))
 
@@ -3890,12 +3917,17 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         title="Duomenys",
         description="Duomenys iš spintos",
         format=FileFormat(title="Saugyklos API", extension="UAPI"),
-        uapi_format=False,
+        uapi_format=True,
         data_service=data_service,
         licence=LicenceFactory(url=f"{po}/licence/CC_BY_4_0"),
         conditions="platinimo sąlygos",
     )
-    ModelFactory(metadata_version=dataset.metadata.first().metadata_version, metadata="test/dataset/TestModel")
+    model = ModelFactory(dataset=dataset, metadata_version=dataset.metadata.first().metadata_version)
+    MetadataFactory(dataset=dataset,
+                    content_type=ContentType.objects.get_for_model(model),
+                    object_id=model.pk,
+                    name="test/dataset/TestModel",
+                    metadata_version=dataset.metadata.first().metadata_version)
     (
         FileFormat(
             title="JSON",

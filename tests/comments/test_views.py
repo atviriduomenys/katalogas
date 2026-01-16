@@ -302,18 +302,11 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
     metadata_version = VersionFactory()
     model = ModelFactory(dataset=metadata_version.dataset, metadata_version=metadata_version)
     dataset = metadata_version.dataset
-    MetadataFactory(
+    model_metadata = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=metadata_version
-    )
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
         metadata_version=metadata_version
     )
     prop = PropertyFactory(model=model, metadata_version=metadata_version)
@@ -326,44 +319,38 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         metadata_version=metadata_version
     )
 
-    with patch("vitrina.structure.services.requests.get") as mock_get:
-        data = {
-            "_id": "c7d66fa2-a880-443d-8ab5-2ab7f9c79886",
-            "prop": "test 1",
-        }
-        mock_get.return_value = Mock(content=json.dumps(data))
-        form = app.get(
-            reverse("object-data", args=[dataset.pk, metadata_version.pk, model.name, "c7d66fa2-a880-443d-8ab5-2ab7f9c79886"])
-        ).forms["comment-form"]
-        match = resolve(form.action)
-        revision_comment = RevisionComment(
-            source=RevisionSource.VIEW,
-            action="external-comment",
-            http_method="POST",
-            path=form.action,
-            args=list(match.args),
-            kwargs=match.kwargs
-        )
-        form["is_public"] = True
-        form["register_request"] = True
-        form["body"] = "Test comment"
-        resp = form.submit().follow()
-        created_request = Request.objects.filter(
-            requestobject__external_object_id="c7d66fa2-a880-443d-8ab5-2ab7f9c79886"
-        )
-        created_comment = Comment.objects.filter(external_object_id="c7d66fa2-a880-443d-8ab5-2ab7f9c79886")
+    form = app.get(
+        reverse("object-data", args=[dataset.pk, model_metadata.metadata_version.pk, model.name, model_metadata.uuid])
+    ).forms["comment-form"]
+    match = resolve(form.action)
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="external-comment",
+        http_method="POST",
+        path=form.action,
+        args=list(match.args),
+        kwargs=match.kwargs
+    )
+    form["is_public"] = True
+    form["register_request"] = True
+    form["body"] = "Test comment"
+    resp = form.submit().follow()
+    created_request = Request.objects.filter(
+        requestobject__external_object_id=model_metadata.uuid
+    )
+    created_comment = Comment.objects.filter(external_object_id=model_metadata.uuid)
 
-        assert created_comment.count() == 1
-        assert created_comment.first() in list(resp.context["comments"])[0]
-        assert created_comment.first().type == Comment.REQUEST
-        assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
-        assert created_comment.first().rel_object_id == created_request.first().pk
+    assert created_comment.count() == 1
+    assert created_comment.first() in list(resp.context["comments"])[0]
+    assert created_comment.first().type == Comment.REQUEST
+    assert created_comment.first().rel_content_type == ContentType.objects.get_for_model(Request)
+    assert created_comment.first().rel_object_id == created_request.first().pk
 
-        assert created_request.count() == 1
-        assert created_request.first().title == "c7d66fa2-a880-443d-8ab5-2ab7f9c79886"
-        assert created_request.first().description == created_comment.first().body
-        assert Version.objects.get_for_object(created_request.first()).count() == 1
-        assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
+    assert created_request.count() == 1
+    assert created_request.first().title == str(model_metadata.uuid)
+    assert created_request.first().description == created_comment.first().body
+    assert Version.objects.get_for_object(created_request.first()).count() == 1
+    assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
 
 
 @pytest.mark.django_db

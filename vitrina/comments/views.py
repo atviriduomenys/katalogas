@@ -27,7 +27,7 @@ from vitrina.orgs.models import Representative, Organization
 from vitrina.plans.models import Plan
 from vitrina.requests.models import Request, RequestObject, RequestAssignment
 from vitrina.resources.models import DatasetDistribution
-from vitrina.structure.models import Property, Model
+from vitrina.structure.models import Property, Model, Metadata
 from vitrina.tasks.models import Task
 from django.utils.translation import gettext_lazy as _
 
@@ -341,6 +341,8 @@ class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
     def post(self, request, dataset_id, external_content_type, external_object_id):
         form_class = get_comment_form_class()
         form = form_class(external_object_id, request.POST)
+        metadata_version = Metadata.objects.filter(dataset=self.dataset,
+                                                   uuid=external_object_id).first().metadata_version
         if form.is_valid():
             comment = form.save(commit=False)
             comment.user = request.user
@@ -348,7 +350,6 @@ class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
             comment.external_content_type = external_content_type
             comment.type = Comment.USER
             sub_email_list = []
-
             if form.cleaned_data.get("register_request"):
                 new_request = Request.objects.create(
                     status=Request.CREATED,
@@ -381,17 +382,17 @@ class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
                     sub_type=Subscription.DATASET,
                     content_type=ContentType.objects.get_for_model(self.dataset),
                     dataset_comments_sub=True,
-                )
+                    )
                 for sub in subs:
                     if (
-                        sub.user.email
-                        and sub.email_subscribed
-                        and sub.user.email not in sub_email_list
-                        and Representative.objects.filter(
-                            content_type=ContentType.objects.get_for_model(self.dataset),
-                            object_id=self.dataset.pk,
-                            email=sub.user.email,
-                        ).exists()
+                            sub.user.email
+                            and sub.email_subscribed
+                            and sub.user.email not in sub_email_list
+                            and Representative.objects.filter(
+                        content_type=ContentType.objects.get_for_model(self.dataset),
+                        object_id=self.dataset.pk,
+                        email=sub.user.email,
+                    ).exists()
                     ):
                         sub_email_list.append(sub.user.email)
 
@@ -420,7 +421,7 @@ class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
                     Task.objects.create(
                         title=title,
                         description=f"Aptikta klaida duomenyse {external_object_id},"
-                        f" {dataset.name}/{external_content_type}.",
+                                    f" {dataset.name}/{external_content_type}.",
                         user=rep.user,
                         status=Task.CREATED,
                         type=Task.ERROR,
@@ -445,6 +446,7 @@ class ExternalCommentView(LoginRequiredMixin, PermissionRequiredMixin, View):
                 "object-data",
                 kwargs={
                     "pk": form.data.get("dataset_id"),
+                    "version_id": metadata_version.pk,
                     "model": external_content_type,
                     "uuid": external_object_id,
                 },

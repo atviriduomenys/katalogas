@@ -16,7 +16,6 @@ from vitrina.resources.models import (
     CompressionFormat,
     PackagingFormat,
 )
-from vitrina.structure.factories import VersionFactory
 
 
 class FileFormat(DjangoModelFactory):

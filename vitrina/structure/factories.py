@@ -1,7 +1,6 @@
 import factory
 import uuid
 
-from django.contrib.contenttypes.models import ContentType
 from factory.django import DjangoModelFactory
 
 from vitrina.structure import VersionStatus
@@ -41,10 +40,7 @@ class MetadataFactory(DjangoModelFactory):
     access = Metadata.OPEN
     visibility = Metadata.UNDEFINED
 
-    metadata_version = factory.SubFactory(
-        VersionFactory,
-        dataset=factory.SelfAttribute('..dataset')
-    )
+    metadata_version = factory.SubFactory(VersionFactory, dataset=factory.SelfAttribute("..dataset"))
     type = ""
     ref = ""
     source = ""

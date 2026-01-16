@@ -116,18 +116,12 @@ def create_or_get_uapi_format():
 
 def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version):
     ct = ContentType.objects.get_for_model(dataset)
-    existing_metadata = Metadata.objects.filter(
-        content_type=ct, object_id=dataset.pk
-    )
+    existing_metadata = Metadata.objects.filter(content_type=ct, object_id=dataset.pk)
     loaded_metadata = []
 
     _clean_errors(dataset.current_structure)
     for order, meta in enumerate(state.manifest.datasets.values(), 1):
-        if (
-            metadata := Metadata.objects.filter(content_type=ct, name=meta.name)
-            .exclude(dataset=dataset)
-            .first()
-        ):
+        if metadata := Metadata.objects.filter(content_type=ct, name=meta.name).exclude(dataset=dataset).first():
             meta.errors.append(_(f'Duomenų išteklius "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
             metadata_version.delete()

@@ -1,4 +1,4 @@
-import os
+from pathlib import Path
 from typing import Any, Callable
 
 from django.contrib import messages
@@ -16,6 +16,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView
 
 from vitrina.datasets.models import Dataset
+from vitrina.helpers import get_file_extension
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.forms import (
@@ -171,6 +172,7 @@ class AgreementUploadSignedFileMixin(AgreementActionMixin):
             agreement=self.agreement,
             file_name=uploaded_file.name,
             file=uploaded_file,
+            file_extension=AgreementFile.AllowedFileTypes(get_file_extension(uploaded_file.name)),
         )
 
 
@@ -223,14 +225,14 @@ class AgreementFormMixin(AgreementActionMixin):
     def perform_action(self, form: ModelForm) -> None:
         template = self.agreement.template
         self.agreement.generate_contract_pdf_file(template=template)
-
-        file_name, extension = os.path.splitext(os.path.basename(template.file.name))
-        copy_file_name = f"{file_name}_copy{extension}"
+        template_file_path = Path(template.file.name)
+        copy_file_name = f"{template_file_path.stem}_copy{template_file_path.suffix}"
         with template.file.open() as file:
             self.agreement.files.create(
                 file=ContentFile(content=file.read(), name=copy_file_name),
                 is_template=True,
                 file_name=copy_file_name,
+                file_extension=AgreementFile.AllowedFileTypes(get_file_extension(copy_file_name)),
             )
 
 

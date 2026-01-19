@@ -4,6 +4,10 @@ Changes
 v 1.13.0 (unreleased)
 ==================
 
+
+v 1.12.1 (2026-01-19)
+==================
+
 Bug fixes:
 
 https://github.com/atviriduomenys/spinta/issues/1630

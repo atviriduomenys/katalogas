@@ -1687,6 +1687,7 @@ class TestDatasetCreateView:
         assert added_dataset.metadata.first().title == "Added title"
         assert added_dataset.metadata.first().description == "Added new dataset description"
         assert added_dataset.get_parent() == parent_dataset
+        assert added_dataset.uuid is not None
 
     def test_dataset_add_form_initial_values(self, app: DjangoTestApp):
         default_frequency = FrequencyFactory(is_default=True)

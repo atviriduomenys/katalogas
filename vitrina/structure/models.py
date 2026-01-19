@@ -7,7 +7,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
-from django.db.models import Q, Max, Avg
+from django.db.models import Q, Max, Avg, QuerySet
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
@@ -192,31 +192,31 @@ class Model(models.Model):
         db_table = "model"
         verbose_name = _("Modelis")
 
-    def __str__(self):
+    def __str__(self) -> str:
         if metadata := self.metadata.first():
             return metadata.name
         return ""
 
     @property
-    def name(self):
+    def name(self) -> str:
         if metadata := self.metadata.first():
             return metadata.name.split("/")[-1]
         return ""
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         if metadata := self.metadata.first():
             return metadata.name
         return ""
 
     @property
-    def title(self):
+    def title(self) -> str:
         if metadata := self.metadata.first():
             return metadata.title
         return ""
 
     @property
-    def description(self):
+    def description(self) -> str:
         if metadata := self.metadata.first():
             return metadata.description
         return ""
@@ -227,7 +227,7 @@ class Model(models.Model):
             return metadata.visibility
         return None
 
-    def update_level(self):
+    def update_level(self) -> None:
         if metadata := self.metadata.first():
             prop_ids = self.model_properties.values_list("pk", flat=True)
             where = [
@@ -253,7 +253,7 @@ class Model(models.Model):
                 metadata.average_level = round(sum(levels) / len(levels))
                 metadata.save()
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str | None:
         if self.name:
             return reverse(
                 "model-structure",
@@ -261,7 +261,7 @@ class Model(models.Model):
             )
         return None
 
-    def get_data_url(self):
+    def get_data_url(self) -> str | None:
         if self.name:
             return reverse(
                 "model-data",
@@ -269,27 +269,27 @@ class Model(models.Model):
             )
         return None
 
-    def get_api_url(self):
+    def get_api_url(self) -> str | None:
         if self.name:
             return reverse(
                 "getall-api", kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk, "model": self.name}
             )
         return None
 
-    def get_given_props(self):
+    def get_given_props(self) -> QuerySet:
         return self.model_properties.filter(given=True).order_by("metadata__order")
 
-    def get_props_excluding_base(self):
+    def get_props_excluding_base(self) -> QuerySet:
         base_props = []
         for props in self.get_base_props().values():
             base_props.extend(props.values_list("metadata__name", flat=True))
 
         return self.get_given_props().exclude(metadata__name__in=base_props)
 
-    def get_acl_parents(self):
+    def get_acl_parents(self) -> list:
         return [self.dataset]
 
-    def get_base_props(self):
+    def get_base_props(self) -> dict:
         base = self.base
         base_props = {}
         while base:
@@ -298,7 +298,7 @@ class Model(models.Model):
         return base_props
 
     @property
-    def access_display_value(self):
+    def access_display_value(self) -> str:
         access = Model.objects.annotate(access=Max("model_properties__metadata__access")).get(pk=self.pk).access
         if access is not None:
             for type in AccessType.choices:
@@ -306,36 +306,35 @@ class Model(models.Model):
                     return type[1]
         return ""
 
-    def is_opened(self):
+    def is_opened(self) -> bool:
         return self.dataset.is_opened()
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
+        if self.distribution and self.distribution.format and self.distribution.format.extension == "UAPI":
+            raise ValidationError(_("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją."))
         old_distribution = None
 
         if self.pk:
             old_instance = Model.objects.get(pk=self.pk)
             old_distribution = old_instance.distribution
 
-        if self.distribution and self.distribution.format and self.distribution.format.extension == "UAPI":
-            raise ValidationError(_("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją."))
-
         super().save(*args, **kwargs)
 
         if self.distribution:
             if self.distribution.metadata_version and self.distribution.metadata_version != self.metadata_version:
                 return
-            self.distribution.create_metadata_instance_and_assign_version(self.metadata_version.pk)
+            self.distribution.create_or_reuse_metadata_instance_and_assign_version(self.metadata_version.pk)
             self.distribution.metadata_version = self.metadata_version
             self.distribution.save(update_fields=["metadata_version"])
 
         if old_distribution:
-            old_distribution.check_if_resource_should_be_versioned()
+            old_distribution.delete_resource_metadata_if_has_no_models()
 
-    def delete(self, *args, **kwargs):
+    def delete(self, *args, **kwargs) -> None:
         distribution = self.distribution
         super().delete(*args, **kwargs)
         if distribution:
-            distribution.check_if_resource_should_be_versioned()
+            distribution.delete_resource_metadata_if_has_no_models()
 
 
 class Property(models.Model):

@@ -1,3 +1,4 @@
+import logging
 import pathlib
 from enum import StrEnum
 import uuid
@@ -15,6 +16,8 @@ from vitrina.structure import AccessType
 from vitrina.structure.models import Metadata, Version
 from vitrina.utils import translate_text
 from vitrina.datasets.tasks import update_applicable_legislation_description
+
+logger = logging.getLogger()
 
 
 def get_default_status() -> uuid.UUID:
@@ -423,11 +426,15 @@ class DatasetDistribution(TranslatableModel):
         update_applicable_legislation_description.delay(legislation_ids_to_update)
         self.applicable_legislation.set(legislations)
 
-    def create_metadata_instance_and_assign_version(self, metadata_version: int) -> Metadata:
-        metadata_version = Version.objects.get(pk=metadata_version)
+    def create_or_reuse_metadata_instance_and_assign_version(self, metadata_version_id: int) -> Metadata:
+        metadata_version = Version.objects.filter(pk=metadata_version_id).first()
+        if not metadata_version:
+            logging.error(f"Version with pk={metadata_version_id} does not exist")
+            raise ValueError(f"Version with pk={metadata_version_id} does not exist")
+
         if metadata_instance := self.metadata.first():
             metadata_instance.metadata_version = metadata_version
-            metadata_instance.save()
+            metadata_instance.save(update_fields=["metadata_version"])
         else:
             metadata_instance = Metadata.objects.create(
                 uuid=str(uuid.uuid4()),
@@ -446,7 +453,7 @@ class DatasetDistribution(TranslatableModel):
 
         return metadata_instance
 
-    def check_if_resource_should_be_versioned(self):
+    def delete_resource_metadata_if_has_no_models(self):
         if not self.model_set.exists():
             self.metadata_version = None
             self.save()

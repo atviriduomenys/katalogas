@@ -526,7 +526,7 @@ class DatasetDetailView(
             "licences": set([dist.licence for dist in dataset.datasetdistribution_set.filter(licence__isnull=False)]),
         }
 
-        if metadata_version.status == VersionStatus.DRAFT:
+        if metadata_version and metadata_version.status == VersionStatus.DRAFT:
             extra_context_data["resources"] = dataset.datasetdistribution_set.filter(
                 Q(metadata_version=metadata_version) | Q(metadata_version__isnull=True) | Q(format__extension="UAPI")
             ).order_by("-period_start")

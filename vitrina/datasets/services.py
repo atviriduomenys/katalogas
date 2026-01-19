@@ -332,9 +332,8 @@ class DynamicResourceService:
         if not self.dataset.is_part_of_dataservice():
             return []
 
-        if is_for_rdf_export:
-            models = self.dataset.model_set.filter()
-        else:
+        models = self.dataset.model_set.all()
+        if not is_for_rdf_export:
             models = self.dataset.model_set.filter(metadata_version=self.metadata_version)
         if not models:
             return []

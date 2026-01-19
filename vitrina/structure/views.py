@@ -2326,7 +2326,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateVi
         model.save()
 
         if old_model_distribution and old_model_distribution != model.distribution:
-            old_model_distribution.check_if_resource_should_be_versioned()
+            old_model_distribution.delete_resource_metadata_if_has_no_models()
 
         model_ref = form.cleaned_data.get("ref")
         self.object.status = form.cleaned_data.get("status") or form.initial.get("status")
@@ -3617,11 +3617,11 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         new_related_instance.save()
 
         if isinstance(old_related_instance, DatasetDistribution):
-            for trans in old_related_instance.translations.all():
-                lang = trans.language_code
-                title = getattr(trans, "title", "") or ""
-                description = getattr(trans, "description", "") or ""
-                conditions = getattr(trans, "conditions", "") or ""
+            for translation in old_related_instance.translations.all():
+                lang = translation.language_code
+                title = getattr(translation, "title", "") or ""
+                description = getattr(translation, "description", "") or ""
+                conditions = getattr(translation, "conditions", "") or ""
 
                 if hasattr(new_related_instance, "has_translation") and new_related_instance.has_translation(lang):
                     new_related_instance.set_current_language(lang)

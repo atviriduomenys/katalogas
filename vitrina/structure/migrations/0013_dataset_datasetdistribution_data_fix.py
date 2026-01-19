@@ -6,7 +6,6 @@ from django.db import migrations, models
 from vitrina.datasets.helpers import generate_unique_dataset_name
 from vitrina.structure import VersionStatus
 
-
 def create_metadata_rows_for_datasets(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     ContentType = apps.get_model("contenttypes", "ContentType")
@@ -32,6 +31,17 @@ def create_metadata_rows_for_datasets(apps, schema_editor):
             )
 
 
+def delete_orphaned_distributions(apps, schema_editor):
+    DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
+    ContentType = apps.get_model("contenttypes", "ContentType")
+    Metadata = apps.get_model("vitrina_structure", "Metadata")
+    dd_ct = ContentType.objects.get_for_model(DatasetDistribution)
+    for metadata in Metadata.objects.filter(content_type_id=dd_ct).all():
+        distribution = DatasetDistribution.objects.filter(pk=metadata.object_id).first()
+        if not distribution:
+            metadata.delete()
+
+
 def fix_dataset_distributions(apps, schema_editor):
     Dataset = apps.get_model("vitrina_datasets", "Dataset")
     DatasetDistribution = apps.get_model("vitrina_resources", "DatasetDistribution")
@@ -50,7 +60,6 @@ def fix_dataset_distributions(apps, schema_editor):
             )
 
             if distribution.model_set.exists():
-
                 if distribution.format and distribution.format.extension == "UAPI":
                     distribution_metadata.all().delete()
                     distribution.metadata_version = None
@@ -70,7 +79,7 @@ def fix_dataset_distributions(apps, schema_editor):
                 else:
                     name = distribution.name
                     if not name:
-                        name = (
+                        latest_name = (
                             Metadata.objects.filter(
                                 dataset=dataset,
                                 content_type=dd_ct,
@@ -80,17 +89,17 @@ def fix_dataset_distributions(apps, schema_editor):
                             .values_list("name", flat=True)
                             .last()
                         )
-                        if not name:
-                            name = "resource1"
+                        if not latest_name:
+                            latest_name = "resource1"
                         else:
-                            n = name.replace("resource", "")
+                            duplicate_name_suffix = latest_name.replace("resource", "")
                             try:
-                                n = int(n)
+                                duplicate_name_suffix = int(duplicate_name_suffix)
                             except ValueError:
-                                n = 0
-                            n += 1
-                            name = f"resource{n}"
-                        name = name
+                                duplicate_name_suffix = 0
+                            duplicate_name_suffix += 1
+                            latest_name = f"resource{duplicate_name_suffix}"
+                        name = latest_name
 
                     Metadata.objects.create(
                         uuid=str(uuid.uuid4()),
@@ -117,7 +126,7 @@ def fix_dataset_distributions(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('vitrina_structure', '0013_version_number_assigning'),
+        ('vitrina_structure', '0012_populate_version_of_new_tables'),
     ]
 
     operations = [
@@ -136,6 +145,7 @@ class Migration(migrations.Migration):
             name='access',
             field=models.IntegerField(blank=True, choices=[(0, 'nepasirinkta'), (1, 'private'), (2, 'protected'), (3, 'public'), (4, 'open')], null=True, verbose_name='Prieiga'),
         ),
+        migrations.RunPython(delete_orphaned_distributions, migrations.RunPython.noop),
         migrations.RunPython(create_metadata_rows_for_datasets, migrations.RunPython.noop),
         migrations.RunPython(fix_dataset_distributions, migrations.RunPython.noop),
     ]

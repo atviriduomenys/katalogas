@@ -261,7 +261,7 @@ class DatasetStructureView(
         dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         structure = dataset.current_structure
         context["selected_version"] = self.metadata_version
-        context["is_disabled"] = self.metadata_version.status != VersionStatus.DRAFT
+        context["is_disabled"] = not self.metadata_version.is_draft()
         context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
         context["errors"] = []
         context["manifest"] = None
@@ -435,9 +435,7 @@ class ModelStructureView(
             self.object,
         )
         context["can_manage_structure"] = self.can_manage_structure
-        context["is_disabled"] = (
-            self.metadata_version is not None and self.metadata_version.status != VersionStatus.DRAFT
-        )
+        context["is_disabled"] = self.metadata_version is not None and not self.metadata_version.is_draft()
         context["base_props"] = self.model.get_base_props()
         context["params"] = self.model.params.all().order_by("name")
         context["page_title"] = build_page_title_context(
@@ -738,9 +736,7 @@ class PropertyStructureView(
             self.object,
         )
         context["can_manage_structure"] = self.can_manage_structure
-        context["is_disabled"] = (
-            self.metadata_version is not None and self.metadata_version.status != VersionStatus.DRAFT
-        )
+        context["is_disabled"] = self.metadata_version is not None and not self.metadata_version.is_draft()
 
         allowed_enum_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Enum
@@ -1818,7 +1814,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
-        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+        if self.metadata_version and not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(
@@ -1945,7 +1941,7 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
-        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+        if self.metadata_version and not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(
@@ -2079,7 +2075,7 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
         )
         if not self.model:
             raise Http404("No Model matches the given query.")
-        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+        if self.metadata_version and not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(
@@ -2158,7 +2154,7 @@ class ModelCreateView(PermissionRequiredMixin, CreateView):
         else:
             self.metadata_version = None
 
-        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+        if self.metadata_version and not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
 
         # Filter by version?
@@ -2296,7 +2292,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateVi
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.dataset)
-        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+        if self.metadata_version and not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
         return super().dispatch(request, *args, **kwargs)
 
@@ -2538,7 +2534,7 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Creat
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
-        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+        if self.metadata_version and not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
         return super().dispatch(request, *args, **kwargs)
 
@@ -2647,7 +2643,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Updat
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
-        if self.metadata_version and self.metadata_version != VersionStatus.DRAFT:
+        if self.metadata_version and not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(
@@ -3466,7 +3462,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"))
 
-        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+        if self.metadata_version and not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
 
         return super().dispatch(request, *args, **kwargs)
@@ -3487,7 +3483,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form: ModelCreateForm) -> HttpResponseRedirect:
-        if self.metadata_version.status != VersionStatus.DRAFT:
+        if not self.metadata_version.status.is_draft():
             form.add_error(None, _("Publikuota versija negali būti publikuota dar kartą."))
             return self.form_invalid(form)
         self.new_version = form.save(commit=False)

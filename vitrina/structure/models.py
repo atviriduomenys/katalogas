@@ -552,6 +552,9 @@ class Version(models.Model):
     def get_absolute_url(self):
         return reverse("version-detail", kwargs={"pk": self.dataset.pk, "version_id": self.pk})
 
+    def is_draft(self) -> bool:
+        return self.status == VersionStatus.DRAFT
+
     def __str__(self):
         return f"v{self.version}"
 

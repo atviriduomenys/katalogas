@@ -118,22 +118,17 @@
                 {% endif %}
                     {% csrf_token %}
                     {% if r.metadata_version %}
-                        {% if not selected_version.external_version %}
-                            <button type="submit"
-                                    class="button is-link is-small is-pulled-right"
-                                    onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį šaltinį?' %})"
-                                    id="delete_resource">
+                        <button type="submit"
+                            class="button is-link is-small is-pulled-right {% if selected_version.external_version %}is-disabled{% endif %}"
+                            {% if selected_version.external_version %}
+                                style="pointer-events: none; opacity: 0.5;"
+                                aria-disabled="true"
+                            {% else %}
+                                onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį šaltinį?' %})"
+                            {% endif %}
+                            id="delete_resource">
                                 {% translate "Ištrinti" %}
-                            </button>
-                        {% else %}
-                            <button type="button"
-                                    class="button is-link is-small is-pulled-right is-disabled"
-                                    style="pointer-events: none; opacity: 0.5;"
-                                    id="delete_resource"
-                                    aria-disabled="true">
-                                {% translate "Ištrinti" %}
-                            </button>
-                        {% endif %}
+                        </button>
                     {% else %}
                         <button type="submit"
                                     class="button is-link is-small is-pulled-right"

@@ -1489,15 +1489,13 @@ class DatasetStructureImportView(
     plan_url_name = "dataset-plans"
 
     def dispatch(self, request, *args, **kwargs):
-        version_id = kwargs.get("version_id")
-        if version_id is not None:
-            self.metadata_version = get_object_or_404(
-                _Version, pk=version_id, dataset=get_object_or_404(Dataset, pk=kwargs.get("pk"))
-            )
-        else:
-            self.metadata_version = None
+        if not (version_id := kwargs.get("version_id")):
+            return super().dispatch(request, *args, **kwargs)
 
-        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+        self.metadata_version = get_object_or_404(
+            _Version, pk=version_id, dataset=get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        )
+        if not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
         return super().dispatch(request, *args, **kwargs)
 
@@ -1536,7 +1534,7 @@ class DatasetStructureImportView(
         self.object.save()
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
-        if self.metadata_version and self.metadata_version.status != VersionStatus.DRAFT:
+        if self.metadata_version and not self.metadata_version.is_draft():
             form.add_error("file", _("Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."))
             return self.form_invalid(form)
 

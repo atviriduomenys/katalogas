@@ -1799,7 +1799,7 @@ def test_property_enum_item_delete_in_pre_released_property(app: DjangoTestApp):
         metadata_version=version
     )
 
-    resp = app.post(reverse('enum-delete', args=[
+    response = app.post(reverse('enum-delete', args=[
         dataset.pk,
         version.pk,
         model.name,
@@ -1807,7 +1807,7 @@ def test_property_enum_item_delete_in_pre_released_property(app: DjangoTestApp):
         enum_item.pk
     ]), expect_errors=True)
 
-    assert resp.status_code == 404
+    assert response.status_code == 404
     assert EnumItem.objects.filter(pk=enum_item.pk).count() == 1
     assert Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(enum_item),

@@ -21,17 +21,14 @@
             {% if can_update %}
                 <div class="buttons is-right">
                     {% if resource.metadata_version %}
-                        {% if not is_disabled %}
-                            <a href="{% url 'resource-change' pk=resource.pk version_id=resource.metadata_version.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
-                                {% translate "Redaguoti" %}
-                            </a>
-                        {% else %}
-                            <a class="button is-primary is-disabled"
+                        <a href="{% url 'resource-change' pk=resource.pk version_id=resource.metadata_version.pk %}"
+                           class="button is-primary is-normal m-t-md is-size-6-mobile{% if is_disabled %} is-disabled{% endif %}"
+                           {% if is_disabled %}
                                style="pointer-events: none; opacity: 0.5;"
-                               aria-disabled="true">
+                               aria-disabled="true"
+                           {% endif %}>
                             {% translate "Redaguoti" %}
-                            </a>
-                        {% endif %}
+                        </a>
                     {% else %}
                         <a href="{% url 'resource-change-no-version' pk=resource.pk %}" class="button is-primary is-normal m-t-md is-size-6-mobile">
                             {% translate "Redaguoti" %}
@@ -264,18 +261,14 @@
                         {% endif %}
 
                         {% if resource.metadata_version %}
-                            {% if not is_disabled %}
-                                <a href="{% url 'resource-model-create' resource.dataset.pk resource.metadata_version.pk resource.pk %}"
-                                   class="button is-primary is-normal m-t-md is-size-6-mobile">
-                                    {% translate "Naujas modelis" %}
-                                </a>
-                                {% else %}
-                                <a class="button is-primary is-normal m-t-md is-size-6-mobile is-disabled"
+                            <a href="{% url 'resource-model-create' resource.dataset.pk resource.metadata_version.pk resource.pk %}"
+                               class="button is-primary is-normal m-t-md is-size-6-mobile{% if is_disabled %} is-disabled{% endif %}"
+                               {% if is_disabled %}
                                    style="pointer-events: none; opacity: 0.5;"
-                                   aria-disabled="true">
+                                   aria-disabled="true"
+                               {% endif %}>
                                 {% translate "Naujas modelis" %}
-                                </a>
-                            {% endif %}
+                            </a>
                         {% endif %}
                     </div>
                 {% endif %}

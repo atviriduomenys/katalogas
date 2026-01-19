@@ -3404,9 +3404,12 @@ def test_dataset_structure_import_without_permission(app: DjangoTestApp):
 
     assert resp.status_code == 403
 
-
-def test_dataset_import_in_not_draft_version(app: DjangoTestApp):
-    version = VersionFactory(status=VersionStatus.PRE_RELEASE)
+@pytest.mark.parametrize(
+    "status",
+    [s for s in VersionStatus.values if s != VersionStatus.DRAFT]
+)
+def test_dataset_import_in_not_draft_version(app: DjangoTestApp, status: str):
+    version = VersionFactory(status=status)
     user = UserFactory()
     dataset = version.dataset
 

@@ -23,7 +23,6 @@ from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import create_structure_objects
-from vitrina.uapi.enums import UdtsCatalogEnum
 from vitrina.uapi.serializers.uapi_serializers import TYPE_PREFIX_TO_REMOVE
 
 
@@ -967,7 +966,7 @@ class TestActionUploadDatasetStructure:
         dsa: str,
         valid_token: str,
     ):
-        url = reverse("uapi-dataset-structure", kwargs={"catalog": UdtsCatalogEnum.ISRIS, "pk": 1})
+        url = reverse("uapi-dataset-structure", kwargs={"pk": 1})
 
         response = app.post(
             url,
@@ -1125,7 +1124,6 @@ class TestActionGetDatasetStructure:
         response = app.get(
             _build_reverse_uapi_url(
                 "uapi-dataset-structure",
-                catalog=UdtsCatalogEnum.ISRIS,
                 pk=1_000_000
             ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
@@ -1189,7 +1187,6 @@ class TestActionGetDatasetStructure:
         response = app.get(
             _build_reverse_uapi_url(
                 "uapi-dataset-structure",
-                catalog=UdtsCatalogEnum.ISRIS,
                 pk=1_000_000
             ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {invalid_token}"},

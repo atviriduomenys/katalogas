@@ -1,6 +1,5 @@
-from django.urls import path, register_converter
+from django.urls import path
 
-from vitrina.uapi.converters import CatalogConverter
 from vitrina.uapi.views.template_views import (
     AgentDeleteView,
     AgentUpdateView,

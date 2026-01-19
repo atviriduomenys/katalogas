@@ -16,7 +16,7 @@ from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
@@ -1489,12 +1489,14 @@ class DatasetStructureImportView(
     plan_url_name = "dataset-plans"
 
     def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        if not self.has_permission():
+            if not request.user.is_authenticated:
+                return redirect(settings.LOGIN_URL)
+            raise PermissionDenied()
         if not (version_id := kwargs.get("version_id")):
             return super().dispatch(request, *args, **kwargs)
-
-        self.metadata_version = get_object_or_404(
-            _Version, pk=version_id, dataset=get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        )
+        self.metadata_version = get_object_or_404(_Version, pk=version_id, dataset=self.dataset)
         if not self.metadata_version.is_draft():
             raise Http404("Only allowed on Draft version.")
         return super().dispatch(request, *args, **kwargs)

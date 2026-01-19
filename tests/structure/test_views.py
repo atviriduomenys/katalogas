@@ -1828,12 +1828,15 @@ def test_model_create_with_lowercase_first_name_letter(app: DjangoTestApp):
         "Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."
     ]]
 
-
+@pytest.mark.parametrize(
+    "status",
+    [s for s in VersionStatus.values if s != VersionStatus.DRAFT]
+)
 @pytest.mark.django_db
-def test_model_create_with_in_not_draft_version(app: DjangoTestApp):
+def test_model_create_with_in_not_draft_version(app: DjangoTestApp, status: str):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory(status=VersionStatus.PRE_RELEASE)
+    version = VersionFactory(status=status)
     dataset = version.dataset
     form = app.get(reverse('model-create', args=[dataset.pk, version.pk]), expect_errors=True)
     assert form.status_code == 404

@@ -104,7 +104,7 @@ class ResourceCreateView(
 
         name = form.cleaned_data.get("name")
         if not name:
-            name = (
+            latest_name = (
                 DatasetDistribution.objects.filter(
                     dataset=self.dataset,
                     name__iregex=r"resource[0-9]+",
@@ -113,16 +113,16 @@ class ResourceCreateView(
                 .values_list("name", flat=True)
                 .last()
             )
-            if not name:
+            if not latest_name:
                 name = "resource1"
             else:
-                n = name.replace("resource", "")
+                duplicate_name_suffix = latest_name.replace("resource", "")
                 try:
-                    n = int(n)
+                    duplicate_name_suffix = int(duplicate_name_suffix)
                 except ValueError:
-                    n = 0
-                n += 1
-                name = f"resource{n}"
+                    duplicate_name_suffix = 0
+                duplicate_name_suffix += 1
+                name = f"resource{duplicate_name_suffix}"
         resource.name = name
 
         if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():
@@ -337,6 +337,8 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
         self.object = self.dataset
         self.models = dynamic_resource["models"]
 
+        name_for_urls = self.models[0].name if self.models else None
+
         context = {
             "resource": dynamic_resource,
             "dataset": self.dataset,
@@ -344,11 +346,11 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
             "detail_url": self.get_detail_url(),
             "child_resources_url": self.get_child_resources_url(),
             "structure_url": reverse("dataset-structure", args=[self.dataset.pk, metadata_version_pk]),
-            "data_url": reverse("model-data", args=[self.dataset.pk, metadata_version_pk, self.models[0].name])
-            if self.models
+            "data_url": reverse("model-data", args=[self.dataset.pk, metadata_version_pk, name_for_urls])
+            if name_for_urls
             else None,
-            "api_url": reverse("getall-api", args=[self.dataset.pk, metadata_version_pk, self.models[0].name])
-            if self.models
+            "api_url": reverse("getall-api", args=[self.dataset.pk, metadata_version_pk, name_for_urls])
+            if name_for_urls
             else None,
             "can_view_members": has_perm(
                 self.request.user,

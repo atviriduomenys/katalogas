@@ -9,12 +9,25 @@ def populate_new_distribution_fields(apps, schema_editor):
     Metadata = apps.get_model('vitrina_structure', 'Metadata')
     dd_ct = ContentType.objects.get_for_model(DatasetDistribution)
 
+    metadata_dict = {
+        metadata['object_id']: metadata
+        for metadata in Metadata.objects.filter(content_type=dd_ct).values(
+            'object_id', 'name', 'access', 'level'
+        )
+    }
+    distributions_to_update = []
     for dataset_distribution in DatasetDistribution.objects.all():
-        if metadata_instance := Metadata.objects.filter(content_type=dd_ct, object_id=dataset_distribution.id).first():
-            dataset_distribution.name = metadata_instance.name
-            dataset_distribution.access = metadata_instance.access
-            dataset_distribution.level = metadata_instance.level
-            dataset_distribution.save()
+        if metadata_instance := metadata_dict.get(dataset_distribution.id):
+            dataset_distribution.name = metadata_instance['name']
+            dataset_distribution.access = metadata_instance['access']
+            dataset_distribution.level = metadata_instance['level']
+            distributions_to_update.append(dataset_distribution)
+
+    if distributions_to_update:
+        DatasetDistribution.objects.bulk_update(
+            distributions_to_update,
+            ['name', 'access', 'level'],
+        )
 
 
 class Migration(migrations.Migration):

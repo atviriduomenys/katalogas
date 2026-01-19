@@ -311,22 +311,22 @@ class Model(models.Model):
     def is_opened(self):
         return self.dataset.is_opened()
 
-    def save(self, *args, **kwargs):
+    def save(self, *args, **kwargs) -> None:
+        if self.distribution and self.distribution.format and self.distribution.format.extension == "UAPI":
+            raise ValidationError(_("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją."))
         old_distribution = None
 
         if self.pk:
             old_instance = Model.objects.get(pk=self.pk)
             old_distribution = old_instance.distribution
 
-        if self.distribution and self.distribution.format and self.distribution.format.extension == "UAPI":
-            raise ValidationError(_("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją."))
 
         super().save(*args, **kwargs)
 
         if self.distribution:
             if self.distribution.metadata_version and self.distribution.metadata_version != self.metadata_version:
                 return
-            self.distribution.create_metadata_instance_and_assign_version(self.metadata_version.pk)
+            self.distribution.create_or_reuse_metadata_instance_and_assign_version(self.metadata_version.pk)
             self.distribution.metadata_version = self.metadata_version
             self.distribution.save(update_fields=["metadata_version"])
 

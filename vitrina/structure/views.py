@@ -3655,7 +3655,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         new_related_instance.save()
 
         if isinstance(old_related_instance, DatasetDistribution):
-            for trans in old_related_instance.translations.all():
+            for translation in old_related_instance.translations.all():
                 lang = trans.language_code
                 title = getattr(trans, "title", "") or ""
                 description = getattr(trans, "description", "") or ""

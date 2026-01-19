@@ -454,7 +454,7 @@ class DatasetDistribution(TranslatableModel):
 
         return metadata_instance
 
-    def check_if_resource_should_be_versioned(self):
+    def delete_resource_metadata_if_has_no_models(self):
         if not self.model_set.exists():
             self.metadata_version = None
             self.save()

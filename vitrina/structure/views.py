@@ -2340,7 +2340,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
         model.save()
 
         if old_model_distribution and old_model_distribution != model.distribution:
-            old_model_distribution.check_if_resource_should_be_versioned()
+            old_model_distribution.delete_resource_metadata_if_has_no_models()
 
         model_ref = form.cleaned_data.get("ref")
         self.object.status = form.cleaned_data.get("status") or form.initial.get("status")

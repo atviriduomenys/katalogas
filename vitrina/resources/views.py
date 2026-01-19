@@ -229,18 +229,16 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
-        else:
-            resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
-            if resource.metadata_version:
-                url = reverse("dataset-detail", kwargs={"pk": resource.dataset.pk})
-                return HttpResponseRedirect(f"{url}?resource_version={resource.metadata_version.pk}")
-            return redirect(resource.dataset)
+
+        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
+        if resource.metadata_version:
+            url = reverse("dataset-detail", kwargs={"pk": resource.dataset.pk})
+            return HttpResponseRedirect(f"{url}?resource_version={resource.metadata_version.pk}")
+        return redirect(resource.dataset)
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
-        version_id = self.kwargs.get("version_id")
-
         with create_revision():
             add_to_revision(resource)
             set_user(self.request.user)
@@ -265,7 +263,7 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
                 )
                 dataset.save()
 
-        if version_id:
+        if version_id := self.kwargs.get("version_id"):
             url = reverse("dataset-detail", kwargs={"pk": dataset.pk})
             return HttpResponseRedirect(f"{url}?resource_version={version_id}")
 

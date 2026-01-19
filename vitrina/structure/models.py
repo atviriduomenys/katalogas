@@ -330,13 +330,13 @@ class Model(models.Model):
             self.distribution.save(update_fields=["metadata_version"])
 
         if old_distribution:
-            old_distribution.check_if_resource_should_be_versioned()
+            old_distribution.delete_resource_metadata_if_has_no_models()
 
     def delete(self, *args, **kwargs) -> None:
         distribution = self.distribution
         super().delete(*args, **kwargs)
         if distribution:
-            distribution.check_if_resource_should_be_versioned()
+            distribution.delete_resource_metadata_if_has_no_models()
 
 
 @reversion.register()

@@ -33,8 +33,8 @@ def get_projects(
     limit: int | None = None,
     require_images: bool = False,
     approved_only: bool = True,
-) -> QuerySet["Project"]:
-    queryset = Project.objects.filter(visible_projects_filter(user))
+) -> QuerySet["Project"] | list["Project"]:
+    queryset = Project.objects.filter(visible_projects_filter(user)).distinct().order_by("-created")
 
     if require_images:
         queryset = queryset.filter(image__isnull=False)
@@ -42,14 +42,7 @@ def get_projects(
     if approved_only:
         queryset = queryset.filter(status=Project.APPROVED)
 
-    queryset = queryset.order_by("-created")
-
-    if limit:
-        queryset = queryset[:limit]
-    else:
-        queryset = queryset.distinct()
-
-    return queryset
+    return queryset[:limit] if limit else queryset
 
 
 def can_update_project(user: User | AnonymousUser, project: Project) -> bool:

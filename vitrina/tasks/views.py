@@ -1,9 +1,11 @@
 import datetime
+from django.utils.functional import cached_property
+from typing import Any
 
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.auth.views import redirect_to_login
 from django.forms import BaseForm
 from django.http import HttpResponseRedirect, HttpResponse
+from django.http.request import HttpRequest
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.views.generic import DetailView, DeleteView, TemplateView, ListView
@@ -18,7 +20,7 @@ from vitrina.users.models import User
 
 from django.core.exceptions import PermissionDenied
 from django.shortcuts import get_object_or_404
-from django.db.models import Q, F, Value, Case, When, CharField, Count
+from django.db.models import Q, F, Value, Case, When, CharField, Count, QuerySet
 from django.db.models.functions import Concat
 
 
@@ -27,24 +29,22 @@ class TaskListView(LoginRequiredMixin, ListView):
     template_name = "vitrina/tasks/list.html"
     paginate_by = 20
 
-    def dispatch(self, request, *args, **kwargs):
-        user_pk = kwargs.get("pk")
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        is_privileged = request.user.is_staff or request.user.is_superuser
 
-        if not (request.user.is_staff or request.user.is_superuser):
-            if request.user.pk != user_pk:
-                raise PermissionDenied("You can only view your own tasks")
+        if not is_privileged and request.user.pk != kwargs.get("pk"):
+            raise PermissionDenied("You can only view your own tasks")
 
-        self.viewed_user = get_object_or_404(User, pk=user_pk)
         return super().dispatch(request, *args, **kwargs)
 
-    @property
-    def target_user(self):
+    @cached_property
+    def target_user(self) -> User:
         if self.request.user.is_staff or self.request.user.is_superuser:
-            return self.viewed_user
+            return get_object_or_404(User, pk=self.kwargs.get("pk"))
         return self.request.user
 
-    @property
-    def filter_params(self):
+    @cached_property
+    def filter_params(self) -> dict[str, str]:
         return {
             "owner": self.request.GET.get("owner", "all"),
             "status": self.request.GET.get("status", ""),
@@ -52,188 +52,133 @@ class TaskListView(LoginRequiredMixin, ListView):
             "keyword": self.request.GET.get("q", ""),
         }
 
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        queryset = self._optimize_queryset(queryset)
-        queryset = get_active_tasks(self.target_user, queryset, all_tasks=True)
-        queryset = self._apply_filters(queryset)
-        return queryset.order_by("due_date")
+    def _get_base_queryset(self) -> QuerySet[Task]:
+        queryset = (
+            get_active_tasks(self.target_user, all_tasks=True)
+            .select_related("user", "organization", "content_type")
+            .annotate(
+                task_type=Case(
+                    When(type=Task.ERROR_FREQUENCY, then=Value(Task.ERROR)),
+                    When(type=Task.ERROR_DISTRIBUTION, then=Value(Task.ERROR)),
+                    When(type=Task.ERROR_GEOPORTAL, then=Value(Task.ERROR)),
+                    default=F("type"),
+                    output_field=CharField(),
+                )
+            )
+        )
 
-    def _optimize_queryset(self, queryset):
-        return queryset.select_related("user", "organization", "content_type")
+        if keyword := self.filter_params["keyword"]:
+            queryset = queryset.annotate(user_name=Concat("user__first_name", Value(" "), "user__last_name")).filter(
+                Q(title__icontains=keyword)
+                | Q(description__icontains=keyword)
+                | Q(organization__title__icontains=keyword)
+                | Q(user_name__icontains=keyword)
+            )
 
-    def _apply_filters(self, queryset):
-        params = self.filter_params
+        return queryset
 
-        if params["owner"] == "user":
+    def _apply_status_filter(self, queryset: QuerySet[Task]) -> QuerySet[Task]:
+        if status := self.filter_params["status"]:
+            return queryset.filter(status=status)
+        return queryset
+
+    def _apply_type_filter(self, queryset: QuerySet[Task]) -> QuerySet[Task]:
+        if type_value := self.filter_params["type"]:
+            return queryset.filter(task_type=type_value)
+        return queryset
+
+    def get_queryset(self) -> QuerySet[Task]:
+        queryset = self._get_base_queryset()
+
+        if self.filter_params["owner"] == "user":
             queryset = queryset.filter(user__pk=self.target_user.pk)
 
-        if params["status"]:
-            queryset = queryset.filter(status=params["status"])
+        queryset = self._apply_status_filter(queryset)
+        queryset = self._apply_type_filter(queryset)
 
-        if params["type"]:
-            queryset = self._apply_type_filter(queryset, params["type"])
+        return queryset.order_by("due_date")
 
-        if params["keyword"]:
-            queryset = self._apply_keyword_search(queryset, params["keyword"])
+    def _calculate_filter_counts(self) -> dict[str, int]:
+        base_queryset = self._get_base_queryset()
 
-        return queryset
-
-    def _apply_type_filter(self, queryset, type_value):
-        return queryset.annotate(task_type=self._get_task_type_annotation()).filter(task_type=type_value)
-
-    def _apply_keyword_search(self, queryset, keyword):
-        return queryset.annotate(user_name=Concat("user__first_name", Value(" "), "user__last_name")).filter(
-            Q(title__icontains=keyword)
-            | Q(description__icontains=keyword)
-            | Q(organization__title__icontains=keyword)
-            | Q(user_name__icontains=keyword)
-        )
-
-    @staticmethod
-    def _get_task_type_annotation():
-        return Case(
-            When(type=Task.ERROR_FREQUENCY, then=Value(Task.ERROR)),
-            When(type=Task.ERROR_DISTRIBUTION, then=Value(Task.ERROR)),
-            When(type=Task.ERROR_GEOPORTAL, then=Value(Task.ERROR)),
-            default=F("type"),
-            output_field=CharField(),
-        )
-
-    def _get_base_queryset_for_counts(self):
-        queryset = Task.objects.all()
-        queryset = self._optimize_queryset(queryset)
-        queryset = get_active_tasks(self.target_user, queryset, all_tasks=True)
-
-        params = self.filter_params
-
-        if params["keyword"]:
-            queryset = self._apply_keyword_search(queryset, params["keyword"])
-
-        return queryset
-
-    def _calculate_filter_counts(self):
-        base_queryset = self._get_base_queryset_for_counts()
-        params = self.filter_params
-
-        status_queryset = base_queryset
-        if params["type"]:
-            status_queryset = self._apply_type_filter(status_queryset, params["type"])
-
-        type_queryset = base_queryset.annotate(task_type=self._get_task_type_annotation())
-        if params["status"]:
-            type_queryset = type_queryset.filter(status=params["status"])
-
+        status_queryset = self._apply_type_filter(base_queryset)
         owner_status_counts = status_queryset.aggregate(
             user_tasks_count=Count("id", filter=Q(user__pk=self.target_user.pk)),
             all_tasks_count=Count("id"),
-            **{
-                f"status_{status_value}_count": Count("id", filter=Q(status=status_value))
-                for status_value in Task.FILTER_STATUSES.keys()
-            },
+            **{f"status_{value}_count": Count("id", filter=Q(status=value)) for value in Task.FILTER_STATUSES},
         )
 
+        type_queryset = self._apply_status_filter(base_queryset)
         type_counts = type_queryset.aggregate(
-            **{
-                f"type_{type_value}_count": Count("id", filter=Q(task_type=type_value))
-                for type_value in Task.FILTER_TYPES.keys()
-            }
+            **{f"type_{value}_count": Count("id", filter=Q(task_type=value)) for value in Task.FILTER_TYPES},
         )
 
         return {**owner_status_counts, **type_counts}
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-        }
-
         params = self.filter_params
-
         counts = self._calculate_filter_counts()
 
-        context["filters"] = self._build_filters(params, counts)
+        context["parent_links"] = {reverse("home"): _("Pradžia")}
+        context["filters"] = [
+            self._build_owner_filter(params, counts),
+            self._build_status_filter(params, counts),
+            self._build_type_filter(params, counts),
+        ]
         context["search_url"] = reverse("user-task-list", args=[self.target_user.pk])
         context["search_query"] = dict(self.request.GET.copy())
         context["q"] = params["keyword"]
 
         return context
 
-    def _build_filters(self, params, counts):
-        return [
-            self._build_owner_filter(params, counts),
-            self._build_status_filter(params, counts),
-            self._build_type_filter(params, counts),
-        ]
-
-    def _build_owner_filter(self, params, counts):
+    def _build_owner_filter(self, params: dict[str, str], counts: dict[str, int]) -> dict[str, Any]:
+        selected_owner = params["owner"]
         return {
             "title": _("Vykdytojas"),
             "items": [
                 {
                     "title": _("Mano užduotys"),
-                    "url": get_filter_url(
-                        self.request,
-                        "owner",
-                        "user",
-                        params["owner"] == "user",
-                        facet_field=False,
-                    ),
+                    "url": get_filter_url(self.request, "owner", "user", selected_owner == "user", facet_field=False),
                     "count": counts["user_tasks_count"],
-                    "selected": params["owner"] == "user",
+                    "selected": selected_owner == "user",
                     "always_show": True,
                 },
                 {
                     "title": _("Visos užduotys"),
-                    "url": get_filter_url(
-                        self.request,
-                        "owner",
-                        "all",
-                        params["owner"] == "all",
-                        facet_field=False,
-                    ),
+                    "url": get_filter_url(self.request, "owner", "all", selected_owner == "all", facet_field=False),
                     "count": counts["all_tasks_count"],
-                    "selected": params["owner"] == "all",
+                    "selected": selected_owner == "all",
                     "always_show": True,
                 },
             ],
         }
 
-    def _build_status_filter(self, params, counts):
+    def _build_status_filter(self, params: dict[str, str], counts: dict[str, int]) -> dict[str, Any]:
+        selected_status = params["status"]
         return {
             "title": _("Būsena"),
             "items": [
                 {
                     "title": title,
-                    "url": get_filter_url(
-                        self.request,
-                        "status",
-                        value,
-                        params["status"] == value,
-                        facet_field=False,
-                    ),
+                    "url": get_filter_url(self.request, "status", value, selected_status == value, facet_field=False),
                     "count": counts.get(f"status_{value}_count", 0),
-                    "selected": params["status"] == value,
+                    "selected": selected_status == value,
                 }
                 for value, title in Task.FILTER_STATUSES.items()
             ],
         }
 
-    def _build_type_filter(self, params, counts):
+    def _build_type_filter(self, params: dict[str, str], counts: dict[str, int]) -> dict[str, Any]:
+        selected_type = params["type"]
         return {
             "title": _("Tipas"),
             "items": [
                 {
                     "title": title,
-                    "url": get_filter_url(
-                        self.request,
-                        "type",
-                        value,
-                        params["type"] == value,
-                        facet_field=False,
-                    ),
+                    "url": get_filter_url(self.request, "type", value, selected_type == value, facet_field=False),
                     "count": counts.get(f"type_{value}_count", 0),
-                    "selected": params["type"] == value,
+                    "selected": selected_type == value,
                 }
                 for value, title in Task.FILTER_TYPES.items()
             ],
@@ -245,33 +190,33 @@ class TaskView(LoginRequiredMixin, DetailView):
     template_name = "vitrina/tasks/detail.html"
     pk_url_kwarg = "task_id"
 
-    def dispatch(self, request, *args, **kwargs):
+    @staticmethod
+    def _can_view_task(user: User, task: Task) -> bool:
+        if user.is_staff or user.is_superuser:
+            return True
+        return get_active_tasks(user, all_tasks=True).filter(pk=task.pk).exists()
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if not request.user.is_authenticated:
-            return redirect_to_login(request.get_full_path())
+            return self.handle_no_permission()
 
         self.object = get_object_or_404(Task, pk=kwargs.get("task_id"))
 
-        if request.user.is_staff or request.user.is_superuser:
-            return super().dispatch(request, *args, **kwargs)
-
-        user_tasks = get_active_tasks(request.user, all_tasks=True)
-        if not user_tasks.filter(pk=self.object.pk).exists():
+        if not self._can_view_task(request.user, self.object):
             raise PermissionDenied("You don't have permission to view this task")
 
         return super().dispatch(request, *args, **kwargs)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         task = self.object
 
-        context["org"] = None
-        if task.organization_id:
-            context["org"] = (
-                Organization.objects.filter(pk=task.organization_id).values_list("title", flat=True).first()
-            )
-
+        context["org"] = (
+            Organization.objects.filter(pk=task.organization_id).values_list("title", flat=True).first()
+            if task.organization_id
+            else None
+        )
         context["object_url"] = task.content_object.get_absolute_url if task.content_object else None
-
         context["parent_links"] = {
             reverse("home"): _("Pradžia"),
             reverse("user-task-list", args=[self.request.user.pk]): _("Užduotys"),
@@ -280,66 +225,61 @@ class TaskView(LoginRequiredMixin, DetailView):
         return context
 
 
-class CloseTaskView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
-    model = Task
-    template_name = "confirm_close.html"
+class BaseTaskActionView(LoginRequiredMixin, PermissionRequiredMixin):
+    task: Task
 
-    pk_url_kwarg = "task_id"
-
-    def dispatch(self, request, *args, **kwargs):
-        self.object = get_object_or_404(Task, pk=self.kwargs.get("task_id"))
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.task = get_object_or_404(Task, pk=kwargs.get("task_id"))
         return super().dispatch(request, *args, **kwargs)
 
-    def has_permission(self):
-        if self.request.user and self.request.user.is_authenticated:
-            user_tasks = get_active_tasks(self.request.user, all_tasks=True)
-            if user_tasks.filter(pk=self.object.pk) and self.object.status != Task.COMPLETED:
-                return True
-        return False
+    def has_permission(self) -> bool:
+        if not self.request.user.is_authenticated:
+            return False
 
-    def get_context_data(self, **kwargs):
+        user_tasks = get_active_tasks(self.request.user, all_tasks=True)
+        return user_tasks.filter(pk=self.task.pk).exists() and self.task.status != Task.COMPLETED
+
+    def get_success_url(self) -> str:
+        return reverse("user-task-list", kwargs={"pk": self.request.user.pk})
+
+
+class CloseTaskView(BaseTaskActionView, DeleteView):
+    model = Task
+    template_name = "confirm_close.html"
+    pk_url_kwarg = "task_id"
+
+    @property
+    def object(self) -> Task:
+        return self.task
+
+    @object.setter
+    def object(self, value: Task) -> None:
+        self.task = value
+
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Užduoties uždarymas")
         return context
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
-        self.object.status = Task.COMPLETED
-        self.object.completed = datetime.datetime.now()
-        self.object.save()
+        self.task.status = Task.COMPLETED
+        self.task.completed = datetime.datetime.now()
+        self.task.save(update_fields=["status", "completed"])
         return HttpResponseRedirect(self.get_success_url())
 
-    def get_success_url(self):
-        return reverse("user-task-list", kwargs={"pk": self.request.user.pk})
 
-
-class AssignTaskView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+class AssignTaskView(BaseTaskActionView, TemplateView):
     template_name = "confirm_reassign.html"
-    pk_url_kwarg = "task_id"
 
-    def dispatch(self, request, *args, **kwargs):
-        self.task = get_object_or_404(Task, pk=self.kwargs.get("task_id"))
-        return super().dispatch(request, *args, **kwargs)
-
-    def has_permission(self):
-        if self.request.user and self.request.user.is_authenticated:
-            user_tasks = get_active_tasks(self.request.user, all_tasks=True)
-            if user_tasks.filter(pk=self.task.pk) and self.task.status != Task.COMPLETED:
-                return True
-        return False
-
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context["task"] = self.task
         context["current_title"] = _("Užduoties priskyrimas")
         return context
 
-    def post(self, request, *args, **kwargs):
-        if self.task is not None:
-            self.task.user = self.request.user
-            self.task.status = Task.ASSIGNED
-            self.task.assigned = datetime.datetime.now()
-            self.task.save()
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self.task.user = request.user
+        self.task.status = Task.ASSIGNED
+        self.task.assigned = datetime.datetime.now()
+        self.task.save(update_fields=["user", "status", "assigned"])
         return redirect(self.get_success_url())
-
-    def get_success_url(self):
-        return reverse("user-task-list", kwargs={"pk": self.request.user.pk})

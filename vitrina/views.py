@@ -65,7 +65,7 @@ def home(request):
                 .select_related("organization")
                 .order_by("-published")[:cards_limit]
             ),
-            "requests": (Request.public.prefetch_related("organizations").order_by("-created")[:cards_limit]),
+            "requests": Request.public.prefetch_related("organizations").order_by("-created")[:cards_limit],
             "projects": get_projects(request.user, limit=cards_limit, require_images=True),
             "orgs": (
                 Organization.public.filter(

@@ -3656,10 +3656,10 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
         if isinstance(old_related_instance, DatasetDistribution):
             for translation in old_related_instance.translations.all():
-                lang = trans.language_code
-                title = getattr(trans, "title", "") or ""
-                description = getattr(trans, "description", "") or ""
-                conditions = getattr(trans, "conditions", "") or ""
+                lang = translation.language_code
+                title = getattr(translation, "title", "") or ""
+                description = getattr(translation, "description", "") or ""
+                conditions = getattr(translation, "conditions", "") or ""
 
                 if hasattr(new_related_instance, "has_translation") and new_related_instance.has_translation(lang):
                     new_related_instance.set_current_language(lang)

@@ -16,14 +16,14 @@ from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
-from django.core.exceptions import ObjectDoesNotExist, PermissionDenied
+from django.core.exceptions import ObjectDoesNotExist
 from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
 from django.forms import BaseForm
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
-from django.http.response import HttpResponsePermanentRedirect, Http404
+from django.http.response import HttpResponsePermanentRedirect
 from django.shortcuts import get_object_or_404, redirect, render
 from django.template.defaultfilters import date as _date
 from django.urls import reverse, reverse_lazy, resolve

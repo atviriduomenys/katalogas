@@ -2,7 +2,28 @@ from rest_framework import serializers
 
 from vitrina.api.serializers import DatasetSerializer, DatasetDistributionSerializer, PostDatasetSerializer
 from vitrina.datasets.models import DCATResourceSubclass
+from vitrina.structure.models import Version
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin
+
+
+class UAPIVersionSerializer(BaseObjectMixin, serializers.ModelSerializer):
+    dataset_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Version
+        fields = (
+            "dataset_id",
+            "version",
+            "released",
+            "description",
+            "deployed",
+            "status",
+            "version_type",
+            "external_version",
+            "major",
+            "minor",
+            "patch",
+        ) + BaseObjectMixin.Meta.fields
 
 
 class UAPIDatasetSerializer(BaseObjectMixin, DatasetSerializer):
@@ -62,3 +83,7 @@ class DistributionQueryParameterSerializer(serializers.Serializer):
         if "dataset._id" in data:
             data["dataset_id"] = data.get("dataset._id")
         return super().to_internal_value(data)
+
+
+class VersionQueryParameterSerializer(serializers.Serializer):
+    dataset_id = serializers.CharField(required=False, max_length=255)

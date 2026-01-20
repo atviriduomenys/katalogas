@@ -100,3 +100,4 @@ class VersionFactory(DjangoModelFactory):
         model = Version
 
     dataset = factory.SubFactory(DatasetFactory)
+    description = factory.Faker("sentence")

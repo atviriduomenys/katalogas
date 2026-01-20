@@ -12,6 +12,7 @@ from vitrina.uapi.views.views import (
     DatasetViewSet,
     DistributionViewSet,
     AgentSyncDoneViewSet,
+    VersionViewSet,
 )
 
 
@@ -74,5 +75,10 @@ urlpatterns = [
         f"{STATIC_UAPI_BASE_PATH}Agreement/<uuid:agreement_id>/sync-done/",
         AgentSyncDoneViewSet.as_view({"put": "update"}),
         name="uapi-agent-sync-done",
+    ),
+    path(
+        f"{STATIC_UAPI_BASE_PATH}Version/",
+        VersionViewSet.as_view({"get": "list"}),
+        name="uapi-version",
     ),
 ]

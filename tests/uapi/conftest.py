@@ -173,6 +173,11 @@ def url_dataset_structure(dataset: Dataset) -> str:
 
 
 @pytest.fixture
+def url_version() -> str:
+    return _build_reverse_uapi_url("uapi-version")
+
+
+@pytest.fixture
 def dsa() -> str:
     return """id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description
 ,example70,,,,,,,,,,,,,,,,,

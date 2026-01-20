@@ -1409,9 +1409,9 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure)
     assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
-    assert Metadata.objects.filter(dataset=structure.dataset).count() == 4
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=version).count() == 4
 
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
@@ -1427,14 +1427,14 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, version)
     assert list(Comment.objects.filter(
         type=Comment.STRUCTURE_ERROR,
         content_type=ContentType.objects.get_for_model(structure),
     ).values_list('body', flat=True)) == [
        'Duomenų išteklius "datasets/gov/ivpk/adp" jau egzistuoja.'
     ]
-    assert Metadata.objects.filter(dataset=structure.dataset).count() == 0
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=version).count() == 0
 
 
 @pytest.mark.django_db
@@ -1666,8 +1666,7 @@ def test_structure_export__prefixes(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
 
-    create_structure_objects(structure)
-
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
@@ -1707,7 +1706,7 @@ def test_structure_export__with_resource_params(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
 
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -1752,7 +1751,7 @@ def test_structure_export__models_and_props(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -1799,7 +1798,7 @@ def test_structure_export__base_model(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -1846,7 +1845,7 @@ def test_structure_export__property_ref(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -1892,7 +1891,7 @@ def test_structure_export__model_ref(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -1934,7 +1933,7 @@ def test_structure_export__comments(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -1981,7 +1980,7 @@ def test_structure_export__enums(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -2033,7 +2032,7 @@ def test_structure_export__params(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -2220,7 +2219,7 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     model = Model.objects.get(
         dataset=structure.dataset,
@@ -2285,7 +2284,7 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
     structure.dataset.current_structure = structure
     structure.dataset.organization = representative.content_object
     structure.dataset.save()
-    create_structure_objects(structure)
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     form = app.get(reverse('dataset-change', kwargs={'pk': structure.dataset.pk})).forms['dataset-form']
     form['title'] = 'Edited title'
@@ -2293,7 +2292,7 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
     form['name'] = structure.dataset.organization.name + "edited_dataset"
     resp = form.submit()
     assert resp.url == reverse('dataset-detail', kwargs={'pk': structure.dataset.pk})
-    assert structure.dataset.metadata.count() == 1
+    assert structure.dataset.metadata.filter(metadata_version=version).count() == 1
     assert structure.dataset.metadata.first().title == "Edited title"
     assert structure.dataset.metadata.first().description == "Edited description"
 
@@ -2326,7 +2325,7 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
     dist_format = FileFormat()
 
     distribution = DatasetDistribution.objects.first()
@@ -2372,7 +2371,7 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
     dist_format = FileFormat()
 
     distribution = DatasetDistribution.objects.first()
@@ -2420,7 +2419,7 @@ def test_structure_export__visibility_row(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -2461,7 +2460,7 @@ def test_structure_export__eli_row(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -2502,7 +2501,7 @@ def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_d
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (

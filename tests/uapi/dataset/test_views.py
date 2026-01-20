@@ -1084,7 +1084,7 @@ class TestActionGetDatasetStructure:
         )
         dataset.current_structure = structure
         dataset.save()
-        create_structure_objects(structure)
+        create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
         response = app.get(
             url_dataset_structure,

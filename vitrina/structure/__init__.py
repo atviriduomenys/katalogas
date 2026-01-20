@@ -21,8 +21,7 @@ class VersionType(models.TextChoices):
 
 
 class AccessType(models.IntegerChoices):
-    UNDEFINED = 0, _("nepasirinkta")
-    PRIVATE = 1, _("private")
-    PROTECTED = 2, _("protected")
-    PUBLIC = 3, _("public")
-    OPEN = 4, _("open")
+    PRIVATE = 0, _("private")
+    PROTECTED = 1, _("protected")
+    PUBLIC = 2, _("public")
+    OPEN = 3, _("open")

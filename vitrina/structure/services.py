@@ -116,12 +116,18 @@ def create_or_get_uapi_format():
 
 def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Version):
     ct = ContentType.objects.get_for_model(dataset)
-    existing_metadata = Metadata.objects.filter(content_type=ct, object_id=dataset.pk)
+    existing_metadata = Metadata.objects.filter(
+        content_type=ct, object_id=dataset.pk, metadata_version=metadata_version
+    )
     loaded_metadata = []
 
     _clean_errors(dataset.current_structure)
     for order, meta in enumerate(state.manifest.datasets.values(), 1):
-        if metadata := Metadata.objects.filter(content_type=ct, name=meta.name).exclude(dataset=dataset).first():
+        if (
+            metadata := Metadata.objects.filter(content_type=ct, name=meta.name, metadata_version=metadata_version)
+            .exclude(dataset=dataset)
+            .first()
+        ):
             meta.errors.append(_(f'Duomenų išteklius "{meta.name}" jau egzistuoja.'))
             loaded_metadata.append(metadata)
             metadata_version.delete()
@@ -134,7 +140,7 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
             loaded_metadata.append(metadata)
             metadata_version.delete()
         else:
-            if md := dataset.metadata.filter(name=meta.name).first():
+            if md := dataset.metadata.filter(name=meta.name, metadata_version=metadata_version).first():
                 if not meta.id:
                     meta.id = md.uuid
 
@@ -674,7 +680,7 @@ def _link_models_to_distribution(
     dataset: Dataset,
     meta_with_models: struct.Dataset,
     distribution: DatasetDistribution,
-    metadata_version: Version,
+    metadata_version: Version = None,
 ):
     """Link models to the given distribution."""
     for model_meta in meta_with_models.models.values():

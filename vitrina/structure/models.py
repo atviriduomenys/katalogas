@@ -312,11 +312,11 @@ class Model(models.Model):
     def save(self, *args, **kwargs) -> None:
         if self.distribution and self.distribution.format and self.distribution.format.extension == "UAPI":
             raise ValidationError(_("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją."))
-        old_distribution = None
+        existing_distribution = None
 
         if self.pk:
             old_instance = Model.objects.get(pk=self.pk)
-            old_distribution = old_instance.distribution
+            existing_distribution = old_instance.distribution
 
         super().save(*args, **kwargs)
 
@@ -327,8 +327,8 @@ class Model(models.Model):
             self.distribution.metadata_version = self.metadata_version
             self.distribution.save(update_fields=["metadata_version"])
 
-        if old_distribution:
-            old_distribution.delete_resource_metadata_if_has_no_models()
+        if existing_distribution:
+            existing_distribution.delete_resource_metadata_if_has_no_models()
 
     def delete(self, *args, **kwargs) -> None:
         distribution = self.distribution

@@ -743,6 +743,7 @@ class TestList:
 
 
     def test_list_with_query_parameters_archived_dataset(
+        self,
         app: DjangoTestApp,
         organization: Organization,
         url_dataset: str,

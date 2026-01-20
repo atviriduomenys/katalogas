@@ -162,14 +162,9 @@ class TestAgentCreate:
                 service=True,
                 organization=organization,
                 subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE),
+                metadata=data["title"].lower().replace(" ", "_"),
             )
             data["service"] = organization_service.pk
-
-            MetadataFactory.create(
-                content_type=ContentType.objects.get_for_model(Dataset),
-                object_id=organization_service.pk,
-                name=data["title"].lower().replace(" ", "_"),
-            )
 
         with patch(
             "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",

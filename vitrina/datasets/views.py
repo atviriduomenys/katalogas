@@ -75,6 +75,7 @@ from vitrina.structure import VersionStatus
 from vitrina.structure.views import DatasetStructureMixin
 
 from vitrina.tasks.models import Task
+from vitrina.uapi.models import Agent
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.mixins import DatasetBreadcrumbsMixin, Crumb
 from vitrina.datasets.services import (
@@ -390,6 +391,10 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 Action.CREATE,
                 Dataset,
                 self.organization,
+            )
+            extra_context["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
+            extra_context["can_view_keys"] = has_perm(
+                self.request.user, Action.MANAGE_KEYS, Organization, self.organization
             )
             context["organization_id"] = self.organization.pk
             if not form.selected_facets:

@@ -64,6 +64,8 @@ class BaseAgentView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
                     self.request.user, Action.UPDATE, Representative, self.organization
                 ),
                 "can_manage_keys": has_perm(self.request.user, Action.MANAGE_KEYS, self.organization),
+                "can_view_agents": has_perm(self.request.user, Action.VIEW, Agent, self.organization),
+                "can_view_keys": has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization),
             }
         )
 

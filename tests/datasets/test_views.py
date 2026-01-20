@@ -451,6 +451,31 @@ class TestDatasetListView:
         resp = app.get(reverse("dataset-list"))
         assert not resp.html.find(id="org-dataset-url")
 
+    @pytest.mark.parametrize(
+        "is_staff,can_view",
+        [
+            (True, True),
+            (False, False),
+        ],
+    )
+    def test_organization_datasets_context_flags_present(
+        self,
+        app: DjangoTestApp,
+        is_staff: bool,
+        can_view: bool,
+    ):
+        organization = OrganizationFactory()
+        user = UserFactory(is_staff=is_staff)
+
+        app.set_user(user)
+        resp = app.get(reverse("organization-datasets", args=[organization.pk]))
+
+        assert "can_view_agents" in resp.context
+        assert "can_view_keys" in resp.context
+
+        assert resp.context["can_view_agents"] is can_view
+        assert resp.context["can_view_keys"] is can_view
+
     def test_manager_dataset_url_is_hidden_for_normal_user(self, app: DjangoTestApp):
         user = User.objects.create_user(email="test@test.com", password="test123")
         app.set_user(user)

@@ -86,4 +86,4 @@ class DistributionQueryParameterSerializer(serializers.Serializer):
 
 
 class VersionQueryParameterSerializer(serializers.Serializer):
-    dataset_id = serializers.CharField(required=False, max_length=255)
+    dataset_id = serializers.IntegerField(required=False)

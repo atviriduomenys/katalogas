@@ -366,17 +366,8 @@ class VersionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.
         return queryset
 
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        if not (versions := self.get_queryset()):
-            raise UAPIException(
-                code="version_not_found",
-                type="VersionNotFound",
-                template="The requested Version could not be found.",
-                message=f"No version matched the provided query — {request.build_absolute_uri()}.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-
         serializer = BaseObjectListSerializer(
-            instance=versions,
+            instance=self.get_queryset(),
             context=self.get_serializer_context(),
             data_serializer_class=UAPIVersionSerializer,
             _type=extract_type_from_url(self.request.build_absolute_uri()),

@@ -230,16 +230,8 @@ class TestList:
             expect_errors=True
         )
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert response.json == {
-            "code": "version_not_found",
-            "type": "VersionNotFound",
-            "template": "The requested Version could not be found.",
-            "message": (
-                f"No version matched the provided query — http://testserver/uapi/datasets/gov/vssa/isris/dcat/Version/."
-            ),
-            "additionalProperties": None
-        }
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json == {"_data": []}
 
     def test_no_datasets_belonging_to_organization_found(
         self,
@@ -258,13 +250,5 @@ class TestList:
             expect_errors=True
         )
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert response.json == {
-            "code": "version_not_found",
-            "type": "VersionNotFound",
-            "template": "The requested Version could not be found.",
-            "message": (
-                f"No version matched the provided query — http://testserver/uapi/datasets/gov/vssa/isris/dcat/Version/."
-            ),
-            "additionalProperties": None
-        }
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json == {"_data": []}

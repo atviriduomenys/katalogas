@@ -4,6 +4,7 @@ import pathlib
 from datetime import datetime
 from functools import cached_property
 from random import randrange
+from uuid import uuid4
 
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -247,7 +248,7 @@ class Dataset(Resource):
         blank=False,
         null=True,
     )  # TODO: Deprecated, slugs are formed from id's
-    uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)  # TODO: Remove blank and null
+    uuid = models.UUIDField(unique=True, default=uuid4, editable=False)
     internal_id = models.CharField(max_length=255, blank=True, null=True)
 
     theme = models.CharField(

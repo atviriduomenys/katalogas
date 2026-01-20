@@ -3,9 +3,10 @@ from django.utils.html import format_html
 from django.utils.text import Truncator
 
 from vitrina.likes.models import Like
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
-class LikeAdmin(admin.ModelAdmin):
+class LikeAdmin(RevisionCommentVersionAdmin):
     list_display = ("user", "content_object", "created")
 
     @admin.display()

@@ -112,3 +112,10 @@ $primary: #007db2;
 .input, .textarea, .select select {
   border-color: #767676;
 }
+
+/* Make Select2widget match Bulma selects */
+.control .select2-container .select2-selection--single {
+  height: 2.5em;
+  padding: 0.25em;
+  border-color: #767676
+}

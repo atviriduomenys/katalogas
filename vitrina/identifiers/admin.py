@@ -1,6 +1,7 @@
 from django.contrib import admin
 
 from .models import Identifier, Agency
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 class IdentifierInline(admin.TabularInline):
@@ -11,7 +12,7 @@ class IdentifierInline(admin.TabularInline):
 
 
 @admin.register(Identifier)
-class IdentifierAdmin(admin.ModelAdmin):
+class IdentifierAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "notation",
         "identifier_type",
@@ -49,7 +50,7 @@ class IdentifierAdmin(admin.ModelAdmin):
 
 
 @admin.register(Agency)
-class AgencyAdmin(admin.ModelAdmin):
+class AgencyAdmin(RevisionCommentVersionAdmin):
     list_display = ("name", "uri")
     search_fields = ("name", "uri")
     inlines = [IdentifierInline]

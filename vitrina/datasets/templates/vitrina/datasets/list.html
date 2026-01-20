@@ -225,16 +225,31 @@
                                       </a>
                                       {% endif %}
                                     </div>
-                                      <span class="tag is-white has-text-dark">
-                                          {% translate "Duomenų išteklius viešinamas" %}:
-                                          {% if i.object.is_public %}
-                                          {% translate "Taip" %}
-                                          {% else %}
-                                          {% translate "Ne" %}
-                                          {% endif %}
-                                      </span>
+                                    <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
+                                        <span class="tag is-white has-text-dark">
+                                            {% translate "Duomenų išteklius viešinamas" %}:
+                                            {% if i.object.is_public %}
+                                                {% translate "Taip" %}
+                                            {% else %}
+                                                {% translate "Ne" %}
+                                            {% endif %}
+                                        </span>
 
-
+                                    <span class="tag is-white has-text-dark">
+                                        {% translate "Brandos lygis" %}:
+                                        {% with level=i.object.get_level|add:"0" %}
+                                            <span style="margin-left: 0.5em;" class="{% if level and level > 0 %}has-text-warning{% endif %}">
+                                                {% for i in "12345" %}
+                                                    {% if level > 0 and forloop.counter <= level %}
+                                                        <i class="fas fa-star"></i>
+                                                    {% else %}
+                                                        <i class="far fa-star has-text-grey-light"></i>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </span>
+                                        {% endwith %}
+                                    </span>
+                                    </div>
 
                                     <p class="dataset-list-description my-1">
                                         {% if i.object %}

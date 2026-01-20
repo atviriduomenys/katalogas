@@ -1,3 +1,5 @@
+from uuid import uuid4
+
 from django.db import models
 from django.urls import reverse
 from django.utils.text import Truncator
@@ -44,7 +46,7 @@ class Project(models.Model):
     slug = models.CharField(unique=True, max_length=255, blank=True, null=True)
     status = models.CharField(max_length=255, choices=STATUSES, blank=False, null=True)
     url = models.CharField(max_length=255, blank=True, null=True)
-    uuid = models.CharField(unique=True, max_length=36, blank=True, null=True)
+    uuid = models.CharField(unique=True, max_length=36, default=uuid4)
     user = models.ForeignKey(User, models.PROTECT, blank=True, null=True)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
@@ -56,7 +58,7 @@ class Project(models.Model):
     other_assignee_legislations = models.TextField(blank=True, null=True)
 
     comments = GenericRelation("vitrina_comments.Comment")
-    datasets = models.ManyToManyField("vitrina_datasets.Dataset")
+    datasets = models.ManyToManyField("vitrina_datasets.Dataset", blank=True)
 
     # Deprecated fields
     imageuuid = models.CharField(max_length=36, blank=True, null=True)
@@ -140,3 +142,6 @@ class UseCaseClientScope(UUIDBaseModel):
     class Meta:
         verbose_name = _("Kliento leidimas")
         verbose_name_plural = _("Kliento leidimai")
+
+    def __str__(self):
+        return self.scope

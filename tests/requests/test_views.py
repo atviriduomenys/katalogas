@@ -10,14 +10,21 @@ from reversion.models import Version
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Representative
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan
-from vitrina.requests.factories import RequestFactory, RequestStructureFactory, RequestObjectFactory, \
-    RequestAssignmentFactory
+from vitrina.requests.factories import (
+    RequestFactory,
+    RequestStructureFactory,
+    RequestObjectFactory,
+    RequestAssignmentFactory,
+)
 from vitrina.requests.models import Request, RequestObject
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.factories import UserFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.utils import RevisionComment, RevisionSource
 
 timezone = pytz.timezone(settings.TIME_ZONE)
 
@@ -27,7 +34,16 @@ def test_request_create(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     orgs = [OrganizationFactory(), OrganizationFactory()]
     app.set_user(user)
-    form = app.get(reverse("request-create")).forms['request-form']
+    url = reverse("request-create")
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="request-create",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={}
+    )
+    form = app.get(url).forms['request-form']
     form['title'] = "Request"
     form['description'] = "Description"
     resp = form.submit()
@@ -36,7 +52,7 @@ def test_request_create(app: DjangoTestApp):
     assert resp.status_code == 302
     assert resp.url == Request.objects.filter(translations__title='Request').first().get_absolute_url()
     assert Version.objects.get_for_object(added_request.first()).count() == 1
-    assert Version.objects.get_for_object(added_request.first()).first().revision.comment == Request.CREATED
+    assert Version.objects.get_for_object(added_request.first()).first().revision.comment == revision_comment.to_json()
 
 
 @pytest.mark.django_db
@@ -55,7 +71,16 @@ def test_request_update_with_permitted_user(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     request = RequestFactory(user=user)
     app.set_user(user)
-    form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']
+    url = reverse("request-update", args=[request.pk])
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="request-update",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={"pk": request.pk}
+    )
+    form = app.get(url).forms['request-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
     resp = form.submit()
@@ -65,7 +90,7 @@ def test_request_update_with_permitted_user(app: DjangoTestApp):
     assert updated_request.title == "Updated title"
     assert updated_request.description == "Updated description"
     assert Version.objects.get_for_object(request).count() == 1
-    assert Version.objects.get_for_object(request).first().revision.comment == Request.EDITED
+    assert Version.objects.get_for_object(request).first().revision.comment == revision_comment.to_json()
 
 
 @pytest.mark.django_db
@@ -106,7 +131,16 @@ def test_request_history_view_with_permission(app: DjangoTestApp):
     request.organizations.add(user.organization)
     app.set_user(user)
 
-    form = app.get(reverse("request-update", args=[request.pk])).forms['request-form']
+    url = reverse("request-update", args=[request.pk])
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="request-update",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={"pk": request.pk}
+    )
+    form = app.get(url).forms['request-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
     resp = form.submit().follow()
@@ -114,7 +148,8 @@ def test_request_history_view_with_permission(app: DjangoTestApp):
     assert resp.context['detail_url_name'] == 'request-detail'
     assert resp.context['history_url_name'] == 'request-history'
     assert len(resp.context['history']) == 1
-    assert resp.context['history'][0]['action'] == "Redaguota"
+    history_action = resp.context['history'][0]['action']
+    assert history_action["comment"] == f"{revision_comment.action}({revision_comment.kwargs})"
     assert resp.context['history'][0]['user'] == user
 
 
@@ -402,6 +437,41 @@ def test_add_existing_dataset_to_request_with_organization_permission(app: Djang
     assert "add-dataset" in resp.text
     resp = app.get(reverse('request-datasets-edit', args=[request.pk]))
     assert resp.request.path_qs == reverse('request-datasets-edit', args=[request.pk])
+
+
+@pytest.mark.django_db
+def test_open_data_coordinator_cannot_see_non_public_datasets(app: "DjangoTestApp"):
+    org = OrganizationFactory()
+    user = UserFactory(organization=org)
+    app.set_user(user)
+
+    RepresentativeFactory(
+        user=user,
+        organization=org,
+        content_type=ContentType.objects.get_for_model(org),
+        role=Representative.OPEN_DATA_COORDINATOR,
+        object_id=org.pk
+    )
+
+    request = RequestFactory()
+
+    RequestAssignmentFactory(organization=org, request=request, status=request.status)
+
+    public_ds = DatasetFactory(organization=org, access_rights=Dataset.PUBLIC)
+    restricted_ds = DatasetFactory(organization=org, access_rights=Dataset.RESTRICTED)
+    non_public_ds = DatasetFactory(organization=org, access_rights=Dataset.NON_PUBLIC)
+
+    for ds in [public_ds, restricted_ds, non_public_ds]:
+        RequestObjectFactory(
+            request=request, content_type=ContentType.objects.get_for_model(Dataset), object_id=ds.pk
+        )
+
+    url = reverse("request-datasets-edit", args=[request.pk])
+    resp = app.get(url)
+
+    assert str(public_ds.id) in resp.text
+    assert str(restricted_ds.id) in resp.text
+    assert str(non_public_ds.id) not in resp.text
 
 
 @pytest.mark.django_db

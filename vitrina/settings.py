@@ -39,7 +39,7 @@ environ.Env.read_env(BASE_DIR / ".env")
 
 BASE_DB_PATH = BASE_DIR / "resources/adp-pg.sql"
 LOCALE_PATHS = [
-    str(env.path("VITRINA_LOCALE_PATH", default=BASE_DIR / "vitrina/locale/")),
+    env.str("VITRINA_LOCALE_PATH", default=str(BASE_DIR / "vitrina/locale/")),
 ]
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
@@ -187,6 +187,8 @@ MIDDLEWARE = [
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django_otp.middleware.OTPMiddleware",
+    "reversion.middleware.RevisionMiddleware",
+    "vitrina.middleware.AutoRevisionCommentMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.contrib.redirects.middleware.RedirectFallbackMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
@@ -545,3 +547,10 @@ LANGUAGE_COOKIE_SECURE = True
 OTP_EMAIL_TOKEN_VALIDITY = 600
 
 USE_OTP_VALIDATION = env.bool("USE_OTP_VALIDATION", default=True)
+
+# Set of model paths to exclude from versioning.
+# Supports exact model paths or wildcards.
+# Examples:
+#   "vitrina.users.models.*"          → excludes all models in that module
+#   "vitrina.comments.models.Comment" → excludes a specific model
+NOT_VERSIONED_MODELS = {}

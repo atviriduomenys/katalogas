@@ -2,7 +2,6 @@ import builtins
 import functools
 import operator
 
-import reversion
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
@@ -162,7 +161,6 @@ class Base(models.Model):
         return ""
 
 
-@reversion.register()
 class Model(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     dataset = models.ForeignKey("vitrina_datasets.Dataset", models.CASCADE, verbose_name=_("Duomenų rinkinys"))
@@ -339,7 +337,6 @@ class Model(models.Model):
             distribution.delete_resource_metadata_if_has_no_models()
 
 
-@reversion.register()
 class Property(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     model = models.ForeignKey(

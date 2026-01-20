@@ -29,7 +29,6 @@ from pygments.lexers.special import TextLexer
 from pygments.styles import get_style_by_name
 from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
-from reversion.views import RevisionMixin
 from shapely.wkt import loads
 
 from vitrina.classifiers.models import Status
@@ -129,9 +128,7 @@ class DatasetStructureMixin(StructureMixin):
         subclass = self.dataset.subclass
         self.can_manage_structure = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
-            if subclass and subclass.is_information_system
-            else Action.STRUCTURE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.STRUCTURE,
             Dataset,
             self.dataset,
         )
@@ -209,9 +206,7 @@ class DatasetStructureView(
         subclass = self.object.subclass
         self.can_manage_structure = has_perm(
             self.request.user,
-            Action.INFORMATION_SYSTEM_AT_GOV_ORG_UPDATE
-            if subclass and subclass.is_information_system
-            else Action.STRUCTURE,
+            Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.STRUCTURE,
             Dataset,
             self.object,
         )
@@ -1787,7 +1782,7 @@ class DatasetStructureExportOpenAPIView(PermissionRequiredMixin, View):
         return response
 
 
-class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
+class EnumCreateView(PermissionRequiredMixin, CreateView):
     model = EnumItem
     form_class = EnumForm
     template_name = "base_form.html"
@@ -1897,12 +1892,11 @@ class EnumCreateView(RevisionMixin, PermissionRequiredMixin, CreateView):
 
         # Save history
         self.property.save()
-        set_comment(_(f'Pridėta duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'))
 
         return redirect(self.property.get_absolute_url())
 
 
-class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
+class EnumUpdateView(PermissionRequiredMixin, UpdateView):
     model = EnumItem
     form_class = EnumForm
     template_name = "base_form.html"
@@ -2030,7 +2024,6 @@ class EnumUpdateView(RevisionMixin, PermissionRequiredMixin, UpdateView):
             metadata.save()
         # Save history
         self.property.save()
-        set_comment(_(f'Redaguota duomenų lauko "{self.property.name}" reikšmė "{form.cleaned_data.get("value")}".'))
 
         return redirect(self.property.get_absolute_url())
 
@@ -2121,19 +2114,15 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
     def post(self, request, *args, **kwargs):
         self.object = self.get_object()
         success_url = self.get_success_url()
-        value = str(self.object).replace('"', "")
         self.object.delete()
 
         # Save history
-        with create_revision():
-            self.property.save()
-            set_user(request.user)
-            set_comment(_(f'Pašalinta duomenų lauko "{self.property.name}" reikšmė "{value}".'))
+        self.property.save()
 
         return redirect(success_url)
 
 
-class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
+class ModelCreateView(PermissionRequiredMixin, CreateView):
     model = Metadata
     template_name = "vitrina/structure/model_form.html"
     form_class = ModelCreateForm
@@ -2249,13 +2238,6 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         model.update_level()
         self.dataset.update_level()
 
-        if form.cleaned_data.get("comment"):
-            comment = _(f'Sukurtas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
-        else:
-            comment = _(f'Sukurtas "{model.name}" modelis.')
-        set_comment(comment)
-        set_user(self.request.user)
-
         return redirect(model.get_absolute_url())
 
     def get_context_data(self, **kwargs):
@@ -2287,7 +2269,7 @@ class ModelCreateView(PermissionRequiredMixin, RevisionMixin, CreateView):
         return kwargs
 
 
-class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateView):
     model = Metadata
     template_name = "vitrina/structure/model_form.html"
     form_class = ModelUpdateForm
@@ -2455,13 +2437,6 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
             self.object.status = Status.objects.filter(is_default=True).first()
         self.object.save()
 
-        if form.cleaned_data.get("comment"):
-            comment = _(f'Redaguotas "{model.name}" modelis. {form.cleaned_data.get("comment")}')
-        else:
-            comment = _(f'Redaguotas "{model.name}" modelis.')
-        set_comment(comment)
-        set_user(self.request.user)
-
         return redirect(model.get_absolute_url())
 
     def get_breadcrumbs(self) -> List[Crumb]:
@@ -2515,7 +2490,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revision
         return metadata_changed and status_unchanged
 
 
-class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
+class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, CreateView):
     model = Metadata
     template_name = "vitrina/structure/property_form.html"
     form_class = PropertyForm
@@ -2578,8 +2553,6 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
 
         self.model_obj.update_level()
         self.dataset.update_level()
-        # Save history
-        set_comment(_(f'Pridėtas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
 
@@ -2614,7 +2587,7 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
         return kwargs
 
 
-class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateView):
     model = Metadata
     template_name = "vitrina/structure/property_form.html"
     form_class = PropertyForm
@@ -2713,10 +2686,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Revis
 
         self.model_obj.update_level()
         self.dataset.update_level()
-
-        # Save history
         prop.save()
-        set_comment(_(f'Redaguotas "{self.model_obj.name}" modelio duomenų laukas "{self.object.name}".'))
 
         return redirect(prop.get_absolute_url())
 
@@ -2901,10 +2871,7 @@ class ParamCreateView(PermissionRequiredMixin, CreateView):
 
         # Save history
         if isinstance(self.rel_object, Model):
-            with create_revision():
-                self.rel_object.save()
-                set_comment(_(f'Pridėtas "{self.rel_object.name}" modelio parametras "{self.object.name}".'))
-                set_user(self.request.user)
+            self.rel_object.save()
 
         return redirect(self.rel_object.get_absolute_url())
 
@@ -2967,10 +2934,7 @@ class ParamUpdateView(PermissionRequiredMixin, UpdateView):
 
         # Save history
         if isinstance(rel_object, Model):
-            with create_revision():
-                rel_object.save()
-                set_comment(_(f'Redaguotas "{rel_object.name}" modelio parametras "{self.object.name}".'))
-                set_user(self.request.user)
+            rel_object.save()
 
         return redirect(rel_object.get_absolute_url())
 
@@ -2993,16 +2957,12 @@ class ParamDeleteView(PermissionRequiredMixin, DeleteView):
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object = self.get_object()
-        value = str(self.object)
         rel_object = self.object.param.object
         response = super().form_valid(form)
 
         # Save history
         if isinstance(rel_object, Model):
-            with create_revision():
-                rel_object.save()
-                set_comment(_(f'Pašalintas "{rel_object.name}" modelio parametras "{value}".'))
-                set_user(self.request.user)
+            rel_object.save()
 
         return response
 

@@ -8,17 +8,18 @@ from vitrina.smart_contracts.models import (
     SmartContractTemplate,
     AgreementFile,
 )
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 @admin.register(SmartContractTemplate)
-class SmartContractTemplateAdmin(admin.ModelAdmin):
+class SmartContractTemplateAdmin(RevisionCommentVersionAdmin):
     class Meta:
         verbose_name = _("Išmaniųjų sutarčių numatytasis šablonas")
         verbose_name_plural = _("Išmaniųjų sutarčių numatytieji šablonai")
 
 
 @admin.register(Agreement)
-class AgreementAdmin(admin.ModelAdmin):
+class AgreementAdmin(RevisionCommentVersionAdmin):
     list_display = [
         "project",
         "assigner",
@@ -35,7 +36,7 @@ class AgreementAdmin(admin.ModelAdmin):
 
 
 @admin.register(AgreementScope)
-class AgreementScopeAdmin(admin.ModelAdmin):
+class AgreementScopeAdmin(RevisionCommentVersionAdmin):
     list_display = ["agreement", "scope"]
     autocomplete_fields = ["agreement"]
     search_fields = [
@@ -48,8 +49,8 @@ class AgreementScopeAdmin(admin.ModelAdmin):
 
 
 @admin.register(AgreementFile)
-class AgreementFileAdmin(admin.ModelAdmin):
-    list_display = ["agreement", "file_name"]
+class AgreementFileAdmin(RevisionCommentVersionAdmin):
+    list_display = ["agreement", "file_name", "file_extension"]
     autocomplete_fields = ["agreement"]
     search_fields = [
         "agreement__project__title",

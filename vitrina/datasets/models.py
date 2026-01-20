@@ -5,7 +5,6 @@ from datetime import datetime
 from functools import cached_property
 from random import randrange
 
-import reversion
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -40,6 +39,7 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem
 from vitrina.users.models import User
+from vitrina.datasets.tasks import update_applicable_legislation_description
 
 logger = logging.getLogger(__name__)
 
@@ -119,7 +119,6 @@ class Resource(MP_Node, TranslatableModel):
         self.fix_tree(fix_paths=True)
 
 
-@reversion.register(follow=["category", "part_of"])
 class Dataset(Resource):
     node_order_by = ("subclass",)
 
@@ -824,88 +823,54 @@ class Dataset(Resource):
     def get_members_url(self):
         return reverse("dataset-members", kwargs={"pk": self.pk})
 
-    def get_resource_managers_queryset(self) -> QuerySet["Dataset"]:
-        datasets_ids = {self.id}
+    def get_managers_queryset(self, roles: list[str]) -> QuerySet["Dataset"]:
+        dataset_ct = ContentType.objects.get_for_model(Dataset)
+        organization_ct = ContentType.objects.get_for_model(Organization)
+
+        dataset_ids = {self.id}
         organization_ids = {self.organization_id}
-        for parent_dataset in self.get_ancestors().only("pk", "organization_id"):
-            datasets_ids.add(parent_dataset.pk)
-            organization_ids.add(parent_dataset.organization_id)
+        for parent in self.get_ancestors().only("pk", "organization_id"):
+            dataset_ids.add(parent.pk)
+            organization_ids.add(parent.organization_id)
         return (
             Representative.objects.filter(
                 Q(
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    object_id__in=datasets_ids,
+                    content_type=dataset_ct,
+                    object_id__in=dataset_ids,
+                    role__in=roles,
                 )
                 | Q(
-                    content_type=ContentType.objects.get_for_model(Organization),
+                    content_type=organization_ct,
                     object_id__in=organization_ids,
-                )
-                | Q(organization_id__in=organization_ids),
-                user__isnull=False,
-                information_system_representative=False,
-                open_data_representative=False,
-            )
-            .values_list("user_id", flat=True)
-            .distinct()
-        )
-
-    def get_resource_managers_queryset_specific_role(
-        self, include_information_system: bool = False, include_open_data: bool = False
-    ) -> QuerySet["Dataset"]:
-        datasets_ids = {self.id}
-        organization_ids = {self.organization_id}
-
-        for parent_dataset in self.get_ancestors().only("pk", "organization_id"):
-            datasets_ids.add(parent_dataset.pk)
-            organization_ids.add(parent_dataset.organization_id)
-
-        base_queryset = (
-            Q(
-                content_type=self.dataset_content_type,
-                object_id__in=datasets_ids,
-            )
-            | Q(
-                content_type=ContentType.objects.get_for_model(Organization),
-                object_id__in=organization_ids,
-            )
-            | Q(organization_id__in=organization_ids)
-        )
-        filters = {
-            "user__isnull": False,
-        }
-
-        if not include_information_system:
-            filters["information_system_representative"] = False
-
-        if not include_open_data:
-            filters["open_data_representative"] = False
-
-        return Representative.objects.filter(base_queryset, **filters).values_list("user_id", flat=True).distinct()
-
-    def get_organization_special_representatives_queryset(self) -> QuerySet[int]:
-        """
-        Returns user IDs of organization-level representatives for this dataset
-        (or its ancestor datasets) who have either information_system_representative
-        or open_data_representative set to True.
-        """
-        organization_ids = {self.organization_id}
-        for parent_dataset in self.get_ancestors().only("organization_id"):
-            organization_ids.add(parent_dataset.organization_id)
-
-        return (
-            Representative.objects.filter(
-                Q(content_type=ContentType.objects.get_for_model(Organization), object_id__in=organization_ids)
-                | Q(organization_id__in=organization_ids),
+                    role__in=roles,
+                ),
                 user__isnull=False,
             )
-            .filter(Q(information_system_representative=True) | Q(open_data_representative=True))
             .values_list("user_id", flat=True)
             .distinct()
         )
 
     @property
     def resource_managers(self) -> set[int]:
-        return set(self.get_resource_managers_queryset())
+        return set(
+            self.get_managers_queryset(
+                [
+                    Representative.RESOURCE_COORDINATOR,
+                    Representative.RESOURCE_MANAGER,
+                ]
+            )
+        )
+
+    @property
+    def open_data_managers(self) -> set[int]:
+        return set(
+            self.get_managers_queryset(
+                [
+                    Representative.OPEN_DATA_COORDINATOR,
+                    Representative.OPEN_DATA_MANAGER,
+                ]
+            )
+        )
 
     @property
     def language_array(self):
@@ -1423,29 +1388,24 @@ class Dataset(Resource):
         return False
 
     def update_applicable_legislation(self, urls: list[str]) -> None:
-        existing_urls = set(ApplicableLegislation.objects.filter(url__in=urls).values_list("url", flat=True))
-        new_urls = [url for url in urls if url not in existing_urls]
-
-        if new_urls:
-            ApplicableLegislation.objects.bulk_create([ApplicableLegislation(url=url) for url in new_urls])
-
-        all_entries = ApplicableLegislation.objects.filter(url__in=urls)
-        self.applicable_legislation.set(all_entries)
-
-        for entry in all_entries.filter(url__in=new_urls):
-            entry.update_description()
+        legislations: list[ApplicableLegislation] = []
+        legislation_ids_to_update = []
+        for url in urls:
+            legislation, created = ApplicableLegislation.objects.get_or_create(url=url)
+            if created:
+                legislation_ids_to_update.append(legislation.uuid)
+            legislations.append(legislation)
+        update_applicable_legislation_description.delay(legislation_ids_to_update)
+        self.applicable_legislation.set(legislations)
 
     def update_documentation(self, urls: list[str]) -> None:
-        existing_urls = set(
-            Documentation.objects.filter(documentation_link__in=urls).values_list("documentation_link", flat=True)
-        )
-        new_urls = [url for url in urls if url not in existing_urls]
+        documentations: list[Documentation] = []
 
-        if new_urls:
-            Documentation.objects.bulk_create([Documentation(documentation_link=url) for url in new_urls])
+        for url in urls:
+            documentation, created = Documentation.objects.get_or_create(documentation_link=url)
+            documentations.append(documentation)
 
-        all_entries = Documentation.objects.filter(documentation_link__in=urls)
-        self.documentation.set(all_entries)
+        self.documentation.set(documentations)
 
 
 class DatasetReport(Dataset):
@@ -1662,7 +1622,6 @@ class DatasetStructureLink(models.Model):
 
 
 # TODO: https://github.com/atviriduomenys/katalogas/issues/14
-@reversion.register()
 class DatasetStructure(models.Model):
     UPLOAD_TO = "data/structure"
 
@@ -1784,7 +1743,6 @@ class Attribution(models.Model):
         return self.title if self.title else self.name
 
 
-@reversion.register()
 class DatasetAttribution(models.Model):
     dataset = models.ForeignKey(Dataset, on_delete=models.CASCADE, verbose_name=_("Duomenų rinkinys"))
     attribution = models.ForeignKey(Attribution, on_delete=models.PROTECT, verbose_name=_("Priskyrimo rūšis"))
@@ -1896,7 +1854,6 @@ class Relation(TranslatableModel):
         return self.safe_translation_getter("title", language_code=self.get_current_language())
 
 
-@reversion.register()
 class DatasetRelation(models.Model):
     relation = models.ForeignKey(Relation, verbose_name=_("Ryšio tipas"), on_delete=models.PROTECT)
     dataset = models.ForeignKey(

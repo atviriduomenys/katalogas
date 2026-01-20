@@ -21,10 +21,9 @@ from django.utils.translation import gettext_lazy as _
 from django.urls import reverse
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.contrib.auth.mixins import PermissionRequiredMixin
+from reversion.models import Version
 
 import requests
-from reversion import set_comment
-from reversion.views import RevisionMixin
 
 from vitrina.api.models import ApiKey, ApiScope
 from vitrina.api.oauth import OAuthClientManagement
@@ -37,7 +36,7 @@ from vitrina.projects.forms import ProjectForm, ClientCreateForm, ClientScopeCre
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.models import AgreementScope
+from vitrina.smart_contracts.models import AgreementScope, Agreement, AgreementFile
 from vitrina.structure.models import Metadata, Property
 from vitrina.tasks.models import Task
 from vitrina.views import HistoryView
@@ -52,6 +51,7 @@ from vitrina.projects.services import (
     can_manage_datasets,
 )
 from vitrina.smart_contracts.permissions import can_view_agreements
+from vitrina.reversion_utils import get_version_ids, VersionRelationSpec
 
 
 logger = logging.getLogger()
@@ -134,7 +134,7 @@ class ProjectDetailView(ProjectViewBaseMixin, PermissionRequiredMixin, DetailVie
         return can_view_project(self.request.user, self.project)
 
 
-class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
+class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView):
     model = Project
     form_class = ProjectForm
     template_name = "base_form.html"
@@ -152,7 +152,6 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         self.object.user = self.request.user
         self.object.status = Project.CREATED
         self.object.save()
-        set_comment(Project.CREATED)
         Task.objects.create(
             title=f"Užregistruotas naujas panaudojimo atvejis: {ContentType.objects.get_for_model(self.object)}, id: {self.object.pk}",
             description="Portale užregistruotas naujas panaudojimo atvejis.",
@@ -180,7 +179,7 @@ class ProjectCreateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         return context_data
 
 
-class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView):
     model = Project
     form_class = ProjectForm
     template_name = "base_form.html"
@@ -208,7 +207,6 @@ class ProjectUpdateView(LoginRequiredMixin, PermissionRequiredMixin, RevisionMix
         super().form_valid(form)
         self.object = form.save(commit=True)
         self.object.save()
-        set_comment(Project.EDITED)
         sub_ct = ContentType.objects.get_for_model(self.object)
         subs = Subscription.objects.filter(
             sub_type=Subscription.PROJECT,
@@ -258,6 +256,21 @@ class ProjectHistoryView(ProjectViewBaseMixin, HistoryView):
         context["parent_links"].update({None: _("Istorija")})
         return context
 
+    def get_history_objects(self):
+        agreement_children = [
+            VersionRelationSpec(target_model=AgreementFile, parent_fk=AgreementFile.agreement),
+            VersionRelationSpec(target_model=AgreementScope, parent_fk=AgreementScope.agreement),
+        ]
+        client_children = [
+            VersionRelationSpec(target_model=UseCaseClientScope, parent_fk=UseCaseClientScope.use_case_client)
+        ]
+        project_children = [
+            VersionRelationSpec(target_model=Agreement, parent_fk=Agreement.project, nested=agreement_children),
+            VersionRelationSpec(target_model=UseCaseClient, parent_fk=UseCaseClient.use_case, nested=client_children),
+        ]
+        history_objects_ids = get_version_ids(self.project, project_children)
+        return Version.objects.filter(id__in=history_objects_ids)
+
 
 class ProjectDatasetsView(ProjectViewBaseMixin, PermissionRequiredMixin, ListView):
     model = Dataset
@@ -272,7 +285,9 @@ class ProjectDatasetsView(ProjectViewBaseMixin, PermissionRequiredMixin, ListVie
         return can_view_project(self.request.user, self.project)
 
     def get_queryset(self):
-        return Dataset.public.filter(project=self.project).select_related("organization")
+        return (
+            Dataset.restricted.for_user(self.request.user).filter(project=self.project).select_related("organization")
+        )
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -653,7 +668,7 @@ class ClientListView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequire
         return context
 
 
-class ClientCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, RevisionMixin, CreateView):
+class ClientCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, CreateView):
     model = UseCaseClient
     form_class = ClientCreateForm
     template_name = "base_form.html"
@@ -688,7 +703,7 @@ class ClientCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequi
         return context_data
 
 
-class ClientUpdateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, RevisionMixin, UpdateView):
+class ClientUpdateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, UpdateView):
     model = UseCaseClient
     form_class = ClientCreateForm
     template_name = "base_form.html"
@@ -754,9 +769,7 @@ class ClientDetailView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequi
         return context
 
 
-class ClientScopeCreateView(
-    LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, RevisionMixin, CreateView
-):
+class ClientScopeCreateView(LoginRequiredMixin, ProjectViewBaseMixin, PermissionRequiredMixin, CreateView):
     model = UseCaseClientScope
     form_class = ClientScopeCreateForm
     template_name = "base_form.html"
@@ -840,11 +853,11 @@ class ClientScopeToggleView(PermissionRequiredMixin, View):
         return can_manage_clients(self.request.user, self.project)
 
     @transaction.atomic
-    def get(self, request, **kwargs) -> HttpResponse:
+    def post(self, request, **kwargs) -> HttpResponse:
         self.scope.is_active = not self.scope.is_active  # Toggle to the opposite status
-        self.scope.save(update_fields=["is_active", "updated_at"])
         OAuthClientManagement.update_oauth_client(
             client_id=self.client.client_id,
             new_scopes=list(self.client.scopes.filter(is_active=True).values_list("scope", flat=True)),
         )
+        self.scope.save(update_fields=["is_active", "updated_at"])
         return redirect(reverse("project-clients-detail", args=[self.project.pk, self.client.uuid]))

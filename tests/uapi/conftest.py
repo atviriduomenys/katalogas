@@ -34,12 +34,13 @@ def _generate_test_token(
     jwk: RSAKey,
     scopes: Iterable[str] = ("datasets:write",),
     organization: Organization = None,
-    expires_in: int = 900
+    expires_in: int = 900,
+    agent_is_enabled: bool = True,
 ):
     oauth_client_id = None
     if organization:
-        agent = AgentFactory(organization=organization, oauth_client_id=str(uuid.uuid4()))
-        oauth_client_id =agent.oauth_client_id
+        agent = AgentFactory(organization=organization, oauth_client_id=str(uuid.uuid4()), is_enabled=agent_is_enabled)
+        oauth_client_id = agent.oauth_client_id
     now = datetime.utcnow()
     claims = {
         "iss": "test-issuer",
@@ -89,6 +90,19 @@ def valid_token(
     return _generate_test_token(test_jwk, organization=organization, scopes=OAUTH_AGENT_DEFAULT_SCOPES)
 
 
+@pytest.fixture()
+def valid_token_disabled_agent(
+    test_jwk: RSAKey,
+    organization: Organization,
+) -> str:
+    return _generate_test_token(
+        test_jwk,
+        organization=organization,
+        scopes=OAUTH_AGENT_DEFAULT_SCOPES,
+        agent_is_enabled=False,
+    )
+
+
 @pytest.fixture
 def organization() -> Organization:
     return OrganizationFactory(kind=Organization.ORG)
@@ -97,9 +111,7 @@ def organization() -> Organization:
 @pytest.fixture
 def dataset(organization: Organization) -> Dataset:
     dataset = DatasetFactory(
-        organization=organization,
-        title="Title of the Dataset",
-        description="Description of the Dataset."
+        organization=organization, title="Title of the Dataset", description="Description of the Dataset."
     )
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(Dataset),
@@ -129,9 +141,7 @@ def domain() -> str:
 def distribution(organization: Organization, dataset: Dataset) -> DatasetDistribution:
     with reversion.create_revision():
         distribution = DatasetDistributionFactory(
-            dataset=dataset,
-            title="Title of the Distribution",
-            description="Description of the Distribution."
+            dataset=dataset, title="Title of the Distribution", description="Description of the Distribution."
         )
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(DatasetDistribution),

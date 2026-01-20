@@ -4,25 +4,26 @@ from urllib.parse import parse_qs
 
 import pytest
 import requests_mock
+import reversion
 from PIL import Image
-from django.urls import reverse
+from django.urls import reverse, resolve
 from django_webtest import DjangoTestApp
 from reversion.models import Version
 from webtest import Upload
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.comments.models import Comment
-from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory
+from vitrina.projects.factories import ProjectFactory, UseCaseClientFactory, UseCaseClientScopeFactory
 from vitrina.projects.models import Project, UseCaseClient, UseCaseClientScope
 from vitrina.smart_contracts import AgreementStatuses
-from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory
 from vitrina.smart_contracts.models import AgreementScope
 from vitrina.users.factories import UserFactory
 from filer.models.imagemodels import Image as FilerImage
 from vitrina.orgs.factories import OrganizationFactory, ViispRepresentativeFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization
-
 from vitrina.users.models import User
+from vitrina.utils import RevisionComment, RevisionSource
 
 pytestmark = pytest.mark.django_db
 
@@ -44,7 +45,16 @@ def test_project_create_personal(app: DjangoTestApp, is_public: bool):
     user = UserFactory()
     app.set_user(user)
 
-    form = app.get(reverse("project-create")).forms['project-form']
+    url = reverse("project-create")
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="project-create",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={}
+    )
+    form = app.get(url).forms['project-form']
     form['title'] = "Project"
     form['description'] = "Description"
     form['url'] = "example.com"
@@ -58,7 +68,7 @@ def test_project_create_personal(app: DjangoTestApp, is_public: bool):
     assert resp.status_code == 302
     assert resp.url == added_project.get_absolute_url()
     assert Version.objects.get_for_object(added_project).count() == 1
-    assert Version.objects.get_for_object(added_project).first().revision.comment == Project.CREATED
+    assert Version.objects.get_for_object(added_project).first().revision.comment == revision_comment.to_json()
     assert FilerImage.objects.count() == 1
     assert added_project.image.original_filename == "example.png"
     assert not added_project.organization
@@ -70,7 +80,16 @@ def test_project_create_for_organization(app: DjangoTestApp):
     app.set_user(user)
     organization = representative.content_object
 
-    form = app.get(reverse("project-create")).forms['project-form']
+    url = reverse("project-create")
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="project-create",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={}
+    )
+    form = app.get(url).forms['project-form']
     form['title'] = "Project"
     form['description'] = "Description"
     form['organization'] = organization.id
@@ -83,7 +102,7 @@ def test_project_create_for_organization(app: DjangoTestApp):
     assert resp.status_code == 302
     assert resp.url == added_project.get_absolute_url()
     assert Version.objects.get_for_object(added_project).count() == 1
-    assert Version.objects.get_for_object(added_project).first().revision.comment == Project.CREATED
+    assert Version.objects.get_for_object(added_project).first().revision.comment == revision_comment.to_json()
     assert FilerImage.objects.count() == 1
     assert added_project.image.original_filename == "example.png"
     assert added_project.organization == organization
@@ -126,7 +145,16 @@ def test_personal_project_update(app: DjangoTestApp):
 
     app.set_user(user)
 
-    form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']
+    url = reverse("project-update", args=[project.pk])
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="project-update",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={"pk": project.pk}
+    )
+    form = app.get(url).forms['project-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
     resp = form.submit()
@@ -137,7 +165,7 @@ def test_personal_project_update(app: DjangoTestApp):
     assert project.title == "Updated title"
     assert project.description == "Updated description"
     assert Version.objects.get_for_object(project).count() == 1
-    assert Version.objects.get_for_object(project).first().revision.comment == Project.EDITED
+    assert Version.objects.get_for_object(project).first().revision.comment == revision_comment.to_json()
 
 def test_organization_project_update_no_permission(app: DjangoTestApp):
     representative = ViispRepresentativeFactory(can_make_agreements=False)
@@ -189,8 +217,16 @@ def test_project_update_with_organization(app: DjangoTestApp):
     project = ProjectFactory(user=user, organization=organization)
 
     app.set_user(user)
-
-    form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']
+    url = reverse("project-update", args=[project.pk])
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="project-update",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={"pk": project.pk}
+    )
+    form = app.get(url).forms['project-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
     resp = form.submit()
@@ -201,7 +237,7 @@ def test_project_update_with_organization(app: DjangoTestApp):
     assert project.title == "Updated title"
     assert project.description == "Updated description"
     assert Version.objects.get_for_object(project).count() == 1
-    assert Version.objects.get_for_object(project).first().revision.comment == Project.EDITED
+    assert Version.objects.get_for_object(project).first().revision.comment == revision_comment.to_json()
 
 def test_project_update_with_organization_no_representative(app: DjangoTestApp):
     user = UserFactory()
@@ -227,16 +263,47 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
     project = ProjectFactory()
     app.set_user(user)
 
-    form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']
+    url = reverse("project-update", args=[project.pk])
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="project-update",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={"pk": project.pk}
+    )
+    form = app.get(url).forms['project-form']
     form['title'] = "Updated title"
     form['description'] = "Updated description"
     resp = form.submit().follow()
+    with reversion.create_revision():
+        agreement_file = AgreementPDFFileFactory(agreement__project=project)
+        scope = UseCaseClientScopeFactory(use_case_client__use_case=project)
+    
+    action_objects = [
+        (str(agreement_file.agreement), None),
+        (str(agreement_file), None),
+        (str(scope.use_case_client), None),
+        (str(scope), None)
+    ]
+
     resp = resp.click(linkid="history-tab")
+    project.refresh_from_db()
     assert resp.context['detail_url_name'] == 'project-detail'
     assert resp.context['history_url_name'] == 'project-history'
-    assert len(resp.context['history']) == 1
-    assert resp.context['history'][0]['action'] == "Redaguota"
-    assert resp.context['history'][0]['user'] == user
+    assert len(resp.context['history']) == 2
+
+    entry1 = resp.context['history'][0]
+    assert entry1["action"]["comment"] == ""
+    assert len(entry1["action"]["objects"]) == 4
+    assert set(entry1["action"]["objects"]) == set(action_objects)
+    assert entry1['user'] is None
+
+    entry2 = resp.context['history'][1]
+    assert entry2["action"]["comment"] == f"{revision_comment.action}({revision_comment.kwargs})"
+    assert len(entry2["action"]["objects"]) == 1
+    assert entry2["action"]["objects"][0] == (str(project), project.get_absolute_url())
+    assert entry2['user'] == user
 
 
 def test_request_comment_with_status(app: DjangoTestApp):
@@ -245,6 +312,15 @@ def test_request_comment_with_status(app: DjangoTestApp):
     app.set_user(user)
 
     form = app.get(project.get_absolute_url()).forms['comment-form']
+    match = resolve(form.action)
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="comment",
+        http_method="POST",
+        path=form.action,
+        args=(),
+        kwargs=match.kwargs
+    )
     form['is_public'] = True
     form['status'] = Comment.APPROVED
     form['body'] = "Approving this project"
@@ -256,7 +332,7 @@ def test_request_comment_with_status(app: DjangoTestApp):
     assert comment.status == Comment.APPROVED
 
     version = Version.objects.get_for_object(project).get()
-    assert version.revision.comment == Project.STATUS_CHANGED
+    assert version.revision.comment == revision_comment.to_json()
 
 
 def test_request_comment_with_status_rejected(app: DjangoTestApp):
@@ -265,6 +341,15 @@ def test_request_comment_with_status_rejected(app: DjangoTestApp):
     app.set_user(user)
 
     form = app.get(project.get_absolute_url()).forms['comment-form']
+    match = resolve(form.action)
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="comment",
+        http_method="POST",
+        path=form.action,
+        args=(),
+        kwargs=match.kwargs
+    )
     form['is_public'] = True
     form['status'] = Comment.REJECTED
     form['body'] = ""
@@ -276,7 +361,7 @@ def test_request_comment_with_status_rejected(app: DjangoTestApp):
     assert comment.status == Comment.REJECTED
 
     version = Version.objects.get_for_object(project).get()
-    assert version.revision.comment == Project.STATUS_CHANGED
+    assert version.revision.comment == revision_comment.to_json()
 
 
 def test_request_comment_with_same_status(app: DjangoTestApp):
@@ -623,7 +708,7 @@ def test_client_scope_toggle(app: DjangoTestApp, oauth_settings):
         url = reverse(
             "project-clients-scopes-detail-toggle", args=[project.pk, client.pk, scope.pk]
         )
-        resp = app.get(url)
+        resp = app.post(url)
 
         assert resp.status_code == 302
 

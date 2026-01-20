@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -8,6 +10,9 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.classifiers.models import AreaOfManagement
 from vitrina.orgs.managers import PublicOrganizationManager
+
+if TYPE_CHECKING:
+    from vitrina.users.models import User
 
 
 class Region(models.Model):
@@ -51,7 +56,7 @@ class Organization(MP_Node):
     ORGANIZATION_KINDS = (
         (GOV, _("Valstybinė įstaiga")),
         (COM, _("Verslo organizacija")),
-        (ORG, _("Nepelno ir nevalstybinė organizacija")),
+        (ORG, _("Ne pelno siekianti ar nevyriausybinė organizacija")),
     )
 
     GROUP = "group"
@@ -146,11 +151,34 @@ class PublisherOrganization(Organization):
 
 
 class Representative(models.Model):
-    COORDINATOR = "coordinator"  # Manager + manages other Representatives
-    MANAGER = "manager"  # Manager
-    RESOURCE_MANAGER = "resource_manager"  # Resource Manager
+    RESOURCE_COORDINATOR = "resource_coordinator"
+    RESOURCE_MANAGER = "resource_manager"
     SUPERVISOR = "supervisor"
-    ROLES = ((COORDINATOR, _("Koordinatorius")), (MANAGER, _("Tvarkytojas")))
+    OPEN_DATA_COORDINATOR = "open_data_coordinator"
+    OPEN_DATA_MANAGER = "open_data_manager"
+
+    COORDINATOR_ROLES = (
+        RESOURCE_COORDINATOR,
+        OPEN_DATA_COORDINATOR,
+    )
+    MANAGER_ROLES = (
+        RESOURCE_MANAGER,
+        OPEN_DATA_MANAGER,
+    )
+
+    ROLES = (
+        (RESOURCE_COORDINATOR, _("Duomenų išteklių koordinatorius")),
+        (RESOURCE_MANAGER, _("Duomenų išteklių tvarkytojas")),
+        (OPEN_DATA_COORDINATOR, _("Atvirų duomenų koordinatorius")),
+        (OPEN_DATA_MANAGER, _("Atvirų duomenų tvarkytojas")),
+    )
+
+    OPEN_DATA_ROLES = (
+        (OPEN_DATA_COORDINATOR, _("Atvirų duomenų koordinatorius")),
+        (OPEN_DATA_MANAGER, _("Atvirų duomenų tvarkytojas")),
+    )
+
+    OPEN_DATA_ROLE_KEYS = {role[0] for role in OPEN_DATA_ROLES}
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -168,12 +196,7 @@ class Representative(models.Model):
     content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
     object_id = models.PositiveIntegerField()
     content_object = GenericForeignKey("content_type", "object_id")
-    can_write = models.BooleanField(default=False, verbose_name=_("Leidžiama keisti duomenis"))
     can_make_agreements = models.BooleanField(default=False)
-    information_system_representative = models.BooleanField(
-        default=False, verbose_name=_("Informacinės sistemos tvarkytojas")
-    )
-    open_data_representative = models.BooleanField(default=False, verbose_name=_("Atvirų duomenų tvarkytojas"))
 
     objects = models.Manager()
 
@@ -193,6 +216,27 @@ class Representative(models.Model):
         if isinstance(self.content_object, Organization):
             if organization in self.content_object.get_descendants():
                 return True
+        return False
+
+    def can_be_updated_by(self, user: "User") -> bool:
+        if user.is_superuser or user.is_staff:
+            return True
+
+        user_rep = user.representative_set.filter(organization=self.organization).first()
+        if not user_rep:
+            return False
+
+        if user_rep.role == Representative.OPEN_DATA_COORDINATOR:
+            return self.role in Representative.OPEN_DATA_ROLE_KEYS
+
+        if user_rep.role == Representative.RESOURCE_COORDINATOR:
+            return self.role in (
+                Representative.RESOURCE_COORDINATOR,
+                Representative.RESOURCE_MANAGER,
+                Representative.OPEN_DATA_COORDINATOR,
+                Representative.OPEN_DATA_MANAGER,
+            )
+
         return False
 
 

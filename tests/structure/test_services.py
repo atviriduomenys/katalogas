@@ -12,7 +12,6 @@ from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
-from vitrina.structure.factories import VersionFactory
 from vitrina.structure.models import Metadata, Prefix, Model, Property, PropertyList, Enum, Param, EnumItem, \
     ParamItem, Base
 from vitrina.structure.services import create_structure_objects
@@ -321,11 +320,11 @@ def test_structure_with_base_model_two_manifests(app: DjangoTestApp):
 
     base_structure.dataset.current_structure = base_structure
     base_structure.dataset.save()
-    version = create_structure_objects(base_structure)
+    create_structure_objects(base_structure)
 
     structure_with_base.dataset.current_structure = structure_with_base
     structure_with_base.dataset.save()
-    create_structure_objects(structure_with_base, version)
+    create_structure_objects(structure_with_base)
 
     models = Model.objects.all()
     assert models.count() == 2
@@ -389,7 +388,7 @@ def test_structure_with_property_ref_two_manifests(app: DjangoTestApp):
 
     ref_object_structure.dataset.current_structure = ref_object_structure
     ref_object_structure.dataset.save()
-    version = create_structure_objects(ref_object_structure)
+    create_structure_objects(ref_object_structure)
 
     manifest_with_ref = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
@@ -411,7 +410,7 @@ def test_structure_with_property_ref_two_manifests(app: DjangoTestApp):
 
     structure_with_ref.dataset.current_structure = structure_with_ref
     structure_with_ref.dataset.save()
-    create_structure_objects(structure_with_ref, version)
+    create_structure_objects(structure_with_ref)
 
     county = Model.objects.filter(metadata__uuid='1').first()
     municipality = Model.objects.filter(metadata__uuid='2').first()
@@ -516,8 +515,8 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
-    assert Metadata.objects.count() == 9
+    create_structure_objects(structure)
+    assert Metadata.objects.count() == 10
 
     new_manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
@@ -534,8 +533,8 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
-    assert Metadata.objects.count() == 6
+    create_structure_objects(structure)
+    assert Metadata.objects.count() == 7
     assert Metadata.objects.get(uuid='2').name == 'datasets/gov/ivpk/adp2/updated'
     assert Metadata.objects.get(uuid='3').name == 'datasets/gov/ivpk/adp2/updated/CountryUpdated'
     assert Metadata.objects.get(uuid='4').type == 'string'
@@ -566,17 +565,15 @@ def test_structure_with_comments(app: DjangoTestApp):
             file=FileField(filename='file.csv', data=manifest)
         )
     )
-    metadata_version = VersionFactory(dataset=structure.dataset)
     DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
         format=FileFormat(title="Saugykla", extension='UAPI'),
-        metadata_version=metadata_version
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, metadata_version)
+    create_structure_objects(structure)
     assert Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Comment)
     ).count() == 3
@@ -610,17 +607,15 @@ def test_structure_with_resource_and_existing_distribution(app: DjangoTestApp):
             file=FileField(filename='file.csv', data=manifest)
         )
     )
-    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='http://www.example.com',
-        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, metadata_version)
+    create_structure_objects(structure)
 
     assert Metadata.objects.get(uuid='1').object == distribution
     assert Model.objects.get(metadata__uuid='2').distribution == distribution
@@ -646,18 +641,16 @@ def test_structure_with_resource_and_existing_distribution_without_title(app: Dj
             file=FileField(filename='file.csv', data=manifest)
         )
     )
-    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='http://www.example.com',
-        title="",
-        metadata_version=metadata_version
+        title=""
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, metadata_version=metadata_version)
+    create_structure_objects(structure)
 
     distribution.refresh_from_db()
     distribution.set_current_language("lt")
@@ -717,18 +710,16 @@ def test_structure_without_resource_and_existing_distribution(app: DjangoTestApp
             file=FileField(filename='file.csv', data=manifest)
         )
     )
-    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
         format=FileFormat(title="Saugykla", extension='UAPI'),
-        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, metadata_version)
+    create_structure_objects(structure)
 
     assert distribution.metadata.count() == 1
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns'
@@ -754,18 +745,17 @@ def test_structure_without_resource_and_existing_distribution_without_title(app:
             file=FileField(filename='file.csv', data=manifest)
         )
     )
-    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns',
         format=FileFormat(title="Saugykla", extension='UAPI'),
-        metadata_version=metadata_version
+        title="",
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, metadata_version)
+    create_structure_objects(structure)
 
     distribution.refresh_from_db()
     distribution.set_current_language("lt")
@@ -794,18 +784,16 @@ def test_structure_without_resource_and_existing_distribution_without_ns(app: Dj
             file=FileField(filename='file.csv', data=manifest)
         )
     )
-    metadata_version = VersionFactory(dataset=structure.dataset)
     distribution = DatasetDistributionFactory(
         dataset=structure.dataset,
         type='URL',
         download_url='https://get.data.gov.lt/datasets/gov/ivpk/adp/',
         format=FileFormat(title="Saugykla", extension='UAPI'),
-        metadata_version=metadata_version
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, metadata_version)
+    create_structure_objects(structure)
 
     assert distribution.metadata.count() == 1
     assert distribution.metadata.first().source == 'https://get.data.gov.lt/datasets/gov/ivpk/adp/'
@@ -989,8 +977,8 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
-    assert Metadata.objects.count() == 14
+    create_structure_objects(structure)
+    assert Metadata.objects.count() == 15
     assert list(Enum.objects.values_list('name', flat=True)) == ['Size', 'Deprecated', 'Type']
     assert list(EnumItem.objects.filter(enum__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1018,8 +1006,8 @@ def test_structure_with_deleted_enums(app: DjangoTestApp):
     structure.file = FilerFileFactory(
         file=FileField(filename='file.csv', data=new_manifest)
     )
-    create_structure_objects(structure, version)
-    assert Metadata.objects.count() == 9
+    create_structure_objects(structure)
+    assert Metadata.objects.count() == 10
     assert list(Enum.objects.values_list('name', flat=True)) == ['Size', 'Type']
     assert list(EnumItem.objects.filter(enum__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1049,8 +1037,8 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
-    assert Metadata.objects.count() == 7
+    create_structure_objects(structure)
+    assert Metadata.objects.count() == 8  # + 1 resource meta
     assert list(Param.objects.values_list('name', flat=True)) == ['Size', 'Deprecated']
     assert list(ParamItem.objects.filter(param__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1071,8 +1059,8 @@ def test_structure_with_deleted_params(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
-    assert Metadata.objects.count() == 3
+    create_structure_objects(structure)
+    assert Metadata.objects.count() == 4
     assert list(Param.objects.values_list('name', flat=True)) == ['Size']
     assert list(ParamItem.objects.filter(param__name='Size').values_list(
         'metadata__prepare', flat=True
@@ -1414,9 +1402,9 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    create_structure_objects(structure)
     assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
-    assert Metadata.objects.filter(dataset=structure.dataset).count() == 3
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 4
 
     manifest = (
         'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
@@ -1432,7 +1420,7 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
+    create_structure_objects(structure)
 
     assert list(Comment.objects.filter(
         type=Comment.STRUCTURE_ERROR,
@@ -1460,7 +1448,7 @@ def test_structure_with_deleted_base(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    create_structure_objects(structure)
     assert Base.objects.count() == 1
     assert Base.objects.get(metadata__uuid='3').model == Model.objects.get(metadata__uuid='2')
     assert Model.objects.get(metadata__uuid='4').base == Base.objects.get(metadata__uuid='3')
@@ -1478,7 +1466,7 @@ def test_structure_with_deleted_base(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, version)
+    create_structure_objects(structure)
 
     assert Base.objects.count() == 0
     assert Model.objects.get(metadata__uuid='4').base is None
@@ -1671,7 +1659,10 @@ def test_structure_export__prefixes(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
+    
     create_structure_objects(structure)
+    distribution = DatasetDistribution.objects.first()
+    meta = distribution.metadata.first()
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -1682,8 +1673,53 @@ def test_structure_export__prefixes(app: DjangoTestApp):
         '3,,,,,,prefix,dcat,,,,,,,,,,http://www.w3.org/ns/dcat#,,,\r\n'
         '4,,,,,,,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
         ',,,,,,,,,,,,,,,,,,,,\r\n'
+        f'{meta.uuid},,adp,,,,,,https://get.data.gov.lt/datasets/gov/ivpk/adp/:ns,,,,,,,,,,,adp,\r\n'
     )
 
+@pytest.mark.django_db
+def test_structure_export__with_resource_params(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        '1,,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        '3,,rc_wsdl,,,,wsdl,,https://test-data.data.gov.lt/api/v1/rc/get-data/?wsdl,,,,,,,,,,\n'
+        '4,,get_data,,,,soap,,Get.GetPort.GetPort.GetData,wsdl(rc_wsdl),,,,,,,,,\n'
+        '5,,,,,,param,action_type,input/ActionType,,,,,,,,,,\n'
+        '6,,,,Country,,,,,,,,,,,,,,\n'
+        '7,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        '8,,,,,title,string,,,,5,,,private,dct:title,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        ),
+        dataset=DatasetFactory(
+            title="Title",
+            description="Description"
+        )
+    )
+
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    
+    create_structure_objects(structure)
+
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    assert resp.text == (
+        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
+        '1,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
+        '3,,rc_wsdl,,,,wsdl,,https://test-data.data.gov.lt/api/v1/rc/get-data/?wsdl,,,,,,,,,,,rc_wsdl,\r\n'
+        '4,,get_data,,,,soap,,Get.GetPort.GetPort.GetData,,wsdl(rc_wsdl),,,,,,,,,get_data,\r\n'
+        '5,,,,,,param,action_type,input/ActionType,,,,,,develop,,,,,,\r\n'
+        '6,,,,Country,,,,,,,,,,develop,,,,,,\r\n'
+        '7,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n'
+        '8,,,,,title,string,,,,,,,5,develop,,private,dct:title,,,\r\n'
+        ',,,,,,,,,,,,,,,,,,,,\r\n'
+    )   
 
 @pytest.mark.django_db
 def test_structure_export__models_and_props(app: DjangoTestApp):
@@ -2207,13 +2243,13 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    create_structure_objects(structure)
 
     model = Model.objects.get(
         dataset=structure.dataset,
         metadata__name="test_dataset/Model"
     )
-    form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, model.name])).forms['model-form']
+    form = app.get(reverse('model-update', args=[structure.dataset.pk, model.name])).forms['model-form']
     form['name'] = "Modelis"
     resp = form.submit()
     assert resp.url == model.get_absolute_url()
@@ -2225,7 +2261,7 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
         dataset=structure.dataset,
         metadata__name="test_dataset/Country"
     )
-    form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, model.name])).forms['model-form']
+    form = app.get(reverse('model-update', args=[structure.dataset.pk, model.name])).forms['model-form']
     form['name'] = "Salis"
     resp = form.submit()
     assert resp.url == model.get_absolute_url()
@@ -2283,11 +2319,16 @@ def test_structure_export_after_changing_dataset_title_and_description(app: Djan
     assert structure.dataset.metadata.count() == 1
     assert structure.dataset.metadata.first().title == "Edited title"
     assert structure.dataset.metadata.first().description == "Edited description"
+    distribution = DatasetDistribution.objects.get(
+        dataset=structure.dataset
+    )
+    meta = distribution.metadata.first()
 
     resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
     assert resp.text == (
         'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
         f'1,{structure.dataset.organization.name + "edited_dataset"},,,,,,,,,,,,,,,,,,Edited title,Edited description\r\n'
+        f'{meta.uuid},,test_dataset,,,,,,https://get.data.gov.lt/test_dataset/:ns,,,,,,,,,,,Title,\r\n'
     )
 
 

@@ -74,7 +74,7 @@
                         </td>
                         <td>
                             {% has_organization_remove_perm organization request.user as can_delete %}
-                            {% if can_delete %}
+                            {% if can_delete and can_update_orgs %}
                             <article class="media">
                                 <div class="media-content">
                                     <div class="content">

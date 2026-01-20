@@ -180,7 +180,7 @@ urlpatterns = [
     ),
     path(
         "orgs/<int:pk>/datasets/<int:parent_id>/add/<uuid:subclass_uuid>/",
-        DatasetCreateView.as_view(),
+        DatasetChildResourceCreateView.as_view(),
         name="child-dataset-add",
     ),
     path("datasets/<int:pk>/update/", DatasetUpdateView.as_view(), name="dataset-change"),

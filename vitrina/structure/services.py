@@ -3,7 +3,7 @@ import json
 import uuid
 from io import StringIO
 from json import JSONDecodeError
-from typing import Union, Tuple, List, Dict
+from typing import Union, Tuple, List, Dict, Generator
 
 import requests
 from django.db.models import Q
@@ -256,7 +256,7 @@ def _load_enums(
 
 
 def _load_params(
-    dataset: Dataset, params: Dict[str, List[struct.Param]], obj: Union[Dataset, Model], metadata_version: Version
+    dataset: Dataset, params: Dict[str, List[struct.Param]], obj: Union[Dataset, Model, DatasetDistribution], metadata_version: Version
 ):
     ct = ContentType.objects.get_for_model(obj)
     param_ct = ContentType.objects.get_for_model(ParamItem)
@@ -578,103 +578,98 @@ def _create_or_update_metadata(
 
 
 def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata_version: Version):
+    """Link distribution metadata to dataset distributions."""
     if dataset_meta.resources:
-        for order, resource_meta in enumerate(dataset_meta.resources.values()):
-            if resource_meta.source:
-                title = resource_meta.title or dataset_meta.title or resource_meta.name
-                distribution = DatasetDistribution.objects.filter(
-                    dataset=dataset, download_url=resource_meta.source, metadata_version=metadata_version
-                ).first()
-                if not distribution:
-                    if not dataset.datasetdistribution_set.exists() and dataset.is_public:
-                        dataset.status = Dataset.HAS_DATA
-                        dataset.save()
-                        sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
-
-                        Comment.objects.create(
-                            content_type=ContentType.objects.get_for_model(dataset),
-                            object_id=dataset.pk,
-                            user=sys_user,
-                            type=Comment.STATUS,
-                            status=Comment.OPENED,
-                        )
-
-                    distribution = DatasetDistribution.objects.create(
-                        dataset=dataset,
-                        download_url=resource_meta.source,
-                        title=resource_meta.name,
-                        description=resource_meta.description,
-                        type="URL",
-                        metadata_version=metadata_version,
-                    )
-                distribution.set_current_language("lt")
-                distribution.title = title
-                distribution.save()
-
-                if md := distribution.metadata.first():
-                    if not resource_meta.id:
-                        resource_meta.id = md.uuid
-
-                distribution, metadata = _create_or_update_metadata(
-                    dataset,
-                    resource_meta,
-                    distribution,
-                    order,
-                    use_existing_meta=True,
-                    metadata_version=metadata_version,
-                )
-                metadata.name = resource_meta.name
-                metadata.save()
-
-                _clean_errors(distribution)
-                _load_comments(dataset, resource_meta.comments, distribution)
-                for model_meta in resource_meta.models.values():
-                    if model := Model.objects.filter(
-                        metadata__uuid=model_meta.id, dataset=dataset, metadata_version=metadata_version
-                    ).first():
-                        model.distribution = distribution
-                        model.save()
-
-                distribution.save()
-                if errors := resource_meta.errors:
-                    _create_errors(errors, dataset.current_structure)
+        _link_resource_distributions(dataset_meta, dataset, metadata_version)
     else:
-        title = dataset_meta.title or dataset_meta.name.split("/")[-1]
-        name = dataset_meta.name.split("/")[-1]
-        url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
-        urls = [
-            f"https://get.data.gov.lt/{dataset_meta.name}",
-            f"https://get.data.gov.lt/{dataset_meta.name}/",
-            url,
-        ]
-        resource_meta = struct.Resource(name=name, source=url)
+        _link_default_distribution(dataset_meta, dataset)
+
+
+def _link_resource_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata_version: Version):
+    """Link each resource as a separate distribution."""
+    for i, resource_meta in enumerate(dataset_meta.resources.values()):
+        title = resource_meta.title or dataset_meta.title or resource_meta.name
+
         distribution = DatasetDistribution.objects.filter(
-            dataset=dataset, download_url__in=urls, metadata_version=metadata_version
+            dataset=dataset,
+            download_url=resource_meta.source,
+            metadata_version=metadata_version,
         ).first()
+
         if not distribution:
-            if not dataset.datasetdistribution_set.exists() and dataset.is_public:
-                dataset.status = Dataset.HAS_DATA
-                dataset.save()
-                sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
-
-                Comment.objects.create(
-                    content_type=ContentType.objects.get_for_model(dataset),
-                    object_id=dataset.pk,
-                    user=sys_user,
-                    type=Comment.STATUS,
-                    status=Comment.OPENED,
-                )
-
-            return
-        elif distribution.download_url:
-            resource_meta.source = distribution.download_url
+            distribution = _create_distribution_with_status_update(
+                dataset=dataset,
+                download_url=resource_meta.source,
+                title=resource_meta.name,
+                description=resource_meta.description,
+                metadata_version=metadata_version,
+            )
 
         distribution.set_current_language("lt")
         distribution.title = title
         distribution.save()
 
-        if md := distribution.metadata.first():
+        if not resource_meta.id and (md := distribution.metadata.first()):
             resource_meta.id = md.uuid
+
+        distribution, metadata = _create_or_update_metadata(
+            dataset,
+                    resource_meta,
+                    distribution,
+                    order,
+                    use_existing_meta=True,
+                    metadata_version=metadata_version,
+        )
+        metadata.name = resource_meta.name
+        metadata.save()
+
+        _load_params(dataset, resource_meta.params, distribution)
+        _clean_errors(distribution)
+        _load_comments(dataset, resource_meta.comments, distribution)
+
+        _link_models_to_distribution(dataset, resource_meta, distribution)
+
+        distribution.save()
+
+        if resource_meta.errors:
+            _create_errors(resource_meta.errors, dataset.current_structure)
+
+
+def _link_default_distribution(dataset_meta: struct.Dataset, dataset: Dataset):
+    """Create or link a default UAPI distribution when no resources are specified."""
+    title = dataset_meta.title or dataset_meta.name.split("/")[-1]
+    name = dataset_meta.name.split("/")[-1]
+    url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
+
+    urls = [
+        f"https://get.data.gov.lt/{dataset_meta.name}",
+        f"https://get.data.gov.lt/{dataset_meta.name}/",
+        url,
+    ]
+
+    resource_meta = struct.Resource(name=name, source=url)
+
+    distribution = DatasetDistribution.objects.filter(
+        dataset=dataset,
+        download_url__in=urls,
+    ).first()
+
+    if not distribution:
+        format = create_or_get_uapi_format()
+        distribution = _create_distribution_with_status_update(
+            dataset=dataset,
+            download_url=url,
+            format=format,
+        )
+    else:
+        resource_meta.source = distribution.download_url
+
+    distribution.set_current_language("lt")
+    distribution.title = title
+    distribution.save()
+
+    if md := distribution.metadata.first():
+        resource_meta.id = md.uuid
 
         distribution, metadata = _create_or_update_metadata(
             dataset,
@@ -687,18 +682,67 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
         metadata.name = resource_meta.name
         metadata.save()
 
-        _clean_errors(distribution)
-        _load_comments(dataset, resource_meta.comments, distribution)
-        for model_meta in dataset_meta.models.values():
-            if model := Model.objects.filter(
+    _clean_errors(distribution)
+    _load_comments(dataset, resource_meta.comments, distribution)
+
+    _link_models_to_distribution(dataset, dataset_meta, distribution)
+
+    distribution.save()
+
+    if resource_meta.errors:
+        _create_errors(resource_meta.errors, dataset.current_structure)
+
+
+def _create_distribution_with_status_update(
+    dataset: Dataset,
+    download_url: str,
+    title: str | None = None,
+    description: str | None = None,
+    format=None,
+) -> DatasetDistribution:
+    """Create a distribution and update dataset status if needed."""
+
+    if not dataset.datasetdistribution_set.exists() and dataset.is_public:
+        dataset.status = Dataset.HAS_DATA
+        dataset.save()
+
+        sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+        Comment.objects.create(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            user=sys_user,
+            type=Comment.STATUS,
+            status=Comment.OPENED,
+        )
+
+    distribution_data = {
+        "dataset": dataset,
+        "download_url": download_url,
+        "type": "URL",
+    }
+
+    if title:
+        distribution_data["title"] = title
+    if description:
+        distribution_data["description"] = description
+    if format:
+        distribution_data["format"] = format
+
+    return DatasetDistribution.objects.create(**distribution_data)
+
+
+def _link_models_to_distribution(
+    dataset: Dataset,
+    meta_with_models: struct.Dataset,
+    distribution: DatasetDistribution,
+):
+    """Link models to the given distribution."""
+    for model_meta in meta_with_models.models.values():
+        if model := Model.objects.filter(
                 metadata__uuid=model_meta.id, dataset=dataset, metadata_version=metadata_version
             ).first():
-                model.distribution = distribution
-                model.save()
-
-        distribution.save()
-        if errors := resource_meta.errors:
-            _create_errors(errors, dataset.current_structure)
+            model.distribution = distribution
+            model.save(update_fields=["distribution"])
 
 
 def _link_models(dataset: Dataset, dataset_meta: struct.Dataset, metadata_version: Version):
@@ -1076,7 +1120,14 @@ def _dataset_to_tabular(dataset: Dataset, separator: bool = False):
     yield from _prefixes_to_tabular(dataset, separator=separator)
     yield from _enums_to_tabular(dataset, separator=separator)
     yield from _params_to_tabular(dataset, separator=separator)
+    yield from _dataset_resources_to_tabular(dataset, separator=separator)
     yield from _models_to_tabular(dataset, separator=separator)
+
+
+def _dataset_resources_to_tabular(dataset: Dataset, separator: bool = False) -> Generator:
+    distributions = DatasetDistribution.objects.filter(dataset=dataset, model__isnull=True).order_by("metadata__order")
+    for distribution in distributions:
+        yield from _resource_to_tabular(distribution)
 
 
 def _enums_to_tabular(obj: models.Model, separator: bool = False):
@@ -1110,7 +1161,7 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False):
         yield to_row(DATASET, {})
 
 
-def _params_to_tabular(obj: models.Model, separator: bool = False):
+def _params_to_tabular(obj: models.Model | Dataset | DatasetDistribution, separator: bool = False):
     ct = ContentType.objects.get_for_model(obj)
     params = Param.objects.filter(content_type=ct, object_id=obj.pk)
 
@@ -1244,6 +1295,7 @@ def _resource_to_tabular(resource: DatasetDistribution):
                 "description": resource.description,
             },
         )
+        yield from _params_to_tabular(resource)
     yield from _comments_to_tabular(resource)
 
 

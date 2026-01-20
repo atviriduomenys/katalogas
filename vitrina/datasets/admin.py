@@ -10,10 +10,9 @@ from django.db.models import QuerySet, Q
 from django.http import StreamingHttpResponse
 from django.utils import timezone
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe
+from django.utils.safestring import mark_safe, SafeString
 from django.utils.translation import gettext_lazy as _
 from parler.admin import TranslatableAdmin
-from reversion.admin import VersionAdmin
 
 from vitrina import settings
 from vitrina.datasets.forms import DatasetAdminForm
@@ -34,19 +33,20 @@ from vitrina.helpers import get_current_domain
 from vitrina.orgs.models import Representative
 from vitrina.resources.models import FormatName
 from vitrina.structure.services import get_data_from_spinta, to_row
+from vitrina.admin import RevisionCommentVersionAdmin
 
 
 TagModel = Dataset.tags.tag_model
 
 
-class AttributionAdmin(admin.ModelAdmin):
+class AttributionAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "name",
         "title",
     )
 
 
-class DatasetAdmin(TranslatableAdmin, VersionAdmin):
+class DatasetAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     search_fields = ("translations__title",)
     list_display = ("title", "description", "is_public")
     form = DatasetAdminForm
@@ -75,19 +75,19 @@ class DatasetAdmin(TranslatableAdmin, VersionAdmin):
         return readonly_fields
 
 
-class GroupAdmin(TranslatableAdmin):
+class GroupAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = ("title",)
 
 
-class TypeAdmin(TranslatableAdmin):
+class TypeAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = ("title",)
 
 
-class DCATResourceSubclassAdmin(TranslatableAdmin):
+class DCATResourceSubclassAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = ("title", "description")
 
 
-class RelationAdmin(TranslatableAdmin):
+class RelationAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     list_display = ("title",)
 
 
@@ -121,7 +121,7 @@ class DatasetLateFilter(admin.SimpleListFilter):
             return queryset.filter(pk__in=not_late_ids)
 
 
-class DatasetReportAdmin(admin.ModelAdmin):
+class DatasetReportAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "root_organization_display",
         "organization_display",
@@ -232,8 +232,10 @@ class DatasetReportAdmin(admin.ModelAdmin):
     title_display.short_description = _("Duomenų rinkinys")
     title_display.allow_tags = True
 
-    def coordinators_display(self, obj):
-        coordinators = obj.representatives.filter(role=Representative.COORDINATOR).values_list("email", flat=True)
+    def coordinators_display(self, obj: Dataset) -> SafeString | str:
+        coordinators = obj.representatives.filter(role__in=Representative.COORDINATOR_ROLES).values_list(
+            "email", flat=True
+        )
         if coordinators:
             return mark_safe("<br/>".join(coordinators))
         return "-"
@@ -241,8 +243,8 @@ class DatasetReportAdmin(admin.ModelAdmin):
     coordinators_display.short_description = _("Koordinatoriai")
     coordinators_display.allow_tags = True
 
-    def managers_display(self, obj):
-        managers = obj.representatives.filter(role=Representative.MANAGER).values_list("email", flat=True)
+    def managers_display(self, obj: Dataset) -> SafeString | str:
+        managers = obj.representatives.filter(role__in=Representative.MANAGER_ROLES).values_list("email", flat=True)
         if managers:
             return mark_safe("<br/>".join(managers))
         return "-"
@@ -412,13 +414,17 @@ class DatasetReportAdmin(admin.ModelAdmin):
 
     def _get_dataset_report(self, cols, queryset, request):
         for item in queryset:
-            coordinators = item.representatives.filter(role=Representative.COORDINATOR).values_list("email", flat=True)
+            coordinators = item.representatives.filter(role__in=Representative.COORDINATOR_ROLES).values_list(
+                "email", flat=True
+            )
             if coordinators:
                 coordinators = "\n".join(coordinators)
             else:
                 coordinators = "-"
 
-            managers = item.representatives.filter(role=Representative.MANAGER).values_list("email", flat=True)
+            managers = item.representatives.filter(role__in=Representative.MANAGER_ROLES).values_list(
+                "email", flat=True
+            )
             if managers:
                 managers = "\n".join(managers)
             else:
@@ -460,7 +466,7 @@ class DatasetReportAdmin(admin.ModelAdmin):
             )
 
 
-class ContactAdmin(admin.ModelAdmin):
+class ContactAdmin(RevisionCommentVersionAdmin):
     list_display = (
         "email",
         "phone_display",
@@ -491,7 +497,7 @@ class GeoportalDataServiceTypeValueInline(admin.TabularInline):
     extra = 0
 
 
-class DatasetRelationAdmin(admin.ModelAdmin):
+class DatasetRelationAdmin(RevisionCommentVersionAdmin):
     list_display = ("dataset", "relation", "part_of")
     search_fields = ("dataset", "relation", "part_of")
     list_filter = ("relation",)
@@ -501,7 +507,7 @@ class DatasetRelationAdmin(admin.ModelAdmin):
 
 
 @admin.register(TagModel)
-class DatasetTagAdmin(admin.ModelAdmin):
+class DatasetTagAdmin(RevisionCommentVersionAdmin):
     list_display = ("name", "count")
     search_fields = ("name",)
 

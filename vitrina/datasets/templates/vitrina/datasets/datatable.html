@@ -91,14 +91,14 @@
             <td>
                 {% if r.metadata_version %}
                     <a
+                        class="button is-link is-small is-pulled-right{% if selected_version.external_version %} is-disabled{% endif %}"
                         {% if not selected_version.external_version %}
                             href="{% url 'resource-change' pk=r.id version_id=r.metadata_version.id %}"
-                        {% endif %}
-                        class="button is-link is-small is-pulled-right{% if selected_version.external_version %} is-disabled{% endif %}"
-                        id="change_resource"
-                        {% if selected_version.external_version %}
+                        {% else %}
+                            style="pointer-events: none; opacity: 0.5;"
                             aria-disabled="true"
                         {% endif %}
+                        id="change_resource"
                     >
                         {% translate "Redaguoti" %}
                     </a>

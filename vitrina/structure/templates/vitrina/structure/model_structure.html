@@ -137,12 +137,12 @@
         {% if can_manage_structure and model.name %}
         <div class="buttons is-right">
             <a
-                {% if not is_disabled %}
-                    href="{% url 'model-update' dataset.pk version_id model.name %}"
-                {% endif %}
-                class="button is-primary{% if is_disabled %} is-disabled{% endif %}"
+                class="button is-primary {% if is_disabled %}is-disabled{% endif %}"
                 {% if is_disabled %}
+                    style="pointer-events: none; opacity: 0.5;"
                     aria-disabled="true"
+                {% else %}
+                    href="{% url 'model-update' dataset.pk version_id model.name %}"
                 {% endif %}
             >
                 {% translate "Redaguoti" %}

@@ -618,11 +618,11 @@ def _link_resource_distributions(dataset_meta: struct.Dataset, dataset: Dataset,
         metadata.name = resource_meta.name
         metadata.save()
 
-        _load_params(dataset, resource_meta.params, distribution)
+        _load_params(dataset, resource_meta.params, distribution, metadata_version)
         _clean_errors(distribution)
         _load_comments(dataset, resource_meta.comments, distribution)
 
-        _link_models_to_distribution(dataset, resource_meta, distribution)
+        _link_models_to_distribution(dataset, resource_meta, distribution, metadata_version)
 
         distribution.save()
 
@@ -636,6 +636,7 @@ def _create_distribution_with_status_update(
     title: str | None = None,
     description: str | None = None,
     format=None,
+    metadata_version: Version = None,
 ) -> DatasetDistribution:
     """Create a distribution and update dataset status if needed."""
 
@@ -656,6 +657,7 @@ def _create_distribution_with_status_update(
         "dataset": dataset,
         "download_url": download_url,
         "type": "URL",
+        "metadata_version": metadata_version,
     }
 
     if title:

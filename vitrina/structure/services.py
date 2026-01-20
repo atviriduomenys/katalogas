@@ -581,8 +581,6 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
     """Link distribution metadata to dataset distributions."""
     if dataset_meta.resources:
         _link_resource_distributions(dataset_meta, dataset, metadata_version)
-    else:
-        _link_default_distribution(dataset_meta, dataset)
 
 
 def _link_resource_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata_version: Version):
@@ -616,81 +614,23 @@ def _link_resource_distributions(dataset_meta: struct.Dataset, dataset: Dataset,
             dataset,
                     resource_meta,
                     distribution,
-                    order,
+                    i,
                     use_existing_meta=True,
                     metadata_version=metadata_version,
         )
         metadata.name = resource_meta.name
         metadata.save()
 
-        _load_params(dataset, resource_meta.params, distribution)
+        _load_params(dataset, resource_meta.params, distribution, metadata_version)
         _clean_errors(distribution)
         _load_comments(dataset, resource_meta.comments, distribution)
 
-        _link_models_to_distribution(dataset, resource_meta, distribution)
+        _link_models_to_distribution(dataset, resource_meta, distribution, metadata_version)
 
         distribution.save()
 
         if resource_meta.errors:
             _create_errors(resource_meta.errors, dataset.current_structure)
-
-
-def _link_default_distribution(dataset_meta: struct.Dataset, dataset: Dataset):
-    """Create or link a default UAPI distribution when no resources are specified."""
-    title = dataset_meta.title or dataset_meta.name.split("/")[-1]
-    name = dataset_meta.name.split("/")[-1]
-    url = f"https://get.data.gov.lt/{dataset_meta.name}/:ns"
-
-    urls = [
-        f"https://get.data.gov.lt/{dataset_meta.name}",
-        f"https://get.data.gov.lt/{dataset_meta.name}/",
-        url,
-    ]
-
-    resource_meta = struct.Resource(name=name, source=url)
-
-    distribution = DatasetDistribution.objects.filter(
-        dataset=dataset,
-        download_url__in=urls,
-    ).first()
-
-    if not distribution:
-        format = create_or_get_uapi_format()
-        distribution = _create_distribution_with_status_update(
-            dataset=dataset,
-            download_url=url,
-            format=format,
-        )
-    else:
-        resource_meta.source = distribution.download_url
-
-    distribution.set_current_language("lt")
-    distribution.title = title
-    distribution.save()
-
-    if md := distribution.metadata.first():
-        resource_meta.id = md.uuid
-
-        distribution, metadata = _create_or_update_metadata(
-            dataset,
-            resource_meta,
-            distribution,
-            1,
-            use_existing_meta=True,
-            metadata_version=metadata_version,
-        )
-        metadata.name = resource_meta.name
-        metadata.save()
-
-    _clean_errors(distribution)
-    _load_comments(dataset, resource_meta.comments, distribution)
-
-    _link_models_to_distribution(dataset, dataset_meta, distribution)
-
-    distribution.save()
-
-    if resource_meta.errors:
-        _create_errors(resource_meta.errors, dataset.current_structure)
 
 
 def _create_distribution_with_status_update(
@@ -699,6 +639,7 @@ def _create_distribution_with_status_update(
     title: str | None = None,
     description: str | None = None,
     format=None,
+    metadata_version: Version = None,
 ) -> DatasetDistribution:
     """Create a distribution and update dataset status if needed."""
 
@@ -719,6 +660,7 @@ def _create_distribution_with_status_update(
         "dataset": dataset,
         "download_url": download_url,
         "type": "URL",
+        "metadata_version": metadata_version,
     }
 
     if title:
@@ -735,6 +677,7 @@ def _link_models_to_distribution(
     dataset: Dataset,
     meta_with_models: struct.Dataset,
     distribution: DatasetDistribution,
+    metadata_version: Version = None,
 ):
     """Link models to the given distribution."""
     for model_meta in meta_with_models.models.values():

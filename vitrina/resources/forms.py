@@ -76,9 +76,7 @@ class DatasetResourceForm(TranslatableModelForm):
     description = TranslatedField(label=_("Aprašymas"), required=False)
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
     access = forms.ChoiceField(
-        label=_("Prieigos lygmuo"),
-        choices=[('', _("nepasirinkta"))] + list(AccessType.choices),
-        required=False
+        label=_("Prieigos lygmuo"), choices=[("", _("nepasirinkta"))] + list(AccessType.choices), required=False
     )
     access_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'

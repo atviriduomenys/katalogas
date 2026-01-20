@@ -256,7 +256,10 @@ def _load_enums(
 
 
 def _load_params(
-    dataset: Dataset, params: Dict[str, List[struct.Param]], obj: Union[Dataset, Model, DatasetDistribution], metadata_version: Version
+    dataset: Dataset,
+    params: Dict[str, List[struct.Param]],
+    obj: Union[Dataset, Model, DatasetDistribution],
+    metadata_version: Version,
 ):
     ct = ContentType.objects.get_for_model(obj)
     param_ct = ContentType.objects.get_for_model(ParamItem)
@@ -612,11 +615,11 @@ def _link_resource_distributions(dataset_meta: struct.Dataset, dataset: Dataset,
 
         distribution, metadata = _create_or_update_metadata(
             dataset,
-                    resource_meta,
-                    distribution,
-                    i,
-                    use_existing_meta=True,
-                    metadata_version=metadata_version,
+            resource_meta,
+            distribution,
+            i,
+            use_existing_meta=True,
+            metadata_version=metadata_version,
         )
         metadata.name = resource_meta.name
         metadata.save()
@@ -682,8 +685,8 @@ def _link_models_to_distribution(
     """Link models to the given distribution."""
     for model_meta in meta_with_models.models.values():
         if model := Model.objects.filter(
-                metadata__uuid=model_meta.id, dataset=dataset, metadata_version=metadata_version
-            ).first():
+            metadata__uuid=model_meta.id, dataset=dataset, metadata_version=metadata_version
+        ).first():
             model.distribution = distribution
             model.save(update_fields=["distribution"])
 

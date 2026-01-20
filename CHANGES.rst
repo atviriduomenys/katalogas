@@ -1,10 +1,29 @@
 Changes
 #######
 
-v 1.12 (unreleased)
+v 1.13.0 (unreleased)
+==================
+
+
+v 1.12.1 (2026-01-19)
+==================
+
+Bug fixes:
+
+https://github.com/atviriduomenys/spinta/issues/1630
+
+- Fix import logic when resource params were imported as dataset params.
+
+v 1.12.0 (2026-01-15)
 ==================
 
 Improvements
+
+https://github.com/atviriduomenys/katalogas/issues/2070
+
+- Update `HistoryView` to list history rows per `Revision`
+- Display list of modified related objects next to each history row.
+- Add `Agreement`, `AgreementFile`, `UseCaseClient` and `UseCaseClientScope` model changes to be included in `Project` history tab.
 
 - https://github.com/atviriduomenys/katalogas/issues/2155
 
@@ -18,6 +37,42 @@ Security: Update katalogas to automatically record all data changes made through
 - Update celery default task to wrap each task execution with revision context
 - Automatically add custom JSON context to revision comment to be able to calculate origin of a change that was made.
 
+https://github.com/atviriduomenys/katalogas/issues/2168
+
+Refactored representative role model to split coordinator and manager roles into:
+
+- OPEN_DATA_COORDINATOR, OPEN_DATA_MANAGER, RESOURCE_COORDINATOR, RESOURCE_MANAGER
+- Enforced validation rules preventing Open Data representatives from creating non_public and confidential resources
+- Creating and updating Information systems
+- Ensured backward compatibility by updating all role checks and queryset filters referencing legacy roles
+- Added logic to not let OPEN_DATA_COORDINATORS add/update/delete RESOURCE_MANAGERS and RESOURCE_COORDINATORS
+
+https://github.com/atviriduomenys/spinta/issues/1647
+
+- Adding an API permission to check if Agent is enabled (in Catalog) before performing any requests coming from the Agent (spinta/other(custom) implementations).
+- Adjusting Sync-done API endpoint to return errors in UDTS format.
+- Minimal cleanup for tests & mixins.
+
+https://github.com/atviriduomenys/katalogas/issues/2227
+
+- Fix landing page cards height
+
+https://github.com/atviriduomenys/katalogas/issues/2244
+
+- Display maturity level for all Dataset cards.
+
+<No ticket>
+
+- Add custom error pages for 400, 403, 404, 500.
+- Fix django translations file.
+
+<No ticket>
+
+- Update `has_perm` to allow update organization for super users.
+
+<No ticket>
+
+- Bump `spinta` version to latest 0.2dev13.
 
 v 1.11.3 (2026-01-05)
 ==================

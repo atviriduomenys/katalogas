@@ -10,10 +10,16 @@ from reversion.models import Version
 
 from vitrina import settings
 from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.models import Dataset
+from vitrina.orgs.models import Representative
 from vitrina.plans.factories import PlanFactory
 from vitrina.plans.models import Plan
-from vitrina.requests.factories import RequestFactory, RequestStructureFactory, RequestObjectFactory, \
-    RequestAssignmentFactory
+from vitrina.requests.factories import (
+    RequestFactory,
+    RequestStructureFactory,
+    RequestObjectFactory,
+    RequestAssignmentFactory,
+)
 from vitrina.requests.models import Request, RequestObject
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.factories import UserFactory
@@ -142,7 +148,8 @@ def test_request_history_view_with_permission(app: DjangoTestApp):
     assert resp.context['detail_url_name'] == 'request-detail'
     assert resp.context['history_url_name'] == 'request-history'
     assert len(resp.context['history']) == 1
-    assert resp.context['history'][0]['action'] == revision_comment.to_json()
+    history_action = resp.context['history'][0]['action']
+    assert history_action["comment"] == f"{revision_comment.action}({revision_comment.kwargs})"
     assert resp.context['history'][0]['user'] == user
 
 
@@ -430,6 +437,41 @@ def test_add_existing_dataset_to_request_with_organization_permission(app: Djang
     assert "add-dataset" in resp.text
     resp = app.get(reverse('request-datasets-edit', args=[request.pk]))
     assert resp.request.path_qs == reverse('request-datasets-edit', args=[request.pk])
+
+
+@pytest.mark.django_db
+def test_open_data_coordinator_cannot_see_non_public_datasets(app: "DjangoTestApp"):
+    org = OrganizationFactory()
+    user = UserFactory(organization=org)
+    app.set_user(user)
+
+    RepresentativeFactory(
+        user=user,
+        organization=org,
+        content_type=ContentType.objects.get_for_model(org),
+        role=Representative.OPEN_DATA_COORDINATOR,
+        object_id=org.pk
+    )
+
+    request = RequestFactory()
+
+    RequestAssignmentFactory(organization=org, request=request, status=request.status)
+
+    public_ds = DatasetFactory(organization=org, access_rights=Dataset.PUBLIC)
+    restricted_ds = DatasetFactory(organization=org, access_rights=Dataset.RESTRICTED)
+    non_public_ds = DatasetFactory(organization=org, access_rights=Dataset.NON_PUBLIC)
+
+    for ds in [public_ds, restricted_ds, non_public_ds]:
+        RequestObjectFactory(
+            request=request, content_type=ContentType.objects.get_for_model(Dataset), object_id=ds.pk
+        )
+
+    url = reverse("request-datasets-edit", args=[request.pk])
+    resp = app.get(url)
+
+    assert str(public_ds.id) in resp.text
+    assert str(restricted_ds.id) in resp.text
+    assert str(non_public_ds.id) not in resp.text
 
 
 @pytest.mark.django_db

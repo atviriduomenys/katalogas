@@ -47,7 +47,7 @@ class RepresentativeFactory(DjangoModelFactory):
     last_name = factory.Faker("last_name")
     phone = factory.Sequence(lambda n: "+3706%07d" % n)
     version = 1
-    role = Representative.COORDINATOR
+    role = Representative.OPEN_DATA_COORDINATOR
     email = factory.LazyAttribute(lambda obj: f"{obj.first_name}.{obj.last_name}@gmail.com")
     user = factory.SubFactory(
         UserFactory,
@@ -56,8 +56,6 @@ class RepresentativeFactory(DjangoModelFactory):
         phone=factory.SelfAttribute("..phone"),
         email=factory.SelfAttribute("..email"),
     )
-    open_data_representative = False
-    information_system_representative = False
 
 
 class ViispRepresentativeFactory(RepresentativeFactory):

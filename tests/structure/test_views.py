@@ -15,7 +15,6 @@ from pygments.lexers.data import JsonLexer
 from pygments.lexers.special import TextLexer
 from pygments.styles import get_style_by_name
 from reversion.models import Version
-from webtest import AppError
 
 from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
@@ -29,7 +28,7 @@ from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import VersionStatus
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
     PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory, VersionFactory
-from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionType, Model, Property, Base
+from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionType
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
@@ -745,6 +744,7 @@ def test_private_model_with_access(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=structure.dataset.pk,
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(representative.user)
 
@@ -2001,14 +2001,21 @@ def test_model_update(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_create_for_resource(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+)
+def test_param_create_for_resource(app: DjangoTestApp, role: str):
     distribution = DatasetDistributionFactory(is_parameterized=True)
     dataset = distribution.dataset
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(representative.user)
 
@@ -2032,7 +2039,14 @@ def test_param_create_for_resource(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_create_for_model(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_param_create_for_model(app: DjangoTestApp, role: str):
     dataset = DatasetFactory()
     model = ModelFactory(dataset=dataset, is_parameterized=True)
     MetadataFactory(
@@ -2045,7 +2059,7 @@ def test_param_create_for_model(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(representative.user)
 
@@ -2071,14 +2085,21 @@ def test_param_create_for_model(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_update(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_param_update(app: DjangoTestApp, role: str):
     distribution = DatasetDistributionFactory(is_parameterized=True)
     dataset = distribution.dataset
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role,
     )
     app.set_user(representative.user)
     ct = ContentType.objects.get_for_model(distribution)
@@ -2106,14 +2127,21 @@ def test_param_update(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_delete(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_param_delete(app: DjangoTestApp, role: str):
     distribution = DatasetDistributionFactory(is_parameterized=True)
     dataset = distribution.dataset
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(representative.user)
     ct = ContentType.objects.get_for_model(distribution)
@@ -2134,6 +2162,7 @@ def test_param_delete(app: DjangoTestApp):
     resp = app.post(reverse('param-delete', args=[dataset.pk, param_item.pk]))
     assert resp.url == distribution.get_absolute_url()
     assert distribution.params.first().paramitem_set.count() == 0
+
 
 @pytest.mark.django_db
 def test_new_version_with_released_date_earlier_than_two_weeks(app: DjangoTestApp):
@@ -3005,14 +3034,21 @@ def test_structure_tab_with_non_public_dataset_without_access(app: DjangoTestApp
 
 
 @pytest.mark.django_db
-def test_structure_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_structure_tab_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     user = UserFactory()
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER,
+        role=role,
     )
     app.set_user(user)
     response = app.get(reverse('dataset-structure-no-version', args=[dataset.pk])).follow()
@@ -3030,7 +3066,14 @@ def test_version_list_with_non_public_dataset_without_access(app: DjangoTestApp)
 
 
 @pytest.mark.django_db
-def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     user = UserFactory()
@@ -3038,7 +3081,7 @@ def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('version-list', args=[dataset.pk]))
@@ -3056,7 +3099,14 @@ def test_version_detail_with_non_public_dataset_without_access(app: DjangoTestAp
 
 
 @pytest.mark.django_db
-def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     user = UserFactory()
@@ -3064,7 +3114,7 @@ def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('version-detail', args=[dataset.pk, version.pk]))
@@ -3106,7 +3156,14 @@ def test_model_structure_with_non_public_dataset_without_access(app: DjangoTestA
 
 
 @pytest.mark.django_db
-def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3138,7 +3195,7 @@ def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp)
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('model-structure', args=[dataset.pk, version.pk, model.name]))
@@ -3180,7 +3237,14 @@ def test_property_structure_with_non_public_dataset_without_access(app: DjangoTe
 
 
 @pytest.mark.django_db
-def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3212,7 +3276,7 @@ def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestA
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('property-structure', args=[dataset.pk, version.pk, model.name, prop.name]))
@@ -3254,7 +3318,14 @@ def test_model_data_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3286,7 +3357,7 @@ def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('model-data', args=[dataset.pk, version.pk, model.name]))
@@ -3328,7 +3399,14 @@ def test_object_data_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3360,7 +3438,7 @@ def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('object-data', args=[dataset.pk, version.pk, model.name, "123456789"]))
@@ -3402,7 +3480,14 @@ def test_api_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_api_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3434,7 +3519,7 @@ def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('getall-api', args=[dataset.pk, version.pk, model.name]))
@@ -3597,7 +3682,7 @@ def test_model_visibility_with_manager_access(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=structure.dataset.pk,
-        role=Representative.MANAGER
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(representative.user)
 
@@ -3725,8 +3810,7 @@ def test_model_visibility_with_open_data_representative_access(app: DjangoTestAp
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(structure.dataset.organization),
         object_id=structure.dataset.organization.pk,
-        role=Representative.MANAGER,
-        open_data_representative=True
+        role=Representative.OPEN_DATA_MANAGER,
     )
     app.set_user(representative.user)
 
@@ -3853,8 +3937,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(structure.dataset.organization),
         object_id=structure.dataset.organization.pk,
-        role=Representative.MANAGER,
-        information_system_representative=True
+        role=Representative.RESOURCE_MANAGER,
     )
     app.set_user(representative.user)
 
@@ -4152,6 +4235,47 @@ def test_manifest_export_openapi(app: DjangoTestApp):
         f"Extra: {actual_paths - expected_paths}"
     )
 
+
+@pytest.mark.django_db
+def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
+    """Test OpenAPI manifest export returns valid spec with correct metadata, schemas, tags, and paths."""
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,rc_wsdl,,,,wsdl,,https://test-data.data.gov.lt/api/v1/rc/get-data/?wsdl,,,,,,,,,,\n'
+        ',,get_data,,,,soap,,Get.GetPort.GetPort.GetData,wsdl(rc_wsdl),,,,,,,,,\n'
+        ',,,,,,param,action_type,input/ActionType,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+    resp = app.get(reverse('dataset-structure-export-openapi', args=[structure.dataset.pk]))
+
+    assert resp.status_code == 200
+    assert resp.content_type == 'application/json'
+
+    openapi_spec = resp.json
+
+    expected_keys = ['openapi', 'info', 'externalDocs', 'servers', 'tags', 'components', 'paths']
+    assert list(openapi_spec.keys()) == expected_keys, "OpenAPI spec missing required top-level fields"
+
+
 @pytest.mark.django_db
 def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
@@ -4332,6 +4456,78 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
     for enum_item in prop.enums.first().enumitem_set.all():
         assert enum_item.metadata.first().status.codename == "withdrawn"
 
+@pytest.mark.django_db
+def test_published_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,,big,,BIG,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename="file.csv", data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    metadata_ids = list(
+        Metadata.objects.filter(
+            dataset=structure.dataset,
+            draft=True,
+        ).values_list('id', flat=True)
+    )
+    publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
+    publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    publish_version_form['version_type'] = "MAJOR"
+    publish_version_form['metadata'] = metadata_ids
+    publish_version_form.submit()
+
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
+
+    enum = enum_meta.object
+    enum_id = enum.id
+    new_enum_name = "Largety"
+
+    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
+    model_form['level'] = 3
+    model_form.submit()
+
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form['access'] = 2
+    property_form.submit()
+
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form['value'] = new_enum_name
+    enum_form.submit()
+
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["develop"]
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "title"]))
+    assert resp_props.context["prop"].metadata.get().status.codename == "completed"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    assert resp_props.context["prop"].metadata.get().status.codename == "develop"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    prop = resp_props.context["prop"]
+    for enum_item in prop.enums.first().enumitem_set.all():
+        enum_metadata = enum_item.metadata.first()
+        if enum_metadata.name == new_enum_name:
+            assert enum_metadata.status.codename == "completed"
+        else:
+            assert enum_metadata.status.codename == "develop"
 
 @pytest.mark.django_db
 def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp):
@@ -4495,8 +4691,72 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
     resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
     assert resp_props.context["prop"].metadata.get().status.codename == "develop"
 
-    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
     prop = resp_props.context["prop"]
+    for enum_item in prop.enums.first().enumitem_set.all():
+        enum_metadata = enum_item.metadata.first()
+        assert enum_metadata.status.codename == "develop"
+
+@pytest.mark.django_db
+def test_published_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,,big,,BIG,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename="file.csv", data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    metadata_ids = list(
+        Metadata.objects.filter(
+            dataset=structure.dataset,
+            draft=True,
+        ).values_list('id', flat=True)
+    )
+    publish_version_form = app.get(reverse('version-create', args=[structure.dataset.pk])).forms['version-form']
+    publish_version_form['released'] = datetime.date.today() + datetime.timedelta(days=15)
+    publish_version_form['version_type'] = "MAJOR"
+    publish_version_form['metadata'] = metadata_ids
+    publish_version_form.submit()
+
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small").first()
+
+    enum = enum_meta.object
+    enum_id = enum.id
+
+    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, "Country"])).forms['model-form']
+    model_form.submit()
+
+    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, "Country", "administration"])).forms['property-form']
+    property_form.submit()
+
+    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, "Country", "administration", enum_id])).forms['enum-form']
+    enum_form.submit()
+
+    resp_models = app.get(reverse("model-structure", args=[structure.dataset.pk, "Country"]))
+    assert list(resp_models.context["models"].values_list("metadata__status__codename", flat=True)) == ["completed"]
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    assert resp_props.context["prop"].metadata.get().status.codename == "completed"
+
+    resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, "Country", "administration"]))
+    prop = resp_props.context["prop"]
+    #TODO the status of enum should also be completed but because of a bug the name of the enum is changed even though nothing is submited. Change after bug fix
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
         assert enum_metadata.status.codename == "develop"

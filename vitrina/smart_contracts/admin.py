@@ -50,7 +50,7 @@ class AgreementScopeAdmin(RevisionCommentVersionAdmin):
 
 @admin.register(AgreementFile)
 class AgreementFileAdmin(RevisionCommentVersionAdmin):
-    list_display = ["agreement", "file_name"]
+    list_display = ["agreement", "file_name", "file_extension"]
     autocomplete_fields = ["agreement"]
     search_fields = [
         "agreement__project__title",

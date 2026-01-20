@@ -2021,8 +2021,15 @@ class TestAgreementFileDownload:
         assert response.status_code == 200
 
     @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
     def test_can_download_file_if_assignee_or_assigner_organization_representative(
-       self, app: DjangoTestApp, agreement_pdf: Path, is_acting_user_assignee: bool,
+       self, app: DjangoTestApp, agreement_pdf: Path, is_acting_user_assignee: bool, role: str
     ):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
@@ -2032,7 +2039,7 @@ class TestAgreementFileDownload:
         RepresentativeFactory(
             user=user,
             organization=assignee if is_acting_user_assignee else assigner,
-            role=Representative.COORDINATOR,
+            role=role,
             object_id=assignee.id if is_acting_user_assignee else assigner.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )
@@ -2049,7 +2056,14 @@ class TestAgreementFileDownload:
 
         assert response.status_code == 200
 
-    def test_raise_404_if_agreement_file_does_not_exist(self, app: DjangoTestApp):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_raise_404_if_agreement_file_does_not_exist(self, app: DjangoTestApp, role: str):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
 
@@ -2058,7 +2072,7 @@ class TestAgreementFileDownload:
         RepresentativeFactory(
             user=user,
             organization=assignee,
-            role=Representative.COORDINATOR,
+            role=role,
             object_id=assignee.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )
@@ -2076,8 +2090,15 @@ class TestAgreementFileDownload:
         assert response.status_code == 404
 
     @override_settings(DEBUG=True)
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
     def test_return_file_as_attachment_if_debug_true(
-        self, app: DjangoTestApp, agreement_pdf: Path
+        self, app: DjangoTestApp, agreement_pdf: Path, role: str
     ):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
@@ -2087,7 +2108,7 @@ class TestAgreementFileDownload:
         RepresentativeFactory(
             user=user,
             organization=assignee,
-            role=Representative.COORDINATOR,
+            role=role,
             object_id=assignee.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )
@@ -2109,8 +2130,15 @@ class TestAgreementFileDownload:
         assert not response.headers.get("X-Accel-Redirect")
 
     @override_settings(DEBUG=False)
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
     def test_return_file_path_as_x_accel_redirect_header_if_debug_false(
-        self, app: DjangoTestApp, agreement_pdf: Path
+        self, app: DjangoTestApp, agreement_pdf: Path, role: str
     ):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
@@ -2120,7 +2148,7 @@ class TestAgreementFileDownload:
         RepresentativeFactory(
             user=user,
             organization=assignee,
-            role=Representative.COORDINATOR,
+            role=role,
             object_id=assignee.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )

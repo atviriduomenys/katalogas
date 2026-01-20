@@ -136,7 +136,7 @@ def get_dataset_managers(request):
         representatives = Representative.objects.filter(
             content_type_id=req_obj.content_type_id,
             object_id=req_obj.object_id,
-            role=Representative.MANAGER,
+            role__in=Representative.MANAGER_ROLES,
             deleted__isnull=True,
         )
 
@@ -158,7 +158,7 @@ def get_organization_coordinators_emails(request):
             coordinators = Representative.objects.filter(
                 content_type=org_content_type,
                 object_id=organization.id,
-                role=Representative.COORDINATOR,
+                role__in=Representative.COORDINATOR_ROLES,
                 deleted__isnull=True,
             )
 

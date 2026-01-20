@@ -16,12 +16,6 @@ from rest_framework.serializers import Serializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from vitrina.api.oauth import (
-    OAuth2Authentication,
-    IsOAuthTokenValid,
-    OAuthTokenHasScopes,
-    OAuthTokenHasValidOrganizationClaim,
-)
 from vitrina.api.serializers import PostDatasetDistributionSerializer
 from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
 from vitrina.exceptions import UAPIException
@@ -39,16 +33,10 @@ from vitrina.uapi.serializers.serializers import (
     UAPIDatasetCreateSerializer,
 )
 from vitrina.uapi.utils.utils import extract_type_from_url
-from vitrina.uapi.utils.views import UAPIExceptionHandlerMixin
+from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandlerMixin
 
 
-class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [
-        IsOAuthTokenValid,
-        OAuthTokenHasScopes,
-        OAuthTokenHasValidOrganizationClaim,
-    ]
+class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
     required_scopes = {
         "create": ["uapi:/datasets/gov/vssa/dcat/Dataset/:create"],
         "list": ["uapi:/datasets/gov/vssa/dcat/Dataset/:getall"],
@@ -247,13 +235,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
 
-class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [
-        IsOAuthTokenValid,
-        OAuthTokenHasScopes,
-        OAuthTokenHasValidOrganizationClaim,
-    ]
+class DistributionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
     required_scopes = {
         "create": ["uapi:/datasets/gov/vssa/dcat/Distribution/:create"],
         "list": ["uapi:/datasets/gov/vssa/dcat/Distribution/:getall"],
@@ -337,13 +319,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, viewsets.ModelViewSet):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class AgentSyncDoneViewSet(viewsets.ModelViewSet):
-    authentication_classes = [OAuth2Authentication]
-    permission_classes = [
-        IsOAuthTokenValid,
-        OAuthTokenHasScopes,
-        OAuthTokenHasValidOrganizationClaim,
-    ]
+class AgentSyncDoneViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
     required_scopes = {"update": ["uapi:/datasets/gov/vssa/dcat/Agreement/:patch"]}
 
     lookup_url_kwarg = "agreement_id"
@@ -363,7 +339,7 @@ class AgentSyncDoneViewSet(viewsets.ModelViewSet):
 
         # Agent Sync changes are determined by time between Agreement.updated_at
         # and Agreement.last_sync_date. This endpoint should not update
-        # Agreement.updated_at in case changes were made since start of sync that
+        # Agreement.updated_at in case changes were made since the start of sync that
         # haven't been synced.
         agreement.save(update_fields=["last_sync_date", "status"])
 

@@ -368,8 +368,18 @@ def test_distribution_detail_with_non_public_dataset_without_access(app: DjangoT
 
 
 @pytest.mark.django_db
-@pytest.mark.parametrize("is_versioned", [True, False])
-def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTestApp, is_versioned: bool):
+@pytest.mark.parametrize(
+    "is_versioned,role",
+    [
+        (True, Representative.OPEN_DATA_MANAGER),
+        (True, Representative.RESOURCE_MANAGER),
+        (False, Representative.OPEN_DATA_MANAGER),
+        (False, Representative.RESOURCE_MANAGER),
+    ],
+)
+def test_distribution_detail_with_non_public_dataset_with_access(
+    app: DjangoTestApp, is_versioned: bool, role: str
+):
     dataset = DatasetFactory(is_public=False)
     resource = DatasetDistributionFactory(dataset=dataset)
 
@@ -385,7 +395,7 @@ def test_distribution_detail_with_non_public_dataset_with_access(app: DjangoTest
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role,
 
     )
     app.set_user(user)

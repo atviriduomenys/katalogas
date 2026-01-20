@@ -705,7 +705,7 @@ class RequestCreateView(LoginRequiredMixin, PermissionRequiredMixin, CreateView)
                         and Representative.objects.filter(
                             content_type=ContentType.objects.get_for_model(organization),
                             object_id=organization.pk,
-                            role=Representative.COORDINATOR,
+                            role=Representative.OPEN_DATA_COORDINATOR,
                             email=sub.user.email,
                         ).exists()
                     ):
@@ -765,18 +765,44 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
         context["request_obj"] = self.request_obj
         context["organizations"] = self.get_queryset()
         context["can_update_orgs"] = False
-        if self.request.user.is_authenticated and (self.request.user.is_staff or self.request.user.is_superuser):
+        user = self.request.user
+        role = user.get_representative_role() if user.is_authenticated else None
+        if user.is_authenticated and (user.is_staff or user.is_superuser):
             context["can_update_orgs"] = True
         else:
-            for req_assignment in self.request_obj.requestassignment_set.all():
-                if has_perm(
-                    self.request.user,
-                    Action.CREATE,
-                    RequestAssignment,
-                    req_assignment.organization,
-                ):
-                    context["can_update_orgs"] = True
-                    break
+            if role in Representative.OPEN_DATA_ROLE_KEYS:
+                dataset_ids = RequestObject.objects.filter(
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    request_id=self.request_obj.pk,
+                ).values_list("object_id", flat=True)
+
+                if dataset_ids:
+                    qs = Dataset.objects.filter(pk__in=dataset_ids)
+                    non_public_exists = qs.exclude(access_rights__in=[Dataset.PUBLIC, Dataset.RESTRICTED]).exists()
+                else:
+                    non_public_exists = False
+
+                if not non_public_exists:
+                    for req_assignment in self.request_obj.requestassignment_set.all():
+                        if has_perm(
+                            user,
+                            Action.CREATE,
+                            RequestAssignment,
+                            req_assignment.organization,
+                        ):
+                            context["can_update_orgs"] = True
+                            break
+            else:
+                for req_assignment in self.request_obj.requestassignment_set.all():
+                    if has_perm(
+                        user,
+                        Action.CREATE,
+                        RequestAssignment,
+                        req_assignment.organization,
+                    ):
+                        context["can_update_orgs"] = True
+                        break
+
         return context
 
     def get_plan_object(self):
@@ -822,7 +848,7 @@ class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
                     and Representative.objects.filter(
                         content_type=ContentType.objects.get_for_model(org),
                         object_id=org.pk,
-                        role=Representative.COORDINATOR,
+                        role=Representative.OPEN_DATA_COORDINATOR,
                         email=sub.user.email,
                     ).exists()
                 ):
@@ -856,7 +882,7 @@ class RequestOrgEditView(LoginRequiredMixin, PermissionRequiredMixin, UpdateView
                             and Representative.objects.filter(
                                 content_type=ContentType.objects.get_for_model(c_org),
                                 object_id=c_org.pk,
-                                role=Representative.COORDINATOR,
+                                role=Representative.OPEN_DATA_COORDINATOR,
                                 email=sub.user.email,
                             ).exists()
                         ):
@@ -1297,7 +1323,7 @@ class RequestDatasetView(HistoryMixin, PlanMixin, ListView):
             args += [Q(model__model_properties__pk__in=property_ids)]
         if args:
             query = functools.reduce(operator.or_, args)
-            datasets = Dataset.public.filter(query).order_by("-created")
+            datasets = Dataset.restricted.for_user(self.request.user).filter(query).order_by("-created")
         return datasets
 
     def get_context_data(self, **kwargs):
@@ -1324,6 +1350,7 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
     form_class = RequestDatasetsEditForm
     template_name = "vitrina/requests/request_dataset_add.html"
     context_object_name = "request_object"
+    dataset_query_limit = 20
 
     def form_valid(self, form):
         super().form_valid(form)
@@ -1353,23 +1380,38 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         form = context_data.get("form")
-        form.fields.get("datasets").queryset = Dataset.objects.filter(organization=self.request.user.organization)[:20]
+        role = self.request.user.get_representative_role()
+        if role in Representative.OPEN_DATA_ROLE_KEYS:
+            queryset = Dataset.objects.filter(
+                organization=self.request.user.organization, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
+            )[: self.dataset_query_limit]
+        else:
+            queryset = Dataset.objects.filter(
+                organization=self.request.user.organization,
+            )[: self.dataset_query_limit]
+        form.fields.get("datasets").queryset = queryset
+
         context_data["current_title"] = _("Poreikio duomenų rinkinių redagavimas")
         return context_data
 
 
 class RequestDatasetsEditUpdateView(RequestDatasetsEditView):
     template_name = "vitrina/requests/request_dataset_add_items.html"
+    queryset_limit = 20
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
+        form = context_data.get("form")
         term = self.request.GET.get("q")
+        role = self.request.user.get_representative_role()
+
+        queryset = Dataset.objects.filter(organization=self.request.user.organization)
+        if role in Representative.OPEN_DATA_ROLE_KEYS:
+            queryset = queryset.filter(access_rights__in=[Dataset.PUBLIC, Dataset.RESTRICTED])
         if term:
-            form = context_data.get("form")
-            form.fields.get("datasets").queryset = Dataset.objects.filter(
-                organization=self.request.user.organization,
-                translations__title__istartswith=term,
-            ).order_by("translations__title")[:20]
+            queryset = queryset.filter(translations__title__istartswith=term)
+        queryset = queryset.order_by("translations__title")[: self.queryset_limit]
+        form.fields["datasets"].queryset = queryset
         return context_data
 
 

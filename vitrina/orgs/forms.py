@@ -351,10 +351,7 @@ class RepresentativeUpdateForm(ModelForm):
             "phone",
             "has_api_access",
             "regenerate_api_key",
-            "can_write",
             "can_make_agreements",
-            "information_system_representative",
-            "open_data_representative",
         )
 
     def __init__(self, *args, **kwargs):
@@ -362,15 +359,10 @@ class RepresentativeUpdateForm(ModelForm):
         self.object = kwargs.pop("object", None)
         super().__init__(*args, **kwargs)
         if self.object_model == Organization:
-            if self.object.kind != Organization.GOV:
-                self.fields.pop("information_system_representative")
-                self.fields.pop("open_data_representative")
-            if self.user.viisp_organization == self.object:
+            if self.user.viisp_organization == self.object and self.user.is_resource_coordinator_for(self.object):
                 self.fields["can_make_agreements"].disabled = False
         else:
             self.fields.pop("can_make_agreements")
-            self.fields.pop("information_system_representative")
-            self.fields.pop("open_data_representative")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
@@ -380,9 +372,6 @@ class RepresentativeUpdateForm(ModelForm):
             Field("has_api_access"),
             Field("regenerate_api_key"),
             Field("subscribe"),
-            Field("information_system_representative"),
-            Field("open_data_representative"),
-            Field("can_write"),
             Field("can_make_agreements"),
             Submit("submit", _("Redaguoti"), css_class="button is-primary"),
         )
@@ -404,8 +393,8 @@ class RepresentativeUpdateForm(ModelForm):
     def clean(self):
         role = self.cleaned_data.get("role")
         if (
-            self.instance.role == Representative.COORDINATOR
-            and role != Representative.COORDINATOR
+            self.instance.role in Representative.COORDINATOR_ROLES
+            and role not in Representative.COORDINATOR_ROLES
             and get_coordinators_count(
                 self.object_model,
                 self.instance.object_id,
@@ -419,7 +408,7 @@ class RepresentativeUpdateForm(ModelForm):
                 )
             )
 
-        if self.instance.organization and role == Representative.COORDINATOR:
+        if self.instance.organization and role in Representative.COORDINATOR_ROLES:
             raise ValidationError(_("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
 
         return self.cleaned_data
@@ -452,26 +441,25 @@ class RepresentativeCreateForm(ModelForm):
             "role",
             "phone",
             "has_api_access",
-            "can_write",
             "can_make_agreements",
-            "information_system_representative",
-            "open_data_representative",
         )
 
     def __init__(self, *args, **kwargs):
         self.user: User = kwargs.pop("user")
         self.object = kwargs.pop("object")
         super().__init__(*args, **kwargs)
+        if self.user.is_open_data_coordinator:
+            allowed_roles = Representative.OPEN_DATA_ROLES
+        else:
+            allowed_roles = Representative.ROLES
+
+        self.fields["role"].choices = allowed_roles
+
         if self.object_model == Organization:
-            if self.object.kind != Organization.GOV:
-                self.fields.pop("information_system_representative")
-                self.fields.pop("open_data_representative")
-            if self.user.viisp_organization == self.object:
+            if self.user.viisp_organization == self.object and self.user.is_resource_coordinator_for(self.object):
                 self.fields["can_make_agreements"].disabled = False
         else:
             self.fields.pop("can_make_agreements")
-            self.fields.pop("information_system_representative")
-            self.fields.pop("open_data_representative")
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
@@ -481,18 +469,23 @@ class RepresentativeCreateForm(ModelForm):
             Field("phone", placeholder=_("Formatas 0... arba +370...")),
             Field("has_api_access"),
             Field("subscribe"),
-            Field("information_system_representative"),
-            Field("open_data_representative"),
-            Field("can_write"),
             Field("can_make_agreements"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
 
     def clean(self):
         email = self.cleaned_data.get("email")
+        role = self.cleaned_data.get("role")
         content_type = ContentType.objects.get_for_model(self.object_model)
         if Representative.objects.filter(content_type=content_type, object_id=self.object.id, email=email).exists():
             self.add_error("email", _("Narys su šiuo el. pašto adresu jau egzistuoja."))
+        if role and self.user.is_open_data_coordinator:
+            allowed_roles = dict(Representative.OPEN_DATA_ROLES)
+            if role not in allowed_roles:
+                self.add_error(
+                    "role",
+                    _("Jūs neturite teisės priskirti šios rolės."),
+                )
         return super().clean()
 
 

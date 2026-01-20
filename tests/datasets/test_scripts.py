@@ -9,8 +9,13 @@ from reversion.models import Version
 
 from scripts.geoportal_import import main as geoportal_import
 from vitrina import settings
-from vitrina.classifiers.factories import FrequencyFactory, LicenceFactory, CategoryFactory, GeoportalCategoryFactory, \
-    GeoportalFrequencyFactory
+from vitrina.classifiers.factories import (
+    FrequencyFactory,
+    LicenceFactory,
+    CategoryFactory,
+    GeoportalCategoryFactory,
+    GeoportalFrequencyFactory,
+)
 from vitrina.classifiers.models import GeoportalCategory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, RelationFactory
@@ -19,8 +24,12 @@ from vitrina.messages.factories import SubscriptionFactory
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
-from vitrina.resources.factories import FileFormat, DatasetDistributionFactory, GeoportalFormatFactory, \
-    GeoportalFormatValueFactory
+from vitrina.resources.factories import (
+    FileFormat,
+    DatasetDistributionFactory,
+    GeoportalFormatFactory,
+    GeoportalFormatValueFactory,
+)
 from vitrina.resources.models import DatasetDistribution
 from vitrina.tasks.models import Task
 from vitrina.users.factories import UserFactory
@@ -875,15 +884,20 @@ def test_geoportal_import__distribution_conditions_update():
 
 
 @pytest.mark.django_db
-def test_geoportal_import__existing_publisher(app: DjangoTestApp):
+@pytest.mark.parametrize(
+    "role",
+    [
+        (Representative.OPEN_DATA_COORDINATOR),
+        (Representative.RESOURCE_COORDINATOR),
+    ],
+)
+def test_geoportal_import__existing_publisher(app: DjangoTestApp, role: str):
     organization = OrganizationFactory(
         title="Viešoji įstaiga Statybos sektoriaus vystymo agentūra",
         company_code="305997589"
     )
     coordinator = RepresentativeFactory(
-        role=Representative.COORDINATOR,
-        content_type=ContentType.objects.get_for_model(organization),
-        object_id=organization.pk
+        role=role, content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
     )
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
@@ -2608,12 +2622,17 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_geoportal_import__subscription_create(app: DjangoTestApp):
+@pytest.mark.parametrize(
+    "role",
+    [
+        (Representative.OPEN_DATA_COORDINATOR),
+        (Representative.RESOURCE_COORDINATOR),
+    ],
+)
+def test_geoportal_import__subscription_create(app: DjangoTestApp, role: str):
     organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ")
     coordinator = RepresentativeFactory(
-        role=Representative.COORDINATOR,
-        content_type=ContentType.objects.get_for_model(organization),
-        object_id=organization.pk
+        role=role, content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
     )
     SubscriptionFactory(
         user=coordinator.user,
@@ -2675,12 +2694,17 @@ def test_geoportal_import__subscription_create(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_geoportal_import__subscription_update(app: DjangoTestApp):
+@pytest.mark.parametrize(
+    "role",
+    [
+        (Representative.OPEN_DATA_COORDINATOR),
+        (Representative.RESOURCE_COORDINATOR),
+    ],
+)
+def test_geoportal_import__subscription_update(app: DjangoTestApp, role: str):
     organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ")
     coordinator = RepresentativeFactory(
-        role=Representative.COORDINATOR,
-        content_type=ContentType.objects.get_for_model(organization),
-        object_id=organization.pk
+        role=role, content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
     )
     SubscriptionFactory(
         user=coordinator.user,
@@ -2743,12 +2767,17 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp):
+@pytest.mark.parametrize(
+    "role",
+    [
+        (Representative.OPEN_DATA_COORDINATOR),
+        (Representative.RESOURCE_COORDINATOR),
+    ],
+)
+def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp, role: str):
     organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ")
     coordinator = RepresentativeFactory(
-        role=Representative.COORDINATOR,
-        content_type=ContentType.objects.get_for_model(organization),
-        object_id=organization.pk
+        role=role, content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
     )
     SubscriptionFactory(
         user=coordinator.user,

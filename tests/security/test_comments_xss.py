@@ -9,7 +9,9 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 
 from vitrina.comments.models import Comment
+from vitrina.datasets.models import Dataset
 from vitrina.templatetags.markdown_tags import markdown
+from vitrina.users.models import Representative
 
 
 # XSS payloads to test
@@ -232,9 +234,15 @@ def test_sanitize_html_preserves_aria():
     assert "aria-label" in result
     assert "aria-current" in result
 
-
+@pytest.mark.parametrize(
+    "role",
+    [
+        Representative.OPEN_DATA_COORDINATOR,
+        Representative.RESOURCE_COORDINATOR,
+    ],
+)
 @pytest.mark.django_db
-def test_comment_xss_end_to_end_protection(client, user, organization, dataset):
+def test_comment_xss_end_to_end_protection(client, user, organization, dataset, role: Representative):
     """
     End-to-end test: Post comment with XSS payload, verify it's sanitized in rendered page.
     """
@@ -243,13 +251,14 @@ def test_comment_xss_end_to_end_protection(client, user, organization, dataset):
 
     # Make dataset public and give user permission to comment
     dataset.is_public = True
+    dataset.access_rights = Dataset.PUBLIC
     dataset.save()
 
     # Add user as representative to have permission
     Representative.objects.create(
         content_object=organization,
         user=user,
-        role=Representative.COORDINATOR,
+        role=role,
     )
 
     # Login user

@@ -17,13 +17,20 @@ from vitrina.users.factories import UserFactory
 
 
 class TestCanCreateAgreements:
-    def test_success(self, organization: Organization):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_success(self, organization: Organization, role: str):
         user = UserFactory(is_viisp_login=True, viisp_company_code=organization.company_code)
         project = ProjectFactory(organization=organization)
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=role,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -31,13 +38,20 @@ class TestCanCreateAgreements:
 
         assert can_create_agreements(user, project)
 
-    def test_no_organization_provided(self, organization: Organization):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_no_organization_provided(self, organization: Organization, role: str):
         user = UserFactory()
         project = ProjectFactory(organization=None)
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=role,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -51,7 +65,7 @@ class TestCanCreateAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -67,7 +81,14 @@ class TestCanCreateAgreements:
 
 
 class TestCanSubmitAgreements:
-    def test_success(self, organization: Organization):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_success(self, organization: Organization, role: str):
         user = UserFactory(is_viisp_login=True, viisp_company_code=organization.company_code)
         agreement = AgreementFactory(
             assignee=organization,
@@ -76,7 +97,7 @@ class TestCanSubmitAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=role,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -93,7 +114,7 @@ class TestCanSubmitAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -112,7 +133,14 @@ class TestCanSubmitAgreements:
 
 
 class TestCanApproveAgreements:
-    def test_success(self, organization: Organization):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_success(self, organization: Organization, role: str):
         user = UserFactory(is_viisp_login=True, viisp_company_code=organization.company_code)
         agreement = AgreementFactory(
             assigner=organization,
@@ -121,7 +149,7 @@ class TestCanApproveAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=role,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -138,7 +166,7 @@ class TestCanApproveAgreements:
         RepresentativeFactory(
             user=user,
             organization=organization,
-            role=Representative.COORDINATOR,
+            role=Representative.OPEN_DATA_COORDINATOR,
             can_make_agreements=True,
             object_id=organization.id,
             content_type=ContentType.objects.get_for_model(organization),
@@ -158,7 +186,14 @@ class TestCanApproveAgreements:
 
 class TestCanFormAgreements:
     @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
-    def test_success(self, is_acting_user_assignee: bool):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_success(self, is_acting_user_assignee: bool, role: str):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
 
@@ -177,7 +212,7 @@ class TestCanFormAgreements:
         RepresentativeFactory(
             user=user,
             organization=assignee if is_acting_user_assignee else assigner,
-            role=Representative.COORDINATOR,
+            role=role,
             can_make_agreements=True,
             object_id=assignee.id if is_acting_user_assignee else assigner.id,
             content_type=ContentType.objects.get_for_model(assignee),
@@ -186,7 +221,14 @@ class TestCanFormAgreements:
         assert can_form_agreements(user, agreement)
 
     @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
-    def test_not_viisp_authenticated(self, is_acting_user_assignee: bool):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_not_viisp_authenticated(self, is_acting_user_assignee: bool, role: str):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
 
@@ -205,7 +247,7 @@ class TestCanFormAgreements:
         RepresentativeFactory(
             user=user,
             organization=assignee if is_acting_user_assignee else assigner,
-            role=Representative.COORDINATOR,
+            role=role,
             can_make_agreements=True,
             object_id=assignee.id if is_acting_user_assignee else assigner.id,
             content_type=ContentType.objects.get_for_model(assignee),
@@ -265,7 +307,14 @@ class TestCanViewAgreements:
         assert can_view_agreement(user, agreement)
 
     @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
-    def test_user_in_organization(self, app: DjangoTestApp, is_acting_user_assignee: bool):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_user_in_organization(self, app: DjangoTestApp, is_acting_user_assignee: bool, role: str):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
 
@@ -274,7 +323,7 @@ class TestCanViewAgreements:
         RepresentativeFactory(
             user=user,
             organization=assignee if is_acting_user_assignee else assigner,
-            role=Representative.COORDINATOR,
+            role=role,
             object_id=assignee.id if is_acting_user_assignee else assigner.id,
             content_type=ContentType.objects.get_for_model(assignee),
         )
@@ -288,7 +337,16 @@ class TestCanViewAgreements:
         assert can_view_agreement(user, agreement)
 
     @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
-    def test_user_in_different_organization(self, app: DjangoTestApp, is_acting_user_assignee: bool):
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+    def test_user_in_different_organization(
+        self, app: DjangoTestApp, is_acting_user_assignee: bool, role: Representative
+    ):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
         different_organization = OrganizationFactory()
@@ -298,7 +356,7 @@ class TestCanViewAgreements:
         RepresentativeFactory(
             user=user,
             organization=different_organization,
-            role=Representative.COORDINATOR,
+            role=role,
             object_id=different_organization.id,
             content_type=ContentType.objects.get_for_model(different_organization),
         )

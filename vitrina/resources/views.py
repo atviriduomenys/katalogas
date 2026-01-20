@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
@@ -187,7 +188,9 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
                 pk=version_id,
             )
             if not self.metadata_version.is_draft():
-                raise Http404("Only allowed on Draft version.")
+                if not self.metadata_version.is_draft():
+                    messages.error(request, _("Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."))
+                    return redirect(self.resource.get_absolute_url())
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -254,7 +257,8 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
                 pk=version_id,
             )
             if not self.metadata_version.is_draft():
-                raise Http404("Only allowed on Draft version.")
+                messages.error(request, _("Negalima trinti šaltinio, kai versijos būsena nėra juodraštis."))
+                return redirect(self.resource.get_absolute_url())
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):

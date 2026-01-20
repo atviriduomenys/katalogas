@@ -1799,20 +1799,19 @@ def test_property_enum_item_delete_in_pre_released_property(app: DjangoTestApp):
         metadata_version=version
     )
 
-    response = app.post(reverse('enum-delete', args=[
-        dataset.pk,
-        version.pk,
-        model.name,
-        prop.name,
-        enum_item.pk
-    ]), expect_errors=True)
+    response = app.post(
+        reverse("enum-delete", args=[dataset.pk, version.pk, model.name, prop.name, enum_item.pk]), expect_errors=True
+    )
 
-    assert response.status_code == 404
+    assert response.status_code == 302
+    assert response.location == prop.get_absolute_url()
     assert EnumItem.objects.filter(pk=enum_item.pk).count() == 1
-    assert Metadata.objects.filter(
-        content_type=ContentType.objects.get_for_model(enum_item),
-        object_id=enum_item.pk
-    ).count() == 1
+    assert (
+        Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(enum_item), object_id=enum_item.pk
+        ).count()
+        == 1
+    )
 
 
 @pytest.mark.django_db
@@ -1828,18 +1827,17 @@ def test_model_create_with_lowercase_first_name_letter(app: DjangoTestApp):
         "Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."
     ]]
 
-@pytest.mark.parametrize(
-    "status",
-    [s for s in VersionStatus.values if s != VersionStatus.DRAFT]
-)
+
+@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
 @pytest.mark.django_db
 def test_model_create_with_in_not_draft_version(app: DjangoTestApp, status: str):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     version = VersionFactory(status=status)
     dataset = version.dataset
-    form = app.get(reverse('model-create', args=[dataset.pk, version.pk]), expect_errors=True)
-    assert form.status_code == 404
+    form = app.get(reverse("model-create", args=[dataset.pk, version.pk]), expect_errors=True)
+    assert form.status_code == 302
+    assert form.location == dataset.get_absolute_url()
 
 
 @pytest.mark.django_db
@@ -2206,14 +2204,15 @@ def test_param_delete(app: DjangoTestApp):
     assert resp.url == distribution.get_absolute_url()
     assert distribution.params.first().paramitem_set.count() == 0
 
-
+@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
 @pytest.mark.django_db
-def test_new_version_when_chosen_version_not_draft(app: DjangoTestApp):
+def test_new_version_when_chosen_version_not_draft(app: DjangoTestApp, status: str):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory(status=VersionStatus.PRE_RELEASE)
-    form = app.get(reverse('version-create', args=[version.dataset.pk, version.pk]), expect_errors=True)
-    assert form.status_code == 404
+    version = VersionFactory(status=status)
+    form = app.get(reverse("version-create", args=[version.dataset.pk, version.pk]), expect_errors=True)
+    assert form.status_code == 302
+    assert form.location == version.dataset.get_absolute_url()
 
 
 @pytest.mark.django_db
@@ -4138,7 +4137,8 @@ def test_property_create_with_in_released_version(app: DjangoTestApp):
         metadata_version=version,
     )
     form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name]), expect_errors=True)
-    assert form.status_code == 404
+    assert form.status_code == 302
+    assert form.location == model.get_absolute_url()
 
 
 @pytest.mark.django_db
@@ -4411,8 +4411,9 @@ def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
         assert enum_item.metadata.first().status.codename == "develop"
 
 
+@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
 @pytest.mark.django_db
-def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp):
+def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, status: str):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
@@ -4426,29 +4427,46 @@ def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp):
         ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename="file.csv", data=manifest)
-        )
-    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
-    version.status = VersionStatus.PRE_RELEASE
+    version.status = status
     version.save()
     enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small", metadata_version=version).first()
 
     enum = enum_meta.object
     enum_id = enum.id
 
-    model_form = app.get(reverse('model-update', args=[structure.dataset.pk, version.pk, "Country"]), expect_errors=True)
-    assert model_form.status_code == 404
+    model_form = app.get(
+        reverse("model-update", args=[structure.dataset.pk, version.pk, "Country"]), expect_errors=True
+    )
+    assert model_form.status_code == 302
+    assert model_form.location == structure.dataset.get_absolute_url()
 
-    property_form = app.get(reverse('property-update', args=[structure.dataset.pk, version.pk, "Country", "administration"]), expect_errors=True)
-    assert property_form.status_code == 404
+    property_form = app.get(
+        reverse("property-update", args=[structure.dataset.pk, version.pk, "Country", "administration"]),
+        expect_errors=True,
+    )
+    assert property_form.status_code == 302
 
-    enum_form = app.get(reverse('enum-update', args=[structure.dataset.pk, version.pk, "Country", "administration", enum_id]), expect_errors=True)
-    assert enum_form.status_code == 404
+    expected_location = reverse(
+        "model-structure",
+        args=[structure.dataset.pk, version.pk, "Country"],
+    )
+    assert property_form.location == expected_location
+
+    enum_form = app.get(
+        reverse("enum-update", args=[structure.dataset.pk, version.pk, "Country", "administration", enum_id]),
+        expect_errors=True,
+    )
+    assert enum_form.status_code == 302
+
+    expected_location = reverse(
+        "property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]
+    )
+
+    assert enum_form.location == expected_location
 
 
 @pytest.mark.django_db

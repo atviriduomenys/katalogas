@@ -1491,14 +1491,13 @@ class DatasetStructureImportView(
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         if not self.has_permission():
-            if not request.user.is_authenticated:
-                return redirect(settings.LOGIN_URL)
-            raise PermissionDenied()
+            return self.handle_no_permission()
         if not (version_id := kwargs.get("version_id")):
             return super().dispatch(request, *args, **kwargs)
         self.metadata_version = get_object_or_404(_Version, pk=version_id, dataset=self.dataset)
         if not self.metadata_version.is_draft():
-            raise Http404("Only allowed on Draft version.")
+            messages.error(request, _("Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."))
+            return redirect(self.dataset.get_absolute_url())
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -1509,6 +1508,11 @@ class DatasetStructureImportView(
             DatasetStructure,
             self.dataset,
         )
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            return redirect(settings.LOGIN_URL)
+        return redirect(self.dataset)
 
     def get_context_data(self, **kwargs):
         return {

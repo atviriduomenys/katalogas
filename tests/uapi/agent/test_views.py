@@ -21,7 +21,6 @@ from vitrina.users.models import User
 pytestmark = pytest.mark.django_db
 
 
-
 class TestAgentList:
     def test_success(self, app: DjangoTestApp, representative_user: User, organization: Organization):
         app.set_user(representative_user)

@@ -10,7 +10,6 @@ from vitrina.uapi.models import Agent
 pytestmark = pytest.mark.django_db
 
 
-
 class TestAgent:
     def test_codename_set_automatically_for_newly_created_agent(self):
         organization = OrganizationFactory()

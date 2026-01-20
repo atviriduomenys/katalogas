@@ -26,7 +26,7 @@ from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
     PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory, VersionFactory
-from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionType
+from vitrina.structure.models import Metadata, Enum, EnumItem, VersionType, Model
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
@@ -5032,3 +5032,94 @@ def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
 
     form = app.get(reverse("version-create", args=[structure.dataset.pk])).forms["version-form"]
     assert len(form.fields["metadata"]) == 12 # Denorm props create an additional property country.continent
+
+@pytest.mark.django_db
+class TestModelDelete:
+    def test_success(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        resp = app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']))
+        assert resp.json == {"success": True}
+        assert not Model.objects.filter(pk=model.pk).exists()
+
+    def test_permission_denied(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=False)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        resp = app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']), expect_errors=True)
+        assert resp.status_code == 403
+        assert resp.json == {"error": "Permission denied"}
+        assert Model.objects.filter(pk=model.pk).exists()
+
+    def test_not_found(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset = DatasetFactory()
+
+        resp = app.post(reverse('model-delete', args=[dataset.pk, 'NonExistent']), expect_errors=True)
+        assert resp.status_code == 404
+        assert resp.json == {"error": "Not found"}
+
+    def test_requires_login(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        resp = app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']))
+        assert resp.status_code == 302  # redirect to login
+        assert Model.objects.filter(pk=model.pk).exists()
+
+
+    def test_deletes_related_metadata(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        metadata = MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']))
+
+        assert not Model.objects.filter(pk=model.pk).exists()
+        assert not Metadata.objects.filter(pk=metadata.pk).exists()
+
+    def test_get_method_not_allowed(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        resp = app.get(reverse('model-delete', args=[dataset.pk, 'TestModel']), expect_errors=True)
+        assert resp.status_code == 405

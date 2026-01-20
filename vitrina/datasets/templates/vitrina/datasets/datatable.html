@@ -90,20 +90,19 @@
             {% if can_add_resource %}
             <td>
                 {% if r.metadata_version %}
-                    {% if not selected_version.external_version %}
-                        <a href="{% url 'resource-change' pk=r.id version_id=r.metadata_version.id %}"
-                           class="button is-link is-small is-pulled-right"
-                           id="change_resource">
-                            {% translate "Redaguoti" %}
-                        </a>
-                    {% else %}
-                        <a class="button is-link is-small is-pulled-right is-disabled"
-                           style="pointer-events: none; opacity: 0.5;"
-                           id="change_resource"
-                           aria-disabled="true">
-                            {% translate "Redaguoti" %}
-                        </a>
-                    {% endif %}
+                    <a
+                        {% if not selected_version.external_version %}
+                            href="{% url 'resource-change' pk=r.id version_id=r.metadata_version.id %}"
+                        {% endif %}
+                        class="button is-link is-small is-pulled-right{% if selected_version.external_version %} is-disabled{% endif %}"
+                        id="change_resource"
+                        {% if selected_version.external_version %}
+                            aria-disabled="true"
+                        {% endif %}
+                    >
+                        {% translate "Redaguoti" %}
+                    </a>
+
                 {% else %}
                     <a href="{% url 'resource-change-no-version' pk=r.id %}"
                        class="button is-link is-small is-pulled-right"

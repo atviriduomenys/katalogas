@@ -2019,7 +2019,7 @@ class ModelDeleteView(LoginRequiredMixin, View):
         if not has_perm(request.user, Action.STRUCTURE, Dataset, dataset):
             return JsonResponse({"error": "Permission denied"}, status=403)
 
-        model_obj = (
+        model_obj = get_object_or_404(
             Model.objects.annotate(
                 model_name=Func(
                     F("metadata__name"),
@@ -2028,12 +2028,10 @@ class ModelDeleteView(LoginRequiredMixin, View):
                     function="split_part",
                     output_field=TextField(),
                 )
-            )
-            .filter(model_name=model, dataset=dataset)
-            .first()
+            ),
+            model_name=model,
+            dataset=dataset,
         )
-        if not model_obj:
-            return JsonResponse({"error": "Not found"}, status=404)
 
         model_obj.delete()
         return JsonResponse({"success": True})

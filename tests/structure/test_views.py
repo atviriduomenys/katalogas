@@ -5075,7 +5075,6 @@ class TestModelDelete:
 
         resp = app.post(reverse('model-delete', args=[dataset.pk, 'NonExistent']), expect_errors=True)
         assert resp.status_code == 404
-        assert resp.json == {"error": "Not found"}
 
     def test_requires_login(self, app: DjangoTestApp):
         dataset = DatasetFactory()

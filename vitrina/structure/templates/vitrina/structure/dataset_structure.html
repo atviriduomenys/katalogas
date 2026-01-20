@@ -203,15 +203,16 @@
                                 {% endif %}
                             {% endif %}
                             {% if can_manage_structure %}
-                                <button class="button is-small is-danger is-light show-model-delete-form ml-2"
-                                        id="delete-model-{{ model.pk }}"
-                                        data-model-id="{{ model.pk }}"
-                                        data-delete-url="{{ model.get_absolute_url }}delete/"
-                                        data-tooltip="{% translate 'Ištrinti' %}">
-                                    <span class="icon is-medium">
+                                <a class="button is-danger is-small show-model-delete-form ml-2"
+                                   id="delete-model-{{ model.pk }}"
+                                   data-model-id="{{ model.pk }}"
+                                   data-delete-url="{{ model.get_absolute_url }}delete/"
+                                   title="{% translate 'Ištrinti' %}"
+                                   aria-label="{% translate 'Ištrinti modelį' %}">
+                                    <span class="icon is-small">
                                         <i class="fas fa-trash"></i>
                                     </span>
-                                </button>
+                                </a>
                             {% endif %}
                         </div>
                     </div>
@@ -221,21 +222,16 @@
                 <div class="modal-background"></div>
                 <div class="modal-card">
                     <header class="modal-card-head">
-                        <p class="modal-card-title">{% translate "Ištrinti modelį" %}</p>
-                        <button class="delete close-model-delete-modal" aria-label="close" data-model-id="{{ model.pk }}"></button>
+                        <p class="modal-card-title">{% translate "Ištrinti modelį" %} <strong>{{ model.name }}</strong> ?</p>
                     </header>
                     <section class="modal-card-body">
-                        <p>{% translate "Ar tikrai norite ištrinti modelį" %} <strong>{{ model.name }}</strong>?</p>
+                        {% translate "Šis veiksmas negrąžinamas." %}
                     </section>
                     <footer class="modal-card-foot">
+                        <button class="button close-model-delete-modal" data-model-id="{{ model.pk }}">{% translate "Atšaukti" %}</button>
                         <button class="button is-danger model-delete-confirm"
                                 data-model-id="{{ model.pk }}"
-                                data-delete-url="{{ model.get_absolute_url }}delete/">
-                            {% translate "Ištrinti" %}
-                        </button>
-                        <button class="button close-model-delete-modal" data-model-id="{{ model.pk }}">
-                            {% translate "Atšaukti" %}
-                        </button>
+                                data-delete-url="{{ model.get_absolute_url }}delete/">{% translate "Ištrinti" %}</button>
                     </footer>
                 </div>
             </div>

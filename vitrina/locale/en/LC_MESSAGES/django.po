@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-12-11 15:50+0200\n"
+"POT-Creation-Date: 2026-01-20 09:27+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "kliento id"
 msgstr "client id"
@@ -37,9 +40,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -667,12 +667,19 @@ msgid "Ši savybė nurodo susijusį resursą. Atitinka dct:relation."
 msgstr ""
 "This property specifies a related resource. Corresponds to dct:relation."
 
+msgid "Vieši"
+msgstr "Public"
+
+msgid "Apriboti"
+msgstr "Restricted"
+
 msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
 msgstr "Code name can only include latin characters."
 
 msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
 msgstr "Code name can only include lowercase letters."
 
+#, python-format
 msgid ""
 "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
 "leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
@@ -680,9 +687,11 @@ msgstr ""
 "The code name must begin with „%(expected)s“ or one of the following "
 "whitelisted code name prefixes: %(whitelisted)s"
 
+#, python-format
 msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“"
 msgstr "The code name must begin with „%(expected)s“"
 
+#, python-format
 msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
 msgstr "There must be at least one character after „%(prefix)s“."
 
@@ -936,12 +945,6 @@ msgstr "Added to organization"
 
 msgid "Pašalinta iš organizacijos"
 msgstr "Removed from organization"
-
-msgid "Vieši"
-msgstr "Public"
-
-msgid "Apriboti"
-msgstr "Restricted"
 
 msgid "Nevieši"
 msgstr "Non Public"
@@ -2896,6 +2899,7 @@ msgstr "Contact editing"
 msgid "Šio kontakto ištrinti negalima, nes jis yra naudojamas sutartyse."
 msgstr "This contact can not be deleted, because it is used in agreements."
 
+#, python-brace-format
 msgid "Ar tikrai norite ištrinti kontaktą \"{contact}\"?"
 msgstr "Are you sure you want to delete the contact \"{contact}\"?"
 
@@ -3733,6 +3737,9 @@ msgstr ""
 msgid "Ar duomenų šaltinis yra didelės vertės"
 msgstr "Is the data source of high value"
 
+msgid "Prieiga"
+msgstr "Access"
+
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"
 
@@ -3851,6 +3858,7 @@ msgstr "Upload document signed by data receiver"
 msgid "Veiksmas įvykdytas sėkmingai."
 msgstr "Action was executed successfully"
 
+#, python-brace-format
 msgid ""
 "Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
 "{expected_status}.Dabartinė būsena: {current_status}."
@@ -4036,44 +4044,6 @@ msgstr "Agreements generated successfully"
 msgid "Sutarčių generavime kilo klaidų"
 msgstr "Errors occurred while generating agreements"
 
-#, python-brace-format
-msgid ""
-"Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
-"{expected_status}.Dabartinė būsena: {current_status}."
-msgstr ""
-"The action can only be executed when the agreement has the status "
-"{expected_status}. Current status: {current_status}"
-
-msgid "Pasiūlymas sėkmingai pateiktas duomenų teikėjui."
-msgstr "The proposal has been successfully submitted to the data provider."
-
-msgid "Pasiūlymas sėkmingai patvirtintas."
-msgstr "Proposal was successfully confirmed."
-
-msgid "Sutarties dokumentas sukurtas"
-msgstr "Agreement document is created"
-
-msgid "PDF failas sutarčiai nėra sukurtas."
-msgstr "PDF file for the agreement is not created."
-
-msgid ""
-"Rasti keli PDF failai susieti su sutartimi. Susisiekite su administratoriumi."
-msgstr ""
-"Multiple PDF files were found related to the agreement. Please contact the "
-"administrator."
-
-msgid "Įkelti pasirašytą sutartį"
-msgstr "Upload signed document"
-
-msgid "Šią sutartį šiuo metu turi pasirašyti duomenų gavėjo atstovas"
-msgstr "Agreement document needs to be signed by data recipient first."
-
-msgid "Sutarties dokumentas įkeltas sėkmingai"
-msgstr "Agreement document uploaded successfully"
-
-msgid "Šią sutartį šiuo metu turi pasirašyti duomenų teikėjo atstovas."
-msgstr "Agreement document needs to be signed by data provider."
-
 msgid "Rodoma tituliniame puslapyje"
 msgstr "Shown in home page"
 
@@ -4118,6 +4088,21 @@ msgstr "Minor"
 
 msgid "Pataisa"
 msgstr "Patch"
+
+msgid "nepasirinkta"
+msgstr "not selected"
+
+msgid "private"
+msgstr "private"
+
+msgid "protected"
+msgstr "protected"
+
+msgid "public"
+msgstr "public"
+
+msgid "open"
+msgstr "open"
 
 msgid "Nepasirinkta"
 msgstr "Not selected"
@@ -4307,6 +4292,12 @@ msgstr ""
 "Model maturity level, indicating aspects such as whether a primary key is "
 "defined or whether the model name complies with naming requirements for code "
 "identifiers."
+
+msgid "Duomenų distribucija"
+msgstr "Dataset distribution"
+
+msgid "Savybė nurodanti modelio duomenų distribuciją."
+msgstr "A property indicating the dataset distribution of a model"
 
 msgid ""
 "Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį."
@@ -4634,21 +4625,6 @@ msgstr "Prefix"
 msgid "Prefiksai"
 msgstr "Prefixes"
 
-msgid "nepasirinkta"
-msgstr "not selected"
-
-msgid "private"
-msgstr "private"
-
-msgid "protected"
-msgstr "protected"
-
-msgid "public"
-msgstr "public"
-
-msgid "open"
-msgstr "open"
-
 msgid "Id"
 msgstr "Id"
 
@@ -4663,9 +4639,6 @@ msgstr "Given maturity level"
 
 msgid "Apskaičiuotas brandos lygis"
 msgstr "Calculated maturity level"
-
-msgid "Prieiga"
-msgstr "Access"
 
 msgid "Eilučių kiekis"
 msgstr "Row count"
@@ -4696,6 +4669,13 @@ msgstr "Inherited model"
 
 msgid "Bazė"
 msgstr "Base"
+
+msgid ""
+"Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą "
+"distribuciją."
+msgstr ""
+"Can not assign Saugyklos API distribution. Choose a different "
+"distribution."
 
 msgid "Susijęs modelis"
 msgstr "Related model"
@@ -5226,6 +5206,12 @@ msgstr "Register request to open data"
 msgid "Statistika"
 msgstr "Statistics"
 
+msgid "Pasirinkite versiją"
+msgstr "Select a version"
+
+msgid "Versija: Juodraštis"
+msgstr "Version: Draft"
+
 msgid "Grįžti į sutartis"
 msgstr "Go back to agreements"
 
@@ -5255,12 +5241,6 @@ msgstr "Data provider representative is not selected."
 
 msgid "Šablono failas nepridėtas."
 msgstr "Template file is not added."
-
-msgid "Pasirinkite versiją"
-msgstr "Select a version"
-
-msgid "Versija: Juodraštis"
-msgstr "Version: Draft"
 
 msgid "Pradinis"
 msgstr "First"

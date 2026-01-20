@@ -4,6 +4,10 @@ Changes
 v 1.13.0 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/705
+
+- Add delete button for `Structure` in dataset.
+- Do not display `None` body comments.
 
 v 1.12.1 (2026-01-19)
 ==================

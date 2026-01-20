@@ -16,8 +16,6 @@ from vitrina.structure import AccessType
 from vitrina.structure.models import Metadata, Version
 from vitrina.helpers import get_file_extension
 from vitrina.utils import translate_text
-from vitrina.datasets.models import Dataset
-from vitrina.datasets.tasks import update_applicable_legislation_description
 from vitrina.datasets.tasks import update_applicable_legislation_description
 
 logger = logging.getLogger()

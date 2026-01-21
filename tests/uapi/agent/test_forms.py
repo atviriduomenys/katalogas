@@ -6,7 +6,6 @@ from vitrina.uapi.forms import AgentForm
 from vitrina.uapi.models import Agent
 
 
-
 class TestAgentForm:
     def test_success(self, organization):
         dataset = DatasetFactory(service=True, organization=organization)

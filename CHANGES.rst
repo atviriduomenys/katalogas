@@ -4,10 +4,17 @@ Changes
 v 1.13.0 (unreleased)
 ==================
 
+Improvements:
+
 https://github.com/atviriduomenys/katalogas/issues/705
 
 - Add delete button for `Structure` in dataset.
 - Do not display `None` body comments.
+
+https://github.com/atviriduomenys/katalogas/pull/2275
+
+- A number of changes regarding UAPI.
+
 
 v 1.12.1 (2026-01-19)
 ==================

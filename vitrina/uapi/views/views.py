@@ -173,7 +173,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.
         dataset = get_object_or_404(
             Dataset,
             ~Q(deleted=True),
-            id=self.kwargs["dataset_id"],
+            id=self.kwargs["pk"],
             organization=self.request.organization,
         )
 
@@ -212,7 +212,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.
         dataset = get_object_or_404(
             Dataset,
             ~Q(deleted=True),
-            id=self.kwargs["dataset_id"],
+            id=self.kwargs["pk"],
             organization=self.request.organization,
         )
 

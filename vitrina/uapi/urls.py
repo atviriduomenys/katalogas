@@ -14,7 +14,8 @@ from vitrina.uapi.views.views import (
     AgentSyncDoneViewSet,
 )
 
-STATIC_UAPI_BASE_PATH = "uapi/datasets/org/vssa/isris/dcat/"
+
+STATIC_UAPI_BASE_PATH = "uapi/datasets/gov/vssa/ror/dcat/"
 
 
 urlpatterns = [
@@ -54,7 +55,7 @@ urlpatterns = [
         name="uapi-dataset",
     ),
     path(
-        f"{STATIC_UAPI_BASE_PATH}Dataset/<str:dataset_id>/dsa/",
+        f"{STATIC_UAPI_BASE_PATH}Dataset/<str:pk>/dsa/",
         DatasetViewSet.as_view(
             {
                 "post": "upload_dataset_structure",

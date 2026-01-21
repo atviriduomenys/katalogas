@@ -23,6 +23,8 @@ from vitrina.orgs.models import Organization
 from vitrina.structure.factories import MetadataFactory
 from vitrina.structure.models import Metadata
 from vitrina.structure.services import create_structure_objects
+from vitrina.uapi.serializers.uapi_serializers import TYPE_PREFIX_TO_REMOVE
+
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -67,7 +69,7 @@ class TestCreate:
 
         assert response.json == {
             "@context": "",
-            "_type": url_dataset.rstrip("/"),
+            "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
             "_id": str(dataset.id),
             "_revision": "",
             "_txn": "",
@@ -214,7 +216,7 @@ class TestCreate:
         assert dataset
         assert response.json == {
             "@context": "",
-            "_type": url_dataset.rstrip("/"),
+            "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
             "_id": str(dataset.id),
             "_revision": "",
             "_txn": "",
@@ -426,11 +428,10 @@ class TestList:
         assert response.status_code == status.HTTP_200_OK
         assert Dataset.objects.filter(organization=organization).count() == 1
         assert response.json == {
-            "_type": url_dataset.rstrip("/"),
             "_data": [
                 {
                     "@context": "",
-                    "_type": url_dataset.rstrip("/"),
+                    "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
                     "_id": str(dataset.id),
                     "_revision": "",
                     "_txn": "",
@@ -481,11 +482,10 @@ class TestList:
         assert response.status_code == status.HTTP_200_OK
         assert Dataset.objects.filter(organization=organization).count() == 1
         assert response.json == {
-            "_type": url_dataset.rstrip("/"),
             "_data": [
                 {
                     "@context": "",
-                    "_type": url_dataset.rstrip("/"),
+                    "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
                     "_id": str(dataset.id),
                     "_revision": "",
                     "_txn": "",
@@ -620,11 +620,10 @@ class TestList:
         assert response.status_code == status.HTTP_200_OK
         assert Dataset.objects.filter(organization=organization).count() == 2
         assert response.json == {
-            "_type": url_dataset.rstrip("/"),
             "_data": [
                 {
                     "@context": "",
-                    "_type": url_dataset.rstrip("/"),
+                    "_type": url_dataset.rstrip("/").removeprefix(TYPE_PREFIX_TO_REMOVE),
                     "_id": str(dataset.id),
                     "_revision": "",
                     "_txn": "",
@@ -702,7 +701,7 @@ class TestList:
             "type": "DatasetNotFound",
             "template": "The requested Dataset could not be found.",
             "message": (
-                f"No dataset matched the provided query — http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/."
+                f"No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/."
             ),
             "additionalProperties": None
         }
@@ -737,7 +736,7 @@ class TestList:
             "type": "DatasetNotFound",
             "template": "The requested Dataset could not be found.",
             "message": (
-                f"No dataset matched the provided query — http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/."
+                f"No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/."
             ),
             "additionalProperties": None
         }
@@ -778,7 +777,7 @@ class TestList:
             "template": "The requested Dataset could not be found.",
             "message": (
                 f"No dataset matched the provided query — "
-                f"http://testserver/uapi/datasets/org/vssa/isris/dcat/Dataset/?name={quote(metadata.name, safe='')}."
+                f"http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/?name={quote(metadata.name, safe='')}."
             ),
             "additionalProperties": None
         }
@@ -808,7 +807,7 @@ class TestList:
             "message": (
                 f"No dataset matched the provided query — "
                 f"http://testserver/uapi/datasets/"
-                f"org/vssa/isris/dcat/Dataset/?name={quote('dataset/that/does/not/exist', safe='')}."
+                f"gov/vssa/ror/dcat/Dataset/?name={quote('dataset/that/does/not/exist', safe='')}."
             ),
             "additionalProperties": None
         }
@@ -967,7 +966,7 @@ class TestActionUploadDatasetStructure:
         dsa: str,
         valid_token: str,
     ):
-        url = reverse("uapi-dataset-structure", kwargs={"dataset_id": 1})
+        url = reverse("uapi-dataset-structure", kwargs={"pk": 1})
 
         response = app.post(
             url,
@@ -1123,7 +1122,10 @@ class TestActionGetDatasetStructure:
         valid_token: str
     ):
         response = app.get(
-            _build_reverse_uapi_url("uapi-dataset-structure", dataset_id=1_000_000),
+            _build_reverse_uapi_url(
+                "uapi-dataset-structure",
+                pk=1_000_000
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
@@ -1183,7 +1185,10 @@ class TestActionGetDatasetStructure:
         token_parts = valid_token.split(".")
         invalid_token = f"{token_parts[0]}.{token_parts[1]}"
         response = app.get(
-            _build_reverse_uapi_url("uapi-dataset-structure", dataset_id=1_000_000),
+            _build_reverse_uapi_url(
+                "uapi-dataset-structure",
+                pk=1_000_000
+            ),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {invalid_token}"},
             expect_errors=True,
         )

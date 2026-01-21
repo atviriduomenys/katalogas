@@ -15,6 +15,7 @@ from vitrina.structure.views import GetAllApiView
 from vitrina.structure.views import GetOneApiView
 from vitrina.structure.views import ChangesApiView
 from vitrina.structure.views import ModelCreateView
+from vitrina.structure.views import ModelDeleteView
 from vitrina.structure.views import ModelUpdateView
 from vitrina.structure.views import PropertyCreateView
 from vitrina.structure.views import PropertyUpdateView
@@ -53,6 +54,11 @@ urlpatterns = [
         "datasets/<int:pk>/models/<str:model>/change/",
         ModelUpdateView.as_view(),
         name="model-update",
+    ),
+    path(
+        "datasets/<int:pk>/models/<str:model>/delete/",
+        ModelDeleteView.as_view(),
+        name="model-delete",
     ),
     path(
         "datasets/<int:pk>/models/<str:model>/add/",

@@ -369,12 +369,14 @@ def test_distribution_detail_with_non_public_dataset_without_access(app: DjangoT
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-    "is_versioned,role",
+    "is_versioned",
+    [True, False],
+)
+@pytest.mark.parametrize(
+    "role",
     [
-        (True, Representative.OPEN_DATA_MANAGER),
-        (True, Representative.RESOURCE_MANAGER),
-        (False, Representative.OPEN_DATA_MANAGER),
-        (False, Representative.RESOURCE_MANAGER),
+        Representative.OPEN_DATA_MANAGER,
+        Representative.RESOURCE_MANAGER,
     ],
 )
 def test_distribution_detail_with_non_public_dataset_with_access(
@@ -409,11 +411,13 @@ def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
     metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    model_metadata = MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model),
-                                     object_id=model.pk,
-                                     name="TestModel",
-                                     metadata_version=metadata_version)
+    model_metadata = MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        name="TestModel",
+        metadata_version=metadata_version
+        )
 
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -433,11 +437,13 @@ def test_distribution_detail_dynamic_resource_jsonl(app: DjangoTestApp):
     metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    model_metadata = MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model),
-                                     object_id=model.pk,
-                                     name="TestModel",
-                                     metadata_version=metadata_version)
+    model_metadata = MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        name="TestModel",
+        metadata_version=metadata_version
+        )
 
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -457,11 +463,13 @@ def test_distribution_detail_dynamic_resource_csv(app: DjangoTestApp):
     metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(uapi_format=True)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    model_metadata = MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model),
-                                     object_id=model.pk,
-                                     name="TestModel",
-                                     metadata_version=metadata_version)
+    model_metadata = MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        name="TestModel",
+        metadata_version=metadata_version
+        )
 
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -481,23 +489,29 @@ def test_distribution_detail_dynamic_resource_json_multiple_models(app: DjangoTe
     metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model),
-                                     object_id=model.pk,
-                                     name="TestModel",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        name="TestModel",
+        metadata_version=metadata_version
+    )
     model2 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model2),
-                                     object_id=model2.pk,
-                                     name="TestModel2",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model2),
+        object_id=model2.pk,
+        name="TestModel2",
+        metadata_version=metadata_version
+    )
     model3 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model3),
-                                     object_id=model3.pk,
-                                     name="TestModel3",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model3),
+        object_id=model3.pk,
+        name="TestModel3",
+        metadata_version=metadata_version
+    )
 
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -517,23 +531,29 @@ def test_distribution_detail_dynamic_resource_jsonl_multiple_models(app: DjangoT
     metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model),
-                                     object_id=model.pk,
-                                     name="TestModel",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        name="TestModel",
+        metadata_version=metadata_version
+    )
     model2 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model2),
-                                     object_id=model2.pk,
-                                     name="TestModel2",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model2),
+        object_id=model2.pk,
+        name="TestModel2",
+        metadata_version=metadata_version
+    )
     model3 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model3),
-                                     object_id=model3.pk,
-                                     name="TestModel3",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model3),
+        object_id=model3.pk,
+        name="TestModel3",
+        metadata_version=metadata_version
+    )
 
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -553,23 +573,29 @@ def test_distribution_detail_dynamic_resource_csv_multiple_models(app: DjangoTes
     metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model),
-                                     object_id=model.pk,
-                                     name="TestModel",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        name="TestModel",
+        metadata_version=metadata_version
+    )
     model2 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model2),
-                                     object_id=model2.pk,
-                                     name="TestModel2",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model2),
+        object_id=model2.pk,
+        name="TestModel2",
+        metadata_version=metadata_version
+    )
     model3 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model3),
-                                     object_id=model3.pk,
-                                     name="TestModel3",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model3),
+        object_id=model3.pk,
+        name="TestModel3",
+        metadata_version=metadata_version
+    )
 
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -736,11 +762,13 @@ def test_distribution_detail_dynamic_resource_rdf(app: DjangoTestApp):
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     metadata_version = dataset.metadata.first().metadata_version
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                                     content_type=ContentType.objects.get_for_model(model),
-                                     object_id=model.pk,
-                                     name="TestModel",
-                                     metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        name="TestModel",
+        metadata_version=metadata_version
+    )
     user = UserFactory(is_staff=True)
     app.set_user(user)
     response = app.get(reverse('dynamic-resource-detail', args=[dataset.pk, metadata_version.pk, resource.pk, "TestModel", "rdf"]))

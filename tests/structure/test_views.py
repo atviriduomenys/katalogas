@@ -4621,6 +4621,7 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
 
     resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
     prop = resp_props.context["prop"]
+    # TODO the status of enum should also be completed but because of a bug the name of the enum is changed even though nothing is submited. Change after bug fix
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
         assert enum_metadata.status.codename == "develop"
@@ -5127,7 +5128,7 @@ def test_publishing_dataset_duplicates_metadata_but_not_dataset(app: DjangoTestA
     dataset_meta = dataset.metadata.first()
 
     assert Metadata.objects.filter(dataset=dataset).count() == 1
-    assert Dataset.objects.count() - 1 == 1
+    assert Dataset.objects.count() == 2 # One Dataset created through a migration
     assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
@@ -5137,7 +5138,7 @@ def test_publishing_dataset_duplicates_metadata_but_not_dataset(app: DjangoTestA
     form.submit()
 
     assert Metadata.objects.filter(dataset=dataset).count() == 2
-    assert Dataset.objects.count() - 1 == 1
+    assert Dataset.objects.count() == 2 # One Dataset created through a migration
     assert _Version.objects.filter(dataset=dataset).count() == 2
 
 
@@ -5155,7 +5156,7 @@ def test_if_dataset_not_published_error(app: DjangoTestApp):
         metadata_version=version
     )
     assert Metadata.objects.filter(dataset=dataset).count() == 2
-    assert Dataset.objects.count() - 1 == 1
+    assert Dataset.objects.count() == 2 # One Dataset created through a migration
     assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']

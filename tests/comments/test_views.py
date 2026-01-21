@@ -41,7 +41,7 @@ def test_comment_is_not_public_user_staff(app: DjangoTestApp):
     form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow()
+    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert Comment.objects.filter(content_type=ct, object_id=dataset.pk).count() == 1
     assert created_comment.first() in list(resp.context["comments"])[0]
@@ -56,7 +56,7 @@ def test_comment_is_public(app: DjangoTestApp):
     form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = True
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow()
+    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert created_comment.count() == 1
     assert created_comment.first() in list(resp.context["comments"])[0]
@@ -85,7 +85,7 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     form["increase_frequency"] = frequency
     form["request_title"] = "Test request title"
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow()
+    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
     created_request = Request.objects.filter(requestobject__object_id=dataset.pk, requestobject__content_type=ct)
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
 
@@ -161,7 +161,7 @@ def test_reply_is_public(app: DjangoTestApp):
     form = app.get(comment.content_object.get_absolute_url()).follow().forms[f"reply-form-{comment.pk}"]
     form["is_public"] = True
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow()
+    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     reply = Comment.objects.filter(content_type=comment.content_type, parent=comment).first()
     assert comments.count() == 2
@@ -474,7 +474,7 @@ def test_view_author_comment_not_public(app: DjangoTestApp):
     form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow()
+    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk, user=user)
     assert comments.count() == 1
     assert [comment for comment, _, _ in resp.context["comments"]] == list(comments)
@@ -661,7 +661,7 @@ def test_subscription_about_comment(app: DjangoTestApp):
     form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow()
+    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 1
     assert [comment for comment, _, _ in resp.context["comments"]] == [comments.first()]

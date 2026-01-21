@@ -127,7 +127,7 @@ class DatasetFactory(DjangoModelFactory):
                 self.category.add(category)
 
     @factory.post_generation
-    def metadata(self, create, extracted, **kwargs):
+    def metadata(self, create: bool, extracted: str, **kwargs) -> None:
         if not create:
             return
         name = extracted if extracted is not None else ((self.organization.name or "test/dataset/") + "abcd")

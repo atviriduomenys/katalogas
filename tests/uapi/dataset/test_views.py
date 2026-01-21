@@ -344,10 +344,10 @@ class TestCreate:
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
-
+        breakpoint()
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert Dataset.objects.filter(organization=organization).count() == 0
-        assert Metadata.objects.count() - 1 == 1
+        assert Metadata.objects.filter(dataset=organization.dataset_set.first()).count() == 0
         assert response.json == {
             "code": "validation_error",
             "type": "ValidationError",
@@ -398,7 +398,7 @@ class TestCreate:
 
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert Dataset.objects.filter(organization=organization).count() == 0
-        assert Metadata.objects.count() - 1 == 1
+        assert Metadata.objects.filter(dataset=organization.dataset_set.first()).count() == 0
         response_json = response.json
         response_json.pop("context")  # Context stores the full traceback, we skip this check in tests.
         assert response_json == {

@@ -3754,23 +3754,29 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     metadata_version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                    content_type=ContentType.objects.get_for_model(model),
-                    object_id=model.pk,
-                    name="TestModel",
-                    metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        name="TestModel",
+        metadata_version=metadata_version
+    )
     model2 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                    content_type=ContentType.objects.get_for_model(model2),
-                    object_id=model2.pk,
-                    name="TestModel2",
-                    metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model2),
+        object_id=model2.pk,
+        name="TestModel2",
+        metadata_version=metadata_version
+    )
     model3 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    MetadataFactory(dataset=dataset,
-                    content_type=ContentType.objects.get_for_model(model3),
-                    object_id=model3.pk,
-                    name="TestModel3",
-                    metadata_version=metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model3),
+        object_id=model3.pk,
+        name="TestModel3",
+        metadata_version=metadata_version
+    )
 
     response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
     html = response.text
@@ -4235,11 +4241,13 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         conditions="platinimo sąlygos",
     )
     model = ModelFactory(dataset=dataset, metadata_version=dataset.metadata.first().metadata_version)
-    MetadataFactory(dataset=dataset,
-                    content_type=ContentType.objects.get_for_model(model),
-                    object_id=model.pk,
-                    name="test/dataset/TestModel",
-                    metadata_version=dataset.metadata.first().metadata_version)
+    MetadataFactory(
+        dataset=dataset,
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        name="test/dataset/TestModel",
+        metadata_version=dataset.metadata.first().metadata_version
+    )
     (
         FileFormat(
             title="JSON",

@@ -10,11 +10,12 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.utils.functional import cached_property
 from filer.models import File
-from rest_framework import viewsets, status
+from rest_framework import status
 from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
+from rest_framework.viewsets import ModelViewSet
 
 from vitrina.api.serializers import PostDatasetDistributionSerializer
 from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
@@ -40,7 +41,7 @@ from vitrina.uapi.utils.utils import extract_type_from_url
 from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandlerMixin
 
 
-class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
+class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSet):
     required_scopes = {
         "create": ["uapi:/datasets/gov/vssa/dcat/Dataset/:create"],
         "list": ["uapi:/datasets/gov/vssa/dcat/Dataset/:getall"],
@@ -239,7 +240,7 @@ class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.
         return Response(status=status.HTTP_501_NOT_IMPLEMENTED)
 
 
-class DistributionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
+class DistributionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSet):
     required_scopes = {
         "create": ["uapi:/datasets/gov/vssa/dcat/Distribution/:create"],
         "list": ["uapi:/datasets/gov/vssa/dcat/Distribution/:getall"],
@@ -323,7 +324,7 @@ class DistributionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, view
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class AgentSyncDoneViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
+class AgentSyncDoneViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSet):
     required_scopes = {"update": ["uapi:/datasets/gov/vssa/dcat/Agreement/:patch"]}
 
     lookup_url_kwarg = "agreement_id"
@@ -350,7 +351,7 @@ class AgentSyncDoneViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, vie
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-class VersionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
+class VersionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSet):
     required_scopes = {"list": ["uapi:/datasets/gov/vssa/dcat/Version/:getall"]}
 
     def get_queryset(self) -> QuerySet:
@@ -377,7 +378,7 @@ class VersionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.
         return Response(serializer.data, status=status.HTTP_200_OK)
 
 
-class AgentViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
+class AgentViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSet):
     required_scopes = {"list": ["uapi:/datasets/gov/vssa/dcat/Agent/:getall"]}
 
     def get_queryset(self) -> QuerySet:

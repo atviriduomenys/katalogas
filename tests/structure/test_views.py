@@ -4266,10 +4266,11 @@ def test_property_enum_create_with_in_released_version(app: DjangoTestApp):
         type="integer",
         metadata_version=version
     )
-    form = app.get(
-        reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])
-    ,expect_errors=True)
-    assert form.status_code == 404
+    resp = app.get(
+        reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name]),
+    )
+    assert resp.status_code == 302
+    assert resp.location == prop.get_absolute_url()
 
 @pytest.mark.django_db
 def test_property_enum_item_create__higher_visibility_then_model_with_error(app: DjangoTestApp):

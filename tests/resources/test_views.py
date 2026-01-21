@@ -41,6 +41,7 @@ def test_change_form_wrong_login(app: DjangoTestApp, is_versioned: bool):
 @pytest.mark.django_db
 def test_change_form_in_not_draft_version_not_allowed(app: DjangoTestApp, status: str):
     resource = DatasetDistributionFactory()
+    ModelFactory(dataset=resource.dataset, distribution=resource)
     resource.metadata_version.status = status
     resource.metadata_version.save()
     user = UserFactory(is_staff=True)
@@ -273,6 +274,7 @@ def test_delete_wrong_login(app: DjangoTestApp, is_versioned: bool):
 @pytest.mark.django_db
 def test_delete_resource_version_not_draft(app: DjangoTestApp, status: str):
     resource = DatasetDistributionFactory()
+    ModelFactory(dataset=resource.dataset, distribution=resource)
     resource.metadata_version.status = status
     resource.metadata_version.save()
     user = UserFactory(is_staff=True)

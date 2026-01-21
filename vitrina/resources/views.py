@@ -1,3 +1,4 @@
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
@@ -59,6 +60,9 @@ class ResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetStructure
         context["structure_acceptable"] = False
         context["params"] = self.object.params.all().order_by("name")
         context["models"] = self.object.model_set.all()
+        context["is_disabled"] = (
+            self.object.metadata_version is not None and not self.object.metadata_version.is_draft()
+        )
         return context
 
 
@@ -169,16 +173,30 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
     context_object_name = "datasetdistribution"
     form_class = DatasetResourceForm
 
+    def dispatch(self, request, *args, **kwargs):
+        self.resource = get_object_or_404(DatasetDistribution, pk=kwargs["pk"])
+        if not self.has_permission():
+            return self.handle_no_permission()
+        self.metadata_version = None
+        version_id = kwargs.get("version_id")
+        if version_id is not None:
+            self.metadata_version = get_object_or_404(
+                Version,
+                pk=version_id,
+            )
+            if not self.metadata_version.is_draft():
+                messages.error(request, _("Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."))
+                return redirect(self.resource.get_absolute_url())
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
-        return has_perm(self.request.user, Action.UPDATE, resource)
+        return has_perm(self.request.user, Action.UPDATE, self.resource)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
-            resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
-            return redirect(resource.dataset)
+            return redirect(self.resource.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -218,19 +236,33 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
 class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = DatasetDistribution
 
+    def dispatch(self, request, *args, **kwargs):
+        self.resource = get_object_or_404(DatasetDistribution, pk=kwargs["pk"])
+        if not self.has_permission():
+            return self.handle_no_permission()
+        self.metadata_version = None
+        version_id = kwargs.get("version_id")
+        if version_id is not None:
+            self.metadata_version = get_object_or_404(
+                Version,
+                pk=version_id,
+            )
+            if not self.metadata_version.is_draft():
+                messages.error(request, _("Negalima trinti šaltinio, kai versijos būsena nėra juodraštis."))
+                return redirect(self.resource.get_absolute_url())
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
-        return has_perm(self.request.user, Action.DELETE, resource)
+        return has_perm(self.request.user, Action.DELETE, self.resource)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
-
-        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
-        if resource.metadata_version:
-            url = reverse("dataset-detail", kwargs={"pk": resource.dataset.pk})
-            return HttpResponseRedirect(f"{url}?resource_version={resource.metadata_version.pk}")
-        return redirect(resource.dataset)
+        else:
+            if self.resource.metadata_version:
+                url = reverse("dataset-detail", kwargs={"pk": self.resource.dataset.pk})
+                return HttpResponseRedirect(f"{url}?resource_version={self.resource.metadata_version.pk}")
+            return redirect(self.resource.dataset)
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])

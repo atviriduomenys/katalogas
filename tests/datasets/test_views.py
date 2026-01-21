@@ -60,7 +60,8 @@ from vitrina.requests.factories import RequestObjectFactory, RequestFactory
 from vitrina.requests.models import RequestObject
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.settings import SPINTA_SERVER_URL
-from vitrina.structure.factories import ModelFactory, MetadataFactory
+from vitrina.structure import VersionStatus
+from vitrina.structure.factories import ModelFactory, MetadataFactory, VersionFactory
 from vitrina.testing.templates import strip_empty_lines
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
@@ -3402,6 +3403,18 @@ def test_dataset_structure_import_without_permission(app: DjangoTestApp):
     resp = app.get(url, expect_errors=True)
 
     assert resp.status_code == 403
+
+@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+def test_dataset_import_in_not_draft_version(app: DjangoTestApp, status: str):
+    version = VersionFactory(status=status)
+    user = UserFactory(is_staff=True)
+    dataset = version.dataset
+
+    app.set_user(user)
+    url = reverse("dataset-structure-import", args=[dataset.pk, version.pk])
+    response = app.get(url)
+    assert response.status_code == 302
+    assert response.location == dataset.get_absolute_url()
 
 
 def test_dataset_structure_import_not_standardized(app: DjangoTestApp):

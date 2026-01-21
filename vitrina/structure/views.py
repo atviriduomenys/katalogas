@@ -5,6 +5,7 @@ from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote
 
+from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import Q, ForeignKey
 from django.conf import settings
@@ -261,6 +262,7 @@ class DatasetStructureView(
         dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         structure = dataset.current_structure
         context["selected_version"] = self.metadata_version
+        context["is_disabled"] = not self.metadata_version.is_draft()
         context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
         context["errors"] = []
         context["manifest"] = None
@@ -434,6 +436,7 @@ class ModelStructureView(
             self.object,
         )
         context["can_manage_structure"] = self.can_manage_structure
+        context["is_disabled"] = self.metadata_version is not None and not self.metadata_version.is_draft()
         context["base_props"] = self.model.get_base_props()
         context["params"] = self.model.params.all().order_by("name")
         context["page_title"] = build_page_title_context(
@@ -734,6 +737,7 @@ class PropertyStructureView(
             self.object,
         )
         context["can_manage_structure"] = self.can_manage_structure
+        context["is_disabled"] = self.metadata_version is not None and not self.metadata_version.is_draft()
 
         allowed_enum_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Enum
@@ -1815,6 +1819,9 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         self.property = get_object_or_404(
             Property, model=self.model_obj, metadata__name=prop_name, metadata_version=self.metadata_version
         )
+        if self.metadata_version and not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."))
+            return redirect(self.property.get_absolute_url())
         self.enum = self.property.enums.first()
         return super().dispatch(request, *args, **kwargs)
 
@@ -1945,6 +1952,9 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
         )
         if not self.property:
             raise Http404("No Property matches the given query.")
+        if self.metadata_version and not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."))
+            return redirect(self.property.get_absolute_url())
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -2072,6 +2082,9 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
         self.property = get_object_or_404(
             Property, model=self.model_obj, metadata__name=prop_name, metadata_version=self.metadata_version
         )
+        if self.metadata_version and not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima trinti reikšmės, kai versijos būsena nėra juodraštis."))
+            return redirect(self.property.get_absolute_url())
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -2144,6 +2157,10 @@ class ModelCreateView(PermissionRequiredMixin, CreateView):
             )
         else:
             self.metadata_version = None
+
+        if self.metadata_version and not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima kurti naujo modelio, kai versijos būsena nėra juodraštis."))
+            return redirect(self.dataset.get_absolute_url())
 
         # Filter by version?
         if has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset):
@@ -2280,6 +2297,9 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateVi
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"), dataset=self.dataset)
+        if self.metadata_version and not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima redaguoti modelio, kai versijos būsena nėra juodraštis."))
+            return redirect(self.dataset.get_absolute_url())
         return super().dispatch(request, *args, **kwargs)
 
     def get_object(self, queryset=None):
@@ -2520,6 +2540,9 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Creat
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
+        if self.metadata_version and not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima kurti naujo duomenų lauko, kai versijos būsena nėra juodraštis."))
+            return redirect(self.model_obj.get_absolute_url())
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -2627,6 +2650,9 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Updat
         )
         if not self.model_obj:
             raise Http404("No Model matches the given query.")
+        if self.metadata_version and not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima redaguoti naujo duomenų lauko, kai versijos būsena nėra juodraštis."))
+            return redirect(self.model_obj.get_absolute_url())
         prop_name = kwargs.get("prop")
         self.property = get_object_or_404(
             Property.objects.filter(visibility_filter_property),
@@ -3443,6 +3469,11 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"))
+
+        if self.metadata_version and not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima publikuoti versijos, kai versijos būsena nėra juodraštis."))
+            return redirect(self.dataset.get_absolute_url())
+
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -3461,7 +3492,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
         return context
 
     def form_valid(self, form: ModelCreateForm) -> HttpResponseRedirect:
-        if self.metadata_version.status != VersionStatus.DRAFT:
+        if not self.metadata_version.is_draft():
             form.add_error(None, _("Publikuota versija negali būti publikuota dar kartą."))
             return self.form_invalid(form)
         self.new_version = form.save(commit=False)

@@ -14,6 +14,7 @@ from vitrina.resources.factories import DatasetDistributionFactory, FileFormat, 
     PackagingFormatFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
+from vitrina.structure import VersionStatus
 from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
@@ -28,6 +29,17 @@ def test_change_form_wrong_login(app: DjangoTestApp):
     assert response.status_code == 302
     assert str(resource.dataset_id) in response.location
 
+@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+@pytest.mark.django_db
+def test_change_form_in_not_draft_version_not_allowed(app: DjangoTestApp, status: str):
+    resource = DatasetDistributionFactory()
+    resource.metadata_version.status = status
+    resource.metadata_version.save()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    response = app.get(reverse('resource-change', kwargs={'pk': resource.id, 'version_id': resource.metadata_version.pk}), expect_errors=True)
+    assert response.status_code == 302
+    assert response.location == resource.get_absolute_url()
 
 @pytest.mark.django_db
 def test_change_form_correct_login(app: DjangoTestApp):
@@ -198,6 +210,20 @@ def test_delete_wrong_login(app: DjangoTestApp):
     response = app.post(reverse('resource-delete', kwargs={'pk': resource.id}))
     assert response.status_code == 302
     assert str(resource.dataset_id) in response.location
+
+@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+@pytest.mark.django_db
+def test_delete_resource_version_not_draft(app: DjangoTestApp, status: str):
+    resource = DatasetDistributionFactory()
+    resource.metadata_version.status = status
+    resource.metadata_version.save()
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    response = app.get(
+        reverse('resource-delete', kwargs={'pk': resource.id, 'version_id': resource.metadata_version.pk}),
+        expect_errors=True)
+    assert response.status_code == 302
+    assert response.location == resource.get_absolute_url()
 
 
 @pytest.mark.django_db

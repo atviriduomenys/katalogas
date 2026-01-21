@@ -344,7 +344,6 @@ class TestCreate:
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
-        breakpoint()
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert Dataset.objects.filter(organization=organization).count() == 0
         assert Metadata.objects.filter(dataset=organization.dataset_set.first()).count() == 0

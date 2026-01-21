@@ -15,6 +15,7 @@ from pygments.lexers.data import JsonLexer
 from pygments.lexers.special import TextLexer
 from pygments.styles import get_style_by_name
 from reversion.models import Version
+from webtest import AppError
 
 from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
@@ -1751,6 +1752,71 @@ def test_property_enum_item_delete(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_property_enum_item_delete_in_pre_released_property(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory(status=VersionStatus.PRE_RELEASE)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name='prop',
+        type='integer',
+        metadata_version=version
+    )
+
+    enum = EnumFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        metadata_version=version
+    )
+    enum_item = EnumItemFactory(enum=enum, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(enum_item),
+        object_id=enum_item.pk,
+        dataset=dataset,
+        title='Test value',
+        description='For testing',
+        prepare='1',
+        access=Metadata.OPEN,
+        source="TEST",
+        metadata_version=version
+    )
+
+    response = app.post(
+        reverse("enum-delete", args=[dataset.pk, version.pk, model.name, prop.name, enum_item.pk]), expect_errors=True
+    )
+
+    assert response.status_code == 302
+    assert response.location == prop.get_absolute_url()
+    assert EnumItem.objects.filter(pk=enum_item.pk).count() == 1
+    assert (
+        Metadata.objects.filter(
+            content_type=ContentType.objects.get_for_model(enum_item), object_id=enum_item.pk
+        ).count()
+        == 1
+    )
+
+
+@pytest.mark.django_db
 def test_model_create_with_lowercase_first_name_letter(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -1762,6 +1828,18 @@ def test_model_create_with_lowercase_first_name_letter(app: DjangoTestApp):
     assert list(resp.context['form'].errors.values()) == [[
         "Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."
     ]]
+
+
+@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+@pytest.mark.django_db
+def test_model_create_with_in_not_draft_version(app: DjangoTestApp, status: str):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    version = VersionFactory(status=status)
+    dataset = version.dataset
+    form = app.get(reverse("model-create", args=[dataset.pk, version.pk]), expect_errors=True)
+    assert form.status_code == 302
+    assert form.location == dataset.get_absolute_url()
 
 
 @pytest.mark.django_db
@@ -2162,6 +2240,16 @@ def test_param_delete(app: DjangoTestApp, role: str):
     resp = app.post(reverse('param-delete', args=[dataset.pk, param_item.pk]))
     assert resp.url == distribution.get_absolute_url()
     assert distribution.params.first().paramitem_set.count() == 0
+
+@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+@pytest.mark.django_db
+def test_new_version_when_chosen_version_not_draft(app: DjangoTestApp, status: str):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    version = VersionFactory(status=status)
+    form = app.get(reverse("version-create", args=[version.dataset.pk, version.pk]), expect_errors=True)
+    assert form.status_code == 302
+    assert form.location == version.dataset.get_absolute_url()
 
 
 @pytest.mark.django_db
@@ -4049,6 +4137,27 @@ def test_model_create_with_public_visibility_without_uri_with_error(app: DjangoT
 
 
 @pytest.mark.django_db
+def test_property_create_with_in_released_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory(status=VersionStatus.PRE_RELEASE)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE,
+        metadata_version=version,
+    )
+    form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name]), expect_errors=True)
+    assert form.status_code == 302
+    assert form.location == model.get_absolute_url()
+
+
+@pytest.mark.django_db
 def test_property_create__higher_visibility_with_error(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -4124,6 +4233,43 @@ def test_property_enum_item_create__higher_visibility_with_error(app: DjangoTest
             "Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų lauko matomumas 'private'."
         ]
     ]
+
+@pytest.mark.django_db
+def test_property_enum_create_with_in_released_version(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory(status=VersionStatus.PRE_RELEASE)
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE,
+        metadata_version=version
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+        metadata_version=version
+    )
+    form = app.get(
+        reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])
+    ,expect_errors=True)
+    assert form.status_code == 404
 
 @pytest.mark.django_db
 def test_property_enum_item_create__higher_visibility_then_model_with_error(app: DjangoTestApp):
@@ -4320,6 +4466,64 @@ def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
     prop = resp_props.context["prop"]
     for enum_item in prop.enums.first().enumitem_set.all():
         assert enum_item.metadata.first().status.codename == "develop"
+
+
+@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+@pytest.mark.django_db
+def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, status: str):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
+        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure)
+    version.status = status
+    version.save()
+    enum_meta = Metadata.objects.filter(dataset=structure.dataset, name="small", metadata_version=version).first()
+
+    enum = enum_meta.object
+    enum_id = enum.id
+
+    model_form = app.get(
+        reverse("model-update", args=[structure.dataset.pk, version.pk, "Country"]), expect_errors=True
+    )
+    assert model_form.status_code == 302
+    assert model_form.location == structure.dataset.get_absolute_url()
+
+    property_form = app.get(
+        reverse("property-update", args=[structure.dataset.pk, version.pk, "Country", "administration"]),
+        expect_errors=True,
+    )
+    assert property_form.status_code == 302
+
+    expected_location = reverse(
+        "model-structure",
+        args=[structure.dataset.pk, version.pk, "Country"],
+    )
+    assert property_form.location == expected_location
+
+    enum_form = app.get(
+        reverse("enum-update", args=[structure.dataset.pk, version.pk, "Country", "administration", enum_id]),
+        expect_errors=True,
+    )
+    assert enum_form.status_code == 302
+
+    expected_location = reverse(
+        "property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]
+    )
+
+    assert enum_form.location == expected_location
 
 
 @pytest.mark.django_db

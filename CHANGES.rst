@@ -15,6 +15,11 @@ https://github.com/atviriduomenys/katalogas/pull/2275
 
 - A number of changes regarding UAPI.
 
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2284
+
+- Fix child-resources url in resources tab
 
 v 1.12.1 (2026-01-19)
 ==================

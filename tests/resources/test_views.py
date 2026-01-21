@@ -10,8 +10,12 @@ from vitrina.classifiers.factories import ApplicableLegislationFactory
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
-from vitrina.resources.factories import DatasetDistributionFactory, FileFormat, CompressionFormatFactory, \
-    PackagingFormatFactory
+from vitrina.resources.factories import (
+    DatasetDistributionFactory,
+    FileFormat,
+    CompressionFormatFactory,
+    PackagingFormatFactory,
+)
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import MetadataFactory
@@ -216,6 +220,19 @@ def test_detail_tab_from_resource_detail_view(app: DjangoTestApp):
     resp = app.get(reverse('resource-detail', args=[resource.dataset.pk, resource.pk]))
     resp = resp.click(linkid='detail_tab')
     assert resp.request.path == resource.dataset.get_absolute_url()
+
+
+@pytest.mark.django_db
+def test_child_resources_tab_from_resource_detail_view_uses_dataset(
+    app: DjangoTestApp,
+):
+    resource = DatasetDistributionFactory()
+    response = app.get(reverse("resource-detail", args=[resource.dataset.pk, resource.pk]))
+    child_resources_response = response.click(linkid="child_resources_tab")
+    assert child_resources_response.request.path == reverse(
+        "dataset-child-resources",
+        args=[resource.dataset.pk],
+    )
 
 
 @pytest.mark.django_db

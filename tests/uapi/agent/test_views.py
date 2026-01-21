@@ -1,296 +1,203 @@
-import secrets
-from http import HTTPStatus
-from unittest.mock import patch
+from typing import Iterable
+from unittest.mock import ANY
 
 import pytest
-from django.urls import reverse
+from authlib.jose import RSAKey
+from django.conf import settings
 from django_webtest import DjangoTestApp
-from django.contrib.contenttypes.models import ContentType
-from vitrina.api.models import ApiKey
-from vitrina.datasets.factories import DatasetFactory, AgentFactory
-from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.structure.factories import MetadataFactory
-from vitrina.uapi import AgentType, Environment
-from vitrina.orgs.factories import OrganizationFactory
+from rest_framework import status
+
+from tests.uapi.conftest import _generate_test_token
 from vitrina.orgs.models import Organization
-from vitrina.uapi.models import Agent, RequestHistory
-from vitrina.orgs.services import hash_api_key
-from vitrina.users.models import User
+from vitrina.uapi.factories import AgentFactory
 
 
-pytestmark = pytest.mark.django_db
-
-
-class TestAgentList:
-    def test_success(self, app: DjangoTestApp, representative_user: User, organization: Organization):
-        app.set_user(representative_user)
-
-        another_organization = OrganizationFactory()
-        dataset = DatasetFactory(service=True, organization=organization)
-        agent_1 = Agent.objects.create(title="Agent 1", organization=organization, service=dataset)
-        agent_2 = Agent.objects.create(title="Agent 2", organization=organization, service=dataset)
-        archived_agent = Agent.objects.create(title="Agent 3", organization=organization, service=dataset, is_archived=True)
-        different_organization_agent = Agent.objects.create(
-            title="Agent 4", organization=another_organization, service=dataset
-        )
-        url = reverse("agent-list", args=[organization.pk])
-
-        response = app.get(url)
-
-        assert response.status_code == HTTPStatus.OK
-        returned_agents = response.context["agents"]
-        assert agent_1 in returned_agents
-        assert agent_2 in returned_agents
-        assert archived_agent not in returned_agents
-        assert different_organization_agent not in returned_agents
-
-
-class TestDetail:
-    def test_sucess(
-        self,
-        app: DjangoTestApp,
-        representative_user: User,
-        organization: Organization,
-        agent: Agent,
-        data_service: Dataset
-    ):
-        app.set_user(representative_user)
-        url = reverse("agent-detail", args=[organization.pk, agent.pk])
-
-        response = app.get(url)
-
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["agent"] == agent
-        assert response.context["dataset"] == data_service
-        assert not response.context["secret"]
-
-
-    def test_archived_agent(
-        self,
-        app: DjangoTestApp,
-        representative_user: User,
-        organization: Organization,
-    ):
-        app.set_user(representative_user)
-        dataset = DatasetFactory(service=True, organization=organization)
-        agent = Agent.objects.create(title="Agent", organization=organization, service=dataset, is_archived=True)
-
-        url = reverse("agent-detail", args=[organization.pk, agent.pk])
-        response = app.get(url, expect_errors=True)
-
-        assert response.status_code == HTTPStatus.NOT_FOUND
-
-    def test_agent_detail_view_request_history(
-        self,
-        app: DjangoTestApp,
-        representative_user: User,
-        organization: Organization,
-        agent: Agent,
-        data_service: Dataset,
-        request_history: RequestHistory
-    ):
-        app.set_user(representative_user)
-        url = reverse("agent-detail", args=[organization.pk, agent.pk])
-
-        response = app.get(url)
-
-        assert response.status_code == HTTPStatus.OK
-        assert list(response.context["agent"].requesthistory.all()) == [request_history]
-        assert response.context["agent"] == agent
-        assert response.context["dataset"] == data_service
-        assert not response.context["secret"]
-
-    def test_wrong_agent_detail_view_request_history_(
-        self,
-        app: DjangoTestApp,
-        representative_user: User,
-        organization: Organization,
-        agent: Agent,
-        data_service: Dataset,
-        request_history: RequestHistory
-    ):
-        """Request_history is created for an agent which is not the one making the request."""
-
-        another_agent = AgentFactory()
-        app.set_user(representative_user)
-        url = reverse("agent-detail", args=[another_agent.organization.pk, another_agent.pk])
-
-        response = app.get(url)
-
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["agent"] == another_agent
-        assert not response.context["secret"]
-        assert list(response.context["agent"].requesthistory.all()) == []
-
-
-class TestAgentCreate:
-    @pytest.mark.parametrize(
-        "service_provided",
-        [
-            False,
-            True,
-        ],
-        ids=["no_service_provided", "service_provided"]
-    )
+class TestList:
     def test_success(
         self,
         app: DjangoTestApp,
-        representative_user: User,
         organization: Organization,
-        service_provided: bool,
+        url_agent: str,
+        test_jwk: RSAKey,
     ):
-        app.set_user(representative_user)
-
-        organization_service = None
-        mocked_id = "some-id"
-        url = reverse("agent-create", args=[organization.pk])
-        data = {
-            "title": "Agent",
-            "is_enabled": True,
-            "environment": Environment.DEVELOPMENT,
-            "is_open_data_published": True,
-            "object_type": AgentType.SPINTA,
-            "open_data_publish_url": "https://data.gov.lt",
-            "auth_server_url": "https://auth.example.com",
-            "api_gate_server_url": "https://api-gate.example.com",
-            "agent_address": "https://agent.example.com",
-        }
-
-        if service_provided:
-            organization_service = DatasetFactory(
-                service=True,
-                organization=organization,
-                subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE),
-            )
-            data["service"] = organization_service.pk
-
-            MetadataFactory.create(
-                content_type=ContentType.objects.get_for_model(Dataset),
-                object_id=organization_service.pk,
-                name=data["title"].lower().replace(" ", "_"),
-            )
-
-        with patch(
-            "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
-            return_value=(mocked_id, "some-secret")
-        ) as mock_create_oauth_client:
-            response = app.post(url, data)
-
-        assert response.status_code == HTTPStatus.FOUND
-        assert Agent.objects.count() == 1
-        assert mock_create_oauth_client.called
-
-        agent = Agent.objects.filter(title=data["title"], organization=organization).first()
-        agent_service = agent.service
-
-        assert agent.oauth_client_id == mocked_id
-        assert agent.auth_server_url == data["auth_server_url"]
-        assert agent.api_gate_server_url == data["api_gate_server_url"]
-        assert agent.agent_address == data["agent_address"]
-        assert agent.is_enabled is data["is_enabled"]
-        assert agent.environment == data["environment"]
-        assert agent_service.service is True
-        assert agent_service.subclass == DCATResourceSubclass.objects.get(
-            name=DCATResourceSubclass.SERVICE
+        agent = AgentFactory(
+            organization=organization,
+            oauth_client_id="test-client-id",
+            is_archived=False,
+            is_enabled=True,
         )
-        assert agent_service.metadata.first().name == Agent().get_codename(data["title"])
+        token = _generate_test_token(test_jwk, organization=organization, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
 
-        if service_provided:
-            assert agent_service == organization_service
-        else:
-            assert agent_service != organization_service
+        response = app.get(
+            url_agent,
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        )
 
-
-    def test_transaction_rollback_on_error(
-        self,
-        app,
-        representative_user,
-        organization,
-    ):
-        app.set_user(representative_user)
-
-        url = reverse("agent-create", args=[organization.pk])
-        data = {
-            "title": "New Agent",
-            "is_enabled": True,
-            "is_open_data_published": False,
-            "object_type": "other",
-            "open_data_publish_url": "https://data.gov.lt/agent",
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json == {
+            "_data": [
+                {
+                    "@context": "",
+                    "_created": ANY,
+                    "_updated": ANY,
+                    "_txn": "",
+                    "_revision": "",
+                    "_id": str(agent.pk),
+                    "_type": "datasets/gov/vssa/ror/dcat/Agent",
+                    "synchronized_at": agent.synchronized_at,
+                    "is_last_sync_successful": agent.is_last_sync_successful,
+                    "title": agent.title,
+                    "codename": agent.codename,
+                    "object_type": agent.object_type,
+                    "is_open_data_published": agent.is_open_data_published,
+                    "open_data_publish_url": agent.open_data_publish_url,
+                    "is_enabled": agent.is_enabled,
+                    "service": agent.service.pk,
+                    "organization": agent.organization_id,
+                    "oauth_client_id": agent.oauth_client_id,
+                    "environment": agent.environment,
+                    "auth_server_url": agent.auth_server_url,
+                    "api_gate_server_url": agent.api_gate_server_url,
+                    "agent_address": agent.agent_address,
+                }
+            ]
         }
 
-        with patch(
-            "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
-            side_effect=Exception("Simulated error")
-        ):
-            response = app.post(url, data)
-
-        assert response.status_code == HTTPStatus.OK  # Re-rendered due to `form_invalid()`.
-        assert Agent.objects.count() == 0
-        assert Dataset.objects.filter(service=True, translations__title__icontains="Agento").count() == 0
-        assert ApiKey.objects.count() == 0
-
-
-class TestAgentUpdate:
-    def test_success(self, app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):
-        app.set_user(representative_user)
-        url = reverse("agent-update", args=[organization.pk, agent.pk])
-        data = {
-            "title": "Updated Agent Title",
-            "is_enabled": True,
-            "environment": Environment.TESTING,
-            "is_open_data_published": False,
-            "object_type": AgentType.OTHER,
-            "open_data_publish_url": "https://updated-data.gov.lt",
-            "service": agent.service.pk,
-            "agent_address": "https://updated-agent.gov.lt",
-            "auth_server_url": "https://updated-auth.gov.lt",
-            "api_gate_server_url": "https://updated-api-gate.gov.lt",
-        }
-
-        response = app.post(url, data)
-
-        assert response.status_code == HTTPStatus.FOUND
-
-        agent.refresh_from_db()
-        assert agent.title == data["title"]
-        assert agent.is_enabled is data["is_enabled"]
-        assert agent.is_open_data_published is data["is_open_data_published"]
-        assert agent.object_type == data["object_type"]
-        assert agent.environment == data["environment"]
-        assert agent.open_data_publish_url == data["open_data_publish_url"]
-        assert agent.agent_address == data["agent_address"]
-        assert agent.auth_server_url == data["auth_server_url"]
-        assert agent.api_gate_server_url == data["api_gate_server_url"]
-
-
-class TestAgentDelete:
-    def test_success(self, app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):
-        app.set_user(representative_user)
-        ApiKey.objects.create(api_key=hash_api_key(secrets.token_urlsafe()), enabled=True, agent=agent)
-        url = reverse("agent-delete", args=[organization.pk, agent.pk])
-
-        response = app.post(url)
-
-        assert response.status_code == HTTPStatus.FOUND
-        assert Agent.objects.count() == 1
-        agent = Agent.objects.first()
-        assert agent.is_archived is True
-
-
-class TestRequestHistoryDetail:
-    def test_success(
+    def test_success_specific_scope_given(
         self,
         app: DjangoTestApp,
-        representative_user: User,
         organization: Organization,
-        data_service: Dataset,
-        agent: Agent,
-        request_history: RequestHistory
+        url_agent: str,
+        test_jwk: RSAKey,
     ):
+        agent = AgentFactory(
+            organization=organization,
+            oauth_client_id="test-client-id",
+            is_archived=False,
+            is_enabled=True,
+        )
 
-        app.set_user(representative_user)
-        url = reverse("request-history", args=[organization.pk, agent.pk, request_history.pk])
+        token = _generate_test_token(
+            test_jwk,
+            organization=organization,
+            scopes=["uapi:/datasets/gov/vssa/dcat/Agent/:getall"],
+            agent=agent,
+        )
 
-        response = app.get(url)
-        assert response.status_code == HTTPStatus.OK
-        assert response.context["request_history"] == request_history
+        response = app.get(
+            url_agent,
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert len(response.json["_data"]) == 1
+
+    def test_agent_is_archived(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        url_agent: str,
+        test_jwk: RSAKey,
+    ):
+        agent = AgentFactory(
+            organization=organization,
+            oauth_client_id="test-client-id",
+            is_archived=True,
+            is_enabled=True,
+        )
+        token = _generate_test_token(
+            test_jwk, organization=organization, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES, agent=agent
+        )
+
+        response = app.get(
+            url_agent,
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json == {"_data": []}
+
+    @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
+    def test_necessary_scope_missing_from_token(
+        self,
+        invalid_scopes: Iterable[str],
+        app: DjangoTestApp,
+        organization: Organization,
+        url_agent: str,
+        domain: str,
+        test_jwk: RSAKey,
+    ):
+        agent = AgentFactory(
+            organization=organization,
+            oauth_client_id="test-client-id",
+            is_archived=False,
+            is_enabled=True,
+        )
+        token = _generate_test_token(test_jwk, organization=organization, scopes=invalid_scopes, agent=agent)
+
+        response = app.get(url_agent, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json == {
+            "code": "Forbidden",
+            "type": "system",
+            "template": "Access is forbidden.",
+            "message": "You do not have permission to perform this action.",
+            "additionalProperties": None,
+        }
+
+    def test_organization_id_missing_from_token(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        url_agent: str,
+        domain: str,
+        test_jwk: RSAKey,
+    ):
+        token = _generate_test_token(
+            test_jwk,
+            scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
+        )
+
+        response = app.get(url_agent, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True)
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json == {
+            "code": "Forbidden",
+            "type": "system",
+            "template": "Access is forbidden.",
+            "message": "You do not have permission to perform this action.",
+            "additionalProperties": None,
+        }
+
+    def test_agent_is_disabled(
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        url_agent: str,
+        test_jwk: RSAKey,
+    ):
+        agent = AgentFactory(
+            organization=organization,
+            oauth_client_id="test-client-id",
+            is_archived=False,
+            is_enabled=False,
+        )
+        token = _generate_test_token(
+            test_jwk, organization=organization, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES, agent=agent
+        )
+
+        response = app.get(
+            url_agent,
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
+            expect_errors=True,
+        )
+
+        assert response.status_code == status.HTTP_403_FORBIDDEN
+        assert response.json == {
+            "code": "Forbidden",
+            "type": "system",
+            "template": "Access is forbidden.",
+            "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
+            "additionalProperties": None,
+        }

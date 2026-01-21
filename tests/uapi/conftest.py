@@ -34,18 +34,22 @@ def _build_reverse_uapi_url(name: str, **kwargs: Any) -> str:
 def _generate_test_token(
     jwk: RSAKey,
     scopes: Iterable[str] = ("datasets:write",),
-    organization: Organization = None,
+    organization: Organization | None = None,
     expires_in: int = 900,
+    agent: Agent | None = None,
+    create_agent: bool = True,
     agent_is_enabled: bool = True,
 ):
-    oauth_client_id = None
-    if organization:
-        agent = AgentFactory(organization=organization, oauth_client_id=str(uuid.uuid4()), is_enabled=agent_is_enabled)
-        oauth_client_id = agent.oauth_client_id
+    if organization and not agent and create_agent:
+        agent = AgentFactory(
+            organization=organization,
+            oauth_client_id=str(uuid.uuid4()),
+            is_enabled=agent_is_enabled
+        )
     now = datetime.utcnow()
     claims = {
         "iss": "test-issuer",
-        "sub": oauth_client_id,
+        "sub": agent.oauth_client_id if agent else None,
         "scope": " ".join(scopes),
         "iat": now,
         "exp": now + timedelta(seconds=expires_in),
@@ -175,6 +179,11 @@ def url_dataset_structure(dataset: Dataset) -> str:
 @pytest.fixture
 def url_version() -> str:
     return _build_reverse_uapi_url("uapi-version")
+
+
+@pytest.fixture
+def url_agent() -> str:
+    return _build_reverse_uapi_url("uapi-agent")
 
 
 @pytest.fixture

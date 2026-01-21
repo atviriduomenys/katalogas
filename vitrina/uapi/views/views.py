@@ -24,6 +24,7 @@ from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.models import Metadata, Version
 from vitrina.structure.services import create_structure_objects, export_dataset_structure
+from vitrina.uapi.models import Agent
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer
 from vitrina.uapi.serializers.serializers import (
     UAPIDatasetSerializer,
@@ -33,6 +34,7 @@ from vitrina.uapi.serializers.serializers import (
     UAPIDatasetCreateSerializer,
     UAPIVersionSerializer,
     VersionQueryParameterSerializer,
+    UAPIAgentSerializer,
 )
 from vitrina.uapi.utils.utils import extract_type_from_url
 from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandlerMixin
@@ -370,6 +372,28 @@ class VersionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.
             instance=self.get_queryset(),
             context=self.get_serializer_context(),
             data_serializer_class=UAPIVersionSerializer,
+            _type=extract_type_from_url(self.request.build_absolute_uri()),
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
+class AgentViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
+    required_scopes = {"list": ["uapi:/datasets/gov/vssa/dcat/Agent/:getall"]}
+
+    def get_queryset(self) -> QuerySet:
+        jwt_subject = self.request.auth["sub"]
+        queryset = Agent.objects.filter(
+            is_archived=False,
+            organization=self.request.organization,
+            oauth_client_id=jwt_subject,
+        )
+        return queryset
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = BaseObjectListSerializer(
+            instance=self.get_queryset(),
+            context=self.get_serializer_context(),
+            data_serializer_class=UAPIAgentSerializer,
             _type=extract_type_from_url(self.request.build_absolute_uri()),
         )
         return Response(serializer.data, status=status.HTTP_200_OK)

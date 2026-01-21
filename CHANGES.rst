@@ -15,6 +15,11 @@ https://github.com/atviriduomenys/katalogas/pull/2275
 
 - A number of changes regarding UAPI.
 
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2284
+
+- Fix child-resources url in resources tab
 
 v 1.12.1 (2026-01-19)
 ==================
@@ -24,10 +29,6 @@ Bug fixes:
 https://github.com/atviriduomenys/spinta/issues/1630
 
 - Fix import logic when resource params were imported as dataset params.
-
-https://github.com/atviriduomenys/katalogas/issues/2284
-
-- Fix child-resources url in resources tab
 
 v 1.12.0 (2026-01-15)
 ==================

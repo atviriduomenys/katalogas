@@ -15,7 +15,7 @@ from vitrina.uapi.views.views import (
 )
 
 
-STATIC_UAPI_BASE_PATH = "uapi/datasets/gov/vssa/isris/dcat/"
+STATIC_UAPI_BASE_PATH = "uapi/datasets/gov/vssa/ror/dcat/"
 
 
 urlpatterns = [

@@ -22,7 +22,7 @@ from vitrina.exceptions import UAPIException
 from vitrina.resources.models import DatasetDistribution
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import Agreement
-from vitrina.structure.models import Metadata
+from vitrina.structure.models import Metadata, Version
 from vitrina.structure.services import create_structure_objects, export_dataset_structure
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer
 from vitrina.uapi.serializers.serializers import (
@@ -31,6 +31,8 @@ from vitrina.uapi.serializers.serializers import (
     DistributionQueryParameterSerializer,
     UAPIDistributionSerializer,
     UAPIDatasetCreateSerializer,
+    UAPIVersionSerializer,
+    VersionQueryParameterSerializer,
 )
 from vitrina.uapi.utils.utils import extract_type_from_url
 from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandlerMixin
@@ -344,3 +346,30 @@ class AgentSyncDoneViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, vie
         agreement.save(update_fields=["last_sync_date", "status"])
 
         return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class VersionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
+    required_scopes = {"list": ["uapi:/datasets/gov/vssa/dcat/Version/:getall"]}
+
+    def get_queryset(self) -> QuerySet:
+        queryset = Version.objects.select_related("dataset__organization").filter(
+            dataset__organization=self.request.organization,
+        )
+
+        if request_parameters := self.request.query_params:
+            query_parameter_serializer = VersionQueryParameterSerializer(data=request_parameters)
+            query_parameter_serializer.is_valid(raise_exception=True)
+
+            if dataset_id := query_parameter_serializer.validated_data.get("dataset_id"):
+                queryset = queryset.filter(dataset_id=dataset_id)
+
+        return queryset
+
+    def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = BaseObjectListSerializer(
+            instance=self.get_queryset(),
+            context=self.get_serializer_context(),
+            data_serializer_class=UAPIVersionSerializer,
+            _type=extract_type_from_url(self.request.build_absolute_uri()),
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)

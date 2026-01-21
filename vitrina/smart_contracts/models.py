@@ -156,7 +156,7 @@ class Agreement(UUIDBaseModel):
                 "@vocab": "http://www.w3.org/ns/odrl.jsonld",
                 "ex": "http://example.org/vocab#",
             },
-            "uid": f"https://data.gov.lt/ID/datasets/gov/vssa/isris/dcat/Agreement/{self.pk}",
+            "uid": f"https://data.gov.lt/ID/datasets/gov/vssa/ror/dcat/Agreement/{self.pk}",
             "type": "Agreement",
             "profile": "http://www.w3.org/ns/odrl/profile/core",
             "issued": format_lithuanian_datetime(),

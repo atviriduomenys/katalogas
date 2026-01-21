@@ -41,7 +41,7 @@ class TestCreate:
     ):
         dataset_parent = DatasetFactory()
         data = {
-            "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
+            "name": "/datasets/gov/vssa/ror/dcat/uapi/Model",
             "title": "DataSet 1",
             "description": "DataSet 1 description",
             "service": True,
@@ -165,7 +165,7 @@ class TestCreate:
         We need this API to be able to create any one of these resources.
         """
         data = {
-            "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
+            "name": "/datasets/gov/vssa/ror/dcat/uapi/Model",
             "title": "Example",
             "description": "Example description",
             **subclass_additional_data,
@@ -196,7 +196,7 @@ class TestCreate:
             scopes=["uapi:/datasets/gov/vssa/dcat/Dataset/:create"],
         )
         data = {
-            "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
+            "name": "/datasets/gov/vssa/ror/dcat/uapi/Model",
             "title": "DataSet 1",
             "description": "DataSet 1 description",
         }
@@ -255,7 +255,7 @@ class TestCreate:
     ):
         dataset_parent = DatasetFactory()
         data = {
-            "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
+            "name": "/datasets/gov/vssa/ror/dcat/uapi/Model",
             "title": "DataSet 1",
             "description": "DataSet 1 description",
             "service": True,
@@ -382,7 +382,7 @@ class TestCreate:
     ):
         """Check that unexpected errors still return a standard UAPI formatted response."""
         data = {
-            "name": "/datasets/gov/vssa/isris/dcat/uapi/Model",
+            "name": "/datasets/gov/vssa/ror/dcat/uapi/Model",
             "title": "Dataset 1",
             "description": "Dataset 1 description",
         }

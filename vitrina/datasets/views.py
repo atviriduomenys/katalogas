@@ -88,6 +88,8 @@ from vitrina.datasets.services import (
     get_query_for_frequency,
     DynamicResourceService,
     manage_subscriptions_for_representative,
+    RepresentativeCreationError,
+    DatasetRepresentativeService,
 )
 from vitrina.datasets.models import (
     Dataset,
@@ -116,14 +118,10 @@ from vitrina.helpers import (
     get_current_domain,
     build_page_title_context,
 )
-from vitrina.messages.models import Subscription, SentMail
+from vitrina.messages.models import Subscription
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
-from vitrina.orgs.views import (
-    ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
-    DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
-)
 from vitrina.plans.models import Plan, PlanDataset
 from vitrina.projects.models import Project
 from vitrina.requests.models import RequestObject, RequestAssignment, Request
@@ -138,7 +136,6 @@ from vitrina.structure.services import (
     get_model_name,
     get_allowed_visibilities,
 )
-from vitrina.users.models import User
 from vitrina.projects.services import get_projects, get_projects_linkable_to_dataset, can_manage_datasets
 
 
@@ -1631,83 +1628,22 @@ class CreateMemberView(
         return self.dataset
 
     def form_valid(self, form):
-        self.object: Representative = form.save(commit=False)
-        self.object.content_type = ContentType.objects.get_for_model(Dataset)
-        self.object.object_id = self.dataset.id
+        service = DatasetRepresentativeService(self.dataset, self.request)
 
         try:
-            user = User.objects.get(email=self.object.email)
-        except ObjectDoesNotExist:
-            user = None
-        try:
-            organization = Organization.objects.get(email=self.object.email)
-        except ObjectDoesNotExist:
-            organization = None
+            self.object, api_key_token = service.create_from_form(form)
+        except RepresentativeCreationError as e:
+            form.add_error(e.field, e.message)
+            return self.form_invalid(form)
 
-        if user:
-            self.object.user = user
-            self.object.save()
-
-            link = "%s%s" % (
-                get_current_domain(self.request),
-                reverse("dataset-detail", kwargs={"pk": self.object.object_id}),
-            )
-            manage_subscriptions_for_representative(
-                form.cleaned_data.get("subscribe"), self.object.user, self.dataset, link
-            )
-        elif organization and self.request.user.is_superuser and organization.publisher:
-            if self.object.role in Representative.COORDINATOR_ROLES:
-                form.add_error("role", _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
-                return self.form_invalid(form)
-            self.object.organization = organization
-            self.object.save()
-            self.dataset.publisher = organization
-        else:
-            self.object.save()
-            if not SentMail.objects.filter(
-                Q(
-                    Q(identifier=DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER)
-                    | Q(identifier=ORGANIZATION_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER)
-                )
-                & Q(recipient=f"['{self.object.email}']")
-            ):
-                serializer = URLSafeSerializer(settings.SECRET_KEY)
-                token = serializer.dumps(
-                    {
-                        "representative_id": self.object.pk,
-                        "subscribe": form.cleaned_data.get("subscribe"),
-                    }
-                )
-                url = "%s%s" % (
-                    get_current_domain(self.request),
-                    reverse("representative-register", kwargs={"token": token}),
-                )
-
-                email(
-                    [self.object.email],
-                    DATASET_REPRESENTATIVE_CREATE_EMAIL_IDENTIFIER,
-                    "vitrina/email/offer_to_join_portal.md",
-                    {"dataset": self.dataset, "link": url},
-                )
-                messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
-        self.dataset.save()
-
-        if self.object.has_api_access:
-            api_key = secrets.token_urlsafe()
-            ApiKey.objects.create(api_key=hash_api_key(api_key), enabled=True, representative=self.object)
-            serializer = URLSafeSerializer(settings.SECRET_KEY)
-            api_key = serializer.dumps({"api_key": api_key})
+        if api_key_token:
             return HttpResponseRedirect(
                 reverse(
                     "dataset-representative-api-key",
-                    args=[self.dataset.pk, self.object.pk, api_key],
+                    args=[self.dataset.pk, self.object.pk, api_key_token],
                 )
             )
 
-        phone = form.cleaned_data.get("phone")
-        if phone:
-            self.object.phone = phone
-            self.object.save()
         return HttpResponseRedirect(self.get_success_url())
 
 

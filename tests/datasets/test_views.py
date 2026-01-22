@@ -2336,6 +2336,7 @@ class TestDatasetMembers:
         response = app.get(reverse("dataset-members", kwargs={"pk": dataset.pk}))
         assert response.status_code == 200
 
+    @pytest.mark.django_db(transaction=True)
     def test_dataset_members_create_member(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)

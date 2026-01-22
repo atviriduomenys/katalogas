@@ -62,7 +62,7 @@ class BaseObjectMixin(serializers.Serializer):
 
 
 class BaseUUIDObjectMixin(BaseObjectMixin):
-    _id = serializers.CharField(source="uuid")
+    _id = serializers.UUIDField(source="uuid")
 
 
 class BaseObjectListSerializer(serializers.Serializer):

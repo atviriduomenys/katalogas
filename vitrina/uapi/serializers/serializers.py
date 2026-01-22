@@ -3,7 +3,30 @@ from rest_framework import serializers
 from vitrina.api.serializers import DatasetSerializer, DatasetDistributionSerializer, PostDatasetSerializer
 from vitrina.datasets.models import DCATResourceSubclass
 from vitrina.structure.models import Version
-from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin
+from vitrina.uapi.models import Agent
+from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin, BaseUUIDObjectMixin
+
+
+class UAPIAgentSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
+    class Meta:
+        model = Agent
+        fields = (
+            "synchronized_at",
+            "is_last_sync_successful",
+            "title",
+            "codename",
+            "object_type",
+            "is_open_data_published",
+            "open_data_publish_url",
+            "is_enabled",
+            "service",
+            "organization",
+            "oauth_client_id",
+            "environment",
+            "auth_server_url",
+            "api_gate_server_url",
+            "agent_address",
+        ) + BaseObjectMixin.Meta.fields
 
 
 class UAPIVersionSerializer(BaseObjectMixin, serializers.ModelSerializer):

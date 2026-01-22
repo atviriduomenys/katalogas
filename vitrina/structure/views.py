@@ -2294,7 +2294,8 @@ class ModelDeleteView(LoginRequiredMixin, View):
         metadata_version = get_object_or_404(_Version, pk=version_id)
         if not has_perm(request.user, Action.STRUCTURE, Dataset, dataset):
             return JsonResponse({"error": "Permission denied"}, status=403)
-
+        if metadata_version and not metadata_version.is_draft():
+            return JsonResponse({"error": "Permission denied"}, status=403)
         model_obj = get_object_or_404(
             Model.objects.annotate(
                 model_name=Func(

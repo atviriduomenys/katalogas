@@ -6404,6 +6404,27 @@ class TestModelDelete:
         assert resp.json == {"error": "Permission denied"}
         assert Model.objects.filter(pk=model.pk).exists()
 
+    @pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+    def test_delete_on_not_draft_version(self, app: DjangoTestApp, status: str):
+        user = UserFactory(is_staff=False)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        metadata_version = dataset.metadata.first().metadata_version
+        metadata_version.status = status
+        model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+        MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+            metadata_version=metadata_version
+        )
+
+        resp = app.post(reverse('model-delete', args=[dataset.pk, metadata_version.pk, 'TestModel']), expect_errors=True)
+        assert resp.status_code == 403
+        assert resp.json == {"error": "Permission denied"}
+        assert Model.objects.filter(pk=model.pk).exists()
+
     def test_not_found(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
         app.set_user(user)

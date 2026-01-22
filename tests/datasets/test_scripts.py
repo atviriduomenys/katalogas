@@ -11,7 +11,6 @@ from scripts.geoportal_import import main as geoportal_import
 from vitrina import settings
 from vitrina.classifiers.factories import (
     FrequencyFactory,
-    LicenceFactory,
     CategoryFactory,
     GeoportalCategoryFactory,
     GeoportalFrequencyFactory,
@@ -2713,7 +2712,7 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp, role: str):
         object_id=organization.pk,
         dataset_update_sub=True,
     )
-    dataset = DatasetFactory(geoportal_id="1", organization=organization)
+    DatasetFactory(geoportal_id="1", organization=organization)
 
     with patch('scripts.geoportal_import.requests.get') as get_data:
         get_all = '''

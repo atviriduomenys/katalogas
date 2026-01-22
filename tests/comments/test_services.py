@@ -8,7 +8,6 @@ from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
-from vitrina.orgs.factories import OrganizationFactory
 from vitrina.users.factories import UserFactory
 
 

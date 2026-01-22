@@ -1,4 +1,3 @@
-import re
 from unittest.mock import patch
 
 import pytest
@@ -245,15 +244,6 @@ def test_profile_view_correct_login(app: DjangoTestApp, user: User):
     app.set_user(user)
     resp = app.get(reverse('user-profile', kwargs={'pk': user.pk}))
     assert resp.status_code == 200
-
-
-@pytest.mark.django_db
-def test_profile_view_wrong_login(app: DjangoTestApp, user: User):
-    app.set_user(user)
-    temp_user = User.objects.create_user(email="testas@testas.com", password="testas123")
-    resp = app.get(reverse('user-profile', kwargs={'pk': temp_user.pk}))
-    assert resp.status_code == 302
-    assert str(user.pk) in resp.location
 
 
 @pytest.mark.django_db

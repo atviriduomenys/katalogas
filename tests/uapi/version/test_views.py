@@ -109,7 +109,7 @@ class TestList:
     ):
         another_dataset = DatasetFactory()
         version = dataset.metadata.first().metadata_version
-        another_version = another_dataset.metadata.first().metadata_version  # Would be returned as well, if not for the specific query parameters.
+        another_dataset.metadata.first().metadata_version  # Would be returned as well, if not for the specific query parameters.
 
         response = app.get(
             url_version,

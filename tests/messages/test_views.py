@@ -22,7 +22,6 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestFactory
 from vitrina.requests.models import Request
 from vitrina.users.factories import UserFactory
-from vitrina.users.models import User
 
 
 @pytest.fixture

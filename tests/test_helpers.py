@@ -5,7 +5,7 @@ from django.test import RequestFactory
 from django.utils.translation import gettext as _
 
 from vitrina.helpers import get_selected_value, get_filter_url, get_file_extension
-from vitrina.helpers import prepare_email_by_identifier, build_page_title_context
+from vitrina.helpers import build_page_title_context
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import OrganizationFactory
 

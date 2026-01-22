@@ -4,12 +4,10 @@ import pytest
 import pytz
 from django.conf import settings
 
-from django.contrib.contenttypes.models import ContentType
 
 from vitrina.classifiers.factories import ConceptFactory
-from vitrina.datasets.factories import ContactFactory, DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
 from vitrina.datasets.models import DCATResourceSubclass, Dataset
-from vitrina.datasets.models import Contact
 from vitrina.orgs.factories import OrganizationFactory
 
 pytestmark = pytest.mark.django_db

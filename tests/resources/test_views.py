@@ -5,7 +5,6 @@ from django_webtest import DjangoTestApp
 from unittest.mock import patch
 
 from vitrina import settings
-from vitrina.classifiers.models import Concept
 from vitrina.classifiers.factories import ApplicableLegislationFactory
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -20,7 +19,6 @@ from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import MetadataFactory, ModelFactory, VersionFactory
 from vitrina.structure import VersionStatus
-from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -457,7 +455,7 @@ def test_distribution_detail_dynamic_resource_json(app: DjangoTestApp):
     metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    model_metadata = MetadataFactory(
+    MetadataFactory(
         dataset=dataset,
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -483,7 +481,7 @@ def test_distribution_detail_dynamic_resource_jsonl(app: DjangoTestApp):
     metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(dataset=dataset, uapi_format=True)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    model_metadata = MetadataFactory(
+    MetadataFactory(
         dataset=dataset,
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -509,7 +507,7 @@ def test_distribution_detail_dynamic_resource_csv(app: DjangoTestApp):
     metadata_version = dataset.metadata.first().metadata_version
     resource = DatasetDistributionFactory(uapi_format=True)
     model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
-    model_metadata = MetadataFactory(
+    MetadataFactory(
         dataset=dataset,
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,

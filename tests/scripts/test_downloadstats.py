@@ -122,7 +122,7 @@ def test_downloadstats(patcher: MagicMock, tmp_path: Path):
     assert res.exit_code == 0
 
     log_file = tmp_path / 'accesslog.json'
-    logbytes = log_file.read_bytes()
+    log_file.read_bytes()
 
     session = patcher.return_value
 

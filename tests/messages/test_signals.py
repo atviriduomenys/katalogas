@@ -129,32 +129,6 @@ def test_more_than_3_datasets_splits_correctly(mock_get_absolute_url, mock_email
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    call_args = mock_email.call_args
-    context = call_args[1]['context']
-
-    assert len(context['top_datasets']) == 3
-    assert len(context['list_datasets']) == 2
-    assert 'list_datasets' in context
-
-
-@pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
-@patch('djangocms_blog.models.Post.get_absolute_url')
-def test_more_than_3_datasets_splits_correctly(mock_get_absolute_url, mock_email, last_month, subscriber):
-    mock_get_absolute_url.return_value = '/blog/test/'
-
-    for i in range(5):
-        Dataset.objects.create(
-            title=f'Dataset {i + 1}',
-            description=f'Description {i + 1}',
-            is_public=True,
-            published=last_month,
-            status=Dataset.HAS_DATA,
-        )
-
-    count = send_monthly_newsletter.send(sender=None)[0][1]
-    assert count == 1
-
     # Verify email was called with correct context structure
     call_args = mock_email.call_args
     context = call_args[1]['context']

@@ -1099,7 +1099,7 @@ def test_organization_representative_view_permission_publisher(role: str, expect
     organization = OrganizationFactory()
 
     ct = ContentType.objects.get_for_model(organization)
-    manager = RepresentativeFactory(
+    RepresentativeFactory(
         organization=user_organization,
         content_type=ct,
         object_id=organization.pk,

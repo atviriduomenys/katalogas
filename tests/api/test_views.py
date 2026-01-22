@@ -43,7 +43,7 @@ def test_retrieve_catalog_list_with_disabled_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(
+    APIKeyFactory(
         representative=representative,
         enabled=False
     )
@@ -62,7 +62,7 @@ def test_retrieve_catalog_list_with_expired_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(
+    APIKeyFactory(
         representative=representative,
         expires=timezone.make_aware(datetime(2000, 12, 24))
     )
@@ -107,7 +107,7 @@ def test_retrieve_catalog_list_with_correct_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -138,7 +138,7 @@ def test_retrieve_category_list_with_disabled_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(
+    APIKeyFactory(
         representative=representative,
         enabled=False
     )
@@ -157,7 +157,7 @@ def test_retrieve_category_list_with_expired_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(
+    APIKeyFactory(
         representative=representative,
         expires=timezone.make_aware(datetime(2000, 12, 24))
     )
@@ -202,7 +202,7 @@ def test_retrieve_category_list_with_correct_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -228,7 +228,7 @@ def test_licence_licence_list_with_disabled_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(
+    APIKeyFactory(
         representative=representative,
         enabled=False
     )
@@ -247,7 +247,7 @@ def test_licence_licence_list_with_expired_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(
+    APIKeyFactory(
         representative=representative,
         expires=timezone.make_aware(datetime(2000, 12, 24))
     )
@@ -292,7 +292,7 @@ def test_retrieve_licence_list_with_correct_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -345,7 +345,6 @@ def test_get_all_datasets(app: DjangoTestApp):
         "publisher": None,
         "spatial": dataset.spatial_coverage,
         "periodicity": dataset.frequency.title,
-        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -370,7 +369,7 @@ def test_get_dataset_from_different_organization(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -391,7 +390,7 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -414,7 +413,6 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         "publisher": None,
         "spatial": dataset.spatial_coverage,
         "periodicity": dataset.frequency.title,
-        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -429,7 +427,7 @@ def test_get_dataset_with_wrong_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -450,7 +448,7 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -473,7 +471,6 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         "publisher": None,
         "spatial": dataset.spatial_coverage,
         "periodicity": dataset.frequency.title,
-        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -496,7 +493,7 @@ def test_create_dataset_with_errors(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -517,7 +514,7 @@ def test_create_dataset(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -572,7 +569,6 @@ def test_create_dataset(app: DjangoTestApp):
         "publisher": None,
         "spatial": dataset.spatial_coverage,
         "periodicity": dataset.frequency.title,
-        'publisher': None,
         "keyword": ['tag1', 'tag2'],
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -597,7 +593,7 @@ def test_update_dataset_from_different_organization(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -619,7 +615,7 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -656,7 +652,6 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         "publisher": None,
         "spatial": dataset.spatial_coverage,
         "periodicity": dataset.frequency.title,
-        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -674,7 +669,7 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -711,7 +706,6 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         "publisher": None,
         "spatial": dataset.spatial_coverage,
         "periodicity": dataset.frequency.title,
-        'publisher': None,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
         "theme": [category.title]
@@ -736,7 +730,7 @@ def test_delete_dataset_from_different_organization(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -757,7 +751,7 @@ def test_delete_dataset_with_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -793,7 +787,7 @@ def test_delete_dataset_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -838,7 +832,7 @@ def test_get_all_dataset_distributions_with_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -872,7 +866,7 @@ def test_get_all_dataset_distributions_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -906,7 +900,7 @@ def test_get_all_distributions(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -947,7 +941,7 @@ def test_create_dataset_distribution_without_file_and_url(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution")
     ], files=[])
@@ -971,7 +965,7 @@ def test_create_dataset_distribution_with_both_file_and_url(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('url', "https://test.com/")
@@ -996,7 +990,7 @@ def test_create_dataset_distribution_with_empty_file(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('url', "https://test.com/")
@@ -1021,7 +1015,7 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('region', 'Geo'),
@@ -1062,7 +1056,7 @@ def test_create_dataset_distribution_with_url(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('region', 'Geo'),
@@ -1105,7 +1099,7 @@ def test_create_dataset_distribution_with_overwrite(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('region', 'Geo'),
@@ -1147,7 +1141,7 @@ def test_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('region', 'Geo'),
@@ -1198,7 +1192,7 @@ def test_put_create_dataset_distribution_without_file_and_url(app: DjangoTestApp
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution")
     ], files=[])
@@ -1222,7 +1216,7 @@ def test_put_create_dataset_distribution_with_both_file_and_url(app: DjangoTestA
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('url', "https://test.com/")
@@ -1247,7 +1241,7 @@ def test_put_create_dataset_distribution_with_empty_file(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('url', "https://test.com/")
@@ -1272,7 +1266,7 @@ def test_put_create_dataset_distribution_with_file(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('region', 'Geo'),
@@ -1313,7 +1307,7 @@ def test_put_create_dataset_distribution_with_url(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('region', 'Geo'),
@@ -1355,7 +1349,7 @@ def test_put_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('region', 'Geo'),
@@ -1408,7 +1402,7 @@ def test_update_dataset_distribution_with_wrong_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1428,7 +1422,7 @@ def test_update_dataset_distribution_with_wrong_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1447,7 +1441,7 @@ def test_update_dataset_distribution_with_both_file_and_url(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
         ('url', 'http://example.com/')
@@ -1473,7 +1467,7 @@ def test_update_dataset_distribution_with_empty_file(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test distribution"),
     ], files=[('file', 'file.csv', b'')])
@@ -1491,14 +1485,13 @@ def test_update_dataset_distribution_with_empty_file(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_update_dataset_distribution_with_not_allowed_file(app: DjangoTestApp):
-    domain = Site.objects.get_current().domain
     distribution = DatasetDistributionFactory()
     ct = ContentType.objects.get_for_model(distribution.dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Updated title"),
         ('description', "Updated description"),
@@ -1525,7 +1518,7 @@ def test_update_dataset_distribution_with_file(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Updated title"),
         ('description', "Updated description"),
@@ -1566,7 +1559,7 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Updated title"),
         ('description', "Updated description"),
@@ -1609,7 +1602,7 @@ def test_update_dataset_distribution_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Updated title"),
         ('description', "Updated description"),
@@ -1661,7 +1654,7 @@ def test_delete_dataset_distribution_with_wrong_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1681,7 +1674,7 @@ def test_delete_dataset_distribution_with_wrong_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=distribution.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1701,7 +1694,7 @@ def test_delete_dataset_distribution_with_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1721,7 +1714,7 @@ def test_delete_dataset_distribution_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1750,7 +1743,7 @@ def test_get_dataset_structures_with_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=structure.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1776,7 +1769,7 @@ def test_get_dataset_structures_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1809,7 +1802,7 @@ def test_create_dataset_structure_with_errors(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1829,7 +1822,7 @@ def test_create_dataset_structure_with_not_allowed_file(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test structure")
     ], files=[('file', 'file.svg', b'test')])
@@ -1851,7 +1844,7 @@ def test_create_dataset_structure_with_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test structure")
     ], files=[('file', 'file.csv', b'test')])
@@ -1883,7 +1876,7 @@ def test_create_dataset_structure_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     content_type, params = app.encode_multipart(params=[
         ('title', "Test structure")
     ], files=[('file', 'file.csv', b'test')])
@@ -1926,7 +1919,7 @@ def test_delete_dataset_structure_with_wrong_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=structure.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1946,7 +1939,7 @@ def test_delete_dataset_structure_with_wrong_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=structure.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1966,7 +1959,7 @@ def test_delete_dataset_structure_with_dataset_id(app: DjangoTestApp):
         content_type=ct,
         object_id=dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -1986,7 +1979,7 @@ def test_delete_dataset_structure_with_internal_id(app: DjangoTestApp):
         content_type=ct,
         object_id=structure.dataset.organization.pk,
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -2009,7 +2002,7 @@ def test_create_model_statistics(app: DjangoTestApp):
         object_id=organization.pk,
         user=user
     )
-    api_key = APIKeyFactory(representative=representative)
+    APIKeyFactory(representative=representative)
     app.extra_environ.update({
         'HTTP_AUTHORIZATION': 'ApiKey test'
     })
@@ -2364,7 +2357,7 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     hvd_group.save()
     parent_category = CategoryFactory(
         title="Environment",
-        uri=f'http://publications.europa.eu/resource/authority/data-theme/ENVI',
+        uri='http://publications.europa.eu/resource/authority/data-theme/ENVI',
     )
     hvd_category = parent_category.add_child(
         instance=CategoryFactory.build(
@@ -2387,7 +2380,7 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
             'en': 'Dataset description.',
         },
         published=datetime(2016, 8, 1),
-        frequency=FrequencyFactory(uri=f'http://publications.europa.eu/resource/authority/frequency/IRREG'),
+        frequency=FrequencyFactory(uri='http://publications.europa.eu/resource/authority/frequency/IRREG'),
         category=[hvd_category],
         organization=OrganizationFactory(
             title='Data Enterprise',

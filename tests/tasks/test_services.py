@@ -22,7 +22,7 @@ def test_get_active_tasks():
 
     task_for_user = TaskFactory(user=user)
     task_for_organization1 = TaskFactory(organization=organization)
-    task_for_organization2 = TaskFactory(organization=OrganizationFactory())
+    TaskFactory(organization=OrganizationFactory())
 
     active_tasks = get_active_tasks(user)
     assert list(active_tasks) == [

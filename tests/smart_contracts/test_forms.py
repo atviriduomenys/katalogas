@@ -7,11 +7,10 @@ from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django_webtest import DjangoTestApp
 
-from tests.conftest import organization
-from tests.smart_contracts.conftest import agreement_pdf, ODRL_JSON
+from tests.smart_contracts.conftest import ODRL_JSON
 from vitrina.datasets.factories import DatasetFactory, ContactFactory
 from vitrina.datasets.models import Dataset
-from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.projects.factories import ProjectFactory
 from vitrina.smart_contracts import AgreementStatuses
@@ -23,7 +22,6 @@ from vitrina.smart_contracts.forms import (
     AgreementFormForm, AgreementInitiateForm, AgreementSignForm,
 )
 from vitrina.smart_contracts.models import SmartContractTemplate
-from vitrina.structure.factories import MetadataFactory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 

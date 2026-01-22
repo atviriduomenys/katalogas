@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 import csv
 import io
-from unittest.mock import patch, Mock
+from unittest.mock import patch
 
 import pytest
 from django.apps import apps
@@ -113,7 +113,6 @@ def organization(db):
 @pytest.fixture
 def dataset(db, organization):
     """Create test dataset."""
-    from vitrina.datasets.models import Dataset
     dataset = DatasetFactory.create(title="Test Dataset", organization=organization)
     return dataset
 

@@ -700,7 +700,7 @@ class TestList:
             "type": "DatasetNotFound",
             "template": "The requested Dataset could not be found.",
             "message": (
-                f"No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/."
+                "No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/."
             ),
             "additionalProperties": None
         }
@@ -735,7 +735,7 @@ class TestList:
             "type": "DatasetNotFound",
             "template": "The requested Dataset could not be found.",
             "message": (
-                f"No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/."
+                "No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/."
             ),
             "additionalProperties": None
         }

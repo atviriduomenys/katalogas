@@ -1,5 +1,4 @@
 import pytest
-from django_webtest import DjangoTestApp
 from django.test import override_settings
 from vitrina.structure.models import ManifestValidationEntry
 from vitrina.users.factories import UserFactory

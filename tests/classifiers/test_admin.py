@@ -14,7 +14,7 @@ from vitrina.users.models import User
 @pytest.mark.django_db
 def test_change_default_licence(app: DjangoTestApp):
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
-    default_licence = LicenceFactory(is_default=True)
+    LicenceFactory(is_default=True)
     another_licence = LicenceFactory(is_default=False)
     app.set_user(admin)
     form = app.get(reverse('admin:vitrina_classifiers_licence_change', args=[another_licence.pk])).forms['licence_form']
@@ -26,7 +26,7 @@ def test_change_default_licence(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_change_default_frequency(app: DjangoTestApp):
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
-    default_frequency = FrequencyFactory(is_default=True)
+    FrequencyFactory(is_default=True)
     another_frequency = FrequencyFactory(is_default=False)
     app.set_user(admin)
     form = app.get(reverse('admin:vitrina_classifiers_frequency_change',

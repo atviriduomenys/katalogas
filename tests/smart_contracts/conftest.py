@@ -3,13 +3,11 @@ from pathlib import Path
 from lxml import etree
 from cryptography import x509
 from base64 import b64decode
-from django.contrib.contenttypes.models import ContentType
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
-from vitrina.structure.factories import MetadataFactory
 from vitrina.smart_contracts.services import SAFE_PARSER, SIGNATURE_NAMESPACES
 
 

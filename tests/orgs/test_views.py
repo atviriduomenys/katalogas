@@ -20,7 +20,6 @@ from itsdangerous import URLSafeSerializer
 from pdfminer.high_level import extract_text
 from webtest import Upload
 
-from vitrina import settings
 from vitrina.api.factories import APIKeyFactory
 from vitrina.api.models import ApiKey
 from vitrina.classifiers.factories import AreaOfManagementFactory
@@ -36,7 +35,7 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestFactory
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.factories import AgreementFactory, AgreementPDFFileFactory, AgreementJSONFileFactory
-from vitrina.smart_contracts.models import SmartContractTemplate, Agreement, AgreementFile
+from vitrina.smart_contracts.models import SmartContractTemplate
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -79,7 +78,7 @@ def test_organization_dataset_tab(app: DjangoTestApp):
     organization1 = OrganizationFactory()
     organization2 = OrganizationFactory()
     dataset1 = DatasetFactory(organization=organization1)
-    dataset2 = DatasetFactory(organization=organization2)
+    DatasetFactory(organization=organization2)
     resp = app.get(reverse('organization-datasets', args=[organization1.pk]))
     assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų ištekliai"]
@@ -1044,8 +1043,8 @@ def test_contact_create_for_non_registered_contact(app, representative_data):
     assert resp.status_code == 302
 
     contact = Contact.objects.first()
-    assert contact.content_type == None
-    assert contact.object_id == None
+    assert contact.content_type is None
+    assert contact.object_id is None
     assert contact.organization == org
     assert contact.contact_name == "Test Testeron"
     assert contact.position == "Tester"

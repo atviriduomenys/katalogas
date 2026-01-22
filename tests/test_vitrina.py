@@ -3,11 +3,6 @@ from django.urls import reverse
 
 from django_webtest import DjangoTestApp
 
-from vitrina.datasets.factories import DatasetFactory
-from vitrina.datasets.models import Dataset
-from vitrina.orgs.factories import OrganizationFactory
-from vitrina.plans.models import Project
-from vitrina.projects.factories import ProjectFactory
 from vitrina.users.factories import UserFactory
 
 

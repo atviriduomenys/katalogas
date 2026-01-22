@@ -161,7 +161,7 @@ def test_task_assign_with_user_with_no_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_task_close_with_user_with_already_closed_task(app: DjangoTestApp):
+def test_task_assign_with_user_with_already_closed_task(app: DjangoTestApp):
     user = UserFactory()
     task = TaskFactory(user=user, status=Task.COMPLETED)
     app.set_user(user)

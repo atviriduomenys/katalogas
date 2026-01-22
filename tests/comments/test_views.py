@@ -1,5 +1,3 @@
-import json
-from unittest.mock import patch, Mock
 
 import pytest
 from django.contrib.contenttypes.models import ContentType

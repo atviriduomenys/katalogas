@@ -734,8 +734,8 @@ def test_structure_without_resource_and_existing_distribution(app: DjangoTestApp
     create_structure_objects(structure, metadata_version)
 
     assert DatasetDistribution.objects.count() == 1
-    assert Model.objects.get(metadata__uuid='1').distribution == None
-    assert Model.objects.get(metadata__uuid='2').distribution == None
+    assert Model.objects.get(metadata__uuid='1').distribution is None
+    assert Model.objects.get(metadata__uuid='2').distribution is None
     assert structure.dataset.status == Dataset.HAS_DATA
 
 
@@ -772,8 +772,8 @@ def test_structure_without_resource_and_existing_distribution_without_title(app:
     distribution.refresh_from_db()
     distribution.set_current_language("lt")
     assert DatasetDistribution.objects.count() == 1
-    assert Model.objects.get(metadata__uuid='1').distribution == None
-    assert Model.objects.get(metadata__uuid='2').distribution == None
+    assert Model.objects.get(metadata__uuid='1').distribution is None
+    assert Model.objects.get(metadata__uuid='2').distribution is None
     assert structure.dataset.status == Dataset.HAS_DATA
     assert distribution.title == "adp"
 
@@ -808,8 +808,8 @@ def test_structure_without_resource_and_existing_distribution_without_ns(app: Dj
     create_structure_objects(structure, metadata_version)
 
     assert DatasetDistribution.objects.count() == 1
-    assert Model.objects.get(metadata__uuid='1').distribution == None
-    assert Model.objects.get(metadata__uuid='2').distribution == None
+    assert Model.objects.get(metadata__uuid='1').distribution is None
+    assert Model.objects.get(metadata__uuid='2').distribution is None
     assert structure.dataset.status == Dataset.HAS_DATA
 
 

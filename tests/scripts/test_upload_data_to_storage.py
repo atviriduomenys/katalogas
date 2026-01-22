@@ -9,7 +9,7 @@ class TestHandleError(unittest.TestCase):
     def test_handle_error(self):
         try:
             raise ValueError("Oh no")
-        except ValueError as e:
+        except ValueError:
             tb = traceback.format_exc()
 
         result = handle_error(tb)

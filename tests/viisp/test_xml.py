@@ -1,6 +1,4 @@
 import pytest
-from unittest.mock import patch
-from django.urls import reverse
 from django_webtest import DjangoTestApp
 from vitrina.viisp.xml_utils import create_signed_authentication_request_xml, \
 create_signed_authentication_data_request_xml, _parse_ticket_id, _parse_user_data

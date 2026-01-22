@@ -22,7 +22,6 @@ from vitrina.requests.factories import (
 )
 from vitrina.requests.models import Request, RequestObject
 from vitrina.users.factories import UserFactory, ManagerFactory
-from vitrina.users.factories import UserFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.utils import RevisionComment, RevisionSource
 
@@ -32,7 +31,6 @@ timezone = pytz.timezone(settings.TIME_ZONE)
 @pytest.mark.django_db
 def test_request_create(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
-    orgs = [OrganizationFactory(), OrganizationFactory()]
     app.set_user(user)
     url = reverse("request-create")
     revision_comment = RevisionComment(
@@ -126,7 +124,6 @@ def test_request_history_view_without_permission(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_request_history_view_with_permission(app: DjangoTestApp):
     user = ManagerFactory(is_staff=True)
-    orgs = [OrganizationFactory().pk, OrganizationFactory().pk]
     request = RequestFactory(user=user)
     request.organizations.add(user.organization)
     app.set_user(user)
@@ -242,7 +239,7 @@ def test_add_request_to_plan_title_error(app: DjangoTestApp):
 def test_request_orgs_view(app: DjangoTestApp):
     organization = OrganizationFactory()
     request = RequestFactory()
-    ra = RequestAssignmentFactory(
+    RequestAssignmentFactory(
         organization=organization,
         request=request,
         status=request.status
@@ -268,7 +265,7 @@ def test_request_orgs_view_click_delete_button_no_user(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_request_orgs_view_click_delete_button_no_user(app: DjangoTestApp):
+def test_request_orgs_view_click_delete_button_redirects_if_no_user(app: DjangoTestApp):
     request = RequestFactory()
     organization = OrganizationFactory()
     ra = RequestAssignmentFactory(
@@ -308,6 +305,7 @@ def test_add_new_dataset_to_request_without_permission(app: DjangoTestApp):
         status=request.status
     )
     subclass = DCATResourceSubclassFactory()
+
     resp = app.get(reverse('request-datasets', args=[request.pk]))
     assert "add-new-dataset" not in resp.text
     resp = app.get(
@@ -333,7 +331,6 @@ def test_add_new_dataset_to_request_with_representative_permission(app: DjangoTe
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk
     )
-    subclass = DCATResourceSubclassFactory()
     resp = app.get(reverse('request-datasets', args=[request.pk]))
     assert "add-new-dataset" in resp.text
     resp = resp.click(linkid="add-new-dataset")
@@ -364,7 +361,6 @@ def test_add_new_dataset_to_request_with_organization_permission(app: DjangoTest
         object_id=organization2.pk
     )
     resp = app.get(reverse('request-datasets', args=[request.pk]))
-    subclass = DCATResourceSubclassFactory()
     assert "add-new-dataset" in resp.text
     resp = resp.click(linkid="add-new-dataset")
     assert resp.request.path_qs == \

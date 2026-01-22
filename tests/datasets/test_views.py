@@ -48,7 +48,7 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
     CatalogResourceForm,
 )
-from vitrina.datasets.models import Dataset, DatasetStructure, Contact, Type, Relation
+from vitrina.datasets.models import Dataset, DatasetStructure, Type, Relation
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -62,11 +62,10 @@ from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, VersionFactory
 from vitrina.structure import VersionStatus
-from vitrina.structure.factories import ModelFactory, MetadataFactory, VersionFactory
 from vitrina.testing.templates import strip_empty_lines
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
-from vitrina.identifiers.factories import AgencyFactory, IdentifierFactory
+from vitrina.identifiers.factories import IdentifierFactory
 from vitrina.identifiers.models import Identifier, Agency
 from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.utils import RevisionComment, RevisionSource
@@ -588,8 +587,8 @@ class TestDatasetListView:
         dataset2 = DatasetFactory(organization=org2)
         ct = ContentType.objects.get_for_model(Organization)
         user = User.objects.create_user(email="test@test.com", password="test123")
-        rep = RepresentativeFactory(content_type=ct, object_id=org.pk, role=role, user=user)
-        rep2 = RepresentativeFactory(content_type=ct, object_id=org2.pk, role=role, user=user)
+        RepresentativeFactory(content_type=ct, object_id=org.pk, role=role, user=user)
+        RepresentativeFactory(content_type=ct, object_id=org2.pk, role=role, user=user)
         app.set_user(user)
         resp = app.get(reverse("dataset-list"))
         resp = resp.click(linkid="manager-dataset-url")
@@ -1331,7 +1330,7 @@ class TestDatasetUpdateView:
 
         response = app.get(reverse("dataset-change", kwargs={"pk": dataset.id}))
 
-        assert type(response.context.get("form")) == form_class
+        assert type(response.context.get("form")) is form_class
 
     def test_dataset_update_information_system(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
@@ -1713,7 +1712,7 @@ class TestDatasetCreateView:
         app.set_user(user)
         response = app.get(reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk}))
 
-        assert type(response.context.get("form")) == form_class
+        assert type(response.context.get("form")) is form_class
 
     def test_dataset_create_information_system(self, app: DjangoTestApp):
         organization = OrganizationFactory()
@@ -2179,9 +2178,9 @@ class TestDatasetCreateView:
         user = UserFactory(is_staff=True, organization=org)
         app.set_user(user)
         dataset1 = DatasetFactory(organization=org, title="Test Dataset", metadata=f"{org.name}test-dataset")
-        metadata_version1 = VersionFactory(dataset=dataset1)
+        VersionFactory(dataset=dataset1)
         dataset2 = DatasetFactory(organization=org, title="Second Test Dataset", metadata=f"{org.name}test-dataset_3")
-        metadata_version2 = VersionFactory(dataset=dataset2)
+        VersionFactory(dataset=dataset2)
 
         form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
             "dataset-form"
@@ -3659,7 +3658,7 @@ def test_delete_non_last_distribution_from_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True, organization=organization)
     app.set_user(user)
     dataset = DatasetFactory(organization=organization, status=Dataset.HAS_DATA)
-    resource1 = DatasetDistributionFactory(dataset=dataset)
+    DatasetDistributionFactory(dataset=dataset)
     resource2 = DatasetDistributionFactory(dataset=dataset)
     ModelFactory(dataset=resource2.dataset, distribution=resource2)
 

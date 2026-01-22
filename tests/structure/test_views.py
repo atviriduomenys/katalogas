@@ -15,7 +15,6 @@ from pygments.lexers.data import JsonLexer
 from pygments.lexers.special import TextLexer
 from pygments.styles import get_style_by_name
 from reversion.models import Version
-from webtest import AppError
 
 from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
@@ -29,7 +28,7 @@ from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import VersionStatus
 from vitrina.structure.factories import ModelFactory, MetadataFactory, PropertyFactory, EnumFactory, EnumItemFactory, \
     PrefixFactory, ParamItemFactory, ParamFactory, BaseFactory, VersionFactory
-from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionType, Model, Property, Base
+from vitrina.structure.models import Metadata, Enum, EnumItem, VersionType, Model, Property, Base
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
@@ -2549,16 +2548,16 @@ def test_new_version_with_updated_structure__model_base(app: DjangoTestApp):
     first_published_version = _Version.objects.filter(dataset=dataset).order_by('-created').first()
     first_version_metadata = Metadata.objects.filter(dataset=dataset, metadata_version=first_published_version).all()
 
-    base_model = ModelFactory(dataset=dataset, metadata_version=version,)
-    base_model_meta = MetadataFactory(
+    base_model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(base_model),
         object_id=base_model.pk,
         dataset=dataset,
         name="test/dataset/BaseModel",
         metadata_version=version,
     )
-    base = BaseFactory(model=base_model, metadata_version=version,)
-    base_meta = MetadataFactory(
+    base = BaseFactory(model=base_model, metadata_version=version)
+    base_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(base),
         object_id=base.pk,
         dataset=dataset,
@@ -2646,7 +2645,7 @@ def test_new_version_with_updated_structure__model_ref(app: DjangoTestApp):
     assert dataset.dataset_version.count() == 3
     assert first_version_metadata.filter(
         content_type=ContentType.objects.get_for_model(model),
-    ).first().ref is ""
+    ).first().ref == ""
 
     assert second_version_metadata.count() == 2
     assert second_version_metadata.first().object.pk != model.pk
@@ -3163,7 +3162,7 @@ def test_version_list_with_non_public_dataset_without_access(app: DjangoTestApp)
     )
 def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
-    version = VersionFactory(dataset=dataset)
+    VersionFactory(dataset=dataset)
     user = UserFactory()
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(dataset),
@@ -5465,7 +5464,6 @@ def test_publishing_model_without_resource_error(app: DjangoTestApp):
         name="test/dataset/TestModel",
         metadata_version=version
     )
-    distribution_meta = distribution.metadata.first()
 
     original_metadata_count = 3
     original_model_count = 1
@@ -5543,7 +5541,7 @@ def test_publishing_property_without_model_error(app: DjangoTestApp):
     version = dataset.metadata.first().metadata_version
     dataset_meta = dataset.metadata.first()
     model = ModelFactory(dataset=dataset, metadata_version=version)
-    model_meta = MetadataFactory(
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
@@ -5654,7 +5652,7 @@ def test_publishing_enum_without_property_error(app: DjangoTestApp):
     version = dataset.metadata.first().metadata_version
     dataset_meta = dataset.metadata.first()
     model = ModelFactory(dataset=dataset, metadata_version=version)
-    model_meta = MetadataFactory(
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
@@ -5662,7 +5660,7 @@ def test_publishing_enum_without_property_error(app: DjangoTestApp):
         metadata_version=version,
     )
     prop = PropertyFactory(model=model, metadata_version=version,)
-    prop_meta = MetadataFactory(
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
@@ -5740,7 +5738,7 @@ def test_publishing_model_with_base_duplicates_model_and_base(app: DjangoTestApp
         metadata_version=version,
     )
     base = BaseFactory(model=base_model, metadata_version=version,)
-    base_meta = MetadataFactory(
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(base),
         object_id=base.pk,
         dataset=dataset,
@@ -5790,7 +5788,7 @@ def test_publishing_model_with_without_base_error(app: DjangoTestApp):
         metadata_version=version
     )
     base_model = ModelFactory(dataset=dataset, metadata_version=version)
-    base_model_meta = MetadataFactory(
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(base_model),
         object_id=base_model.pk,
         dataset=dataset,
@@ -5798,7 +5796,7 @@ def test_publishing_model_with_without_base_error(app: DjangoTestApp):
         metadata_version=version,
     )
     base = BaseFactory(model=base_model, metadata_version=version,)
-    base_meta = MetadataFactory(
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(base),
         object_id=base.pk,
         dataset=dataset,
@@ -6063,9 +6061,9 @@ def test_publishing_model_with_base_from_draft_version_different_dataset(app: Dj
     app.set_user(user)
     first_dataset = DatasetFactory()
     first_version = first_dataset.metadata.first().metadata_version
-    first_dataset_meta = first_dataset.metadata.first()
+    first_dataset.metadata.first()
     first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
-    first_model_meta = MetadataFactory(
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
         object_id=first_model.pk,
         dataset=first_dataset,
@@ -6261,7 +6259,7 @@ def test_publishing_property_with_draft_model_ref_same_dataset(app: DjangoTestAp
     version = dataset.metadata.first().metadata_version
     dataset_meta = dataset.metadata.first()
     first_model = ModelFactory(dataset=dataset, metadata_version=version)
-    first_model_meta = MetadataFactory(
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
         object_id=first_model.pk,
         dataset=dataset,
@@ -6314,9 +6312,9 @@ def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoT
     app.set_user(user)
     first_dataset = DatasetFactory()
     first_version = first_dataset.metadata.first().metadata_version
-    first_dataset_meta = first_dataset.metadata.first()
+    first_dataset.metadata.first()
     first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
-    first_model_meta = MetadataFactory(
+    MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
         object_id=first_model.pk,
         dataset=first_dataset,
@@ -6464,7 +6462,7 @@ class TestModelDelete:
             metadata_version=metadata_version
         )
 
-        resp = app.post(reverse('model-delete', args=[dataset.pk, metadata_version.pk, 'TestModel']))
+        app.post(reverse('model-delete', args=[dataset.pk, metadata_version.pk, 'TestModel']))
 
         assert not Model.objects.filter(pk=model.pk).exists()
         assert not Metadata.objects.filter(pk=metadata.pk).exists()

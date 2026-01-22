@@ -6,7 +6,6 @@ from django_webtest import DjangoTestApp
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
-from vitrina.orgs import forms
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization, Representative
 
@@ -34,14 +33,6 @@ def test_admin_publisher_list_display(app: DjangoTestApp):
     resp = app.get(reverse('admin:vitrina_orgs_publisherorganization_changelist'))
     assert [org.title for org in resp.context['cl'].result_list] == ['title1', 'title2', 'title3']
     assert org.title not in [org.title for org in resp.context['cl'].result_list]
-
-@pytest.mark.django_db
-def test_admin_publisher_update(app: DjangoTestApp):
-    admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
-    publisher_org = OrganizationFactory(publisher=True)
-    app.set_user(admin)
-    form = app.get(reverse('admin:vitrina_orgs_publisherorganization_change', args=[publisher_org.pk])).forms['publisherorganization_form']
-    assert True
 
 
 @pytest.fixture

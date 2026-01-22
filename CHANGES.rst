@@ -21,6 +21,10 @@ https://github.com/atviriduomenys/katalogas/issues/2284
 
 - Fix child-resources url in resources tab
 
+https://github.com/atviriduomenys/spinta/issues/1656
+
+- Implement pagination for UAPI
+
 https://github.com/atviriduomenys/spinta/issues/1647
 
 - Add API for Version model conforming to UAPI

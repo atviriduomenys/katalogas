@@ -115,7 +115,7 @@ def test_returns_all_results_and_next_page_none_if_limit_is_greater_than_result_
 
 @pytest.mark.parametrize(
     "limit, err_message", [
-        (-1, 'Query parameter "_limit" must be an positive integer.'),
+        (-1, 'Query parameter "_limit" must be a positive integer.'),
         (0, 'Query parameter "_limit" must be between 0 and 1000.'),
         (1000, 'Query parameter "_limit" must be between 0 and 1000.')
     ]

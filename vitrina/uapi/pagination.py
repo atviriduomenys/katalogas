@@ -40,7 +40,7 @@ class UAPIPagination(BasePagination):
         * _sort - comma separated string with fields to sort queryset by. Queryset must always be sorted.
                   Defaults to "_id".
         * _page - base64 encoded JSON string (or list) with all "_sort" field values of the last element of previous
-                  page. Result is returned starting with element following _page element. If not given - results are
+                  page. Result is returned starting with element following "_page" element. If not given - results are
                   returned from queryset start.
     """
 
@@ -66,7 +66,7 @@ class UAPIPagination(BasePagination):
                 code="incorrect_query_parameters",
                 type="IncorrectQueryParameters",
                 template="Given query parameters are incorrect.",
-                message=f'Query parameter "{self.limit_query_param}" must be an positive integer.',
+                message=f'Query parameter "{self.limit_query_param}" must be a positive integer.',
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -91,6 +91,7 @@ class UAPIPagination(BasePagination):
             "_" to "/"
             "." to "="
         urlsafe_base64decode cannot be used because replace values do not match.
+        https://ivpk.github.io/uapi/#section/Query/Page
         """
         replaced_value = encoded_value.replace("-", "+").replace("_", "/").replace(".", "=")
         return base64.b64decode(replaced_value).decode("ascii")
@@ -103,6 +104,7 @@ class UAPIPagination(BasePagination):
             "/" to "_"
             "=" to "."
         urlsafe_base64encode cannot be used because replace values do not match.
+        https://ivpk.github.io/uapi/#section/Query/Page
         """
         encoded_value = base64.b64encode(value.encode("ascii")).decode("ascii")
         return encoded_value.replace("+", "-").replace("/", "+").replace("=", ".")

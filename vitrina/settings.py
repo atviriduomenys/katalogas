@@ -225,7 +225,6 @@ TEMPLATES = [
                 "sekizai.context_processors.sekizai",
                 "cms.context_processors.cms_settings",
                 "vitrina.context_processors.current_domain",
-                "vitrina.context_processors.feature_flags",
             ],
         },
     },
@@ -557,5 +556,3 @@ USE_OTP_VALIDATION = env.bool("USE_OTP_VALIDATION", default=True)
 #   "vitrina.users.models.*"          → excludes all models in that module
 #   "vitrina.comments.models.Comment" → excludes a specific model
 NOT_VERSIONED_MODELS = {}
-
-IS_PUBLISH_BUTTON_ACTIVE = False

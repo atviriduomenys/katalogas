@@ -40,7 +40,7 @@ from vitrina.orgs.models import Representative
 from vitrina.orgs.services import has_perm, Action
 from vitrina.projects.models import Project
 from vitrina.resources.models import DatasetDistribution
-from vitrina.settings import SPINTA_SERVER_URL, IS_PUBLISH_BUTTON_ACTIVE
+from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure import spyna
 from vitrina.structure.forms import (
     EnumForm,
@@ -3493,12 +3493,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"))
-        if not IS_PUBLISH_BUTTON_ACTIVE:
-            return redirect(
-                "dataset-structure",
-                pk=self.dataset.pk,
-                version_id=self.metadata_version.pk,
-            )
+
         if self.metadata_version and not self.metadata_version.is_draft():
             messages.error(request, _("Negalima publikuoti versijos, kai versijos būsena nėra juodraštis."))
             return redirect(self.dataset.get_absolute_url())

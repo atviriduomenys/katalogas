@@ -4,10 +4,10 @@ from vitrina.api.serializers import DatasetSerializer, DatasetDistributionSerial
 from vitrina.datasets.models import DCATResourceSubclass
 from vitrina.structure.models import Version
 from vitrina.uapi.models import Agent
-from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin
+from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin, BaseUUIDObjectMixin
 
 
-class UAPIAgentSerializer(BaseObjectMixin, serializers.ModelSerializer):
+class UAPIAgentSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
     class Meta:
         model = Agent
         fields = (

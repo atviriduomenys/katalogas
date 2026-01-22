@@ -24,7 +24,7 @@ timezone = ZoneInfo(settings.TIME_ZONE)
 class BaseObjectMixin(serializers.Serializer):
     _context = serializers.CharField(default="")
     _type = serializers.SerializerMethodField()
-    _id = serializers.SerializerMethodField()
+    _id = serializers.CharField(source="id")
     _revision = serializers.SerializerMethodField()
     _txn = serializers.CharField(default="")
     _created = serializers.SerializerMethodField()
@@ -40,13 +40,6 @@ class BaseObjectMixin(serializers.Serializer):
 
     def get__type(self, obj: Model) -> str:
         return (self.context.get("_type", "") or "").removeprefix(TYPE_PREFIX_TO_REMOVE)
-
-    def get__id(self, obj: Model) -> str:
-        if hasattr(obj, "id"):
-            return str(obj.id)
-        elif hasattr(obj, "uuid"):
-            return str(obj.uuid)
-        return ""
 
     def get__revision(self, obj: Model) -> str:
         # TODO: Logic needs to be updated. https://github.com/atviriduomenys/katalogas/issues/2177
@@ -69,7 +62,7 @@ class BaseObjectMixin(serializers.Serializer):
 
 
 class BaseUUIDObjectMixin(BaseObjectMixin):
-    _id = serializers.CharField(source="uuid")
+    _id = serializers.UUIDField(source="uuid")
 
 
 class BaseObjectListSerializer(serializers.Serializer):

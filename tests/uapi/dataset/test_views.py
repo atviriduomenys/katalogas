@@ -771,7 +771,7 @@ class TestList:
             "template": "The requested Dataset could not be found.",
             "message": (
                 f"No dataset matched the provided query — "
-                f"http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/?name={quote(metadata.name, safe='')}."
+                f"http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/?name={quote(dataset.metadata.first().name, safe='')}."
             ),
             "additionalProperties": None
         }

@@ -25,7 +25,7 @@ class TestList:
         domain: str,
         valid_token: str,
     ):
-        version = VersionFactory(dataset=dataset)
+        version = dataset.metadata.first().metadata_version
         response = app.get(url_version, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"})
 
         assert response.status_code == status.HTTP_200_OK
@@ -63,7 +63,7 @@ class TestList:
         domain: str,
         test_jwk: RSAKey,
     ):
-        version = VersionFactory(dataset=dataset)
+        version = dataset.metadata.first().metadata_version
         token = _generate_test_token(
             test_jwk,
             organization=organization,
@@ -108,8 +108,8 @@ class TestList:
         valid_token: str,
     ):
         another_dataset = DatasetFactory()
-        version = VersionFactory(dataset=dataset)
-        VersionFactory(dataset=another_dataset)  # Would be returned as well, if not for the specific query parameters.
+        version = dataset.metadata.first().metadata_version
+        another_version = another_dataset.metadata.first().metadata_version  # Would be returned as well, if not for the specific query parameters.
 
         response = app.get(
             url_version,

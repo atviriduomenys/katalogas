@@ -330,7 +330,7 @@ def test_child_resources_tab_from_resource_detail_view_uses_dataset(
     app: DjangoTestApp,
 ):
     resource = DatasetDistributionFactory()
-    response = app.get(reverse("resource-detail", args=[resource.dataset.pk, resource.pk]))
+    response = app.get(reverse("resource-detail-no-version", args=[resource.dataset.pk, resource.pk]))
     child_resources_response = response.click(linkid="child_resources_tab")
     assert child_resources_response.request.path == reverse(
         "dataset-child-resources",

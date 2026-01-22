@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-20 09:27+0200\n"
+"POT-Creation-Date: 2026-01-22 11:11+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -3999,8 +3999,14 @@ msgstr "New model"
 msgid "Naujas duomenų rinkinio šaltinis"
 msgstr "New dataset distribution"
 
+msgid "Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."
+msgstr "Can not edit the source, when the version status is not draft."
+
 msgid "Duomenų rinkinio šaltinio redagavimas"
 msgstr "Dataset source edit"
+
+msgid "Negalima trinti šaltinio, kai versijos būsena nėra juodraštis."
+msgstr "Can not delete the source, when the version status is not draft."
 
 msgid "Modelio pridėjimas"
 msgstr "Add model"
@@ -5150,20 +5156,41 @@ msgstr "Amount"
 msgid "API: visi įrašai"
 msgstr "API: all records"
 
+msgid "Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."
+msgstr "Can not create a new enum, when the version status is not draft."
+
 msgid "Galimos reikšmės pridėjimas"
 msgstr "Add enum item"
+
+msgid "Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."
+msgstr "Can not edit the enum, when the version status is not draft."
 
 msgid "Galimos reikšmės redagavimas"
 msgstr "Edit enum item"
 
+msgid "Negalima trinti reikšmės, kai versijos būsena nėra juodraštis."
+msgstr "Can not delete the enum, when the version status is not draft."
+
 msgid "Galimos reikšmės šalinimas"
 msgstr "Delete enum item"
+
+msgid "Negalima kurti naujo modelio, kai versijos būsena nėra juodraštis."
+msgstr "Can not create a new model, when the version status is not draft."
+
+msgid "Negalima redaguoti modelio, kai versijos būsena nėra juodraštis."
+msgstr "Can not edit the model, when the version status is not draft."
 
 msgid "Modelio redagavimas"
 msgstr "Edit model"
 
+msgid "Negalima kurti naujo duomenų lauko, kai versijos būsena nėra juodraštis."
+msgstr "Can not create a new property, when the version status is not draft."
+
 msgid "Duomenų lauko pridėjimas"
 msgstr "Add property"
+
+msgid "Negalima redaguoti naujo duomenų lauko, kai versijos būsena nėra juodraštis."
+msgstr "Can not edit the property, when the version status is not draft."
 
 msgid "Duomenų lauko redagavimas"
 msgstr "Edit property"
@@ -5183,6 +5210,9 @@ msgstr "Add parameter"
 
 msgid "Parametro redagavimas"
 msgstr "Edit parameter"
+
+msgid "Negalima publikuoti versijos, kai versijos būsena nėra juodraštis."
+msgstr "Can not publish version, when the version status is not draft."
 
 msgid "Publikuota versija negali būti publikuota dar kartą."
 msgstr "Published version can not be published again"

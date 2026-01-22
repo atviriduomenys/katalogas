@@ -29,7 +29,11 @@ def test_is_checksum_valid_success(agreement_one_signer: Path):
 
 
 def test_is_checksum_valid_added_extra_scope():
-    assert not get_pdf_checksum_from_adoc(str(test_contracts_dir / "sutartis_signed_extra_scope.adoc")) == CONTRACT_CHECKSUM
+    assert (
+        not get_pdf_checksum_from_adoc(str(test_contracts_dir / "sutartis_signed_extra_scope.adoc"))
+        == CONTRACT_CHECKSUM
+    )
+
 
 def test_is_checksum_valid_missing_pdf_in_adoc(agreement_no_pdf: Path):
     with pytest.raises(InvalidAdocError, match="Blogas ADOC failas: Nerastas PDF failas."):
@@ -41,24 +45,17 @@ def test_extract_elements_from_adoc(agreement_one_signer: Path):
         "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getall",
         "uapi:/datasets/gov/rc/ar/ws/Country/@resident/:getone",
     ]
-    assert (
-        extract_elements_from_adoc(
-            str(agreement_one_signer), SCOPES_REGEX
-        )
-        == expected_scopes
-    )
+    assert extract_elements_from_adoc(str(agreement_one_signer), SCOPES_REGEX) == expected_scopes
 
 
 def test_extract_scopes_from_adoc_not_supported_file(agreement_pdf: Path):
-    with pytest.raises(
-        InvalidAdocError, match="Invalid ADOC file: File is not a zip file"
-    ):
-        extract_elements_from_adoc(
-            str(agreement_pdf), SCOPES_REGEX
-        )
+    with pytest.raises(InvalidAdocError, match="Invalid ADOC file: File is not a zip file"):
+        extract_elements_from_adoc(str(agreement_pdf), SCOPES_REGEX)
 
 
-def test_extract_sigatures_from_adoc(agreement_two_signers: Path, signature1: etree._Element, signature2: etree._Element):
+def test_extract_sigatures_from_adoc(
+    agreement_two_signers: Path, signature1: etree._Element, signature2: etree._Element
+):
     with zipfile.ZipFile(agreement_two_signers) as zip_file:
         signatures = extract_signatures_from_adoc(zip_file)
     assert len(signatures) == 2
@@ -90,7 +87,7 @@ def test_get_signer_from_certificate_no_first_name(certificate_no_first_name: x5
 def test_get_signers_from_adoc(agreement_two_signers: Path):
     with zipfile.ZipFile(agreement_two_signers) as zip_file:
         signers = get_signers_from_adoc(zip_file)
-    
+
     assert len(signers) == 2
     assert signers[0] == SIGNER1_FULL_NAME
     assert signers[1] == SIGNER2_FULL_NAME

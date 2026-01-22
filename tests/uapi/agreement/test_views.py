@@ -25,10 +25,7 @@ timezone = pytz.timezone(settings.TIME_ZONE)
 class TestSyncDone:
     def test_update_404_when_agreement_does_not_exist(self, app: DjangoTestApp, valid_token: str) -> None:
         response = app.put(
-            reverse(
-                "uapi-agent-sync-done",
-                kwargs={"agreement_id": str(uuid4())}
-            ),
+            reverse("uapi-agent-sync-done", kwargs={"agreement_id": str(uuid4())}),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
@@ -41,7 +38,6 @@ class TestSyncDone:
             "message": "No Agreement matches the given query.",
             "additionalProperties": None,
         }
-
 
     def test_update_404_when_different_organization_in_token(
         self,
@@ -51,15 +47,10 @@ class TestSyncDone:
         valid_token: str,
     ) -> None:
         different_organization = OrganizationFactory()
-        agreement = AgreementFactory(
-            project=project, assigner=organization, assignee=different_organization
-        )
+        agreement = AgreementFactory(project=project, assigner=organization, assignee=different_organization)
 
         response = app.put(
-            reverse(
-                "uapi-agent-sync-done",
-                kwargs={"agreement_id": agreement.pk}
-            ),
+            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
@@ -72,7 +63,6 @@ class TestSyncDone:
             "message": "No Agreement matches the given query.",
             "additionalProperties": None,
         }
-
 
     def test_update_404_when_agreement_sync_disabled(
         self,
@@ -89,10 +79,7 @@ class TestSyncDone:
         )
 
         response = app.put(
-            reverse(
-                "uapi-agent-sync-done",
-                kwargs={"agreement_id": agreement.pk}
-            ),
+            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
@@ -105,7 +92,6 @@ class TestSyncDone:
             "message": "No Agreement matches the given query.",
             "additionalProperties": None,
         }
-
 
     def test_agent_is_disabled(
         self,
@@ -122,10 +108,7 @@ class TestSyncDone:
         )
 
         response = app.put(
-            reverse(
-                "uapi-agent-sync-done",
-                kwargs={"agreement_id": agreement.pk}
-            ),
+            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
             expect_errors=True,
         )
@@ -138,7 +121,6 @@ class TestSyncDone:
             "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
             "additionalProperties": None,
         }
-
 
     def test_sync_agent_is_disabled(
         self,
@@ -155,10 +137,7 @@ class TestSyncDone:
         )
 
         response = app.put(
-            reverse(
-                "uapi-agent-sync-done",
-                kwargs={"agreement_id": agreement.pk}
-            ),
+            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token_disabled_agent}"},
             expect_errors=True,
         )
@@ -171,7 +150,6 @@ class TestSyncDone:
             "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
             "additionalProperties": None,
         }
-
 
     def test_updates_last_sync_date_and_status_to_active(
         self,
@@ -188,10 +166,7 @@ class TestSyncDone:
         )
 
         response = app.put(
-            reverse(
-                "uapi-agent-sync-done",
-                kwargs={"agreement_id": agreement.pk}
-            ),
+            reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
         )
 
@@ -199,7 +174,6 @@ class TestSyncDone:
         agreement.refresh_from_db()
         assert agreement.last_sync_date
         assert agreement.status == AgreementStatuses.ACTIVE
-
 
     def test_does_not_update_agreement_updated_at(
         self,
@@ -224,10 +198,7 @@ class TestSyncDone:
                 scopes=["uapi:/datasets/gov/vssa/dcat/Agreement/:patch"],
             )
             response = app.put(
-                reverse(
-                    "uapi-agent-sync-done",
-                    kwargs={"agreement_id": agreement.pk}
-                ),
+                reverse("uapi-agent-sync-done", kwargs={"agreement_id": agreement.pk}),
                 extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
             )
 

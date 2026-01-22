@@ -16,8 +16,13 @@ from vitrina.api.factories import APIKeyFactory
 from vitrina.api.models import ApiKey
 from vitrina.catalogs.factories import CatalogFactory
 from vitrina.classifiers.factories import CategoryFactory
-from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory, DatasetGroupFactory, \
-    DCATResourceSubclassFactory, DatasetGroupCategoryUriFactory
+from vitrina.datasets.factories import (
+    DatasetFactory,
+    DatasetStructureFactory,
+    DatasetGroupFactory,
+    DCATResourceSubclassFactory,
+    DatasetGroupCategoryUriFactory,
+)
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
@@ -43,13 +48,8 @@ def test_retrieve_catalog_list_with_disabled_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    APIKeyFactory(
-        representative=representative,
-        enabled=False
-    )
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    APIKeyFactory(representative=representative, enabled=False)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
 
@@ -62,13 +62,8 @@ def test_retrieve_catalog_list_with_expired_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    APIKeyFactory(
-        representative=representative,
-        expires=timezone.make_aware(datetime(2000, 12, 24))
-    )
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    APIKeyFactory(representative=representative, expires=timezone.make_aware(datetime(2000, 12, 24)))
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
 
@@ -83,17 +78,11 @@ def test_retrieve_catalog_list_with_duplicate_api_key(app: DjangoTestApp):
         object_id=organization.pk,
     )
     key = secrets.token_urlsafe()
-    APIKeyFactory(
-        api_key=f"{ApiKey.DUPLICATE}-0-{key}",
-        representative=representative,
-        enabled=False
-    )
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {key}'
-    })
+    APIKeyFactory(api_key=f"{ApiKey.DUPLICATE}-0-{key}", representative=representative, enabled=False)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": f"ApiKey {key}"})
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
     assert res.status_code == 403
-    assert res.json['detail'] == DuplicateAPIKeyException.default_detail.format(
+    assert res.json["detail"] == DuplicateAPIKeyException.default_detail.format(
         url=f"http://{domain}{reverse('organization-members', args=[organization.pk])}"
     )
 
@@ -108,20 +97,20 @@ def test_retrieve_catalog_list_with_correct_api_key(app: DjangoTestApp):
         object_id=organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-catalog-list"), expect_errors=True)
-    assert res.json == [{
-        'description': catalog.description,
-        'id': str(catalog.identifier),
-        'licence': {
-            'description': catalog.licence.description,
-            'id': str(catalog.licence.identifier),
-            'title': catalog.licence.title
-        },
-        'title': catalog.title
-    }]
+    assert res.json == [
+        {
+            "description": catalog.description,
+            "id": str(catalog.identifier),
+            "licence": {
+                "description": catalog.licence.description,
+                "id": str(catalog.licence.identifier),
+                "title": catalog.licence.title,
+            },
+            "title": catalog.title,
+        }
+    ]
 
 
 @pytest.mark.django_db
@@ -138,13 +127,8 @@ def test_retrieve_category_list_with_disabled_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    APIKeyFactory(
-        representative=representative,
-        enabled=False
-    )
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    APIKeyFactory(representative=representative, enabled=False)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
 
@@ -157,13 +141,8 @@ def test_retrieve_category_list_with_expired_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    APIKeyFactory(
-        representative=representative,
-        expires=timezone.make_aware(datetime(2000, 12, 24))
-    )
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    APIKeyFactory(representative=representative, expires=timezone.make_aware(datetime(2000, 12, 24)))
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
 
@@ -178,17 +157,11 @@ def test_retrieve_category_list_with_duplicate_api_key(app: DjangoTestApp):
         object_id=organization.pk,
     )
     key = secrets.token_urlsafe()
-    APIKeyFactory(
-        api_key=f"{ApiKey.DUPLICATE}-0-{key}",
-        representative=representative,
-        enabled=False
-    )
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {key}'
-    })
+    APIKeyFactory(api_key=f"{ApiKey.DUPLICATE}-0-{key}", representative=representative, enabled=False)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": f"ApiKey {key}"})
     res = app.get(reverse("api-category-list"), expect_errors=True)
     assert res.status_code == 403
-    assert res.json['detail'] == DuplicateAPIKeyException.default_detail.format(
+    assert res.json["detail"] == DuplicateAPIKeyException.default_detail.format(
         url=f"http://{domain}{reverse('organization-members', args=[organization.pk])}"
     )
 
@@ -203,15 +176,9 @@ def test_retrieve_category_list_with_correct_api_key(app: DjangoTestApp):
         object_id=organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-category-list"), expect_errors=True)
-    assert res.json == [{
-        'description': category.description,
-        'id': str(category.pk),
-        'title': category.title
-    }]
+    assert res.json == [{"description": category.description, "id": str(category.pk), "title": category.title}]
 
 
 @pytest.mark.django_db
@@ -228,13 +195,8 @@ def test_licence_licence_list_with_disabled_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    APIKeyFactory(
-        representative=representative,
-        enabled=False
-    )
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    APIKeyFactory(representative=representative, enabled=False)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
 
@@ -247,13 +209,8 @@ def test_licence_licence_list_with_expired_api_key(app: DjangoTestApp):
         content_type=ct,
         object_id=organization.pk,
     )
-    APIKeyFactory(
-        representative=representative,
-        expires=timezone.make_aware(datetime(2000, 12, 24))
-    )
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    APIKeyFactory(representative=representative, expires=timezone.make_aware(datetime(2000, 12, 24)))
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
 
@@ -268,17 +225,11 @@ def test_retrieve_licence_list_with_duplicate_api_key(app: DjangoTestApp):
         object_id=organization.pk,
     )
     key = secrets.token_urlsafe()
-    APIKeyFactory(
-        api_key=f"{ApiKey.DUPLICATE}-0-{key}",
-        representative=representative,
-        enabled=False
-    )
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': f'ApiKey {key}'
-    })
+    APIKeyFactory(api_key=f"{ApiKey.DUPLICATE}-0-{key}", representative=representative, enabled=False)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": f"ApiKey {key}"})
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     assert res.status_code == 403
-    assert res.json['detail'] == DuplicateAPIKeyException.default_detail.format(
+    assert res.json["detail"] == DuplicateAPIKeyException.default_detail.format(
         url=f"http://{domain}{reverse('organization-members', args=[organization.pk])}"
     )
 
@@ -293,16 +244,10 @@ def test_retrieve_licence_list_with_correct_api_key(app: DjangoTestApp):
         object_id=organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-licence-list"), expect_errors=True)
     data = [licence_obj for licence_obj in res.json if licence_obj["id"] == str(licence.identifier)]
-    assert data == [{
-        'description': licence.description,
-        'id': str(licence.identifier),
-        'title': licence.title
-    }]
+    assert data == [{"description": licence.description, "id": str(licence.identifier), "title": licence.title}]
 
 
 @pytest.mark.django_db
@@ -325,38 +270,36 @@ def test_get_all_datasets(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-dataset"))
     dataset.refresh_from_db()
-    assert res.json == [{
-        "created": timezone.localtime(dataset.created).isoformat(),
-        "id": str(dataset.pk),
-        "internalId": dataset.internal_id,
-        "origin": dataset.origin,
-        "title": dataset.title,
-        "description": dataset.description,
-        "modified": timezone.localtime(dataset.modified).isoformat(),
-        'organization_id': dataset.organization.id,
-        'organization_title': dataset.organization.title,
-        "temporalCoverage": dataset.temporal_coverage,
-        "language": dataset.language_array,
-        "publisher": None,
-        "spatial": dataset.spatial_coverage,
-        "periodicity": dataset.frequency.title,
-        "keyword": dataset.tag_name_array,
-        "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": [category.title]
-    }]
+    assert res.json == [
+        {
+            "created": timezone.localtime(dataset.created).isoformat(),
+            "id": str(dataset.pk),
+            "internalId": dataset.internal_id,
+            "origin": dataset.origin,
+            "title": dataset.title,
+            "description": dataset.description,
+            "modified": timezone.localtime(dataset.modified).isoformat(),
+            "organization_id": dataset.organization.id,
+            "organization_title": dataset.organization.title,
+            "temporalCoverage": dataset.temporal_coverage,
+            "language": dataset.language_array,
+            "publisher": None,
+            "spatial": dataset.spatial_coverage,
+            "periodicity": dataset.frequency.title,
+            "keyword": dataset.tag_name_array,
+            "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
+            "theme": [category.title],
+        }
+    ]
 
 
 @pytest.mark.django_db
 def test_get_dataset_without_api_key(app: DjangoTestApp):
     dataset = DatasetFactory()
-    res = app.get(reverse("api-single-dataset", kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    res = app.get(reverse("api-single-dataset", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -370,12 +313,8 @@ def test_get_dataset_from_different_organization(app: DjangoTestApp):
         object_id=organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.get(reverse("api-single-dataset", kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-single-dataset", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert res.status_code == 404
 
 
@@ -391,12 +330,8 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.get(reverse("api-single-dataset", kwargs={
-        'datasetId': dataset.pk
-    }))
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-single-dataset", kwargs={"datasetId": dataset.pk}))
     dataset.refresh_from_db()
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
@@ -406,8 +341,8 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         "title": dataset.title,
         "description": dataset.description,
         "modified": timezone.localtime(dataset.modified).isoformat(),
-        'organization_id': dataset.organization.id,
-        'organization_title': dataset.organization.title,
+        "organization_id": dataset.organization.id,
+        "organization_title": dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
         "publisher": None,
@@ -415,7 +350,7 @@ def test_get_dataset_with_dataset_id(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": [category.title]
+        "theme": [category.title],
     }
 
 
@@ -428,12 +363,8 @@ def test_get_dataset_with_wrong_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.get(reverse("api-single-dataset-internal", kwargs={
-        'internalId': "wrong"
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-single-dataset-internal", kwargs={"internalId": "wrong"}), expect_errors=True)
     assert res.status_code == 404
 
 
@@ -449,12 +380,8 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.get(reverse("api-single-dataset-internal", kwargs={
-        'internalId': dataset.internal_id
-    }))
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-single-dataset-internal", kwargs={"internalId": dataset.internal_id}))
     dataset.refresh_from_db()
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
@@ -464,8 +391,8 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         "title": dataset.title,
         "description": dataset.description,
         "modified": timezone.localtime(dataset.modified).isoformat(),
-        'organization_id': dataset.organization.id,
-        'organization_title': dataset.organization.title,
+        "organization_id": dataset.organization.id,
+        "organization_title": dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
         "publisher": None,
@@ -473,15 +400,13 @@ def test_get_dataset_with_internal_id(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": [category.title]
+        "theme": [category.title],
     }
 
 
 @pytest.mark.django_db
 def test_create_dataset_without_api_key(app: DjangoTestApp):
-    res = app.post(reverse("api-dataset"), {
-        'title': "New dataset"
-    }, expect_errors=True)
+    res = app.post(reverse("api-dataset"), {"title": "New dataset"}, expect_errors=True)
     assert res.status_code == 403
 
 
@@ -494,13 +419,11 @@ def test_create_dataset_with_errors(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.post(reverse("api-dataset"), expect_errors=True)
     assert res.status_code == 400
-    assert 'title' in res.json
-    assert 'description' in res.json
+    assert "title" in res.json
+    assert "description" in res.json
 
 
 @pytest.mark.django_db
@@ -515,38 +438,28 @@ def test_create_dataset(app: DjangoTestApp):
         object_id=organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     url = reverse("api-dataset")
     revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="api-dataset",
-        http_method="POST",
-        path=url,
-        args=[],
-        kwargs={}
+        source=RevisionSource.VIEW, action="api-dataset", http_method="POST", path=url, args=[], kwargs={}
     )
-    res = app.post(url, {
-        'title': 'Test dataset',
-        'description': 'Test dataset',
-        'language': [
-            'en',
-            'lt'
-        ],
-        'keyword': [
-            'tag1',
-            'tag2'
-        ],
-        'periodicity': frequency.title,
-        'theme': [category.title]
-    })
+    res = app.post(
+        url,
+        {
+            "title": "Test dataset",
+            "description": "Test dataset",
+            "language": ["en", "lt"],
+            "keyword": ["tag1", "tag2"],
+            "periodicity": frequency.title,
+            "theme": [category.title],
+        },
+    )
     dataset_objects = Dataset.objects.exclude(id=1)
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
     assert dataset.language == "en lt"
-    assert list(dataset.tags.all()) == ['tag1', 'tag2']
+    assert list(dataset.tags.all()) == ["tag1", "tag2"]
     assert dataset.frequency == frequency
     assert list(dataset.category.all()) == [category]
     assert dataset.organization == organization
@@ -562,25 +475,23 @@ def test_create_dataset(app: DjangoTestApp):
         "title": dataset.title,
         "description": dataset.description,
         "modified": timezone.localtime(dataset.modified).isoformat(),
-        'organization_id': dataset.organization.id,
-        'organization_title': dataset.organization.title,
+        "organization_id": dataset.organization.id,
+        "organization_title": dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
-        "language": ['en', 'lt'],
+        "language": ["en", "lt"],
         "publisher": None,
         "spatial": dataset.spatial_coverage,
         "periodicity": dataset.frequency.title,
-        "keyword": ['tag1', 'tag2'],
+        "keyword": ["tag1", "tag2"],
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": [category.title]
+        "theme": [category.title],
     }
 
 
 @pytest.mark.django_db
 def test_update_dataset_without_api_key(app: DjangoTestApp):
     dataset = DatasetFactory()
-    res = app.patch(reverse("api-single-dataset", kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    res = app.patch(reverse("api-single-dataset", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -594,13 +505,12 @@ def test_update_dataset_from_different_organization(app: DjangoTestApp):
         object_id=organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.patch(reverse("api-single-dataset", kwargs={'datasetId': dataset.pk}), {
-        'title': "Updated title",
-        'description': "Updated description"
-    }, expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.patch(
+        reverse("api-single-dataset", kwargs={"datasetId": dataset.pk}),
+        {"title": "Updated title", "description": "Updated description"},
+        expect_errors=True,
+    )
     assert res.status_code == 404
 
 
@@ -616,22 +526,17 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    url = reverse("api-single-dataset", kwargs={'datasetId': dataset.pk})
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    url = reverse("api-single-dataset", kwargs={"datasetId": dataset.pk})
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="api-single-dataset",
         http_method="PATCH",
         path=url,
         args=[],
-        kwargs={'datasetId': dataset.pk}
+        kwargs={"datasetId": dataset.pk},
     )
-    res = app.patch(url, {
-        'title': "Updated title",
-        'description': "Updated description"
-    })
+    res = app.patch(url, {"title": "Updated title", "description": "Updated description"})
     dataset.refresh_from_db()
     assert Version.objects.get_for_object(dataset).count() == 1
     version = Version.objects.get_for_object(dataset).first()
@@ -645,8 +550,8 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         "title": "Updated title",
         "description": "Updated description",
         "modified": timezone.localtime(dataset.modified).isoformat(),
-        'organization_id': dataset.organization.id,
-        'organization_title': dataset.organization.title,
+        "organization_id": dataset.organization.id,
+        "organization_title": dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
         "publisher": None,
@@ -654,7 +559,7 @@ def test_update_dataset_with_dataset_id(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": [category.title]
+        "theme": [category.title],
     }
 
 
@@ -670,22 +575,17 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    url = reverse("api-single-dataset-internal", kwargs={'internalId': dataset.internal_id})
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    url = reverse("api-single-dataset-internal", kwargs={"internalId": dataset.internal_id})
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="api-single-dataset-internal",
         http_method="PATCH",
         path=url,
         args=[],
-        kwargs={'internalId': dataset.internal_id}
+        kwargs={"internalId": dataset.internal_id},
     )
-    res = app.patch(url, {
-        'title': "Updated title",
-        'description': "Updated description"
-    })
+    res = app.patch(url, {"title": "Updated title", "description": "Updated description"})
     dataset.refresh_from_db()
     assert Version.objects.get_for_object(dataset).count() == 1
     version = Version.objects.get_for_object(dataset).select_related("revision").first()
@@ -699,8 +599,8 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         "title": "Updated title",
         "description": "Updated description",
         "modified": timezone.localtime(dataset.modified).isoformat(),
-        'organization_id': dataset.organization.id,
-        'organization_title': dataset.organization.title,
+        "organization_id": dataset.organization.id,
+        "organization_title": dataset.organization.title,
         "temporalCoverage": dataset.temporal_coverage,
         "language": dataset.language_array,
         "publisher": None,
@@ -708,16 +608,14 @@ def test_update_dataset_with_internal_id(app: DjangoTestApp):
         "periodicity": dataset.frequency.title,
         "keyword": dataset.tag_name_array,
         "landingPage": f"http://{domain}{dataset.get_absolute_url()}",
-        "theme": [category.title]
+        "theme": [category.title],
     }
 
 
 @pytest.mark.django_db
 def test_delete_dataset_without_api_key(app: DjangoTestApp):
     dataset = DatasetFactory()
-    res = app.delete(reverse('api-single-dataset', kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    res = app.delete(reverse("api-single-dataset", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -731,38 +629,29 @@ def test_delete_dataset_from_different_organization(app: DjangoTestApp):
         object_id=organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.delete(reverse('api-single-dataset', kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.delete(reverse("api-single-dataset", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert res.status_code == 404
 
 
 @pytest.mark.django_db
 def test_delete_dataset_with_dataset_id(app: DjangoTestApp):
-    dataset = DatasetFactory(
-        internal_id="test",
-        slug="test"
-    )
+    dataset = DatasetFactory(internal_id="test", slug="test")
     ct = ContentType.objects.get_for_model(dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    url = reverse('api-single-dataset', kwargs={'datasetId': dataset.pk})
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    url = reverse("api-single-dataset", kwargs={"datasetId": dataset.pk})
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="api-single-dataset",
         http_method="DELETE",
         path=url,
         args=[],
-        kwargs={'datasetId': dataset.pk}
+        kwargs={"datasetId": dataset.pk},
     )
     app.delete(url)
     dataset.refresh_from_db()
@@ -778,28 +667,23 @@ def test_delete_dataset_with_dataset_id(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_delete_dataset_with_internal_id(app: DjangoTestApp):
-    dataset = DatasetFactory(
-        internal_id="test",
-        slug="test"
-    )
+    dataset = DatasetFactory(internal_id="test", slug="test")
     ct = ContentType.objects.get_for_model(dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    kwargs_dict = {'internalId': dataset.internal_id}
-    url = reverse('api-single-dataset-internal', kwargs=kwargs_dict)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    kwargs_dict = {"internalId": dataset.internal_id}
+    url = reverse("api-single-dataset-internal", kwargs=kwargs_dict)
     revision_comment = RevisionComment(
         source=RevisionSource.VIEW,
         action="api-single-dataset-internal",
         http_method="DELETE",
         path=url,
         args=[],
-        kwargs=kwargs_dict
+        kwargs=kwargs_dict,
     )
     app.delete(url)
     dataset.refresh_from_db()
@@ -816,9 +700,7 @@ def test_delete_dataset_with_internal_id(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_get_all_dataset_distributions_without_api_key(app: DjangoTestApp):
     dataset = DatasetFactory()
-    res = app.get(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    res = app.get(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -833,26 +715,24 @@ def test_get_all_dataset_distributions_with_dataset_id(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.get(reverse('api-distribution', kwargs={
-        'datasetId': distribution.dataset.pk
-    }))
-    assert res.json == [{
-        'description': distribution.description,
-        'file': distribution.filename_without_path(),
-        'geo_location': distribution.geo_location,
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': str(distribution.period_end),
-        'periodStart': str(distribution.period_start),
-        'title': distribution.title,
-        'type': distribution.type,
-        'url': f"http://{domain}{distribution.dataset.get_absolute_url()}",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
-    }]
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-distribution", kwargs={"datasetId": distribution.dataset.pk}))
+    assert res.json == [
+        {
+            "description": distribution.description,
+            "file": distribution.filename_without_path(),
+            "geo_location": distribution.geo_location,
+            "id": distribution.pk,
+            "issued": distribution.issued,
+            "periodEnd": str(distribution.period_end),
+            "periodStart": str(distribution.period_start),
+            "title": distribution.title,
+            "type": distribution.type,
+            "url": f"http://{domain}{distribution.dataset.get_absolute_url()}",
+            "version": distribution.distribution_version,
+            "upload_to_storage": distribution.upload_to_storage,
+        }
+    ]
 
 
 @pytest.mark.django_db
@@ -867,26 +747,24 @@ def test_get_all_dataset_distributions_with_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.get(reverse('api-distribution-internal', kwargs={
-        'internalId': dataset.internal_id
-    }))
-    assert res.json == [{
-        'description': distribution.description,
-        'file': distribution.filename_without_path(),
-        'geo_location': distribution.geo_location,
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': str(distribution.period_end),
-        'periodStart': str(distribution.period_start),
-        'title': distribution.title,
-        'type': distribution.type,
-        'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
-    }]
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-distribution-internal", kwargs={"internalId": dataset.internal_id}))
+    assert res.json == [
+        {
+            "description": distribution.description,
+            "file": distribution.filename_without_path(),
+            "geo_location": distribution.geo_location,
+            "id": distribution.pk,
+            "issued": distribution.issued,
+            "periodEnd": str(distribution.period_end),
+            "periodStart": str(distribution.period_start),
+            "title": distribution.title,
+            "type": distribution.type,
+            "url": f"http://{domain}{dataset.get_absolute_url()}",
+            "version": distribution.distribution_version,
+            "upload_to_storage": distribution.upload_to_storage,
+        }
+    ]
 
 
 @pytest.mark.django_db
@@ -901,35 +779,33 @@ def test_get_all_distributions(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.get(reverse('api-all-distributions-upload-to-storage'))
-    assert res.json == [{
-        'dataset_id': distribution.dataset.id,
-        'description': distribution.description,
-        'file': distribution.filename_without_path(),
-        'geo_location': distribution.geo_location,
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'organization_id': distribution.dataset.organization.id,
-        'periodEnd': str(distribution.period_end),
-        'periodStart': str(distribution.period_start),
-        'title': distribution.title,
-        'type': distribution.type,
-        'update_interval': distribution.dataset.frequency.hours,
-        'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
-    }]
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-all-distributions-upload-to-storage"))
+    assert res.json == [
+        {
+            "dataset_id": distribution.dataset.id,
+            "description": distribution.description,
+            "file": distribution.filename_without_path(),
+            "geo_location": distribution.geo_location,
+            "id": distribution.pk,
+            "issued": distribution.issued,
+            "organization_id": distribution.dataset.organization.id,
+            "periodEnd": str(distribution.period_end),
+            "periodStart": str(distribution.period_start),
+            "title": distribution.title,
+            "type": distribution.type,
+            "update_interval": distribution.dataset.frequency.hours,
+            "url": f"http://{domain}{dataset.get_absolute_url()}",
+            "version": distribution.distribution_version,
+            "upload_to_storage": distribution.upload_to_storage,
+        }
+    ]
 
 
 @pytest.mark.django_db
 def test_create_dataset_distribution_without_api_key(app: DjangoTestApp):
     dataset = DatasetFactory()
-    res = app.post(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    res = app.post(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -942,19 +818,12 @@ def test_create_dataset_distribution_without_file_and_url(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution")
-    ], files=[])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params, expect_errors=True)
+    content_type, params = app.encode_multipart(params=[("title", "Test distribution")], files=[])
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params, expect_errors=True)
     assert res.status_code == 400
-    assert 'file' in res.json
-    assert 'url' in res.json
+    assert "file" in res.json
+    assert "url" in res.json
 
 
 @pytest.mark.django_db
@@ -966,20 +835,14 @@ def test_create_dataset_distribution_with_both_file_and_url(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('url', "https://test.com/")
-    ], files=[('file', 'file.csv', b'Test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params, expect_errors=True)
+    content_type, params = app.encode_multipart(
+        params=[("title", "Test distribution"), ("url", "https://test.com/")], files=[("file", "file.csv", b"Test")]
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params, expect_errors=True)
     assert res.status_code == 400
-    assert 'file' in res.json
-    assert 'url' in res.json
+    assert "file" in res.json
+    assert "url" in res.json
 
 
 @pytest.mark.django_db
@@ -991,19 +854,13 @@ def test_create_dataset_distribution_with_empty_file(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('url', "https://test.com/")
-    ], files=[('file', 'file.csv', b'')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params, expect_errors=True)
+    content_type, params = app.encode_multipart(
+        params=[("title", "Test distribution"), ("url", "https://test.com/")], files=[("file", "file.csv", b"")]
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params, expect_errors=True)
     assert res.status_code == 400
-    assert 'file' in res.json
+    assert "file" in res.json
 
 
 @pytest.mark.django_db
@@ -1016,35 +873,33 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-        ('periodStart', "2022-10-12")
-    ], files=[('file', 'file.csv', b'Test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Test distribution"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+            ("periodStart", "2022-10-12"),
+        ],
+        files=[("file", "file.csv", b"Test")],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': distribution.description,
-        'file': distribution.filename_without_path(),
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': None,
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Test distribution",
-        'type': "FILE",
-        'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": distribution.description,
+        "file": distribution.filename_without_path(),
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": None,
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Test distribution",
+        "type": "FILE",
+        "url": f"http://{domain}{dataset.get_absolute_url()}",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
@@ -1057,36 +912,34 @@ def test_create_dataset_distribution_with_url(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-        ('periodStart', "2022-10-12"),
-        ('url', "http://test.com/")
-    ], files=[])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Test distribution"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+            ("periodStart", "2022-10-12"),
+            ("url", "http://test.com/"),
+        ],
+        files=[],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': distribution.description,
-        'file': "",
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': None,
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Test distribution",
-        'type': "URL",
-        'url': "http://test.com/",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": distribution.description,
+        "file": "",
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": None,
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Test distribution",
+        "type": "URL",
+        "url": "http://test.com/",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
@@ -1100,36 +953,34 @@ def test_create_dataset_distribution_with_overwrite(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-        ('periodStart', "2022-10-12"),
-        ('overwrite', True)
-    ], files=[('file', distribution.filename_without_path(), b'Test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-distribution', kwargs={
-        'datasetId': distribution.dataset.pk
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Test distribution"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+            ("periodStart", "2022-10-12"),
+            ("overwrite", True),
+        ],
+        files=[("file", distribution.filename_without_path(), b"Test")],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-distribution", kwargs={"datasetId": distribution.dataset.pk}), params)
     assert distribution.dataset.datasetdistribution_set.count() == 1
     distribution = distribution.dataset.datasetdistribution_set.first()
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': distribution.description,
-        'file': distribution.filename_without_path(),
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': str(distribution.period_end),
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Test distribution",
-        'type': "FILE",
-        'url': f"http://{domain}{distribution.dataset.get_absolute_url()}",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": distribution.description,
+        "file": distribution.filename_without_path(),
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": str(distribution.period_end),
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Test distribution",
+        "type": "FILE",
+        "url": f"http://{domain}{distribution.dataset.get_absolute_url()}",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
@@ -1142,45 +993,41 @@ def test_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-        ('periodStart', "2022-10-12"),
-        ('url', "http://test.com/")
-    ], files=[])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-distribution-internal', kwargs={
-        'internalId': dataset.internal_id
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Test distribution"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+            ("periodStart", "2022-10-12"),
+            ("url", "http://test.com/"),
+        ],
+        files=[],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-distribution-internal", kwargs={"internalId": dataset.internal_id}), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': distribution.description,
-        'file': "",
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': None,
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Test distribution",
-        'type': "URL",
-        'url': "http://test.com/",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": distribution.description,
+        "file": "",
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": None,
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Test distribution",
+        "type": "URL",
+        "url": "http://test.com/",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
 @pytest.mark.django_db
 def test_put_create_dataset_distribution_without_api_key(app: DjangoTestApp):
     dataset = DatasetFactory()
-    res = app.put(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    res = app.put(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -1193,19 +1040,12 @@ def test_put_create_dataset_distribution_without_file_and_url(app: DjangoTestApp
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution")
-    ], files=[])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.put(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params, expect_errors=True)
+    content_type, params = app.encode_multipart(params=[("title", "Test distribution")], files=[])
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.put(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params, expect_errors=True)
     assert res.status_code == 400
-    assert 'file' in res.json
-    assert 'url' in res.json
+    assert "file" in res.json
+    assert "url" in res.json
 
 
 @pytest.mark.django_db
@@ -1217,20 +1057,14 @@ def test_put_create_dataset_distribution_with_both_file_and_url(app: DjangoTestA
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('url', "https://test.com/")
-    ], files=[('file', 'file.csv', b'Test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.put(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params, expect_errors=True)
+    content_type, params = app.encode_multipart(
+        params=[("title", "Test distribution"), ("url", "https://test.com/")], files=[("file", "file.csv", b"Test")]
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.put(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params, expect_errors=True)
     assert res.status_code == 400
-    assert 'file' in res.json
-    assert 'url' in res.json
+    assert "file" in res.json
+    assert "url" in res.json
 
 
 @pytest.mark.django_db
@@ -1242,19 +1076,13 @@ def test_put_create_dataset_distribution_with_empty_file(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('url', "https://test.com/")
-    ], files=[('file', 'file.csv', b'')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.put(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params, expect_errors=True)
+    content_type, params = app.encode_multipart(
+        params=[("title", "Test distribution"), ("url", "https://test.com/")], files=[("file", "file.csv", b"")]
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.put(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params, expect_errors=True)
     assert res.status_code == 400
-    assert 'file' in res.json
+    assert "file" in res.json
 
 
 @pytest.mark.django_db
@@ -1267,35 +1095,33 @@ def test_put_create_dataset_distribution_with_file(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-        ('periodStart', "2022-10-12")
-    ], files=[('file', 'file.csv', b'Test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.put(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Test distribution"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+            ("periodStart", "2022-10-12"),
+        ],
+        files=[("file", "file.csv", b"Test")],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.put(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': distribution.description,
-        'file': distribution.filename_without_path(),
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': None,
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Test distribution",
-        'type': "FILE",
-        'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": distribution.description,
+        "file": distribution.filename_without_path(),
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": None,
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Test distribution",
+        "type": "FILE",
+        "url": f"http://{domain}{dataset.get_absolute_url()}",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
@@ -1308,36 +1134,34 @@ def test_put_create_dataset_distribution_with_url(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-        ('periodStart', "2022-10-12"),
-        ('url', "http://test.com/")
-    ], files=[])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.put(reverse('api-distribution', kwargs={
-        'datasetId': dataset.pk
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Test distribution"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+            ("periodStart", "2022-10-12"),
+            ("url", "http://test.com/"),
+        ],
+        files=[],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.put(reverse("api-distribution", kwargs={"datasetId": dataset.pk}), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': distribution.description,
-        'file': "",
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': None,
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Test distribution",
-        'type': "URL",
-        'url': "http://test.com/",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": distribution.description,
+        "file": "",
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": None,
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Test distribution",
+        "type": "URL",
+        "url": "http://test.com/",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
@@ -1350,46 +1174,46 @@ def test_put_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-        ('periodStart', "2022-10-12"),
-        ('url', "http://test.com/")
-    ], files=[])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.put(reverse('api-distribution-internal', kwargs={
-        'internalId': dataset.internal_id
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Test distribution"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+            ("periodStart", "2022-10-12"),
+            ("url", "http://test.com/"),
+        ],
+        files=[],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.put(reverse("api-distribution-internal", kwargs={"internalId": dataset.internal_id}), params)
     assert dataset.datasetdistribution_set.count() == 1
     distribution = dataset.datasetdistribution_set.first()
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': distribution.description,
-        'file': "",
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': None,
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Test distribution",
-        'type': "URL",
-        'url': "http://test.com/",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": distribution.description,
+        "file": "",
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": None,
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Test distribution",
+        "type": "URL",
+        "url": "http://test.com/",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
 @pytest.mark.django_db
 def test_update_dataset_distribution_without_api_key(app: DjangoTestApp):
     distribution = DatasetDistributionFactory()
-    res = app.patch(reverse('api-single-distribution', kwargs={
-        'datasetId': distribution.dataset.pk,
-        'distributionId': distribution.pk
-    }), expect_errors=True)
+    res = app.patch(
+        reverse(
+            "api-single-distribution", kwargs={"datasetId": distribution.dataset.pk, "distributionId": distribution.pk}
+        ),
+        expect_errors=True,
+    )
     assert res.status_code == 403
 
 
@@ -1403,13 +1227,11 @@ def test_update_dataset_distribution_with_wrong_dataset_id(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.patch(reverse('api-single-distribution', kwargs={
-        'datasetId': another_dataset.pk,
-        'distributionId': distribution.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.patch(
+        reverse("api-single-distribution", kwargs={"datasetId": another_dataset.pk, "distributionId": distribution.pk}),
+        expect_errors=True,
+    )
     assert res.status_code == 404
 
 
@@ -1423,13 +1245,14 @@ def test_update_dataset_distribution_with_wrong_internal_id(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.patch(reverse('api-single-distribution-internal', kwargs={
-        'internalId': another_dataset.internal_id,
-        'distributionId': distribution.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.patch(
+        reverse(
+            "api-single-distribution-internal",
+            kwargs={"internalId": another_dataset.internal_id, "distributionId": distribution.pk},
+        ),
+        expect_errors=True,
+    )
     assert res.status_code == 404
 
 
@@ -1442,21 +1265,20 @@ def test_update_dataset_distribution_with_both_file_and_url(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-        ('url', 'http://example.com/')
-    ], files=[('file', 'file.csv', b'Test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.patch(reverse('api-single-distribution', kwargs={
-        'datasetId': distribution.dataset.pk,
-        'distributionId': distribution.pk
-    }), params, expect_errors=True)
+    content_type, params = app.encode_multipart(
+        params=[("title", "Test distribution"), ("url", "http://example.com/")], files=[("file", "file.csv", b"Test")]
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.patch(
+        reverse(
+            "api-single-distribution", kwargs={"datasetId": distribution.dataset.pk, "distributionId": distribution.pk}
+        ),
+        params,
+        expect_errors=True,
+    )
     assert res.status_code == 400
-    assert 'file' in res.json
-    assert 'url' in res.json
+    assert "file" in res.json
+    assert "url" in res.json
 
 
 @pytest.mark.django_db
@@ -1468,19 +1290,22 @@ def test_update_dataset_distribution_with_empty_file(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test distribution"),
-    ], files=[('file', 'file.csv', b'')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.patch(reverse('api-single-distribution', kwargs={
-        'datasetId': distribution.dataset.pk,
-        'distributionId': distribution.pk
-    }), params, expect_errors=True)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Test distribution"),
+        ],
+        files=[("file", "file.csv", b"")],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.patch(
+        reverse(
+            "api-single-distribution", kwargs={"datasetId": distribution.dataset.pk, "distributionId": distribution.pk}
+        ),
+        params,
+        expect_errors=True,
+    )
     assert res.status_code == 400
-    assert 'file' in res.json
+    assert "file" in res.json
 
 
 @pytest.mark.django_db
@@ -1492,21 +1317,24 @@ def test_update_dataset_distribution_with_not_allowed_file(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Updated title"),
-        ('description', "Updated description"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-    ], files=[('file', 'updated_file.html', b'test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.patch(reverse('api-single-distribution', kwargs={
-        'datasetId': distribution.dataset.pk,
-        'distributionId': distribution.pk
-    }), params, expect_errors=True)
-    assert 'file' in res.json
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Updated title"),
+            ("description", "Updated description"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+        ],
+        files=[("file", "updated_file.html", b"test")],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.patch(
+        reverse(
+            "api-single-distribution", kwargs={"datasetId": distribution.dataset.pk, "distributionId": distribution.pk}
+        ),
+        params,
+        expect_errors=True,
+    )
+    assert "file" in res.json
 
 
 @pytest.mark.django_db
@@ -1519,35 +1347,37 @@ def test_update_dataset_distribution_with_file(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Updated title"),
-        ('description', "Updated description"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-    ], files=[('file', 'updated_file.csv', b'test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.patch(reverse('api-single-distribution', kwargs={
-        'datasetId': distribution.dataset.pk,
-        'distributionId': distribution.pk
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Updated title"),
+            ("description", "Updated description"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+        ],
+        files=[("file", "updated_file.csv", b"test")],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.patch(
+        reverse(
+            "api-single-distribution", kwargs={"datasetId": distribution.dataset.pk, "distributionId": distribution.pk}
+        ),
+        params,
+    )
     distribution.refresh_from_db()
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': "Updated description",
-        'file': distribution.filename_without_path(),
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': str(distribution.period_end),
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Updated title",
-        'type': "FILE",
-        'url': f"http://{domain}{distribution.dataset.get_absolute_url()}",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": "Updated description",
+        "file": distribution.filename_without_path(),
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": str(distribution.period_end),
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Updated title",
+        "type": "FILE",
+        "url": f"http://{domain}{distribution.dataset.get_absolute_url()}",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
@@ -1560,35 +1390,37 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Updated title"),
-        ('description', "Updated description"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-        ('url', "http://example.com/")
-    ], files=[])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.patch(reverse('api-single-distribution', kwargs={
-        'datasetId': distribution.dataset.pk,
-        'distributionId': distribution.pk
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Updated title"),
+            ("description", "Updated description"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+            ("url", "http://example.com/"),
+        ],
+        files=[],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.patch(
+        reverse(
+            "api-single-distribution", kwargs={"datasetId": distribution.dataset.pk, "distributionId": distribution.pk}
+        ),
+        params,
+    )
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': "Updated description",
-        'file': "",
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': str(distribution.period_end),
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Updated title",
-        'type': "URL",
-        'url': "http://example.com/",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": "Updated description",
+        "file": "",
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": str(distribution.period_end),
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Updated title",
+        "type": "URL",
+        "url": "http://example.com/",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
@@ -1603,45 +1435,50 @@ def test_update_dataset_distribution_with_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Updated title"),
-        ('description', "Updated description"),
-        ('region', 'Geo'),
-        ('municipality', 'Location'),
-    ], files=[('file', 'updated_file.csv', b'test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.patch(reverse('api-single-distribution-internal', kwargs={
-        'internalId': dataset.internal_id,
-        'distributionId': distribution.pk
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Updated title"),
+            ("description", "Updated description"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+        ],
+        files=[("file", "updated_file.csv", b"test")],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.patch(
+        reverse(
+            "api-single-distribution-internal",
+            kwargs={"internalId": dataset.internal_id, "distributionId": distribution.pk},
+        ),
+        params,
+    )
     distribution.refresh_from_db()
     distribution.set_current_language("lt")
     assert res.json == {
-        'description': "Updated description",
-        'file': distribution.filename_without_path(),
-        'id': distribution.pk,
-        'issued': distribution.issued,
-        'periodEnd': str(distribution.period_end),
-        'periodStart': str(distribution.period_start),
-        'geo_location': "Geo Location",
-        'title': "Updated title",
-        'type': "FILE",
-        'url': f"http://{domain}{dataset.get_absolute_url()}",
-        'version': distribution.distribution_version,
-        'upload_to_storage': distribution.upload_to_storage,
+        "description": "Updated description",
+        "file": distribution.filename_without_path(),
+        "id": distribution.pk,
+        "issued": distribution.issued,
+        "periodEnd": str(distribution.period_end),
+        "periodStart": str(distribution.period_start),
+        "geo_location": "Geo Location",
+        "title": "Updated title",
+        "type": "FILE",
+        "url": f"http://{domain}{dataset.get_absolute_url()}",
+        "version": distribution.distribution_version,
+        "upload_to_storage": distribution.upload_to_storage,
     }
 
 
 @pytest.mark.django_db
 def test_delete_dataset_distribution_without_api_key(app: DjangoTestApp):
     distribution = DatasetDistributionFactory()
-    res = app.delete(reverse('api-single-distribution', kwargs={
-        'datasetId': distribution.dataset.pk,
-        'distributionId': distribution.pk
-    }), expect_errors=True)
+    res = app.delete(
+        reverse(
+            "api-single-distribution", kwargs={"datasetId": distribution.dataset.pk, "distributionId": distribution.pk}
+        ),
+        expect_errors=True,
+    )
     assert res.status_code == 403
 
 
@@ -1655,13 +1492,11 @@ def test_delete_dataset_distribution_with_wrong_dataset_id(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.delete(reverse('api-single-distribution', kwargs={
-        'datasetId': another_dataset.pk,
-        'distributionId': distribution.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.delete(
+        reverse("api-single-distribution", kwargs={"datasetId": another_dataset.pk, "distributionId": distribution.pk}),
+        expect_errors=True,
+    )
     assert res.status_code == 404
 
 
@@ -1675,13 +1510,14 @@ def test_delete_dataset_distribution_with_wrong_internal_id(app: DjangoTestApp):
         object_id=distribution.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.delete(reverse('api-single-distribution-internal', kwargs={
-        'internalId': another_dataset.internal_id,
-        'distributionId': distribution.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.delete(
+        reverse(
+            "api-single-distribution-internal",
+            kwargs={"internalId": another_dataset.internal_id, "distributionId": distribution.pk},
+        ),
+        expect_errors=True,
+    )
     assert res.status_code == 404
 
 
@@ -1695,13 +1531,8 @@ def test_delete_dataset_distribution_with_dataset_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    app.delete(reverse('api-single-distribution', kwargs={
-        'datasetId': dataset.pk,
-        'distributionId': distribution.pk
-    }))
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    app.delete(reverse("api-single-distribution", kwargs={"datasetId": dataset.pk, "distributionId": distribution.pk}))
     assert dataset.datasetdistribution_set.count() == 0
 
 
@@ -1715,22 +1546,20 @@ def test_delete_dataset_distribution_with_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    app.delete(reverse('api-single-distribution-internal', kwargs={
-        'internalId': dataset.internal_id,
-        'distributionId': distribution.pk
-    }))
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    app.delete(
+        reverse(
+            "api-single-distribution-internal",
+            kwargs={"internalId": dataset.internal_id, "distributionId": distribution.pk},
+        )
+    )
     assert dataset.datasetdistribution_set.count() == 0
 
 
 @pytest.mark.django_db
 def test_get_dataset_structures_without_api_key(app: DjangoTestApp):
     structure = DatasetStructureFactory()
-    res = app.get(reverse('api-structure', kwargs={
-        'datasetId': structure.dataset.pk
-    }), expect_errors=True)
+    res = app.get(reverse("api-structure", kwargs={"datasetId": structure.dataset.pk}), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -1744,19 +1573,17 @@ def test_get_dataset_structures_with_dataset_id(app: DjangoTestApp):
         object_id=structure.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.get(reverse('api-structure', kwargs={
-        'datasetId': structure.dataset.pk
-    }))
-    assert res.json == [{
-        'created': timezone.localtime(structure.created).isoformat(),
-        'filename': structure.filename_without_path(),
-        'id': structure.pk,
-        'size': structure.size,
-        'title': structure.title
-    }]
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-structure", kwargs={"datasetId": structure.dataset.pk}))
+    assert res.json == [
+        {
+            "created": timezone.localtime(structure.created).isoformat(),
+            "filename": structure.filename_without_path(),
+            "id": structure.pk,
+            "size": structure.size,
+            "title": structure.title,
+        }
+    ]
 
 
 @pytest.mark.django_db
@@ -1770,27 +1597,23 @@ def test_get_dataset_structures_with_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.get(reverse('api-structure-internal', kwargs={
-        'internalId': dataset.internal_id
-    }))
-    assert res.json == [{
-        'created': timezone.localtime(structure.created).isoformat(),
-        'filename': structure.filename_without_path(),
-        'id': structure.pk,
-        'size': structure.size,
-        'title': structure.title
-    }]
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-structure-internal", kwargs={"internalId": dataset.internal_id}))
+    assert res.json == [
+        {
+            "created": timezone.localtime(structure.created).isoformat(),
+            "filename": structure.filename_without_path(),
+            "id": structure.pk,
+            "size": structure.size,
+            "title": structure.title,
+        }
+    ]
 
 
 @pytest.mark.django_db
 def test_create_dataset_structures_without_api_key(app: DjangoTestApp):
     dataset = DatasetFactory()
-    res = app.post(reverse('api-structure', kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    res = app.post(reverse("api-structure", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert res.status_code == 403
 
 
@@ -1803,15 +1626,11 @@ def test_create_dataset_structure_with_errors(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.post(reverse('api-structure', kwargs={
-        'datasetId': dataset.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.post(reverse("api-structure", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     assert dataset.datasetstructure_set.count() == 0
-    assert 'file' in res.json
-    assert 'title' in res.json
+    assert "file" in res.json
+    assert "title" in res.json
 
 
 @pytest.mark.django_db
@@ -1823,17 +1642,12 @@ def test_create_dataset_structure_with_not_allowed_file(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test structure")
-    ], files=[('file', 'file.svg', b'test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-structure', kwargs={
-        'datasetId': dataset.pk
-    }), params, expect_errors=True)
-    assert 'file' in res.json
+    content_type, params = app.encode_multipart(
+        params=[("title", "Test structure")], files=[("file", "file.svg", b"test")]
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-structure", kwargs={"datasetId": dataset.pk}), params, expect_errors=True)
+    assert "file" in res.json
 
 
 @pytest.mark.django_db
@@ -1845,26 +1659,21 @@ def test_create_dataset_structure_with_dataset_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test structure")
-    ], files=[('file', 'file.csv', b'test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-structure', kwargs={
-        'datasetId': dataset.pk
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[("title", "Test structure")], files=[("file", "file.csv", b"test")]
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-structure", kwargs={"datasetId": dataset.pk}), params)
     dataset.refresh_from_db()
     assert dataset.datasetstructure_set.count() == 1
     structure = dataset.datasetstructure_set.first()
     assert dataset.current_structure == structure
     assert res.json == {
-        'created': timezone.localtime(structure.created).isoformat(),
-        'filename': structure.filename_without_path(),
-        'id': structure.pk,
-        'size': structure.size,
-        'title': structure.title
+        "created": timezone.localtime(structure.created).isoformat(),
+        "filename": structure.filename_without_path(),
+        "id": structure.pk,
+        "size": structure.size,
+        "title": structure.title,
     }
 
 
@@ -1877,36 +1686,31 @@ def test_create_dataset_structure_with_internal_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    content_type, params = app.encode_multipart(params=[
-        ('title', "Test structure")
-    ], files=[('file', 'file.csv', b'test')])
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test',
-        'CONTENT_TYPE': content_type
-    })
-    res = app.post(reverse('api-structure-internal', kwargs={
-        'internalId': dataset.internal_id
-    }), params)
+    content_type, params = app.encode_multipart(
+        params=[("title", "Test structure")], files=[("file", "file.csv", b"test")]
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.post(reverse("api-structure-internal", kwargs={"internalId": dataset.internal_id}), params)
     dataset.refresh_from_db()
     assert dataset.datasetstructure_set.count() == 1
     structure = dataset.datasetstructure_set.first()
     assert dataset.current_structure == structure
     assert res.json == {
-        'created': timezone.localtime(structure.created).isoformat(),
-        'filename': structure.filename_without_path(),
-        'id': structure.pk,
-        'size': structure.size,
-        'title': structure.title
+        "created": timezone.localtime(structure.created).isoformat(),
+        "filename": structure.filename_without_path(),
+        "id": structure.pk,
+        "size": structure.size,
+        "title": structure.title,
     }
 
 
 @pytest.mark.django_db
 def test_delete_dataset_structures_without_api_key(app: DjangoTestApp):
     structure = DatasetStructureFactory()
-    res = app.delete(reverse('api-single-structure', kwargs={
-        'datasetId': structure.dataset.pk,
-        'structureId': structure.pk
-    }), expect_errors=True)
+    res = app.delete(
+        reverse("api-single-structure", kwargs={"datasetId": structure.dataset.pk, "structureId": structure.pk}),
+        expect_errors=True,
+    )
     assert res.status_code == 403
 
 
@@ -1920,13 +1724,11 @@ def test_delete_dataset_structure_with_wrong_dataset_id(app: DjangoTestApp):
         object_id=structure.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.delete(reverse('api-single-structure', kwargs={
-        'datasetId': another_dataset.pk,
-        'structureId': structure.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.delete(
+        reverse("api-single-structure", kwargs={"datasetId": another_dataset.pk, "structureId": structure.pk}),
+        expect_errors=True,
+    )
     assert res.status_code == 404
 
 
@@ -1940,13 +1742,14 @@ def test_delete_dataset_structure_with_wrong_internal_id(app: DjangoTestApp):
         object_id=structure.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.delete(reverse('api-single-structure-internal', kwargs={
-        'internalId': another_dataset.internal_id,
-        'structureId': structure.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.delete(
+        reverse(
+            "api-single-structure-internal",
+            kwargs={"internalId": another_dataset.internal_id, "structureId": structure.pk},
+        ),
+        expect_errors=True,
+    )
     assert res.status_code == 404
 
 
@@ -1960,13 +1763,8 @@ def test_delete_dataset_structure_with_dataset_id(app: DjangoTestApp):
         object_id=dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    app.delete(reverse('api-single-structure', kwargs={
-        'datasetId': dataset.pk,
-        'structureId': structure.pk
-    }))
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    app.delete(reverse("api-single-structure", kwargs={"datasetId": dataset.pk, "structureId": structure.pk}))
     assert dataset.datasetstructure_set.count() == 0
 
 
@@ -1980,13 +1778,12 @@ def test_delete_dataset_structure_with_internal_id(app: DjangoTestApp):
         object_id=structure.dataset.organization.pk,
     )
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    app.delete(reverse('api-single-structure-internal', kwargs={
-        'internalId': dataset.internal_id,
-        'structureId': structure.pk
-    }))
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    app.delete(
+        reverse(
+            "api-single-structure-internal", kwargs={"internalId": dataset.internal_id, "structureId": structure.pk}
+        )
+    )
     assert dataset.datasetstructure_set.count() == 0
 
 
@@ -1994,63 +1791,59 @@ def test_delete_dataset_structure_with_internal_id(app: DjangoTestApp):
 def test_create_model_statistics(app: DjangoTestApp):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    user = UserFactory(
-        is_staff=True
-    )
-    representative = RepresentativeFactory(
-        content_type=ct,
-        object_id=organization.pk,
-        user=user
-    )
+    user = UserFactory(is_staff=True)
+    representative = RepresentativeFactory(content_type=ct, object_id=organization.pk, user=user)
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.post(reverse('api-download-stats-internal'), {
-        'source': 'get.data.gov.lt',
-        'model': 'naujas_modelis',
-        'format': 'excel',
-        'time': datetime.now(),
-        'requests': 100,
-        'objects': 10
-    }, expect_errors=False)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.post(
+        reverse("api-download-stats-internal"),
+        {
+            "source": "get.data.gov.lt",
+            "model": "naujas_modelis",
+            "format": "excel",
+            "time": datetime.now(),
+            "requests": 100,
+            "objects": 10,
+        },
+        expect_errors=False,
+    )
     assert res.json == {
         "source": "get.data.gov.lt",
         "model": "naujas_modelis",
         "format": "excel",
         "time": timezone.localtime(ModelDownloadStats.objects.first().created).isoformat(),
         "requests": 100,
-        "objects": 10
+        "objects": 10,
     }
 
 
 @pytest.mark.django_db
 def test_edp_dcat_ap_rdf(app: DjangoTestApp):
     Dataset.objects.all().delete()
-    iana = 'http://www.iana.org/assignments'
-    po = 'http://publications.europa.eu/resource/authority'
+    iana = "http://www.iana.org/assignments"
+    po = "http://publications.europa.eu/resource/authority"
 
     dataset = DatasetFactory(
         title={
-            'lt': 'Testas1',
-            'en': 'Test1',
+            "lt": "Testas1",
+            "en": "Test1",
         },
         description={
-            'lt': 'Duomenų rinkinio aprašymas.',
-            'en': 'Dataset description.',
+            "lt": "Duomenų rinkinio aprašymas.",
+            "en": "Dataset description.",
         },
         published=datetime(2016, 8, 1),
-        frequency=FrequencyFactory(uri=f'{po}/frequency/IRREG'),
+        frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title='Energy'),
+            CategoryFactory(title="Energy"),
             CategoryFactory(
-                title='Environment',
-                uri=f'{po}/data-theme/ENVI',
+                title="Environment",
+                uri=f"{po}/data-theme/ENVI",
             ),
         ],
         organization=OrganizationFactory(
-            title='Data Enterprise',
-            email='data@example.com',
+            title="Data Enterprise",
+            email="data@example.com",
         ),
         access_rights=Dataset.PUBLIC,
     )
@@ -2059,10 +1852,10 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
         title="CSV failas",
         description="Atviras duomenų šaltinis.",
         format=FileFormat(
-            uri=f'{po}/file-type/CSV',
-            media_type_uri=f'{iana}/media-types/text/csv',
+            uri=f"{po}/file-type/CSV",
+            media_type_uri=f"{iana}/media-types/text/csv",
         ),
-        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
+        licence=LicenceFactory(url=f"{po}/licence/CC_BY_4_0"),
         conditions="platinimo sąlygos",
     )
     dist2 = DatasetDistributionFactory(
@@ -2070,19 +1863,21 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
         title="Duomenų teikimo paslauga",
         description="Universali duomenų teikimo paslauga.",
         format=FileFormat(
-            extension='UAPI',
-            uri=f'{po}/file-type/JSON',
-            media_type_uri=f'{iana}/media-types/application/json',
+            extension="UAPI",
+            uri=f"{po}/file-type/JSON",
+            media_type_uri=f"{iana}/media-types/application/json",
         ),
-        licence=LicenceFactory(url=f'{po}/licence/CC_BY_4_0'),
+        licence=LicenceFactory(url=f"{po}/licence/CC_BY_4_0"),
         conditions="platinimo sąlygos",
     )
 
-    res = app.get('/edp/dcat-ap.rdf')
+    res = app.get("/edp/dcat-ap.rdf")
 
     assert res.status_code == 200
-    assert res.headers['Content-Type'] == 'application/rdf+xml'
-    assert strip_empty_lines(res.text) == f'''\
+    assert res.headers["Content-Type"] == "application/rdf+xml"
+    assert (
+        strip_empty_lines(res.text)
+        == f"""\
 <?xml version="1.0"?>
 <rdf:RDF
     xml:base="http://localhost"
@@ -2177,7 +1972,8 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
             </dcat:Distribution>
         </dcat:distribution>
     </dcat:Dataset>
-</rdf:RDF>'''
+</rdf:RDF>"""
+    )
 
 
 @pytest.mark.django_db
@@ -2187,21 +1983,14 @@ def test_get_all_datasets_publisher_exclusive(app: DjangoTestApp):
     get all should be forbidden
     """
     org = OrganizationFactory()
-    publisher_org = OrganizationFactory(publisher = True)
+    publisher_org = OrganizationFactory(publisher=True)
     dataset = DatasetFactory(is_public=False, organization=org)
     DatasetFactory(organization=org)
     DatasetFactory(organization=org)
     ct = ContentType.objects.get_for_model(dataset)
-    representative = RepresentativeFactory(
-        content_type=ct,
-        object_id=dataset.pk,
-        user = None,
-        organization = publisher_org
-    )
+    representative = RepresentativeFactory(content_type=ct, object_id=dataset.pk, user=None, organization=publisher_org)
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-dataset"), expect_errors=True)
     dataset.refresh_from_db()
     assert res.status_code == 403
@@ -2214,24 +2003,17 @@ def test_get_all_datasets_publisher(app: DjangoTestApp):
     get all should return all the datasets from that organization
     """
     org = OrganizationFactory()
-    publisher_org = OrganizationFactory(publisher = True)
+    publisher_org = OrganizationFactory(publisher=True)
     ds1 = DatasetFactory(is_public=False, organization=org)
     ds2 = DatasetFactory(organization=org)
     DatasetFactory()
     ct = ContentType.objects.get_for_model(org)
-    representative = RepresentativeFactory(
-        content_type=ct,
-        object_id=org.pk,
-        user = None,
-        organization = publisher_org
-    )
+    representative = RepresentativeFactory(content_type=ct, object_id=org.pk, user=None, organization=publisher_org)
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-dataset"), expect_errors=True)
     assert len(res.json) == 2
-    assert {int(ds['id']) for ds in res.json} == {ds1.pk, ds2.pk}
+    assert {int(ds["id"]) for ds in res.json} == {ds1.pk, ds2.pk}
 
 
 @pytest.mark.django_db
@@ -2241,29 +2023,18 @@ def test_get_dataset_publisher(app: DjangoTestApp):
     access should only be granted to that dataset.
     """
     org = OrganizationFactory()
-    publisher_org = OrganizationFactory(publisher = True)
+    publisher_org = OrganizationFactory(publisher=True)
     ds1 = DatasetFactory(is_public=False, organization=org)
     ds2 = DatasetFactory(organization=org)
     ct = ContentType.objects.get_for_model(ds1)
-    representative = RepresentativeFactory(
-        content_type=ct,
-        object_id=ds1.pk,
-        user = None,
-        organization = publisher_org
-    )
+    representative = RepresentativeFactory(content_type=ct, object_id=ds1.pk, user=None, organization=publisher_org)
     APIKeyFactory(representative=representative)
-    app.extra_environ.update({
-        'HTTP_AUTHORIZATION': 'ApiKey test'
-    })
-    res = app.delete(reverse('api-single-dataset', kwargs={
-        'datasetId': ds2.pk
-    }), expect_errors=True)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.delete(reverse("api-single-dataset", kwargs={"datasetId": ds2.pk}), expect_errors=True)
     assert res.status_code == 403
 
-    res = app.get(reverse("api-single-dataset", kwargs={
-        'datasetId': ds1.pk
-    }))
-    assert int(res.json['id']) == ds1.pk
+    res = app.get(reverse("api-single-dataset", kwargs={"datasetId": ds1.pk}))
+    assert int(res.json["id"]) == ds1.pk
 
 
 class EdpDcatApRestrictedRdfTests(TestCase):
@@ -2338,7 +2109,9 @@ class EdpDcatApPublicRdfTests(TestCase):
         self.assertNotIn(b"Restricted Dataset", response.content)
 
     def test_edp_dcat_ap_rdf_homepage_for_information_system_subclass(self):
-        DatasetFactory(subclass=DCATResourceSubclassFactory(name="information_system"), landing_page="https://example.com")
+        DatasetFactory(
+            subclass=DCATResourceSubclassFactory(name="information_system"), landing_page="https://example.com"
+        )
 
         response = self.client.get(reverse("edp-dcat-ap-rdf"))
 
@@ -2357,44 +2130,42 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     hvd_group.save()
     parent_category = CategoryFactory(
         title="Environment",
-        uri='http://publications.europa.eu/resource/authority/data-theme/ENVI',
+        uri="http://publications.europa.eu/resource/authority/data-theme/ENVI",
     )
     hvd_category = parent_category.add_child(
         instance=CategoryFactory.build(
             title="Earth observation and environment",
         )
     )
-    DatasetGroupCategoryUriFactory(
-        group=hvd_group,
-        category=hvd_category,
-        uri="http://data.europa.eu/bna/c_dd313021"
-    )
+    DatasetGroupCategoryUriFactory(group=hvd_group, category=hvd_category, uri="http://data.europa.eu/bna/c_dd313021")
 
     dataset = DatasetFactory(
         title={
-            'lt': 'Testas1',
-            'en': 'Test1',
+            "lt": "Testas1",
+            "en": "Test1",
         },
         description={
-            'lt': 'Duomenų rinkinio aprašymas.',
-            'en': 'Dataset description.',
+            "lt": "Duomenų rinkinio aprašymas.",
+            "en": "Dataset description.",
         },
         published=datetime(2016, 8, 1),
-        frequency=FrequencyFactory(uri='http://publications.europa.eu/resource/authority/frequency/IRREG'),
+        frequency=FrequencyFactory(uri="http://publications.europa.eu/resource/authority/frequency/IRREG"),
         category=[hvd_category],
         organization=OrganizationFactory(
-            title='Data Enterprise',
-            email='data@example.com',
+            title="Data Enterprise",
+            email="data@example.com",
         ),
         access_rights=Dataset.PUBLIC,
         is_hvd=True,
     )
 
-    res = app.get('/edp/dcat-ap.rdf')
+    res = app.get("/edp/dcat-ap.rdf")
 
     assert res.status_code == 200
-    assert res.headers['Content-Type'] == 'application/rdf+xml'
-    assert strip_empty_lines(res.text) == f'''\
+    assert res.headers["Content-Type"] == "application/rdf+xml"
+    assert (
+        strip_empty_lines(res.text)
+        == f"""\
 <?xml version="1.0"?>
 <rdf:RDF
     xml:base="http://localhost"
@@ -2444,4 +2215,5 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
             </vcard:Kind>
         </dcat:contactPoint>
     </dcat:Dataset>
-</rdf:RDF>'''
+</rdf:RDF>"""
+    )

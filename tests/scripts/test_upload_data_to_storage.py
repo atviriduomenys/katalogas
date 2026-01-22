@@ -5,7 +5,6 @@ from scripts.upload_data_to_storage import handle_error
 
 
 class TestHandleError(unittest.TestCase):
-
     def test_handle_error(self):
         try:
             raise ValueError("Oh no")

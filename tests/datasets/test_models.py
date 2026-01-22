@@ -108,4 +108,3 @@ class TestDCATResourceSubclass:
     def test_is_catalog(self, name: str, result: bool) -> None:
         subclass = DCATResourceSubclassFactory(name=name)
         assert subclass.is_catalog is result
-

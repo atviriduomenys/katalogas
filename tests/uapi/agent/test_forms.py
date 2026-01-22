@@ -56,7 +56,7 @@ class TestAgentForm:
         assert not form.is_valid()
         assert form.errors == {
             "open_data_publish_url": [
-                "Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys publikuojami Saugykloje\"."
+                'Šis laukas yra privalomas, jei nustatytas požymis "Atviri duomenys publikuojami Saugykloje".'
             ]
         }
 

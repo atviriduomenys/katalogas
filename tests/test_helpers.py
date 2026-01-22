@@ -12,57 +12,57 @@ from vitrina.orgs.factories import OrganizationFactory
 
 @pytest.mark.django_db
 def test_get_selected_value():
-    facet_form = Mock(selected_facets=['key_exact:value'])
-    selected_value = get_selected_value(facet_form, 'key', is_int=False)
-    assert selected_value == 'value'
+    facet_form = Mock(selected_facets=["key_exact:value"])
+    selected_value = get_selected_value(facet_form, "key", is_int=False)
+    assert selected_value == "value"
 
 
 @pytest.mark.django_db
 def test_get_selected_value_multiple():
-    facet_form = Mock(selected_facets=['key_exact:value1', 'key_exact:value2'])
-    selected_value = get_selected_value(facet_form, 'key', multiple=True, is_int=False)
-    assert selected_value == ['value1', 'value2']
+    facet_form = Mock(selected_facets=["key_exact:value1", "key_exact:value2"])
+    selected_value = get_selected_value(facet_form, "key", multiple=True, is_int=False)
+    assert selected_value == ["value1", "value2"]
 
 
 @pytest.mark.django_db
 def test_get_selected_value_int():
-    facet_form = Mock(selected_facets=['key_exact:1'])
-    selected_value = get_selected_value(facet_form, 'key')
+    facet_form = Mock(selected_facets=["key_exact:1"])
+    selected_value = get_selected_value(facet_form, "key")
     assert selected_value == 1
 
 
 @pytest.mark.django_db
 def test_get_selected_value_multiple_int():
-    facet_form = Mock(selected_facets=['key_exact:1', 'key_exact:2'])
-    selected_value = get_selected_value(facet_form, 'key', multiple=True)
+    facet_form = Mock(selected_facets=["key_exact:1", "key_exact:2"])
+    selected_value = get_selected_value(facet_form, "key", multiple=True)
     assert selected_value == [1, 2]
 
 
 @pytest.mark.django_db
 def test_get_selected_value_int_value_error(rf: RequestFactory):
-    facet_form = Mock(selected_facets=['key_exact:?'])
-    selected_value = get_selected_value(facet_form, 'key')
+    facet_form = Mock(selected_facets=["key_exact:?"])
+    selected_value = get_selected_value(facet_form, "key")
     assert selected_value is None
 
 
 @pytest.mark.django_db
 def test_get_filter_url(rf: RequestFactory):
-    request = rf.get('/')
-    filter_url = get_filter_url(request, 'key', 'value')
+    request = rf.get("/")
+    filter_url = get_filter_url(request, "key", "value")
     assert filter_url == "?selected_facets=key_exact%3Avalue"
 
 
 @pytest.mark.django_db
 def test_get_filter_url_with_existing_key(rf: RequestFactory):
-    request = rf.get('/', {"selected_facets": "key1_exact:value1"})
-    filter_url = get_filter_url(request, 'key2', 'value2')
+    request = rf.get("/", {"selected_facets": "key1_exact:value1"})
+    filter_url = get_filter_url(request, "key2", "value2")
     assert filter_url == "?selected_facets=key1_exact%3Avalue1&selected_facets=key2_exact%3Avalue2"
 
 
 @pytest.mark.django_db
 def test_get_filter_url_with_page(rf: RequestFactory):
-    request = rf.get('/', {"page": "1"})
-    filter_url = get_filter_url(request, 'key', 'value')
+    request = rf.get("/", {"page": "1"})
+    filter_url = get_filter_url(request, "key", "value")
     assert filter_url == "?selected_facets=key_exact%3Avalue"
 
 
@@ -70,10 +70,7 @@ def test_get_filter_url_with_page(rf: RequestFactory):
 def test_organization_only():
     organization = OrganizationFactory(title="Test Organization")
     result = build_page_title_context(organization=organization)
-    expected = {
-            "title": "Test Organization",
-            "object_type": str(_("Organizacija"))
-        }
+    expected = {"title": "Test Organization", "object_type": str(_("Organizacija"))}
     assert result == expected
 
 
@@ -81,12 +78,9 @@ def test_organization_only():
 def test_dataset_only():
     parent_org = OrganizationFactory(title="Parent Organization")
 
-    dataset = DatasetFactory(
-        title="Test Dataset",
-        organization=parent_org
-    )
+    dataset = DatasetFactory(title="Test Dataset", organization=parent_org)
     result = build_page_title_context(dataset=dataset, language_code="en")
-    
+
     assert result["title"] == "Test Dataset"
     assert result["root_label"] == str(_("Organizacija"))
     assert result["root_name"] == "Parent Organization"
@@ -102,7 +96,7 @@ def test_dataset_only():
         ("test.tar.gz", "gz"),
         ("test", ""),
         ("", ""),
-    ]
+    ],
 )
 def test_get_file_extension(file_name: str, result: str):
     assert get_file_extension(file_name) == result

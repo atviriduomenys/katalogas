@@ -38,9 +38,7 @@ class TestProjectBasedAgreementListView:
         project = ProjectFactory(user=user)
         app.set_user(user)
 
-        response = app.get(
-            reverse("project-agreement-list", args=[project.pk]), expect_errors=True
-        )
+        response = app.get(reverse("project-agreement-list", args=[project.pk]), expect_errors=True)
         assert response.status_code == 403
 
     def test_cannot_list_no_permission(self, app: DjangoTestApp, organization: Organization) -> None:
@@ -48,14 +46,11 @@ class TestProjectBasedAgreementListView:
         project = ProjectFactory(user=user, organization=organization)
         app.set_user(user)
 
-        response = app.get(
-            reverse("project-agreement-list", args=[project.pk]), expect_errors=True
-        )
+        response = app.get(reverse("project-agreement-list", args=[project.pk]), expect_errors=True)
         assert response.status_code == 403
 
-    def test_list_agreements_as_assignee(
-        self, app: DjangoTestApp, organization: Organization) -> None:
-        user =  UserFactory()
+    def test_list_agreements_as_assignee(self, app: DjangoTestApp, organization: Organization) -> None:
+        user = UserFactory()
         RepresentativeFactory(user=user, content_object=organization)
         project = ProjectFactory(organization=organization)
         app.set_user(user)
@@ -67,11 +62,9 @@ class TestProjectBasedAgreementListView:
         assert project.agreements.count() == 2
         assert response.context["agreements"].count() == 2
 
-    def test_list_no_agreements(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
-    ) -> None:
+    def test_list_no_agreements(self, app: DjangoTestApp, organization: Organization, dataset: Dataset) -> None:
         representative = RepresentativeFactory(content_object=organization)
-        user =  representative.user
+        user = representative.user
         project = ProjectFactory(organization=organization, datasets=[dataset])
         app.set_user(user)
 
@@ -81,7 +74,7 @@ class TestProjectBasedAgreementListView:
         assert response.context["agreements"].count() == 0
 
     def test_list_agreements_as_assigner(self, app: DjangoTestApp, organization: Organization) -> None:
-        user =  UserFactory()
+        user = UserFactory()
         RepresentativeFactory(user=user, content_object=organization)
         project = ProjectFactory(organization=OrganizationFactory())
         app.set_user(user)
@@ -96,9 +89,7 @@ class TestProjectBasedAgreementListView:
 
 
 class TestProjectBasedAgreementDetailView:
-    def test_cannot_show_details_without_permission(
-        self, app: DjangoTestApp, organization: Organization
-    ) -> None:
+    def test_cannot_show_details_without_permission(self, app: DjangoTestApp, organization: Organization) -> None:
         user = UserFactory()
         app.set_user(user)
         project = ProjectFactory()
@@ -115,9 +106,7 @@ class TestProjectBasedAgreementDetailView:
         app.set_user(user)
         project = ProjectFactory()
 
-        response = app.get(
-            reverse("project-agreement-detail", args=[project.pk, uuid4()]), expect_errors=True
-        )
+        response = app.get(reverse("project-agreement-detail", args=[project.pk, uuid4()]), expect_errors=True)
         assert response.status_code == 404
 
     def test_http_404_when_agreement_does_not_exist_in_project(
@@ -135,9 +124,7 @@ class TestProjectBasedAgreementDetailView:
         )
         assert response.status_code == 404
 
-    def test_agreement_details(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset
-    ) -> None:
+    def test_agreement_details(self, app: DjangoTestApp, organization: Organization, dataset: Dataset) -> None:
         user = UserFactory(organization=organization)
         RepresentativeFactory(user=user, content_object=organization)
         app.set_user(user)
@@ -150,30 +137,22 @@ class TestProjectBasedAgreementDetailView:
 
 
 class TestAgreementCreateView:
-    def test_cannot_create_agreement_without_permission(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_cannot_create_agreement_without_permission(self, app: DjangoTestApp) -> None:
         representative = ViispRepresentativeFactory(can_make_agreements=False)
         user = representative.user
         project = ProjectFactory(user=user, organization=representative.content_object)
         app.set_user(user)
 
-        response = app.get(
-            reverse("project-agreement-create", args=[project.pk]), expect_errors=True
-        )
+        response = app.get(reverse("project-agreement-create", args=[project.pk]), expect_errors=True)
         assert response.status_code == 403
 
-    def test_cannot_create_agreement_for_deleted_project(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_cannot_create_agreement_for_deleted_project(self, app: DjangoTestApp) -> None:
         representative = ViispRepresentativeFactory(can_make_agreements=True)
         user = representative.user
         project = ProjectFactory(user=user, organization=representative.content_object, deleted=True)
         app.set_user(user)
 
-        response = app.get(
-            reverse("project-agreement-create", args=[project.pk]), expect_errors=True
-        )
+        response = app.get(reverse("project-agreement-create", args=[project.pk]), expect_errors=True)
         assert response.status_code == 404
 
     def test_cannot_create_agreements_if_all_organizations_already_has_agreement(
@@ -215,9 +194,7 @@ class TestAgreementCreateView:
         assert agreement_scope.action == "getall"
         assert agreement_scope.scope == "uapi:/test/dataset/:getall"
 
-    def test_creates_multiple_agreements_and_scopes(
-        self, app: DjangoTestApp, organization: Organization
-    ) -> None:
+    def test_creates_multiple_agreements_and_scopes(self, app: DjangoTestApp, organization: Organization) -> None:
         dataset1 = DatasetFactory(organization=organization, metadata="test/dataset1")
         dataset2 = DatasetFactory(organization=organization, metadata="test/dataset2")
         diff_organization = OrganizationFactory()
@@ -241,15 +218,13 @@ class TestAgreementCreateView:
         assert response.url == reverse("project-agreement-list", args=[project.pk])
 
         assert Agreement.objects.filter(project=project).count() == 2
+        assert set(AgreementScope.objects.filter(agreement__assigner=organization).values_list("scope", flat=True)) == {
+            "uapi:/test/dataset1/:getall",
+            "uapi:/test/dataset2/:search",
+            "uapi:/test/dataset2/:select",
+        }
         assert set(
-            AgreementScope.objects.filter(agreement__assigner=organization).values_list(
-                "scope", flat=True
-            )
-        ) == {"uapi:/test/dataset1/:getall", "uapi:/test/dataset2/:search", "uapi:/test/dataset2/:select"}
-        assert set(
-            AgreementScope.objects.filter(
-                agreement__assigner=diff_organization
-            ).values_list("scope", flat=True)
+            AgreementScope.objects.filter(agreement__assigner=diff_organization).values_list("scope", flat=True)
         ) == {"uapi:/datasets/gov/org/dataset/:getall"}
 
     def test_can_create_agreements_for_organizations_that_currently_do_not_have_one(
@@ -296,9 +271,7 @@ class TestAgreementCreateView:
         assert response.status_code == 200
         assert Agreement.objects.filter(project=project).count() == 0
 
-    def test_create_agreement_for_personal_project(
-        self, app: DjangoTestApp, dataset: Dataset
-    ) -> None:
+    def test_create_agreement_for_personal_project(self, app: DjangoTestApp, dataset: Dataset) -> None:
         user = UserFactory()
         project = ProjectFactory(user=user, datasets=[dataset])
         app.set_user(user)
@@ -324,7 +297,7 @@ class TestAgreementSubmit:
             object_id=user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=user.email,
-            phone=user.phone
+            phone=user.phone,
         )
 
         project = ProjectFactory(
@@ -338,15 +311,13 @@ class TestAgreementSubmit:
             assignee_representative=None,
             assigner=assigner_organization,
             created_by=user,
-            status=AgreementStatuses.CREATED
+            status=AgreementStatuses.CREATED,
         )
 
         # Act
         response = app.post(
             reverse("project-agreement-submit", args=[project.pk, agreement.pk]),
-            {
-                "assignee_representative": contact.pk
-            }
+            {"assignee_representative": contact.pk},
         )
 
         # Assert
@@ -369,7 +340,7 @@ class TestAgreementSubmit:
             object_id=user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=user.email,
-            phone=user.phone
+            phone=user.phone,
         )
 
         project = ProjectFactory(
@@ -383,7 +354,7 @@ class TestAgreementSubmit:
             assignee_representative=None,
             assigner=assigner_organization,
             created_by=user,
-            status=AgreementStatuses.CREATED
+            status=AgreementStatuses.CREATED,
         )
 
         # Act
@@ -416,7 +387,7 @@ class TestAgreementSubmit:
             object_id=user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=user.email,
-            phone=user.phone
+            phone=user.phone,
         )
 
         project = ProjectFactory(
@@ -430,15 +401,13 @@ class TestAgreementSubmit:
             assignee_representative=None,
             assigner=assigner_organization,
             created_by=user,
-            status=AgreementStatuses.CREATED
+            status=AgreementStatuses.CREATED,
         )
 
         # Act
         response = app.post(
             reverse("project-agreement-submit", args=[project.pk, agreement.pk]),
-            {
-                "assignee_representative": contact.pk
-            },
+            {"assignee_representative": contact.pk},
             expect_errors=True,
         )
 
@@ -463,7 +432,7 @@ class TestAgreementSubmit:
             object_id=user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=user.email,
-            phone=user.phone
+            phone=user.phone,
         )
 
         project = ProjectFactory(
@@ -477,15 +446,13 @@ class TestAgreementSubmit:
             assignee_representative=None,
             assigner=assigner_organization,
             created_by=user,
-            status=AgreementStatuses.CREATED
+            status=AgreementStatuses.CREATED,
         )
 
         # Act
         response = app.post(
             reverse("project-agreement-submit", args=[project.pk, agreement.pk]),
-            {
-                "assignee_representative": contact.pk
-            },
+            {"assignee_representative": contact.pk},
             expect_errors=True,
         )
 
@@ -495,15 +462,18 @@ class TestAgreementSubmit:
         assert agreement.status == AgreementStatuses.CREATED
         assert not agreement.assignee_representative
 
-    @pytest.mark.parametrize("initial_agreement_status", [
-        AgreementStatuses.SUBMITTED,
-        AgreementStatuses.APPROVED,
-        AgreementStatuses.FORMED,
-        AgreementStatuses.INITIATED,
-        AgreementStatuses.SIGNED,
-        AgreementStatuses.ACTIVE,
-        AgreementStatuses.TERMINATED,
-    ])
+    @pytest.mark.parametrize(
+        "initial_agreement_status",
+        [
+            AgreementStatuses.SUBMITTED,
+            AgreementStatuses.APPROVED,
+            AgreementStatuses.FORMED,
+            AgreementStatuses.INITIATED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
     def test_incorrect_agreement_status(
         self,
         initial_agreement_status: AgreementStatuses,
@@ -524,7 +494,7 @@ class TestAgreementSubmit:
             object_id=user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=user.email,
-            phone=user.phone
+            phone=user.phone,
         )
 
         project = ProjectFactory(
@@ -538,15 +508,13 @@ class TestAgreementSubmit:
             assignee_representative=None,
             assigner=assigner_organization,
             created_by=user,
-            status=initial_agreement_status
+            status=initial_agreement_status,
         )
 
         # Act
         response = app.post(
             reverse("project-agreement-submit", args=[project.pk, agreement.pk]),
-            {
-                "assignee_representative": contact.pk
-            }
+            {"assignee_representative": contact.pk},
         )
 
         # Assert
@@ -587,14 +555,14 @@ class TestAgreementApprove:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
-            phone=assigner_user.phone
+            phone=assigner_user.phone,
         )
 
         project = ProjectFactory(
@@ -610,7 +578,7 @@ class TestAgreementApprove:
             assigner_representative=None,
             assigner=assigner_organization,
             created_by=assignee_user,
-            status=AgreementStatuses.SUBMITTED
+            status=AgreementStatuses.SUBMITTED,
         )
         other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
 
@@ -620,8 +588,8 @@ class TestAgreementApprove:
             {
                 "template": template.pk,
                 "assigner_representative": assigner_contact.pk,
-                "other_assigner_legislations": other_assigner_legislations
-            }
+                "other_assigner_legislations": other_assigner_legislations,
+            },
         )
 
         # Assert
@@ -631,7 +599,6 @@ class TestAgreementApprove:
         assert agreement.template == template
         assert agreement.assigner_representative == assigner_contact
         assert agreement.other_assigner_legislations == other_assigner_legislations
-
 
     def test_unauthorized_not_representative(self, app: DjangoTestApp, dataset: Dataset):
         # Arrange
@@ -662,14 +629,14 @@ class TestAgreementApprove:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
-            phone=assigner_user.phone
+            phone=assigner_user.phone,
         )
 
         project = ProjectFactory(
@@ -685,7 +652,7 @@ class TestAgreementApprove:
             assigner_representative=None,
             assigner=assigner_organization,
             created_by=assignee_user,
-            status=AgreementStatuses.SUBMITTED
+            status=AgreementStatuses.SUBMITTED,
         )
         other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
 
@@ -695,7 +662,7 @@ class TestAgreementApprove:
             {
                 "template": template.pk,
                 "assigner_representative": assigner_contact.pk,
-                "other_assigner_legislations": other_assigner_legislations
+                "other_assigner_legislations": other_assigner_legislations,
             },
             expect_errors=True,
         )
@@ -738,14 +705,14 @@ class TestAgreementApprove:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
-            phone=assigner_user.phone
+            phone=assigner_user.phone,
         )
 
         project = ProjectFactory(
@@ -761,7 +728,7 @@ class TestAgreementApprove:
             assigner_representative=None,
             assigner=assigner_organization,
             created_by=assignee_user,
-            status=AgreementStatuses.SUBMITTED
+            status=AgreementStatuses.SUBMITTED,
         )
         other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
 
@@ -771,7 +738,7 @@ class TestAgreementApprove:
             {
                 "template": template.pk,
                 "assigner_representative": assigner_contact.pk,
-                "other_assigner_legislations": other_assigner_legislations
+                "other_assigner_legislations": other_assigner_legislations,
             },
             expect_errors=True,
         )
@@ -814,14 +781,14 @@ class TestAgreementApprove:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
-            phone=assigner_user.phone
+            phone=assigner_user.phone,
         )
 
         project = ProjectFactory(
@@ -837,7 +804,7 @@ class TestAgreementApprove:
             assigner_representative=None,
             assigner=assigner_organization,
             created_by=assignee_user,
-            status=AgreementStatuses.SUBMITTED
+            status=AgreementStatuses.SUBMITTED,
         )
         other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
 
@@ -847,7 +814,7 @@ class TestAgreementApprove:
             {
                 "template": template.pk,
                 "assigner_representative": assigner_contact.pk,
-                "other_assigner_legislations": other_assigner_legislations
+                "other_assigner_legislations": other_assigner_legislations,
             },
             expect_errors=True,
         )
@@ -860,20 +827,20 @@ class TestAgreementApprove:
         assert not agreement.assigner_representative
         assert not agreement.other_assigner_legislations
 
-    @pytest.mark.parametrize("initial_agreement_status", [
-        AgreementStatuses.CREATED,
-        AgreementStatuses.APPROVED,
-        AgreementStatuses.FORMED,
-        AgreementStatuses.INITIATED,
-        AgreementStatuses.SIGNED,
-        AgreementStatuses.ACTIVE,
-        AgreementStatuses.TERMINATED,
-    ])
+    @pytest.mark.parametrize(
+        "initial_agreement_status",
+        [
+            AgreementStatuses.CREATED,
+            AgreementStatuses.APPROVED,
+            AgreementStatuses.FORMED,
+            AgreementStatuses.INITIATED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
     def test_incorrect_agreement_status(
-        self,
-        initial_agreement_status: AgreementStatuses,
-        app: DjangoTestApp,
-        dataset: Dataset
+        self, initial_agreement_status: AgreementStatuses, app: DjangoTestApp, dataset: Dataset
     ):
         # Arrange
         template = SmartContractTemplate.objects.create(
@@ -904,14 +871,14 @@ class TestAgreementApprove:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
-            phone=assigner_user.phone
+            phone=assigner_user.phone,
         )
 
         project = ProjectFactory(
@@ -927,7 +894,7 @@ class TestAgreementApprove:
             assigner_representative=None,
             assigner=assigner_organization,
             created_by=assignee_user,
-            status=initial_agreement_status
+            status=initial_agreement_status,
         )
         other_assigner_legislations = "Legislation A; Legislation B; Legislation C."
 
@@ -937,8 +904,8 @@ class TestAgreementApprove:
             {
                 "template": template.pk,
                 "assigner_representative": assigner_contact.pk,
-                "other_assigner_legislations": other_assigner_legislations
-            }
+                "other_assigner_legislations": other_assigner_legislations,
+            },
         )
 
         # Assert
@@ -984,7 +951,7 @@ class TestAgreementForm:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
@@ -1014,10 +981,7 @@ class TestAgreementForm:
         )
 
         # Act
-        response = app.post(
-            reverse("project-agreement-form", args=[project.pk, agreement.pk]),
-            {}
-        )
+        response = app.post(reverse("project-agreement-form", args=[project.pk, agreement.pk]), {})
 
         # Assert
         assert response.status_code == 302
@@ -1141,7 +1105,7 @@ class TestAgreementForm:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
@@ -1184,7 +1148,9 @@ class TestAgreementForm:
         assert not agreement.files.exists()
 
     @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
-    def test_unauthorized_not_viisp_authorized(self, is_acting_user_assignee: bool, app: DjangoTestApp, dataset: Dataset):
+    def test_unauthorized_not_viisp_authorized(
+        self, is_acting_user_assignee: bool, app: DjangoTestApp, dataset: Dataset
+    ):
         # Arrange
         template = SmartContractTemplate.objects.create(
             file=ContentFile(
@@ -1216,7 +1182,7 @@ class TestAgreementForm:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
@@ -1259,7 +1225,9 @@ class TestAgreementForm:
         assert not agreement.files.exists()
 
     @pytest.mark.parametrize("is_acting_user_assignee", [True, False])
-    def test_unauthorized_not_granted_agreement_signing_rights(self, is_acting_user_assignee: bool, app: DjangoTestApp, dataset: Dataset):
+    def test_unauthorized_not_granted_agreement_signing_rights(
+        self, is_acting_user_assignee: bool, app: DjangoTestApp, dataset: Dataset
+    ):
         # Arrange
         template = SmartContractTemplate.objects.create(
             file=ContentFile(
@@ -1291,7 +1259,7 @@ class TestAgreementForm:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
@@ -1333,16 +1301,21 @@ class TestAgreementForm:
         assert agreement.status == AgreementStatuses.APPROVED  # Unchanged.
         assert not agreement.files.exists()
 
-    @pytest.mark.parametrize("initial_agreement_status", [
-        AgreementStatuses.CREATED,
-        AgreementStatuses.SUBMITTED,
-        AgreementStatuses.FORMED,
-        AgreementStatuses.INITIATED,
-        AgreementStatuses.SIGNED,
-        AgreementStatuses.ACTIVE,
-        AgreementStatuses.TERMINATED,
-    ])
-    def test_incorrect_agreement_status(self, initial_agreement_status: AgreementStatuses, app: DjangoTestApp, dataset: Dataset):
+    @pytest.mark.parametrize(
+        "initial_agreement_status",
+        [
+            AgreementStatuses.CREATED,
+            AgreementStatuses.SUBMITTED,
+            AgreementStatuses.FORMED,
+            AgreementStatuses.INITIATED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
+    def test_incorrect_agreement_status(
+        self, initial_agreement_status: AgreementStatuses, app: DjangoTestApp, dataset: Dataset
+    ):
         template = SmartContractTemplate.objects.create(
             file=ContentFile(
                 open(Path(__file__).parent / "files" / "contract_template.md").read(),
@@ -1373,7 +1346,7 @@ class TestAgreementForm:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
@@ -1456,7 +1429,7 @@ class TestAgreementInitiate:
                     agreement_one_signer.read_bytes(),
                     "text/plain",
                 )
-            ]
+            ],
         )
 
         # Assert
@@ -1503,7 +1476,7 @@ class TestAgreementInitiate:
                     agreement_one_signer.read_bytes(),
                     "text/plain",
                 )
-            ]
+            ],
         )
 
         # Assert
@@ -1512,14 +1485,17 @@ class TestAgreementInitiate:
         agreement.refresh_from_db()
         assert agreement.status == AgreementStatuses.FORMED
 
-    @pytest.mark.parametrize("initial_agreement_status", [
-        AgreementStatuses.CREATED,
-        AgreementStatuses.SUBMITTED,
-        AgreementStatuses.APPROVED,
-        AgreementStatuses.SIGNED,
-        AgreementStatuses.ACTIVE,
-        AgreementStatuses.TERMINATED,
-    ])
+    @pytest.mark.parametrize(
+        "initial_agreement_status",
+        [
+            AgreementStatuses.CREATED,
+            AgreementStatuses.SUBMITTED,
+            AgreementStatuses.APPROVED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
     def test_incorrect_agreement_status(
         self,
         initial_agreement_status: AgreementStatuses,
@@ -1613,7 +1589,7 @@ class TestAgreementInitiate:
                     agreement_one_signer.read_bytes(),
                     "text/plain",
                 )
-            ]
+            ],
         )
 
         # Assert
@@ -1662,14 +1638,14 @@ class TestAgreementSign:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.email
+            phone=assignee_user.email,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
-            phone=assigner_user.email
+            phone=assigner_user.email,
         )
 
         project = ProjectFactory(organization=assignee_organization, datasets=[dataset])
@@ -1684,7 +1660,7 @@ class TestAgreementSign:
             other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
             payment_terms="Payment term A; Payment term B.",
             created_by=assignee_user,
-            status=AgreementStatuses.INITIATED
+            status=AgreementStatuses.INITIATED,
         )
 
         AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
@@ -1700,7 +1676,7 @@ class TestAgreementSign:
                     agreement_two_signers.read_bytes(),
                     "text/plain",
                 )
-            ]
+            ],
         )
 
         # Assert
@@ -1710,14 +1686,17 @@ class TestAgreementSign:
         assert agreement.status == AgreementStatuses.SIGNED
         assert agreement.is_agent_sync_enabled
 
-    @pytest.mark.parametrize("initial_agreement_status", [
-        AgreementStatuses.CREATED,
-        AgreementStatuses.SUBMITTED,
-        AgreementStatuses.APPROVED,
-        AgreementStatuses.SIGNED,
-        AgreementStatuses.ACTIVE,
-        AgreementStatuses.TERMINATED,
-    ])
+    @pytest.mark.parametrize(
+        "initial_agreement_status",
+        [
+            AgreementStatuses.CREATED,
+            AgreementStatuses.SUBMITTED,
+            AgreementStatuses.APPROVED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
     def test_incorrect_agreement_status(
         self,
         initial_agreement_status: AgreementStatuses,
@@ -1757,14 +1736,14 @@ class TestAgreementSign:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.email
+            phone=assignee_user.email,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
-            phone=assigner_user.email
+            phone=assigner_user.email,
         )
 
         project = ProjectFactory(organization=assignee_organization, datasets=[dataset])
@@ -1779,7 +1758,7 @@ class TestAgreementSign:
             other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
             payment_terms="Payment term A; Payment term B.",
             created_by=assignee_user,
-            status=initial_agreement_status
+            status=initial_agreement_status,
         )
 
         AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
@@ -1796,7 +1775,7 @@ class TestAgreementSign:
                     "text/plain",
                 )
             ],
-            expect_errors = True,
+            expect_errors=True,
         )
 
         # Assert
@@ -1846,14 +1825,14 @@ class TestAgreementSign:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.email
+            phone=assignee_user.email,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
-            phone=assigner_user.email
+            phone=assigner_user.email,
         )
 
         project = ProjectFactory(organization=assignee_organization, datasets=[dataset])
@@ -1868,7 +1847,7 @@ class TestAgreementSign:
             other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
             payment_terms="Payment term A; Payment term B.",
             created_by=assignee_user,
-            status=AgreementStatuses.INITIATED
+            status=AgreementStatuses.INITIATED,
         )
 
         AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
@@ -1883,7 +1862,7 @@ class TestAgreementSign:
                     agreement_two_signers.read_bytes(),
                     "text/plain",
                 )
-            ]
+            ],
         )
 
         # Assert
@@ -1930,14 +1909,14 @@ class TestAgreementSign:
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assignee_user.email,
-            phone=assignee_user.email
+            phone=assignee_user.email,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(User),
             email=assigner_user.email,
-            phone=assigner_user.email
+            phone=assigner_user.email,
         )
 
         project = ProjectFactory(organization=assignee_organization, datasets=[dataset])
@@ -1952,7 +1931,7 @@ class TestAgreementSign:
             other_assigner_legislations="Legislation D; Legislation E; Legislation F.",
             payment_terms="Payment term A; Payment term B.",
             created_by=assignee_user,
-            status=AgreementStatuses.INITIATED
+            status=AgreementStatuses.INITIATED,
         )
 
         AgreementJSONFileFactory(agreement=agreement, json_path=odrl_json)
@@ -1969,7 +1948,7 @@ class TestAgreementSign:
                     agreement_two_signers.read_bytes(),
                     "text/plain",
                 )
-            ]
+            ],
         )
 
         # Assert
@@ -1981,7 +1960,9 @@ class TestAgreementSign:
 
 class TestAgreementFileDownload:
     def test_cannot_download_file_if_unauthorized(
-        self, app: DjangoTestApp, agreement_pdf: Path,
+        self,
+        app: DjangoTestApp,
+        agreement_pdf: Path,
     ):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
@@ -1996,11 +1977,14 @@ class TestAgreementFileDownload:
         response = app.get(url)
 
         assert response.status_code == 302
-        assert response.location == f'{reverse("login")}?next={url}'
+        assert response.location == f"{reverse('login')}?next={url}"
 
     @pytest.mark.parametrize("user_field", ["is_staff", "is_superuser"])
     def test_can_download_file_if_staff_or_superuser(
-        self, app: DjangoTestApp, agreement_pdf: Path, user_field: str,
+        self,
+        app: DjangoTestApp,
+        agreement_pdf: Path,
+        user_field: str,
     ):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
@@ -2014,9 +1998,7 @@ class TestAgreementFileDownload:
             project=ProjectFactory(organization=assignee),
         )
         agreement_file = AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
-        response = app.get(
-            reverse("agreement-file-download", args=[agreement.pk, agreement_file.pk])
-        )
+        response = app.get(reverse("agreement-file-download", args=[agreement.pk, agreement_file.pk]))
 
         assert response.status_code == 200
 
@@ -2029,7 +2011,7 @@ class TestAgreementFileDownload:
         ],
     )
     def test_can_download_file_if_assignee_or_assigner_organization_representative(
-       self, app: DjangoTestApp, agreement_pdf: Path, is_acting_user_assignee: bool, role: str
+        self, app: DjangoTestApp, agreement_pdf: Path, is_acting_user_assignee: bool, role: str
     ):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
@@ -2050,9 +2032,7 @@ class TestAgreementFileDownload:
         )
         agreement_file = AgreementPDFFileFactory(agreement=agreement, pdf_path=agreement_pdf)
 
-        response = app.get(
-            reverse("agreement-file-download", args=[agreement.pk, agreement_file.pk])
-        )
+        response = app.get(reverse("agreement-file-download", args=[agreement.pk, agreement_file.pk]))
 
         assert response.status_code == 200
 
@@ -2097,9 +2077,7 @@ class TestAgreementFileDownload:
             Representative.RESOURCE_COORDINATOR,
         ],
     )
-    def test_return_file_as_attachment_if_debug_true(
-        self, app: DjangoTestApp, agreement_pdf: Path, role: str
-    ):
+    def test_return_file_as_attachment_if_debug_true(self, app: DjangoTestApp, agreement_pdf: Path, role: str):
         assignee = OrganizationFactory()
         assigner = OrganizationFactory()
 

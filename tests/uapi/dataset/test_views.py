@@ -96,7 +96,6 @@ class TestCreate:
             "subclass": DCATResourceSubclass.SERVICE,
         }
 
-
     @pytest.mark.parametrize(
         "subclass, subclass_additional_data, is_service, is_series",
         [
@@ -180,7 +179,6 @@ class TestCreate:
         assert response.json["series"] == is_series
         assert response.json["service"] == is_service
 
-
     def test_specific_scope(
         self,
         app: DjangoTestApp,
@@ -243,7 +241,6 @@ class TestCreate:
             "subclass": DCATResourceSubclass.DATASET,
         }
 
-
     def test_agent_is_disabled(
         self,
         app: DjangoTestApp,
@@ -277,7 +274,6 @@ class TestCreate:
             "additionalProperties": None,
         }
 
-
     @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
     def test_token_does_not_have_necessary_scopes(
         self,
@@ -306,7 +302,6 @@ class TestCreate:
             "additionalProperties": None,
         }
 
-
     def test_no_organization_id_inside_token_payload(
         self,
         app: DjangoTestApp,
@@ -333,7 +328,6 @@ class TestCreate:
             "additionalProperties": None,
         }
 
-
     def test_serialization_validation_error(
         self,
         app: DjangoTestApp,
@@ -357,19 +351,14 @@ class TestCreate:
             "message": str(
                 {
                     "title": [ErrorDetail(string="Šis laukas yra privalomas.", code="required")],
-                    "description": [ErrorDetail(string="Šis laukas yra privalomas.", code="required")]
+                    "description": [ErrorDetail(string="Šis laukas yra privalomas.", code="required")],
                 }
             ),
             "context": {
-                "errors": {
-                    "title": ["Šis laukas yra privalomas."],
-                    "description": ["Šis laukas yra privalomas."]
-
-                }
+                "errors": {"title": ["Šis laukas yra privalomas."], "description": ["Šis laukas yra privalomas."]}
             },
-            "additionalProperties": None
+            "additionalProperties": None,
         }
-
 
     def test_unexpected_exception_raised_and_rollback_executed(
         self,
@@ -387,9 +376,9 @@ class TestCreate:
 
         # Mocking a property at the end of the file, to also check that rollback happened, and no new objects were created.
         with patch(
-                "vitrina.uapi.views.views.UAPIDatasetSerializer.data",
-                new_callable=PropertyMock,
-                side_effect=Exception("Unexpected error")
+            "vitrina.uapi.views.views.UAPIDatasetSerializer.data",
+            new_callable=PropertyMock,
+            side_effect=Exception("Unexpected error"),
         ):
             response = app.post(
                 url_dataset,
@@ -408,7 +397,7 @@ class TestCreate:
             "type": "Exception",
             "template": "An unexpected server error occurred.",
             "message": "Unexpected error",
-            "additionalProperties": None
+            "additionalProperties": None,
         }
 
 
@@ -459,7 +448,6 @@ class TestList:
                 }
             ]
         }
-
 
     def test_specific_scope(
         self,
@@ -514,7 +502,6 @@ class TestList:
             ]
         }
 
-
     def test_agent_is_disabled(
         self,
         app: DjangoTestApp,
@@ -537,7 +524,6 @@ class TestList:
             "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
             "additionalProperties": None,
         }
-
 
     @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
     def test_token_does_not_have_necessary_scopes(
@@ -564,7 +550,6 @@ class TestList:
             "additionalProperties": None,
         }
 
-
     def test_no_organization_id_inside_token_payload(
         self,
         app: DjangoTestApp,
@@ -588,7 +573,6 @@ class TestList:
             "additionalProperties": None,
         }
 
-
     def test_call_with_name_query_parameter(
         self,
         app: DjangoTestApp,
@@ -599,9 +583,7 @@ class TestList:
         valid_token: str,
     ):
         dataset_2 = DatasetFactory(
-            organization=organization,
-            title="Title of the Dataset 2",
-            description="Description of the Dataset 2."
+            organization=organization, title="Title of the Dataset 2", description="Description of the Dataset 2."
         )
         MetadataFactory(
             content_type=ContentType.objects.get_for_model(Dataset),
@@ -652,7 +634,6 @@ class TestList:
             ]
         }
 
-
     def test_call_with_parent_id_query_parameter(
         self,
         app: DjangoTestApp,
@@ -668,8 +649,8 @@ class TestList:
         dataset_other_organization = DatasetFactory(organization=OrganizationFactory())
 
         # Attach children to the Data Service (saved instances).
-        dataset_2.move(dataset, pos='sorted-child')
-        dataset_3.move(dataset, pos='sorted-child')
+        dataset_2.move(dataset, pos="sorted-child")
+        dataset_3.move(dataset, pos="sorted-child")
 
         response = app.get(
             url_dataset,
@@ -684,7 +665,6 @@ class TestList:
         assert str(dataset_orphan.pk) not in child_dataset_ids
         assert str(dataset_other_organization.pk) not in child_dataset_ids
 
-
     def test_no_datasets_exist(
         self,
         app: DjangoTestApp,
@@ -692,7 +672,9 @@ class TestList:
         url_dataset: str,
         valid_token: str,
     ):
-        response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True)
+        response = app.get(
+            url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True
+        )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert response.json == {
@@ -702,9 +684,8 @@ class TestList:
             "message": (
                 "No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/."
             ),
-            "additionalProperties": None
+            "additionalProperties": None,
         }
-
 
     def test_no_unarchived_datasets_exist(
         self,
@@ -726,7 +707,9 @@ class TestList:
             name="test/dataset/TestModel",
         )
 
-        response = app.get(url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True)
+        response = app.get(
+            url_dataset, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True
+        )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert Dataset.objects.filter(organization=organization).count() == 1
@@ -737,9 +720,8 @@ class TestList:
             "message": (
                 "No dataset matched the provided query — http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/."
             ),
-            "additionalProperties": None
+            "additionalProperties": None,
         }
-
 
     def test_list_with_query_parameters_archived_dataset(
         self,
@@ -760,7 +742,7 @@ class TestList:
             url_dataset,
             params={"name": dataset.metadata.first().name},
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -773,9 +755,8 @@ class TestList:
                 f"No dataset matched the provided query — "
                 f"http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/?name={quote(dataset.metadata.first().name, safe='')}."
             ),
-            "additionalProperties": None
+            "additionalProperties": None,
         }
-
 
     def test_no_datasets_for_the_organization_passed_in_path_parameters(
         self,
@@ -803,7 +784,7 @@ class TestList:
                 f"http://testserver/uapi/datasets/"
                 f"gov/vssa/ror/dcat/Dataset/?name={quote('dataset/that/does/not/exist', safe='')}."
             ),
-            "additionalProperties": None
+            "additionalProperties": None,
         }
 
 
@@ -831,7 +812,6 @@ class TestActionUploadDatasetStructure:
         file = dataset.datasetstructure_set.first().file
         assert file is not None
         assert file.label == f"dataset_{dataset.id}_structure.csv"
-
 
     def test_dataset_structure_specific_scope(
         self,
@@ -862,7 +842,6 @@ class TestActionUploadDatasetStructure:
         assert file is not None
         assert file.label == f"dataset_{dataset.id}_structure.csv"
 
-
     def test_agent_is_disabled(
         self,
         app: DjangoTestApp,
@@ -889,7 +868,6 @@ class TestActionUploadDatasetStructure:
             "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
             "additionalProperties": None,
         }
-
 
     @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
     def test_token_does_not_have_necessary_scopes(
@@ -922,7 +900,6 @@ class TestActionUploadDatasetStructure:
             "additionalProperties": None,
         }
 
-
     def test_no_organization_id_inside_token_payload(
         self,
         app: DjangoTestApp,
@@ -939,7 +916,7 @@ class TestActionUploadDatasetStructure:
             dsa,
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
             content_type="text/csv",
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -951,7 +928,6 @@ class TestActionUploadDatasetStructure:
             "message": "You do not have permission to perform this action.",
             "additionalProperties": None,
         }
-
 
     def test_no_object(
         self,
@@ -981,7 +957,6 @@ class TestActionUploadDatasetStructure:
             "additionalProperties": None,
         }
 
-
     def test_empty_csv(
         self,
         app: DjangoTestApp,
@@ -1006,7 +981,6 @@ class TestActionUploadDatasetStructure:
             "message": "CSV content is missing or invalid.",
             "additionalProperties": None,
         }
-
 
     def test_file_only_contains_special_characters(
         self,
@@ -1042,7 +1016,6 @@ class TestActionUploadDatasetStructure:
         url_dataset_structure: str,
         valid_token: str,
     ):
-
         with patch("vitrina.uapi.views.views.Dataset.save", side_effect=Exception("Unexpected error")):
             response = app.post(
                 url_dataset_structure,
@@ -1077,9 +1050,7 @@ class TestActionGetDatasetStructure:
     ):
         structure = DatasetStructureFactory(
             dataset=dataset,
-            file=FilerFileFactory(
-                file=FileField(filename=f"dataset_{dataset.id}_structure.csv", data=dsa)
-            )
+            file=FilerFileFactory(file=FileField(filename=f"dataset_{dataset.id}_structure.csv", data=dsa)),
         )
         dataset.current_structure = structure
         dataset.save()
@@ -1107,19 +1078,11 @@ class TestActionGetDatasetStructure:
         expected_rows = _normalize_csv(expected_csv)
         assert actual_rows == expected_rows
 
-
     def test_no_dataset(
-        self,
-        app: DjangoTestApp,
-        organization: Organization,
-        url_dataset_structure: str,
-        valid_token: str
+        self, app: DjangoTestApp, organization: Organization, url_dataset_structure: str, valid_token: str
     ):
         response = app.get(
-            _build_reverse_uapi_url(
-                "uapi-dataset-structure",
-                pk=1_000_000
-            ),
+            _build_reverse_uapi_url("uapi-dataset-structure", pk=1_000_000),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
@@ -1133,7 +1096,6 @@ class TestActionGetDatasetStructure:
             "additionalProperties": None,
         }
 
-
     def test_agent_is_disabled(
         self,
         app: DjangoTestApp,
@@ -1145,9 +1107,7 @@ class TestActionGetDatasetStructure:
     ):
         structure = DatasetStructureFactory(
             dataset=dataset,
-            file=FilerFileFactory(
-                file=FileField(filename=f"dataset_{dataset.id}_structure.csv", data=dsa)
-            )
+            file=FilerFileFactory(file=FileField(filename=f"dataset_{dataset.id}_structure.csv", data=dsa)),
         )
         dataset.current_structure = structure
         dataset.save()
@@ -1168,21 +1128,13 @@ class TestActionGetDatasetStructure:
             "additionalProperties": None,
         }
 
-
     def test_invalid_token(
-        self,
-        app: DjangoTestApp,
-        organization: Organization,
-        url_dataset_structure: str,
-        valid_token: str
+        self, app: DjangoTestApp, organization: Organization, url_dataset_structure: str, valid_token: str
     ):
         token_parts = valid_token.split(".")
         invalid_token = f"{token_parts[0]}.{token_parts[1]}"
         response = app.get(
-            _build_reverse_uapi_url(
-                "uapi-dataset-structure",
-                pk=1_000_000
-            ),
+            _build_reverse_uapi_url("uapi-dataset-structure", pk=1_000_000),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {invalid_token}"},
             expect_errors=True,
         )
@@ -1196,7 +1148,6 @@ class TestActionGetDatasetStructure:
             "type": "system",
         }
 
-
     def test_no_dataset_structure(
         self,
         app: DjangoTestApp,
@@ -1207,7 +1158,9 @@ class TestActionGetDatasetStructure:
         valid_token: str,
     ):
         response = app.get(
-            url_dataset_structure, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True,
+            url_dataset_structure,
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+            expect_errors=True,
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -1235,7 +1188,6 @@ class TestActionUpdateDatasetStructure:
 
         assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
 
-
     def test_specific_scope(
         self,
         app: DjangoTestApp,
@@ -1260,7 +1212,6 @@ class TestActionUpdateDatasetStructure:
         )
 
         assert response.status_code == status.HTTP_501_NOT_IMPLEMENTED
-
 
     def test_agent_is_disabled(
         self,
@@ -1287,7 +1238,6 @@ class TestActionUpdateDatasetStructure:
             "message": "The agent is disabled. Enable the agent in the Data catalog to access this API.",
             "additionalProperties": None,
         }
-
 
     @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
     def test_token_does_not_have_necessary_scopes(
@@ -1319,7 +1269,6 @@ class TestActionUpdateDatasetStructure:
             "message": "You do not have permission to perform this action.",
             "additionalProperties": None,
         }
-
 
     def test_no_organization_id_inside_token_payload(
         self,

@@ -19,7 +19,9 @@ from vitrina.smart_contracts.forms import (
     SmartContractForm,
     AgreementSubmitForm,
     AgreementApproveForm,
-    AgreementFormForm, AgreementInitiateForm, AgreementSignForm,
+    AgreementFormForm,
+    AgreementInitiateForm,
+    AgreementSignForm,
 )
 from vitrina.smart_contracts.models import SmartContractTemplate
 from vitrina.users.factories import UserFactory
@@ -36,9 +38,7 @@ class TestSmartContractForm:
 
         assert form.fields["scopes"].choices == []
 
-    def test_generates_no_scope_choices_if_organization_has_no_datasets(
-        self, organization: Organization
-    ) -> None:
+    def test_generates_no_scope_choices_if_organization_has_no_datasets(self, organization: Organization) -> None:
         form = SmartContractForm(
             instance=organization,
             dataset_metadata_by_organization={organization.id: []},
@@ -46,15 +46,11 @@ class TestSmartContractForm:
 
         assert form.fields["scopes"].choices == []
 
-    def test_generates_no_scope_choices_if_dataset_metadata_has_empty_name(
-        self, organization: Organization
-    ) -> None:
+    def test_generates_no_scope_choices_if_dataset_metadata_has_empty_name(self, organization: Organization) -> None:
         dataset = DatasetFactory(organization=organization, metadata="")
         form = SmartContractForm(
             instance=organization,
-            dataset_metadata_by_organization={
-                organization.id: [dataset.metadata.first()]
-            },
+            dataset_metadata_by_organization={organization.id: [dataset.metadata.first()]},
         )
         assert form.fields["scopes"].choices == []
 
@@ -63,9 +59,7 @@ class TestSmartContractForm:
     ) -> None:
         form = SmartContractForm(
             instance=organization,
-            dataset_metadata_by_organization={
-                organization.id: [dataset.metadata.first()]
-            },
+            dataset_metadata_by_organization={organization.id: [dataset.metadata.first()]},
         )
 
         assert set(form.fields["scopes"].choices) == {
@@ -88,14 +82,11 @@ class TestAgreementSubmitForm:
             object_id=None,
             content_type=None,
             email="example@example.com",
-            phone="+37060000000"
+            phone="+37060000000",
         )
 
         # Act
-        form = AgreementSubmitForm(
-            data={"assignee_representative": contact.pk},
-            agreement=agreement
-        )
+        form = AgreementSubmitForm(data={"assignee_representative": contact.pk}, agreement=agreement)
 
         # Assert
         assert form.is_valid(), form.errors
@@ -104,10 +95,7 @@ class TestAgreementSubmitForm:
         # Arrange
         unrelated_organization = OrganizationFactory()
 
-        agreement = AgreementFactory(
-            assignee=organization,
-            project=ProjectFactory(organization=organization)
-        )
+        agreement = AgreementFactory(assignee=organization, project=ProjectFactory(organization=organization))
         user = UserFactory(organization=organization)
 
         contact_no_user = ContactFactory(
@@ -116,7 +104,7 @@ class TestAgreementSubmitForm:
             content_type=None,
             object_id=None,
             email="example3@example.com",
-            phone="+37060000000"
+            phone="+37060000000",
         )
         contact_with_user = ContactFactory(
             contact_name="Vardenis Pavardenis",
@@ -124,7 +112,7 @@ class TestAgreementSubmitForm:
             object_id=user.id,
             content_type=ContentType.objects.get_for_model(User),
             email="example@example.com",
-            phone="+37060000000"
+            phone="+37060000000",
         )
         contact_unrelated_organization = ContactFactory(
             contact_name="Jonas Jonauskas",
@@ -132,7 +120,7 @@ class TestAgreementSubmitForm:
             content_type=None,
             object_id=None,
             email="example4@example.com",
-            phone="+37060000000"
+            phone="+37060000000",
         )
 
         # Act
@@ -146,10 +134,7 @@ class TestAgreementSubmitForm:
         assert contact_unrelated_organization not in selectable_contacts
 
     def test_failure_required_fields_unfilled(self, organization: Organization):
-        agreement = AgreementFactory(
-            assignee=organization,
-            project=ProjectFactory(organization=organization)
-        )
+        agreement = AgreementFactory(assignee=organization, project=ProjectFactory(organization=organization))
         form = AgreementSubmitForm(data={}, agreement=agreement)
 
         assert not form.is_valid()
@@ -177,7 +162,7 @@ class TestAgreementApproveForm:
             object_id=None,
             content_type=None,
             email="example@example.com",
-            phone="+37060000000"
+            phone="+37060000000",
         )
 
         # Act
@@ -185,9 +170,9 @@ class TestAgreementApproveForm:
             data={
                 "template": template.pk,
                 "assigner_representative": contact.pk,
-                "other_assigner_legislations": "Legislation A; Legislation B; Legislation C."
+                "other_assigner_legislations": "Legislation A; Legislation B; Legislation C.",
             },
-            agreement=agreement
+            agreement=agreement,
         )
 
         # Assert
@@ -214,7 +199,7 @@ class TestAgreementApproveForm:
             object_id=user.id,
             content_type=ContentType.objects.get_for_model(User),
             email="example@example.com",
-            phone="+37060000000"
+            phone="+37060000000",
         )
         contact_no_user = ContactFactory(
             contact_name="Petras Petrauskas",
@@ -222,7 +207,7 @@ class TestAgreementApproveForm:
             content_type=None,
             object_id=None,
             email="example3@example.com",
-            phone="+37060000000"
+            phone="+37060000000",
         )
         contact_unrelated_organization = ContactFactory(
             contact_name="Jonas Jonauskas",
@@ -230,7 +215,7 @@ class TestAgreementApproveForm:
             content_type=None,
             object_id=None,
             email="example4@example.com",
-            phone="+37060000000"
+            phone="+37060000000",
         )
 
         # Act
@@ -278,7 +263,8 @@ class TestAgreementApproveForm:
         agreements_selectable_in_form = list(form.fields["template"].queryset)
         assert template_unrelated_organization not in agreements_selectable_in_form
         assert all(
-            template in agreements_selectable_in_form for template in (
+            template in agreements_selectable_in_form
+            for template in (
                 template_no_organization,
                 template_current_organization,
             )
@@ -286,10 +272,7 @@ class TestAgreementApproveForm:
 
     def test_failure_required_fields_unfilled(self, organization: Organization):
         # Arrange
-        agreement = AgreementFactory(
-            assignee=organization,
-            project=ProjectFactory(organization=organization)
-        )
+        agreement = AgreementFactory(assignee=organization, project=ProjectFactory(organization=organization))
 
         # Act
         form = AgreementApproveForm(data={}, agreement=agreement)
@@ -305,10 +288,7 @@ class TestAgreementApproveForm:
 class TestAgreementFormForm:
     def test_success(self, organization: Organization):
         # Arrange
-        agreement = AgreementFactory(
-            assignee=organization,
-            project=ProjectFactory(organization=organization)
-        )
+        agreement = AgreementFactory(assignee=organization, project=ProjectFactory(organization=organization))
 
         # Act
         form = AgreementFormForm(data={}, agreement=agreement)
@@ -319,11 +299,12 @@ class TestAgreementFormForm:
 
 class TestAgreementInitiateAndSignForms:
     """Tests for both AgreementInitiateForm and AgreementSignForm have the same logic in their respective forms."""
+
     @pytest.mark.parametrize(
         "form_class,agreement_status,file_name",
         [
             (AgreementInitiateForm, AgreementStatuses.FORMED, "agreement_one_signer.adoc"),
-            (AgreementSignForm, AgreementStatuses.INITIATED, "agreement_two_signers.adoc")
+            (AgreementSignForm, AgreementStatuses.INITIATED, "agreement_two_signers.adoc"),
         ],
     )
     def test_success(
@@ -331,7 +312,7 @@ class TestAgreementInitiateAndSignForms:
         form_class: Type[AgreementInitiateForm | AgreementSignForm],
         agreement_status: AgreementStatuses,
         file_name: str,
-        agreement_pdf: str
+        agreement_pdf: str,
     ):
         # Arrange
         base_path = Path(__file__).parent / "files" / "test_contracts"
@@ -361,7 +342,9 @@ class TestAgreementInitiateAndSignForms:
         agreement_pdf_file = AgreementPDFFileFactory()
 
         # Act
-        form = AgreementInitiateForm(files={"file": uploaded_file}, agreement_pdf=agreement_pdf_file, agreement=agreement_pdf_file.agreement)
+        form = AgreementInitiateForm(
+            files={"file": uploaded_file}, agreement_pdf=agreement_pdf_file, agreement=agreement_pdf_file.agreement
+        )
 
         # Assert
         assert not form.is_valid()
@@ -374,9 +357,7 @@ class TestAgreementInitiateAndSignForms:
 
         # Act
         form = AgreementInitiateForm(
-            files={"file": uploaded_file},
-            agreement_pdf=agreement_pdf_file,
-            agreement=agreement_pdf_file.agreement
+            files={"file": uploaded_file}, agreement_pdf=agreement_pdf_file, agreement=agreement_pdf_file.agreement
         )
 
         # Assert
@@ -395,7 +376,7 @@ class TestAgreementInitiateAndSignForms:
             ("agreement_non_zip.adoc", "Prisegtas failas nėra ZIP archyvas."),
             ("agreement_not_signed.adoc", "Įkelta sutartis nepasirašyta."),
             ("agreement.pdf", "Dokumentas turi būti adoc formato."),
-        ]
+        ],
     )
     def test_initiate_and_sign_form_errors(
         self,

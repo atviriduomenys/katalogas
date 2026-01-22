@@ -15,9 +15,7 @@ def test_get_active_tasks():
     organization = OrganizationFactory()
     user = UserFactory(organization=organization)
     RepresentativeFactory(
-        content_type=ContentType.objects.get_for_model(organization),
-        object_id=organization.pk,
-        user=user
+        content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk, user=user
     )
 
     task_for_user = TaskFactory(user=user)
@@ -33,12 +31,12 @@ def test_get_active_tasks():
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-        "role",
-        [
-            Representative.OPEN_DATA_COORDINATOR,
-            Representative.RESOURCE_COORDINATOR,
-        ],
-    )
+    "role",
+    [
+        Representative.OPEN_DATA_COORDINATOR,
+        Representative.RESOURCE_COORDINATOR,
+    ],
+)
 def test_get_active_tasks_with_task_organization_supervisor_after_5_days(role: str):
     parent_organization = OrganizationFactory()
     child_organization = parent_organization.add_child(instance=OrganizationFactory.build())
@@ -56,36 +54,30 @@ def test_get_active_tasks_with_task_organization_supervisor_after_5_days(role: s
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
         role=role,
-        user=parent_organization_user
+        user=parent_organization_user,
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization),
         object_id=child_organization.pk,
         role=role,
-        user=child_organization_user
+        user=child_organization_user,
     )
 
-    active_tasks = get_active_tasks(
-        parent_organization_user,
-        now=timezone.datetime(2022, 11, 23).date()
-    )
+    active_tasks = get_active_tasks(parent_organization_user, now=timezone.datetime(2022, 11, 23).date())
     assert list(active_tasks) == [task_for_parent_organization]
 
-    active_tasks = get_active_tasks(
-        child_organization_user,
-        now=timezone.datetime(2022, 11, 23).date()
-    )
+    active_tasks = get_active_tasks(child_organization_user, now=timezone.datetime(2022, 11, 23).date())
     assert list(active_tasks) == [task_for_child_organization]
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-        "role",
-        [
-            Representative.OPEN_DATA_COORDINATOR,
-            Representative.RESOURCE_COORDINATOR,
-        ],
-    )
+    "role",
+    [
+        Representative.OPEN_DATA_COORDINATOR,
+        Representative.RESOURCE_COORDINATOR,
+    ],
+)
 def test_get_active_tasks_with_task_organization_supervisor_after_5_work_days(role: str):
     parent_organization = OrganizationFactory()
     child_organization = parent_organization.add_child(instance=OrganizationFactory.build())
@@ -103,39 +95,33 @@ def test_get_active_tasks_with_task_organization_supervisor_after_5_work_days(ro
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
         role=role,
-        user=parent_organization_user
+        user=parent_organization_user,
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization),
         object_id=child_organization.pk,
         role=role,
-        user=child_organization_user
+        user=child_organization_user,
     )
 
-    active_tasks = get_active_tasks(
-        parent_organization_user,
-        now=timezone.datetime(2022, 11, 25).date()
-    )
+    active_tasks = get_active_tasks(parent_organization_user, now=timezone.datetime(2022, 11, 25).date())
     assert set(active_tasks) == {
         task_for_parent_organization,
         task_for_child_organization,
     }
 
-    active_tasks = get_active_tasks(
-        child_organization_user,
-        now=timezone.datetime(2022, 11, 25).date()
-    )
+    active_tasks = get_active_tasks(child_organization_user, now=timezone.datetime(2022, 11, 25).date())
     assert set(active_tasks) == {task_for_child_organization}
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-        "role",
-        [
-            Representative.OPEN_DATA_COORDINATOR,
-            Representative.RESOURCE_COORDINATOR,
-        ],
-    )
+    "role",
+    [
+        Representative.OPEN_DATA_COORDINATOR,
+        Representative.RESOURCE_COORDINATOR,
+    ],
+)
 def test_get_active_tasks_with_staff_after_10_days(role: str):
     parent_organization = OrganizationFactory()
     child_organization1 = parent_organization.add_child(instance=OrganizationFactory.build())
@@ -149,13 +135,13 @@ def test_get_active_tasks_with_staff_after_10_days(role: str):
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
         role=role,
-        user=parent_organization_user
+        user=parent_organization_user,
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization1),
         object_id=child_organization1.pk,
         role=role,
-        user=child_organization_user
+        user=child_organization_user,
     )
 
     task_for_parent_organization = TaskFactory(organization=parent_organization)
@@ -165,40 +151,28 @@ def test_get_active_tasks_with_staff_after_10_days(role: str):
         task.created = timezone.datetime(2022, 11, 18)
         task.save()
 
-    active_tasks = get_active_tasks(
-        parent_organization_user,
-        now=timezone.datetime(2022, 11, 28).date()
-    )
+    active_tasks = get_active_tasks(parent_organization_user, now=timezone.datetime(2022, 11, 28).date())
     assert set(active_tasks) == {
         task_for_parent_organization,
         task_for_child_organization1,
-        task_for_child_organization2
+        task_for_child_organization2,
     }
 
-    active_tasks = get_active_tasks(
-        child_organization_user,
-        now=timezone.datetime(2022, 11, 28).date()
-    )
-    assert set(active_tasks) == {
-        task_for_child_organization1,
-        task_for_child_organization2
-    }
+    active_tasks = get_active_tasks(child_organization_user, now=timezone.datetime(2022, 11, 28).date())
+    assert set(active_tasks) == {task_for_child_organization1, task_for_child_organization2}
 
-    active_tasks = get_active_tasks(
-        staff,
-        now=timezone.datetime(2022, 11, 28).date()
-    )
+    active_tasks = get_active_tasks(staff, now=timezone.datetime(2022, 11, 28).date())
     assert list(active_tasks) == []
 
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
-        "role",
-        [
-            Representative.OPEN_DATA_COORDINATOR,
-            Representative.RESOURCE_COORDINATOR,
-        ],
-    )
+    "role",
+    [
+        Representative.OPEN_DATA_COORDINATOR,
+        Representative.RESOURCE_COORDINATOR,
+    ],
+)
 def test_get_active_tasks_with_staff_after_10_work_days(role: str):
     parent_organization = OrganizationFactory()
     child_organization1 = parent_organization.add_child(instance=OrganizationFactory.build())
@@ -212,13 +186,13 @@ def test_get_active_tasks_with_staff_after_10_work_days(role: str):
         content_type=ContentType.objects.get_for_model(parent_organization),
         object_id=parent_organization.pk,
         role=role,
-        user=parent_organization_user
+        user=parent_organization_user,
     )
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(child_organization1),
         object_id=child_organization1.pk,
         role=role,
-        user=child_organization_user
+        user=child_organization_user,
     )
 
     task_for_parent_organization = TaskFactory(organization=parent_organization)
@@ -228,31 +202,19 @@ def test_get_active_tasks_with_staff_after_10_work_days(role: str):
         task.created = timezone.datetime(2022, 11, 18)
         task.save()
 
-    active_tasks = get_active_tasks(
-        parent_organization_user,
-        now=timezone.datetime(2022, 12, 2).date()
-    )
+    active_tasks = get_active_tasks(parent_organization_user, now=timezone.datetime(2022, 12, 2).date())
     assert set(active_tasks) == {
         task_for_parent_organization,
         task_for_child_organization1,
-        task_for_child_organization2
+        task_for_child_organization2,
     }
 
-    active_tasks = get_active_tasks(
-        child_organization_user,
-        now=timezone.datetime(2022, 12, 2).date()
-    )
-    assert set(active_tasks) == {
-        task_for_child_organization1,
-        task_for_child_organization2
-    }
+    active_tasks = get_active_tasks(child_organization_user, now=timezone.datetime(2022, 12, 2).date())
+    assert set(active_tasks) == {task_for_child_organization1, task_for_child_organization2}
 
-    active_tasks = get_active_tasks(
-        staff,
-        now=timezone.datetime(2022, 12, 2).date()
-    )
+    active_tasks = get_active_tasks(staff, now=timezone.datetime(2022, 12, 2).date())
     assert set(active_tasks) == {
         task_for_parent_organization,
         task_for_child_organization1,
-        task_for_child_organization2
+        task_for_child_organization2,
     }

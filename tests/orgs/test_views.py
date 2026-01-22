@@ -48,7 +48,7 @@ def test_organization_detail_tab(app: DjangoTestApp):
     parent_organization = OrganizationFactory()
     organization = parent_organization.add_child(instance=OrganizationFactory.build())
     resp = app.get(organization.get_absolute_url())
-    assert list(resp.context['ancestors']) == [parent_organization]
+    assert list(resp.context["ancestors"]) == [parent_organization]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Informacija"]
 
 
@@ -66,8 +66,8 @@ def test_organization_members_tab(app: DjangoTestApp):
     )
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
     app.set_user(admin)
-    resp = app.get(reverse('organization-members', args=[organization1.pk]))
-    assert list(resp.context['members']) == [representative1]
+    resp = app.get(reverse("organization-members", args=[organization1.pk]))
+    assert list(resp.context["members"]) == [representative1]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == [
         "Tvarkytojai",
     ]
@@ -79,8 +79,8 @@ def test_organization_dataset_tab(app: DjangoTestApp):
     organization2 = OrganizationFactory()
     dataset1 = DatasetFactory(organization=organization1)
     DatasetFactory(organization=organization2)
-    resp = app.get(reverse('organization-datasets', args=[organization1.pk]))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [dataset1.pk]
+    resp = app.get(reverse("organization-datasets", args=[organization1.pk]))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [dataset1.pk]
     assert list(resp.html.find("li", class_="is-active").a.stripped_strings) == ["Duomenų ištekliai"]
 
 
@@ -94,11 +94,7 @@ def organizations():
         )
     with freeze_time(timezone.localize(datetime(2022, 10, 22, 10, 30))):
         jurisdiction2 = AreaOfManagementFactory(id=30)
-        organization2 = OrganizationFactory(
-            slug="org2",
-            title="Organization 2",
-            jurisdiction=jurisdiction2
-        )
+        organization2 = OrganizationFactory(slug="org2", title="Organization 2", jurisdiction=jurisdiction2)
     with freeze_time(datetime(2022, 9, 22, 10, 30)):
         organization3 = OrganizationFactory(
             slug="org3",
@@ -110,101 +106,83 @@ def organizations():
 
 @pytest.mark.haystack
 def test_search_without_query(app: DjangoTestApp, organizations):
-    resp = app.get(reverse('organization-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [organizations[0].pk, organizations[1].pk, organizations[2].pk]
+    resp = app.get(reverse("organization-list"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [
+        organizations[0].pk,
+        organizations[1].pk,
+        organizations[2].pk,
+    ]
 
 
 def test_search_with_query_that_doesnt_match(app: DjangoTestApp, organizations):
-    resp = app.get("%s?q=%s" % (reverse('organization-list'), "doesnt-match"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == []
+    resp = app.get("%s?q=%s" % (reverse("organization-list"), "doesnt-match"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == []
 
 
 @pytest.mark.haystack
 def test_search_with_query_that_matches_one(app: DjangoTestApp, organizations):
-    resp = app.get("%s?q=%s" % (reverse('organization-list'), "1"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [organizations[0].pk]
+    resp = app.get("%s?q=%s" % (reverse("organization-list"), "1"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [organizations[0].pk]
 
 
 @pytest.mark.haystack
 def test_search_with_query_that_matches_all(app: DjangoTestApp, organizations):
-    resp = app.get("%s?q=%s" % (reverse('organization-list'), "organization"))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [organizations[0].pk, organizations[1].pk,
-                                                                    organizations[2].pk]
+    resp = app.get("%s?q=%s" % (reverse("organization-list"), "organization"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [
+        organizations[0].pk,
+        organizations[1].pk,
+        organizations[2].pk,
+    ]
 
 
 @pytest.mark.haystack
 def test_filter_without_query(app: DjangoTestApp, organizations):
-    resp = app.get(reverse('organization-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [organizations[0].pk, organizations[1].pk,
-                                                                    organizations[2].pk]
-    assert resp.context['selected_jurisdiction'] is None
-    assert resp.context['jurisdictions'] == [
-        {
-            'id': 30,
-            'title': 'Jurisdiction30',
-            'query': "?jurisdiction=30",
-            'count': 2
-        },
-        {
-            'id': 1,
-            'title': 'Nepriskirta',
-            'query': "?jurisdiction=1",
-            'count': 1
-        },
+    resp = app.get(reverse("organization-list"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [
+        organizations[0].pk,
+        organizations[1].pk,
+        organizations[2].pk,
+    ]
+    assert resp.context["selected_jurisdiction"] is None
+    assert resp.context["jurisdictions"] == [
+        {"id": 30, "title": "Jurisdiction30", "query": "?jurisdiction=30", "count": 2},
+        {"id": 1, "title": "Nepriskirta", "query": "?jurisdiction=1", "count": 1},
     ]
 
 
 @pytest.mark.haystack
 def test_filter_with_jurisdiction(app: DjangoTestApp, organizations):
-    resp = app.get("%s?jurisdiction=1" % reverse('organization-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [organizations[0].pk]
-    assert resp.context['selected_jurisdiction'] == "Nepriskirta"
-    assert resp.context['jurisdictions'] == [
-        {
-            'id': 1,
-            'title': 'Nepriskirta',
-            'query': "?jurisdiction=1",
-            'count': 1
-        }
-    ]
+    resp = app.get("%s?jurisdiction=1" % reverse("organization-list"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [organizations[0].pk]
+    assert resp.context["selected_jurisdiction"] == "Nepriskirta"
+    assert resp.context["jurisdictions"] == [{"id": 1, "title": "Nepriskirta", "query": "?jurisdiction=1", "count": 1}]
 
 
 @pytest.mark.haystack
 def test_filter_with_other_jurisdiction(app: DjangoTestApp, organizations):
-    resp = app.get("%s?jurisdiction=30" % reverse('organization-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [organizations[1].pk,
-                                                                    organizations[2].pk]
-    assert resp.context['selected_jurisdiction'] == "Jurisdiction30"
-    assert resp.context['jurisdictions'] == [
-        {
-            'id': 30,
-            'title': 'Jurisdiction30',
-            'query': "?jurisdiction=30",
-            'count': 2
-        }
+    resp = app.get("%s?jurisdiction=30" % reverse("organization-list"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [organizations[1].pk, organizations[2].pk]
+    assert resp.context["selected_jurisdiction"] == "Jurisdiction30"
+    assert resp.context["jurisdictions"] == [
+        {"id": 30, "title": "Jurisdiction30", "query": "?jurisdiction=30", "count": 2}
     ]
 
 
 @pytest.mark.haystack
 def test_filter_with_non_existent_jurisdiction(app: DjangoTestApp, organizations):
-    resp = app.get("%s?jurisdiction=0" % reverse('organization-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == []
-    assert resp.context['selected_jurisdiction'] is None
-    assert resp.context['jurisdictions'] == []
+    resp = app.get("%s?jurisdiction=0" % reverse("organization-list"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == []
+    assert resp.context["selected_jurisdiction"] is None
+    assert resp.context["jurisdictions"] == []
 
 
 @pytest.mark.haystack
 def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
-    resp = app.get("%s?q=2&jurisdiction=30" % reverse('organization-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [organizations[1].pk]
-    assert resp.context['selected_jurisdiction'] == "Jurisdiction30"
-    assert resp.context['jurisdictions'] == [
-        {
-            'id': 30,
-            'title': 'Jurisdiction30',
-            'query': "?q=2&jurisdiction=30",
-            'count': 1
-        },
+    resp = app.get("%s?q=2&jurisdiction=30" % reverse("organization-list"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [organizations[1].pk]
+    assert resp.context["selected_jurisdiction"] == "Jurisdiction30"
+    assert resp.context["jurisdictions"] == [
+        {"id": 30, "title": "Jurisdiction30", "query": "?q=2&jurisdiction=30", "count": 1},
     ]
 
 
@@ -212,48 +190,39 @@ def test_filter_with_jurisdiction_and_title(app: DjangoTestApp, organizations):
 def test_filter_with_query_containing_special_characters(app: DjangoTestApp):
     jurisdiction = AreaOfManagementFactory(id=30, name_lt="Jurisdiction\"<'>\\", name_en="Jurisdiction\"<'>\\")
     organization = OrganizationFactory(title="Organization \"<'>\\", jurisdiction=jurisdiction)
-    resp = app.get("%s?q=\"<'>\\&jurisdiction=30" % reverse('organization-list'))
-    assert [int(obj.pk) for obj in resp.context['object_list']] == [organization.pk]
-    assert resp.context['selected_jurisdiction'] == "Jurisdiction\"<'>\\"
-    assert resp.context['jurisdictions'] == [
-        {
-            'id' : 30,
-            'title': "Jurisdiction\"<'>\\",
-            'query': "?q=\"<'>\\&jurisdiction=30",
-            'count': 1
-        },
+    resp = app.get("%s?q=\"<'>\\&jurisdiction=30" % reverse("organization-list"))
+    assert [int(obj.pk) for obj in resp.context["object_list"]] == [organization.pk]
+    assert resp.context["selected_jurisdiction"] == "Jurisdiction\"<'>\\"
+    assert resp.context["jurisdictions"] == [
+        {"id": 30, "title": "Jurisdiction\"<'>\\", "query": "?q=\"<'>\\&jurisdiction=30", "count": 1},
     ]
 
 
 @pytest.fixture
 def representative_data():
     open_data_manager = User.objects.create_user(
-        email="manager@gmail.com",
-        password="manager123",
-        first_name="Manager",
-        last_name="User",
-        phone="861234567"
+        email="manager@gmail.com", password="manager123", first_name="Manager", last_name="User", phone="861234567"
     )
     resource_manager = User.objects.create_user(
         email="resource_manager@gmail.com",
         password="manager123",
         first_name="Manager",
         last_name="User",
-        phone="861234567"
+        phone="861234567",
     )
     open_data_coordinator = User.objects.create_user(
         email="coordinator@gmail.com",
         password="coordinator123",
         first_name="Coordinator",
         last_name="User",
-        phone="869876543"
+        phone="869876543",
     )
     resource_coordinator = User.objects.create_user(
         email="resource_coordinator@gmail.com",
         password="coordinator123",
         first_name="Coordinator",
         last_name="User",
-        phone="869876543"
+        phone="869876543",
     )
     organization = OrganizationFactory()
     viisp_coordinator = User.objects.create_user(
@@ -263,133 +232,128 @@ def representative_data():
         last_name="User",
         phone="869876543",
         is_viisp_login=True,
-        viisp_company_code=organization.company_code
+        viisp_company_code=organization.company_code,
     )
     content_type = ContentType.objects.get_for_model(Organization)
     open_data_representative_manager = RepresentativeFactory(
-        role="open_data_manager",
-        content_type=content_type,
-        object_id=organization.pk
+        role="open_data_manager", content_type=content_type, object_id=organization.pk
     )
     resource_representative_manager = RepresentativeFactory(
-        role="resource_manager",
-        content_type=content_type,
-        object_id=organization.pk
+        role="resource_manager", content_type=content_type, object_id=organization.pk
     )
     open_data_representative_coordinator = RepresentativeFactory(
-        role="open_data_coordinator",
-        content_type=content_type,
-        object_id=organization.pk,
-        user=open_data_coordinator
+        role="open_data_coordinator", content_type=content_type, object_id=organization.pk, user=open_data_coordinator
     )
     resource_representative_coordinator = RepresentativeFactory(
-        role="resource_coordinator",
-        content_type=content_type,
-        object_id=organization.pk,
-        user=resource_coordinator
+        role="resource_coordinator", content_type=content_type, object_id=organization.pk, user=resource_coordinator
     )
     representative_viisp_coordinator = RepresentativeFactory(
-        role="resource_coordinator",
-        content_type=content_type,
-        object_id=organization.pk,
-        user=viisp_coordinator
+        role="resource_coordinator", content_type=content_type, object_id=organization.pk, user=viisp_coordinator
     )
     return {
-        'open_data_manager': open_data_manager,
-        'resource_manager': resource_manager,
-        'open_data_coordinator': open_data_coordinator,
-        'resource_coordinator': resource_coordinator,
-        'viisp_coordinator': viisp_coordinator,
-        'organization': organization,
-        'open_data_representative_manager': open_data_representative_manager,
-        'resource_representative_manager': resource_representative_manager,
-        'open_data_representative_coordinator': open_data_representative_coordinator,
-        'resource_representative_coordinator': resource_representative_coordinator,
-        'representative_viisp_coordinator': representative_viisp_coordinator
+        "open_data_manager": open_data_manager,
+        "resource_manager": resource_manager,
+        "open_data_coordinator": open_data_coordinator,
+        "resource_coordinator": resource_coordinator,
+        "viisp_coordinator": viisp_coordinator,
+        "organization": organization,
+        "open_data_representative_manager": open_data_representative_manager,
+        "resource_representative_manager": resource_representative_manager,
+        "open_data_representative_coordinator": open_data_representative_coordinator,
+        "resource_representative_coordinator": resource_representative_coordinator,
+        "representative_viisp_coordinator": representative_viisp_coordinator,
     }
 
 
 def test_representative_create_without_permission(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['open_data_manager'])
-    resp = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    }), expect_errors=True)
+    app.set_user(representative_data["open_data_manager"])
+    resp = app.get(
+        reverse("representative-create", kwargs={"pk": representative_data["organization"].pk}), expect_errors=True
+    )
     assert resp.status_code == 403
 
 
 def test_representative_create_with_existing_user(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    })).forms['representative-form']
-    form['email'] = "manager@gmail.com"
-    form['role'] = "open_data_coordinator"
+    app.set_user(representative_data["open_data_coordinator"])
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    form["email"] = "manager@gmail.com"
+    form["role"] = "open_data_coordinator"
     resp = form.submit()
     assert resp.status_code == 302
-    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert resp.url == reverse("organization-members", kwargs={"pk": representative_data["organization"].pk})
     assert Representative.objects.filter(email="manager@gmail.com").count() == 1
-    assert Representative.objects.filter(email="manager@gmail.com").first().content_object == \
-           representative_data['organization']
-    assert Representative.objects.filter(email="manager@gmail.com").first().user == representative_data['open_data_manager']
-    assert Representative.objects.filter(
-        email="manager@gmail.com"
-    ).first().user.organization == representative_data['organization']
+    assert (
+        Representative.objects.filter(email="manager@gmail.com").first().content_object
+        == representative_data["organization"]
+    )
+    assert (
+        Representative.objects.filter(email="manager@gmail.com").first().user
+        == representative_data["open_data_manager"]
+    )
+    assert (
+        Representative.objects.filter(email="manager@gmail.com").first().user.organization
+        == representative_data["organization"]
+    )
 
 
 def test_representative_create_can_make_agreements_disabled(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    })).forms['representative-form']
-    assert 'disabled' in form["can_make_agreements"].attrs
-    form['email'] = "manager@gmail.com"
-    form['role'] = "open_data_coordinator"
-    form['can_make_agreements'] = True
+    app.set_user(representative_data["open_data_coordinator"])
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    assert "disabled" in form["can_make_agreements"].attrs
+    form["email"] = "manager@gmail.com"
+    form["role"] = "open_data_coordinator"
+    form["can_make_agreements"] = True
     resp = form.submit()
     assert resp.status_code == 302
-    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert resp.url == reverse("organization-members", kwargs={"pk": representative_data["organization"].pk})
     representative_qs = Representative.objects.filter(email="manager@gmail.com")
     assert representative_qs.count() == 1
     representative = representative_qs.first()
-    assert representative.content_object == representative_data['organization']
-    assert representative.user == representative_data['open_data_manager']
-    assert representative.user.organization == representative_data['organization']
+    assert representative.content_object == representative_data["organization"]
+    assert representative.user == representative_data["open_data_manager"]
+    assert representative.user.organization == representative_data["organization"]
     assert not representative.can_make_agreements
 
 
 def test_representative_create_with_can_make_agreements_rights(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['viisp_coordinator'])
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    })).forms['representative-form']
-    form['email'] = "manager@gmail.com"
-    form['role'] = "open_data_coordinator"
-    form['can_make_agreements'] = True
+    app.set_user(representative_data["viisp_coordinator"])
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    form["email"] = "manager@gmail.com"
+    form["role"] = "open_data_coordinator"
+    form["can_make_agreements"] = True
     resp = form.submit()
     assert resp.status_code == 302
-    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert resp.url == reverse("organization-members", kwargs={"pk": representative_data["organization"].pk})
     representative_qs = Representative.objects.filter(email="manager@gmail.com")
     assert representative_qs.count() == 1
     representative = representative_qs.first()
-    assert representative.content_object == representative_data['organization']
-    assert representative.user == representative_data['open_data_manager']
-    assert representative.user.organization == representative_data['organization']
+    assert representative.content_object == representative_data["organization"]
+    assert representative.user == representative_data["open_data_manager"]
+    assert representative.user.organization == representative_data["organization"]
     assert representative.can_make_agreements
 
 
 def test_representative_create_without_user(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    })).forms['representative-form']
-    form['email'] = "new@gmail.com"
-    form['role'] = "open_data_manager"
+    app.set_user(representative_data["open_data_coordinator"])
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    form["email"] = "new@gmail.com"
+    form["role"] = "open_data_manager"
     resp = form.submit()
     assert resp.status_code == 302
-    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert resp.url == reverse("organization-members", kwargs={"pk": representative_data["organization"].pk})
     assert Representative.objects.filter(email="new@gmail.com").count() == 1
-    assert Representative.objects.filter(email="new@gmail.com").first().content_object == \
-           representative_data['organization']
+    assert (
+        Representative.objects.filter(email="new@gmail.com").first().content_object
+        == representative_data["organization"]
+    )
     assert Representative.objects.filter(email="new@gmail.com").first().user is None
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == ["new@gmail.com"]
@@ -401,18 +365,14 @@ def test_representative_create_without_user_for_two_organizations(app: DjangoTes
     organization2 = OrganizationFactory()
     app.set_user(user)
 
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': organization1.pk
-    })).forms['representative-form']
-    form['email'] = "new@gmail.com"
-    form['role'] = "open_data_manager"
+    form = app.get(reverse("representative-create", kwargs={"pk": organization1.pk})).forms["representative-form"]
+    form["email"] = "new@gmail.com"
+    form["role"] = "open_data_manager"
     form.submit()
 
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': organization2.pk
-    })).forms['representative-form']
-    form['email'] = "new@gmail.com"
-    form['role'] = "open_data_manager"
+    form = app.get(reverse("representative-create", kwargs={"pk": organization2.pk})).forms["representative-form"]
+    form["email"] = "new@gmail.com"
+    form["role"] = "open_data_manager"
     form.submit()
 
     assert Representative.objects.filter(email="new@gmail.com").count() == 2
@@ -421,40 +381,40 @@ def test_representative_create_without_user_for_two_organizations(app: DjangoTes
 
 
 def test_representative_create_invalid_phone(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    })).forms['representative-form']
-    form['email'] = "new@gmail.com"
-    form['role'] = "open_data_manager"
-    form['phone'] = "123456"
+    app.set_user(representative_data["open_data_coordinator"])
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    form["email"] = "new@gmail.com"
+    form["role"] = "open_data_manager"
+    form["phone"] = "123456"
     resp = form.submit()
     assert resp.status_code == 200
-    assert "Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)" in resp.context['form'].errors['phone'][0]
+    assert "Primtini formatai: +3706XXXXXXX, 0XXXXXXXX)" in resp.context["form"].errors["phone"][0]
     assert Representative.objects.filter(email="new@gmail.com").count() == 0
 
 
 def test_representative_create_valid_phone(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
+    app.set_user(representative_data["open_data_coordinator"])
 
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    })).forms['representative-form']
-    form['email'] = "new1@gmail.com"
-    form['role'] = "open_data_manager"
-    form['phone'] = "+37061234567"
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    form["email"] = "new1@gmail.com"
+    form["role"] = "open_data_manager"
+    form["phone"] = "+37061234567"
     resp = form.submit()
     assert resp.status_code == 302
     rep_queryset = Representative.objects.filter(email="new1@gmail.com")
     assert rep_queryset.count() == 1
     assert rep_queryset.first().phone == "+37061234567"
 
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    })).forms['representative-form']
-    form['email'] = "new2@gmail.com"
-    form['role'] = "open_data_manager"
-    form['phone'] = "061234567"
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    form["email"] = "new2@gmail.com"
+    form["role"] = "open_data_manager"
+    form["phone"] = "061234567"
     resp = form.submit()
     assert resp.status_code == 302
     rep_queryset = Representative.objects.filter(email="new2@gmail.com")
@@ -463,18 +423,23 @@ def test_representative_create_valid_phone(app: DjangoTestApp, representative_da
 
 
 def test_representative_update_phone(app: DjangoTestApp, representative_data):
-    representative_data['open_data_representative_manager'].user = representative_data['open_data_manager']
-    representative_data['open_data_representative_manager'].save()
-    app.set_user(representative_data['open_data_coordinator'])
-    form = app.get(reverse('representative-update', kwargs={
-        'pk': representative_data['organization'].pk,
-        'representative_id': representative_data['open_data_representative_manager'].pk
-    })).forms['representative-form']
-    form['phone'] = "061234567"
+    representative_data["open_data_representative_manager"].user = representative_data["open_data_manager"]
+    representative_data["open_data_representative_manager"].save()
+    app.set_user(representative_data["open_data_coordinator"])
+    form = app.get(
+        reverse(
+            "representative-update",
+            kwargs={
+                "pk": representative_data["organization"].pk,
+                "representative_id": representative_data["open_data_representative_manager"].pk,
+            },
+        )
+    ).forms["representative-form"]
+    form["phone"] = "061234567"
     resp = form.submit()
     assert resp.status_code == 302
-    representative_data['open_data_representative_manager'].refresh_from_db()
-    assert representative_data['open_data_representative_manager'].phone == "061234567"
+    representative_data["open_data_representative_manager"].refresh_from_db()
+    assert representative_data["open_data_representative_manager"].phone == "061234567"
 
 
 def test_representative_subscription(app: DjangoTestApp, representative_data):
@@ -484,23 +449,25 @@ def test_representative_subscription(app: DjangoTestApp, representative_data):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    })).forms['representative-form']
-    form['email'] = "manager@gmail.com"
-    form['role'] = "open_data_manager"
-    form['subscribe'] = True
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    form["email"] = "manager@gmail.com"
+    form["role"] = "open_data_manager"
+    form["subscribe"] = True
     resp = form.submit()
 
     assert resp.status_code == 302
-    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
+    assert resp.url == reverse("organization-members", kwargs={"pk": representative_data["organization"].pk})
     assert Representative.objects.filter(email="manager@gmail.com").count() == 1
-    assert Representative.objects.filter(email="manager@gmail.com").first().content_object == \
-           representative_data['organization']
+    assert (
+        Representative.objects.filter(email="manager@gmail.com").first().content_object
+        == representative_data["organization"]
+    )
     assert len(mail.outbox) == 1
     assert mail.outbox[0].to == ["manager@gmail.com"]
 
-    subscription = Subscription.objects.get(user=representative_data['open_data_manager'])
+    subscription = Subscription.objects.get(user=representative_data["open_data_manager"])
     assert subscription.sub_type == Subscription.ORGANIZATION
 
 
@@ -508,168 +475,172 @@ def test_register_after_adding_representative(app: DjangoTestApp, representative
     new_representative = RepresentativeFactory(
         email="new@gmail.com",
         content_type=ContentType.objects.get_for_model(Organization),
-        object_id=representative_data['organization'].pk,
-        user=None
+        object_id=representative_data["organization"].pk,
+        user=None,
     )
     serializer = URLSafeSerializer(settings.SECRET_KEY)
     token = serializer.dumps({"representative_id": new_representative.pk})
 
-    with patch('django_recaptcha.fields.client.submit') as mocked_submit:
+    with patch("django_recaptcha.fields.client.submit") as mocked_submit:
         mocked_submit.return_value = RecaptchaResponse(is_valid=True)
-        resp = app.post(reverse('representative-register', kwargs={'token': token}), {
-            'first_name': "New",
-            'last_name': "User",
-            'email': "new@gmail.com",
-            'password1': "v)Yxu*DF8}rj~(Sz!-X:Ws",
-            'password2': "v)Yxu*DF8}rj~(Sz!-X:Ws",
-            'agree_to_terms': True,
-            "g-recaptcha-response": "PASSED",
-        })
+        resp = app.post(
+            reverse("representative-register", kwargs={"token": token}),
+            {
+                "first_name": "New",
+                "last_name": "User",
+                "email": "new@gmail.com",
+                "password1": "v)Yxu*DF8}rj~(Sz!-X:Ws",
+                "password2": "v)Yxu*DF8}rj~(Sz!-X:Ws",
+                "agree_to_terms": True,
+                "g-recaptcha-response": "PASSED",
+            },
+        )
         new_representative.refresh_from_db()
         assert resp.status_code == 302
-        assert resp.url == reverse('home')
-        assert User.objects.filter(email='new@gmail.com').count() == 1
-        assert new_representative.user == User.objects.filter(email='new@gmail.com').first()
-        assert new_representative.user.organization == representative_data['organization']
+        assert resp.url == reverse("home")
+        assert User.objects.filter(email="new@gmail.com").count() == 1
+        assert new_representative.user == User.objects.filter(email="new@gmail.com").first()
+        assert new_representative.user.organization == representative_data["organization"]
 
 
 def test_representative_update_without_permission(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['open_data_manager'])
-    resp = app.get(reverse('representative-create', kwargs={
-        'pk': representative_data['organization'].pk
-    }), expect_errors=True)
+    app.set_user(representative_data["open_data_manager"])
+    resp = app.get(
+        reverse("representative-create", kwargs={"pk": representative_data["organization"].pk}), expect_errors=True
+    )
     assert resp.status_code == 403
 
 
 def test_representative_update_no_coordinators(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    representative_data['representative_viisp_coordinator'].role = 'resource_manager'
-    representative_data['representative_viisp_coordinator'].save()
-    representative_data['resource_representative_coordinator'].role = 'resource_manager'
-    representative_data['resource_representative_coordinator'].save()
-    form = app.get(reverse('representative-update', kwargs={
-        'pk': representative_data['organization'].pk,
-        'representative_id': representative_data['open_data_representative_coordinator'].pk
-    })).forms['representative-form']
-    form['role'] = "open_data_manager"
+    app.set_user(representative_data["open_data_coordinator"])
+    representative_data["representative_viisp_coordinator"].role = "resource_manager"
+    representative_data["representative_viisp_coordinator"].save()
+    representative_data["resource_representative_coordinator"].role = "resource_manager"
+    representative_data["resource_representative_coordinator"].save()
+    form = app.get(
+        reverse(
+            "representative-update",
+            kwargs={
+                "pk": representative_data["organization"].pk,
+                "representative_id": representative_data["open_data_representative_coordinator"].pk,
+            },
+        )
+    ).forms["representative-form"]
+    form["role"] = "open_data_manager"
     resp = form.submit()
-    assert len(resp.context['form'].errors) == 1
+    assert len(resp.context["form"].errors) == 1
 
 
 def test_representative_update_with_correct_data(app: DjangoTestApp, representative_data):
-    representative_data['open_data_representative_manager'].user = representative_data['open_data_manager']
-    representative_data['open_data_representative_manager'].save()
-    app.set_user(representative_data['open_data_coordinator'])
-    form = app.get(reverse('representative-update', kwargs={
-        'pk': representative_data['organization'].pk,
-        'representative_id': representative_data['open_data_representative_manager'].pk
-    })).forms['representative-form']
-    form['role'] = "open_data_coordinator"
+    representative_data["open_data_representative_manager"].user = representative_data["open_data_manager"]
+    representative_data["open_data_representative_manager"].save()
+    app.set_user(representative_data["open_data_coordinator"])
+    form = app.get(
+        reverse(
+            "representative-update",
+            kwargs={
+                "pk": representative_data["organization"].pk,
+                "representative_id": representative_data["open_data_representative_manager"].pk,
+            },
+        )
+    ).forms["representative-form"]
+    form["role"] = "open_data_coordinator"
     resp = form.submit()
-    representative_data['open_data_representative_manager'].refresh_from_db()
+    representative_data["open_data_representative_manager"].refresh_from_db()
     assert resp.status_code == 302
-    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
-    assert representative_data['open_data_representative_manager'].role == "open_data_coordinator"
-    assert representative_data['open_data_representative_manager'].user.organization == representative_data['organization']
+    assert resp.url == reverse("organization-members", kwargs={"pk": representative_data["organization"].pk})
+    assert representative_data["open_data_representative_manager"].role == "open_data_coordinator"
+    assert (
+        representative_data["open_data_representative_manager"].user.organization == representative_data["organization"]
+    )
 
 
 def test_representative_update_can_make_agreements(app: DjangoTestApp, representative_data):
-    app.set_user(representative_data['viisp_coordinator'])
-    form = app.get(reverse('representative-update', kwargs={
-        'pk': representative_data['organization'].pk,
-        'representative_id': representative_data['open_data_representative_manager'].pk
-    })).forms['representative-form']
-    form['can_make_agreements'] = True
+    app.set_user(representative_data["viisp_coordinator"])
+    form = app.get(
+        reverse(
+            "representative-update",
+            kwargs={
+                "pk": representative_data["organization"].pk,
+                "representative_id": representative_data["open_data_representative_manager"].pk,
+            },
+        )
+    ).forms["representative-form"]
+    form["can_make_agreements"] = True
     resp = form.submit()
-    representative_data['open_data_representative_manager'].refresh_from_db()
+    representative_data["open_data_representative_manager"].refresh_from_db()
     assert resp.status_code == 302
-    assert resp.url == reverse('organization-members', kwargs={'pk': representative_data['organization'].pk})
-    assert representative_data['open_data_representative_manager'].can_make_agreements
+    assert resp.url == reverse("organization-members", kwargs={"pk": representative_data["organization"].pk})
+    assert representative_data["open_data_representative_manager"].can_make_agreements
 
 
 def test_organization_plan_create_with_no_publisher(app: DjangoTestApp):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    rep = RepresentativeFactory(
-        content_type=ct,
-        object_id=organization.pk,
-        role=Representative.OPEN_DATA_MANAGER
-    )
+    rep = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.OPEN_DATA_MANAGER)
     app.set_user(rep.user)
 
-    form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
-    form['title'] = "Test plan"
-    form['description'] = "Plan for testing"
-    form['publisher'] = ''
+    form = app.get(reverse("organization-plans-create", args=[organization.pk])).forms["plan-form"]
+    form["title"] = "Test plan"
+    form["description"] = "Plan for testing"
+    form["publisher"] = ""
     resp = form.submit()
 
-    assert list(resp.context['form'].errors.values()) == [[
-        "Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas."
-    ]]
+    assert list(resp.context["form"].errors.values()) == [
+        ["Turi būti nurodytas paslaugų teikėjas arba paslaugų teikėjo pavadinimas."]
+    ]
 
 
 def test_organization_plan_create_with_multiple_publishers(app: DjangoTestApp):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    rep = RepresentativeFactory(
-        content_type=ct,
-        object_id=organization.pk,
-        role=Representative.OPEN_DATA_MANAGER
-    )
+    rep = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.OPEN_DATA_MANAGER)
     app.set_user(rep.user)
 
-    form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
-    form['title'] = "Test plan"
-    form['description'] = "Plan for testing"
-    form['publisher'].force_value(organization.pk)
-    form['provider_title'] = "Publisher"
+    form = app.get(reverse("organization-plans-create", args=[organization.pk])).forms["plan-form"]
+    form["title"] = "Test plan"
+    form["description"] = "Plan for testing"
+    form["publisher"].force_value(organization.pk)
+    form["provider_title"] = "Publisher"
     resp = form.submit()
 
-    assert list(resp.context['form'].errors.values()) == [[
-        "Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu."
-    ]]
+    assert list(resp.context["form"].errors.values()) == [
+        ["Turi būti nurodytas arba paslaugų teikėjas, arba paslaugų teikėjo pavadinimas, bet ne abu."]
+    ]
 
 
 def test_organization_plan_create(app: DjangoTestApp):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
-    rep = RepresentativeFactory(
-        content_type=ct,
-        object_id=organization.pk,
-        role=Representative.OPEN_DATA_MANAGER
-    )
+    rep = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=Representative.OPEN_DATA_MANAGER)
     rep.user.organization = organization
     rep.user.save()
     app.set_user(rep.user)
 
-    form = app.get(reverse('organization-plans-create', args=[organization.pk])).forms['plan-form']
-    form['title'] = "Test plan"
-    form['description'] = "Plan for testing"
+    form = app.get(reverse("organization-plans-create", args=[organization.pk])).forms["plan-form"]
+    form["title"] = "Test plan"
+    form["description"] = "Plan for testing"
     resp = form.submit()
 
-    assert resp.url == reverse('organization-plans', args=[organization.pk])
+    assert resp.url == reverse("organization-plans", args=[organization.pk])
     assert Plan.objects.count() == 1
-    assert Plan.objects.first().title == 'Test plan'
-    assert Plan.objects.first().description == 'Plan for testing'
+    assert Plan.objects.first().title == "Test plan"
+    assert Plan.objects.first().description == "Plan for testing"
     assert Plan.objects.first().receiver == organization
 
 
 def test_organization_plan_update(app: DjangoTestApp):
     plan = PlanFactory()
     ct = ContentType.objects.get_for_model(plan.receiver)
-    rep = RepresentativeFactory(
-        content_type=ct,
-        object_id=plan.receiver.pk,
-        role=Representative.OPEN_DATA_MANAGER
-    )
+    rep = RepresentativeFactory(content_type=ct, object_id=plan.receiver.pk, role=Representative.OPEN_DATA_MANAGER)
     app.set_user(rep.user)
 
-    form = app.get(reverse('plan-change', args=[plan.receiver.pk, plan.pk])).forms['plan-form']
-    form['title'] = "Test plan (updated)"
-    form['publisher'].force_value(plan.receiver.pk)
+    form = app.get(reverse("plan-change", args=[plan.receiver.pk, plan.pk])).forms["plan-form"]
+    form["title"] = "Test plan (updated)"
+    form["publisher"].force_value(plan.receiver.pk)
     resp = form.submit()
 
-    assert resp.url == reverse('plan-detail', args=[plan.receiver.pk, plan.pk])
+    assert resp.url == reverse("plan-detail", args=[plan.receiver.pk, plan.pk])
     assert Plan.objects.count() == 1
     assert Plan.objects.first().title == "Test plan (updated)"
     assert Plan.objects.first().publisher == plan.receiver
@@ -680,7 +651,7 @@ def test_organization_merge_without_permission(app: DjangoTestApp):
     app.set_user(user)
 
     organization = OrganizationFactory()
-    resp = app.get(reverse('merge-organizations', args=[organization.pk]), expect_errors=True)
+    resp = app.get(reverse("merge-organizations", args=[organization.pk]), expect_errors=True)
 
     assert resp.status_code == 403
 
@@ -697,24 +668,23 @@ def test_organization_merge(app: DjangoTestApp):
     request = RequestFactory()
     request.organizations.add(organization)
     representative = RepresentativeFactory(
-        content_type=ContentType.objects.get_for_model(organization),
-        object_id=organization.pk
+        content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
     )
 
-    form = app.get(reverse('confirm-organization-merge', args=[
-        organization.pk,
-        merge_organization.pk
-    ])).forms['confirm-merge-form']
+    form = app.get(reverse("confirm-organization-merge", args=[organization.pk, merge_organization.pk])).forms[
+        "confirm-merge-form"
+    ]
     resp = form.submit()
 
-    assert resp.url == reverse('organization-detail', args=[merge_organization.pk])
+    assert resp.url == reverse("organization-detail", args=[merge_organization.pk])
     assert Organization.objects.filter(pk=organization_id).count() == 0
     assert list(merge_organization.dataset_set.all()) == [dataset]
     assert list(merge_organization.request_set.all()) == [request]
-    assert list(Representative.objects.filter(
-        content_type=ContentType.objects.get_for_model(merge_organization),
-        object_id=merge_organization.pk
-    )) == [representative]
+    assert list(
+        Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(merge_organization), object_id=merge_organization.pk
+        )
+    ) == [representative]
 
 
 def test_organization_open_plans(app: DjangoTestApp):
@@ -723,8 +693,8 @@ def test_organization_open_plans(app: DjangoTestApp):
     PlanFactory(is_closed=False, receiver=organization)
     PlanFactory(is_closed=False, receiver=organization)
 
-    resp = app.get(reverse('organization-plans', args=[organization.pk]))
-    assert len(resp.context['plans']) == 2
+    resp = app.get(reverse("organization-plans", args=[organization.pk]))
+    assert len(resp.context["plans"]) == 2
 
 
 def test_organization_closed_plans(app: DjangoTestApp):
@@ -733,13 +703,13 @@ def test_organization_closed_plans(app: DjangoTestApp):
     PlanFactory(is_closed=False, receiver=organization)
     PlanFactory(is_closed=False, receiver=organization)
 
-    resp = app.get("%s?status=closed" % reverse('organization-plans', args=[organization.pk]))
-    assert len(resp.context['plans']) == 1
+    resp = app.get("%s?status=closed" % reverse("organization-plans", args=[organization.pk]))
+    assert len(resp.context["plans"]) == 1
 
 
 def test_change_form_no_login(app: DjangoTestApp):
     org = OrganizationFactory()
-    response = app.get(reverse('organization-change', kwargs={'pk': org.id}))
+    response = app.get(reverse("organization-change", kwargs={"pk": org.id}))
     assert response.status_code == 302
     assert settings.LOGIN_URL in response.location
 
@@ -748,16 +718,16 @@ def test_change_form_wrong_login(app: DjangoTestApp):
     org = OrganizationFactory()
     user = User.objects.create_user(email="test@test.com", password="test123")
     app.set_user(user)
-    response = app.get(reverse('organization-change', kwargs={'pk': org.id}))
+    response = app.get(reverse("organization-change", kwargs={"pk": org.id}))
     assert response.status_code == 302
     assert str(org.id) in response.location
 
 
 def generate_photo_file(height, length) -> bytes:
     file = io.BytesIO()
-    image = Image.new('RGBA', size=(height, length), color=(155, 0, 0))
-    image.save(file, 'png')
-    file.name = 'img.png'
+    image = Image.new("RGBA", size=(height, length), color=(155, 0, 0))
+    image.save(file, "png")
+    file.name = "img.png"
     return file.getvalue()
 
 
@@ -769,20 +739,20 @@ def test_change_form_correct_login(app: DjangoTestApp):
     user = representative.user
     app.set_user(user)
 
-    form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
+    form = app.get(reverse("organization-change", kwargs={"pk": org.id})).forms["organization-form"]
 
-    form['title'] = 'Edited title'
-    form['description'] = 'edited org description'
-    form['jurisdiction'] = jurisdiction.id
-    form['image'] = Upload('img.png', generate_photo_file(300, 300), 'image')
+    form["title"] = "Edited title"
+    form["description"] = "edited org description"
+    form["jurisdiction"] = jurisdiction.id
+    form["image"] = Upload("img.png", generate_photo_file(300, 300), "image")
 
     resp = form.submit()
     org.refresh_from_db()
 
     assert resp.status_code == 302
-    assert resp.url == reverse('organization-detail', kwargs={'pk': org.id})
-    assert org.title == 'Edited title'
-    assert org.description == 'edited org description'
+    assert resp.url == reverse("organization-detail", kwargs={"pk": org.id})
+    assert org.title == "Edited title"
+    assert org.description == "edited org description"
 
 
 def test_click_edit_button(app: DjangoTestApp):
@@ -790,82 +760,76 @@ def test_click_edit_button(app: DjangoTestApp):
     org = representative.content_object
     user = representative.user
     app.set_user(user)
-    response = app.get(reverse('organization-detail', kwargs={'pk': org.id}))
-    response.click(linkid='change_organization')
+    response = app.get(reverse("organization-detail", kwargs={"pk": org.id}))
+    response.click(linkid="change_organization")
     assert response.status_code == 200
 
 
 def test_contact_tab_access_coordinator(app, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
+    app.set_user(representative_data["open_data_coordinator"])
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': representative_data['organization'].pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": representative_data["organization"].pk}))
 
     assert resp.status_code == 200
-    assert 'Kontaktai' in resp.text
-    assert 'contacts/add' in resp.text
+    assert "Kontaktai" in resp.text
+    assert "contacts/add" in resp.text
 
 
 def test_contact_tab_access_denied_for_manager(app, representative_data):
-    app.set_user(representative_data['open_data_manager'])
+    app.set_user(representative_data["open_data_manager"])
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': representative_data['organization'].pk
-    }), expect_errors=True)
+    resp = app.get(
+        reverse("organization-contacts", kwargs={"pk": representative_data["organization"].pk}), expect_errors=True
+    )
 
     assert resp.status_code == 403
 
 
 def test_contact_tab_display_org_contacts(app, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    organization = representative_data['organization']
+    app.set_user(representative_data["open_data_coordinator"])
+    organization = representative_data["organization"]
 
     Contact.objects.create(
         organization=organization,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk,
         email="org@test.com",
-        phone="+37061234567"
+        phone="+37061234567",
     )
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': organization.pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": organization.pk}))
 
     assert resp.status_code == 200
-    assert 'org@test.com' in resp.text
-    assert '+37061234567' in resp.text
+    assert "org@test.com" in resp.text
+    assert "+37061234567" in resp.text
     assert organization.title in resp.text
 
 
 def test_contact_tab_display_user_contacts(app, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    organization = representative_data['organization']
-    user = representative_data['open_data_manager']
+    app.set_user(representative_data["open_data_coordinator"])
+    organization = representative_data["organization"]
+    user = representative_data["open_data_manager"]
 
     Contact.objects.create(
         organization=organization,
         content_type=ContentType.objects.get_for_model(user),
         object_id=user.pk,
         email="user@test.com",
-        phone="+37061234567"
+        phone="+37061234567",
     )
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': organization.pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": organization.pk}))
 
     assert resp.status_code == 200
-    assert 'user@test.com' in resp.text
-    assert '+37061234567' in resp.text
+    assert "user@test.com" in resp.text
+    assert "+37061234567" in resp.text
     assert user.get_full_name() in resp.text
 
 
 def test_contact_tab_display_multiple_contacts(app, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    organization = representative_data['organization']
-    user1 =  UserFactory(organization=organization)
+    app.set_user(representative_data["open_data_coordinator"])
+    organization = representative_data["organization"]
+    user1 = UserFactory(organization=organization)
     user2 = UserFactory(organization=organization)
 
     contacts = [
@@ -874,27 +838,25 @@ def test_contact_tab_display_multiple_contacts(app, representative_data):
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
             email="org@test.com",
-            phone="+37061234567"
+            phone="+37061234567",
         ),
         Contact.objects.create(
             organization=organization,
             content_type=ContentType.objects.get_for_model(user1),
             object_id=user1.pk,
             email="user1@test.com",
-            phone="+37067654321"
+            phone="+37067654321",
         ),
         Contact.objects.create(
             organization=organization,
             content_type=ContentType.objects.get_for_model(user2),
             object_id=user2.pk,
             email="user2@test.com",
-            phone="+37061111111"
-        )
+            phone="+37061111111",
+        ),
     ]
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': organization.pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": organization.pk}))
 
     assert resp.status_code == 200
 
@@ -908,8 +870,8 @@ def test_contact_tab_display_multiple_contacts(app, representative_data):
 
 
 def test_contact_tab_pagination(app, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    organization = representative_data['organization']
+    app.set_user(representative_data["open_data_coordinator"])
+    organization = representative_data["organization"]
 
     for i in range(15):
         user = UserFactory(organization=organization)
@@ -917,68 +879,60 @@ def test_contact_tab_pagination(app, representative_data):
             organization=organization,
             content_type=ContentType.objects.get_for_model(user),
             object_id=user.pk,
-            email=f"user{i}@test.com"
+            email=f"user{i}@test.com",
         )
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': organization.pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": organization.pk}))
 
     assert resp.status_code == 200
-    assert 'page=2' in resp.text
+    assert "page=2" in resp.text
 
-    soup = BeautifulSoup(resp.content, 'html.parser')
-    rows = soup.find('table').find('tbody').find_all('tr')
+    soup = BeautifulSoup(resp.content, "html.parser")
+    rows = soup.find("table").find("tbody").find_all("tr")
     assert len(rows) == 10
 
 
 def test_contact_tab_empty_state(app, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
+    app.set_user(representative_data["open_data_coordinator"])
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': representative_data['organization'].pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": representative_data["organization"].pk}))
 
     assert resp.status_code == 200
-    soup = BeautifulSoup(resp.content, 'html.parser')
-    rows = soup.find('table')
+    soup = BeautifulSoup(resp.content, "html.parser")
+    rows = soup.find("table")
     assert rows is None
 
 
 def test_contact_tab_actions_coordinator(app, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    organization = representative_data['organization']
+    app.set_user(representative_data["open_data_coordinator"])
+    organization = representative_data["organization"]
 
     contact = Contact.objects.create(
         organization=organization,
         content_type=ContentType.objects.get_for_model(organization),
         object_id=organization.pk,
-        email="test@test.com"
+        email="test@test.com",
     )
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': organization.pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": organization.pk}))
 
     assert resp.status_code == 200
-    assert f'contacts/{contact.pk}/change' in resp.text
-    assert f'contacts/{contact.pk}/delete' in resp.text
+    assert f"contacts/{contact.pk}/change" in resp.text
+    assert f"contacts/{contact.pk}/delete" in resp.text
 
 
 def test_contact_create_for_org(app, representative_data):
-    org = representative_data['organization']
-    app.set_user(representative_data['open_data_coordinator'])
-    form = app.get(reverse('contact-create', kwargs={
-        'pk': org.pk
-    })).forms['contact-form']
+    org = representative_data["organization"]
+    app.set_user(representative_data["open_data_coordinator"])
+    form = app.get(reverse("contact-create", kwargs={"pk": org.pk})).forms["contact-form"]
 
-    form['contact'] = f"org-{org.pk}"
-    form['email'] = "org@test.com"
-    form['phone'] = "+37061234567"
+    form["contact"] = f"org-{org.pk}"
+    form["email"] = "org@test.com"
+    form["phone"] = "+37061234567"
 
     resp = form.submit()
     assert resp.status_code == 302
-    assert resp.url == reverse('organization-contacts', kwargs={'pk': org.pk})
+    assert resp.url == reverse("organization-contacts", kwargs={"pk": org.pk})
 
     contact = Contact.objects.first()
     assert contact.content_type == ContentType.objects.get_for_model(org)
@@ -987,9 +941,7 @@ def test_contact_create_for_org(app, representative_data):
     assert contact.phone == "+37061234567"
     assert contact.organization == org
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': org.pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": org.pk}))
     assert resp.status_code == 200
     assert contact.email in resp.text
     assert contact.phone in resp.text
@@ -997,16 +949,14 @@ def test_contact_create_for_org(app, representative_data):
 
 
 def test_contact_create_for_user_valid_data(app, representative_data):
-    org = representative_data['organization']
-    app.set_user(representative_data['open_data_coordinator'])
-    coordinator = representative_data['open_data_coordinator']
-    form = app.get(reverse('contact-create', kwargs={
-        'pk': org.pk
-    })).forms['contact-form']
-    form['contact'] = f"user-{coordinator.pk}"
-    form['email'] = "user@test.com"
-    form['phone'] = "+37061234567"
-    form['position'] = "Tester"
+    org = representative_data["organization"]
+    app.set_user(representative_data["open_data_coordinator"])
+    coordinator = representative_data["open_data_coordinator"]
+    form = app.get(reverse("contact-create", kwargs={"pk": org.pk})).forms["contact-form"]
+    form["contact"] = f"user-{coordinator.pk}"
+    form["email"] = "user@test.com"
+    form["phone"] = "+37061234567"
+    form["position"] = "Tester"
 
     resp = form.submit()
     assert resp.status_code == 302
@@ -1017,27 +967,23 @@ def test_contact_create_for_user_valid_data(app, representative_data):
     assert contact.email == "user@test.com"
     assert contact.phone == "+37061234567"
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': org.pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": org.pk}))
     assert resp.status_code == 200
     assert contact.email in resp.text
     assert contact.phone in resp.text
     assert coordinator.get_full_name() in resp.text
-    
+
 
 def test_contact_create_for_non_registered_contact(app, representative_data):
-    org = representative_data['organization']
-    app.set_user(representative_data['open_data_coordinator'])
+    org = representative_data["organization"]
+    app.set_user(representative_data["open_data_coordinator"])
 
-    form = app.get(reverse('contact-create', kwargs={
-        'pk': org.pk
-    })).forms['contact-form']
+    form = app.get(reverse("contact-create", kwargs={"pk": org.pk})).forms["contact-form"]
 
     form["contact_name"] = "Test Testeron"
-    form['email'] = "user@test.com"
-    form['phone'] = "+37061234567"
-    form['position'] = "Tester"
+    form["email"] = "user@test.com"
+    form["phone"] = "+37061234567"
+    form["position"] = "Tester"
 
     resp = form.submit()
     assert resp.status_code == 302
@@ -1051,9 +997,7 @@ def test_contact_create_for_non_registered_contact(app, representative_data):
     assert contact.email == "user@test.com"
     assert contact.phone == "+37061234567"
 
-    resp = app.get(reverse('organization-contacts', kwargs={
-        'pk': org.pk
-    }))
+    resp = app.get(reverse("organization-contacts", kwargs={"pk": org.pk}))
     assert resp.status_code == 200
     assert contact.contact_name in resp.text
     assert contact.position in resp.text
@@ -1062,31 +1006,26 @@ def test_contact_create_for_non_registered_contact(app, representative_data):
 
 
 def test_contact_create_no_permission(app, representative_data):
-    app.set_user(representative_data['open_data_manager'])
-    resp = app.get(reverse('contact-create', kwargs={
-        'pk': representative_data['organization'].pk
-    }), expect_errors=True)
+    app.set_user(representative_data["open_data_manager"])
+    resp = app.get(reverse("contact-create", kwargs={"pk": representative_data["organization"].pk}), expect_errors=True)
     assert resp.status_code == 403
 
 
 def test_contact_update_org(app, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    org = representative_data['organization']
+    app.set_user(representative_data["open_data_coordinator"])
+    org = representative_data["organization"]
     contact = Contact.objects.create(
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
         email="old@test.com",
-        phone="+37061234567"
+        phone="+37061234567",
     )
 
-    form = app.get(reverse('contact-update', kwargs={
-        'pk': org.pk,
-        'contact_id': contact.pk
-    })).forms['contact-form']
+    form = app.get(reverse("contact-update", kwargs={"pk": org.pk, "contact_id": contact.pk})).forms["contact-form"]
 
-    form['email'] = "updated@test.com"
-    form['phone'] = "+37067654321"
+    form["email"] = "updated@test.com"
+    form["phone"] = "+37067654321"
 
     resp = form.submit()
     assert resp.status_code == 302
@@ -1097,9 +1036,9 @@ def test_contact_update_org(app, representative_data):
 
 
 def test_contact_update_user(app, representative_data):
-    coordinator = representative_data['open_data_coordinator']
+    coordinator = representative_data["open_data_coordinator"]
     app.set_user(coordinator)
-    org = representative_data['organization']
+    org = representative_data["organization"]
     contact = Contact.objects.create(
         organization=org,
         content_type=ContentType.objects.get_for_model(coordinator),
@@ -1108,12 +1047,9 @@ def test_contact_update_user(app, representative_data):
         phone="+37061234567",
         position="Tester",
     )
-    form = app.get(reverse('contact-update', kwargs={
-        'pk': org.pk,
-        'contact_id': contact.pk
-    })).forms['contact-form']
+    form = app.get(reverse("contact-update", kwargs={"pk": org.pk, "contact_id": contact.pk})).forms["contact-form"]
 
-    form['email'] = "updated@test.com"
+    form["email"] = "updated@test.com"
 
     resp = form.submit()
     assert resp.status_code == 302
@@ -1123,40 +1059,35 @@ def test_contact_update_user(app, representative_data):
 
 
 def test_contact_delete(app, representative_data):
-    app.set_user(representative_data['open_data_coordinator'])
-    org = representative_data['organization']
+    app.set_user(representative_data["open_data_coordinator"])
+    org = representative_data["organization"]
     contact = Contact.objects.create(
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
     )
-    url = reverse('organization-contacts', kwargs={
-        'pk': org.pk
-    })
+    url = reverse("organization-contacts", kwargs={"pk": org.pk})
     resp = app.get(url)
     resp = resp.click(linkid=f"delete-contact-{contact.pk}-btn")
-    form = resp.forms['delete-form']
+    form = resp.forms["delete-form"]
     resp = form.submit()
 
-    assert resp.headers['location'] == url
+    assert resp.headers["location"] == url
     assert resp.status_code == 302
     c = Contact.objects.filter(pk=contact.pk)
     assert not c.exists()
 
 
 def test_contact_delete_no_permission(app, representative_data):
-    app.set_user(representative_data['open_data_manager'])  # Manager shouldn't have permission
-    org = representative_data['organization']
+    app.set_user(representative_data["open_data_manager"])  # Manager shouldn't have permission
+    org = representative_data["organization"]
     contact = Contact.objects.create(
         organization=org,
         content_type=ContentType.objects.get_for_model(org),
         object_id=org.pk,
     )
 
-    resp = app.get(reverse('contact-delete', kwargs={
-        'pk': org.pk,
-        'contact_id': contact.pk
-    }), expect_errors=True)
+    resp = app.get(reverse("contact-delete", kwargs={"pk": org.pk, "contact_id": contact.pk}), expect_errors=True)
 
     assert resp.status_code == 403
     assert Contact.objects.count() == 1
@@ -1199,10 +1130,10 @@ def test_non_gov_organizaton_no_gov_kind(app: DjangoTestApp):
     user = representative.user
     app.set_user(user)
 
-    form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
+    form = app.get(reverse("organization-change", kwargs={"pk": org.id})).forms["organization-form"]
 
-    kind_values = [value for value, _, _ in form['kind'].options]
-    
+    kind_values = [value for value, _, _ in form["kind"].options]
+
     assert len(kind_values) == 2
     assert Organization.GOV not in kind_values
 
@@ -1216,10 +1147,10 @@ def test_gov_organizaton_cannot_select_different_kind(app: DjangoTestApp):
     user = representative.user
     app.set_user(user)
 
-    form = app.get(reverse('organization-change', kwargs={'pk': org.id})).forms['organization-form']
+    form = app.get(reverse("organization-change", kwargs={"pk": org.id})).forms["organization-form"]
 
-    kind_values = [value for value, _, _ in form['kind'].options]
-    
+    kind_values = [value for value, _, _ in form["kind"].options]
+
     assert len(kind_values) == 1
     assert kind_values[0] == Organization.GOV
 
@@ -1228,7 +1159,7 @@ def test_create_organization(app: DjangoTestApp):
     user = UserFactory(is_superuser=True)
     app.set_user(user)
 
-    form = app.get(reverse('organization-create')).forms['organization-form']
+    form = app.get(reverse("organization-create")).forms["organization-form"]
 
     form["company_code"] = "123456789"
     form["title"] = "Imone"
@@ -1260,7 +1191,7 @@ def test_partner_register_no_permission(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)
 
-    response = app.get(reverse('partner-register'))
+    response = app.get(reverse("partner-register"))
 
     assert response.status_code == 302
     assert response.url == reverse("viisp-login")
@@ -1270,7 +1201,7 @@ def test_partner_register_access_with_permission(app: DjangoTestApp):
     user = UserFactory(is_viisp_login=True)
     app.set_user(user)
 
-    response = app.get(reverse('partner-register'))
+    response = app.get(reverse("partner-register"))
 
     assert response.status_code == 200
 
@@ -1286,16 +1217,11 @@ class TestRepresentativeDeleteView:
             object_id=organization.pk,
         )
 
-        app.post(
-            reverse("representative-delete", args=[organization.pk, representative.pk])
-        )
+        app.post(reverse("representative-delete", args=[organization.pk, representative.pk]))
 
         assert not Representative.objects.filter(pk=representative.pk).exists()
 
-    
-    def test_remove_publisher_from_all_representative_organization_datasets(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_remove_publisher_from_all_representative_organization_datasets(self, app: DjangoTestApp) -> None:
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -1307,18 +1233,14 @@ class TestRepresentativeDeleteView:
         )
         dataset = DatasetFactory(organization=organization, publisher=organization)
 
-        app.post(
-            reverse("representative-delete", args=[organization.pk, representative.pk])
-        )
+        app.post(reverse("representative-delete", args=[organization.pk, representative.pk]))
 
         dataset.refresh_from_db()
         assert dataset.publisher is None
 
 
 class TestOrganizationApiKeysDeleteView:
-    def test_delete_api_client_if_spinta_request_successful(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_delete_api_client_if_spinta_request_successful(self, app: DjangoTestApp) -> None:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         organization = OrganizationFactory()
@@ -1335,9 +1257,7 @@ class TestOrganizationApiKeysDeleteView:
             assert not ApiKey.objects.exists()
             api_delete_request_mock.assert_called_once()
 
-    def test_do_not_delete_api_client_if_spinta_request_unsuccessful(
-        self, app: DjangoTestApp
-    ) -> None:
+    def test_do_not_delete_api_client_if_spinta_request_unsuccessful(self, app: DjangoTestApp) -> None:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         organization = OrganizationFactory()
@@ -1353,7 +1273,6 @@ class TestOrganizationApiKeysDeleteView:
 
             assert ApiKey.objects.exists()
             api_delete_request_mock.assert_called_once()
-
 
 
 class TestOrganizationBasedAgreementList:
@@ -1377,8 +1296,7 @@ class TestOrganizationBasedAgreementList:
         now = datetime.now(tz=timezone)
 
         agreements = [
-            AgreementFactory(assigner=organization, status=status, created_at=now)
-            for status in AgreementStatuses
+            AgreementFactory(assigner=organization, status=status, created_at=now) for status in AgreementStatuses
         ]
         older_agreement = AgreementFactory(
             assigner=organization,
@@ -1393,7 +1311,8 @@ class TestOrganizationBasedAgreementList:
         agreements.extend([older_agreement, newer_agreement])
 
         expected_agreement_order = sorted(
-            agreements, key=lambda agreement: (status_priority.get(agreement.status, 8), agreement.created_at),
+            agreements,
+            key=lambda agreement: (status_priority.get(agreement.status, 8), agreement.created_at),
         )
         ordered_expected_agreement_ids = [agreement.uuid for agreement in expected_agreement_order]
 
@@ -1433,9 +1352,7 @@ class TestOrganizationBasedAgreementList:
         assert response.status_code == 403
 
     def test_cannot_list_if_representative_of_another_organization(
-        self,
-        app: DjangoTestApp,
-        organization: Organization
+        self, app: DjangoTestApp, organization: Organization
     ):
         other_organization = OrganizationFactory()
 
@@ -1531,21 +1448,23 @@ class TestOrganizationBasedAgreementNegotiateApprove:
         RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
         RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
 
-        project = ProjectFactory(organization=assignee_organization, datasets=[dataset], other_assignee_legislations="Test")
+        project = ProjectFactory(
+            organization=assignee_organization, datasets=[dataset], other_assignee_legislations="Test"
+        )
 
         assignee_contact = ContactFactory(
             organization=assignee_organization,
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(assignee_user),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(assigner_user),
             email=assigner_user.email,
-            phone=assigner_user.phone
+            phone=assigner_user.phone,
         )
 
         agreement = AgreementFactory(
@@ -1564,8 +1483,8 @@ class TestOrganizationBasedAgreementNegotiateApprove:
             {
                 "template": template.pk,
                 "assigner_representative": assigner_contact.pk,
-                "other_assigner_legislations": "Legislation A; Legislation B"
-            }
+                "other_assigner_legislations": "Legislation A; Legislation B",
+            },
         )
 
         # Assert
@@ -1605,7 +1524,7 @@ class TestOrganizationBasedAgreementNegotiateApprove:
                 "assigner_representative": None,
                 "other_assigner_legislations": "",
             },
-            expect_errors=True
+            expect_errors=True,
         )
 
         # Assert
@@ -1646,7 +1565,7 @@ class TestOrganizationBasedAgreementNegotiateApprove:
                 "assigner_representative": None,
                 "other_assigner_legislations": "",
             },
-            expect_errors=True
+            expect_errors=True,
         )
 
         # Assert
@@ -1654,15 +1573,18 @@ class TestOrganizationBasedAgreementNegotiateApprove:
         agreement.refresh_from_db()
         assert agreement.status == AgreementStatuses.SUBMITTED
 
-    @pytest.mark.parametrize("status", [
-        AgreementStatuses.CREATED,
-        AgreementStatuses.APPROVED,
-        AgreementStatuses.FORMED,
-        AgreementStatuses.INITIATED,
-        AgreementStatuses.SIGNED,
-        AgreementStatuses.ACTIVE,
-        AgreementStatuses.TERMINATED,
-    ])
+    @pytest.mark.parametrize(
+        "status",
+        [
+            AgreementStatuses.CREATED,
+            AgreementStatuses.APPROVED,
+            AgreementStatuses.FORMED,
+            AgreementStatuses.INITIATED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
     def test_incorrect_agreement_status(self, app: DjangoTestApp, dataset, status):
         # Arrange
         template = SmartContractTemplate.objects.create(
@@ -1689,22 +1611,23 @@ class TestOrganizationBasedAgreementNegotiateApprove:
         RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
         RepresentativeFactory(user=assignee_user, content_object=assignee_organization, can_make_agreements=True)
 
-        project = ProjectFactory(organization=assignee_organization, datasets=[dataset],
-                                 other_assignee_legislations="Test")
+        project = ProjectFactory(
+            organization=assignee_organization, datasets=[dataset], other_assignee_legislations="Test"
+        )
 
         assignee_contact = ContactFactory(
             organization=assignee_organization,
             object_id=assignee_user.pk,
             content_type=ContentType.objects.get_for_model(assignee_user),
             email=assignee_user.email,
-            phone=assignee_user.phone
+            phone=assignee_user.phone,
         )
         assigner_contact = ContactFactory(
             organization=assigner_organization,
             object_id=assigner_user.pk,
             content_type=ContentType.objects.get_for_model(assigner_user),
             email=assigner_user.email,
-            phone=assigner_user.phone
+            phone=assigner_user.phone,
         )
 
         agreement = AgreementFactory(
@@ -1720,7 +1643,11 @@ class TestOrganizationBasedAgreementNegotiateApprove:
         # Act
         response = app.post(
             reverse("organization-agreement-approve", args=[assigner_organization.pk, agreement.pk]),
-            {"template": template.pk, "assigner_representative": assigner_contact.pk, "other_assigner_legislations": ""}
+            {
+                "template": template.pk,
+                "assigner_representative": assigner_contact.pk,
+                "other_assigner_legislations": "",
+            },
         )
 
         # Assert
@@ -1797,10 +1724,7 @@ class TestOrganizationBasedAgreementNegotiateForm:
         )
 
         # Act
-        response = app.post(
-            reverse("organization-agreement-form", args=[assigner_organization.pk, agreement.pk]),
-            {}
-        )
+        response = app.post(reverse("organization-agreement-form", args=[assigner_organization.pk, agreement.pk]), {})
 
         # Assert
         assert response.status_code == 302
@@ -2042,15 +1966,18 @@ class TestOrganizationBasedAgreementNegotiateForm:
         assert agreement.status == AgreementStatuses.APPROVED
         assert not agreement.files.exists()
 
-    @pytest.mark.parametrize("initial_status", [
-        AgreementStatuses.CREATED,
-        AgreementStatuses.SUBMITTED,
-        AgreementStatuses.FORMED,
-        AgreementStatuses.INITIATED,
-        AgreementStatuses.SIGNED,
-        AgreementStatuses.ACTIVE,
-        AgreementStatuses.TERMINATED,
-    ])
+    @pytest.mark.parametrize(
+        "initial_status",
+        [
+            AgreementStatuses.CREATED,
+            AgreementStatuses.SUBMITTED,
+            AgreementStatuses.FORMED,
+            AgreementStatuses.INITIATED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
     def test_incorrect_agreement_status(self, initial_status, app, dataset: Dataset):
         """Cannot form an agreement if status is not APPROVED."""
         template = SmartContractTemplate.objects.create(
@@ -2171,7 +2098,7 @@ class TestOrganizationBasedAgreementNegotiateSign:
         # Act
         response = app.post(
             reverse("organization-agreement-sign", args=[assigner_organization.pk, agreement.pk]),
-            upload_files=[("file", "agreement.adoc", agreement_two_signers.read_bytes(), "text/plain")]
+            upload_files=[("file", "agreement.adoc", agreement_two_signers.read_bytes(), "text/plain")],
         )
 
         # Assert
@@ -2180,16 +2107,19 @@ class TestOrganizationBasedAgreementNegotiateSign:
         assert agreement.status == AgreementStatuses.SIGNED
         assert agreement.is_agent_sync_enabled
 
-    @pytest.mark.parametrize("initial_status", [
-        AgreementStatuses.CREATED,
-        AgreementStatuses.SUBMITTED,
-        AgreementStatuses.APPROVED,
-        AgreementStatuses.SIGNED,
-        AgreementStatuses.ACTIVE,
-        AgreementStatuses.TERMINATED,
-    ])
+    @pytest.mark.parametrize(
+        "initial_status",
+        [
+            AgreementStatuses.CREATED,
+            AgreementStatuses.SUBMITTED,
+            AgreementStatuses.APPROVED,
+            AgreementStatuses.SIGNED,
+            AgreementStatuses.ACTIVE,
+            AgreementStatuses.TERMINATED,
+        ],
+    )
     def test_incorrect_status(
-            self, initial_status, app: DjangoTestApp, agreement_pdf: Path, agreement_two_signers: str, odrl_json: Path
+        self, initial_status, app: DjangoTestApp, agreement_pdf: Path, agreement_two_signers: str, odrl_json: Path
     ):
         # Arrange
         template = SmartContractTemplate.objects.create(
@@ -2197,10 +2127,16 @@ class TestOrganizationBasedAgreementNegotiateSign:
         )
 
         assigner_organization, assignee_organization = OrganizationFactory.create_batch(2)
-        assigner_user = UserFactory(organization=assigner_organization, is_viisp_login=True,
-                                    viisp_company_code=assigner_organization.company_code)
-        assignee_user = UserFactory(organization=assignee_organization, is_viisp_login=True,
-                                    viisp_company_code=assignee_organization.company_code)
+        assigner_user = UserFactory(
+            organization=assigner_organization,
+            is_viisp_login=True,
+            viisp_company_code=assigner_organization.company_code,
+        )
+        assignee_user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
 
         RepresentativeFactory(user=assigner_user, content_object=assigner_organization, can_make_agreements=True)
         assigner_contact = ContactFactory(
@@ -2237,7 +2173,7 @@ class TestOrganizationBasedAgreementNegotiateSign:
         response = app.post(
             reverse("organization-agreement-sign", args=[assigner_organization.pk, agreement.pk]),
             upload_files=[("file", "agreement.adoc", agreement_two_signers.read_bytes(), "text/plain")],
-            expect_errors=True
+            expect_errors=True,
         )
 
         # Assert
@@ -2333,7 +2269,7 @@ class TestOrganizationBasedAgreementNegotiateSign:
         # Act
         response = app.post(
             reverse("organization-agreement-sign", args=[assigner_organization.pk, agreement.pk]),
-            upload_files=[("file", "agreement.adoc", agreement_two_signers.read_bytes(), "text/plain")]
+            upload_files=[("file", "agreement.adoc", agreement_two_signers.read_bytes(), "text/plain")],
         )
 
         # Assert

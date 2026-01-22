@@ -14,9 +14,7 @@ def test_valid_markdown_file_is_accepted():
     content = b"# Sample Markdown"
     md_file = SimpleUploadedFile("template.md", content)
 
-    template = SmartContractTemplate.objects.create(
-        file=md_file, organization=organization
-    )
+    template = SmartContractTemplate.objects.create(file=md_file, organization=organization)
 
     assert template.file.name.endswith(".md")
     with open(template.file.path, "rb") as f:

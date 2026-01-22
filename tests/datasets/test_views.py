@@ -1115,7 +1115,7 @@ class TestDatasetUpdateView:
             http_method="POST",
             path=url,
             args=(),
-            kwargs={"pk": dataset.id}
+            kwargs={"pk": dataset.id},
         )
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Edited title"
@@ -1654,11 +1654,9 @@ class TestDatasetCreateView:
             http_method="POST",
             path=url,
             args=(),
-            kwargs={"pk": org.id, "subclass_uuid": subclass.pk}
+            kwargs={"pk": org.id, "subclass_uuid": subclass.pk},
         )
-        form = app.get(url).forms[
-            "dataset-form"
-        ]
+        form = app.get(url).forms["dataset-form"]
         form["title"] = "Added title"
         form["description"] = "Added new dataset description"
         form["tags"] = ["test tag"]
@@ -2360,9 +2358,9 @@ class TestDatasetMembers:
         ],
     )
     def test_dataset_members_create_member_in_information_system_forbidden_for_roles(
-            self,
-            app: DjangoTestApp,
-            role: str,
+        self,
+        app: DjangoTestApp,
+        role: str,
     ):
         subclass = DCATResourceSubclassFactory(name="information_system")
         dataset = DatasetFactory(subclass=subclass)
@@ -2574,8 +2572,9 @@ class TestDatasetMembers:
 
             target_rep.refresh_from_db()
             assert target_rep.role == new_role
-            assert target_rep.user.organization == original_org, \
+            assert target_rep.user.organization == original_org, (
                 "User's organization should not change during role update"
+            )
         else:
             assert len(update_links) == 0
 
@@ -2584,39 +2583,39 @@ class TestDatasetMembers:
         "coordinator_role,target_role,new_role,can_update",
         [
             (
-                    Representative.OPEN_DATA_COORDINATOR,
-                    Representative.OPEN_DATA_MANAGER,
-                    Representative.OPEN_DATA_MANAGER,
-                    False,
+                Representative.OPEN_DATA_COORDINATOR,
+                Representative.OPEN_DATA_MANAGER,
+                Representative.OPEN_DATA_MANAGER,
+                False,
             ),
             (
-                    Representative.OPEN_DATA_COORDINATOR,
-                    Representative.RESOURCE_MANAGER,
-                    Representative.RESOURCE_MANAGER,
-                    False,
+                Representative.OPEN_DATA_COORDINATOR,
+                Representative.RESOURCE_MANAGER,
+                Representative.RESOURCE_MANAGER,
+                False,
             ),
             (
-                    Representative.RESOURCE_COORDINATOR,
-                    Representative.OPEN_DATA_MANAGER,
-                    Representative.OPEN_DATA_MANAGER,
-                    True,
+                Representative.RESOURCE_COORDINATOR,
+                Representative.OPEN_DATA_MANAGER,
+                Representative.OPEN_DATA_MANAGER,
+                True,
             ),
             (
-                    Representative.RESOURCE_COORDINATOR,
-                    Representative.RESOURCE_MANAGER,
-                    Representative.RESOURCE_MANAGER,
-                    True,
+                Representative.RESOURCE_COORDINATOR,
+                Representative.RESOURCE_MANAGER,
+                Representative.RESOURCE_MANAGER,
+                True,
             ),
             (
-                    Representative.RESOURCE_MANAGER,
-                    Representative.RESOURCE_MANAGER,
-                    Representative.OPEN_DATA_MANAGER,
-                    False,
+                Representative.RESOURCE_MANAGER,
+                Representative.RESOURCE_MANAGER,
+                Representative.OPEN_DATA_MANAGER,
+                False,
             ),
         ],
     )
     def test_dataset_members_update_member_subclass_information_system(
-            self, app: DjangoTestApp, coordinator_role, target_role, new_role, can_update
+        self, app: DjangoTestApp, coordinator_role, target_role, new_role, can_update
     ):
         subclass = DCATResourceSubclassFactory(name="information_system")
         dataset = DatasetFactory(subclass=subclass)
@@ -2653,8 +2652,9 @@ class TestDatasetMembers:
 
             target_rep.refresh_from_db()
             assert target_rep.role == new_role
-            assert target_rep.user.organization == original_org, \
+            assert target_rep.user.organization == original_org, (
                 "User's organization should not change during role update"
+            )
         else:
             assert len(update_links) == 0
 
@@ -2734,7 +2734,9 @@ class TestDatasetMembers:
             (Representative.RESOURCE_MANAGER, Representative.OPEN_DATA_MANAGER, False),
         ],
     )
-    def test_dataset_members_delete_member_subclass_information_system(self, app: DjangoTestApp, coordinator_role, target_role, can_delete):
+    def test_dataset_members_delete_member_subclass_information_system(
+        self, app: DjangoTestApp, coordinator_role, target_role, can_delete
+    ):
         subclass = DCATResourceSubclassFactory(name="information_system")
         dataset = DatasetFactory(subclass=subclass)
         ct = ContentType.objects.get_for_model(Dataset)
@@ -2882,7 +2884,6 @@ class TestDatasetMembers:
         coordinator.refresh_from_db()
         assert coordinator.phone == "061234567"
 
-
     def test_create_representative_with_organization_email_coordinator_role_fails(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)
@@ -2907,7 +2908,6 @@ class TestDatasetMembers:
         assert resp.status_code == 200
         assert "Organizacijai gali būti suteikta tik tvarkytojo rolė" in resp.text
         assert not Representative.objects.filter(email=org.email).exists()
-
 
     def test_create_representative_with_organization_email_manager_role_succeeds(self, app: DjangoTestApp):
         dataset = DatasetFactory()
@@ -3419,7 +3419,7 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
         http_method="POST",
         path=url,
         args=[],
-        kwargs={"pk": dataset.pk}
+        kwargs={"pk": dataset.pk},
     )
     form = app.get(url).forms["dataset-form"]
     form["title"] = "Updated title"
@@ -3443,6 +3443,7 @@ def test_dataset_structure_import_without_permission(app: DjangoTestApp):
     resp = app.get(url, expect_errors=True)
 
     assert resp.status_code == 403
+
 
 @pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
 def test_dataset_import_in_not_draft_version(app: DjangoTestApp, status: str):
@@ -3832,7 +3833,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         name="TestModel",
-        metadata_version=metadata_version
+        metadata_version=metadata_version,
     )
     model2 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
     MetadataFactory(
@@ -3840,7 +3841,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(model2),
         object_id=model2.pk,
         name="TestModel2",
-        metadata_version=metadata_version
+        metadata_version=metadata_version,
     )
     model3 = ModelFactory(dataset=dataset, metadata_version=metadata_version)
     MetadataFactory(
@@ -3848,7 +3849,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(model3),
         object_id=model3.pk,
         name="TestModel3",
-        metadata_version=metadata_version
+        metadata_version=metadata_version,
     )
 
     response = app.get(reverse("dataset-detail", args=[resource.dataset.pk])).follow()
@@ -4319,7 +4320,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         name="test/dataset/TestModel",
-        metadata_version=dataset.metadata.first().metadata_version
+        metadata_version=dataset.metadata.first().metadata_version,
     )
     (
         FileFormat(
@@ -4651,21 +4652,21 @@ class TestDatasetMemberCreate:
         # Add new coordinator to dataset
         url = reverse("dataset-representative-create", args=[dataset.pk])
         resp = app.get(url)
-        form = resp.forms['representative-form']
-        form['email'] = 'new.coordinator@test.com'
+        form = resp.forms["representative-form"]
+        form["email"] = "new.coordinator@test.com"
         form.submit()
 
         # Coordinator representative should be created for the DATASET
         coordinator_rep = Representative.objects.get(
-            email='new.coordinator@test.com',
+            email="new.coordinator@test.com",
             content_type=ContentType.objects.get_for_model(dataset.__class__),
-            object_id=dataset.pk
+            object_id=dataset.pk,
         )
         assert coordinator_rep.role == Representative.RESOURCE_COORDINATOR
 
         # User doesn't exist yet (will be created when they register)
         # But if they existed, they should NOT have org assigned
-        assert not User.objects.filter(email='new.coordinator@test.com').exists()
+        assert not User.objects.filter(email="new.coordinator@test.com").exists()
 
     def test_existing_user_assigned_as_coordinator_keeps_no_org(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -4676,16 +4677,17 @@ class TestDatasetMemberCreate:
 
         url = reverse("dataset-representative-create", args=[dataset.pk])
         resp = app.get(url)
-        form = resp.forms['representative-form']
-        form['email'] = existing_user.email
-        form['role'] = Representative.OPEN_DATA_COORDINATOR
+        form = resp.forms["representative-form"]
+        form["email"] = existing_user.email
+        form["role"] = Representative.OPEN_DATA_COORDINATOR
         form.submit()
 
         existing_user.refresh_from_db()
 
         # User should still have NO organization
-        assert existing_user.organization is None, \
+        assert existing_user.organization is None, (
             f"User should not be added to dataset's organization, but has {existing_user.organization}"
+        )
 
     def test_existing_user_from_different_org_not_changed(self, app: DjangoTestApp):
         org_a = OrganizationFactory(title="Org A")
@@ -4700,15 +4702,16 @@ class TestDatasetMemberCreate:
 
         url = reverse("dataset-representative-create", args=[dataset_in_org_a.pk])
         resp = app.get(url)
-        form = resp.forms['representative-form']
-        form['email'] = user_from_org_b.email
+        form = resp.forms["representative-form"]
+        form["email"] = user_from_org_b.email
         form.submit()
 
         user_from_org_b.refresh_from_db()
 
         # User should still belong to Org B, NOT Org A
-        assert user_from_org_b.organization == original_org, \
+        assert user_from_org_b.organization == original_org, (
             f"User's organization should not be changed from {original_org} to {user_from_org_b.organization}"
+        )
         assert user_from_org_b.organization != org_a
 
     def test_coordinator_has_representative_for_dataset_not_org(self, app: DjangoTestApp):
@@ -4721,25 +4724,21 @@ class TestDatasetMemberCreate:
 
         url = reverse("dataset-representative-create", args=[dataset.pk])
         resp = app.get(url)
-        form = resp.forms['representative-form']
-        form['email'] = user.email
+        form = resp.forms["representative-form"]
+        form["email"] = user.email
         form.submit()
 
         user.refresh_from_db()
 
         # Should have representative for DATASET
         dataset_reps = Representative.objects.filter(
-            user=user,
-            content_type=ContentType.objects.get_for_model(dataset.__class__),
-            object_id=dataset.pk
+            user=user, content_type=ContentType.objects.get_for_model(dataset.__class__), object_id=dataset.pk
         )
         assert dataset_reps.exists(), "User should have representative for dataset"
 
         # Should NOT have representative for ORGANIZATION
         org_reps = Representative.objects.filter(
-            user=user,
-            content_type=ContentType.objects.get_for_model(org.__class__),
-            object_id=org.pk
+            user=user, content_type=ContentType.objects.get_for_model(org.__class__), object_id=org.pk
         )
         assert not org_reps.exists(), "User should NOT have representative for organization"
 
@@ -4754,9 +4753,9 @@ class TestDatasetMemberCreate:
 
         url = reverse("dataset-representative-create", args=[dataset.pk])
         resp = app.get(url)
-        form = resp.forms['representative-form']
-        form['email'] = existing_user.email
-        form['role'] = Representative.OPEN_DATA_MANAGER
+        form = resp.forms["representative-form"]
+        form["email"] = existing_user.email
+        form["role"] = Representative.OPEN_DATA_MANAGER
         form.submit()
 
         existing_user.refresh_from_db()
@@ -4776,13 +4775,14 @@ class TestDatasetMemberCreate:
 
         url = reverse("dataset-representative-create", args=[dataset.pk])
         resp = app.get(url)
-        form = resp.forms['representative-form']
-        form['email'] = user.email
+        form = resp.forms["representative-form"]
+        form["email"] = user.email
         form.submit()
 
         user.refresh_from_db()
 
         assert user.organization == org
+
 
 class TestDatasetMemberUpdate:
     def test_dataset_member_update_does_not_assign_org(self, app: DjangoTestApp):

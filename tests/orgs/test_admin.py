@@ -17,8 +17,8 @@ def test_admin_add_publisher(app: DjangoTestApp):
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
     organization = OrganizationFactory()
     app.set_user(admin)
-    form = app.get(reverse('admin:vitrina_orgs_publisherorganization_add')).forms['publisherorganization_form']
-    form['organization'] = organization.pk
+    form = app.get(reverse("admin:vitrina_orgs_publisherorganization_add")).forms["publisherorganization_form"]
+    form["organization"] = organization.pk
     form.submit()
     assert Organization.objects.filter(publisher=True, pk=organization.pk).exists()
 
@@ -26,21 +26,19 @@ def test_admin_add_publisher(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_admin_publisher_list_display(app: DjangoTestApp):
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
-    org = OrganizationFactory(title = 'title')
-    for title in ['title1', 'title2', 'title3']:
+    org = OrganizationFactory(title="title")
+    for title in ["title1", "title2", "title3"]:
         OrganizationFactory(title=title, publisher=True)
     app.set_user(admin)
-    resp = app.get(reverse('admin:vitrina_orgs_publisherorganization_changelist'))
-    assert [org.title for org in resp.context['cl'].result_list] == ['title1', 'title2', 'title3']
-    assert org.title not in [org.title for org in resp.context['cl'].result_list]
+    resp = app.get(reverse("admin:vitrina_orgs_publisherorganization_changelist"))
+    assert [org.title for org in resp.context["cl"].result_list] == ["title1", "title2", "title3"]
+    assert org.title not in [org.title for org in resp.context["cl"].result_list]
 
 
 @pytest.fixture
 def admin_user():
-    return User.objects.create_superuser(
-        email="admin@gmail.com",
-        password="test123"
-    )
+    return User.objects.create_superuser(email="admin@gmail.com", password="test123")
+
 
 @pytest.fixture
 def publisher_org():
@@ -57,20 +55,17 @@ def test_admin_dataset_assign(app: DjangoTestApp, admin_user: User, publisher_or
     datasets = [DatasetFactory() for _ in range(3)]
 
     app.set_user(admin_user)
-    form = app.get(
-        reverse('admin:vitrina_orgs_publisherorganization_change',
-                args=[publisher_org.pk])
-    ).forms['publisherorganization_form']
+    form = app.get(reverse("admin:vitrina_orgs_publisherorganization_change", args=[publisher_org.pk])).forms[
+        "publisherorganization_form"
+    ]
 
-    form['datasets'] = [str(dataset.id) for dataset in datasets]
+    form["datasets"] = [str(dataset.id) for dataset in datasets]
     response = form.submit()
 
     assert response.status_code == 302
     for dataset in datasets:
         assert Representative.objects.filter(
-            organization=publisher_org,
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id=dataset.id
+            organization=publisher_org, content_type=ContentType.objects.get_for_model(Dataset), object_id=dataset.id
         ).exists()
 
 
@@ -80,29 +75,22 @@ def test_admin_dataset_remove(app: DjangoTestApp, admin_user: User, publisher_or
     app.set_user(admin_user)
     for dataset in datasets:
         Representative.objects.create(
-            organization=publisher_org,
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id=dataset.id
+            organization=publisher_org, content_type=ContentType.objects.get_for_model(Dataset), object_id=dataset.id
         )
-    form = app.get(
-        reverse('admin:vitrina_orgs_publisherorganization_change',
-                args=[publisher_org.pk])
-    ).forms['publisherorganization_form']
-    form['datasets'] = [str(datasets[0].id), str(datasets[1].id)]
+    form = app.get(reverse("admin:vitrina_orgs_publisherorganization_change", args=[publisher_org.pk])).forms[
+        "publisherorganization_form"
+    ]
+    form["datasets"] = [str(datasets[0].id), str(datasets[1].id)]
     response = form.submit()
     assert response.status_code == 302
 
     assert not Representative.objects.filter(
-        organization=publisher_org,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=datasets[2].id
+        organization=publisher_org, content_type=ContentType.objects.get_for_model(Dataset), object_id=datasets[2].id
     ).exists()
 
     for dataset in datasets[:2]:
         assert Representative.objects.filter(
-            organization=publisher_org,
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id=dataset.id
+            organization=publisher_org, content_type=ContentType.objects.get_for_model(Dataset), object_id=dataset.id
         ).exists()
 
 
@@ -111,20 +99,17 @@ def test_admin_organization_assign(app: DjangoTestApp, admin_user: User, publish
     orgs = [OrganizationFactory() for _ in range(3)]
 
     app.set_user(admin_user)
-    form = app.get(
-        reverse('admin:vitrina_orgs_publisherorganization_change',
-                args=[publisher_org.pk])
-    ).forms['publisherorganization_form']
+    form = app.get(reverse("admin:vitrina_orgs_publisherorganization_change", args=[publisher_org.pk])).forms[
+        "publisherorganization_form"
+    ]
 
-    form['creator_assignment'] = [str(org.id) for org in orgs]
+    form["creator_assignment"] = [str(org.id) for org in orgs]
     response = form.submit()
 
     assert response.status_code == 302
     for org in orgs:
         assert Representative.objects.filter(
-            organization=publisher_org,
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=org.id
+            organization=publisher_org, content_type=ContentType.objects.get_for_model(Organization), object_id=org.id
         ).exists()
 
 
@@ -134,21 +119,15 @@ def test_admin_organization_remove(app: DjangoTestApp, admin_user: User, publish
     app.set_user(admin_user)
     for org in orgs:
         Representative.objects.create(
-            organization=publisher_org,
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=org.id
+            organization=publisher_org, content_type=ContentType.objects.get_for_model(Organization), object_id=org.id
         )
-    form = app.get(
-        reverse('admin:vitrina_orgs_publisherorganization_change',
-                args=[publisher_org.pk])
-    ).forms['publisherorganization_form']
-    form['creator_assignment'] = [str(orgs[0].id), str(orgs[1].id)]
+    form = app.get(reverse("admin:vitrina_orgs_publisherorganization_change", args=[publisher_org.pk])).forms[
+        "publisherorganization_form"
+    ]
+    form["creator_assignment"] = [str(orgs[0].id), str(orgs[1].id)]
     response = form.submit()
     assert response.status_code == 302
 
     assert not Representative.objects.filter(
-        organization=publisher_org,
-        content_type=ContentType.objects.get_for_model(Organization),
-        object_id=orgs[2].id
+        organization=publisher_org, content_type=ContentType.objects.get_for_model(Organization), object_id=orgs[2].id
     ).exists()
-

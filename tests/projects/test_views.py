@@ -30,40 +30,31 @@ pytestmark = pytest.mark.django_db
 
 def generate_photo_file() -> bytes:
     file = io.BytesIO()
-    image = Image.new('RGBA', size=(100, 100), color=(155, 0, 0))
-    image.save(file, 'png')
-    file.name = 'example.png'
+    image = Image.new("RGBA", size=(100, 100), color=(155, 0, 0))
+    image.save(file, "png")
+    file.name = "example.png"
     return file.getvalue()
 
-@pytest.mark.parametrize(
-        'is_public',
-        [
-            True,False
-        ]
-)
+
+@pytest.mark.parametrize("is_public", [True, False])
 def test_project_create_personal(app: DjangoTestApp, is_public: bool):
     user = UserFactory()
     app.set_user(user)
 
     url = reverse("project-create")
     revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="project-create",
-        http_method="POST",
-        path=url,
-        args=(),
-        kwargs={}
+        source=RevisionSource.VIEW, action="project-create", http_method="POST", path=url, args=(), kwargs={}
     )
-    form = app.get(url).forms['project-form']
-    form['title'] = "Project"
-    form['description'] = "Description"
-    form['url'] = "example.com"
-    form['image'] = Upload('example.png', generate_photo_file(), 'image')
-    form['is_public'] = is_public
+    form = app.get(url).forms["project-form"]
+    form["title"] = "Project"
+    form["description"] = "Description"
+    form["url"] = "example.com"
+    form["image"] = Upload("example.png", generate_photo_file(), "image")
+    form["is_public"] = is_public
     resp = form.submit()
 
-    project_qs = Project.objects.filter(title='Project')
-    assert  project_qs.exists()
+    project_qs = Project.objects.filter(title="Project")
+    assert project_qs.exists()
     added_project = project_qs.first()
     assert resp.status_code == 302
     assert resp.url == added_project.get_absolute_url()
@@ -74,6 +65,7 @@ def test_project_create_personal(app: DjangoTestApp, is_public: bool):
     assert not added_project.organization
     assert added_project.is_public == is_public
 
+
 def test_project_create_for_organization(app: DjangoTestApp):
     representative = ViispRepresentativeFactory(can_make_agreements=True)
     user = representative.user
@@ -82,22 +74,17 @@ def test_project_create_for_organization(app: DjangoTestApp):
 
     url = reverse("project-create")
     revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="project-create",
-        http_method="POST",
-        path=url,
-        args=(),
-        kwargs={}
+        source=RevisionSource.VIEW, action="project-create", http_method="POST", path=url, args=(), kwargs={}
     )
-    form = app.get(url).forms['project-form']
-    form['title'] = "Project"
-    form['description'] = "Description"
-    form['organization'] = organization.id
-    form['url'] = "example.com"
-    form['image'] = Upload('example.png', generate_photo_file(), 'image')
+    form = app.get(url).forms["project-form"]
+    form["title"] = "Project"
+    form["description"] = "Description"
+    form["organization"] = organization.id
+    form["url"] = "example.com"
+    form["image"] = Upload("example.png", generate_photo_file(), "image")
     resp = form.submit()
 
-    added_project = Project.objects.filter(title='Project').first()
+    added_project = Project.objects.filter(title="Project").first()
     assert added_project
     assert resp.status_code == 302
     assert resp.url == added_project.get_absolute_url()
@@ -108,35 +95,37 @@ def test_project_create_for_organization(app: DjangoTestApp):
     assert added_project.organization == organization
     assert not added_project.is_public
 
+
 def test_organization_project_create_viisp_no_representative(app: DjangoTestApp):
     organization = OrganizationFactory()
     user = UserFactory(is_viisp_login=True, viisp_company_code=organization.company_code)
     app.set_user(user)
 
-    form = app.get(reverse("project-create")).forms['project-form']
-    form['title'] = "Project"
-    form['description'] = "Description"
-    form['url'] = "example.com"
-    form['image'] = Upload('example.png', generate_photo_file(), 'image')
-    assert 'organization' not in form.fields
+    form = app.get(reverse("project-create")).forms["project-form"]
+    form["title"] = "Project"
+    form["description"] = "Description"
+    form["url"] = "example.com"
+    form["image"] = Upload("example.png", generate_photo_file(), "image")
+    assert "organization" not in form.fields
 
     resp = form.submit()
 
     assert resp.status_code == 302
-    project = Project.objects.filter(title='Project').first()
+    project = Project.objects.filter(title="Project").first()
     assert not project.organization
+
 
 def test_organization_project_create_viisp_representative_no_agreements_flag(app: DjangoTestApp):
     representative = ViispRepresentativeFactory(can_make_agreements=False)
     user = representative.user
     app.set_user(user)
 
-    form = app.get(reverse("project-create")).forms['project-form']
-    form['title'] = "Project"
-    form['description'] = "Description"
-    form['url'] = "example.com"
-    form['image'] = Upload('example.png', generate_photo_file(), 'image')
-    assert 'organization' not in form.fields
+    form = app.get(reverse("project-create")).forms["project-form"]
+    form["title"] = "Project"
+    form["description"] = "Description"
+    form["url"] = "example.com"
+    form["image"] = Upload("example.png", generate_photo_file(), "image")
+    assert "organization" not in form.fields
 
 
 def test_personal_project_update(app: DjangoTestApp):
@@ -152,11 +141,11 @@ def test_personal_project_update(app: DjangoTestApp):
         http_method="POST",
         path=url,
         args=(),
-        kwargs={"pk": project.pk}
+        kwargs={"pk": project.pk},
     )
-    form = app.get(url).forms['project-form']
-    form['title'] = "Updated title"
-    form['description'] = "Updated description"
+    form = app.get(url).forms["project-form"]
+    form["title"] = "Updated title"
+    form["description"] = "Updated description"
     resp = form.submit()
 
     project.refresh_from_db()
@@ -166,6 +155,7 @@ def test_personal_project_update(app: DjangoTestApp):
     assert project.description == "Updated description"
     assert Version.objects.get_for_object(project).count() == 1
     assert Version.objects.get_for_object(project).first().revision.comment == revision_comment.to_json()
+
 
 def test_organization_project_update_no_permission(app: DjangoTestApp):
     representative = ViispRepresentativeFactory(can_make_agreements=False)
@@ -177,6 +167,7 @@ def test_organization_project_update_no_permission(app: DjangoTestApp):
     resp = app.get(reverse("project-update", args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
 
+
 def test_personal_project_update_no_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory()
@@ -186,6 +177,7 @@ def test_personal_project_update_no_permission(app: DjangoTestApp):
     resp = app.get(reverse("project-update", args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
 
+
 def test_project_cannot_update_organization(app: DjangoTestApp):
     representative = ViispRepresentativeFactory(can_make_agreements=True)
     user = representative.user
@@ -193,7 +185,7 @@ def test_project_cannot_update_organization(app: DjangoTestApp):
 
     app.set_user(user)
 
-    form = app.get(reverse("project-update", args=[project.pk])).forms['project-form']
+    form = app.get(reverse("project-update", args=[project.pk])).forms["project-form"]
     assert "organization" not in form.fields
 
 
@@ -208,6 +200,7 @@ def test_project_update_with_agreements(app: DjangoTestApp, organization: Organi
     resp = app.get(reverse("project-update", args=[project.pk]))
 
     assert resp.status_code == 302
+
 
 def test_project_update_with_organization(app: DjangoTestApp):
     representative = ViispRepresentativeFactory(can_make_agreements=True)
@@ -224,11 +217,11 @@ def test_project_update_with_organization(app: DjangoTestApp):
         http_method="POST",
         path=url,
         args=(),
-        kwargs={"pk": project.pk}
+        kwargs={"pk": project.pk},
     )
-    form = app.get(url).forms['project-form']
-    form['title'] = "Updated title"
-    form['description'] = "Updated description"
+    form = app.get(url).forms["project-form"]
+    form["title"] = "Updated title"
+    form["description"] = "Updated description"
     resp = form.submit()
 
     project.refresh_from_db()
@@ -239,6 +232,7 @@ def test_project_update_with_organization(app: DjangoTestApp):
     assert Version.objects.get_for_object(project).count() == 1
     assert Version.objects.get_for_object(project).first().revision.comment == revision_comment.to_json()
 
+
 def test_project_update_with_organization_no_representative(app: DjangoTestApp):
     user = UserFactory()
     organization = OrganizationFactory()
@@ -246,7 +240,7 @@ def test_project_update_with_organization_no_representative(app: DjangoTestApp):
 
     app.set_user(user)
 
-    resp = app.get(reverse("project-update", args=[project.pk]),  expect_errors=True)
+    resp = app.get(reverse("project-update", args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
 
 
@@ -254,7 +248,7 @@ def test_project_history_view_without_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory()
     app.set_user(user)
-    resp = app.get(reverse('project-history', args=[project.pk]), expect_errors=True)
+    resp = app.get(reverse("project-history", args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
 
 
@@ -270,40 +264,40 @@ def test_project_history_view_with_permission(app: DjangoTestApp):
         http_method="POST",
         path=url,
         args=(),
-        kwargs={"pk": project.pk}
+        kwargs={"pk": project.pk},
     )
-    form = app.get(url).forms['project-form']
-    form['title'] = "Updated title"
-    form['description'] = "Updated description"
+    form = app.get(url).forms["project-form"]
+    form["title"] = "Updated title"
+    form["description"] = "Updated description"
     resp = form.submit().follow()
     with reversion.create_revision():
         agreement_file = AgreementPDFFileFactory(agreement__project=project)
         scope = UseCaseClientScopeFactory(use_case_client__use_case=project)
-    
+
     action_objects = [
         (str(agreement_file.agreement), None),
         (str(agreement_file), None),
         (str(scope.use_case_client), None),
-        (str(scope), None)
+        (str(scope), None),
     ]
 
     resp = resp.click(linkid="history-tab")
     project.refresh_from_db()
-    assert resp.context['detail_url_name'] == 'project-detail'
-    assert resp.context['history_url_name'] == 'project-history'
-    assert len(resp.context['history']) == 2
+    assert resp.context["detail_url_name"] == "project-detail"
+    assert resp.context["history_url_name"] == "project-history"
+    assert len(resp.context["history"]) == 2
 
-    entry1 = resp.context['history'][0]
+    entry1 = resp.context["history"][0]
     assert entry1["action"]["comment"] == ""
     assert len(entry1["action"]["objects"]) == 4
     assert set(entry1["action"]["objects"]) == set(action_objects)
-    assert entry1['user'] is None
+    assert entry1["user"] is None
 
-    entry2 = resp.context['history'][1]
+    entry2 = resp.context["history"][1]
     assert entry2["action"]["comment"] == f"{revision_comment.action}({revision_comment.kwargs})"
     assert len(entry2["action"]["objects"]) == 1
     assert entry2["action"]["objects"][0] == (str(project), project.get_absolute_url())
-    assert entry2['user'] == user
+    assert entry2["user"] == user
 
 
 def test_request_comment_with_status(app: DjangoTestApp):
@@ -311,23 +305,18 @@ def test_request_comment_with_status(app: DjangoTestApp):
     project = ProjectFactory(status=Project.CREATED)
     app.set_user(user)
 
-    form = app.get(project.get_absolute_url()).forms['comment-form']
+    form = app.get(project.get_absolute_url()).forms["comment-form"]
     match = resolve(form.action)
     revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="comment",
-        http_method="POST",
-        path=form.action,
-        args=(),
-        kwargs=match.kwargs
+        source=RevisionSource.VIEW, action="comment", http_method="POST", path=form.action, args=(), kwargs=match.kwargs
     )
-    form['is_public'] = True
-    form['status'] = Comment.APPROVED
-    form['body'] = "Approving this project"
+    form["is_public"] = True
+    form["status"] = Comment.APPROVED
+    form["body"] = "Approving this project"
     resp = form.submit().follow()
 
     comment = project.comments.get()
-    assert comment in list(resp.context['comments'])[0]
+    assert comment in list(resp.context["comments"])[0]
     assert comment.type == Comment.STATUS
     assert comment.status == Comment.APPROVED
 
@@ -340,23 +329,18 @@ def test_request_comment_with_status_rejected(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(project.get_absolute_url()).forms['comment-form']
+    form = app.get(project.get_absolute_url()).forms["comment-form"]
     match = resolve(form.action)
     revision_comment = RevisionComment(
-        source=RevisionSource.VIEW,
-        action="comment",
-        http_method="POST",
-        path=form.action,
-        args=(),
-        kwargs=match.kwargs
+        source=RevisionSource.VIEW, action="comment", http_method="POST", path=form.action, args=(), kwargs=match.kwargs
     )
-    form['is_public'] = True
-    form['status'] = Comment.REJECTED
-    form['body'] = ""
+    form["is_public"] = True
+    form["status"] = Comment.REJECTED
+    form["body"] = ""
     resp = form.submit().follow()
 
     comment = project.comments.get()
-    assert comment in list(resp.context['comments'])[0]
+    assert comment in list(resp.context["comments"])[0]
     assert comment.type == Comment.STATUS
     assert comment.status == Comment.REJECTED
 
@@ -369,8 +353,8 @@ def test_request_comment_with_same_status(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    form = app.get(project.get_absolute_url()).forms['comment-form']
-    form['status'] = Comment.APPROVED
+    form = app.get(project.get_absolute_url()).forms["comment-form"]
+    form["status"] = Comment.APPROVED
     form.submit().follow()
 
     assert project.comments.count() == 0
@@ -386,9 +370,9 @@ def test_remove_dataset_no_permission(app: DjangoTestApp):
 
     app.set_user(user)
 
-    resp = app.get(reverse('project-dataset-remove', kwargs={'pk': project.pk,
-                                                             'dataset_id': dataset.pk}),
-                   expect_errors=True)
+    resp = app.get(
+        reverse("project-dataset-remove", kwargs={"pk": project.pk, "dataset_id": dataset.pk}), expect_errors=True
+    )
 
     assert resp.status_code == 403
 
@@ -399,12 +383,7 @@ def test_remove_dataset(app: DjangoTestApp) -> None:
     dataset = DatasetFactory()
     project = ProjectFactory(datasets=[dataset])
 
-    app.post(
-        reverse(
-            "project-dataset-remove",
-            kwargs={"pk": project.pk, "dataset_id": dataset.pk}
-        )
-    )
+    app.post(reverse("project-dataset-remove", kwargs={"pk": project.pk, "dataset_id": dataset.pk}))
 
     project.refresh_from_db()
     assert not project.datasets.exists()
@@ -417,16 +396,16 @@ def test_remove_dataset_with_permission(app: DjangoTestApp):
     project.datasets.add(dataset)
     assert project.datasets.all().count() == 1
 
-    url = reverse('project-datasets', kwargs={'pk': project.pk})
+    url = reverse("project-datasets", kwargs={"pk": project.pk})
     app.set_user(user)
 
     resp = app.get(url)
-    resp = resp.click(linkid=f"remove-dataset-{ dataset.pk }-btn")
+    resp = resp.click(linkid=f"remove-dataset-{dataset.pk}-btn")
 
-    form = resp.forms['delete-form']
+    form = resp.forms["delete-form"]
     resp = form.submit()
 
-    assert resp.headers['location'] == url
+    assert resp.headers["location"] == url
     assert project.datasets.all().count() == 0
 
 
@@ -434,14 +413,15 @@ def test_not_approved_project_view_without_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory(status=Project.CREATED)
     app.set_user(user)
-    resp = app.get(reverse('project-detail', args=[project.pk]), expect_errors=True)
+    resp = app.get(reverse("project-detail", args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
+
 
 def test_approved_non_public_project_view_without_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory(status=Project.APPROVED, is_public=False)
     app.set_user(user)
-    resp = app.get(reverse('project-detail', args=[project.pk]), expect_errors=True)
+    resp = app.get(reverse("project-detail", args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
 
 
@@ -450,19 +430,20 @@ def test_not_approved_project_view_with_permission(app: DjangoTestApp):
     project = ProjectFactory(user=user, status=Project.CREATED)
     app.set_user(user)
 
-    resp = app.get(reverse('project-detail', args=[project.pk]))
-    assert resp.context['object'] == project
+    resp = app.get(reverse("project-detail", args=[project.pk]))
+    assert resp.context["object"] == project
+
 
 @pytest.mark.parametrize(
-        'project_status, is_public',
-        [
-            (Project.APPROVED, True),
-            (Project.APPROVED, False),
-            (Project.CREATED, True),
-            (Project.CREATED, False),
-            (Project.REJECTED, True),
-            (Project.REJECTED, False),
-        ]
+    "project_status, is_public",
+    [
+        (Project.APPROVED, True),
+        (Project.APPROVED, False),
+        (Project.CREATED, True),
+        (Project.CREATED, False),
+        (Project.REJECTED, True),
+        (Project.REJECTED, False),
+    ],
 )
 def test_representative_can_view_any_organization_projects(app: DjangoTestApp, project_status, is_public: bool):
     organization = OrganizationFactory()
@@ -471,58 +452,62 @@ def test_representative_can_view_any_organization_projects(app: DjangoTestApp, p
     project = ProjectFactory(organization=organization, is_public=is_public, status=project_status)
     app.set_user(user)
 
-    resp = app.get(reverse('project-detail', args=[project.pk]))
-    assert resp.context['object'] == project
+    resp = app.get(reverse("project-detail", args=[project.pk]))
+    assert resp.context["object"] == project
+
 
 @pytest.mark.parametrize(
-        'project_status, is_public',
-        [
-            (Project.APPROVED, False),
-            (Project.CREATED, True),
-            (Project.CREATED, False),
-            (Project.REJECTED, True),
-            (Project.REJECTED, False),
-        ]
+    "project_status, is_public",
+    [
+        (Project.APPROVED, False),
+        (Project.CREATED, True),
+        (Project.CREATED, False),
+        (Project.REJECTED, True),
+        (Project.REJECTED, False),
+    ],
 )
-def test_non_representative_cannot_view_non_public_non_approved_organization_projects(app: DjangoTestApp, project_status, is_public: bool):
+def test_non_representative_cannot_view_non_public_non_approved_organization_projects(
+    app: DjangoTestApp, project_status, is_public: bool
+):
     organization = OrganizationFactory()
     user = UserFactory()
     project = ProjectFactory(organization=organization, is_public=is_public, status=project_status)
     app.set_user(user)
 
-    resp = app.get(reverse('project-detail', args=[project.pk]), expect_errors=True)
+    resp = app.get(reverse("project-detail", args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
 
+
 @pytest.mark.parametrize(
-        'project_status, is_public',
-        [
-            (Project.APPROVED, True),
-            (Project.APPROVED, False),
-            (Project.CREATED, True),
-            (Project.CREATED, False),
-            (Project.REJECTED, True),
-            (Project.REJECTED, False),
-        ]
+    "project_status, is_public",
+    [
+        (Project.APPROVED, True),
+        (Project.APPROVED, False),
+        (Project.CREATED, True),
+        (Project.CREATED, False),
+        (Project.REJECTED, True),
+        (Project.REJECTED, False),
+    ],
 )
 def test_user_can_view_any_personal_projects(app: DjangoTestApp, project_status, is_public: bool):
     user = UserFactory()
     project = ProjectFactory(user=user, is_public=is_public, status=project_status)
     app.set_user(user)
 
-    resp = app.get(reverse('project-detail', args=[project.pk]))
-    assert resp.context['object'] == project
+    resp = app.get(reverse("project-detail", args=[project.pk]))
+    assert resp.context["object"] == project
 
 
 @pytest.mark.parametrize(
-        'project_status, is_public',
-        [
-            (Project.APPROVED, True),
-            (Project.APPROVED, False),
-            (Project.CREATED, True),
-            (Project.CREATED, False),
-            (Project.REJECTED, True),
-            (Project.REJECTED, False),
-        ]
+    "project_status, is_public",
+    [
+        (Project.APPROVED, True),
+        (Project.APPROVED, False),
+        (Project.CREATED, True),
+        (Project.CREATED, False),
+        (Project.REJECTED, True),
+        (Project.REJECTED, False),
+    ],
 )
 def test_assigner_can_view_any_projects_it_is_part_of(app: DjangoTestApp, project_status, is_public: bool):
     organization = OrganizationFactory()
@@ -533,15 +518,17 @@ def test_assigner_can_view_any_projects_it_is_part_of(app: DjangoTestApp, projec
     project.datasets.add(dataset)
     app.set_user(user)
 
-    resp = app.get(reverse('project-detail', args=[project.pk]))
-    assert resp.context['object'] == project
+    resp = app.get(reverse("project-detail", args=[project.pk]))
+    assert resp.context["object"] == project
+
 
 def test_clients_view_without_permission(app: DjangoTestApp):
     user = UserFactory()
     project = ProjectFactory(user=user)
     app.set_user(user)
-    resp = app.get(reverse('project-clients', args=[project.pk]), expect_errors=True)
+    resp = app.get(reverse("project-clients", args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
+
 
 def test_clients_view(app: DjangoTestApp):
     organization = OrganizationFactory()
@@ -550,7 +537,7 @@ def test_clients_view(app: DjangoTestApp):
     project = ProjectFactory(user=user, organization=organization)
     UseCaseClientFactory.create_batch(2, use_case=project)
     app.set_user(user)
-    resp = app.get(reverse('project-clients', args=[project.pk]))
+    resp = app.get(reverse("project-clients", args=[project.pk]))
     assert resp.status_code == 200
     assert project.client_set.count() == 2
     assert resp.context["clients"].count() == 2
@@ -563,12 +550,8 @@ def test_client_create_without_permission(app: DjangoTestApp):
     app.set_user(user)
     project = ProjectFactory(user=user, organization=organization)
 
-    resp = app.get(
-        reverse("project-clients-create", args=[project.pk]),
-        expect_errors=True
-    )
+    resp = app.get(reverse("project-clients-create", args=[project.pk]), expect_errors=True)
     assert resp.status_code == 403
-
 
 
 def test_client_create(app: DjangoTestApp, oauth_settings):
@@ -606,14 +589,22 @@ def test_client_create(app: DjangoTestApp, oauth_settings):
 
         # --- Assertions for correct OAuth requests ---
         # Access token POST
-        token_requests = [req for req in m.request_history if req.method == "POST" and req.url == oauth_settings.OAUTH_SERVER_TOKEN_URL]
+        token_requests = [
+            req
+            for req in m.request_history
+            if req.method == "POST" and req.url == oauth_settings.OAUTH_SERVER_TOKEN_URL
+        ]
         assert token_requests, "No access token request made"
         token_data = parse_qs(token_requests[0].text)
         assert token_data.get("grant_type") == ["client_credentials"]
         assert token_data.get("scope") == [oauth_settings.OAUTH_CLIENTS_MANAGEMENT_SCOPE]
 
         # Client creation POST
-        client_requests = [req for req in m.request_history if req.method == "POST" and req.url == oauth_settings.OAUTH_SERVER_CLIENTS_URL]
+        client_requests = [
+            req
+            for req in m.request_history
+            if req.method == "POST" and req.url == oauth_settings.OAUTH_SERVER_CLIENTS_URL
+        ]
         assert client_requests, "No client creation request made"
         client_json = client_requests[0].json()
         assert "secret" in client_json
@@ -628,12 +619,8 @@ def test_client_update_without_permission(app: DjangoTestApp):
     app.set_user(user)
     project = ProjectFactory(user=user, organization=organization)
     client = UseCaseClientFactory(use_case=project)
-    resp = app.get(
-        reverse("project-clients-update", args=[project.pk, client.uuid]),
-        expect_errors=True
-    )
+    resp = app.get(reverse("project-clients-update", args=[project.pk, client.uuid]), expect_errors=True)
     assert resp.status_code == 403
-
 
 
 def test_client_update(app: DjangoTestApp, oauth_settings):
@@ -646,9 +633,7 @@ def test_client_update(app: DjangoTestApp, oauth_settings):
         project = ProjectFactory(organization=representative.content_object)
         client = UseCaseClientFactory()
 
-        form = app.get(
-            reverse("project-clients-update", args=[project.pk, client.uuid])
-        ).forms["client-form"]
+        form = app.get(reverse("project-clients-update", args=[project.pk, client.uuid])).forms["client-form"]
         form["name"] = "Client"
         resp = form.submit()
 
@@ -669,12 +654,8 @@ def test_client_scope_create(app: DjangoTestApp, oauth_settings, organization):
         app.set_user(user)
         project = ProjectFactory(organization=representative.content_object)
         client: UseCaseClient = UseCaseClientFactory(use_case=project)
-        agreement = AgreementFactory(
-            project=project, assigner=organization, status=AgreementStatuses.ACTIVE
-        )
-        available_scope: AgreementScope = agreement.scopes.create(
-            scope="Test", action="WRITE", resource="dataset"
-        )
+        agreement = AgreementFactory(project=project, assigner=organization, status=AgreementStatuses.ACTIVE)
+        available_scope: AgreementScope = agreement.scopes.create(scope="Test", action="WRITE", resource="dataset")
 
         url = reverse("project-clients-scopes-create", args=[project.pk, client.pk])
         resp = app.get(url)
@@ -684,9 +665,7 @@ def test_client_scope_create(app: DjangoTestApp, oauth_settings, organization):
         form["scope"] = available_scope.pk
         response = form.submit()
 
-        created_scope = UseCaseClientScope.objects.filter(
-            use_case_client=client
-        ).first()
+        created_scope = UseCaseClientScope.objects.filter(use_case_client=client).first()
 
         assert created_scope
         assert created_scope.is_active is False
@@ -705,16 +684,12 @@ def test_client_scope_toggle(app: DjangoTestApp, oauth_settings):
         client: UseCaseClient = UseCaseClientFactory(use_case=project)
         scope = client.scopes.create(scope="Test", action="WRITE", resource="dataset")
 
-        url = reverse(
-            "project-clients-scopes-detail-toggle", args=[project.pk, client.pk, scope.pk]
-        )
+        url = reverse("project-clients-scopes-detail-toggle", args=[project.pk, client.pk, scope.pk])
         resp = app.post(url)
 
         assert resp.status_code == 302
 
-        updated_scope = UseCaseClientScope.objects.filter(
-            use_case_client=client
-        ).first()
+        updated_scope = UseCaseClientScope.objects.filter(use_case_client=client).first()
         assert updated_scope
         assert updated_scope.is_active is True
 
@@ -736,6 +711,7 @@ def test_client_scope_toggle(app: DjangoTestApp, oauth_settings):
         assert data.get("grant_type") == ["client_credentials"]
         assert data.get("scope") == [oauth_settings.OAUTH_CLIENTS_MANAGEMENT_SCOPE]
 
+
 @pytest.fixture
 def oauth_settings(settings):
     settings.OAUTH_SERVER_TOKEN_URL = "https://oauth.test/token"
@@ -743,6 +719,7 @@ def oauth_settings(settings):
     settings.OAUTH_CLIENT_SECRET_BASE64 = "ZmFrZV9iYXNlNjRfY2xpZW50X3NlY3JldA=="
     settings.OAUTH_CLIENTS_MANAGEMENT_SCOPE = "auth_clients"
     return settings
+
 
 def mock_oauth_endpoints(m, settings):
     m.post(

@@ -3728,7 +3728,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
 
             deeper_old_related_object = getattr(new_related_object, field.name)
             if deeper_old_related_object:
-                self.check_if_field_is_valid(deeper_old_related_object, new_related_object, already_created_fields)
+                self.validate_field_relationships(deeper_old_related_object, new_related_object, already_created_fields)
 
             # EnumItem and ParamItem have an additional connection to a specific table which has to be checked.
             if isinstance(deeper_old_related_object, (Enum, Param)):
@@ -3750,7 +3750,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
                         )
                         raise ValidationError(error_msg)
 
-                    if type(deeper_new_related_object.object) is not Dataset:
+                    if isinstance(deeper_old_related_object, (Enum, Param)):
                         deeper_new_related_object.object = already_created_fields[deeper_new_related_object.object]
 
                 deeper_new_related_object.save()
@@ -3787,7 +3787,7 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def check_if_field_has_published_version(self, field: RELATED_OBJECT_TYPE) -> bool:
         return field.metadata_version.status and field.metadata_version.status != VersionStatus.DRAFT
 
-    def check_if_field_is_valid(
+    def validate_field_relationships(
         self,
         deeper_old_related_object: RELATED_OBJECT_TYPE,
         new_related_object: RELATED_OBJECT_TYPE,

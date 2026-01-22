@@ -75,7 +75,7 @@ bleach = "^6.2.0"
 requests-mock = "^1.12.1"
 celery = "^5.5.3"
 workalendar = "^17.0.0"
-spinta = {version = "*", allow-prereleases = true}
+spinta = { git = "https://github.com/atviriduomenys/spinta.git", branch = "bg/2291-fix-openapi-tags" }  # TODO: Do not merge.
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"

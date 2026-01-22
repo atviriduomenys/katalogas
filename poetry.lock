@@ -5583,6 +5583,8 @@ files = [
     {file = "ruamel.yaml.clib-0.2.14-cp39-cp39-win32.whl", hash = "sha256:6d5472f63a31b042aadf5ed28dd3ef0523da49ac17f0463e10fda9c4a2773352"},
     {file = "ruamel.yaml.clib-0.2.14-cp39-cp39-win_amd64.whl", hash = "sha256:8dd3c2cc49caa7a8d64b67146462aed6723a0495e44bf0aa0a2e94beaa8432f6"},
     {file = "ruamel.yaml.clib-0.2.14.tar.gz", hash = "sha256:803f5044b13602d58ea378576dd75aa759f52116a0232608e8fdada4da33752e"},
+    {file = "ruamel_yaml_clib-0.2.14-cp314-cp314-win32.whl", hash = "sha256:9b4104bf43ca0cd4e6f738cb86326a3b2f6eef00f417bd1e7efb7bdffe74c539"},
+    {file = "ruamel_yaml_clib-0.2.14-cp314-cp314-win_amd64.whl", hash = "sha256:13997d7d354a9890ea1ec5937a219817464e5cc344805b37671562a401ca3008"},
 ]
 
 [[package]]
@@ -5782,15 +5784,13 @@ files = [
 
 [[package]]
 name = "spinta"
-version = "0.2.dev13"
+version = "0.2dev14"
 description = "A platform for describing, extracting, transforming, loading and serving open data."
 optional = false
-python-versions = "<4.0,>=3.10"
+python-versions = "^3.10"
 groups = ["main"]
-files = [
-    {file = "spinta-0.2.dev13-py3-none-any.whl", hash = "sha256:4e27cae86efa189cdf558b750b44498742cc0745059ddec9bc8b07f63bb14979"},
-    {file = "spinta-0.2.dev13.tar.gz", hash = "sha256:702fd4be71763991c2723052075d1462ab757d9273ae389e16126f2543c60dba"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 aiofiles = "*"
@@ -5800,7 +5800,7 @@ authlib = ">=1.0.0"
 cachetools = "*"
 click = "*"
 dask = {version = "*", extras = ["dataframe"]}
-docutils = ">=0.21.2,<0.22.0"
+docutils = "^0.21.2"
 fsspec = "*"
 GeoAlchemy2 = "*"
 jinja2 = "*"
@@ -5824,13 +5824,13 @@ pyproj = [
 python-multipart = "*"
 pytz = "*"
 rdflib = "*"
-redis = ">=6.4.0,<7.0.0"
+redis = "^6.4.0"
 requests = "*"
 "ruamel.yaml" = "*"
 setuptools = "*"
 setuptools-scm = "*"
 Shapely = "*"
-sqlalchemy = ">=1.4,<1.5"
+sqlalchemy = "~1.4"
 sqlalchemy-utils = "<=0.41.2"
 sqlean-py = "<=3.49.1"
 sqlparse = "*"
@@ -5844,12 +5844,18 @@ unidecode = "*"
 xlrd = "*"
 XlsxWriter = "*"
 xmltodict = "*"
-zeep = ">=4.3.1,<5.0.0"
+zeep = "^4.3.1"
 
 [package.extras]
 all = ["alembic (>=1.11.0,<1.12.0)", "gunicorn", "uvicorn"]
 http = ["gunicorn", "uvicorn"]
 migrations = ["alembic (>=1.11.0,<1.12.0)"]
+
+[package.source]
+type = "git"
+url = "https://github.com/atviriduomenys/spinta.git"
+reference = "bg/2291-fix-openapi-tags"
+resolved_reference = "541a8f0819a024f472dbd74887c492e297f42ee8"
 
 [[package]]
 name = "sqlalchemy"
@@ -6874,4 +6880,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "419211ebc26ac1068485088d818427b223308eb3d3a43fc371371f4806feb3e1"
+content-hash = "daf9849bbad415f0395b17e3245942d94fe295fc9408b3c64b7688109c4c3214"

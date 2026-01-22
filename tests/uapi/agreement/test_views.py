@@ -22,7 +22,7 @@ from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.factories import AgreementFactory, AgreementFileFactory
 from vitrina.uapi.models import Agent
-
+from vitrina.uapi.pagination import UAPIPagination
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -580,3 +580,32 @@ class TestAgreementViewSetList:
         assert response.status_code == status.HTTP_200_OK
         assert response.json["_data"][0]["agreement_file_url"] is None
         assert response.json["_data"][0]["agreement_scopes"] is None
+
+    def test_returns_paginated_response(self, app: DjangoTestApp, organization: Organization, valid_token: str):
+        agent = Agent.objects.get(organization=organization)
+        use_case = ProjectFactory(datasets=[agent.service])
+        agreement1 = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
+        response = app.get(
+            f"{agreement_url()}?_limit=1&_sort=_created",
+            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        assert response.json == {
+            "_data": [
+                {
+                    "_type": "datasets/gov/vssa/ror/dcat/Agreement",
+                    "_id": str(agreement1.uuid),
+                    "_revision": "",
+                    "_txn": "",
+                    "_created": agreement1.created_at.astimezone(timezone).isoformat(),
+                    "_updated": agreement1.updated_at.astimezone(timezone).isoformat(),
+                    "@context": "",
+                    "agreement_file_url": None,
+                    "agreement_scopes": None,
+                    "clients": [],
+                }
+            ],
+            "_next": UAPIPagination()._encode_uapi_urlsafe_base64(f'["{str(agreement1.created_at)}"]'),
+        }

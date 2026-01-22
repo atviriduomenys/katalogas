@@ -19,6 +19,7 @@ from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.models import Agreement
 from vitrina.smart_contracts.services import extract_elements_from_adoc
 from vitrina.uapi.models import Agent
+from vitrina.uapi.pagination import UAPIPagination
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer, BaseUUIDObjectMixin
 from vitrina.uapi.utils.utils import extract_type_from_url
 from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandlerMixin
@@ -94,6 +95,7 @@ class UAPIAgreementListSerializer(BaseUUIDObjectMixin, serializers.ModelSerializ
 
 
 class AgreementViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewsets.ModelViewSet):
+    pagination_class = UAPIPagination
     required_scopes = {
         "list": ["uapi:/datasets/gov/vssa/dcat/Agreement/:getall"],
     }
@@ -144,9 +146,9 @@ class AgreementViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewset
             )
 
         serializer = BaseObjectListSerializer(
-            instance=agreements,
+            instance=self.paginate_queryset(agreements),
             context=self.get_serializer_context(),
             data_serializer_class=UAPIAgreementListSerializer,
             _type=extract_type_from_url(self.request.build_absolute_uri()),
         )
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return self.get_paginated_response(serializer.data)

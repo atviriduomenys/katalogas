@@ -6371,15 +6371,17 @@ class TestModelDelete:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset = DatasetFactory()
-        model = ModelFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
+        model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         MetadataFactory(
             dataset=dataset,
             content_type=ContentType.objects.get_for_model(Model),
             object_id=model.pk,
             name=f"{dataset}/{model.pk}/TestModel",
+            metadata_version=metadata_version
         )
 
-        resp = app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']))
+        resp = app.post(reverse('model-delete', args=[dataset.pk, metadata_version.pk, 'TestModel']))
         assert resp.json == {"success": True}
         assert not Model.objects.filter(pk=model.pk).exists()
 
@@ -6387,15 +6389,17 @@ class TestModelDelete:
         user = UserFactory(is_staff=False)
         app.set_user(user)
         dataset = DatasetFactory()
-        model = ModelFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
+        model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         MetadataFactory(
             dataset=dataset,
             content_type=ContentType.objects.get_for_model(Model),
             object_id=model.pk,
             name=f"{dataset}/{model.pk}/TestModel",
+            metadata_version=metadata_version
         )
 
-        resp = app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']), expect_errors=True)
+        resp = app.post(reverse('model-delete', args=[dataset.pk, metadata_version.pk, 'TestModel']), expect_errors=True)
         assert resp.status_code == 403
         assert resp.json == {"error": "Permission denied"}
         assert Model.objects.filter(pk=model.pk).exists()
@@ -6404,21 +6408,23 @@ class TestModelDelete:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset = DatasetFactory()
-
-        resp = app.post(reverse('model-delete', args=[dataset.pk, 'NonExistent']), expect_errors=True)
+        metadata_version = dataset.metadata.first().metadata_version
+        resp = app.post(reverse('model-delete', args=[dataset.pk, metadata_version.pk, 'NonExistent']), expect_errors=True)
         assert resp.status_code == 404
 
     def test_requires_login(self, app: DjangoTestApp):
         dataset = DatasetFactory()
-        model = ModelFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
+        model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         MetadataFactory(
             dataset=dataset,
             content_type=ContentType.objects.get_for_model(Model),
             object_id=model.pk,
             name=f"{dataset}/{model.pk}/TestModel",
+            metadata_version=metadata_version
         )
 
-        resp = app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']))
+        resp = app.post(reverse('model-delete', args=[dataset.pk, metadata_version.pk, 'TestModel']))
         assert resp.status_code == 302  # redirect to login
         assert Model.objects.filter(pk=model.pk).exists()
 
@@ -6427,15 +6433,17 @@ class TestModelDelete:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset = DatasetFactory()
-        model = ModelFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
+        model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         metadata = MetadataFactory(
             dataset=dataset,
             content_type=ContentType.objects.get_for_model(Model),
             object_id=model.pk,
             name=f"{dataset}/{model.pk}/TestModel",
+            metadata_version=metadata_version
         )
 
-        app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']))
+        resp = app.post(reverse('model-delete', args=[dataset.pk, metadata_version.pk, 'TestModel']))
 
         assert not Model.objects.filter(pk=model.pk).exists()
         assert not Metadata.objects.filter(pk=metadata.pk).exists()
@@ -6444,13 +6452,15 @@ class TestModelDelete:
         user = UserFactory(is_staff=True)
         app.set_user(user)
         dataset = DatasetFactory()
-        model = ModelFactory(dataset=dataset)
+        metadata_version = dataset.metadata.first().metadata_version
+        model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
         MetadataFactory(
             dataset=dataset,
             content_type=ContentType.objects.get_for_model(Model),
             object_id=model.pk,
             name=f"{dataset}/{model.pk}/TestModel",
+            metadata_version=metadata_version
         )
 
-        resp = app.get(reverse('model-delete', args=[dataset.pk, 'TestModel']), expect_errors=True)
+        resp = app.get(reverse('model-delete', args=[dataset.pk, metadata_version.pk, 'TestModel']), expect_errors=True)
         assert resp.status_code == 405

@@ -2289,8 +2289,9 @@ class ModelCreateView(PermissionRequiredMixin, CreateView):
 class ModelDeleteView(LoginRequiredMixin, View):
     http_method_names = ["post"]
 
-    def post(self, request, pk, model):
+    def post(self, request, pk, version_id, model):
         dataset = get_object_or_404(Dataset, pk=pk)
+        metadata_version = get_object_or_404(_Version, pk=version_id)
         if not has_perm(request.user, Action.STRUCTURE, Dataset, dataset):
             return JsonResponse({"error": "Permission denied"}, status=403)
 
@@ -2303,9 +2304,7 @@ class ModelDeleteView(LoginRequiredMixin, View):
                     function="split_part",
                     output_field=TextField(),
                 )
-            ),
-            model_name=model,
-            dataset=dataset,
+            ).filter(model_name=model, dataset=dataset, metadata_version=metadata_version)
         )
 
         model_obj.delete()

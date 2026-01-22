@@ -67,7 +67,7 @@ urlpatterns = [
         name="model-update",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/delete/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/delete/",
         ModelDeleteView.as_view(),
         name="model-delete",
     ),

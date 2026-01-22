@@ -1490,7 +1490,8 @@ class DatasetStructureImportView(
 
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        self.has_permission()
+        if not self.has_permission():
+            return self.handle_no_permission()
         if not (version_id := kwargs.get("version_id")):
             return super().dispatch(request, *args, **kwargs)
         self.metadata_version = get_object_or_404(_Version, pk=version_id, dataset=self.dataset)

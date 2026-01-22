@@ -1661,7 +1661,8 @@ class DatasetStructure(models.Model):
             return str(_("Struktūra"))
 
     def get_absolute_url(self):
-        return reverse("dataset-structure", kwargs={"pk": self.dataset.pk})
+        metadata_version = self.dataset.metadata.last().metadata_version
+        return reverse("dataset-structure", kwargs={"pk": self.dataset.pk, "version_id": metadata_version.pk})
 
     def file_size(self):
         if self.file:

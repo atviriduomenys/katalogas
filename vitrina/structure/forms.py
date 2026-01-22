@@ -608,6 +608,9 @@ class ModelCreateForm(forms.ModelForm):
             .filter(dataset=dataset)
             .filter(Q(metadata_version=self.metadata_version) | Q(metadata_version__isnull=True))
         )
+        self.fields["base"].queryset = Model.objects.exclude(
+            Q(metadata_version__status=VersionStatus.DRAFT) & ~Q(dataset=dataset)
+        )
         self.initial["level"] = "None"
         self.initial["base_level"] = "None"
         self.initial["visibility"] = "None"

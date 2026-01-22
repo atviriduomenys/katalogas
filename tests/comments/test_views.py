@@ -12,7 +12,10 @@ from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory
+from vitrina.datasets.models import Dataset
 from vitrina.orgs.models import Organization, Representative
+from vitrina.projects.factories import ProjectFactory
+from vitrina.projects.models import Project
 from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
 from vitrina.requests.models import Request
 from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory
@@ -897,3 +900,158 @@ def test_edit_comment_wrong_http_method(client):
     resp = client.get(url)
 
     assert resp.status_code == 405
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "access_rights, expected_status_code",
+    (
+        (Dataset.PUBLIC, 302), # Allow
+        (Dataset.RESTRICTED, 302), # Allow
+        (Dataset.NON_PUBLIC, 403), # Disallow
+        (Dataset.CONFIDENTIAL, 403), # Disallow
+    ),
+)
+def test_comment_based_on_access_rights(app: DjangoTestApp, access_rights, expected_status_code):
+    user1 = UserFactory()
+    user2 = UserFactory()
+
+    org2 = OrganizationFactory()
+    dataset2 = DatasetFactory(organization=org2, access_rights=access_rights)
+    RepresentativeFactory(
+        user=user2,
+        content_type=ContentType.objects.get_for_model(dataset2),
+        object_id=dataset2.pk
+    )
+
+    ct = ContentType.objects.get_for_model(dataset2)
+
+    # User1 (not owner) tries to comment
+    app.set_user(user1)
+    resp = app.post(
+        reverse("comment", args=[ct.pk, dataset2.pk]),
+        {"is_public": True, "body": "Test comment"},
+        expect_errors=True
+    )
+
+    assert resp.status_code == expected_status_code
+    assert Comment.objects.filter(object_id=dataset2.pk).count() == (1 if expected_status_code == 302 else 0)
+
+
+@pytest.mark.django_db
+def test_comment_nonexistent_dataset(app: DjangoTestApp):
+    user = UserFactory()
+    app.set_user(user)
+
+    ct = ContentType.objects.get_for_model(Dataset)
+
+    resp = app.post(
+        reverse("comment", args=[ct.pk, 99999]),
+        {"is_public": True, "body": "IDOR test"},
+        expect_errors=True
+    )
+
+    assert resp.status_code == 404
+
+
+@pytest.mark.django_db
+def test_comment_on_private_dataset_model(app: DjangoTestApp):
+    user1 = UserFactory()
+    user2 = UserFactory()
+
+    dataset = DatasetFactory(organization=OrganizationFactory(), access_rights=Dataset.NON_PUBLIC)
+    RepresentativeFactory(user=user2, content_type=ContentType.objects.get_for_model(dataset), object_id=dataset.pk)
+    model = ModelFactory(dataset=dataset)
+
+    ct = ContentType.objects.get_for_model(model)
+
+    app.set_user(user1)
+    resp = app.post(
+        reverse("comment", args=[ct.pk, model.pk]),
+        {"is_public": True, "body": "IDOR test"},
+        expect_errors=True
+    )
+
+    assert resp.status_code == 403
+    assert Comment.objects.filter(object_id=model.pk).count() == 0
+
+@pytest.mark.django_db
+def test_comment_on_non_public_project(app: DjangoTestApp):
+    user1 = UserFactory()
+    user2 = UserFactory()
+
+    # User2's non-public project
+    project = ProjectFactory(is_public=False, user=user2, status=Project.APPROVED)
+
+    ct = ContentType.objects.get_for_model(project)
+
+    # User1 tries to comment
+    app.set_user(user1)
+    resp = app.post(
+        reverse("comment", args=[ct.pk, project.pk]),
+        {"is_public": True, "body": "IDOR test"},
+        expect_errors=True
+    )
+
+    assert resp.status_code == 403
+    assert Comment.objects.filter(object_id=project.pk).count() == 0
+
+
+@pytest.mark.django_db
+def test_comment_on_private_dataset_property(app: DjangoTestApp):
+    """User tries to comment on Property belonging to private dataset"""
+    user1 = UserFactory()
+    user2 = UserFactory()
+
+    # Setup private dataset with model and property (same as other tests)
+    dataset = DatasetFactory(organization=OrganizationFactory(), access_rights=Dataset.NON_PUBLIC)
+    RepresentativeFactory(user=user2, content_type=ContentType.objects.get_for_model(dataset), object_id=dataset.pk)
+
+    model = ModelFactory(dataset=dataset)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+    )
+
+    prop = PropertyFactory(model=model)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="string",
+        title="Test prop",
+    )
+
+    ct = ContentType.objects.get_for_model(prop)
+
+    # User1 tries to comment on the property
+    app.set_user(user1)
+    resp = app.post(
+        reverse("comment", args=[ct.pk, prop.pk]),
+        {"is_public": True, "body": "IDOR test"},
+        expect_errors=True
+    )
+
+    assert resp.status_code == 403
+    assert Comment.objects.filter(object_id=prop.pk).count() == 0
+
+@pytest.mark.django_db
+def test_comment_on_unapproved_project(app: DjangoTestApp):
+    user1 = UserFactory()
+    user2 = UserFactory()
+
+    project = ProjectFactory(is_public=True, user=user2, status=Project.CREATED)
+
+    ct = ContentType.objects.get_for_model(project)
+
+    app.set_user(user1)
+    resp = app.post(
+        reverse("comment", args=[ct.pk, project.pk]),
+        {"is_public": True, "body": "Test"},
+        expect_errors=True
+    )
+
+    assert resp.status_code == 403

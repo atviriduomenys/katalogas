@@ -1,6 +1,6 @@
 import itertools
-import json
 import secrets
+import json
 import uuid
 from datetime import datetime, date
 from functools import cached_property
@@ -32,6 +32,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
+from haystack.backends import SQ
 from haystack.generic_views import FacetedSearchView
 from haystack.query import SearchQuerySet
 from itsdangerous import URLSafeSerializer
@@ -85,8 +86,8 @@ from vitrina.datasets.services import (
     has_remove_from_request_perm,
     get_values_for_frequency,
     get_query_for_frequency,
-    manage_subscriptions_for_representative,
     DynamicResourceService,
+    manage_subscriptions_for_representative,
 )
 from vitrina.datasets.models import (
     Dataset,
@@ -204,11 +205,25 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             queryset = queryset.facet(field, **options)
 
         if is_manager_dataset_list(self.request):
+            # Get dataset IDs where user is a direct representative
+            dataset_ids = [
+                rep.object_id
+                for rep in self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
+            ]
+
+            # Get organization IDs where user is a representative
             org_ids = [
                 rep.object_id
                 for rep in self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
             ]
-            queryset = queryset.filter(organization__in=org_ids)
+
+            query = SQ()
+            for dataset_id in dataset_ids:
+                query |= SQ(id=dataset_id)
+            for org_id in org_ids:
+                query |= SQ(organization=org_id)
+
+            queryset = queryset.filter(query)
 
         if is_org_dataset_list(self.request):
             queryset = queryset.filter(organization=self.organization.pk)
@@ -1633,9 +1648,6 @@ class CreateMemberView(
             self.object.user = user
             self.object.save()
 
-            if not user.organization:
-                user.organization = self.dataset.organization
-                user.save()
             link = "%s%s" % (
                 get_current_domain(self.request),
                 reverse("dataset-detail", kwargs={"pk": self.object.object_id}),
@@ -1800,10 +1812,6 @@ class UpdateMemberView(
 
     def form_valid(self, form):
         self.object: Representative = form.save()
-
-        if self.object.user and not self.object.user.organization:
-            self.object.user.organization = self.dataset.organization
-            self.object.user.save()
 
         self.dataset.save()
         link = "%s%s" % (

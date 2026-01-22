@@ -513,3 +513,10 @@ class DynamicResourceService:
             "period_end": self.uapi_distribution.period_end if self.uapi_distribution else None,
             "geo_location": self.uapi_distribution.geo_location if self.uapi_distribution else None,
         }
+
+
+class RepresentativeCreationError(Exception):
+    def __init__(self, field, message):
+        self.field = field
+        self.message = message
+        super().__init__(field, message)

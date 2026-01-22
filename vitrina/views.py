@@ -268,7 +268,7 @@ class HistoryMixin:
             )
         else:
             return reverse(
-                "dataset-history",
+                "dataset-structure-history-no-version",
                 kwargs={
                     "pk": obj.pk,
                 },

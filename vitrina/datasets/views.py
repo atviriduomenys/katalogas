@@ -1509,11 +1509,6 @@ class DatasetStructureImportView(
             self.dataset,
         )
 
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            return redirect(settings.LOGIN_URL)
-        return redirect(self.dataset)
-
     def get_context_data(self, **kwargs):
         return {
             **super().get_context_data(**kwargs),

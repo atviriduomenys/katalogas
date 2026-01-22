@@ -51,13 +51,7 @@ class TestSmartContractForm:
     def test_generates_no_scope_choices_if_dataset_metadata_has_empty_name(
         self, organization: Organization
     ) -> None:
-        dataset = DatasetFactory(organization=organization)
-        MetadataFactory(
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            dataset=dataset,
-            name="",
-        )
+        dataset = DatasetFactory(organization=organization, metadata="")
         form = SmartContractForm(
             instance=organization,
             dataset_metadata_by_organization={

@@ -1,8 +1,8 @@
 import factory
 import uuid
+
 from factory.django import DjangoModelFactory
 
-from vitrina.datasets.factories import DatasetFactory
 from vitrina.structure import VersionStatus
 from vitrina.structure.models import (
     Model,
@@ -22,7 +22,7 @@ class VersionFactory(DjangoModelFactory):
     class Meta:
         model = Version
 
-    dataset = factory.SubFactory(DatasetFactory)
+    dataset = factory.SubFactory("vitrina.datasets.factories.DatasetFactory")
     status = VersionStatus.DRAFT
     version = factory.Sequence(lambda n: n + 1)
 
@@ -31,8 +31,8 @@ class MetadataFactory(DjangoModelFactory):
     class Meta:
         model = Metadata
 
-    uuid = str(uuid.uuid4())
-    dataset = factory.SelfAttribute("metadata_version.dataset")
+    uuid = factory.LazyFunction(uuid.uuid4)
+    dataset = factory.SubFactory("vitrina.datasets.factories.DatasetFactory")
     name = factory.Faker("word")
     title = factory.Faker("catch_phrase")
     description = factory.Faker("catch_phrase")
@@ -40,7 +40,7 @@ class MetadataFactory(DjangoModelFactory):
     access = Metadata.OPEN
     visibility = Metadata.UNDEFINED
 
-    metadata_version = factory.SubFactory(VersionFactory)
+    metadata_version = factory.SubFactory(VersionFactory, dataset=factory.SelfAttribute("..dataset"))
     type = ""
     ref = ""
     source = ""

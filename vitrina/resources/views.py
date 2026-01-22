@@ -279,14 +279,14 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
                 dataset.status = Dataset.INVENTORED
                 comment_status = Comment.INVENTORED
 
-                Comment.objects.create(
-                    content_type=ContentType.objects.get_for_model(dataset),
-                    object_id=dataset.pk,
-                    type=Comment.STATUS,
-                    status=comment_status,
-                    user=self.request.user,
-                )
-                dataset.save()
+            Comment.objects.create(
+                content_type=ContentType.objects.get_for_model(dataset),
+                object_id=dataset.pk,
+                type=Comment.STATUS,
+                status=comment_status,
+                user=self.request.user,
+            )
+            dataset.save()
 
         if version_id := self.kwargs.get("version_id"):
             url = reverse("dataset-detail", kwargs={"pk": dataset.pk})

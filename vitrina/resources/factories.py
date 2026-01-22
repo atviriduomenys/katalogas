@@ -16,7 +16,6 @@ from vitrina.resources.models import (
     CompressionFormat,
     PackagingFormat,
 )
-from vitrina.structure.factories import VersionFactory
 
 
 class FileFormat(DjangoModelFactory):
@@ -76,7 +75,7 @@ class DatasetDistributionFactory(DjangoModelFactory):
             },
         )[0]
     )
-    metadata_version = factory.SubFactory(VersionFactory, dataset=factory.SelfAttribute("..dataset"))
+    name = factory.Sequence(lambda n: f"resource{n + 1}")
 
     class Params:
         uapi_format = factory.Trait(

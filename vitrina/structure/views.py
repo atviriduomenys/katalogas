@@ -2885,8 +2885,6 @@ class ParamCreateView(PermissionRequiredMixin, CreateView):
             name=form.cleaned_data.get("name"),
         )
         param_item = ParamItem.objects.create(param=param)
-        draft_version, created = _Version.objects.get_or_create(dataset=self.dataset, status=VersionStatus.DRAFT)
-        self.object.metadata_version = draft_version
         self.object.object = param_item
         self.object.dataset = self.dataset
         self.object.uuid = str(uuid.uuid4())

@@ -33,6 +33,7 @@ from vitrina.structure.models import Metadata, Enum, EnumItem, Param, VersionTyp
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
+from vitrina.utils import RevisionComment, RevisionSource
 
 
 @pytest.mark.django_db
@@ -407,9 +408,9 @@ def test_structure_tab_from_dataset_detail(app: DjangoTestApp):
         metadata_version=version,
     )
 
-    resp = app.get(dataset.get_absolute_url())
-    resp = resp.click(linkid='structure_tab')
-    assert resp.request.path == reverse('dataset-structure-no-version', args=[dataset.pk]) # By default takes to no version page
+    resp = app.get(dataset.get_absolute_url()).follow()
+    resp = resp.click(linkid='structure_tab').follow()
+    assert resp.request.path == reverse('dataset-structure', args=[dataset.pk, version.pk])
 
 
 @pytest.mark.django_db
@@ -744,6 +745,7 @@ def test_private_model_with_access(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=structure.dataset.pk,
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(representative.user)
 
@@ -1918,9 +1920,9 @@ def test_model_create(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     PrefixFactory(name="dcat", metadata_version=version)
 
     MetadataFactory(
@@ -1929,13 +1931,6 @@ def test_model_create(app: DjangoTestApp):
         dataset=dataset,
         name="test/dataset/TestModel",
         uri="dcat:TestModel",
-        metadata_version=version
-    )
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
         metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version)
@@ -1948,7 +1943,16 @@ def test_model_create(app: DjangoTestApp):
         metadata_version=version
     )
 
-    form = app.get(reverse('model-create', args=[dataset.pk, version.pk])).forms['model-form']
+    url = reverse('model-create', args=[dataset.pk, version.pk])
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="model-create",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs={"pk": dataset.pk, "version_id": version.pk}
+    )
+    form = app.get(url).forms['model-form']
     form['name'] = "Model"
     form['uri'] = 'dcat:model'
     form['source'] = "MODEL"
@@ -1960,6 +1964,7 @@ def test_model_create(app: DjangoTestApp):
     form['base_ref'].force_value([prop.pk])
     form['comment'] = 'Added Model'
     resp = form.submit()
+
     new_model = dataset.model_set.exclude(pk=model.pk).first()
     assert resp.url == new_model.get_absolute_url()
     assert new_model.metadata.count() == 1
@@ -1982,8 +1987,9 @@ def test_model_create(app: DjangoTestApp):
     assert new_model.base.metadata.first().metadata_version == version
 
     assert Version.objects.get_for_object(new_model).count() == 1
-    assert Version.objects.get_for_object(new_model).first().revision.comment == 'Sukurtas "Model" modelis. Added Model'
-    assert Version.objects.get_for_object(new_model).first().revision.user == user
+    version = (Version.objects.get_for_object(new_model).select_related("revision").first())
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == user
 
 
 @pytest.mark.django_db
@@ -1991,9 +1997,9 @@ def test_model_update(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     PrefixFactory(name="dcat", metadata_version=version)
 
     MetadataFactory(
@@ -2038,8 +2044,17 @@ def test_model_update(app: DjangoTestApp):
         name="test/dataset/BaseModel",
         metadata_version = version
     )
-
-    form = app.get(reverse('model-update', args=[dataset.pk, version.pk, model.name])).forms['model-form']
+    kwargs_dict = {"pk": dataset.pk, "version_id":  version.pk, "model": model.name}
+    url = reverse('model-update', kwargs=kwargs_dict)
+    revision_comment = RevisionComment(
+        source=RevisionSource.VIEW,
+        action="model-update",
+        http_method="POST",
+        path=url,
+        args=(),
+        kwargs=kwargs_dict
+    )
+    form = app.get(url).forms['model-form']
     form['name'] = "UpdatedModel"
     form['prepare'] = "sort(prop1)"
     form['ref'].force_value([prop2.pk, prop1.pk])
@@ -2058,20 +2073,27 @@ def test_model_update(app: DjangoTestApp):
     assert model.base.metadata.first().ref == ''
 
     assert Version.objects.get_for_object(model).count() == 1
-    assert Version.objects.get_for_object(model).first().revision.comment == \
-           'Redaguotas "UpdatedModel" modelis. Updated Model'
-    assert Version.objects.get_for_object(model).first().revision.user == user
+    version = Version.objects.get_for_object(model).select_related("revision").first()
+    assert version.revision.comment == revision_comment.to_json()
+    assert version.revision.user == user
 
 
 @pytest.mark.django_db
-def test_param_create_for_resource(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+)
+def test_param_create_for_resource(app: DjangoTestApp, role: str):
     distribution = DatasetDistributionFactory(is_parameterized=True)
     dataset = distribution.dataset
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(representative.user)
 
@@ -2095,26 +2117,27 @@ def test_param_create_for_resource(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_create_for_model(app: DjangoTestApp):
-    model = ModelFactory(is_parameterized=True)
-    dataset = model.dataset
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_param_create_for_model(app: DjangoTestApp, role: str):
+    dataset = DatasetFactory()
+    model = ModelFactory(dataset=dataset, is_parameterized=True)
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
     )
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset"
-    )
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(representative.user)
 
@@ -2140,14 +2163,21 @@ def test_param_create_for_model(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_update(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_COORDINATOR,
+        ],
+    )
+def test_param_update(app: DjangoTestApp, role: str):
     distribution = DatasetDistributionFactory(is_parameterized=True)
     dataset = distribution.dataset
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role,
     )
     app.set_user(representative.user)
     ct = ContentType.objects.get_for_model(distribution)
@@ -2175,14 +2205,21 @@ def test_param_update(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_param_delete(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_param_delete(app: DjangoTestApp, role: str):
     distribution = DatasetDistributionFactory(is_parameterized=True)
     dataset = distribution.dataset
     ct = ContentType.objects.get_for_model(dataset)
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=dataset.pk,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(representative.user)
     ct = ContentType.objects.get_for_model(distribution)
@@ -2263,9 +2300,10 @@ def test_new_version_with_released_date_earlier_than_last_version(app: DjangoTes
 def test_new_version_with_new_structure(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -2273,13 +2311,7 @@ def test_new_version_with_new_structure(app: DjangoTestApp):
         name="test/dataset/TestModel",
         metadata_version=version
     )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
+
     prop = PropertyFactory(model=model, metadata_version=version)
     prop_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(prop),
@@ -2297,7 +2329,7 @@ def test_new_version_with_new_structure(app: DjangoTestApp):
     form['description'] = "Add new structure to version"
     form.submit()
 
-    assert _Version.objects.count() == 2
+    assert _Version.objects.filter(dataset=dataset).count() == 2
     assert _Version.objects.exclude(status=VersionStatus.DRAFT).first().dataset == dataset
     assert len(list(_Version.objects.exclude(status=VersionStatus.DRAFT).first().metadata_set.values_list(
         'pk', flat=True
@@ -2308,21 +2340,15 @@ def test_new_version_with_new_structure(app: DjangoTestApp):
 def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
         metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version)
@@ -2373,21 +2399,15 @@ def test_new_version_with_updated_structure__dataset_name(app: DjangoTestApp):
 def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
         metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version)
@@ -2437,21 +2457,15 @@ def test_new_version_with_updated_structure__model_name(app: DjangoTestApp):
 def test_new_version_with_updated_structure__property_name(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
         metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version)
@@ -2505,22 +2519,16 @@ def test_new_version_with_updated_structure__property_name(app: DjangoTestApp):
 def test_new_version_with_updated_structure__model_base(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
+        metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version)
     prop_meta = MetadataFactory(
@@ -2592,22 +2600,16 @@ def test_new_version_with_updated_structure__model_base(app: DjangoTestApp):
 def test_new_version_with_updated_structure__model_ref(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
+        metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
@@ -2655,22 +2657,16 @@ def test_new_version_with_updated_structure__model_ref(app: DjangoTestApp):
 def test_new_version_with_updated_structure__property_type(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
+        metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
@@ -2722,22 +2718,16 @@ def test_new_version_with_updated_structure__property_type(app: DjangoTestApp):
 def test_new_version_with_updated_structure__property_ref(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
+        metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
@@ -2788,22 +2778,16 @@ def test_new_version_with_updated_structure__property_ref(app: DjangoTestApp):
 def test_new_version_with_updated_structure__model_level(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
         level_given=3,
-        metadata_version=version,
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
         metadata_version=version,
     )
     prop = PropertyFactory(model=model, metadata_version=version,)
@@ -2852,22 +2836,16 @@ def test_new_version_with_updated_structure__model_level(app: DjangoTestApp):
 def test_new_version_with_updated_structure__property_level(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
+        metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version, )
     prop_meta = MetadataFactory(
@@ -2920,22 +2898,16 @@ def test_new_version_with_updated_structure__property_level(app: DjangoTestApp):
 def test_new_version_with_updated_structure__property_access(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
+        metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version, )
     prop_meta = MetadataFactory(
@@ -2988,22 +2960,16 @@ def test_new_version_with_updated_structure__property_access(app: DjangoTestApp)
 def test_new_version_with_updated_structure__enum_prepare(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
+        metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
@@ -3071,22 +3037,16 @@ def test_new_version_with_updated_structure__enum_prepare(app: DjangoTestApp):
 def test_new_version_with_updated_structure__enum_source(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_meta = dataset.metadata.first()
+    version = dataset.metadata.first().metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
+        metadata_version=version
     )
     prop = PropertyFactory(model=model, metadata_version=version,)
     prop_meta = MetadataFactory(
@@ -3155,22 +3115,31 @@ def test_structure_tab_with_non_public_dataset_without_access(app: DjangoTestApp
     dataset = DatasetFactory(is_public=False)
     user = UserFactory()
     app.set_user(user)
-    response = app.get(reverse('dataset-structure-no-version', args=[dataset.pk]), expect_errors=True)
+    response = app.get(
+        reverse('dataset-structure-no-version', args=[dataset.pk])
+    ).follow(expect_errors=True)
     assert response.status_code == 403
 
 
 @pytest.mark.django_db
-def test_structure_tab_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_structure_tab_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     user = UserFactory()
     RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER,
+        role=role,
     )
     app.set_user(user)
-    response = app.get(reverse('dataset-structure-no-version', args=[dataset.pk]))
+    response = app.get(reverse('dataset-structure-no-version', args=[dataset.pk])).follow()
     assert response.context['dataset'] == dataset
 
 
@@ -3185,7 +3154,14 @@ def test_version_list_with_non_public_dataset_without_access(app: DjangoTestApp)
 
 
 @pytest.mark.django_db
-def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     user = UserFactory()
@@ -3193,7 +3169,7 @@ def test_version_list_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('version-list', args=[dataset.pk]))
@@ -3211,7 +3187,14 @@ def test_version_detail_with_non_public_dataset_without_access(app: DjangoTestAp
 
 
 @pytest.mark.django_db
-def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     user = UserFactory()
@@ -3219,7 +3202,7 @@ def test_version_detail_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('version-detail', args=[dataset.pk, version.pk]))
@@ -3261,7 +3244,14 @@ def test_model_structure_with_non_public_dataset_without_access(app: DjangoTestA
 
 
 @pytest.mark.django_db
-def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3293,7 +3283,7 @@ def test_model_structure_with_non_public_dataset_with_access(app: DjangoTestApp)
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('model-structure', args=[dataset.pk, version.pk, model.name]))
@@ -3335,7 +3325,14 @@ def test_property_structure_with_non_public_dataset_without_access(app: DjangoTe
 
 
 @pytest.mark.django_db
-def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3367,7 +3364,7 @@ def test_property_structure_with_non_public_dataset_with_access(app: DjangoTestA
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('property-structure', args=[dataset.pk, version.pk, model.name, prop.name]))
@@ -3409,7 +3406,14 @@ def test_model_data_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3441,7 +3445,7 @@ def test_model_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('model-data', args=[dataset.pk, version.pk, model.name]))
@@ -3483,7 +3487,14 @@ def test_object_data_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3515,7 +3526,7 @@ def test_object_data_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('object-data', args=[dataset.pk, version.pk, model.name, "123456789"]))
@@ -3557,7 +3568,14 @@ def test_api_with_non_public_dataset_without_access(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
+@pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+def test_api_with_non_public_dataset_with_access(app: DjangoTestApp, role: str):
     dataset = DatasetFactory(is_public=False)
     version = VersionFactory(dataset=dataset)
     model = ModelFactory(dataset=dataset, metadata_version=version)
@@ -3589,7 +3607,7 @@ def test_api_with_non_public_dataset_with_access(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(dataset),
         object_id=dataset.pk,
         user=user,
-        role=Representative.MANAGER
+        role=role
     )
     app.set_user(user)
     response = app.get(reverse('getall-api', args=[dataset.pk, version.pk, model.name]))
@@ -3752,7 +3770,7 @@ def test_model_visibility_with_manager_access(app: DjangoTestApp):
     representative = RepresentativeFactory(
         content_type=ct,
         object_id=structure.dataset.pk,
-        role=Representative.MANAGER
+        role=Representative.RESOURCE_MANAGER
     )
     app.set_user(representative.user)
 
@@ -3880,8 +3898,7 @@ def test_model_visibility_with_open_data_representative_access(app: DjangoTestAp
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(structure.dataset.organization),
         object_id=structure.dataset.organization.pk,
-        role=Representative.MANAGER,
-        open_data_representative=True
+        role=Representative.OPEN_DATA_MANAGER,
     )
     app.set_user(representative.user)
 
@@ -4008,8 +4025,7 @@ def test_model_visibility_with_information_system_representative_access(app: Dja
     representative = RepresentativeFactory(
         content_type=ContentType.objects.get_for_model(structure.dataset.organization),
         object_id=structure.dataset.organization.pk,
-        role=Representative.MANAGER,
-        information_system_representative=True
+        role=Representative.RESOURCE_MANAGER,
     )
     app.set_user(representative.user)
 
@@ -4250,10 +4266,11 @@ def test_property_enum_create_with_in_released_version(app: DjangoTestApp):
         type="integer",
         metadata_version=version
     )
-    form = app.get(
-        reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])
-    ,expect_errors=True)
-    assert form.status_code == 404
+    resp = app.get(
+        reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name]),
+    )
+    assert resp.status_code == 302
+    assert resp.location == prop.get_absolute_url()
 
 @pytest.mark.django_db
 def test_property_enum_item_create__higher_visibility_then_model_with_error(app: DjangoTestApp):
@@ -4321,7 +4338,7 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure)
+    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     ct = ContentType.objects.get_for_model(structure.dataset)
     representative = RepresentativeFactory(
@@ -4364,6 +4381,47 @@ def test_manifest_export_openapi(app: DjangoTestApp):
         f"Paths mismatch. Missing: {expected_paths - actual_paths}, "
         f"Extra: {actual_paths - expected_paths}"
     )
+
+
+@pytest.mark.django_db
+def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
+    """Test OpenAPI manifest export returns valid spec with correct metadata, schemas, tags, and paths."""
+    manifest = (
+        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n'
+        ',,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n'
+        ',datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
+        ',,rc_wsdl,,,,wsdl,,https://test-data.data.gov.lt/api/v1/rc/get-data/?wsdl,,,,,,,,,,\n'
+        ',,get_data,,,,soap,,Get.GetPort.GetPort.GetData,wsdl(rc_wsdl),,,,,,,,,\n'
+        ',,,,,,param,action_type,input/ActionType,,,,,,,,,,\n'
+        ',,,,Country,,,,,,,,,,,,,,\n'
+        ',,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n'
+        ',,,,,title,string,,,,5,,,private,dct:title,,,,\n'
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(
+            file=FileField(filename='file.csv', data=manifest)
+        )
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+    resp = app.get(reverse('dataset-structure-export-openapi', args=[structure.dataset.pk]))
+
+    assert resp.status_code == 200
+    assert resp.content_type == 'application/json'
+
+    openapi_spec = resp.json
+
+    expected_keys = ['openapi', 'info', 'externalDocs', 'servers', 'tags', 'components', 'paths']
+    assert list(openapi_spec.keys()) == expected_keys, "OpenAPI spec missing required top-level fields"
+
 
 @pytest.mark.django_db
 def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
@@ -4768,10 +4826,10 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
 
     resp_props = app.get(reverse("property-structure", args=[structure.dataset.pk, version.pk, "Country", "administration"]))
     prop = resp_props.context["prop"]
+    # TODO the status of enum should also be completed but because of a bug the name of the enum is changed even though nothing is submited. Change after bug fix
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
         assert enum_metadata.status.codename == "develop"
-
 
 @pytest.mark.django_db
 def test_props_metadata_rendering(app: DjangoTestApp) -> None:
@@ -5110,7 +5168,7 @@ def test_publish_form_shows_all_metadata_rows_params(app: DjangoTestApp):
     version = create_structure_objects(structure)
 
     form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
-    assert len(form.fields["metadata"]) == 11 # 10 fields from DSA + 1 for dataset_distribution
+    assert len(form.fields["metadata"]) == 10
 
 
 def test_publish_form_shows_all_metadata_rows_base(app: DjangoTestApp):
@@ -5139,7 +5197,7 @@ def test_publish_form_shows_all_metadata_rows_base(app: DjangoTestApp):
     version = create_structure_objects(structure)
 
     form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
-    assert len(form.fields["metadata"]) == 10 # 9 fields from DSA, because Base as City Base is not displayed + 1 for dataset_distribution
+    assert len(form.fields["metadata"]) == 9
 
 
 def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
@@ -5169,7 +5227,7 @@ def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
     version = create_structure_objects(structure)
 
     form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
-    assert len(form.fields["metadata"]) == 12 # 11 DSA rows + 1 dataset_distribution
+    assert len(form.fields["metadata"]) == 11
 
 
 def test_publish_form_shows_all_metadata_rows_single_defined_resource(app: DjangoTestApp):
@@ -5270,19 +5328,15 @@ def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
 def test_publishing_dataset_duplicates_metadata_but_not_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    dataset = version.dataset
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    original_metadata_count = 1
+    origin_version_count = 1
 
-    assert Metadata.objects.count() == 1
-    assert Dataset.objects.count() - 1 == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Dataset.objects.count() == 2 # One Dataset created through a migration
+    assert _Version.objects.filter(dataset=dataset).count() == origin_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5290,16 +5344,16 @@ def test_publishing_dataset_duplicates_metadata_but_not_dataset(app: DjangoTestA
     form['metadata'] = dataset_meta.pk
     form.submit()
 
-    assert Metadata.objects.count() == 2
-    assert Dataset.objects.count() - 1 == 1
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count * 2
+    assert Dataset.objects.count() == 2 # One Dataset created through a migration
+    assert _Version.objects.filter(dataset=dataset).count() == origin_version_count * 2
 
 
 def test_if_dataset_not_published_error(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
     model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(Model),
@@ -5308,9 +5362,9 @@ def test_if_dataset_not_published_error(app: DjangoTestApp):
         name="test/dataset",
         metadata_version=version
     )
-    assert Metadata.objects.count() == 1
-    assert Dataset.objects.count() - 1 == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == 2
+    assert Dataset.objects.count() == 2 # One Dataset created through a migration
+    assert _Version.objects.filter(dataset=dataset).count() == 1
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5326,9 +5380,10 @@ def test_if_dataset_not_published_error(app: DjangoTestApp):
 def test_publishing_model_duplicates_metadata_and_model(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5336,17 +5391,14 @@ def test_publishing_model_duplicates_metadata_and_model(app: DjangoTestApp):
         name="test/dataset/TestModel",
         metadata_version=version
     )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
 
-    assert Metadata.objects.count() == 2
-    assert Model.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 2
+    original_model_count = 1
+    original_version_count = 1
+
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5354,18 +5406,19 @@ def test_publishing_model_duplicates_metadata_and_model(app: DjangoTestApp):
     form['metadata'] = [dataset_meta.pk, model_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count * 2
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count * 2
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count * 2
 
 
 def test_publishing_model_duplicates_metadata_and_dataset_distribution(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    distribution = DatasetDistributionFactory(is_parameterized=True, metadata_version=version)
-    model = ModelFactory(dataset=version.dataset, metadata_version=version, distribution=distribution)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    distribution = DatasetDistributionFactory(dataset=dataset, is_parameterized=True)
+    model = ModelFactory(dataset=dataset, metadata_version=version, distribution=distribution)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5373,45 +5426,38 @@ def test_publishing_model_duplicates_metadata_and_dataset_distribution(app: Djan
         name="test/dataset/TestModel",
         metadata_version=version
     )
-    distribution_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(distribution),
-        object_id=distribution.pk,
-        dataset=dataset,
-        name="test/dataset/TestDistribution",
-        metadata_version=version
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
 
-    assert Metadata.objects.count() == 3
-    assert Model.objects.count() == 1
-    assert DatasetDistribution.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 3
+    original_model_count = 1
+    original_distribution_count = 1
+    original_version_count = 1
+
+    distribution_meta = distribution.metadata.first()
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count
+    assert DatasetDistribution.objects.filter(dataset=dataset).count() == original_distribution_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
     form['version_type'] = "MAJOR"
     form['metadata'] = [dataset_meta.pk, distribution_meta.pk, model_meta.pk]
-    response = form.submit()
+    form.submit()
 
-    assert Metadata.objects.count() == 6
-    assert Model.objects.count() == 2
-    assert DatasetDistribution.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count * 2
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count * 2
+    assert DatasetDistribution.objects.filter(dataset=dataset).count() == original_distribution_count * 2
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count * 2
 
 
 def test_publishing_model_without_resource_error(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    distribution = DatasetDistributionFactory(is_parameterized=True, metadata_version=version)
-    model = ModelFactory(dataset=version.dataset, metadata_version=version, distribution=distribution)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    distribution = DatasetDistributionFactory(dataset=dataset, is_parameterized=True, metadata_version=version)
+    model = ModelFactory(dataset=dataset, metadata_version=version, distribution=distribution)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5419,25 +5465,17 @@ def test_publishing_model_without_resource_error(app: DjangoTestApp):
         name="test/dataset/TestModel",
         metadata_version=version
     )
-    distribution_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(distribution),
-        object_id=distribution.pk,
-        dataset=dataset,
-        name="test/dataset/TestDistribution",
-        metadata_version=version
-    )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
+    distribution_meta = distribution.metadata.first()
 
-    assert Metadata.objects.count() == 3
-    assert Model.objects.count() == 1
-    assert DatasetDistribution.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 3
+    original_model_count = 1
+    original_distribution_count = 1
+    original_version_count = 1
+
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count
+    assert DatasetDistribution.objects.filter(dataset=dataset).count() == original_distribution_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5449,18 +5487,19 @@ def test_publishing_model_without_resource_error(app: DjangoTestApp):
     assert response.context['form'].errors
     assert "laukas TestModel turi nuorodą į jį" in response.context['form'].errors['__all__'][0]
 
-    assert Metadata.objects.count() == 3
-    assert Model.objects.count() == 1
-    assert DatasetDistribution.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count
+    assert DatasetDistribution.objects.filter(dataset=dataset).count() == original_distribution_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
 
 def test_publishing_property_duplicates_metadata_and_property(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5477,17 +5516,14 @@ def test_publishing_property_duplicates_metadata_and_property(app: DjangoTestApp
         type='string',
         metadata_version=version
     )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
 
-    assert Metadata.objects.count() == 3
-    assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 3
+    original_property_count = 1
+    original_version_count = 1
+
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Property.objects.count() == original_property_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5495,17 +5531,18 @@ def test_publishing_property_duplicates_metadata_and_property(app: DjangoTestApp
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 6
-    assert Property.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count * 2
+    assert Property.objects.count() == original_property_count * 2
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count * 2
 
 
 def test_publishing_property_without_model_error(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5522,17 +5559,14 @@ def test_publishing_property_without_model_error(app: DjangoTestApp):
         type='string',
         metadata_version=version
     )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
 
-    assert Metadata.objects.count() == 3
-    assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 3
+    original_property_count = 1
+    original_version_count = 1
+
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Property.objects.count() == original_property_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5544,17 +5578,18 @@ def test_publishing_property_without_model_error(app: DjangoTestApp):
     assert response.context['form'].errors
     assert "laukas prop turi nuorodą į jį" in response.context['form'].errors['__all__'][0]
 
-    assert Metadata.objects.count() == 3
-    assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Property.objects.count() == original_property_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
 
 def test_publishing_enum_duplicates_enum_item_and_enum(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5589,18 +5624,16 @@ def test_publishing_enum_duplicates_enum_item_and_enum(app: DjangoTestApp):
         source="TEST",
         metadata_version=version,
     )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
 
-    assert Metadata.objects.count() == 4
-    assert EnumItem.objects.count() == 1
-    assert Enum.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 4
+    original_enum_item_count = 1
+    original_enum_count = 1
+    original_version_count = 1
+
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert EnumItem.objects.count() == original_enum_item_count
+    assert Enum.objects.count() == original_enum_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5608,18 +5641,19 @@ def test_publishing_enum_duplicates_enum_item_and_enum(app: DjangoTestApp):
     form['metadata'] = [dataset_meta.pk, model_meta.pk, prop_meta.pk, enum_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 8
-    assert EnumItem.objects.count() == 2
-    assert Enum.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count * 2
+    assert EnumItem.objects.count() == original_enum_item_count * 2
+    assert Enum.objects.count() == original_enum_count * 2
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count * 2
 
 
 def test_publishing_enum_without_property_error(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5654,18 +5688,16 @@ def test_publishing_enum_without_property_error(app: DjangoTestApp):
         source="TEST",
         metadata_version=version,
     )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
 
-    assert Metadata.objects.count() == 4
-    assert EnumItem.objects.count() == 1
-    assert Enum.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 4
+    original_enum_item_count = 1
+    original_enum_count = 1
+    original_version_count = 1
+
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert EnumItem.objects.count() == original_enum_item_count
+    assert Enum.objects.count() == original_enum_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5677,19 +5709,20 @@ def test_publishing_enum_without_property_error(app: DjangoTestApp):
     assert response.context['form'].errors
     assert response.context['form'].errors['__all__'][0] == "Laukas 1 turi nuorodą į nepublikuojamą lauką tame pačiame duomenų ištekliuje."
 
-    assert Metadata.objects.count() == 4
-    assert EnumItem.objects.count() == 1
-    assert Enum.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert EnumItem.objects.count() == original_enum_item_count
+    assert Enum.objects.count() == original_enum_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
 
 def test_publishing_model_with_base_duplicates_model_and_base(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5714,21 +5747,19 @@ def test_publishing_model_with_base_duplicates_model_and_base(app: DjangoTestApp
         name="test/dataset/BaseModel",
         metadata_version=version,
     )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
 
     model.base = base
     model.save()
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
-    assert Base.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 4
+    original_model_count = 2
+    original_base_count = 1
+    original_version_count = 1
+
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count
+    assert Base.objects.count() == original_base_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5736,19 +5767,20 @@ def test_publishing_model_with_base_duplicates_model_and_base(app: DjangoTestApp
     form['metadata'] = [dataset_meta.pk, base_model_meta.pk, model_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 8
-    assert Model.objects.count() == 4
-    assert Base.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count * 2
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count * 2
+    assert Base.objects.count() == original_base_count * 2
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count * 2
 
 
 def test_publishing_model_with_without_base_error(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    model = ModelFactory(dataset=dataset, metadata_version=version)
     model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(model),
         object_id=model.pk,
@@ -5773,21 +5805,19 @@ def test_publishing_model_with_without_base_error(app: DjangoTestApp):
         name="test/dataset/BaseModel",
         metadata_version=version,
     )
-    dataset_meta = MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version
-    )
 
     model.base = base
     model.save()
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
-    assert Base.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 4
+    original_model_count = 2
+    original_base_count = 1
+    original_version_count = 1
+
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count
+    assert Base.objects.count() == original_base_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5799,10 +5829,10 @@ def test_publishing_model_with_without_base_error(app: DjangoTestApp):
     assert response.context['form'].errors
     assert "laukas test/dataset/BaseModel turi nuorodą į jį." in response.context['form'].errors['__all__'][0]
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
-    assert Base.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=dataset).count() == original_metadata_count
+    assert Model.objects.filter(dataset=dataset).count() == original_model_count
+    assert Base.objects.count() == original_base_count
+    assert _Version.objects.filter(dataset=dataset).count() == original_version_count
 
 
 def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
@@ -5823,16 +5853,20 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
-    assert Metadata.objects.count() == 5
-    assert Model.objects.count() == 2
-    assert DatasetDistribution.objects.count() == 1
-    assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    original_metadata_count = 4
+    original_model_count = 2
+    original_property_count = 1
+    original_version_count = 1
+
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == original_metadata_count
+    assert Model.objects.filter(dataset=structure.dataset).count() == original_model_count
+    assert Property.objects.count() == original_property_count
+    assert _Version.objects.filter(dataset=structure.dataset).count() == original_version_count
 
     publish_metadata = list(
-        Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "adp", "datasets/govsssss/ivpk/adp/City", "id"]).values_list('pk', flat=True)
+        Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "datasets/govsssss/ivpk/adp/City", "id"]).values_list('pk', flat=True)
     )
     form = app.get(reverse('version-create', args=[structure.dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5844,11 +5878,10 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
     assert response.context['form'].errors
     assert response.context['form'].errors['__all__'][0] == "Laukas Country privalo būti publikuojamas, nes laukas id turi nuorodą į jį."
 
-    assert Metadata.objects.count() == 5
-    assert Model.objects.count() == 2
-    assert DatasetDistribution.objects.count() == 1
-    assert Property.objects.count() == 1
-    assert _Version.objects.count() == 1
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == original_metadata_count
+    assert Model.objects.filter(dataset=structure.dataset).count() == original_model_count
+    assert Property.objects.count() == original_property_count
+    assert _Version.objects.filter(dataset=structure.dataset).count() == original_version_count
 
 
 def test_publishing_property_with_ref_to_another_property(app: DjangoTestApp):
@@ -5870,16 +5903,15 @@ def test_publishing_property_with_ref_to_another_property(app: DjangoTestApp):
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
-    assert Metadata.objects.count() == 6
-    assert Model.objects.count() == 2
-    assert DatasetDistribution.objects.count() == 1
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 5
+    assert Model.objects.filter(dataset=structure.dataset).count() == 2
     assert Property.objects.count() == 2
-    assert _Version.objects.count() == 1
+    assert _Version.objects.filter(dataset=structure.dataset).count() == 1
 
     publish_metadata = list(
-        Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "adp", "datasets/govsssss/ivpk/adp/City", "datasets/govsssss/ivpk/adp/Country", "country.id"]).values_list('pk', flat=True)
+        Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "datasets/govsssss/ivpk/adp/City", "datasets/govsssss/ivpk/adp/Country", "country.id"]).values_list('pk', flat=True)
     )
     form = app.get(reverse('version-create', args=[structure.dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5908,14 +5940,14 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure)
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 3
+    assert Model.objects.filter(dataset=structure.dataset).count() == 2
     assert Base.objects.count() == 0
 
     publish_metadata = list(
-        Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "adp", "datasets/govsssss/ivpk/adp/City"]).values_list('pk', flat=True)
+        Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "datasets/govsssss/ivpk/adp/City"]).values_list('pk', flat=True)
     )
     form = app.get(reverse('version-create', args=[structure.dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -5923,8 +5955,8 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     form['metadata'] = publish_metadata
     form.submit()
 
-    assert Metadata.objects.count() == 7
-    assert Model.objects.count() == 3
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 5
+    assert Model.objects.filter(dataset=structure.dataset).count() == 3
     assert Base.objects.count() == 0
 
     published_version = _Version.objects.filter(dataset=structure.dataset).order_by("-created").first()
@@ -5934,11 +5966,11 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     form['base'].force_value(str(base_model.pk))
     form.submit()
 
-    assert Metadata.objects.count() == 8
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 6
     assert Base.objects.count() == 1
 
     publish_metadata = list(
-        Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "adp", "datasets/govsssss/ivpk/adp/Country"]).values_list('pk', flat=True)
+        Metadata.objects.filter(dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "datasets/govsssss/ivpk/adp/Country"]).values_list('pk', flat=True)
     )
 
     form = app.get(reverse('version-create', args=[structure.dataset.pk, version.pk])).forms['version-form']
@@ -5950,8 +5982,8 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     published_model = Model.objects.filter(dataset=structure.dataset, metadata_version=published_version).first()
 
     assert base_model.pk == published_model.base.model.pk
-    assert Metadata.objects.count() == 12
-    assert Model.objects.count() == 4
+    assert Metadata.objects.filter(dataset=structure.dataset).count() == 9
+    assert Model.objects.filter(dataset=structure.dataset).count() == 4
     assert Base.objects.count() == 2
 
 
@@ -5959,15 +5991,10 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    first_version = VersionFactory()
-    first_model = ModelFactory(dataset=first_version.dataset, metadata_version=first_version)
-    first_dataset = first_version.dataset
-    first_dataset_meta = MetadataFactory(
-        dataset=first_dataset,
-        metadata_version=first_version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=first_dataset.pk
-    )
+    first_dataset = DatasetFactory()
+    first_version = first_dataset.metadata.first().metadata_version
+    first_dataset_meta = first_dataset.metadata.first()
+    first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
     first_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
         object_id=first_model.pk,
@@ -5976,15 +6003,10 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
         metadata_version=first_version,
     )
 
-    second_version = VersionFactory()
-    second_model = ModelFactory(dataset=second_version.dataset, metadata_version=second_version)
-    second_dataset = second_version.dataset
-    second_dataset_meta = MetadataFactory(
-        dataset=second_dataset,
-        metadata_version=second_version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=second_dataset.pk
-    )
+    second_dataset = DatasetFactory()
+    second_version = second_dataset.metadata.first().metadata_version
+    second_dataset_meta = second_dataset.metadata.first()
+    second_model = ModelFactory(dataset=second_dataset, metadata_version=second_version)
     second_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(second_model),
         object_id=second_model.pk,
@@ -5993,9 +6015,9 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
         metadata_version=second_version,
     )
 
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
     assert Base.objects.count() == 0
 
     form = app.get(reverse('version-create', args=[first_dataset.pk, first_version.pk])).forms['version-form']
@@ -6004,9 +6026,9 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
     form['metadata'] = [first_dataset_meta.pk, first_model_meta.pk]
     form.submit()
 
-    assert Metadata.objects.count() == 6
-    assert Model.objects.count() == 3
-    assert _Version.objects.count() == 3
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 6
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
     assert Base.objects.count() == 0
 
     first_published_version = _Version.objects.filter(dataset=first_dataset).order_by("-created").first()
@@ -6016,9 +6038,9 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
     form['base'].force_value(str(first_published_model.pk))
     form.submit()
 
-    assert Metadata.objects.count() == 7
-    assert Model.objects.count() == 3
-    assert _Version.objects.count() == 3
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 7
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
     assert Base.objects.count() == 1
 
     form = app.get(reverse('version-create', args=[second_dataset.pk, second_version.pk])).forms['version-form']
@@ -6030,24 +6052,19 @@ def test_publishing_model_with_base_from_published_version_different_dataset(app
     published_model_with_base = Model.objects.filter(dataset=second_dataset, metadata_version=published_version).first()
 
     assert first_published_model.pk == published_model_with_base.base.model.pk
-    assert Metadata.objects.count() == 10
-    assert Model.objects.count() == 4
-    assert _Version.objects.count() == 4
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 10
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
     assert Base.objects.count() == 2
 
 
 def test_publishing_model_with_base_from_draft_version_different_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    first_version = VersionFactory()
-    first_model = ModelFactory(dataset=first_version.dataset, metadata_version=first_version)
-    first_dataset = first_version.dataset
-    first_dataset_meta = MetadataFactory(
-        dataset=first_dataset,
-        metadata_version=first_version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=first_dataset.pk
-    )
+    first_dataset = DatasetFactory()
+    first_version = first_dataset.metadata.first().metadata_version
+    first_dataset_meta = first_dataset.metadata.first()
+    first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
     first_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
         object_id=first_model.pk,
@@ -6056,15 +6073,10 @@ def test_publishing_model_with_base_from_draft_version_different_dataset(app: Dj
         metadata_version=first_version,
     )
 
-    second_version = VersionFactory()
-    second_model = ModelFactory(dataset=second_version.dataset, metadata_version=second_version)
-    second_dataset = second_version.dataset
-    second_dataset_meta = MetadataFactory(
-        dataset=second_dataset,
-        metadata_version=second_version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=second_dataset.pk
-    )
+    second_dataset = DatasetFactory()
+    second_version = second_dataset.metadata.first().metadata_version
+    second_dataset_meta = second_dataset.metadata.first()
+    second_model = ModelFactory(dataset=second_dataset, metadata_version=second_version)
     second_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(second_model),
         object_id=second_model.pk,
@@ -6072,9 +6084,10 @@ def test_publishing_model_with_base_from_draft_version_different_dataset(app: Dj
         name="test/dataset/TestModel2",
         metadata_version=second_version,
     )
-    assert Metadata.objects.count() == 4
-    assert Model.objects.count() == 2
-    assert _Version.objects.count() == 2
+
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
     assert Base.objects.count() == 0
 
     form = app.get(reverse('model-update', args=[second_dataset.pk, second_version.pk, "TestModel2"])).forms['model-form']
@@ -6082,9 +6095,9 @@ def test_publishing_model_with_base_from_draft_version_different_dataset(app: Dj
     form.submit()
     second_model.refresh_from_db()
 
-    assert Metadata.objects.count() == 5
-    assert Model.objects.count() == 2
-    assert _Version.objects.count() == 2
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 5
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
+    assert _Version.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
     assert Base.objects.count() == 1
 
     form = app.get(reverse('version-create', args=[second_dataset.pk, second_version.pk])).forms['version-form']
@@ -6101,9 +6114,10 @@ def test_publishing_model_with_base_from_draft_version_different_dataset(app: Dj
 def test_publishing_property_with_published_model_ref_same_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    first_model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
+    first_model = ModelFactory(dataset=dataset, metadata_version=version)
     first_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
         object_id=first_model.pk,
@@ -6111,13 +6125,7 @@ def test_publishing_property_with_published_model_ref_same_dataset(app: DjangoTe
         name="test/dataset/TestModel",
         metadata_version=version,
     )
-    dataset_meta = MetadataFactory(
-        dataset=dataset,
-        metadata_version=version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=dataset.pk
-    )
-    second_model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    second_model = ModelFactory(dataset=dataset, metadata_version=version)
     second_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(second_model),
         object_id=second_model.pk,
@@ -6136,9 +6144,9 @@ def test_publishing_property_with_published_model_ref_same_dataset(app: DjangoTe
         metadata_version=version,
     )
 
-    assert Metadata.objects.count() == 4
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 2
+    assert Model.objects.filter(dataset=dataset).count() == 2
 
     form = app.get(reverse('version-create', args=[dataset.pk, version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -6148,9 +6156,9 @@ def test_publishing_property_with_published_model_ref_same_dataset(app: DjangoTe
     published_version = _Version.objects.filter(dataset=dataset).order_by("-created").first()
     first_published_model = Model.objects.filter(metadata_version=published_version).first()
 
-    assert Metadata.objects.count() == 6
+    assert Metadata.objects.filter(dataset=dataset).count() == 6
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 3
+    assert Model.objects.filter(dataset=dataset).count() == 3
 
     property_form = app.get(reverse('property-update', args=[dataset.pk, version.pk, "TestModel2", "prop2"])).forms['property-form']
     property_form['ref'].force_value(str(first_published_model.pk))
@@ -6167,39 +6175,29 @@ def test_publishing_property_with_published_model_ref_same_dataset(app: DjangoTe
     second_published_property = Property.objects.filter(metadata_version=published_version).first()
 
     assert first_published_model.pk == second_published_property.ref_model_id
-    assert Metadata.objects.count() == 9
+    assert Metadata.objects.filter(dataset=dataset).count() == 9
     assert Property.objects.count() == 2
-    assert Model.objects.count() == 4
+    assert Model.objects.filter(dataset=dataset).count() == 4
 
 
 def test_publishing_property_with_published_model_ref_different_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    first_version = VersionFactory()
-    first_dataset = first_version.dataset
-    first_dataset_meta = MetadataFactory(
-        dataset=first_dataset,
-        metadata_version=first_version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=first_dataset.pk
-    )
+    first_dataset = DatasetFactory()
+    first_version = first_dataset.metadata.first().metadata_version
+    first_dataset_meta = first_dataset.metadata.first()
     first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
     first_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
         object_id=first_model.pk,
         dataset=first_dataset,
-        name="test/dataset/TestModel",
+        name="test/dataset/TestModel1",
         metadata_version=first_version,
     )
 
-    second_version = VersionFactory()
-    second_dataset = second_version.dataset
-    second_dataset_meta = MetadataFactory(
-        dataset=second_dataset,
-        metadata_version=second_version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=second_dataset.pk
-    )
+    second_dataset = DatasetFactory()
+    second_version = second_dataset.metadata.first().metadata_version
+    second_dataset_meta = second_dataset.metadata.first()
     second_model = ModelFactory(dataset=second_dataset, metadata_version=second_version)
     second_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(second_model),
@@ -6219,9 +6217,9 @@ def test_publishing_property_with_published_model_ref_different_dataset(app: Dja
         metadata_version=second_version,
     )
 
-    assert Metadata.objects.count() == 5
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 5
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 2
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
 
     form = app.get(reverse('version-create', args=[first_dataset.pk, first_version.pk])).forms['version-form']
     form['released'] = datetime.date.today() + datetime.timedelta(days=15)
@@ -6231,9 +6229,9 @@ def test_publishing_property_with_published_model_ref_different_dataset(app: Dja
     published_version = _Version.objects.filter(dataset=first_dataset).order_by("-created").first()
     first_published_model = Model.objects.filter(metadata_version=published_version).first()
 
-    assert Metadata.objects.count() == 7
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 7
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 3
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 3
 
     property_form = app.get(reverse('property-update', args=[second_dataset.pk, second_version.pk, "TestModel2", "prop2"])).forms['property-form']
     property_form['ref'].force_value(str(first_published_model.pk))
@@ -6251,22 +6249,17 @@ def test_publishing_property_with_published_model_ref_different_dataset(app: Dja
     second_published_property = Property.objects.filter(metadata_version=published_version).first()
 
     assert first_published_model.pk == second_published_property.ref_model_id
-    assert Metadata.objects.count() == 10
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 10
     assert Property.objects.count() == 2
-    assert Model.objects.count() == 4
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 4
 
 
 def test_publishing_property_with_draft_model_ref_same_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    version = VersionFactory()
-    dataset = version.dataset
-    dataset_meta = MetadataFactory(
-        dataset=dataset,
-        metadata_version=version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=dataset.pk
-    )
+    dataset = DatasetFactory()
+    version = dataset.metadata.first().metadata_version
+    dataset_meta = dataset.metadata.first()
     first_model = ModelFactory(dataset=dataset, metadata_version=version)
     first_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
@@ -6295,9 +6288,9 @@ def test_publishing_property_with_draft_model_ref_same_dataset(app: DjangoTestAp
         metadata_version=version,
     )
 
-    assert Metadata.objects.count() == 4
+    assert Metadata.objects.filter(dataset=dataset).count() == 4
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 2
+    assert Model.objects.filter(dataset=dataset).count() == 2
 
     property_form = app.get(reverse('property-update', args=[dataset.pk, version.pk, "TestModel2", "prop2"])).forms['property-form']
     property_form['ref'].force_value(str(first_model.pk))
@@ -6319,14 +6312,9 @@ def test_publishing_property_with_draft_model_ref_same_dataset(app: DjangoTestAp
 def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
-    first_version = VersionFactory()
-    first_dataset = first_version.dataset
-    first_dataset_meta = MetadataFactory(
-        dataset=first_dataset,
-        metadata_version=first_version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=first_dataset.pk
-    )
+    first_dataset = DatasetFactory()
+    first_version = first_dataset.metadata.first().metadata_version
+    first_dataset_meta = first_dataset.metadata.first()
     first_model = ModelFactory(dataset=first_dataset, metadata_version=first_version)
     first_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(first_model),
@@ -6336,14 +6324,9 @@ def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoT
         metadata_version=first_version,
     )
 
-    second_version = VersionFactory()
-    second_dataset = second_version.dataset
-    second_dataset_meta = MetadataFactory(
-        dataset=second_dataset,
-        metadata_version=second_version,
-        content_type=ContentType.objects.get_for_model(Dataset),
-        object_id=second_dataset.pk
-    )
+    second_dataset = DatasetFactory()
+    second_version = second_dataset.metadata.first().metadata_version
+    second_dataset_meta = second_dataset.metadata.first()
     second_model = ModelFactory(dataset=second_dataset, metadata_version=second_version)
     second_model_meta = MetadataFactory(
         content_type=ContentType.objects.get_for_model(second_model),
@@ -6363,9 +6346,9 @@ def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoT
         metadata_version=second_version,
     )
 
-    assert Metadata.objects.count() == 5
+    assert Metadata.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 5
     assert Property.objects.count() == 1
-    assert Model.objects.count() == 2
+    assert Model.objects.filter(dataset__in=[first_dataset, second_dataset]).count() == 2
 
     property_form = app.get(reverse('property-update', args=[second_dataset.pk, second_version.pk, "TestModel2", "prop2"])).forms['property-form']
     property_form['ref'].force_value(str(first_model.pk))

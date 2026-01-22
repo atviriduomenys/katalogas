@@ -2,7 +2,51 @@ from rest_framework import serializers
 
 from vitrina.api.serializers import DatasetSerializer, DatasetDistributionSerializer, PostDatasetSerializer
 from vitrina.datasets.models import DCATResourceSubclass
-from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin
+from vitrina.structure.models import Version
+from vitrina.uapi.models import Agent
+from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin, BaseUUIDObjectMixin
+
+
+class UAPIAgentSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
+    class Meta:
+        model = Agent
+        fields = (
+            "synchronized_at",
+            "is_last_sync_successful",
+            "title",
+            "codename",
+            "object_type",
+            "is_open_data_published",
+            "open_data_publish_url",
+            "is_enabled",
+            "service",
+            "organization",
+            "oauth_client_id",
+            "environment",
+            "auth_server_url",
+            "api_gate_server_url",
+            "agent_address",
+        ) + BaseObjectMixin.Meta.fields
+
+
+class UAPIVersionSerializer(BaseObjectMixin, serializers.ModelSerializer):
+    dataset_id = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = Version
+        fields = (
+            "dataset_id",
+            "version",
+            "released",
+            "description",
+            "deployed",
+            "status",
+            "version_type",
+            "external_version",
+            "major",
+            "minor",
+            "patch",
+        ) + BaseObjectMixin.Meta.fields
 
 
 class UAPIDatasetSerializer(BaseObjectMixin, DatasetSerializer):
@@ -62,3 +106,7 @@ class DistributionQueryParameterSerializer(serializers.Serializer):
         if "dataset._id" in data:
             data["dataset_id"] = data.get("dataset._id")
         return super().to_internal_value(data)
+
+
+class VersionQueryParameterSerializer(serializers.Serializer):
+    dataset_id = serializers.IntegerField(required=False)

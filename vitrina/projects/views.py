@@ -103,7 +103,6 @@ class ProjectViewBaseMixin:
 
 class ProjectListView(ListView):
     model = Project
-    queryset = Project.public.all()
     template_name = "vitrina/projects/list.html"
     paginate_by = 20
 

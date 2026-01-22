@@ -5069,6 +5069,12 @@ msgstr "Object count"
 msgid "rengiama"
 msgstr "preparing"
 
+msgid "Ištrinti modelį"
+msgstr "Delete model"
+
+msgid "Šis veiksmas negrąžinamas."
+msgstr "This action is irreversible."
+
 msgid "Įkelti duomenis"
 msgstr "Upload data"
 

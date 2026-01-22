@@ -12,9 +12,12 @@ from vitrina.uapi.views.views import (
     DatasetViewSet,
     DistributionViewSet,
     AgentSyncDoneViewSet,
+    VersionViewSet,
+    AgentViewSet,
 )
 
-STATIC_UAPI_BASE_PATH = "uapi/datasets/org/vssa/isris/dcat/"
+
+STATIC_UAPI_BASE_PATH = "uapi/datasets/gov/vssa/ror/dcat/"
 
 
 urlpatterns = [
@@ -54,7 +57,7 @@ urlpatterns = [
         name="uapi-dataset",
     ),
     path(
-        f"{STATIC_UAPI_BASE_PATH}Dataset/<str:dataset_id>/dsa/",
+        f"{STATIC_UAPI_BASE_PATH}Dataset/<str:pk>/dsa/",
         DatasetViewSet.as_view(
             {
                 "post": "upload_dataset_structure",
@@ -73,5 +76,15 @@ urlpatterns = [
         f"{STATIC_UAPI_BASE_PATH}Agreement/<uuid:agreement_id>/sync-done/",
         AgentSyncDoneViewSet.as_view({"put": "update"}),
         name="uapi-agent-sync-done",
+    ),
+    path(
+        f"{STATIC_UAPI_BASE_PATH}Version/",
+        VersionViewSet.as_view({"get": "list"}),
+        name="uapi-version",
+    ),
+    path(
+        f"{STATIC_UAPI_BASE_PATH}Agent/",
+        AgentViewSet.as_view({"get": "list"}),
+        name="uapi-agent",
     ),
 ]

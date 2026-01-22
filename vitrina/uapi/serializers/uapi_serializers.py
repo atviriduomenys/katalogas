@@ -9,10 +9,16 @@ Reference:
 
 import traceback
 from typing import Any
+from zoneinfo import ZoneInfo
 
+from django.conf import settings
 from django.db.models import Model
 from rest_framework import serializers
 from reversion.models import Version
+
+
+TYPE_PREFIX_TO_REMOVE = "/uapi/"
+timezone = ZoneInfo(settings.TIME_ZONE)
 
 
 class BaseObjectMixin(serializers.Serializer):
@@ -21,8 +27,8 @@ class BaseObjectMixin(serializers.Serializer):
     _id = serializers.CharField(source="id")
     _revision = serializers.SerializerMethodField()
     _txn = serializers.CharField(default="")
-    _created = serializers.DateTimeField(source="created")
-    _updated = serializers.DateTimeField(source="modified")
+    _created = serializers.SerializerMethodField()
+    _updated = serializers.SerializerMethodField()
 
     class Meta:
         fields = ("_context", "_type", "_id", "_revision", "_txn", "_created", "_updated")
@@ -33,16 +39,33 @@ class BaseObjectMixin(serializers.Serializer):
         return representation
 
     def get__type(self, obj: Model) -> str:
-        return self.context.get("_type", "")
+        return (self.context.get("_type", "") or "").removeprefix(TYPE_PREFIX_TO_REMOVE)
 
     def get__revision(self, obj: Model) -> str:
         # TODO: Logic needs to be updated. https://github.com/atviriduomenys/katalogas/issues/2177
         latest_version = Version.objects.get_for_object(obj).first()
         return str(latest_version.revision_id) if latest_version else ""
 
+    def get__created(self, obj: Model) -> str:
+        if hasattr(obj, "created"):
+            return obj.created.astimezone(timezone).isoformat()
+        elif hasattr(obj, "created_at"):
+            return obj.created_at.astimezone(timezone).isoformat()
+        return ""
+
+    def get__updated(self, obj: Model) -> str:
+        if hasattr(obj, "modified"):
+            return obj.modified.astimezone(timezone).isoformat()
+        elif hasattr(obj, "updated_at"):
+            return obj.updated_at.astimezone(timezone).isoformat()
+        return ""
+
+
+class BaseUUIDObjectMixin(BaseObjectMixin):
+    _id = serializers.UUIDField(source="uuid")
+
 
 class BaseObjectListSerializer(serializers.Serializer):
-    _type = serializers.CharField()
     _data = serializers.ListField(child=serializers.DictField())
 
     def __init__(self, *args: Any, **kwargs: Any):
@@ -61,7 +84,6 @@ class BaseObjectListSerializer(serializers.Serializer):
         data_serializer = self.data_serializer_class(instance, many=True, context=context)
 
         return {
-            "_type": self._type_value,
             "_data": data_serializer.data,
         }
 

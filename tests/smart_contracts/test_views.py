@@ -1033,7 +1033,7 @@ class TestAgreementForm:
                 "@vocab": "http://www.w3.org/ns/odrl.jsonld",
                 "ex": "http://example.org/vocab#",
             },
-            "uid": f"https://data.gov.lt/ID/datasets/gov/vssa/isris/dcat/Agreement/{agreement.pk}",
+            "uid": f"https://data.gov.lt/ID/datasets/gov/vssa/ror/dcat/Agreement/{agreement.pk}",
             "type": "Agreement",
             "profile": "http://www.w3.org/ns/odrl/profile/core",
             "issued": odrl_content["issued"],

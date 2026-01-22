@@ -6364,3 +6364,93 @@ def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoT
     assert response.status_code == 200
     assert response.context['form'].errors
     assert response.context['form'].errors['__all__'][0] == "Laukas prop2 turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje."
+
+@pytest.mark.django_db
+class TestModelDelete:
+    def test_success(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        resp = app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']))
+        assert resp.json == {"success": True}
+        assert not Model.objects.filter(pk=model.pk).exists()
+
+    def test_permission_denied(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=False)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        resp = app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']), expect_errors=True)
+        assert resp.status_code == 403
+        assert resp.json == {"error": "Permission denied"}
+        assert Model.objects.filter(pk=model.pk).exists()
+
+    def test_not_found(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset = DatasetFactory()
+
+        resp = app.post(reverse('model-delete', args=[dataset.pk, 'NonExistent']), expect_errors=True)
+        assert resp.status_code == 404
+
+    def test_requires_login(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        resp = app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']))
+        assert resp.status_code == 302  # redirect to login
+        assert Model.objects.filter(pk=model.pk).exists()
+
+
+    def test_deletes_related_metadata(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        metadata = MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        app.post(reverse('model-delete', args=[dataset.pk, 'TestModel']))
+
+        assert not Model.objects.filter(pk=model.pk).exists()
+        assert not Metadata.objects.filter(pk=metadata.pk).exists()
+
+    def test_get_method_not_allowed(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        dataset = DatasetFactory()
+        model = ModelFactory(dataset=dataset)
+        MetadataFactory(
+            dataset=dataset,
+            content_type=ContentType.objects.get_for_model(Model),
+            object_id=model.pk,
+            name=f"{dataset}/{model.pk}/TestModel",
+        )
+
+        resp = app.get(reverse('model-delete', args=[dataset.pk, 'TestModel']), expect_errors=True)
+        assert resp.status_code == 405

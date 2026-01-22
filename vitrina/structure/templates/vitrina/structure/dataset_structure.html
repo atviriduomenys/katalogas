@@ -232,17 +232,50 @@
                         {% endif %}
                     </div>
                     <div class="column is-1">
-                    {% if metadata.metadata_version %}
-                        {% if metadata.metadata_version.status == "DRAFT" %}
-                            <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
-                        {% elif metadata.draft and metadata.metadata_version.status != "DRAFT"%}
-                            <span class="tag is-danger is-light">{{ metadata.metadata_version.external_version}} ({% translate "rengiama" %})</span>
-                        {% elif metadata.metadata_version.external_version and not metadata.draft %}
-                            <span class="tag is-success is-light">{{ metadata.metadata_version.external_version }}</span>
-                        {% endif %}
-                    {% endif %}
+                        <div class="is-flex is-align-items-center is-justify-content-flex-end">
+                            {% if metadata.metadata_version %}
+                                {% if metadata.metadata_version.status == "DRAFT" %}
+                                    <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+                                {% elif metadata.draft and metadata.metadata_version.status != "DRAFT"%}
+                                    <span class="tag is-danger is-light">{{ metadata.metadata_version.external_version}} ({% translate "rengiama" %})</span>
+                                {% elif metadata.metadata_version.external_version and not metadata.draft %}
+                                    <span class="tag is-success is-light">{{ metadata.metadata_version.external_version }}</span>
+                                {% endif %}
+                            {% endif %}
+                            {% if can_manage_structure %}
+                                <a class="button is-danger is-small show-model-delete-form ml-2"
+                                   id="delete-model-{{ model.pk }}"
+                                   data-model-id="{{ model.pk }}"
+                                   data-delete-url="{{ model.get_absolute_url }}delete/"
+                                   title="{% translate 'Ištrinti' %}"
+                                   aria-label="{% translate 'Ištrinti modelį' %}">
+                                    <span class="icon is-small">
+                                        <i class="fas fa-trash"></i>
+                                    </span>
+                                </a>
+                            {% endif %}
+                        </div>
                     </div>
                 </div>
+            {% if can_manage_structure %}
+            <div class="modal" id="delete-model-modal-{{ model.pk }}">
+                <div class="modal-background"></div>
+                <div class="modal-card">
+                    <header class="modal-card-head">
+                        <p class="modal-card-title">{% translate "Ištrinti modelį" %} <strong>{{ model.name }}</strong> ?</p>
+                    </header>
+                    <section class="modal-card-body">
+                        {% translate "Šis veiksmas negrąžinamas." %}
+                    </section>
+                    <footer class="modal-card-foot">
+                        <button class="button close-model-delete-modal" data-model-id="{{ model.pk }}">{% translate "Atšaukti" %}</button>
+                        <button class="button is-danger model-delete-confirm"
+                                data-model-id="{{ model.pk }}"
+                                data-delete-url="{{ model.get_absolute_url }}delete/">{% translate "Ištrinti" %}</button>
+                    </footer>
+                </div>
+            </div>
+            {% endif %}
         {% endfor %}
 
         {% if structure %}
@@ -252,4 +285,48 @@
         {% endif %}
     </div>
 </div>
+<script>
+    document.querySelectorAll('.show-model-delete-form').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modelId = button.dataset.modelId;
+            document.getElementById(`delete-model-modal-${modelId}`).classList.add('is-active');
+        });
+    });
+
+    document.querySelectorAll('.close-model-delete-modal').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modelId = button.dataset.modelId;
+            document.getElementById(`delete-model-modal-${modelId}`).classList.remove('is-active');
+        });
+    });
+
+    document.querySelectorAll('.model-delete-confirm').forEach(button => {
+        button.addEventListener('click', (e) => {
+            e.preventDefault();
+            const modelId = button.dataset.modelId;
+            const deleteUrl = button.dataset.deleteUrl;
+            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+            fetch(deleteUrl, {
+                method: 'POST',
+                headers: { 'X-CSRFToken': csrfToken }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById(`delete-model-modal-${modelId}`).classList.remove('is-active');
+                    location.reload();
+                } else {
+                    alert('Nepavyko ištrinti modelio');
+                }
+            })
+            .catch(error => {
+                console.error(error);
+                alert('Klaida');
+            });
+        });
+    });
+</script>
 {% endblock %}

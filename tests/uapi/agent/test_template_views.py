@@ -21,7 +21,6 @@ from vitrina.users.models import User
 pytestmark = pytest.mark.django_db
 
 
-
 class TestAgentList:
     def test_success(self, app: DjangoTestApp, representative_user: User, organization: Organization):
         app.set_user(representative_user)
@@ -30,7 +29,9 @@ class TestAgentList:
         dataset = DatasetFactory(service=True, organization=organization)
         agent_1 = Agent.objects.create(title="Agent 1", organization=organization, service=dataset)
         agent_2 = Agent.objects.create(title="Agent 2", organization=organization, service=dataset)
-        archived_agent = Agent.objects.create(title="Agent 3", organization=organization, service=dataset, is_archived=True)
+        archived_agent = Agent.objects.create(
+            title="Agent 3", organization=organization, service=dataset, is_archived=True
+        )
         different_organization_agent = Agent.objects.create(
             title="Agent 4", organization=another_organization, service=dataset
         )
@@ -53,7 +54,7 @@ class TestDetail:
         representative_user: User,
         organization: Organization,
         agent: Agent,
-        data_service: Dataset
+        data_service: Dataset,
     ):
         app.set_user(representative_user)
         url = reverse("agent-detail", args=[organization.pk, agent.pk])
@@ -64,7 +65,6 @@ class TestDetail:
         assert response.context["agent"] == agent
         assert response.context["dataset"] == data_service
         assert not response.context["secret"]
-
 
     def test_archived_agent(
         self,
@@ -88,7 +88,7 @@ class TestDetail:
         organization: Organization,
         agent: Agent,
         data_service: Dataset,
-        request_history: RequestHistory
+        request_history: RequestHistory,
     ):
         app.set_user(representative_user)
         url = reverse("agent-detail", args=[organization.pk, agent.pk])
@@ -108,7 +108,7 @@ class TestDetail:
         organization: Organization,
         agent: Agent,
         data_service: Dataset,
-        request_history: RequestHistory
+        request_history: RequestHistory,
     ):
         """Request_history is created for an agent which is not the one making the request."""
 
@@ -131,7 +131,7 @@ class TestAgentCreate:
             False,
             True,
         ],
-        ids=["no_service_provided", "service_provided"]
+        ids=["no_service_provided", "service_provided"],
     )
     def test_success(
         self,
@@ -168,7 +168,7 @@ class TestAgentCreate:
 
         with patch(
             "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
-            return_value=(mocked_id, "some-secret")
+            return_value=(mocked_id, "some-secret"),
         ) as mock_create_oauth_client:
             response = app.post(url, data)
 
@@ -186,16 +186,13 @@ class TestAgentCreate:
         assert agent.is_enabled is data["is_enabled"]
         assert agent.environment == data["environment"]
         assert agent_service.service is True
-        assert agent_service.subclass == DCATResourceSubclass.objects.get(
-            name=DCATResourceSubclass.SERVICE
-        )
+        assert agent_service.subclass == DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE)
         assert agent_service.metadata.first().name == Agent().get_codename(data["title"])
 
         if service_provided:
             assert agent_service == organization_service
         else:
             assert agent_service != organization_service
-
 
     def test_transaction_rollback_on_error(
         self,
@@ -216,7 +213,7 @@ class TestAgentCreate:
 
         with patch(
             "vitrina.uapi.views.template_views.OAuthClientManagement.create_oauth_client",
-            side_effect=Exception("Simulated error")
+            side_effect=Exception("Simulated error"),
         ):
             response = app.post(url, data)
 
@@ -281,9 +278,8 @@ class TestRequestHistoryDetail:
         organization: Organization,
         data_service: Dataset,
         agent: Agent,
-        request_history: RequestHistory
+        request_history: RequestHistory,
     ):
-
         app.set_user(representative_user)
         url = reverse("request-history", args=[organization.pk, agent.pk, request_history.pk])
 

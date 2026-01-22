@@ -4,6 +4,31 @@ Changes
 v 1.13.0 (unreleased)
 ==================
 
+Improvements:
+
+https://github.com/atviriduomenys/katalogas/issues/705
+
+- Add delete button for `Structure` in dataset.
+- Do not display `None` body comments.
+
+https://github.com/atviriduomenys/katalogas/pull/2275
+
+- A number of changes regarding UAPI.
+
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2284
+
+- Fix child-resources url in resources tab
+
+https://github.com/atviriduomenys/spinta/issues/1656
+
+- Implement pagination for UAPI
+
+https://github.com/atviriduomenys/spinta/issues/1647
+
+- Add API for Version model conforming to UAPI
+- Add API for Agent model conforming to UAPI
 
 v 1.12.1 (2026-01-19)
 ==================

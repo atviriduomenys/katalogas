@@ -358,23 +358,31 @@ class RepresentativeUpdateForm(ModelForm):
         self.user: User = kwargs.pop("user")
         self.object = kwargs.pop("object", None)
         super().__init__(*args, **kwargs)
+
         if self.object_model == Organization:
             if self.user.viisp_organization == self.object and self.user.is_resource_coordinator_for(self.object):
                 self.fields["can_make_agreements"].disabled = False
         else:
             self.fields.pop("can_make_agreements")
+
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
-        self.helper.layout = Layout(
+
+        layout_fields = [
             Field("role"),
             Field("phone", placeholder=_("Formatas 0... arba +370...")),
             Field("has_api_access"),
             Field("regenerate_api_key"),
             Field("subscribe"),
-            Field("can_make_agreements"),
-            Submit("submit", _("Redaguoti"), css_class="button is-primary"),
-        )
+        ]
+
+        if "can_make_agreements" in self.fields:
+            layout_fields.append(Field("can_make_agreements"))
+
+        layout_fields.append(Submit("submit", _("Redaguoti"), css_class="button is-primary"))
+        self.helper.layout = Layout(*layout_fields)
+
         if self.instance.user is None and self.instance.organization is not None:
             self.fields.pop("subscribe")
         else:
@@ -460,18 +468,25 @@ class RepresentativeCreateForm(ModelForm):
                 self.fields["can_make_agreements"].disabled = False
         else:
             self.fields.pop("can_make_agreements")
+
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "representative-form"
-        self.helper.layout = Layout(
+
+        layout_fields = [
             Field("email"),
             Field("role"),
             Field("phone", placeholder=_("Formatas 0... arba +370...")),
             Field("has_api_access"),
             Field("subscribe"),
-            Field("can_make_agreements"),
-            Submit("submit", _("Sukurti"), css_class="button is-primary"),
-        )
+        ]
+
+        if "can_make_agreements" in self.fields:
+            layout_fields.append(Field("can_make_agreements"))
+
+        layout_fields.append(Submit("submit", _("Sukurti"), css_class="button is-primary"))
+
+        self.helper.layout = Layout(*layout_fields)
 
     def clean(self):
         email = self.cleaned_data.get("email")

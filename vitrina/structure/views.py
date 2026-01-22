@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.db.models import Q, ForeignKey
 from django.conf import settings
-from django.contrib.auth.mixins import PermissionRequiredMixin
+from django.contrib.auth.mixins import PermissionRequiredMixin, LoginRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.core.cache import cache
 from django.db import transaction
@@ -2284,6 +2284,32 @@ class ModelCreateView(PermissionRequiredMixin, CreateView):
         kwargs["dataset"] = self.dataset
         kwargs["metadata_version"] = self.metadata_version
         return kwargs
+
+
+class ModelDeleteView(LoginRequiredMixin, View):
+    http_method_names = ["post"]
+
+    def post(self, request, pk, model):
+        dataset = get_object_or_404(Dataset, pk=pk)
+        if not has_perm(request.user, Action.STRUCTURE, Dataset, dataset):
+            return JsonResponse({"error": "Permission denied"}, status=403)
+
+        model_obj = get_object_or_404(
+            Model.objects.annotate(
+                model_name=Func(
+                    F("metadata__name"),
+                    Value("/"),
+                    Value(-1),
+                    function="split_part",
+                    output_field=TextField(),
+                )
+            ),
+            model_name=model,
+            dataset=dataset,
+        )
+
+        model_obj.delete()
+        return JsonResponse({"success": True})
 
 
 class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateView):

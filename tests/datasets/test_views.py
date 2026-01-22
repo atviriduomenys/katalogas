@@ -563,7 +563,7 @@ class TestDatasetListView:
     def test_manager_datasets_are_shown_for_manager(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(organization=org)
-        ct = ContentType.objects.get_for_model(Dataset)
+        ct = ContentType.objects.get_for_model(Organization)
         rep = RepresentativeFactory(
             content_type=ct,
             object_id=org.pk,
@@ -586,7 +586,7 @@ class TestDatasetListView:
         org2 = OrganizationFactory()
         dataset = DatasetFactory(organization=org)
         dataset2 = DatasetFactory(organization=org2)
-        ct = ContentType.objects.get_for_model(Dataset)
+        ct = ContentType.objects.get_for_model(Organization)
         user = User.objects.create_user(email="test@test.com", password="test123")
         rep = RepresentativeFactory(content_type=ct, object_id=org.pk, role=role, user=user)
         rep2 = RepresentativeFactory(content_type=ct, object_id=org2.pk, role=role, user=user)
@@ -1450,7 +1450,7 @@ class TestDatasetUpdateView:
         new_urls = ("http://www.google.", "http://www.example.com")
         for i, field in enumerate(form.fields["applicable_legislation"]):
             field.value = new_urls[i] if i < len(new_urls) else ""
-        
+
         with patch("vitrina.datasets.tasks.update_applicable_legislation_description.delay") as mocked_task:
             response = form.submit()
 
@@ -2399,7 +2399,7 @@ class TestDatasetMembers:
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)
         url = reverse("dataset-members", kwargs={"pk": dataset.pk})
-        user = UserFactory(email="test@example.com")
+        user = UserFactory(email="test@example.com", organization=None)  # User has NO org
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
@@ -2409,7 +2409,6 @@ class TestDatasetMembers:
         app.set_user(coordinator.user)
 
         resp = app.get(url)
-
         resp = resp.click(linkid="add-member-btn")
 
         form = resp.forms["representative-form"]
@@ -2425,7 +2424,8 @@ class TestDatasetMembers:
             email="test@example.com",
         )
         assert rep.user == user
-        assert rep.user.organization == dataset.organization
+        user.refresh_from_db()
+        assert rep.user.organization is None, "User should not be auto-assigned to dataset org"
         assert rep.role == Representative.OPEN_DATA_MANAGER
         assert rep.has_api_access is False
         assert rep.apikey_set.count() == 0
@@ -2439,7 +2439,7 @@ class TestDatasetMembers:
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)
         url = reverse("dataset-members", kwargs={"pk": dataset.pk})
-        user = UserFactory(email="test@example.com")
+        user = UserFactory(email="test@example.com", organization=None)  # User has NO org
         coordinator = RepresentativeFactory(
             content_type=ct,
             object_id=dataset.pk,
@@ -2449,7 +2449,6 @@ class TestDatasetMembers:
         app.set_user(coordinator.user)
 
         resp = app.get(url)
-
         resp = resp.click(linkid="add-member-btn")
 
         form = resp.forms["representative-form"]
@@ -2466,7 +2465,8 @@ class TestDatasetMembers:
             email="test@example.com",
         )
         assert rep.user == user
-        assert rep.user.organization == dataset.organization
+        user.refresh_from_db()
+        assert rep.user.organization is None, "User should not be auto-assigned to dataset org"
         assert rep.role == Representative.OPEN_DATA_MANAGER
         assert rep.has_api_access is False
         assert rep.apikey_set.count() == 0
@@ -2549,6 +2549,7 @@ class TestDatasetMembers:
             object_id=dataset.pk,
             role=target_role,
         )
+        original_org = target_rep.user.organization
 
         coordinator = RepresentativeFactory(
             content_type=ct,
@@ -2569,11 +2570,12 @@ class TestDatasetMembers:
             resp = resp.click(linkid=f"update-member-{target_rep.pk}-btn")
             form = resp.forms["representative-form"]
             form["role"] = new_role
-            resp = form.submit()
+            form.submit()
 
             target_rep.refresh_from_db()
             assert target_rep.role == new_role
-            assert target_rep.user.organization == dataset.organization
+            assert target_rep.user.organization == original_org, \
+                "User's organization should not change during role update"
         else:
             assert len(update_links) == 0
 
@@ -2626,6 +2628,7 @@ class TestDatasetMembers:
             object_id=dataset.pk,
             role=target_role,
         )
+        original_org = target_rep.user.organization
 
         coordinator = RepresentativeFactory(
             content_type=ct,
@@ -2650,7 +2653,8 @@ class TestDatasetMembers:
 
             target_rep.refresh_from_db()
             assert target_rep.role == new_role
-            assert target_rep.user.organization == dataset.organization
+            assert target_rep.user.organization == original_org, \
+                "User's organization should not change during role update"
         else:
             assert len(update_links) == 0
 
@@ -4579,3 +4583,179 @@ class TestRemoveRequestView:
         assert Dataset.objects.filter(pk=dataset.pk).exists()
         assert not Comment.objects.filter(pk=comment.pk).exists()
         assert not RequestObject.objects.filter(pk=request_object.pk).exists()
+
+
+@pytest.mark.django_db
+class TestDatasetMemberCreate:
+    def test_dataset_coordinator_not_added_to_organization(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org)
+        admin = UserFactory(is_staff=True)
+
+        app.set_user(admin)
+
+        # Add new coordinator to dataset
+        url = reverse("dataset-representative-create", args=[dataset.pk])
+        resp = app.get(url)
+        form = resp.forms['representative-form']
+        form['email'] = 'new.coordinator@test.com'
+        form.submit()
+
+        # Coordinator representative should be created for the DATASET
+        coordinator_rep = Representative.objects.get(
+            email='new.coordinator@test.com',
+            content_type=ContentType.objects.get_for_model(dataset.__class__),
+            object_id=dataset.pk
+        )
+        assert coordinator_rep.role == Representative.RESOURCE_COORDINATOR
+
+        # User doesn't exist yet (will be created when they register)
+        # But if they existed, they should NOT have org assigned
+        assert not User.objects.filter(email='new.coordinator@test.com').exists()
+
+    def test_existing_user_assigned_as_coordinator_keeps_no_org(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org)
+        existing_user = UserFactory(organization=None)
+        admin = UserFactory(is_staff=True)
+        app.set_user(admin)
+
+        url = reverse("dataset-representative-create", args=[dataset.pk])
+        resp = app.get(url)
+        form = resp.forms['representative-form']
+        form['email'] = existing_user.email
+        form['role'] = Representative.OPEN_DATA_COORDINATOR
+        form.submit()
+
+        existing_user.refresh_from_db()
+
+        # User should still have NO organization
+        assert existing_user.organization is None, \
+            f"User should not be added to dataset's organization, but has {existing_user.organization}"
+
+    def test_existing_user_from_different_org_not_changed(self, app: DjangoTestApp):
+        org_a = OrganizationFactory(title="Org A")
+        org_b = OrganizationFactory(title="Org B")
+        dataset_in_org_a = DatasetFactory(organization=org_a)
+
+        user_from_org_b = UserFactory(organization=org_b)
+        original_org = user_from_org_b.organization
+
+        admin = UserFactory(is_staff=True)
+        app.set_user(admin)
+
+        url = reverse("dataset-representative-create", args=[dataset_in_org_a.pk])
+        resp = app.get(url)
+        form = resp.forms['representative-form']
+        form['email'] = user_from_org_b.email
+        form.submit()
+
+        user_from_org_b.refresh_from_db()
+
+        # User should still belong to Org B, NOT Org A
+        assert user_from_org_b.organization == original_org, \
+            f"User's organization should not be changed from {original_org} to {user_from_org_b.organization}"
+        assert user_from_org_b.organization != org_a
+
+    def test_coordinator_has_representative_for_dataset_not_org(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org)
+
+        user = UserFactory()
+        admin = UserFactory(is_staff=True)
+        app.set_user(admin)
+
+        url = reverse("dataset-representative-create", args=[dataset.pk])
+        resp = app.get(url)
+        form = resp.forms['representative-form']
+        form['email'] = user.email
+        form.submit()
+
+        user.refresh_from_db()
+
+        # Should have representative for DATASET
+        dataset_reps = Representative.objects.filter(
+            user=user,
+            content_type=ContentType.objects.get_for_model(dataset.__class__),
+            object_id=dataset.pk
+        )
+        assert dataset_reps.exists(), "User should have representative for dataset"
+
+        # Should NOT have representative for ORGANIZATION
+        org_reps = Representative.objects.filter(
+            user=user,
+            content_type=ContentType.objects.get_for_model(org.__class__),
+            object_id=org.pk
+        )
+        assert not org_reps.exists(), "User should NOT have representative for organization"
+
+    def test_manager_same_behavior_as_coordinator(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org)
+
+        existing_user = UserFactory(organization=None)
+
+        admin = UserFactory(is_staff=True)
+        app.set_user(admin)
+
+        url = reverse("dataset-representative-create", args=[dataset.pk])
+        resp = app.get(url)
+        form = resp.forms['representative-form']
+        form['email'] = existing_user.email
+        form['role'] = Representative.OPEN_DATA_MANAGER
+        form.submit()
+
+        existing_user.refresh_from_db()
+
+        # Manager should also not be added to org
+        assert existing_user.organization is None
+
+    def test_user_with_org_assigned_to_their_own_org_dataset_keeps_org(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        dataset = DatasetFactory(organization=org)
+
+        # User already belongs to the dataset's org
+        user = UserFactory(organization=org)
+
+        admin = UserFactory(is_staff=True)
+        app.set_user(admin)
+
+        url = reverse("dataset-representative-create", args=[dataset.pk])
+        resp = app.get(url)
+        form = resp.forms['representative-form']
+        form['email'] = user.email
+        form.submit()
+
+        user.refresh_from_db()
+
+        assert user.organization == org
+
+class TestDatasetMemberUpdate:
+    def test_dataset_member_update_does_not_assign_org(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        ct = ContentType.objects.get_for_model(Dataset)
+
+        user = UserFactory(organization=None)
+
+        representative = RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=Representative.OPEN_DATA_MANAGER,
+            user=user,
+        )
+
+        coordinator = RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+        )
+
+        app.set_user(coordinator.user)
+        resp = app.get(reverse("dataset-members", kwargs={"pk": dataset.pk}))
+        resp = resp.click(linkid=f"update-member-{representative.pk}-btn")
+
+        form = resp.forms["representative-form"]
+        form["has_api_access"] = True
+        form.submit()
+
+        user.refresh_from_db()
+        assert user.organization is None, "User's org should not be assigned during update"

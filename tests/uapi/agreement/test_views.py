@@ -232,11 +232,13 @@ class TestAgreementViewSetAuthorization:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.parametrize(
-        "invalid_scopes", [
+        "invalid_scopes",
+        [
             tuple(),
-            ("", ),
+            ("",),
             ("invalid_scope1", "invalid_scope2"),
-        ])
+        ],
+    )
     def test_403_if_list_authorized_with_incorrect_scopes(
         self, app: DjangoTestApp, organization: Organization, test_jwk: RSAKey, invalid_scopes: tuple[str]
     ):
@@ -266,9 +268,7 @@ class TestAgreementViewSetList:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    def test_404_if_agreement_does_not_exist(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str
-    ):
+    def test_404_if_agreement_does_not_exist(self, app: DjangoTestApp, organization: Organization, valid_token: str):
         response = app.get(
             agreement_url(),
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
@@ -278,14 +278,15 @@ class TestAgreementViewSetList:
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.parametrize(
-        "incorrect_status", [
+        "incorrect_status",
+        [
             AgreementStatuses.CREATED,
             AgreementStatuses.SUBMITTED,
             AgreementStatuses.APPROVED,
             AgreementStatuses.FORMED,
             AgreementStatuses.INITIATED,
             AgreementStatuses.TERMINATED,
-        ]
+        ],
     )
     def test_404_if_agreement_with_incorrect_status(
         self, app: DjangoTestApp, organization: Organization, valid_token: str, incorrect_status: AgreementStatuses
@@ -314,10 +315,7 @@ class TestAgreementViewSetList:
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
-    @pytest.mark.parametrize("correct_status", [
-        AgreementStatuses.SIGNED,
-        AgreementStatuses.ACTIVE
-    ])
+    @pytest.mark.parametrize("correct_status", [AgreementStatuses.SIGNED, AgreementStatuses.ACTIVE])
     def test_success(
         self, app: DjangoTestApp, organization: Organization, valid_token: str, correct_status: AgreementStatuses
     ):
@@ -361,7 +359,7 @@ class TestAgreementViewSetList:
                             "_updated": use_case_client.updated_at.astimezone(timezone).isoformat(),
                             "@context": "",
                         }
-                    ]
+                    ],
                 }
             ]
         }
@@ -419,9 +417,7 @@ class TestAgreementViewSetList:
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert response.json["message"] == f"dataset._id values: {non_existig_dataset_uuid} are invalid."
 
-    def test_filter_dataset_by_dataset_uuid(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str
-    ):
+    def test_filter_dataset_by_dataset_uuid(self, app: DjangoTestApp, organization: Organization, valid_token: str):
         agent = Agent.objects.get(organization=organization)
         child_dataset = DatasetFactory(organization=organization)
         child_dataset.move(agent.service, pos="sorted-child")
@@ -552,8 +548,7 @@ class TestAgreementViewSetList:
         agreement_file = AgreementFileFactory(agreement=agreement)
 
         with patch(
-            "vitrina.uapi.views.agreement_views.extract_elements_from_adoc",
-            side_effect=InvalidAdocError("Test error")
+            "vitrina.uapi.views.agreement_views.extract_elements_from_adoc", side_effect=InvalidAdocError("Test error")
         ):
             response = app.get(
                 agreement_url(),

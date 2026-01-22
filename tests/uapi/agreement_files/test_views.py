@@ -36,11 +36,13 @@ class TestAgreementFileDownloadUAPIView:
         assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.parametrize(
-        "invalid_scopes", [
+        "invalid_scopes",
+        [
             tuple(),
             ("",),
             ("invalid_scope1", "invalid_scope2"),
-        ])
+        ],
+    )
     def test_403_if_list_authorized_with_incorrect_scopes(
         self, app: DjangoTestApp, organization: Organization, test_jwk: RSAKey, invalid_scopes: tuple[str]
     ):
@@ -70,14 +72,15 @@ class TestAgreementFileDownloadUAPIView:
         assert response.status_code == status.HTTP_404_NOT_FOUND
 
     @pytest.mark.parametrize(
-        "incorrect_status", [
+        "incorrect_status",
+        [
             AgreementStatuses.CREATED,
             AgreementStatuses.SUBMITTED,
             AgreementStatuses.APPROVED,
             AgreementStatuses.FORMED,
             AgreementStatuses.INITIATED,
             AgreementStatuses.TERMINATED,
-        ]
+        ],
     )
     def test_404_if_use_case_has_no_agreement_with_correct_status(
         self,
@@ -106,7 +109,7 @@ class TestAgreementFileDownloadUAPIView:
         agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
         agreement_file = AgreementFileFactory(
             agreement=agreement,
-            file_path=settings.BASE_DIR / "tests/smart_contracts/files/test_contracts/agreement.pdf"
+            file_path=settings.BASE_DIR / "tests/smart_contracts/files/test_contracts/agreement.pdf",
         )
 
         response = app.get(

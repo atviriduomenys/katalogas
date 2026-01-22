@@ -10,6 +10,10 @@ https://github.com/atviriduomenys/katalogas/issues/1906
 
 - Export Dataset structure for a specific version.
 
+https://github.com/atviriduomenys/spinta/issues/1656
+
+- Add endpoints for Agreement and Client synchronization
+
 Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/2296
@@ -29,6 +33,7 @@ https://github.com/atviriduomenys/katalogas/issues/705
 https://github.com/atviriduomenys/katalogas/pull/2275
 
 - A number of changes regarding UAPI.
+
 
 https://github.com/atviriduomenys/katalogas/pull/2149
 

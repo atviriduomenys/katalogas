@@ -50,6 +50,7 @@ class DatasetAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     search_fields = ("translations__title",)
     list_display = ("title", "description", "is_public")
     form = DatasetAdminForm
+    readonly_fields = ("uuid",)
 
     def has_change_permission(self, request, obj=None):
         """Control who can edit datasets"""

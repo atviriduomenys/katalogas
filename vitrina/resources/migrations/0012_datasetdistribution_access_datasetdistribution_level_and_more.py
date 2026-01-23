@@ -40,7 +40,7 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name='datasetdistribution',
             name='access',
-            field=models.IntegerField(blank=True, choices=[(0, 'nepasirinkta'), (1, 'private'), (2, 'protected'), (3, 'public'), (4, 'open')], null=True, verbose_name='Prieiga'),
+            field=models.IntegerField(blank=True,choices=[(0, 'private'), (1, 'protected'), (2, 'public'), (3, 'open')], null=True,verbose_name='Prieiga'),
         ),
         migrations.AddField(
             model_name='datasetdistribution',

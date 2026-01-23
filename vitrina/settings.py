@@ -150,6 +150,7 @@ INSTALLED_APPS = [
     "crispy_bulma",
     "django_select2",
     "django_recaptcha",
+    "flags",
     "vitrina",
     "vitrina.cms",
     "vitrina.api",
@@ -556,3 +557,8 @@ USE_OTP_VALIDATION = env.bool("USE_OTP_VALIDATION", default=True)
 #   "vitrina.users.models.*"          → excludes all models in that module
 #   "vitrina.comments.models.Comment" → excludes a specific model
 NOT_VERSIONED_MODELS = {}
+FLAGS = {
+    "publish_button": [
+        {"condition": "boolean", "value": False},
+    ],
+}

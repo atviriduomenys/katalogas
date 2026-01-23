@@ -4,6 +4,8 @@ import json
 from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote
+from flags.decorators import flag_required
+from django.utils.decorators import method_decorator
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -31,6 +33,7 @@ from pygments.styles import get_style_by_name
 from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
 from shapely.wkt import loads
+from flags.state import flag_enabled
 
 from vitrina.classifiers.models import Status
 from vitrina.datasets.models import Dataset
@@ -261,6 +264,7 @@ class DatasetStructureView(
         context = super().get_context_data(**kwargs)
         dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         structure = dataset.current_structure
+        context["publish_button"] = flag_enabled("publish_button", request=self.request)
         context["selected_version"] = self.metadata_version
         context["is_disabled"] = not self.metadata_version.is_draft()
         context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
@@ -3483,6 +3487,7 @@ async def get_updated_summary(request, *args, **kwargs):
     return JsonResponse({"data": transformed_data})
 
 
+@method_decorator(flag_required("publish_button"), name="dispatch")
 class PublishVersionView(PermissionRequiredMixin, CreateView):
     model = _Version
     form_class = PublishForm
@@ -3493,7 +3498,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"))
-
         if self.metadata_version and not self.metadata_version.is_draft():
             messages.error(request, _("Negalima publikuoti versijos, kai versijos būsena nėra juodraštis."))
             return redirect(self.dataset.get_absolute_url())

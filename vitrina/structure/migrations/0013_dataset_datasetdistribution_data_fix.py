@@ -132,18 +132,18 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AlterField(
             model_name='metadata',
-            name='access',
-            field=models.IntegerField(blank=True, choices=[(0, 'nepasirinkta'), (1, 'private'), (2, 'protected'), (3, 'public'), (4, 'open')], null=True, verbose_name='Prieiga'),
-        ),
-        migrations.AlterField(
-            model_name='metadata',
             name='name',
             field=models.CharField(blank=True, max_length=400, verbose_name='Vardas'),
         ),
         migrations.AlterField(
+            model_name='metadata',
+            name='access',
+            field=models.IntegerField(blank=True, choices=[(0, 'private'), (1, 'protected'), (2, 'public'), (3, 'open')], null=True, verbose_name='Prieiga'),
+        ),
+        migrations.AlterField(
             model_name='metadataversion',
             name='access',
-            field=models.IntegerField(blank=True, choices=[(0, 'nepasirinkta'), (1, 'private'), (2, 'protected'), (3, 'public'), (4, 'open')], null=True, verbose_name='Prieiga'),
+            field=models.IntegerField(blank=True, choices=[(0, 'private'), (1, 'protected'), (2, 'public'), (3, 'open')], null=True, verbose_name='Prieiga'),
         ),
         migrations.RunPython(delete_orphaned_distributions, migrations.RunPython.noop),
         migrations.RunPython(create_metadata_rows_for_datasets, migrations.RunPython.noop),

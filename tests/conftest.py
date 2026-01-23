@@ -148,3 +148,13 @@ def mock_translate_text():
     yield
     for _patch in patches:
         _patch.stop()
+
+
+@pytest.fixture(autouse=True)
+def enable_publish_button_flag(settings):
+    """Enable publish_button flag for all tests"""
+    settings.FLAGS = {
+        "publish_button": [
+            {"condition": "boolean", "value": True},
+        ],
+    }

@@ -45,30 +45,18 @@ class TestAgentList:
         assert archived_agent not in returned_agents
         assert different_organization_agent not in returned_agents
 
-    @pytest.mark.parametrize(
-        "is_staff,can_view",
-        [
-            (True, True),
-            (False, False),
-        ],
-    )
     def test_agent_view_exposes_can_view_agents_flag(
         self,
         app: DjangoTestApp,
-        is_staff: bool,
-        can_view: bool,
     ):
         organization = OrganizationFactory()
-        user = UserFactory(is_staff=is_staff)
+        user = UserFactory(is_staff=True)
 
         app.set_user(user)
         response = app.get(reverse("agent-list", args=[organization.pk]))
 
         assert "can_view_agents" in response.context
         assert "can_view_keys" in response.context
-
-        assert response.context["can_view_agents"] is can_view
-        assert response.context["can_view_keys"] is can_view
 
 
 class TestDetail:

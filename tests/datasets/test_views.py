@@ -2336,6 +2336,7 @@ class TestDatasetMembers:
         response = app.get(reverse("dataset-members", kwargs={"pk": dataset.pk}))
         assert response.status_code == 200
 
+    @pytest.mark.django_db(transaction=True)
     def test_dataset_members_create_member(self, app: DjangoTestApp):
         dataset = DatasetFactory()
         ct = ContentType.objects.get_for_model(Dataset)
@@ -2899,6 +2900,60 @@ class TestDatasetMembers:
         assert resp.status_code == 302
         coordinator.refresh_from_db()
         assert coordinator.phone == "061234567"
+
+
+    def test_create_representative_with_organization_email_coordinator_role_fails(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        ct = ContentType.objects.get_for_model(Dataset)
+        superuser = UserFactory(is_superuser=True)
+        org = OrganizationFactory(publisher=True)
+
+        RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=Representative.OPEN_DATA_COORDINATOR,
+            user=superuser,
+        )
+
+        app.set_user(superuser)
+        resp = app.get(reverse("dataset-representative-create", kwargs={"pk": dataset.pk}))
+
+        form = resp.forms["representative-form"]
+        form["email"] = org.email
+        form["role"] = Representative.OPEN_DATA_COORDINATOR
+        resp = form.submit()
+
+        assert resp.status_code == 200
+        assert "Organizacijai gali būti suteikta tik tvarkytojo rolė" in resp.text
+        assert not Representative.objects.filter(email=org.email).exists()
+
+
+    def test_create_representative_with_organization_email_manager_role_succeeds(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        ct = ContentType.objects.get_for_model(Dataset)
+        superuser = UserFactory(is_superuser=True)
+        org = OrganizationFactory(publisher=True)
+
+        RepresentativeFactory(
+            content_type=ct,
+            object_id=dataset.pk,
+            role=Representative.OPEN_DATA_COORDINATOR,
+            user=superuser,
+        )
+
+        app.set_user(superuser)
+        resp = app.get(reverse("dataset-representative-create", kwargs={"pk": dataset.pk}))
+
+        form = resp.forms["representative-form"]
+        form["email"] = org.email
+        form["role"] = Representative.OPEN_DATA_MANAGER
+        resp = form.submit()
+
+        assert resp.status_code == 302
+        rep = Representative.objects.get(email=org.email)
+        assert rep.organization == org
+        dataset.refresh_from_db()
+        assert dataset.publisher == org
 
 
 class TestDatasetAttribution:

@@ -1,23 +1,31 @@
+import secrets
 from collections import OrderedDict
 from typing import List, Any, Dict, Type
 
 import numpy as np
+from django.db import transaction
+from django.conf import settings
+from django.contrib import messages
 from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.handlers.wsgi import HttpRequest
 
 from django.db.models import Q
+from django.forms import Form
 from django.urls import reverse
+from django.utils.translation import gettext_lazy as _
 from haystack.backends import SQ
 from haystack.query import SearchQuerySet
+from itsdangerous import URLSafeSerializer
 
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.helpers import get_filter_url
+from vitrina.helpers import get_filter_url, get_current_domain
+from vitrina.api.models import ApiKey
 from vitrina.helpers import email
-from vitrina.messages.models import Subscription
+from vitrina.messages.models import Subscription, SentMail
 from vitrina.orgs.models import Organization, Representative
-from vitrina.orgs.services import has_perm, Action
+from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.requests.models import Request, RequestObject
 from vitrina.resources.models import Format
 from vitrina.settings import SPINTA_SERVER_URL
@@ -520,3 +528,161 @@ class RepresentativeCreationError(Exception):
         self.field = field
         self.message = message
         super().__init__(field, message)
+
+
+class DatasetRepresentativeService:
+    DATASET_REP_EMAIL_ID = "dataset_representative_create"
+    ORG_REP_EMAIL_ID = "organization_representative_create"
+
+    def __init__(self, dataset, request):
+        self.dataset = dataset
+        self.request = request
+
+    @transaction.atomic
+    def create_from_form(self, form: Form) -> tuple[Representative, str | None]:
+        representative = self._prepare_representative(form)
+
+        if user := self._find_user(representative.email):
+            self._handle_user_representative(form, representative, user)
+        elif organization := self._find_organization(representative.email):
+            self._handle_organization_representative(representative, organization)
+        else:
+            self._handle_new_representative(form, representative)
+
+        return self._finalize_representative(form, representative)
+
+    def update_from_form(self, form: Form, representative: Representative) -> tuple[Representative, str | None]:
+        representative = form.save()
+
+        if representative.user:
+            self._manage_user_subscription(form, representative.user)
+
+        api_key_token = None
+        if representative.has_api_access:
+            api_key_token = self._handle_api_key_update(form, representative)
+        else:
+            representative.apikey_set.all().delete()
+
+        return self._finalize_representative(form, representative, api_key_token)
+
+    def _prepare_representative(self, form: Form) -> Representative:
+        rep = form.save(commit=False)
+        rep.content_type = ContentType.objects.get_for_model(Dataset)
+        rep.object_id = self.dataset.id
+        return rep
+
+    def _find_user(self, email: str) -> User | None:
+        try:
+            return User.objects.get(email=email)
+        except ObjectDoesNotExist:
+            return None
+
+    def _find_organization(self, email: str) -> Organization | None:
+        try:
+            return Organization.objects.get(email=email)
+        except ObjectDoesNotExist:
+            return None
+
+    def _handle_user_representative(self, form: Form, representative: Representative, user: User) -> None:
+        representative.user = user
+        representative.save()
+        self._manage_user_subscription(form, user)
+
+    def _handle_organization_representative(self, representative: Representative, organization: Organization) -> None:
+        if not self.request.user.is_superuser:
+            return
+
+        if not organization.publisher:
+            return
+
+        if representative.role in Representative.COORDINATOR_ROLES:
+            raise RepresentativeCreationError("role", _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
+
+        representative.organization = organization
+        representative.save()
+        self.dataset.publisher = organization
+
+    def _handle_new_representative(self, form: Form, representative: Representative) -> None:
+        representative.save()
+
+        if not self._email_already_sent(representative.email):
+            email_data = {
+                "representative_pk": representative.pk,
+                "subscribe": form.cleaned_data.get("subscribe"),
+            }
+            transaction.on_commit(lambda data=email_data: self._send_registration_email_by_pk(data))
+            messages.info(self.request, _("Naudotojui išsiųstas laiškas dėl registracijos"))
+
+    def _finalize_representative(
+        self, form: Form, representative: Representative, api_key_token: str | None = None
+    ) -> tuple[Representative, str | None]:
+        if phone := form.cleaned_data.get("phone"):
+            representative.phone = phone
+            representative.save()
+
+        if api_key_token is None and representative.has_api_access:
+            api_key_token = self._create_api_key(representative)
+
+        self.dataset.save()
+
+        return representative, api_key_token
+
+    def _create_api_key(self, representative: Representative) -> str:
+        raw_api_key = secrets.token_urlsafe()
+        ApiKey.objects.create(api_key=hash_api_key(raw_api_key), enabled=True, representative=representative)
+
+        serializer = URLSafeSerializer(settings.SECRET_KEY)
+        return serializer.dumps({"api_key": raw_api_key})
+
+    def _handle_api_key_update(self, form: Form, representative: Representative) -> str | None:
+        if not representative.apikey_set.exists():
+            return self._create_api_key(representative)
+
+        if form.cleaned_data.get("regenerate_api_key"):
+            raw_api_key = secrets.token_urlsafe()
+            api_key_obj = representative.apikey_set.first()
+            api_key_obj.api_key = hash_api_key(raw_api_key)
+            api_key_obj.enabled = True
+            api_key_obj.save()
+
+            serializer = URLSafeSerializer(settings.SECRET_KEY)
+            return serializer.dumps({"api_key": raw_api_key})
+
+        return None
+
+    def _manage_user_subscription(self, form: Form, user: User) -> None:
+        link = self._build_dataset_url()
+        manage_subscriptions_for_representative(form.cleaned_data.get("subscribe"), user, self.dataset, link)
+
+    def _email_already_sent(self, email: str) -> bool:
+        return SentMail.objects.filter(
+            Q(Q(identifier=self.DATASET_REP_EMAIL_ID) | Q(identifier=self.ORG_REP_EMAIL_ID))
+            & Q(recipient=f"['{email}']")
+        ).exists()
+
+    def _send_registration_email_by_pk(self, data: dict) -> None:
+        representative = Representative.objects.get(pk=data["representative_pk"])
+        serializer = URLSafeSerializer(settings.SECRET_KEY)
+        token = serializer.dumps(
+            {
+                "representative_id": representative.pk,
+                "subscribe": data["subscribe"],
+            }
+        )
+
+        url = self._build_registration_url(token)
+
+        email(
+            [representative.email],
+            self.DATASET_REP_EMAIL_ID,
+            "vitrina/email/offer_to_join_portal.md",
+            {"dataset": self.dataset, "link": url},
+        )
+
+    def _build_dataset_url(self) -> str:
+        path = reverse("dataset-detail", kwargs={"pk": self.dataset.id})
+        return f"{get_current_domain(self.request)}{path}"
+
+    def _build_registration_url(self, token: str) -> str:
+        path = reverse("representative-register", kwargs={"token": token})
+        return f"{get_current_domain(self.request)}{path}"

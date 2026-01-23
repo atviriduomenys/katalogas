@@ -30,6 +30,14 @@ https://github.com/atviriduomenys/spinta/issues/1647
 - Add API for Version model conforming to UAPI
 - Add API for Agent model conforming to UAPI
 
+https://github.com/atviriduomenys/katalogas/issues/2031
+
+- Refactor `Task` views and restrict access.
+- Filter elastic to show correct assigned datasets.
+- Allow comments only for public datasets.
+- Fix landing page counts.
+- Refactor `CreateMemberView.form_valid` function into service.
+
 v 1.12.1 (2026-01-19)
 ==================
 

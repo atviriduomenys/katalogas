@@ -35,13 +35,15 @@ from vitrina.uapi.models import RequestHistory
 from vitrina.resources.models import Format
 from vitrina.uapi.forms import AgentForm
 from vitrina.uapi.models import Agent
+from vitrina.views import PlanMixin
 
 logger = logging.getLogger(__name__)
 
 
-class BaseAgentView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
+class BaseAgentView(LoginRequiredMixin, PermissionRequiredMixin, PlanMixin, TemplateView):
     organization_url_kwarg = "organization_id"
     template_name = "base_form.html"
+    plan_url_name = "organization-plans"
 
     def setup(self, request, *args, **kwargs) -> None:
         super().setup(request, *args, **kwargs)
@@ -70,6 +72,9 @@ class BaseAgentView(LoginRequiredMixin, PermissionRequiredMixin, TemplateView):
         )
 
         return context
+
+    def get_plan_object(self) -> Organization:
+        return self.organization
 
 
 class AgentListView(BaseAgentView):

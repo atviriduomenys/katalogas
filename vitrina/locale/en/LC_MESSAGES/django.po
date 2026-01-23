@@ -868,10 +868,8 @@ msgstr "Groups"
 msgid "Kategorija"
 msgstr "Category"
 
-#, fuzzy
-#| msgid "Pasirinkite kategoriją."
 msgid "Rodyti pasirinktas kategorijas"
-msgstr "Select a category."
+msgstr "Show selected categories"
 
 msgid "Išsaugoti"
 msgstr "Save"
@@ -1276,10 +1274,6 @@ msgid ""
 "skaičiai, "
 msgstr "Model code name can contain uppercase/lowercase letters and numbers. "
 
-#, fuzzy
-#| msgid ""
-#| "Pavadinime gali būti mažosios raidės ir skaičiai, žodžiai gali būti "
-#| "atskirti _ simboliu, jokie kiti simboliai negalimi."
 msgid ""
 "Pavadinime gali būti mažosios raidės ir skaičiai, žodžiai gali būti atskirti "
 "_ simboliu, arba . simboliu, "
@@ -2672,10 +2666,8 @@ msgstr "Does the organization exist?"
 msgid "*Pastaba: Bus sukurta nauja organizacija."
 msgstr "*Note: A new organization will be created."
 
-#, fuzzy
-#| msgid "Koordinatoriai"
 msgid "Koordinatorius"
-msgstr "Coordinators"
+msgstr "Coordinator"
 
 msgid "Pasirinkite duomenų rinkino kūrėją"
 msgstr "Assign the creator of the dataset"
@@ -3838,8 +3830,6 @@ msgstr "Agreement is created. Agreement document is not created yet."
 msgid "Pateiktas pasiūlymas iš duomenų gavėjo pusės."
 msgstr "Agreement document is signed by data receiver."
 
-#, fuzzy
-#| msgid "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų teikėjo."
 msgid ""
 "Duomenų gavėjo pasiūlymas duomenims gauti yra patvirtintas duomenų teikėjo."
 msgstr "Agreement document is signed by data receiver and data provider."

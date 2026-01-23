@@ -4,6 +4,8 @@ import json
 from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote
+from flags.decorators import flag_required
+from django.utils.decorators import method_decorator
 
 from django.contrib import messages
 from django.core.exceptions import ValidationError
@@ -3485,6 +3487,7 @@ async def get_updated_summary(request, *args, **kwargs):
     return JsonResponse({"data": transformed_data})
 
 
+@method_decorator(flag_required("publish_button"), name="dispatch")
 class PublishVersionView(PermissionRequiredMixin, CreateView):
     model = _Version
     form_class = PublishForm
@@ -3495,9 +3498,6 @@ class PublishVersionView(PermissionRequiredMixin, CreateView):
     def dispatch(self, request, *args, **kwargs):
         self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
         self.metadata_version = get_object_or_404(_Version, pk=kwargs.get("version_id"))
-        if not flag_enabled("publish_button", request=request):
-            return redirect("dataset-structure", pk=self.dataset.pk, version_id=self.metadata_version.pk)
-
         if self.metadata_version and not self.metadata_version.is_draft():
             messages.error(request, _("Negalima publikuoti versijos, kai versijos būsena nėra juodraštis."))
             return redirect(self.dataset.get_absolute_url())

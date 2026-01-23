@@ -559,6 +559,6 @@ USE_OTP_VALIDATION = env.bool("USE_OTP_VALIDATION", default=True)
 NOT_VERSIONED_MODELS = {}
 FLAGS = {
     "publish_button": [
-        {"condition": "boolean", "value": True},
+        {"condition": "boolean", "value": False},
     ],
 }

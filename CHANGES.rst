@@ -35,6 +35,10 @@ https://github.com/atviriduomenys/katalogas/pull/2285
 
 - Disabled the ability to create, edit, import and delete structure objects when the version is not a draft.
 
+https://github.com/atviriduomenys/katalogas/pull/2313
+
+- Disabled the Publish Version button.
+
 Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/2284

@@ -558,7 +558,7 @@ USE_OTP_VALIDATION = env.bool("USE_OTP_VALIDATION", default=True)
 #   "vitrina.comments.models.Comment" → excludes a specific model
 NOT_VERSIONED_MODELS = {}
 FLAGS = {
-    'publish_button': [
-        {'condition': 'boolean', 'value': True},
+    "publish_button": [
+        {"condition": "boolean", "value": True},
     ],
 }

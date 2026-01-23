@@ -11,6 +11,7 @@ from django.core.management import call_command
 from pprintpp import pprint as pp
 from pytest_django.lazy_django import skip_if_no_django
 
+from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import DCATResourceSubclass
 
 builtins.pp = pp
@@ -113,8 +114,8 @@ def organization(db):
 def dataset(db, organization):
     """Create test dataset."""
     from vitrina.datasets.models import Dataset
-
-    return Dataset.objects.create(title="Test Dataset", organization=organization)
+    dataset = DatasetFactory.create(title="Test Dataset", organization=organization)
+    return dataset
 
 
 @pytest.fixture(autouse=True)
@@ -147,3 +148,13 @@ def mock_translate_text():
     yield
     for _patch in patches:
         _patch.stop()
+
+
+@pytest.fixture(autouse=True)
+def enable_publish_button_flag(settings):
+    """Enable publish_button flag for all tests"""
+    settings.FLAGS = {
+        "publish_button": [
+            {"condition": "boolean", "value": True},
+        ],
+    }

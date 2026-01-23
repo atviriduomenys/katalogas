@@ -4,15 +4,16 @@ import operator
 
 from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
-from django.db.models import Q, Max, Avg
+from django.db.models import Q, Max, Avg, QuerySet
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Status
 from vitrina.models import UUIDBaseModel
-from vitrina.structure import VersionStatus, VersionType
+from vitrina.structure import VersionStatus, VersionType, AccessType
 from vitrina.structure.helpers import get_type_repr
 from enum import Enum
 
@@ -40,6 +41,7 @@ class Prefix(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "prefix"
@@ -64,16 +66,9 @@ class Metadata(models.Model):
     OPEN = 3
     PACKAGE = 2
     VISIBILITY_PUBLIC = 3
-    ACCESS_TYPES = (
-        (UNDEFINED, _("nepasirinkta")),
-        (PRIVATE, _("private")),
-        (PROTECTED, _("protected")),
-        (PUBLIC, _("public")),
-        (OPEN, _("open")),
-    )
 
     uuid = models.CharField(_("Id"), max_length=255)
-    name = models.CharField(_("Vardas"), max_length=255, blank=True)
+    name = models.CharField(_("Vardas"), max_length=400, blank=True)
     type = models.CharField(_("Tipas"), max_length=255, blank=True)
     ref = models.CharField(_("Ryšys"), max_length=255, blank=True, null=True)
     source = models.CharField(_("Šaltinis"), max_length=255, blank=True, null=True)
@@ -82,7 +77,12 @@ class Metadata(models.Model):
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
     average_level = models.IntegerField(_("Apskaičiuotas brandos lygis"), null=True, blank=True)
-    access = models.IntegerField(_("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True)
+    access = models.IntegerField(
+        _("Prieiga"),
+        choices=AccessType.choices,
+        blank=True,
+        null=True,
+    )
     visibility = models.PositiveIntegerField(
         _("Metaduomenų matomumas"), null=True, blank=True, validators=[MaxValueValidator(3)]
     )
@@ -149,6 +149,7 @@ class Base(models.Model):
     metadata = GenericRelation("Metadata")
     property_list = GenericRelation("PropertyList")
     objects = models.Manager()
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "base"
@@ -185,36 +186,37 @@ class Model(models.Model):
     property_list = GenericRelation("PropertyList")
     params = GenericRelation("Param")
     requests = GenericRelation("vitrina_requests.RequestObject")
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "model"
         verbose_name = _("Modelis")
 
-    def __str__(self):
+    def __str__(self) -> str:
         if metadata := self.metadata.first():
             return metadata.name
         return ""
 
     @property
-    def name(self):
+    def name(self) -> str:
         if metadata := self.metadata.first():
             return metadata.name.split("/")[-1]
         return ""
 
     @property
-    def full_name(self):
+    def full_name(self) -> str:
         if metadata := self.metadata.first():
             return metadata.name
         return ""
 
     @property
-    def title(self):
+    def title(self) -> str:
         if metadata := self.metadata.first():
             return metadata.title
         return ""
 
     @property
-    def description(self):
+    def description(self) -> str:
         if metadata := self.metadata.first():
             return metadata.description
         return ""
@@ -225,7 +227,7 @@ class Model(models.Model):
             return metadata.visibility
         return None
 
-    def update_level(self):
+    def update_level(self) -> None:
         if metadata := self.metadata.first():
             prop_ids = self.model_properties.values_list("pk", flat=True)
             where = [
@@ -251,47 +253,43 @@ class Model(models.Model):
                 metadata.average_level = round(sum(levels) / len(levels))
                 metadata.save()
 
-    def get_absolute_url(self):
+    def get_absolute_url(self) -> str | None:
         if self.name:
             return reverse(
                 "model-structure",
-                kwargs={
-                    "pk": self.dataset.pk,
-                    "model": self.name,
-                },
+                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.metadata_version.pk},
             )
         return None
 
-    def get_data_url(self):
+    def get_data_url(self) -> str | None:
         if self.name:
             return reverse(
                 "model-data",
-                kwargs={
-                    "pk": self.dataset.pk,
-                    "model": self.name,
-                },
+                kwargs={"pk": self.dataset.pk, "model": self.name, "version_id": self.metadata_version.pk},
             )
         return None
 
-    def get_api_url(self):
+    def get_api_url(self) -> str | None:
         if self.name:
-            return reverse("getall-api", kwargs={"pk": self.dataset.pk, "model": self.name})
+            return reverse(
+                "getall-api", kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk, "model": self.name}
+            )
         return None
 
-    def get_given_props(self):
+    def get_given_props(self) -> QuerySet:
         return self.model_properties.filter(given=True).order_by("metadata__order")
 
-    def get_props_excluding_base(self):
+    def get_props_excluding_base(self) -> QuerySet:
         base_props = []
         for props in self.get_base_props().values():
             base_props.extend(props.values_list("metadata__name", flat=True))
 
         return self.get_given_props().exclude(metadata__name__in=base_props)
 
-    def get_acl_parents(self):
+    def get_acl_parents(self) -> list:
         return [self.dataset]
 
-    def get_base_props(self):
+    def get_base_props(self) -> dict:
         base = self.base
         base_props = {}
         while base:
@@ -300,16 +298,43 @@ class Model(models.Model):
         return base_props
 
     @property
-    def access_display_value(self):
+    def access_display_value(self) -> str:
         access = Model.objects.annotate(access=Max("model_properties__metadata__access")).get(pk=self.pk).access
         if access is not None:
-            for type in Metadata.ACCESS_TYPES:
+            for type in AccessType.choices:
                 if type[0] == access:
                     return type[1]
         return ""
 
-    def is_opened(self):
+    def is_opened(self) -> bool:
         return self.dataset.is_opened()
+
+    def save(self, *args, **kwargs) -> None:
+        if self.distribution and self.distribution.format and self.distribution.format.extension == "UAPI":
+            raise ValidationError(_("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją."))
+        existing_distribution = None
+
+        if self.pk:
+            old_instance = Model.objects.get(pk=self.pk)
+            existing_distribution = old_instance.distribution
+
+        super().save(*args, **kwargs)
+
+        if self.distribution:
+            if self.distribution.metadata_version and self.distribution.metadata_version != self.metadata_version:
+                return
+            self.distribution.create_or_reuse_metadata_instance_and_assign_version(self.metadata_version.pk)
+            self.distribution.metadata_version = self.metadata_version
+            self.distribution.save(update_fields=["metadata_version"])
+
+        if existing_distribution:
+            existing_distribution.delete_resource_metadata_if_has_no_models()
+
+    def delete(self, *args, **kwargs) -> None:
+        distribution = self.distribution
+        super().delete(*args, **kwargs)
+        if distribution:
+            distribution.delete_resource_metadata_if_has_no_models()
 
 
 class Property(models.Model):
@@ -343,6 +368,7 @@ class Property(models.Model):
     property_list = GenericRelation("PropertyList")
     enums = GenericRelation("Enum")
     requests = GenericRelation("vitrina_requests.RequestObject")
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "property"
@@ -361,6 +387,7 @@ class Property(models.Model):
                     "pk": self.model.dataset.pk,
                     "model": self.model.name,
                     "prop": self.name,
+                    "version_id": self.metadata_version.pk,
                 },
             )
         return None
@@ -408,6 +435,7 @@ class PropertyList(models.Model):
     object = GenericForeignKey("content_type", "object_id")
 
     objects = models.Manager()
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "property_list"
@@ -429,6 +457,7 @@ class Enum(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "enum"
@@ -443,6 +472,7 @@ class EnumItem(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "enum_item"
@@ -466,6 +496,7 @@ class Param(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "param"
@@ -480,6 +511,7 @@ class ParamItem(models.Model):
 
     metadata = GenericRelation("Metadata")
     objects = models.Manager()
+    metadata_version = models.ForeignKey("Version", models.SET_NULL, verbose_name=_("Versija"), null=True, blank=True)
 
     class Meta:
         db_table = "param_item"
@@ -520,6 +552,9 @@ class Version(models.Model):
     def get_absolute_url(self):
         return reverse("version-detail", kwargs={"pk": self.dataset.pk, "version_id": self.pk})
 
+    def is_draft(self) -> bool:
+        return self.status == VersionStatus.DRAFT
+
     def __str__(self):
         return f"v{self.version}"
 
@@ -530,13 +565,6 @@ class MetadataVersion(models.Model):
     PROTECTED = 1
     PUBLIC = 2
     OPEN = 3
-    ACCESS_TYPES = (
-        (UNDEFINED, _("nepasirinkta")),
-        (PRIVATE, _("private")),
-        (PROTECTED, _("protected")),
-        (PUBLIC, _("public")),
-        (OPEN, _("open")),
-    )
 
     version = models.ForeignKey(Version, verbose_name=_("Versija"), on_delete=models.CASCADE)
     metadata = models.ForeignKey(Metadata, verbose_name=_("Metaduomenys"), on_delete=models.CASCADE)
@@ -551,7 +579,7 @@ class MetadataVersion(models.Model):
     source = models.CharField(_("Šaltinis"), max_length=255, blank=True, null=True)
     prepare = models.CharField(_("Formulė"), max_length=255, blank=True, null=True)
     level_given = models.IntegerField(_("Duotas brandos lygis"), null=True, blank=True)
-    access = models.IntegerField(_("Prieiga"), choices=ACCESS_TYPES, blank=True, null=True)
+    access = models.IntegerField(_("Prieiga"), choices=AccessType.choices, blank=True, null=True)
     base = models.ForeignKey(
         "Base",
         models.SET_NULL,

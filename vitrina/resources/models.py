@@ -1,7 +1,9 @@
+import logging
 import pathlib
 from enum import StrEnum
 import uuid
 from django.contrib.contenttypes.fields import GenericRelation
+from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -10,10 +12,13 @@ from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
 from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
+from vitrina.structure import AccessType
+from vitrina.structure.models import Metadata, Version
 from vitrina.helpers import get_file_extension
 from vitrina.utils import translate_text
-from vitrina.datasets.models import Dataset
 from vitrina.datasets.tasks import update_applicable_legislation_description
+
+logger = logging.getLogger()
 
 
 def get_default_status() -> uuid.UUID:
@@ -128,7 +133,7 @@ class DatasetDistribution(TranslatableModel):
     version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)
-    dataset = models.ForeignKey(Dataset, models.CASCADE)
+    dataset = models.ForeignKey("vitrina_datasets.Dataset", models.CASCADE)
     translations = TranslatedFields(
         title=models.CharField(_("Pavadinimas"), blank=True, max_length=255),
         description=models.TextField(_("Aprašymas"), blank=True),
@@ -204,7 +209,9 @@ class DatasetDistribution(TranslatableModel):
 
     issued = models.CharField(max_length=255, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
-    data_service = models.ForeignKey(Dataset, models.SET_NULL, null=True, related_name="data_service_distributions")
+    data_service = models.ForeignKey(
+        "vitrina_datasets.Dataset", models.SET_NULL, null=True, related_name="data_service_distributions"
+    )
     is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
     upload_to_storage = models.BooleanField(default=False, verbose_name=_("Įkėlimas į saugyklą"))
     imported = models.BooleanField(default=False, verbose_name=_("Importuojamas išorinis metaduomenų katalogas"))
@@ -280,6 +287,22 @@ class DatasetDistribution(TranslatableModel):
 
     objects = TranslatableManager()
 
+    metadata_version = models.ForeignKey(
+        "vitrina_structure.Version",
+        models.SET_NULL,
+        blank=True,
+        null=True,
+    )
+
+    access = models.IntegerField(
+        _("Prieiga"),
+        choices=AccessType.choices,
+        blank=True,
+        null=True,
+    )
+    name = models.CharField(_("Vardas"), max_length=255, blank=True)
+    level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
+
     class Meta:
         db_table = "dataset_distribution"
 
@@ -332,8 +355,19 @@ class DatasetDistribution(TranslatableModel):
             parents.extend(self.dataset.get_acl_parents())
         return parents
 
-    def get_absolute_url(self):
-        return reverse("resource-detail", kwargs={"pk": self.dataset.pk, "resource_id": self.pk})
+    def get_absolute_url(self) -> str:
+        if self.metadata_version and self.metadata_version.pk:
+            return reverse(
+                "resource-detail",
+                kwargs={"pk": self.dataset.pk, "resource_id": self.pk, "version_id": self.metadata_version.pk},
+            )
+        return reverse(
+            "resource-detail-no-version",
+            kwargs={
+                "pk": self.dataset.pk,
+                "resource_id": self.pk,
+            },
+        )
 
     def lt_title(self):
         return self.safe_translation_getter("title", language_code="lt")
@@ -391,3 +425,36 @@ class DatasetDistribution(TranslatableModel):
 
         update_applicable_legislation_description.delay(legislation_ids_to_update)
         self.applicable_legislation.set(legislations)
+
+    def create_or_reuse_metadata_instance_and_assign_version(self, metadata_version_id: int) -> Metadata:
+        metadata_version = Version.objects.filter(pk=metadata_version_id).first()
+        if not metadata_version:
+            logging.error(f"Version with pk={metadata_version_id} does not exist")
+            raise ValueError(f"Version with pk={metadata_version_id} does not exist")
+
+        if metadata_instance := self.metadata.first():
+            metadata_instance.metadata_version = metadata_version
+            metadata_instance.save(update_fields=["metadata_version"])
+        else:
+            metadata_instance = Metadata.objects.create(
+                uuid=str(uuid.uuid4()),
+                dataset=self.dataset,
+                content_type=ContentType.objects.get_for_model(DatasetDistribution),
+                object_id=self.pk,
+                name=self.name,
+                prepare_ast={},
+                access=self.access or None,
+                version=1,
+                title=self.title,
+                description=self.description,
+                level_given=self.level,
+                metadata_version=metadata_version,
+            )
+
+        return metadata_instance
+
+    def delete_resource_metadata_if_has_no_models(self):
+        if not self.model_set.exists():
+            self.metadata_version = None
+            self.save()
+            self.metadata.all().delete()

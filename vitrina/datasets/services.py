@@ -29,6 +29,7 @@ from vitrina.orgs.services import has_perm, Action, hash_api_key
 from vitrina.requests.models import Request, RequestObject
 from vitrina.resources.models import Format
 from vitrina.settings import SPINTA_SERVER_URL
+from vitrina.structure.models import Version
 from vitrina.users.models import User
 from rest_framework.request import Request as DrfRequest
 
@@ -375,8 +376,9 @@ class DynamicResourceService:
     CSV_FORMAT = "CSV"
     RDF_FORMAT = "RDF"
 
-    def __init__(self, dataset):
+    def __init__(self, dataset: Dataset, metadata_version: Version | None):
         self.dataset: Dataset = dataset
+        self.metadata_version: Version | None = metadata_version
         self.dataset_service = Dataset.objects.filter(service=True, endpoint_url=SPINTA_SERVER_URL).first()
         self.uapi_distribution = self.dataset.datasetdistribution_set.filter(format__extension="UAPI").first()
 
@@ -385,9 +387,10 @@ class DynamicResourceService:
             return []
 
         models = self.dataset.model_set.all()
+        if not is_for_rdf_export:
+            models = self.dataset.model_set.filter(metadata_version=self.metadata_version)
         if not models:
             return []
-
         return [
             self._create_distribution(models, self.JSON_FORMAT, is_for_rdf_export),
             self._create_distribution(models, self.JSONL_FORMAT, is_for_rdf_export),
@@ -404,7 +407,7 @@ class DynamicResourceService:
             )
             return {
                 "uri": reverse(
-                    "dynamic-resource-detail",
+                    "dynamic-resource-detail-no-version",
                     args=[
                         self.dataset.pk,
                         self.uapi_distribution.pk,
@@ -450,6 +453,7 @@ class DynamicResourceService:
                 "dynamic-resource-detail",
                 args=[
                     self.dataset.pk,
+                    self.metadata_version.pk,
                     self.uapi_distribution.pk,
                     distribution_name,
                     distribution_format.lower(),
@@ -486,9 +490,11 @@ class DynamicResourceService:
 
         return download_url, distribution_name
 
-    def retrieve_data(self, dataset_pk, resource_name, distribution_format):
+    def retrieve_data(
+        self, dataset_pk: int, metadata_version: Version, resource_name: str, distribution_format: str
+    ) -> dict:
         dataset = Dataset.objects.get(pk=dataset_pk)
-        models = dataset.model_set.all()
+        models = dataset.model_set.filter(metadata_version=metadata_version)
 
         if distribution_format in [self.JSON_FORMAT, self.JSONL_FORMAT, self.RDF_FORMAT]:
             full_name_parts = (

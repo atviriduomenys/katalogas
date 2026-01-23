@@ -136,7 +136,15 @@
         </div>
         {% if can_manage_structure and model.name %}
         <div class="buttons is-right">
-            <a href="{% url 'model-update' dataset.pk model.name %}" class="button is-primary">
+            <a
+                class="button is-primary {% if is_disabled %}is-disabled{% endif %}"
+                {% if is_disabled %}
+                    style="pointer-events: none; opacity: 0.5;"
+                    aria-disabled="true"
+                {% else %}
+                    href="{% url 'model-update' dataset.pk version_id model.name %}"
+                {% endif %}
+            >
                 {% translate "Redaguoti" %}
             </a>
         </div>
@@ -318,9 +326,18 @@
         </div>
         {% if can_manage_structure and model.name %}
         <div class="buttons is-right mt-5">
-            <a href="{% url 'property-create' dataset.pk model.name %}" class="button is-primary">
-                {% translate "Naujas duomenų laukas" %}
-            </a>
+            {% if not is_disabled %}
+                <a href="{% url 'property-create' dataset.pk version_id model.name %}"
+                   class="button is-primary">
+                    {% translate "Naujas duomenų laukas" %}
+                </a>
+            {% else %}
+                <a class="button is-primary is-disabled"
+                   style="pointer-events: none; opacity: 0.5;"
+                   aria-disabled="true">
+                    {% translate "Naujas duomenų laukas" %}
+                </a>
+            {% endif %}
         </div>
         {% endif %}
         {% if model.base and base_props %}
@@ -432,15 +449,15 @@
                                     {% if can_manage_structure %}
                                         <span class="mr-1 ml-3 no-margin-bottom is-pulled-right">
                                         {% if prop.model != model %}
-                                            <a href="{% url 'base-property-create' dataset.pk model.pk prop.pk %}" class="button is-primary is-small">
+                                            <a href="{% url 'base-property-create' dataset.pk version_id model.pk prop.pk %}" class="button is-primary is-small">
                                                 {% translate "Pridėti" %}
                                             </a>
                                         {% else %}
-                                            <a href="{% url 'property-update' dataset.pk model.name prop.name %}" class="button is-primary is-small">
+                                            <a href="{% url 'property-update' dataset.pk version_id model.name prop.name %}" class="button is-primary is-small">
                                                 {% translate "Keisti" %}
                                             </a>
                                             <a
-                                                href="{% url 'base-property-delete' dataset.pk model.pk prop.pk %}"
+                                                href="{% url 'base-property-delete' dataset.pk version_id model.pk prop.pk %}"
                                                 class="button is-link is-small"
                                                 onclick="return confirm({% translate 'Ar tikrai norite ištrinti?' %})"
                                             >

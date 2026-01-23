@@ -75,6 +75,7 @@ class DatasetDistributionFactory(DjangoModelFactory):
             },
         )[0]
     )
+    name = factory.Sequence(lambda n: f"resource{n + 1}")
 
     class Params:
         uapi_format = factory.Trait(

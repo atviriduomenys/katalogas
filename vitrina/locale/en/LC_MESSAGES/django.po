@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-20 14:12+0200\n"
+"POT-Creation-Date: 2026-01-22 11:11+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1899,6 +1899,9 @@ msgstr "Resource edit"
 
 msgid "Struktūros importas"
 msgstr "Structure import"
+
+msgid "Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."
+msgstr "Can not import structure, when the version status is draft"
 
 msgid "Tvarkytojo pridėjimas"
 msgstr "Add manager"
@@ -3969,6 +3972,9 @@ msgstr ""
 msgid "Ar duomenų šaltinis yra didelės vertės"
 msgstr "Is the data source of high value"
 
+msgid "Prieiga"
+msgstr "Access"
+
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr "Download dataset distribution"
 
@@ -3993,8 +3999,14 @@ msgstr "New model"
 msgid "Naujas duomenų rinkinio šaltinis"
 msgstr "New dataset distribution"
 
+msgid "Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."
+msgstr "Can not edit the source, when the version status is not draft."
+
 msgid "Duomenų rinkinio šaltinio redagavimas"
 msgstr "Dataset source edit"
+
+msgid "Negalima trinti šaltinio, kai versijos būsena nėra juodraštis."
+msgstr "Can not delete the source, when the version status is not draft."
 
 msgid "Modelio pridėjimas"
 msgstr "Add model"
@@ -4318,6 +4330,21 @@ msgstr "Minor"
 msgid "Pataisa"
 msgstr "Patch"
 
+msgid "nepasirinkta"
+msgstr "not selected"
+
+msgid "private"
+msgstr "private"
+
+msgid "protected"
+msgstr "protected"
+
+msgid "public"
+msgstr "public"
+
+msgid "open"
+msgstr "open"
+
 msgid "Nepasirinkta"
 msgstr "Not selected"
 
@@ -4510,6 +4537,12 @@ msgstr ""
 "Model maturity level, indicating aspects such as whether a primary key is "
 "defined or whether the model name complies with naming requirements for code "
 "identifiers."
+
+msgid "Duomenų distribucija"
+msgstr "Dataset distribution"
+
+msgid "Savybė nurodanti modelio duomenų distribuciją."
+msgstr "A property indicating the dataset distribution of a model"
 
 msgid ""
 "Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį."
@@ -4836,26 +4869,14 @@ msgstr "Object type"
 msgid "Objekto id"
 msgstr "Object id"
 
+msgid "Versija"
+msgstr "Version"
+
 msgid "Prefiksas"
 msgstr "Prefix"
 
 msgid "Prefiksai"
 msgstr "Prefixes"
-
-msgid "nepasirinkta"
-msgstr "not selected"
-
-msgid "private"
-msgstr "private"
-
-msgid "protected"
-msgstr "protected"
-
-msgid "public"
-msgstr "public"
-
-msgid "open"
-msgstr "open"
 
 msgid "Id"
 msgstr "Id"
@@ -4872,17 +4893,11 @@ msgstr "Given maturity level"
 msgid "Apskaičiuotas brandos lygis"
 msgstr "Calculated maturity level"
 
-msgid "Prieiga"
-msgstr "Access"
-
 msgid "Eilučių kiekis"
 msgstr "Row count"
 
 msgid "Žodyno atitikmuo"
 msgstr "Uri"
-
-msgid "Versija"
-msgstr "Version"
 
 msgid "Rikiavimo tvarka"
 msgstr "Order"
@@ -4907,6 +4922,13 @@ msgstr "Inherited model"
 
 msgid "Bazė"
 msgstr "Base"
+
+msgid ""
+"Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą "
+"distribuciją."
+msgstr ""
+"Can not assign Saugyklos API distribution. Choose a different "
+"distribution."
 
 msgid "Susijęs modelis"
 msgstr "Related model"
@@ -5140,20 +5162,41 @@ msgstr "Amount"
 msgid "API: visi įrašai"
 msgstr "API: all records"
 
+msgid "Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."
+msgstr "Can not create a new enum, when the version status is not draft."
+
 msgid "Galimos reikšmės pridėjimas"
 msgstr "Add enum item"
+
+msgid "Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."
+msgstr "Can not edit the enum, when the version status is not draft."
 
 msgid "Galimos reikšmės redagavimas"
 msgstr "Edit enum item"
 
+msgid "Negalima trinti reikšmės, kai versijos būsena nėra juodraštis."
+msgstr "Can not delete the enum, when the version status is not draft."
+
 msgid "Galimos reikšmės šalinimas"
 msgstr "Delete enum item"
+
+msgid "Negalima kurti naujo modelio, kai versijos būsena nėra juodraštis."
+msgstr "Can not create a new model, when the version status is not draft."
+
+msgid "Negalima redaguoti modelio, kai versijos būsena nėra juodraštis."
+msgstr "Can not edit the model, when the version status is not draft."
 
 msgid "Modelio redagavimas"
 msgstr "Edit model"
 
+msgid "Negalima kurti naujo duomenų lauko, kai versijos būsena nėra juodraštis."
+msgstr "Can not create a new property, when the version status is not draft."
+
 msgid "Duomenų lauko pridėjimas"
 msgstr "Add property"
+
+msgid "Negalima redaguoti naujo duomenų lauko, kai versijos būsena nėra juodraštis."
+msgstr "Can not edit the property, when the version status is not draft."
 
 msgid "Duomenų lauko redagavimas"
 msgstr "Edit property"
@@ -5173,6 +5216,38 @@ msgstr "Add parameter"
 
 msgid "Parametro redagavimas"
 msgstr "Edit parameter"
+
+msgid "Negalima publikuoti versijos, kai versijos būsena nėra juodraštis."
+msgstr "Can not publish version, when the version status is not draft."
+
+msgid "Publikuota versija negali būti publikuota dar kartą."
+msgstr "Published version can not be published again"
+
+msgid "Privalote publikuoti duomenų rinkinį."
+msgstr "You must publish the dataset"
+
+#, python-brace-format
+msgid ""
+"Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų "
+"ištekliuje."
+msgstr "Field {0} has a reference to an unpublished field in the same dataset."
+
+#, python-brace-format
+msgid ""
+"Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų "
+"ištekliuje."
+msgstr ""
+"Field {0} has a reference to an unpublished field {1} in the same dataset."
+
+#, python-brace-format
+msgid ""
+"Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį."
+msgstr "Field {0} must be published, because field {1} has a reference to it."
+
+#, python-brace-format
+msgid "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje."
+msgstr ""
+"Field {0} has a reference to an unpublished field in a different dataset."
 
 msgid "Vyr. koordinatorius"
 msgstr "Senior coordinator"
@@ -5306,10 +5381,10 @@ msgid "Komentaras pašalintas"
 msgstr "Comment deleted"
 
 msgid "ištrinta"
-msgstr "deleted"
+msgstr "Deleted"
 
 msgid "redaguotas"
-msgstr "edited"
+msgstr "Edited"
 
 msgid "(neviešinamas komentaras)"
 msgstr "(private comment)"
@@ -5328,6 +5403,9 @@ msgstr "Delete comment"
 
 msgid "Ištrinti komentarą?"
 msgstr "Delete comment?"
+
+msgid "Šis veiksmas negrąžinamas."
+msgstr "This action cannot be undone."
 
 msgid "Komentarai"
 msgstr "Comments"
@@ -5486,6 +5564,12 @@ msgid ""
 msgstr ""
 "Sorry, an unexpected server error occurred. Our team has been informed about "
 "the problem."
+
+msgid "Pasirinkite versiją"
+msgstr "Select a version"
+
+msgid "Versija: Juodraštis"
+msgstr "Version: Draft"
 
 msgid "Grįžti į sutartis"
 msgstr "Go back to agreements"

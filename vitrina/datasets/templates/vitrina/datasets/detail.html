@@ -162,7 +162,10 @@
             </div>
         </div>
     {% else %}
-        {% include 'vitrina/datasets/add_resource.html' %}
+        <div class="buttons is-right m-t-md">
+            {% include "version_picker.html" with version_as_query_param=True url_name="dataset-detail" dataset=dataset versions=versions selected_version=selected_version %}
+            {% include "vitrina/datasets/add_resource.html" %}
+        </div>
     {% endif %}
 {% endif %}
 {% if can_update_dataset %}

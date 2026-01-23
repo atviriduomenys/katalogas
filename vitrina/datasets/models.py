@@ -779,6 +779,9 @@ class Dataset(Resource):
     def level(self):
         return randrange(5)
 
+    def latest_version(self):
+        return self.dataset_version.order_by("-version").first()
+
     @property
     def formats(self):
         return [obj.get_format() for obj in self.datasetdistribution_set.all() if obj.get_format()]
@@ -982,19 +985,21 @@ class Dataset(Resource):
             "model_requests__sum"
         ] or 0
 
-    def get_metadata_objects_for_version(self):
+    def get_metadata_objects_for_version(self, metadata_version):
         meta_objects = []
         models = []
         props = []
         dataset_distributions = set()
-        metadata = self.metadata.first()
+        metadata = self.metadata.filter(metadata_version=metadata_version).first()
         dataset_param_item_metadata_ref = None
         dataset_enum_item_metadata_ref = None
         model_param_item_metadata_ref = None
         dataset_content_type_pk = ContentType.objects.get_for_model(Dataset).pk
 
         all_metadata_instances = (
-            Metadata.objects.filter(dataset=self.pk, draft=True).order_by("id").select_related("metadata_version")
+            Metadata.objects.filter(dataset=self.pk, draft=True, metadata_version=metadata_version)
+            .order_by("id")
+            .select_related("metadata_version")
         )
         # TODO optimize by introducing manual collection of all related models.
         if metadata and metadata.draft is True:
@@ -1656,7 +1661,8 @@ class DatasetStructure(models.Model):
             return str(_("Struktūra"))
 
     def get_absolute_url(self):
-        return reverse("dataset-structure", kwargs={"pk": self.dataset.pk})
+        metadata_version = self.dataset.metadata.last().metadata_version
+        return reverse("dataset-structure", kwargs={"pk": self.dataset.pk, "version_id": metadata_version.pk})
 
     def file_size(self):
         if self.file:

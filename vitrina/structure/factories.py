@@ -3,7 +3,7 @@ import uuid
 
 from factory.django import DjangoModelFactory
 
-from vitrina.datasets.factories import DatasetFactory
+from vitrina.structure import VersionStatus
 from vitrina.structure.models import (
     Model,
     Metadata,
@@ -18,12 +18,21 @@ from vitrina.structure.models import (
 )
 
 
+class VersionFactory(DjangoModelFactory):
+    class Meta:
+        model = Version
+
+    dataset = factory.SubFactory("vitrina.datasets.factories.DatasetFactory")
+    status = VersionStatus.DRAFT
+    version = factory.Sequence(lambda n: n + 1)
+
+
 class MetadataFactory(DjangoModelFactory):
     class Meta:
         model = Metadata
 
-    uuid = str(uuid.uuid4())
-    dataset = factory.SubFactory(DatasetFactory)
+    uuid = factory.LazyFunction(uuid.uuid4)
+    dataset = factory.SubFactory("vitrina.datasets.factories.DatasetFactory")
     name = factory.Faker("word")
     title = factory.Faker("catch_phrase")
     description = factory.Faker("catch_phrase")
@@ -31,6 +40,7 @@ class MetadataFactory(DjangoModelFactory):
     access = Metadata.OPEN
     visibility = Metadata.UNDEFINED
 
+    metadata_version = factory.SubFactory(VersionFactory, dataset=factory.SelfAttribute("..dataset"))
     type = ""
     ref = ""
     source = ""
@@ -43,7 +53,8 @@ class ModelFactory(DjangoModelFactory):
     class Meta:
         model = Model
 
-    dataset = factory.SubFactory(DatasetFactory)
+    metadata_version = factory.SubFactory(VersionFactory)
+    dataset = factory.SelfAttribute("metadata_version.dataset")
 
 
 class BaseFactory(DjangoModelFactory):
@@ -51,6 +62,7 @@ class BaseFactory(DjangoModelFactory):
         model = Base
 
     model = factory.SubFactory(ModelFactory)
+    metadata_version = factory.SelfAttribute("model.metadata_version")
 
 
 class PropertyFactory(DjangoModelFactory):
@@ -58,6 +70,7 @@ class PropertyFactory(DjangoModelFactory):
         model = Property
 
     model = factory.SubFactory(ModelFactory)
+    metadata_version = factory.SelfAttribute("model.metadata_version")
 
 
 class EnumFactory(DjangoModelFactory):
@@ -65,6 +78,7 @@ class EnumFactory(DjangoModelFactory):
         model = Enum
 
     name = factory.Faker("word")
+    metadata_version = factory.SubFactory(VersionFactory)
 
 
 class EnumItemFactory(DjangoModelFactory):
@@ -72,6 +86,7 @@ class EnumItemFactory(DjangoModelFactory):
         model = EnumItem
 
     enum = factory.SubFactory(EnumFactory)
+    metadata_version = factory.SelfAttribute("enum.metadata_version")
 
 
 class PrefixFactory(DjangoModelFactory):
@@ -79,6 +94,7 @@ class PrefixFactory(DjangoModelFactory):
         model = Prefix
 
     name = factory.Faker("word")
+    metadata_version = factory.SubFactory(VersionFactory)
 
 
 class ParamFactory(DjangoModelFactory):
@@ -86,6 +102,7 @@ class ParamFactory(DjangoModelFactory):
         model = Param
 
     name = factory.Faker("word")
+    metadata_version = factory.SubFactory(VersionFactory)
 
 
 class ParamItemFactory(DjangoModelFactory):
@@ -93,11 +110,4 @@ class ParamItemFactory(DjangoModelFactory):
         model = ParamItem
 
     param = factory.SubFactory(ParamFactory)
-
-
-class VersionFactory(DjangoModelFactory):
-    class Meta:
-        model = Version
-
-    dataset = factory.SubFactory(DatasetFactory)
-    description = factory.Faker("sentence")
+    metadata_version = factory.SelfAttribute("param.metadata_version")

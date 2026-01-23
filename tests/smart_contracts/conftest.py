@@ -38,15 +38,7 @@ def organization() -> Organization:
 
 @pytest.fixture
 def dataset(organization: Organization) -> Dataset:
-    dataset = DatasetFactory(organization=organization)
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-    )
-
-    return dataset
+    return DatasetFactory(organization=organization, metadata="test/dataset")
 
 
 @pytest.fixture

@@ -47,6 +47,7 @@ from parler.views import (
 from reversion import add_to_revision
 from reversion.models import Version
 
+from vitrina.structure.models import Version as _Version
 from vitrina.api.helpers import get_datasets_for_rdf
 from vitrina.api.models import ApiKey
 from vitrina.comments.models import Comment
@@ -70,6 +71,7 @@ from vitrina.datasets.forms import (
     CatalogResourceForm,
 )
 from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name
+from vitrina.structure import VersionStatus
 from vitrina.structure.views import DatasetStructureMixin
 
 from vitrina.tasks.models import Task
@@ -469,6 +471,18 @@ class DatasetDetailView(
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.VIEW, dataset)
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+
+        if not request.GET.get("resource_version"):
+            if metadata_version := _Version.objects.filter(dataset=self.object).order_by("version").last():
+                url = (
+                    f"{reverse('dataset-detail', kwargs={'pk': self.object.pk})}?resource_version={metadata_version.pk}"
+                )
+                return redirect(url)
+
+        return super().get(request, *args, **kwargs)
+
     def get_queryset(self) -> QuerySet[Dataset]:
         return (
             super()
@@ -480,6 +494,11 @@ class DatasetDetailView(
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         dataset = context_data.get("dataset")
+        context_data["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
+        metadata_version = None
+        if metadata_version_id := self.request.GET.get("resource_version"):
+            metadata_version = _Version.objects.filter(id=metadata_version_id).first()
+            context_data["selected_version"] = metadata_version
         organization = dataset.organization
 
         related_datasets = dataset.related_datasets.all()
@@ -506,7 +525,6 @@ class DatasetDetailView(
                 dataset,
             ),
             "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, dataset),
-            "resources": dataset.datasetdistribution_set.all().order_by("-period_start"),
             "org_logo": organization.image if organization else None,
             "attributions": dataset.datasetattribution_set.order_by("attribution"),
             "data_maturity": dataset.metadata_set.average_level(),
@@ -516,8 +534,19 @@ class DatasetDetailView(
             "licences": set([dist.licence for dist in dataset.datasetdistribution_set.filter(licence__isnull=False)]),
         }
 
+        if metadata_version and metadata_version.status == VersionStatus.DRAFT:
+            extra_context_data["resources"] = dataset.datasetdistribution_set.filter(
+                Q(metadata_version=metadata_version) | Q(metadata_version__isnull=True) | Q(format__extension="UAPI")
+            ).order_by("-period_start")
+        else:
+            extra_context_data["resources"] = dataset.datasetdistribution_set.filter(
+                Q(metadata_version=metadata_version) | Q(format__extension="UAPI")
+            ).order_by("-period_start")
+
         distributions_with_conditions_ids = (
-            dataset.datasetdistribution_set.filter(translations__conditions__isnull=False)
+            dataset.datasetdistribution_set.filter(
+                translations__conditions__isnull=False, metadata_version=metadata_version
+            )
             .exclude(translations__conditions="")
             .values_list("id", flat=True)
         )
@@ -530,7 +559,7 @@ class DatasetDetailView(
         part_of = itertools.groupby(part_of, lambda x: x.relation)
         extra_context_data["part_of"] = [(relation, list(values)) for relation, values in part_of]
 
-        dynamic_resource = DynamicResourceService(dataset)
+        dynamic_resource = DynamicResourceService(dataset, metadata_version)
         generated_resources = dynamic_resource.generate_resources()
         extra_context_data["dynamic_resources"] = generated_resources
 
@@ -862,6 +891,11 @@ class DatasetCreateView(
         dataset_name = form.cleaned_data.get("name", "") or generate_unique_dataset_name(
             self.object.organization, self.object
         )
+        draft_metadata_version = _Version.objects.create(
+            dataset=self.object,
+            version=1,
+            status=VersionStatus.DRAFT,
+        )
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
             dataset=self.object,
@@ -872,6 +906,7 @@ class DatasetCreateView(
             description=self.object.description,
             prepare_ast={},
             version=1,
+            metadata_version=draft_metadata_version,
         )
         if self.object.organization:
             org_id = self.object.organization.id
@@ -1465,6 +1500,18 @@ class DatasetStructureImportView(
     history_url_name = "dataset-structure-history"
     plan_url_name = "dataset-plans"
 
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        if not self.has_permission():
+            return self.handle_no_permission()
+        if not (version_id := kwargs.get("version_id")):
+            return super().dispatch(request, *args, **kwargs)
+        self.metadata_version = get_object_or_404(_Version, pk=version_id, dataset=self.dataset)
+        if not self.metadata_version.is_draft():
+            messages.error(request, _("Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."))
+            return redirect(self.dataset.get_absolute_url())
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
         subclass = self.dataset.subclass
         return has_perm(
@@ -1500,7 +1547,11 @@ class DatasetStructureImportView(
         self.object.save()
         self.object.dataset.current_structure = self.object
         self.object.dataset.save()
-        create_structure_objects(self.object)
+        if self.metadata_version and not self.metadata_version.is_draft():
+            form.add_error("file", _("Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."))
+            return self.form_invalid(form)
+
+        self.metadata_version = create_structure_objects(self.object, self.metadata_version)
         self.object.dataset.save()
         return HttpResponseRedirect(self.get_success_url())
 
@@ -1512,6 +1563,14 @@ class DatasetStructureImportView(
 
     def get_history_object(self):
         return self.dataset
+
+    def get_success_url(self) -> str:
+        if self.metadata_version.pk:
+            return reverse(
+                "dataset-structure",
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk},
+            )
+        return reverse("dataset-structure-no-version", kwargs={"pk": self.dataset.pk})
 
 
 class DatasetMembersView(

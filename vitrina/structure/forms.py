@@ -16,7 +16,8 @@ from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from lark import ParseError
 
 from vitrina.classifiers.models import Status
-from vitrina.structure import spyna
+from vitrina.resources.models import DatasetDistribution
+from vitrina.structure import spyna, AccessType
 from vitrina.structure.helpers import is_time_unit, is_si_unit
 from vitrina.structure.models import (
     EnumItem,
@@ -103,7 +104,7 @@ class EnumForm(forms.ModelForm):
     )
     access = forms.ChoiceField(
         label=_("Prieigos lygmuo"),
-        choices=Metadata.ACCESS_TYPES,
+        choices=AccessType.choices,
         required=False,
         help_text=_("Prieigos lygis, naudojamas pagal nutylėjimą visiems šios vardų erdvės elementams."),
     )
@@ -463,6 +464,12 @@ class ModelCreateForm(forms.ModelForm):
         widget=forms.RadioSelect,
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
+    distribution = forms.ModelChoiceField(
+        label=_("Duomenų distribucija"),
+        required=False,
+        queryset=DatasetDistribution.objects.none(),
+        help_text=_("Savybė nurodanti modelio duomenų distribuciją."),
+    )
     visibility = forms.ChoiceField(
         label=_("Metaduomenų matomumas"),
         required=False,
@@ -568,9 +575,10 @@ class ModelCreateForm(forms.ModelForm):
             "is_parameterized",
         )
 
-    def __init__(self, dataset, *args, **kwargs):
+    def __init__(self, dataset, metadata_version, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.dataset = dataset
+        self.metadata_version = metadata_version
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "model-form"
@@ -584,6 +592,7 @@ class ModelCreateForm(forms.ModelForm):
             Field("visibility"),
             Field("eli"),
             Field("title"),
+            Field("distribution"),
             Field("description"),
             Field("is_parameterized"),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Modelio bazė")}</h4>'),
@@ -594,7 +603,11 @@ class ModelCreateForm(forms.ModelForm):
             Field("comment"),
             Submit("submit", _("Sukurti"), css_class="button is-primary"),
         )
-
+        self.fields["distribution"].queryset = (
+            DatasetDistribution.objects.exclude(format__extension="UAPI")
+            .filter(dataset=dataset)
+            .filter(Q(metadata_version=self.metadata_version) | Q(metadata_version__isnull=True))
+        )
         self.initial["level"] = "None"
         self.initial["base_level"] = "None"
         self.initial["visibility"] = "None"
@@ -638,11 +651,13 @@ class ModelCreateForm(forms.ModelForm):
             metadata = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Model),
                 name=metadata_name,
+                metadata_version=self.metadata_version,
             ).exclude(pk=self.instance.pk)
         else:
             metadata = Metadata.objects.filter(
                 content_type=ContentType.objects.get_for_model(Model),
                 name=metadata_name,
+                metadata_version=self.metadata_version,
             )
 
         if name:
@@ -722,6 +737,7 @@ class ModelUpdateForm(ModelCreateForm):
             "is_parameterized",
             "level",
             "status",
+            "distribution",
             "visibility",
             "eli",
             "title",
@@ -732,8 +748,8 @@ class ModelUpdateForm(ModelCreateForm):
             "comment",
         )
 
-    def __init__(self, dataset, *args, **kwargs):
-        super().__init__(dataset, *args, **kwargs)
+    def __init__(self, dataset, metadata_version, *args, **kwargs):
+        super().__init__(dataset, metadata_version, *args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
 
         self.helper.layout = Layout(
@@ -748,6 +764,7 @@ class ModelUpdateForm(ModelCreateForm):
             Field("visibility"),
             Field("eli"),
             Field("title"),
+            Field("distribution"),
             Field("description"),
             Field("is_parameterized"),
             HTML(f'<hr><h4 class="custom-title mt-5">{_("Modelio bazė")}</h4>'),
@@ -771,6 +788,7 @@ class ModelUpdateForm(ModelCreateForm):
             self.initial["visibility"] = instance.visibility if instance.visibility is not None else "None"
             self.initial["status"] = instance.status if instance.status is not None else default_status
             self.initial["eli"] = instance.eli
+            self.initial["distribution"] = model.distribution_id
             if model.base:
                 self.initial["base"] = model.base.model
                 self.initial["base_ref"] = model.base.property_list.order_by("order").values_list("property", flat=True)
@@ -961,7 +979,7 @@ class PropertyForm(forms.ModelForm):
     access = forms.ChoiceField(
         label=_("Prieigos lygis"),
         required=False,
-        choices=Metadata.ACCESS_TYPES,
+        choices=AccessType.choices,
         help_text=_("Nurodo prieigos prie duomenų lygį."),
     )
     eli = forms.URLField(
@@ -1242,7 +1260,7 @@ class ParamForm(forms.ModelForm):
         return description
 
 
-class VersionForm(forms.ModelForm):
+class PublishForm(forms.ModelForm):
     released = forms.DateField(label=_("Įsigalioja"), widget=forms.DateInput(attrs={"type": "date"}))
     metadata = forms.MultipleChoiceField(label=_("Įtraukiama į versiją"), required=False, widget=CheckboxSelectMultiple)
     version_type = forms.ChoiceField(
@@ -1267,8 +1285,9 @@ class VersionForm(forms.ModelForm):
             "version_type",
         )
 
-    def __init__(self, dataset, *args, **kwargs):
+    def __init__(self, dataset, metadata_version, *args, **kwargs):
         self.dataset = dataset
+        self.metadata_version = metadata_version
         super().__init__(*args, **kwargs)
         latest_versions = []
         major_versions = Version.objects.filter(dataset=self.dataset, version_type=VersionType.MAJOR).order_by("major")
@@ -1301,7 +1320,7 @@ class VersionForm(forms.ModelForm):
             Field("metadata"),
             Submit("submit", _("Publikuoti"), css_class="button is-primary"),
         )
-        self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version()
+        self.fields["metadata"].choices = self.dataset.get_metadata_objects_for_version(self.metadata_version)
 
     def clean(self) -> dict:
         cleaned_data = super().clean()

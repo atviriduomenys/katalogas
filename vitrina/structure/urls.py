@@ -1,7 +1,7 @@
 from django.urls import path
 
 from vitrina.api_example.views import YamlFileImportView
-from vitrina.structure.views import DatasetStructureView, VersionCreateView
+from vitrina.structure.views import DatasetStructureView, PublishVersionView
 from vitrina.structure.views import DatasetStructureExportView
 from vitrina.structure.views import DatasetStructureExportOpenAPIView
 from vitrina.structure.views import ModelStructureView
@@ -40,50 +40,61 @@ from vitrina.structure.views import PropertyGraphView
 
 urlpatterns = [
     path(
-        "datasets/<int:pk>/models/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/",
         DatasetStructureView.as_view(),
         name="dataset-structure",
     ),
     path(
+        "datasets/<int:pk>/models/",
+        DatasetStructureView.as_view(),
+        name="dataset-structure-no-version",
+    ),
+    path(
         "datasets/<int:pk>/models/history/",
+        DatasetStructureHistoryView.as_view(),
+        name="dataset-structure-history-no-version",
+    ),
+    path(
+        "datasets/<int:pk>/versions/<int:version_id>/models/history/",
         DatasetStructureHistoryView.as_view(),
         name="dataset-structure-history",
     ),
-    path("datasets/<int:pk>/models/add/", ModelCreateView.as_view(), name="model-create"),
+    path("datasets/<int:pk>/versions/<int:version_id>/models/add/", ModelCreateView.as_view(), name="model-create"),
+    path("datasets/<int:pk>/models/add/", ModelCreateView.as_view(), name="model-create-no-version"),
     path(
-        "datasets/<int:pk>/models/<str:model>/change/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/change/",
         ModelUpdateView.as_view(),
         name="model-update",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/delete/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/delete/",
         ModelDeleteView.as_view(),
         name="model-delete",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/add/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/add/",
         PropertyCreateView.as_view(),
         name="property-create",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/",
         ModelStructureView.as_view(),
         name="model-structure",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/history/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/history/",
         ModelHistoryView.as_view(),
         name="model-history",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/<str:prop>/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/<str:prop>/",
         PropertyStructureView.as_view(),
         name="property-structure",
     ),
     path(
         "datasets/<int:pk>/models/<str:model>/<str:prop>/data/",
         get_property_data,
-        name="property-data",
+        name="property-data",  # not used
     ),
     path(
         "datasets/<int:pk>/models/<str:model>/<str:prop>/graph/",
@@ -91,19 +102,24 @@ urlpatterns = [
         name="property-graph",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/<str:prop>/history/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/<str:prop>/history/",
         PropertyHistoryView.as_view(),
         name="property-history",
     ),
     path(
-        "datasets/<int:pk>/models/<str:model>/<str:prop>/change/",
+        "datasets/<int:pk>/versions/<int:version_id>/models/<str:model>/<str:prop>/change/",
         PropertyUpdateView.as_view(),
         name="property-update",
     ),
     path(
-        "datasets/<int:pk>/data/<str:model>/",
+        "datasets/<int:pk>/versions/<int:version_id>/data/<str:model>/",
         ModelDataView.as_view(),
         name="model-data",
+    ),
+    path(
+        "datasets/<int:pk>/data/<str:model>/",
+        ModelDataView.as_view(),
+        name="model-data-no-version",
     ),
     path(
         "datasets/<int:pk>/data/<str:model>/count/",
@@ -111,67 +127,67 @@ urlpatterns = [
         name="model-data-count",
     ),
     path(
-        "datasets/<int:pk>/data/<str:model>/table/",
+        "datasets/<int:pk>/versions/<int:version_id>/data/<str:model>/table/",
         ModelDataTableView.as_view(),
         name="model-data-table",
     ),
     path(
         "datasets/<int:pk>/data/<str:model>/table-data/",
         get_model_data,
-        name="model-data-table-data",
+        name="model-data-table-data",  # not used
     ),
     path(
-        "datasets/<int:pk>/data/<str:model>/<str:uuid>/",
+        "datasets/<int:pk>/versions/<int:version_id>/data/<str:model>/<str:uuid>/",
         ObjectDataView.as_view(),
         name="object-data",
     ),
     path(
-        "datasets/<int:pk>/data/<str:model>/<str:uuid>/table/",
+        "datasets/<int:pk>/versions/<int:version_id>/data/<str:model>/<str:uuid>/table/",
         ObjectDataTableView.as_view(),
         name="object-data-table",
     ),
     path(
         "datasets/<int:pk>/data/<str:model>/<str:uuid>/table-data/",
         get_object_data,
-        name="object-data-table-data",
+        name="object-data-table-data",  # not used
     ),
     path(
         "datasets/<int:pk>/params/<int:content_type_id>/<int:object_id>/add/",
         ParamCreateView.as_view(),
-        name="param-create",
+        name="param-create",  # no way to navigate to
     ),
     path(
         "datasets/<int:pk>/params/<int:param_id>/change/",
         ParamUpdateView.as_view(),
-        name="param-update",
+        name="param-update",  # no way to navigate to
     ),
     path(
         "datasets/<int:pk>/params/<int:param_id>/delete/",
         ParamDeleteView.as_view(),
-        name="param-delete",
+        name="param-delete",  # no way to navigate to
     ),
     path(
-        "datasets/<int:pk>/<int:model_id>/add_prop/<int:prop_id>/",
+        "datasets/<int:pk>/versions/<int:version_id>/<int:model_id>/add_prop/<int:prop_id>/",
         CreateBasePropertyView.as_view(),
         name="base-property-create",
     ),
     path(
-        "datasets/<int:pk>/<int:model_id>/delete_prop/<int:prop_id>/",
+        "datasets/<int:pk>/versions/<int:version_id>/<int:model_id>/delete_prop/<int:prop_id>/",
         DeleteBasePropertyView.as_view(),
         name="base-property-delete",
     ),
     path(
-        "datasets/<int:pk>/api/getall/<str:model>/",
+        "datasets/<int:pk>/versions/<int:version_id>/api/getall/<str:model>/",
         GetAllApiView.as_view(),
         name="getall-api",
     ),
     path(
-        "datasets/<int:pk>/api/getone/<str:model>/<str:uuid>/",
+        "datasets/<int:pk>/versions/<int:version_id>/api/getone/<str:model>/<str:uuid>/",
         GetOneApiView.as_view(),
         name="getone-api",
     ),
     path(
-        "datasets/<int:pk>/api/changes/<str:model>/",
+        "datasets/<int:pk>/versions/<int:version_id>/api/changes/<str:model>/",
         ChangesApiView.as_view(),
         name="changes-api",
     ),
@@ -186,29 +202,29 @@ urlpatterns = [
         name="dataset-structure-export-openapi",
     ),
     path(
-        "datasets/<int:pk>/<str:model>/<str:prop>/enum/add/",
+        "datasets/<int:pk>/versions/<int:version_id>/<str:model>/<str:prop>/enum/add/",
         EnumCreateView.as_view(),
         name="enum-create",
     ),
     path(
-        "datasets/<int:pk>/<str:model>/<str:prop>/enum/<int:enum_id>/change/",
+        "datasets/<int:pk>/versions/<int:version_id>/<str:model>/<str:prop>/enum/<int:enum_id>/change/",
         EnumUpdateView.as_view(),
         name="enum-update",
     ),
     path(
-        "datasets/<int:pk>/<str:model>/<str:prop>/enum/<int:enum_id>/delete/",
+        "datasets/<int:pk>/versions/<int:version_id>/<str:model>/<str:prop>/enum/<int:enum_id>/delete/",
         EnumDeleteView.as_view(),
         name="enum-delete",
     ),
     path("get_updated_summary/", get_updated_summary, name="get_updated_summary"),
     path("datasets/<int:pk>/version/", VersionListView.as_view(), name="version-list"),
     path(
-        "datasets/<int:pk>/version/add/",
-        VersionCreateView.as_view(),
+        "datasets/<int:pk>/versions/<int:version_id>/add/",
+        PublishVersionView.as_view(),
         name="version-create",
     ),
     path(
-        "datasets/<int:pk>/version/<int:version_id>/",
+        "datasets/<int:pk>/versions/<int:version_id>/",
         VersionDetailView.as_view(),
         name="version-detail",
     ),

@@ -57,13 +57,12 @@ class TestCreate:
 
         assert response.status_code == status.HTTP_201_CREATED
 
-        assert Metadata.objects.count() == 1
         dataset = Dataset.objects.filter(
             metadata__name=data["name"],
             access_rights=Dataset.NON_PUBLIC,
             organization=organization,
         ).first()
-
+        assert Metadata.objects.filter(dataset=dataset).count() == 1
         assert dataset
         assert dataset.path is not None
         assert dataset.is_child_of(dataset_parent) is True  # Parent is set.
@@ -208,12 +207,12 @@ class TestCreate:
 
         assert response.status_code == status.HTTP_201_CREATED
 
-        assert Metadata.objects.count() == 1
         dataset = Dataset.objects.filter(
             metadata__name=data["name"],
             access_rights=Dataset.NON_PUBLIC,
             organization=organization,
         ).first()
+        assert Metadata.objects.filter(dataset=dataset).count() == 1
         assert dataset
         assert response.json == {
             "@context": "",
@@ -348,10 +347,9 @@ class TestCreate:
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
             expect_errors=True,
         )
-
         assert response.status_code == status.HTTP_400_BAD_REQUEST
         assert Dataset.objects.filter(organization=organization).count() == 0
-        assert Metadata.objects.count() == 0
+        assert Metadata.objects.filter(dataset=organization.dataset_set.first()).count() == 0
         assert response.json == {
             "code": "validation_error",
             "type": "ValidationError",
@@ -402,7 +400,7 @@ class TestCreate:
 
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR
         assert Dataset.objects.filter(organization=organization).count() == 0
-        assert Metadata.objects.count() == 0
+        assert Metadata.objects.filter(dataset=organization.dataset_set.first()).count() == 0
         response_json = response.json
         response_json.pop("context")  # Context stores the full traceback, we skip this check in tests.
         assert response_json == {
@@ -743,7 +741,7 @@ class TestList:
         }
 
 
-    def test_call_with_query_parameters_archived_dataset(
+    def test_list_with_query_parameters_archived_dataset(
         self,
         app: DjangoTestApp,
         organization: Organization,
@@ -755,12 +753,7 @@ class TestList:
             title="Title of the Dataset",
             description="Description of the Dataset.",
             deleted=True,
-        )
-        metadata = MetadataFactory(
-            content_type=ContentType.objects.get_for_model(Dataset),
-            object_id=dataset.pk,
-            dataset=dataset,
-            name="test/dataset/TestModel",
+            metadata="test/dataset/TestModel",
         )
 
         response = app.get(
@@ -778,7 +771,7 @@ class TestList:
             "template": "The requested Dataset could not be found.",
             "message": (
                 f"No dataset matched the provided query — "
-                f"http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/?name={quote(metadata.name, safe='')}."
+                f"http://testserver/uapi/datasets/gov/vssa/ror/dcat/Dataset/?name={quote(dataset.metadata.first().name, safe='')}."
             ),
             "additionalProperties": None
         }
@@ -1090,7 +1083,7 @@ class TestActionGetDatasetStructure:
         )
         dataset.current_structure = structure
         dataset.save()
-        create_structure_objects(structure)
+        create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
         response = app.get(
             url_dataset_structure,

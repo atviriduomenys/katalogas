@@ -1,5 +1,8 @@
 {% load i18n %}
-{% include 'vitrina/datasets/add_resource.html' %}
+<div class="buttons is-right m-t-md">
+    {% include "version_picker.html" with version_as_query_param=True url_name="dataset-detail" dataset=dataset versions=versions selected_version=selected_version %}
+    {% include 'vitrina/datasets/add_resource.html' with selected_version=selected_version %}
+</div>
 <table class="table is-striped is-hoverable is-fullwidth no-margin-bottom table-smaller-padding" id="resource-table">
     <thead>
     <tr>
@@ -86,19 +89,53 @@
 
             {% if can_add_resource %}
             <td>
-                <a href="{%url 'resource-change' pk=r.id %}"
-                   class="button is-link is-small is-pulled-right"
-                   id="change_resource">{% translate "Redaguoti" %}</a>
+                {% if r.metadata_version %}
+                    <a
+                        class="button is-link is-small is-pulled-right{% if selected_version.external_version %} is-disabled{% endif %}"
+                        {% if not selected_version.external_version %}
+                            href="{% url 'resource-change' pk=r.id version_id=r.metadata_version.id %}"
+                        {% else %}
+                            style="pointer-events: none; opacity: 0.5;"
+                            aria-disabled="true"
+                        {% endif %}
+                        id="change_resource"
+                    >
+                        {% translate "Redaguoti" %}
+                    </a>
+
+                {% else %}
+                    <a href="{% url 'resource-change-no-version' pk=r.id %}"
+                       class="button is-link is-small is-pulled-right"
+                       id="change_resource">{% translate "Redaguoti" %}</a>
+                {% endif %}
             </td>
             <td>
-                <form method="post" action="{% url 'resource-delete' pk=r.id %}">
+                {% if r.metadata_version %}
+                    <form method="post" action="{% url 'resource-delete' pk=r.id version_id=r.metadata_version.id %}">
+                {% else %}
+                    <form method="post" action="{% url 'resource-delete-no-version' pk=r.id %}">
+                {% endif %}
                     {% csrf_token %}
-                    <button type="submit"
-                            class="button is-link is-small is-pulled-right"
-                            onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį šaltinį?' %})"
+                    {% if r.metadata_version %}
+                        <button type="submit"
+                            class="button is-link is-small is-pulled-right {% if selected_version.external_version %}is-disabled{% endif %}"
+                            {% if selected_version.external_version %}
+                                style="pointer-events: none; opacity: 0.5;"
+                                aria-disabled="true"
+                            {% else %}
+                                onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį šaltinį?' %})"
+                            {% endif %}
                             id="delete_resource">
-                        {% translate "Ištrinti" %}
-                    </button>
+                                {% translate "Ištrinti" %}
+                        </button>
+                    {% else %}
+                        <button type="submit"
+                                    class="button is-link is-small is-pulled-right"
+                                    onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti šį šaltinį?' %})"
+                                    id="delete_resource">
+                                {% translate "Ištrinti" %}
+                            </button>
+                    {% endif %}
                 </form>
             </td>
             {% endif %}

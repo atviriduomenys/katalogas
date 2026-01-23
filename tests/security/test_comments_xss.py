@@ -284,7 +284,7 @@ def test_comment_xss_end_to_end_protection(client, user, organization, dataset, 
 
     # Get page where comment is displayed
     detail_url = dataset.get_absolute_url()
-    response = client.get(detail_url)
+    response = client.get(detail_url, follow=True)
 
     assert response.status_code == 200, f"Dataset detail returned {response.status_code}"
 

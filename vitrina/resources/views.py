@@ -1,10 +1,9 @@
-import uuid
-
+from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Exists, OuterRef
 from django.forms import BaseForm
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect, get_object_or_404, render
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -22,7 +21,7 @@ from vitrina.plans.models import Plan
 from vitrina.requests.models import Request
 from vitrina.resources.forms import DatasetResourceForm
 from vitrina.resources.models import DatasetDistribution
-from vitrina.structure.models import Metadata
+from vitrina.structure.models import Version
 from vitrina.structure.views import DatasetStructureMixin, ModelCreateView
 from vitrina.views import HistoryMixin
 
@@ -67,6 +66,9 @@ class ResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetStructure
         context["structure_acceptable"] = False
         context["params"] = self.object.params.all().order_by("name")
         context["models"] = self.object.model_set.all()
+        context["is_disabled"] = (
+            self.object.metadata_version is not None and not self.object.metadata_version.is_draft()
+        )
         return context
 
 
@@ -110,39 +112,26 @@ class ResourceCreateView(
 
         name = form.cleaned_data.get("name")
         if not name:
-            name = (
-                Metadata.objects.filter(
+            latest_name = (
+                DatasetDistribution.objects.filter(
                     dataset=self.dataset,
-                    content_type=ContentType.objects.get_for_model(DatasetDistribution),
                     name__iregex=r"resource[0-9]+",
                 )
                 .order_by("name")
                 .values_list("name", flat=True)
                 .last()
             )
-            if not name:
+            if not latest_name:
                 name = "resource1"
             else:
-                n = name.replace("resource", "")
+                duplicate_name_suffix = latest_name.replace("resource", "")
                 try:
-                    n = int(n)
+                    duplicate_name_suffix = int(duplicate_name_suffix)
                 except ValueError:
-                    n = 0
-                n += 1
-                name = f"resource{n}"
-        Metadata.objects.create(
-            uuid=str(uuid.uuid4()),
-            dataset=self.dataset,
-            content_type=ContentType.objects.get_for_model(resource),
-            object_id=resource.pk,
-            name=name,
-            prepare_ast={},
-            access=form.cleaned_data.get("access") or None,
-            version=1,
-            title=form.cleaned_data.get("title"),
-            description=form.cleaned_data.get("description"),
-            level_given=form.cleaned_data.get("level"),
-        )
+                    duplicate_name_suffix = 0
+                duplicate_name_suffix += 1
+                name = f"resource{duplicate_name_suffix}"
+        resource.name = name
 
         if not self.dataset.datasetdistribution_set.exclude(pk=resource.pk).exists():
             dataset_plans = Plan.objects.filter(plandataset__dataset=self.dataset)
@@ -190,16 +179,30 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
     context_object_name = "datasetdistribution"
     form_class = DatasetResourceForm
 
+    def dispatch(self, request, *args, **kwargs):
+        self.resource = get_object_or_404(DatasetDistribution, pk=kwargs["pk"])
+        if not self.has_permission():
+            return self.handle_no_permission()
+        self.metadata_version = None
+        version_id = kwargs.get("version_id")
+        if version_id is not None:
+            self.metadata_version = get_object_or_404(
+                Version,
+                pk=version_id,
+            )
+            if not self.metadata_version.is_draft():
+                messages.error(request, _("Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."))
+                return redirect(self.resource.get_absolute_url())
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
-        return has_perm(self.request.user, Action.UPDATE, resource)
+        return has_perm(self.request.user, Action.UPDATE, self.resource)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
-            resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
-            return redirect(resource.dataset)
+            return redirect(self.resource.dataset)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -213,27 +216,7 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
         applicable_legislation_urls = form.cleaned_data.pop("applicable_legislation")
         resource: DatasetDistribution = form.save()
         name = form.cleaned_data.get("name")
-        if not name:
-            name = (
-                Metadata.objects.filter(
-                    dataset=resource.dataset,
-                    content_type=ContentType.objects.get_for_model(DatasetDistribution),
-                    name__iregex=r"resource[0-9]+",
-                )
-                .order_by("name")
-                .values_list("name", flat=True)
-                .last()
-            )
-            if not name:
-                name = "resource1"
-            else:
-                n = name.replace("resource", "")
-                try:
-                    n = int(n)
-                except ValueError:
-                    n = 0
-                n += 1
-                name = f"resource{n}"
+
         if metadata := resource.metadata.first():
             metadata.name = name
             metadata.access = form.cleaned_data.get("access") or None
@@ -242,20 +225,6 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
             metadata.level_given = form.cleaned_data.get("level")
             metadata.version += 1
             metadata.save()
-        else:
-            Metadata.objects.create(
-                uuid=str(uuid.uuid4()),
-                dataset=resource.dataset,
-                content_type=ContentType.objects.get_for_model(resource),
-                object_id=resource.pk,
-                name=name,
-                prepare_ast={},
-                access=form.cleaned_data.get("access") or None,
-                version=1,
-                title=form.cleaned_data.get("title"),
-                description=form.cleaned_data.get("description"),
-                level_given=form.cleaned_data.get("level"),
-            )
 
         if "applicable_legislation" in form.changed_data:
             resource.update_applicable_legislation(applicable_legislation_urls)
@@ -273,22 +242,40 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
 class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView):
     model = DatasetDistribution
 
+    def dispatch(self, request, *args, **kwargs):
+        self.resource = get_object_or_404(DatasetDistribution, pk=kwargs["pk"])
+        if not self.has_permission():
+            return self.handle_no_permission()
+        self.metadata_version = None
+        version_id = kwargs.get("version_id")
+        if version_id is not None:
+            self.metadata_version = get_object_or_404(
+                Version,
+                pk=version_id,
+            )
+            if not self.metadata_version.is_draft():
+                messages.error(request, _("Negalima trinti šaltinio, kai versijos būsena nėra juodraštis."))
+                return redirect(self.resource.get_absolute_url())
+        return super().dispatch(request, *args, **kwargs)
+
     def has_permission(self):
-        resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
-        return has_perm(self.request.user, Action.DELETE, resource)
+        return has_perm(self.request.user, Action.DELETE, self.resource)
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             return redirect(settings.LOGIN_URL)
         else:
-            resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
-            return redirect(resource.dataset)
+            if self.resource.metadata_version:
+                url = reverse("dataset-detail", kwargs={"pk": self.resource.dataset.pk})
+                return HttpResponseRedirect(f"{url}?resource_version={self.resource.metadata_version.pk}")
+            return redirect(self.resource.dataset)
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         resource = get_object_or_404(DatasetDistribution, id=self.kwargs["pk"])
         dataset = get_object_or_404(Dataset, id=resource.dataset_id)
         add_to_revision(resource)
         resource.delete()
+        resource.metadata.all().delete()
 
         if not DatasetDistribution.objects.filter(dataset=dataset).exists() and dataset.is_public:
             if dataset.plandataset_set.exists():
@@ -306,6 +293,11 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
                 user=self.request.user,
             )
             dataset.save()
+
+        if version_id := self.kwargs.get("version_id"):
+            url = reverse("dataset-detail", kwargs={"pk": dataset.pk})
+            return HttpResponseRedirect(f"{url}?resource_version={version_id}")
+
         return redirect(dataset)
 
 
@@ -314,6 +306,7 @@ class ResourceModelCreateView(ModelCreateView):
 
     def dispatch(self, request, *args, **kwargs):
         self.resource = get_object_or_404(DatasetDistribution, pk=kwargs.get("resource_id"))
+        self.metadata_version = get_object_or_404(Version, pk=kwargs.get("version_id"))
         return super().dispatch(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -323,7 +316,9 @@ class ResourceModelCreateView(ModelCreateView):
             reverse("home"): _("Pradžia"),
             reverse("dataset-list"): _("Duomenų ištekliai"),
             reverse("dataset-detail", args=[self.dataset.pk]): self.dataset.title,
-            reverse("resource-detail", args=[self.dataset.pk, self.resource.pk]): self.resource.title,
+            reverse(
+                "resource-detail", args=[self.dataset.pk, self.metadata_version.pk, self.resource.pk]
+            ): self.resource.title,
         }
         return context
 
@@ -331,6 +326,7 @@ class ResourceModelCreateView(ModelCreateView):
         super().form_valid(form)
         model = self.object.object
         model.distribution = self.resource
+        model.metadata_version = self.metadata_version
         model.save()
         return redirect(self.resource.get_absolute_url())
 
@@ -342,10 +338,16 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
         dataset = get_object_or_404(Dataset, id=self.kwargs["pk"])
         return has_perm(self.request.user, Action.VIEW, dataset)
 
-    def get_data(self, dataset_pk, model_name, distribution_format):
+    def get_data(
+        self, dataset_pk: int, metadata_version_pk: int | None, model_name: str, distribution_format: str
+    ) -> dict:
         dataset = get_object_or_404(Dataset, id=dataset_pk)
-        dynamic_resource = DynamicResourceService(dataset)
-        data = dynamic_resource.retrieve_data(dataset_pk, model_name, distribution_format)
+        metadata_version = None
+        if metadata_version_pk:
+            metadata_version = get_object_or_404(Version, id=metadata_version_pk)
+
+        dynamic_resource = DynamicResourceService(dataset, metadata_version)
+        data = dynamic_resource.retrieve_data(dataset_pk, metadata_version, model_name, distribution_format)
         if not data:
             raise Http404("Data not found")
         return data
@@ -355,13 +357,16 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
 
     def get(self, request, *args, **kwargs):
         dataset_pk = self.kwargs.get("pk")
+        metadata_version_pk = self.kwargs.get("version_id")
         distribution_name = self.kwargs.get("distribution_name")
         distribution_format = self.kwargs.get("format").upper()
-        dynamic_resource = self.get_data(dataset_pk, distribution_name, distribution_format)
+        dynamic_resource = self.get_data(dataset_pk, metadata_version_pk, distribution_name, distribution_format)
 
         self.dataset = get_object_or_404(Dataset, id=dataset_pk)
         self.object = self.dataset
         self.models = dynamic_resource["models"]
+
+        name_for_urls = self.models[0].name if self.models else None
 
         context = {
             "resource": dynamic_resource,
@@ -369,9 +374,13 @@ class DynamicResourceDetailView(PermissionRequiredMixin, HistoryMixin, DatasetSt
             "format": distribution_format,
             "detail_url": self.get_detail_url(),
             "child_resources_url": self.get_child_resources_url(),
-            "structure_url": reverse("dataset-structure", args=[self.dataset.pk]),
-            "data_url": reverse("model-data", args=[self.dataset.pk, self.models[0].name]) if self.models else None,
-            "api_url": reverse("getall-api", args=[self.dataset.pk, self.models[0].name]) if self.models else None,
+            "structure_url": reverse("dataset-structure", args=[self.dataset.pk, metadata_version_pk]),
+            "data_url": reverse("model-data", args=[self.dataset.pk, metadata_version_pk, name_for_urls])
+            if name_for_urls
+            else None,
+            "api_url": reverse("getall-api", args=[self.dataset.pk, metadata_version_pk, name_for_urls])
+            if name_for_urls
+            else None,
             "can_view_members": has_perm(
                 self.request.user,
                 Action.VIEW,

@@ -8,7 +8,13 @@
         <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
         <li><a href="{% url 'dataset-list' %}"><span>{% translate 'Duomenų ištekliai' %}</span></a></li>
         <li><a href="{% url 'dataset-detail' dataset.pk %}"><span>{{ dataset.title }}</span></a></li>
-        <li><a href="{% url 'dataset-structure' dataset.pk %}"><span>{% translate 'Struktūra' %}</span></a></li>
+        {% if metadata_version and metadata_version.external_version %}
+            <li><a href="{% url 'dataset-structure' dataset.pk metadata_version.pk %}"><span>{{ metadata_version.external_version }}</span></a></li>
+        {% elif metadata_version %}
+            <li><a href="{% url 'dataset-structure' dataset.pk metadata_version.pk %}"><span>{% translate 'Juodraštis' %}</span></a></li>
+        {% else %}
+            <li><a href="{% url 'dataset-structure-no-version' dataset.pk %}"><span>{% translate 'Struktūra' %}</span></a></li>
+        {% endif %}
     </ul>
 {% endblock %}
 

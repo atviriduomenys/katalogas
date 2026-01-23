@@ -2,7 +2,14 @@
 {% load i18n %}
 {% load comment_tags util_tags %}
 
-{% block current_title %}{% translate "Duomenų rinkinio struktūra" %}{% endblock %}
+{% block current_title %}
+    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <span>{% translate "Duomenų rinkinio struktūra" %}</span>
+        {% if versions %}
+            {% include "version_picker.html" with url_name="dataset-structure" dataset=dataset versions=versions selected_version=selected_version %}
+        {% endif %}
+    </div>
+{% endblock %}
 {% block parent_links %}
     {% include "component/breadcrumbs.html" %}
 {% endblock %}
@@ -33,15 +40,50 @@
                     {% translate "Eksportuoti OpenAPI" %}
                 </a>
             {% endif %}
-            <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import' view.kwargs.pk %}">
-                {% translate "Importuoti" %}
-            </a>
-            <a class="button is-primary mb-5 ml-2" href="{% url 'model-create' dataset.pk %}">
-                {% translate "Naujas modelis" %}
-            </a>
-            <a class="button is-primary mb-5 ml-2" href="{% url 'version-create' dataset.pk %}">
-                {% translate "Publikuoti versiją" %}
-            </a>
+            {% if selected_version %}
+                <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
+                   {% if is_disabled %}
+                       style="pointer-events: none; opacity: 0.5;"
+                       aria-disabled="true"
+                   {% else %}
+                       href="{% url 'dataset-structure-import' view.kwargs.pk selected_version.pk %}"
+                   {% endif %}>
+                    {% translate "Importuoti" %}
+                </a>
+                <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
+                   {% if is_disabled %}
+                       style="pointer-events: none; opacity: 0.5;"
+                       aria-disabled="true"
+                   {% else %}
+                       href="{% url 'model-create' dataset.pk selected_version.pk %}"
+                   {% endif %}>
+                    {% translate "Naujas modelis" %}
+                </a>
+                {% if publish_button %}
+                    <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
+                       {% if is_disabled %}
+                           style="pointer-events: none; opacity: 0.5;"
+                           aria-disabled="true"
+                       {% else %}
+                           href="{% url 'version-create' dataset.pk selected_version.pk %}"
+                       {% endif %}>
+                        {% translate "Publikuoti versiją" %}
+                    </a>
+                {% endif %}
+            {% else %}
+                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import-no-version' view.kwargs.pk %}">
+                    {% translate "Importuoti" %}
+                </a>
+                <a class="button is-primary mb-5 ml-2" href="{% url 'model-create-no-version' dataset.pk %}">
+                    {% translate "Naujas modelis" %}
+                </a>
+                {% if publish_button %}
+                    <a class="button is-primary mb-5 ml-2 is-disabled"
+                       style="pointer-events: none; opacity: 0.5;">
+                        {% translate "Publikuoti versiją" %}
+                    </a>
+                {% endif %}
+            {% endif %}
         {% endif %}
 
         {% if models %}
@@ -203,12 +245,18 @@
                                 {% endif %}
                             {% endif %}
                             {% if can_manage_structure %}
-                                <a class="button is-danger is-small show-model-delete-form ml-2"
+                                <a class="button is-danger is-small show-model-delete-form ml-2
+                                          {% if is_disabled %}is-disabled{% endif %}"
                                    id="delete-model-{{ model.pk }}"
                                    data-model-id="{{ model.pk }}"
                                    data-delete-url="{{ model.get_absolute_url }}delete/"
                                    title="{% translate 'Ištrinti' %}"
-                                   aria-label="{% translate 'Ištrinti modelį' %}">
+                                   aria-label="{% translate 'Ištrinti modelį' %}"
+                                   {% if is_disabled %}
+                                       style="pointer-events: none; opacity: 0.5;"
+                                       aria-disabled="true"
+                                   {% endif %}
+                                >
                                     <span class="icon is-small">
                                         <i class="fas fa-trash"></i>
                                     </span>

@@ -12,7 +12,7 @@ from vitrina.classifiers.models import Licence, Concept
 from vitrina.datasets.models import Dataset
 from vitrina.fields import FilerFileField, StringListField
 from vitrina.resources.models import DatasetDistribution, Format
-from vitrina.structure.models import Metadata
+from vitrina.structure import AccessType
 from django.db.models import Case, When, IntegerField
 
 CODE_ORDER = ["COMPLETED", "DEVELOP", "PLANNED", "DEPRECATED", "WITHDRAWN"]
@@ -75,7 +75,9 @@ class DatasetResourceForm(TranslatableModelForm):
     title = TranslatedField(label=_("Pavadinimas"), required=False)
     description = TranslatedField(label=_("Aprašymas"), required=False)
     name = forms.CharField(label=_("Kodinis pavadinimas"), required=False)
-    access = forms.ChoiceField(label=_("Prieigos lygmuo"), choices=Metadata.ACCESS_TYPES, required=False)
+    access = forms.ChoiceField(
+        label=_("Prieigos lygmuo"), choices=[("", _("nepasirinkta"))] + list(AccessType.choices), required=False
+    )
     access_url = forms.URLField(
         # TODO: Bulma does not support type: 'url'
         widget=forms.TextInput(),

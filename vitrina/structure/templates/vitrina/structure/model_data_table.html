@@ -212,7 +212,7 @@
                                 {% if col == '_id' %}
                                     <td id="{{ col }}_col_id">
                                         {% if model.name %}
-                                            <a href="{% url 'object-data' dataset.pk model.name val %}">{{ val|slice:":8" }}</a>
+                                            <a href="{% url 'object-data' dataset.pk version_id model.name val %}">{{ val|slice:":8" }}</a>
                                         {% else %}
                                             {{ val|slice:":8" }}
                                         {% endif %}
@@ -223,7 +223,7 @@
                                         {% if val != None %}
                                             <td id="{{ col }}_col_id">
                                                 {% if prop.ref_model.name %}
-                                                    <a href="{% url 'object-data' prop.ref_model.dataset.pk prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
+                                                    <a href="{% url 'object-data' prop.ref_model.dataset.pk version_id prop.ref_model.name val %}">{{ val|slice:":8" }}</a>
                                                 {% else %}
                                                     {{ val|slice:":8" }}
                                                 {% endif %}

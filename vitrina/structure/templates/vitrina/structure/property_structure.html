@@ -173,11 +173,20 @@
         </div>
 
         {% if can_manage_structure and model.name and prop.name %}
-        <div class="buttons is-right">
-            <a href="{% url 'property-update' dataset.pk model.name prop.name %}" class="button is-primary">
-                {% translate "Redaguoti" %}
-            </a>
-        </div>
+           <div class="buttons is-right">
+                {% if not is_disabled %}
+                    <a href="{% url 'property-update' dataset.pk version_id.pk model.name prop.name %}"
+                       class="button is-primary">
+                        {% translate "Redaguoti" %}
+                    </a>
+                {% else %}
+                    <a class="button is-primary is-disabled"
+                       style="pointer-events: none; opacity: 0.5;"
+                       aria-disabled="true">
+                        {% translate "Redaguoti" %}
+                    </a>
+                {% endif %}
+            </div>
         {% endif %}
 
         {% if has_graph %}
@@ -303,16 +312,29 @@
                         <div class="column is-2">
                             {% if enum_meta.prepare or enum_meta.title %}
                                 {% if prop.name and model.name and can_manage_structure %}
-                                <div class="buttons is-right">
-                                    <a href="{% url 'enum-update' dataset.pk model.name prop.name enum_item.pk %}" class="button is-primary is-small">
+                                {% if not is_disabled %}
+                                    <a href="{% url 'enum-update' dataset.pk version_id.pk model.name prop.name enum_item.pk %}"
+                                       class="button is-primary is-small">
                                         {% translate "Keisti" %}
                                     </a>
-                                    <a href="{% url 'enum-delete' dataset.pk model.name prop.name enum_item.pk %}"
+                                    <a href="{% url 'enum-delete' dataset.pk version_id.pk model.name prop.name enum_item.pk %}"
                                        onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti?' %})"
                                        class="button is-link is-small"
-                                       id="delete_enum">{% translate "Ištrinti" %}
+                                       id="delete_enum">
+                                        {% translate "Ištrinti" %}
                                     </a>
-                                </div>
+                                {% else %}
+                                    <a class="button is-primary is-small is-disabled"
+                                       style="pointer-events: none; opacity: 0.5;"
+                                       aria-disabled="true">
+                                        {% translate "Keisti" %}
+                                    </a>
+                                    <a class="button is-link is-small is-disabled"
+                                       style="pointer-events: none; opacity: 0.5;"
+                                       aria-disabled="true">
+                                        {% translate "Ištrinti" %}
+                                    </a>
+                                {% endif %}
                                 {% endif %}
                             {% endif %}
                         </div>
@@ -326,9 +348,18 @@
             {% endif %}
             {% if model.name and prop.name and can_manage_structure %}
                 <div class="buttons is-right mt-5">
-                    <a href="{% url 'enum-create' dataset.pk model.name prop.name %}" class="button is-primary">
-                        {% translate "Nauja reikšmė" %}
-                    </a>
+                    {% if not is_disabled %}
+                        <a href="{% url 'enum-create' dataset.pk version_id.pk model.name prop.name %}"
+                           class="button is-primary">
+                            {% translate "Nauja reikšmė" %}
+                        </a>
+                    {% else %}
+                        <a class="button is-primary is-disabled"
+                           style="pointer-events: none; opacity: 0.5;"
+                           aria-disabled="true">
+                            {% translate "Nauja reikšmė" %}
+                        </a>
+                    {% endif %}
                 </div>
             {% endif %}
         </div>

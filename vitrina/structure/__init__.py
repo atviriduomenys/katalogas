@@ -18,3 +18,10 @@ class VersionType(models.TextChoices):
     MAJOR = "MAJOR", _("Pagrindinė")
     MINOR = "MINOR", _("Papildoma")
     PATCH = "PATCH", _("Pataisa")
+
+
+class AccessType(models.IntegerChoices):
+    PRIVATE = 0, _("private")
+    PROTECTED = 1, _("protected")
+    PUBLIC = 2, _("public")
+    OPEN = 3, _("open")

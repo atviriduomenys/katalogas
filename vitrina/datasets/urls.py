@@ -196,9 +196,14 @@ urlpatterns = [
         name="dataset-rdf-download",
     ),
     path(
-        "datasets/<int:pk>/structure/import/",
+        "datasets/<int:pk>/versions/<int:version_id>/structure/",
         DatasetStructureImportView.as_view(),
         name="dataset-structure-import",
+    ),
+    path(
+        "datasets/<int:pk>/structure/",
+        DatasetStructureImportView.as_view(),
+        name="dataset-structure-import-no-version",
     ),
     path(
         "datasets/<int:pk>/history/",

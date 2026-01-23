@@ -15,6 +15,26 @@ https://github.com/atviriduomenys/katalogas/pull/2275
 
 - A number of changes regarding UAPI.
 
+https://github.com/atviriduomenys/katalogas/pull/2149
+
+- Structure tab navigation rewritten to accept version_id.
+- Implemented rules on how DSA data is versioned and saved.
+- Implemented a version picker that allows the user to view Metadata for different versions.
+
+https://github.com/atviriduomenys/katalogas/pull/2192
+
+- Changed the publication logic, so that each version is a snapshot.
+- Implemented validations so that invalid versions can not be published.
+
+https://github.com/atviriduomenys/katalogas/pull/2233
+
+- Changed the logic on how DatasetDistributions are displayed and saved.
+- Implemented versions for DatasetDistributions.
+
+https://github.com/atviriduomenys/katalogas/pull/2285
+
+- Disabled the ability to create, edit, import and delete structure objects when the version is not a draft.
+
 Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/2284

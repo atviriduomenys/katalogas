@@ -8,27 +8,18 @@ from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
-from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
+from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
+from vitrina.orgs.factories import ViispRepresentativeFactory
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import VersionStatus
 from vitrina.structure.factories import VersionFactory
-from vitrina.structure.models import (
-    Metadata,
-    Prefix,
-    Model,
-    Property,
-    PropertyList,
-    Enum,
-    Param,
-    EnumItem,
-    ParamItem,
-    Base,
-)
+from vitrina.structure.models import (Base, Enum, EnumItem, Metadata, Model,
+                                      Param, ParamItem, Prefix, Property,
+                                      PropertyList)
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
-from vitrina.orgs.factories import ViispRepresentativeFactory
 
 
 @pytest.fixture
@@ -1601,9 +1592,10 @@ def test_structure_export__with_resource_params(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
 
-    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+    version = structure.dataset.metadata.first().metadata_version
+    create_structure_objects(structure, version)
 
-    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, version.pk]))
     assert resp.text == (
         "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
         "1,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n"
@@ -1826,7 +1818,7 @@ def test_structure_export__models_and_props(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
     )
 
     structure.dataset.current_structure = structure
@@ -1887,7 +1879,7 @@ def test_structure_export__base_model(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
     )
 
     structure.dataset.current_structure = structure
@@ -1948,7 +1940,7 @@ def test_structure_export__property_ref(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
     )
 
     structure.dataset.current_structure = structure
@@ -2008,12 +2000,11 @@ def test_structure_export__model_ref(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     expected_output = (
         'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
@@ -2065,11 +2056,11 @@ def test_structure_export__comments(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+    create_structure_objects(structure)
 
     resp = app.get(reverse("dataset-structure-export-no-version", args=[structure.dataset.pk]))
     assert resp.text == (
@@ -2108,7 +2099,7 @@ def test_structure_export__enums(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -2173,7 +2164,7 @@ def test_structure_export__params(app: DjangoTestApp, use_version):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
@@ -2348,12 +2339,12 @@ def test_structure_export_after_changing_model_name(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Title", description="Description"),
+        dataset=DatasetFactory(title="Title", description="Description", metadata=False),
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+    version = create_structure_objects(structure)
 
     model = Model.objects.get(dataset=structure.dataset, metadata__name="test_dataset/Model")
     form = app.get(reverse("model-update", args=[structure.dataset.pk, version.pk, model.name])).forms["model-form"]
@@ -2439,12 +2430,12 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Dataset", description="Dataset description"),
+        dataset=DatasetFactory(title="Dataset", description="Dataset description", metadata=False),
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+    version = create_structure_objects(structure)
     dist_format = FileFormat()
 
     distribution = DatasetDistribution.objects.first()
@@ -2462,7 +2453,7 @@ def test_structure_export_after_changing_distribution_title_and_description(app:
     assert distribution.metadata.first().title == "Edited title"
     assert distribution.metadata.first().description == "Edited description"
 
-    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, version.pk]))
     assert resp.text == (
         "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
         "1,test_dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset description\r\n"
@@ -2484,12 +2475,12 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
-        dataset=DatasetFactory(title="Dataset", description="Dataset description"),
+        dataset=DatasetFactory(title="Dataset", description="Dataset description", metadata=False),
     )
 
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+    version = create_structure_objects(structure)
     dist_format = FileFormat()
 
     distribution = DatasetDistribution.objects.first()
@@ -2505,7 +2496,7 @@ def test_structure_export_after_changing_distribution_level(app: DjangoTestApp):
     assert distribution.metadata.count() == 1
     assert distribution.metadata.first().level_given == 2
 
-    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk]))
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, version.pk]))
     assert resp.text == (
         "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
         "1,test_dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset description\r\n"

@@ -1085,14 +1085,25 @@ def _dataset_to_tabular(dataset: Dataset, separator: bool = False, version: Vers
     yield from _prefixes_to_tabular(dataset, separator=separator, version=version)
     yield from _enums_to_tabular(dataset, separator=separator, version=version)
     yield from _params_to_tabular(dataset, separator=separator, version=version)
-    yield from _dataset_resources_to_tabular(dataset, separator=separator)
+    yield from _dataset_resources_to_tabular(dataset, separator=separator, version=version)
     yield from _models_to_tabular(dataset, separator=separator, version=version)
 
 
-def _dataset_resources_to_tabular(dataset: Dataset, separator: bool = False) -> Generator:
-    distributions = DatasetDistribution.objects.filter(dataset=dataset, model__isnull=True).order_by("metadata__order")
+def _dataset_resources_to_tabular(
+    dataset: Dataset, separator: bool = False, version: Version | None = None
+) -> Generator:
+    distribution_filter = {"dataset": dataset, "model__isnull": True}
+    metadata_queryset = Metadata.objects.all()
+    if version is not None:
+        distribution_filter["metadata_version"] = version
+        metadata_queryset = metadata_queryset.filter(metadata_version=version)
+    distributions = (
+        DatasetDistribution.objects.filter(**distribution_filter)
+        .prefetch_related(Prefetch("metadata", queryset=metadata_queryset.order_by("order")))
+        .order_by("metadata__order")
+    )
     for distribution in distributions:
-        yield from _resource_to_tabular(distribution)
+        yield from _resource_to_tabular(distribution, version=version)
 
 
 def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Version | None = None) -> Generator:
@@ -1138,8 +1149,9 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Versi
         yield to_row(DATASET, {})
 
 
-def _params_to_tabular(obj: models.Model | Dataset | DatasetDistribution,
-                       separator: bool = False, version: Version | None = None) -> Generator:
+def _params_to_tabular(
+    obj: models.Model | Dataset | DatasetDistribution, separator: bool = False, version: Version | None = None
+) -> Generator:
     ct = ContentType.objects.get_for_model(obj)
     param_filter = {"content_type": ct, "object_id": obj.pk}
     metadata_queryset = Metadata.objects.all()

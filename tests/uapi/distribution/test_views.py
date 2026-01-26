@@ -52,7 +52,7 @@ class TestCreate:
         distribution = DatasetDistribution.objects.filter(
             metadata__name=dataset.datasetdistribution_set.first().metadata.name,
             dataset__organization__kind=organization.kind,
-            dataset__organization__name=organization.name
+            dataset__organization__name=organization.name,
         ).first()
         assert distribution
         assert response.json == {
@@ -76,7 +76,6 @@ class TestCreate:
             "version": None,
             "upload_to_storage": distribution.upload_to_storage,
         }
-
 
     def test_specific_scope(
         self,
@@ -109,7 +108,7 @@ class TestCreate:
         distribution = DatasetDistribution.objects.filter(
             metadata__name=dataset.datasetdistribution_set.first().metadata.name,
             dataset__organization__kind=organization.kind,
-            dataset__organization__name=organization.name
+            dataset__organization__name=organization.name,
         ).first()
         assert distribution
         assert response.json == {
@@ -133,7 +132,6 @@ class TestCreate:
             "version": None,
             "upload_to_storage": distribution.upload_to_storage,
         }
-
 
     def test_agent_is_disabled(
         self,
@@ -167,7 +165,6 @@ class TestCreate:
             "additionalProperties": None,
         }
 
-
     @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
     def test_token_does_not_have_necessary_scopes(
         self,
@@ -196,7 +193,6 @@ class TestCreate:
             "message": "You do not have permission to perform this action.",
             "additionalProperties": None,
         }
-
 
     def test_no_organization_id_inside_token_payload(
         self,
@@ -229,7 +225,6 @@ class TestCreate:
             "additionalProperties": None,
         }
 
-
     def test_serializer_is_invalid(
         self,
         app: DjangoTestApp,
@@ -251,11 +246,10 @@ class TestCreate:
             "code": "validation_error",
             "type": "ValidationError",
             "template": "Request validation failed.",
-            "message": str({"title": [ErrorDetail(string='Šis laukas yra privalomas.', code='required')]}),
+            "message": str({"title": [ErrorDetail(string="Šis laukas yra privalomas.", code="required")]}),
             "context": {"errors": {"title": ["Šis laukas yra privalomas."]}},
             "additionalProperties": None,
         }
-
 
     def test_unexpected_exception_raised(
         self,
@@ -272,9 +266,9 @@ class TestCreate:
         }
 
         with patch(
-                "vitrina.uapi.views.views.UAPIDistributionSerializer.data",
-                new_callable=PropertyMock,
-                side_effect=Exception("Unexpected error")
+            "vitrina.uapi.views.views.UAPIDistributionSerializer.data",
+            new_callable=PropertyMock,
+            side_effect=Exception("Unexpected error"),
         ):
             response = app.post(
                 url_distribution,
@@ -337,7 +331,6 @@ class TestList:
             ]
         }
 
-
     def test_specific_scope(
         self,
         app: DjangoTestApp,
@@ -382,7 +375,6 @@ class TestList:
             ]
         }
 
-
     def test_agent_is_disabled(
         self,
         app: DjangoTestApp,
@@ -407,7 +399,6 @@ class TestList:
             "additionalProperties": None,
         }
 
-
     @pytest.mark.parametrize("invalid_scopes", [["invalid_scope"], [], [""]])
     def test_token_does_not_have_necessary_scopes(
         self,
@@ -426,9 +417,7 @@ class TestList:
             scopes=invalid_scopes,
         )
         response = app.get(
-            url_distribution,
-            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
-            expect_errors=True
+            url_distribution, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -440,7 +429,6 @@ class TestList:
             "message": "You do not have permission to perform this action.",
             "additionalProperties": None,
         }
-
 
     def test_no_organization_id_inside_token_payload(
         self,
@@ -458,9 +446,7 @@ class TestList:
             scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
         )
         response = app.get(
-            url_distribution,
-            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"},
-            expect_errors=True
+            url_distribution, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {token}"}, expect_errors=True
         )
 
         assert response.status_code == status.HTTP_403_FORBIDDEN
@@ -473,7 +459,6 @@ class TestList:
             "additionalProperties": None,
         }
 
-
     def test_call_with_query_parameters(
         self,
         app: DjangoTestApp,
@@ -485,9 +470,7 @@ class TestList:
         valid_token: str,
     ):
         distribution_2 = DatasetDistributionFactory(
-            dataset=dataset,
-            title="Title of the Distribution 2",
-            description="Description of the Distribution 2."
+            dataset=dataset, title="Title of the Distribution 2", description="Description of the Distribution 2."
         )
         MetadataFactory(
             content_type=ContentType.objects.get_for_model(DatasetDistribution),
@@ -497,10 +480,7 @@ class TestList:
 
         response = app.get(
             url_distribution,
-            params={
-                "dataset._id": dataset.id,
-                "name": distribution.metadata.first().name
-            },
+            params={"dataset._id": dataset.id, "name": distribution.metadata.first().name},
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
         )  # w/ Query parameters, we should only get one.
 
@@ -532,7 +512,6 @@ class TestList:
             ]
         }
 
-
     def test_call_with_query_parameters_dataset_does_not_exist(
         self,
         app: DjangoTestApp,
@@ -542,12 +521,9 @@ class TestList:
     ):
         response = app.get(
             url_distribution,
-            params={
-                "dataset._id": 1,
-                "name": "not_existing_distribution"
-            },
+            params={"dataset._id": 1, "name": "not_existing_distribution"},
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -558,8 +534,6 @@ class TestList:
             "message": "No distributions matched the provided query.",
             "additionalProperties": None,
         }
-
-
 
     def test_call_with_query_parameters_no_given_distribution(
         self,
@@ -571,12 +545,9 @@ class TestList:
     ):
         response = app.get(
             url_distribution,
-            params={
-                "dataset._id": dataset.id,
-                "name": "not_existing_distribution"
-            },
+            params={"dataset._id": dataset.id, "name": "not_existing_distribution"},
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -587,7 +558,6 @@ class TestList:
             "message": "No distributions matched the provided query.",
             "additionalProperties": None,
         }
-
 
     def test_distributions_dataset_is_deleted(
         self,
@@ -608,7 +578,7 @@ class TestList:
                 "name": distribution.metadata.first().name,
             },
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -620,7 +590,6 @@ class TestList:
             "message": "No distributions matched the provided query.",
             "additionalProperties": None,
         }
-
 
     def test_distributions_do_not_exist(
         self,
@@ -641,7 +610,7 @@ class TestList:
                 "name": distribution.metadata.first().name,
             },
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
-            expect_errors=True
+            expect_errors=True,
         )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
@@ -653,7 +622,6 @@ class TestList:
             "message": "No distributions matched the provided query.",
             "additionalProperties": None,
         }
-
 
     def test_unexpected_exception_raised(
         self,
@@ -667,7 +635,7 @@ class TestList:
         with patch(
             "vitrina.uapi.views.views.BaseObjectListSerializer.data",
             new_callable=PropertyMock,
-            side_effect=Exception("Unexpected error")
+            side_effect=Exception("Unexpected error"),
         ):
             response = app.get(
                 url_distribution,
@@ -676,7 +644,7 @@ class TestList:
                     "name": distribution.metadata.first().name,
                 },
                 extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
-                expect_errors=True
+                expect_errors=True,
             )
 
         assert response.status_code == status.HTTP_500_INTERNAL_SERVER_ERROR

@@ -20,27 +20,27 @@ def last_month():
 @pytest.fixture
 def subscriber():
     return NewsletterSubscriber.objects.create(
-        email='test@example.com',
+        email="test@example.com",
         status=NewsletterSubscriber.SUBSCRIBED,
     )
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
-@patch('djangocms_blog.models.Post.get_absolute_url')
+@patch("vitrina.messages.signals.email")
+@patch("djangocms_blog.models.Post.get_absolute_url")
 def test_newsletter_with_blog_and_dataset(mock_get_absolute_url, mock_email, last_month, subscriber):
-    mock_get_absolute_url.return_value = '/blog/test-blog/'
+    mock_get_absolute_url.return_value = "/blog/test-blog/"
     Post.objects.create(
-        title='Test Blog',
-        slug='test-blog',
+        title="Test Blog",
+        slug="test-blog",
         publish=True,
         date_published=last_month,
         app_config=BlogConfig.objects.create(namespace="blog"),
     )
 
     Dataset.objects.create(
-        title='Test Dataset',
-        description='Description here',
+        title="Test Dataset",
+        description="Description here",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,
@@ -53,7 +53,7 @@ def test_newsletter_with_blog_and_dataset(mock_get_absolute_url, mock_email, las
 @pytest.mark.django_db
 def test_no_content_yields_no_newsletter():
     NewsletterSubscriber.objects.create(
-        email='empty@test.com',
+        email="empty@test.com",
         status=NewsletterSubscriber.SUBSCRIBED,
     )
 
@@ -64,8 +64,8 @@ def test_no_content_yields_no_newsletter():
 @pytest.mark.django_db
 def test_deleted_on_dataset_not_sent(last_month, subscriber):
     Dataset.objects.create(
-        title='Hidden Dataset',
-        description='...',
+        title="Hidden Dataset",
+        description="...",
         created=last_month,
         deleted_on=timezone.now(),
         status=Dataset.HAS_DATA,
@@ -76,11 +76,11 @@ def test_deleted_on_dataset_not_sent(last_month, subscriber):
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_unpublished_blog_post_not_included(mock_email, last_month, subscriber):
     Post.objects.create(
-        title='Hidden Post',
-        slug='hidden-post',
+        title="Hidden Post",
+        slug="hidden-post",
         publish=False,
         date_published=last_month,
     )
@@ -90,18 +90,20 @@ def test_unpublished_blog_post_not_included(mock_email, last_month, subscriber):
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_multiple_subscribers_all_get_newsletter(mock_email, last_month):
-    NewsletterSubscriber.objects.bulk_create([
-        NewsletterSubscriber(email='a@test.com', status=NewsletterSubscriber.SUBSCRIBED),
-        NewsletterSubscriber(email='b@test.com', status=NewsletterSubscriber.SUBSCRIBED),
-        NewsletterSubscriber(email='c@test.com', status=NewsletterSubscriber.UNSUBSCRIBED),
-        NewsletterSubscriber(email='d@test.com', status=NewsletterSubscriber.PENDING),
-    ])
+    NewsletterSubscriber.objects.bulk_create(
+        [
+            NewsletterSubscriber(email="a@test.com", status=NewsletterSubscriber.SUBSCRIBED),
+            NewsletterSubscriber(email="b@test.com", status=NewsletterSubscriber.SUBSCRIBED),
+            NewsletterSubscriber(email="c@test.com", status=NewsletterSubscriber.UNSUBSCRIBED),
+            NewsletterSubscriber(email="d@test.com", status=NewsletterSubscriber.PENDING),
+        ]
+    )
 
     Dataset.objects.create(
-        title='Shared Dataset',
-        description='Used for both',
+        title="Shared Dataset",
+        description="Used for both",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,
@@ -112,41 +114,15 @@ def test_multiple_subscribers_all_get_newsletter(mock_email, last_month):
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
-@patch('djangocms_blog.models.Post.get_absolute_url')
+@patch("vitrina.messages.signals.email")
+@patch("djangocms_blog.models.Post.get_absolute_url")
 def test_more_than_3_datasets_splits_correctly(mock_get_absolute_url, mock_email, last_month, subscriber):
-    mock_get_absolute_url.return_value = '/blog/test/'
+    mock_get_absolute_url.return_value = "/blog/test/"
 
     for i in range(5):
         Dataset.objects.create(
-            title=f'Dataset {i + 1}',
-            description=f'Description {i + 1}',
-            is_public=True,
-            published=last_month,
-            status=Dataset.HAS_DATA,
-        )
-
-    count = send_monthly_newsletter.send(sender=None)[0][1]
-    assert count == 1
-
-    call_args = mock_email.call_args
-    context = call_args[1]['context']
-
-    assert len(context['top_datasets']) == 3
-    assert len(context['list_datasets']) == 2
-    assert 'list_datasets' in context
-
-
-@pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
-@patch('djangocms_blog.models.Post.get_absolute_url')
-def test_more_than_3_datasets_splits_correctly(mock_get_absolute_url, mock_email, last_month, subscriber):
-    mock_get_absolute_url.return_value = '/blog/test/'
-
-    for i in range(5):
-        Dataset.objects.create(
-            title=f'Dataset {i + 1}',
-            description=f'Description {i + 1}',
+            title=f"Dataset {i + 1}",
+            description=f"Description {i + 1}",
             is_public=True,
             published=last_month,
             status=Dataset.HAS_DATA,
@@ -157,21 +133,21 @@ def test_more_than_3_datasets_splits_correctly(mock_get_absolute_url, mock_email
 
     # Verify email was called with correct context structure
     call_args = mock_email.call_args
-    context = call_args[1]['context']
+    context = call_args[1]["context"]
 
     # Should have exactly 3 top datasets and 2 list datasets
-    assert len(context['top_datasets']) == 3
-    assert len(context['list_datasets']) == 2
-    assert 'list_datasets' in context
+    assert len(context["top_datasets"]) == 3
+    assert len(context["list_datasets"]) == 2
+    assert "list_datasets" in context
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_exactly_3_datasets_no_list(mock_email, last_month, subscriber):
     for i in range(3):
         Dataset.objects.create(
-            title=f'Dataset {i + 1}',
-            description=f'Description {i + 1}',
+            title=f"Dataset {i + 1}",
+            description=f"Description {i + 1}",
             is_public=True,
             published=last_month,
             status=Dataset.HAS_DATA,
@@ -180,25 +156,25 @@ def test_exactly_3_datasets_no_list(mock_email, last_month, subscriber):
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    context = mock_email.call_args[1]['context']
-    assert len(context['top_datasets']) == 3
-    assert context.get('list_datasets') is None
+    context = mock_email.call_args[1]["context"]
+    assert len(context["top_datasets"]) == 3
+    assert context.get("list_datasets") is None
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_private_datasets_excluded(mock_email, last_month, subscriber):
     Dataset.objects.create(
-        title='Private Dataset',
-        description='Should not appear',
+        title="Private Dataset",
+        description="Should not appear",
         is_public=False,
         published=last_month,
         status=Dataset.HAS_DATA,
     )
 
     Dataset.objects.create(
-        title='Public Dataset',
-        description='Should appear',
+        title="Public Dataset",
+        description="Should appear",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,
@@ -207,19 +183,19 @@ def test_private_datasets_excluded(mock_email, last_month, subscriber):
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    context = mock_email.call_args[1]['context']
-    assert len(context['top_datasets']) == 1
-    assert context['top_datasets'][0]['title'] == 'Public Dataset'
+    context = mock_email.call_args[1]["context"]
+    assert len(context["top_datasets"]) == 1
+    assert context["top_datasets"][0]["title"] == "Public Dataset"
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_current_month_content_excluded(mock_email, subscriber):
     now = timezone.now()
 
     Dataset.objects.create(
-        title='Current Month Dataset',
-        description='Should not appear',
+        title="Current Month Dataset",
+        description="Should not appear",
         is_public=True,
         published=now,
         status=Dataset.HAS_DATA,
@@ -230,19 +206,19 @@ def test_current_month_content_excluded(mock_email, subscriber):
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_email_sending_failure_continues(mock_email, last_month):
     subscribers = []
     for i in range(3):
         subscriber = NewsletterSubscriber.objects.create(
-            email=f'test{i}@example.com',
+            email=f"test{i}@example.com",
             status=NewsletterSubscriber.SUBSCRIBED,
         )
         subscribers.append(subscriber)
 
     Dataset.objects.create(
-        title='Test Dataset',
-        description='Test',
+        title="Test Dataset",
+        description="Test",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,
@@ -256,14 +232,14 @@ def test_email_sending_failure_continues(mock_email, last_month):
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
-@patch('djangocms_blog.models.Post.get_absolute_url')
+@patch("vitrina.messages.signals.email")
+@patch("djangocms_blog.models.Post.get_absolute_url")
 def test_context_structure_blog_posts(mock_get_absolute_url, mock_email, last_month, subscriber):
-    mock_get_absolute_url.return_value = '/blog/test-post/'
+    mock_get_absolute_url.return_value = "/blog/test-post/"
 
     Post.objects.create(
-        title='Test Blog Post',
-        slug='test-post',
+        title="Test Blog Post",
+        slug="test-post",
         publish=True,
         date_published=last_month,
         app_config=BlogConfig.objects.create(namespace="blog"),
@@ -272,23 +248,23 @@ def test_context_structure_blog_posts(mock_get_absolute_url, mock_email, last_mo
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    context = mock_email.call_args[1]['context']
-    blog_post = context['blog_posts'][0]
+    context = mock_email.call_args[1]["context"]
+    blog_post = context["blog_posts"][0]
 
-    assert 'title' in blog_post
-    assert 'url' in blog_post
-    assert 'day' in blog_post
-    assert 'month' in blog_post
-    assert blog_post['title'] == 'Test Blog Post'
-    assert blog_post['url'] == '/blog/test-post/'
+    assert "title" in blog_post
+    assert "url" in blog_post
+    assert "day" in blog_post
+    assert "month" in blog_post
+    assert blog_post["title"] == "Test Blog Post"
+    assert blog_post["url"] == "/blog/test-post/"
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_context_structure_datasets(mock_email, last_month, subscriber):
     Dataset.objects.create(
-        title='Test Dataset',
-        description='Test description',
+        title="Test Dataset",
+        description="Test description",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,
@@ -297,21 +273,21 @@ def test_context_structure_datasets(mock_email, last_month, subscriber):
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    context = mock_email.call_args[1]['context']
-    dataset = context['top_datasets'][0]
+    context = mock_email.call_args[1]["context"]
+    dataset = context["top_datasets"][0]
 
-    assert 'id' in dataset
-    assert 'title' in dataset
-    assert 'description' in dataset
-    assert dataset['title'] == 'Test Dataset'
+    assert "id" in dataset
+    assert "title" in dataset
+    assert "description" in dataset
+    assert dataset["title"] == "Test Dataset"
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_month_year_formatting(mock_email, last_month, subscriber):
     Dataset.objects.create(
-        title='Test Dataset',
-        description='Test',
+        title="Test Dataset",
+        description="Test",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,
@@ -320,23 +296,33 @@ def test_month_year_formatting(mock_email, last_month, subscriber):
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    context = mock_email.call_args[1]['context']
-    month_year = context['month_year']
+    context = mock_email.call_args[1]["context"]
+    month_year = context["month_year"]
 
     assert str(timezone.now().year) in month_year
     lithuanian_months = [
-        "sausis", "vasaris", "kovas", "balandis", "gegužė", "birželis",
-        "liepa", "rugpjūtis", "rugsėjis", "spalis", "lapkritis", "gruodis"
+        "sausis",
+        "vasaris",
+        "kovas",
+        "balandis",
+        "gegužė",
+        "birželis",
+        "liepa",
+        "rugpjūtis",
+        "rugsėjis",
+        "spalis",
+        "lapkritis",
+        "gruodis",
     ]
     assert any(month in month_year for month in lithuanian_months)
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_unsubscribe_url_in_context(mock_email, last_month, subscriber):
     Dataset.objects.create(
-        title='Test Dataset',
-        description='Test',
+        title="Test Dataset",
+        description="Test",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,
@@ -345,20 +331,20 @@ def test_unsubscribe_url_in_context(mock_email, last_month, subscriber):
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    context = mock_email.call_args[1]['context']
-    unsubscribe_url = context['unsubscribe_url']
+    context = mock_email.call_args[1]["context"]
+    unsubscribe_url = context["unsubscribe_url"]
 
-    assert 'unsubscribe' in unsubscribe_url
+    assert "unsubscribe" in unsubscribe_url
     assert str(subscriber.unsubscribe_token) in unsubscribe_url
-    assert unsubscribe_url.startswith('https://')
+    assert unsubscribe_url.startswith("https://")
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_domain_in_context(mock_email, last_month, subscriber):
     Dataset.objects.create(
-        title='Test Dataset',
-        description='Test',
+        title="Test Dataset",
+        description="Test",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,
@@ -367,8 +353,8 @@ def test_domain_in_context(mock_email, last_month, subscriber):
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    context = mock_email.call_args[1]['context']
-    domain = context['domain']
+    context = mock_email.call_args[1]["context"]
+    domain = context["domain"]
 
     # Should be the current site's domain
     current_site = Site.objects.get_current()
@@ -376,13 +362,13 @@ def test_domain_in_context(mock_email, last_month, subscriber):
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
-@patch('djangocms_blog.models.Post.get_absolute_url')
+@patch("vitrina.messages.signals.email")
+@patch("djangocms_blog.models.Post.get_absolute_url")
 def test_only_blog_posts_no_datasets(mock_get_absolute_url, mock_email, last_month, subscriber):
-    mock_get_absolute_url.return_value = '/blog/only-blog/'
+    mock_get_absolute_url.return_value = "/blog/only-blog/"
     Post.objects.create(
-        title='Only Blog Post',
-        slug='only-blog',
+        title="Only Blog Post",
+        slug="only-blog",
         publish=True,
         date_published=last_month,
         app_config=BlogConfig.objects.create(namespace="blog"),
@@ -391,19 +377,19 @@ def test_only_blog_posts_no_datasets(mock_get_absolute_url, mock_email, last_mon
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    context = mock_email.call_args[1]['context']
-    assert 'blog_posts' in context
-    assert len(context['blog_posts']) == 1
-    assert 'top_datasets' in context
-    assert len(context['top_datasets']) == 0
+    context = mock_email.call_args[1]["context"]
+    assert "blog_posts" in context
+    assert len(context["blog_posts"]) == 1
+    assert "top_datasets" in context
+    assert len(context["top_datasets"]) == 0
 
 
 @pytest.mark.django_db
-@patch('vitrina.messages.signals.email')
+@patch("vitrina.messages.signals.email")
 def test_only_datasets_no_blog_posts(mock_email, last_month, subscriber):
     Dataset.objects.create(
-        title='Only Dataset',
-        description='Test',
+        title="Only Dataset",
+        description="Test",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,
@@ -412,11 +398,11 @@ def test_only_datasets_no_blog_posts(mock_email, last_month, subscriber):
     count = send_monthly_newsletter.send(sender=None)[0][1]
     assert count == 1
 
-    context = mock_email.call_args[1]['context']
-    assert 'top_datasets' in context
-    assert len(context['top_datasets']) == 1
-    assert 'blog_posts' in context
-    assert len(context['blog_posts']) == 0
+    context = mock_email.call_args[1]["context"]
+    assert "top_datasets" in context
+    assert len(context["top_datasets"]) == 1
+    assert "blog_posts" in context
+    assert len(context["blog_posts"]) == 0
 
 
 @pytest.mark.django_db
@@ -425,8 +411,8 @@ def test_no_subscribers_returns_early():
     last_month = last_month.replace(day=15)
 
     Dataset.objects.create(
-        title='Test Dataset',
-        description='Test',
+        title="Test Dataset",
+        description="Test",
         is_public=True,
         published=last_month,
         status=Dataset.HAS_DATA,

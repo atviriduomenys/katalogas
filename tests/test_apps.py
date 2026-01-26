@@ -12,18 +12,15 @@ import reversion
 
 @pytest.mark.parametrize(
     "model, should_be_registered",
-    [
-        (model, is_model_versioned(model))
-        for model in get_all_models()
-    ],
+    [(model, is_model_versioned(model)) for model in get_all_models()],
 )
 def test_reversion_model_registration(model: type[models.Model], should_be_registered: bool):
     path = f"{model.__module__}.{model.__name__}"
 
     if should_be_registered:
-        assert reversion.is_registered(model), (f"Model '{path}' should be registered with reversion.")
+        assert reversion.is_registered(model), f"Model '{path}' should be registered with reversion."
     else:
-        assert not reversion.is_registered(model), (f"Model '{path}' should not be registered with reversion.")
+        assert not reversion.is_registered(model), f"Model '{path}' should not be registered with reversion."
 
 
 @override_settings(NOT_VERSIONED_MODELS=["notExistingModel"], DEBUG=True)
@@ -36,10 +33,7 @@ def test_not_existing_model_in_not_versioned_models():
         api_config.ready()
 
 
-@pytest.mark.parametrize(
-        'versioned_model',
-        [model for model in get_all_models() if is_model_versioned(model)]
-)
+@pytest.mark.parametrize("versioned_model", [model for model in get_all_models() if is_model_versioned(model)])
 @pytest.mark.django_db
 def test_versioned_models_inherit_revision_comment_admin_class(versioned_model: type[models.Model]):
     if model_admin_instance := admin.site._registry.get(versioned_model):

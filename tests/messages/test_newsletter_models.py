@@ -19,11 +19,13 @@ class TestNewsletterSubscriber:
         assert subscriber.unsubscribe_token is not None
         assert subscriber.created is not None
 
-
-    @pytest.mark.parametrize("email_variant", [
-        "test@example.com",
-        "tEST@example.com",
-    ])
+    @pytest.mark.parametrize(
+        "email_variant",
+        [
+            "test@example.com",
+            "tEST@example.com",
+        ],
+    )
     def test_unique_email_constraint(self, email_variant):
         NewsletterSubscriber.objects.create(email="test@example.com")
 
@@ -33,7 +35,9 @@ class TestNewsletterSubscriber:
     def test_auto_set_confirmation_expiry(self):
         before_creation = timezone.now()
         expected_expiry = before_creation + timedelta(hours=24)
-        subscriber = NewsletterSubscriber.objects.create(email="test@example.com", confirmation_expires_at=expected_expiry)
+        subscriber = NewsletterSubscriber.objects.create(
+            email="test@example.com", confirmation_expires_at=expected_expiry
+        )
         actual_expiry = subscriber.confirmation_expires_at
 
         tolerance = timedelta(minutes=1)
@@ -41,17 +45,13 @@ class TestNewsletterSubscriber:
 
     def test_is_confirmation_expired_false_when_not_expired(self):
         future_time = timezone.now() + timedelta(hours=1)
-        subscriber = NewsletterSubscriber.objects.create(
-            email="test@example.com", confirmation_expires_at=future_time
-        )
+        subscriber = NewsletterSubscriber.objects.create(email="test@example.com", confirmation_expires_at=future_time)
 
         assert subscriber.is_confirmation_expired() is False
 
     def test_is_confirmation_expired_true_when_expired(self):
         past_time = timezone.now() - timedelta(hours=1)
-        subscriber = NewsletterSubscriber.objects.create(
-            email="test@example.com", confirmation_expires_at=past_time
-        )
+        subscriber = NewsletterSubscriber.objects.create(email="test@example.com", confirmation_expires_at=past_time)
 
         assert subscriber.is_confirmation_expired() is True
 

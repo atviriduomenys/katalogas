@@ -90,7 +90,6 @@ class TestDatasetViewPermissions:
             ("data_set_representative", "grandchild", False, "PUBLIC", "dataset", True),
             ("parent_representative", "grandchild", False, "PUBLIC", "dataset", True),
             ("global_representative", "grandchild", False, "PUBLIC", "dataset", True),
-
             # public datasets
             ("regular_user", "grandchild", True, "PUBLIC", "dataset", True),
             ("random_org_representative", "grandchild", True, "PUBLIC", "dataset", True),
@@ -99,7 +98,6 @@ class TestDatasetViewPermissions:
             ("parent_representative", "grandchild", True, "PUBLIC", "dataset", True),
             ("global_representative", "grandchild", True, "PUBLIC", "dataset", True),
             ("grandpa_rep", "grandchild", True, "PUBLIC", "dataset", True),
-
             # restricted
             ("regular_user", "grandchild", True, "RESTRICTED", "dataset", True),
             ("random_org_representative", "grandchild", True, "RESTRICTED", "dataset", True),
@@ -107,7 +105,6 @@ class TestDatasetViewPermissions:
             ("data_set_representative", "grandchild", True, "RESTRICTED", "dataset", True),
             ("parent_representative", "grandchild", True, "RESTRICTED", "dataset", True),
             ("global_representative", "grandchild", True, "RESTRICTED", "dataset", True),
-
             # non-public
             ("regular_user", "grandchild", True, "NON_PUBLIC", "dataset", False),
             ("random_org_representative", "grandchild", True, "NON_PUBLIC", "dataset", False),
@@ -115,7 +112,6 @@ class TestDatasetViewPermissions:
             ("data_set_representative", "grandchild", True, "NON_PUBLIC", "dataset", False),
             ("parent_representative", "grandchild", True, "NON_PUBLIC", "dataset", False),
             ("global_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
-
             # confidential
             ("regular_user", "grandchild", True, "CONFIDENTIAL", "dataset", False),
             ("random_org_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
@@ -123,17 +119,16 @@ class TestDatasetViewPermissions:
             ("data_set_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
             ("parent_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
             ("global_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
-
         ],
     )
     def test_view_permissions_open_data_managers(
-            self,
-            user_attributes: str,
-            dataset_attributes: str,
-            is_public: bool,
-            access_rights: str,
-            subclass: str,
-            expected: bool,
+        self,
+        user_attributes: str,
+        dataset_attributes: str,
+        is_public: bool,
+        access_rights: str,
+        subclass: str,
+        expected: bool,
     ):
         user = getattr(self, user_attributes)
         dataset = getattr(self, dataset_attributes)
@@ -158,7 +153,6 @@ class TestDatasetViewPermissions:
             ("data_set_representative", "grandchild", False, "PUBLIC", "dataset", True),
             ("parent_representative", "grandchild", False, "PUBLIC", "dataset", True),
             ("global_representative", "grandchild", False, "PUBLIC", "dataset", True),
-
             # public datasets
             ("regular_user", "grandchild", True, "PUBLIC", "dataset", True),
             ("random_org_representative", "grandchild", True, "PUBLIC", "dataset", True),
@@ -167,7 +161,6 @@ class TestDatasetViewPermissions:
             ("parent_representative", "grandchild", True, "PUBLIC", "dataset", True),
             ("global_representative", "grandchild", True, "PUBLIC", "dataset", True),
             ("grandpa_rep", "grandchild", True, "PUBLIC", "dataset", True),
-
             # restricted
             ("regular_user", "grandchild", True, "RESTRICTED", "dataset", True),
             ("random_org_representative", "grandchild", True, "RESTRICTED", "dataset", True),
@@ -175,7 +168,6 @@ class TestDatasetViewPermissions:
             ("data_set_representative", "grandchild", True, "RESTRICTED", "dataset", True),
             ("parent_representative", "grandchild", True, "RESTRICTED", "dataset", True),
             ("global_representative", "grandchild", True, "RESTRICTED", "dataset", True),
-
             # non-public
             ("regular_user", "grandchild", True, "NON_PUBLIC", "dataset", False),
             ("random_org_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
@@ -183,7 +175,6 @@ class TestDatasetViewPermissions:
             ("data_set_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
             ("parent_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
             ("global_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
-
             # confidential
             ("regular_user", "grandchild", True, "CONFIDENTIAL", "dataset", False),
             ("random_org_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
@@ -191,24 +182,23 @@ class TestDatasetViewPermissions:
             ("data_set_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
             ("parent_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
             ("global_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
-
         ],
     )
     def test_view_permissions_resource_managers(
-            self,
-            user_attributes: str,
-            dataset_attributes: str,
-            is_public: bool,
-            access_rights: str,
-            subclass: str,
-            expected: bool,
+        self,
+        user_attributes: str,
+        dataset_attributes: str,
+        is_public: bool,
+        access_rights: str,
+        subclass: str,
+        expected: bool,
     ):
         for repr_ in (
-                self.repr_random_org,
-                self.repr_org,
-                self.repr_ds,
-                self.repr_parent,
-                self.repr_grand_org,
+            self.repr_random_org,
+            self.repr_org,
+            self.repr_ds,
+            self.repr_parent,
+            self.repr_grand_org,
         ):
             repr_.role = Representative.RESOURCE_MANAGER
             repr_.save(update_fields=["role"])

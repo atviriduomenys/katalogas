@@ -14,11 +14,11 @@ from vitrina.users.models import User
 @pytest.mark.django_db
 def test_change_default_licence(app: DjangoTestApp):
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
-    default_licence = LicenceFactory(is_default=True)
+    LicenceFactory(is_default=True)
     another_licence = LicenceFactory(is_default=False)
     app.set_user(admin)
-    form = app.get(reverse('admin:vitrina_classifiers_licence_change', args=[another_licence.pk])).forms['licence_form']
-    form['is_default'] = True
+    form = app.get(reverse("admin:vitrina_classifiers_licence_change", args=[another_licence.pk])).forms["licence_form"]
+    form["is_default"] = True
     form.submit()
     assert list(Licence.objects.filter(is_default=True)) == [another_licence]
 
@@ -26,12 +26,13 @@ def test_change_default_licence(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_change_default_frequency(app: DjangoTestApp):
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
-    default_frequency = FrequencyFactory(is_default=True)
+    FrequencyFactory(is_default=True)
     another_frequency = FrequencyFactory(is_default=False)
     app.set_user(admin)
-    form = app.get(reverse('admin:vitrina_classifiers_frequency_change',
-                           args=[another_frequency.pk])).forms['frequency_form']
-    form['is_default'] = True
+    form = app.get(reverse("admin:vitrina_classifiers_frequency_change", args=[another_frequency.pk])).forms[
+        "frequency_form"
+    ]
+    form["is_default"] = True
     form.submit()
     assert list(Frequency.objects.filter(is_default=True)) == [another_frequency]
 
@@ -39,30 +40,28 @@ def test_change_default_frequency(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_change_default_status(app: DjangoTestApp):
     """
-        Test that changing the default status via the Django admin form works correctly.
+    Test that changing the default status via the Django admin form works correctly.
 
-        This test verifies that when an existing status is updated to be the new default
-        (`is_default=True`), the previous default status is automatically unset
-        (`is_default=False`). It simulates an admin user modifying a status through
-        the admin interface.
+    This test verifies that when an existing status is updated to be the new default
+    (`is_default=True`), the previous default status is automatically unset
+    (`is_default=False`). It simulates an admin user modifying a status through
+    the admin interface.
 
-        Steps:
-            - Create an admin user and two status instances (one default, one not).
-            - Authenticate as the admin user.
-            - Submit a change form to make the non-default status the new default.
-            - Assert that the new default is updated correctly, and the old default is unset.
+    Steps:
+        - Create an admin user and two status instances (one default, one not).
+        - Authenticate as the admin user.
+        - Submit a change form to make the non-default status the new default.
+        - Assert that the new default is updated correctly, and the old default is unset.
 
-        Args:
-            app (DjangoTestApp): A test app instance from `pytest-django` or `WebTest`
-                configured to simulate requests to the Django app.
-        """
+    Args:
+        app (DjangoTestApp): A test app instance from `pytest-django` or `WebTest`
+            configured to simulate requests to the Django app.
+    """
     admin = User.objects.create_superuser(email="admin@gmail.com", password="test123")
     default_status = StatusFactory(is_default=True)
     another_status = StatusFactory(is_default=False)
     app.set_user(admin)
-    form = app.get(
-        reverse("admin:vitrina_classifiers_status_change", args=[another_status.pk])
-    ).forms["status_form"]
+    form = app.get(reverse("admin:vitrina_classifiers_status_change", args=[another_status.pk])).forms["status_form"]
     form["is_default"] = True
     form["name"] = "Test"
 

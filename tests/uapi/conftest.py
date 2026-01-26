@@ -41,11 +41,7 @@ def _generate_test_token(
     agent_is_enabled: bool = True,
 ):
     if organization and not agent and create_agent:
-        agent = AgentFactory(
-            organization=organization,
-            oauth_client_id=str(uuid.uuid4()),
-            is_enabled=agent_is_enabled
-        )
+        agent = AgentFactory(organization=organization, oauth_client_id=str(uuid.uuid4()), is_enabled=agent_is_enabled)
     now = datetime.utcnow()
     claims = {
         "iss": "test-issuer",
@@ -119,7 +115,7 @@ def dataset(organization: Organization) -> Dataset:
         organization=organization,
         title="Title of the Dataset",
         description="Description of the Dataset.",
-        metadata="test/dataset/TestModel"
+        metadata="test/dataset/TestModel",
     )
     return dataset
 

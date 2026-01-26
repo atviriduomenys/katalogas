@@ -11,7 +11,6 @@ from scripts.geoportal_import import main as geoportal_import
 from vitrina import settings
 from vitrina.classifiers.factories import (
     FrequencyFactory,
-    LicenceFactory,
     CategoryFactory,
     GeoportalCategoryFactory,
     GeoportalFrequencyFactory,
@@ -38,8 +37,8 @@ from vitrina.users.models import User
 
 @pytest.mark.django_db
 def test_geoportal_import__title_and_description_create(app: DjangoTestApp):
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -56,9 +55,9 @@ def test_geoportal_import__title_and_description_create(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -71,7 +70,7 @@ def test_geoportal_import__title_and_description_create(app: DjangoTestApp):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -95,8 +94,8 @@ def test_geoportal_import__title_and_description_create(app: DjangoTestApp):
 def test_geoportal_import__title_and_description_update(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -113,9 +112,9 @@ def test_geoportal_import__title_and_description_update(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -128,7 +127,7 @@ def test_geoportal_import__title_and_description_update(app: DjangoTestApp):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -147,7 +146,7 @@ def test_geoportal_import__title_and_description_update(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__title_and_description_create_without_translation(app: DjangoTestApp):
-    get_all = '''
+    get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -164,8 +163,8 @@ def test_geoportal_import__title_and_description_create_without_translation(app:
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-    '''
-    get_one = '''
+    """
+    get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -176,12 +175,12 @@ def test_geoportal_import__title_and_description_create_without_translation(app:
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-    '''
+    """
     get_all_mock = Mock(content=get_all)
     get_one_mock = Mock(content=get_one)
     get_conditions_mock = None
 
-    with patch('scripts.geoportal_import.requests.get') as get_data, patch('vitrina.utils.requests.post') as post_mock:
+    with patch("scripts.geoportal_import.requests.get") as get_data, patch("vitrina.utils.requests.post") as post_mock:
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         post_mock.side_effect = requests.exceptions.Timeout
         geoportal_import()
@@ -201,8 +200,8 @@ def test_geoportal_import__title_and_description_create_without_translation(app:
 
 @pytest.mark.django_db
 def test_geoportal_import__tags_create(app: DjangoTestApp):
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -219,9 +218,9 @@ def test_geoportal_import__tags_create(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -248,7 +247,7 @@ def test_geoportal_import__tags_create(app: DjangoTestApp):
                 </gmd:descriptiveKeywords> 
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -260,15 +259,15 @@ def test_geoportal_import__tags_create(app: DjangoTestApp):
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
     assert dataset.geoportal_id == "1"
-    assert sorted(list(dataset.tags.values_list('name', flat=True))) == ['žymė1', 'žymė2', 'žymė3']
+    assert sorted(list(dataset.tags.values_list("name", flat=True))) == ["žymė1", "žymė2", "žymė3"]
 
 
 @pytest.mark.django_db
 def test_geoportal_import__tags_update(app: DjangoTestApp):
-    dataset = DatasetFactory(geoportal_id="1", tags=('žymė1', 'test'))
+    dataset = DatasetFactory(geoportal_id="1", tags=("žymė1", "test"))
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -285,9 +284,9 @@ def test_geoportal_import__tags_update(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -314,7 +313,7 @@ def test_geoportal_import__tags_update(app: DjangoTestApp):
                 </gmd:descriptiveKeywords> 
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -323,16 +322,16 @@ def test_geoportal_import__tags_update(app: DjangoTestApp):
 
     dataset.refresh_from_db()
     assert Dataset.objects.exclude(id=1).count() == 1
-    assert sorted(list(dataset.tags.values_list('name', flat=True))) == ['žymė1', 'žymė2', 'žymė3']
+    assert sorted(list(dataset.tags.values_list("name", flat=True))) == ["žymė1", "žymė2", "žymė3"]
 
 
 @pytest.mark.django_db
 def test_geoportal_import__frequency_create_with_existing_value(app: DjangoTestApp):
     frequency = FrequencyFactory(title="Neapibrėžtu periodiškumu")
-    GeoportalFrequencyFactory(title='asNeeded', frequency=frequency)
+    GeoportalFrequencyFactory(title="asNeeded", frequency=frequency)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -349,9 +348,9 @@ def test_geoportal_import__frequency_create_with_existing_value(app: DjangoTestA
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -367,7 +366,7 @@ def test_geoportal_import__frequency_create_with_existing_value(app: DjangoTestA
                 </gmd:resourceMaintenance>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -384,8 +383,8 @@ def test_geoportal_import__frequency_create_with_existing_value(app: DjangoTestA
 @pytest.mark.django_db
 def test_geoportal_import__frequency_create_with_not_existing_value(app: DjangoTestApp):
     UserFactory(is_superuser=True)
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -402,9 +401,9 @@ def test_geoportal_import__frequency_create_with_not_existing_value(app: DjangoT
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -420,7 +419,7 @@ def test_geoportal_import__frequency_create_with_not_existing_value(app: DjangoT
                 </gmd:resourceMaintenance>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -444,8 +443,8 @@ def test_geoportal_import__frequency_update(app: DjangoTestApp):
     frequency = FrequencyFactory(title="Neapibrėžtu periodiškumu")
     GeoportalFrequencyFactory(title="asNeeded", frequency=frequency)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -462,9 +461,9 @@ def test_geoportal_import__frequency_update(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -480,7 +479,7 @@ def test_geoportal_import__frequency_update(app: DjangoTestApp):
                 </gmd:resourceMaintenance>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -494,8 +493,8 @@ def test_geoportal_import__frequency_update(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__access_rights_public(app: DjangoTestApp):
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -512,9 +511,9 @@ def test_geoportal_import__access_rights_public(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -532,7 +531,7 @@ def test_geoportal_import__access_rights_public(app: DjangoTestApp):
                 </gmd:descriptiveKeywords>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -549,8 +548,8 @@ def test_geoportal_import__access_rights_public(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__access_rights_restricted(app: DjangoTestApp):
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -567,9 +566,9 @@ def test_geoportal_import__access_rights_restricted(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -582,7 +581,7 @@ def test_geoportal_import__access_rights_restricted(app: DjangoTestApp):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -601,8 +600,8 @@ def test_geoportal_import__access_rights_restricted(app: DjangoTestApp):
 def test_geoportal_import__access_rights_public_update(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1", access_rights=Dataset.RESTRICTED)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -619,9 +618,9 @@ def test_geoportal_import__access_rights_public_update(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -639,7 +638,7 @@ def test_geoportal_import__access_rights_public_update(app: DjangoTestApp):
                 </gmd:descriptiveKeywords>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -655,8 +654,8 @@ def test_geoportal_import__access_rights_public_update(app: DjangoTestApp):
 def test_geoportal_import__access_rights_restricted_update(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1", access_rights=Dataset.PUBLIC)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -673,9 +672,9 @@ def test_geoportal_import__access_rights_restricted_update(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -688,7 +687,7 @@ def test_geoportal_import__access_rights_restricted_update(app: DjangoTestApp):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -702,7 +701,7 @@ def test_geoportal_import__access_rights_restricted_update(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__distribution_conditions_create():
-    get_all = '''
+    get_all = """
     <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
         xmlns:dct="http://purl.org/dc/terms/"
         xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -715,9 +714,9 @@ def test_geoportal_import__distribution_conditions_create():
             </csw:Record>
         </csw:SearchResults>
     </csw:GetRecordsResponse>              
-    '''
+    """
 
-    get_one = '''
+    get_one = """
     <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
         <gmd:identificationInfo>
             <gmd:title>
@@ -754,9 +753,9 @@ def test_geoportal_import__distribution_conditions_create():
             </gmd:transferOptions>
         </gmd:distributionInfo>
     </gmd:MD_Metadata>
-    '''
+    """
 
-    get_conditions = '''
+    get_conditions = """
     <CT_CodelistCatalogue xmlns="http://www.isotc211.org/2005/gmx"  xmlns:gml="http://www.opengis.net/gml/3.2">
         <CodeListDictionary gml:id="MD_RestrictionCode">
             <CodeDefinition gml:id="MD_RestrictionCode_copyright">
@@ -773,11 +772,11 @@ def test_geoportal_import__distribution_conditions_create():
             </CodeDefinition>
         </CodeListDictionary>
     </CT_CodelistCatalogue>
-    '''
+    """
 
     with (
         patch("scripts.geoportal_import.requests.get") as get_data,
-        patch("scripts.geoportal_import.translate_text") as mock_translate
+        patch("scripts.geoportal_import.translate_text") as mock_translate,
     ):
         mock_translate.side_effect = lambda text, field_name=None: text
 
@@ -807,12 +806,10 @@ def test_geoportal_import__distribution_conditions_create():
 def test_geoportal_import__distribution_conditions_update():
     dataset = Dataset.objects.create(geoportal_id="1", title="Old title")
     distribution = DatasetDistribution.objects.create(
-        dataset=dataset,
-        download_url="https://example.com/file.csv",
-        conditions="old conditions"
+        dataset=dataset, download_url="https://example.com/file.csv", conditions="old conditions"
     )
 
-    get_all_response = '''<csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
+    get_all_response = """<csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
         xmlns:dct="http://purl.org/dc/terms/" xmlns:dc="http://purl.org/dc/elements/1.1/">
         <csw:SearchResults numberOfRecordsMatched="1">
             <csw:Record>
@@ -821,9 +818,9 @@ def test_geoportal_import__distribution_conditions_update():
                 <dct:references scheme="urn:x-esri:specification:ServiceType:ArcIMS:Metadata:Document">https://www.metadata.com</dct:references>
             </csw:Record>
         </csw:SearchResults>
-    </csw:GetRecordsResponse>'''
+    </csw:GetRecordsResponse>"""
 
-    get_conditions_response = '''<CT_CodelistCatalogue xmlns="http://www.isotc211.org/2005/gmx"  xmlns:gml="http://www.opengis.net/gml/3.2">
+    get_conditions_response = """<CT_CodelistCatalogue xmlns="http://www.isotc211.org/2005/gmx"  xmlns:gml="http://www.opengis.net/gml/3.2">
         <CodeListDictionary gml:id="MD_RestrictionCode">
             <CodeDefinition gml:id="MD_RestrictionCode_copyright">
                 <gml:description>Copyright</gml:description>
@@ -838,9 +835,9 @@ def test_geoportal_import__distribution_conditions_update():
                 <gml:identifier codeSpace="ISOTC211/19115">restricted</gml:identifier>
             </CodeDefinition>
         </CodeListDictionary>
-    </CT_CodelistCatalogue>'''
+    </CT_CodelistCatalogue>"""
 
-    get_one_response = '''<gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
+    get_one_response = """<gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
         <gmd:identificationInfo>
             <gmd:title>
                 <gco:CharacterString>Naujas duomenų rinkinys</gco:CharacterString>
@@ -861,10 +858,9 @@ def test_geoportal_import__distribution_conditions_update():
             <gmd:distributionFormat><gmd:MD_Format_GC>CSV</gmd:MD_Format_GC></gmd:distributionFormat>
             <gmd:transferOptions><gmd:CI_OnlineResource><gmd:URL>https://example.com/file.csv</gmd:URL></gmd:CI_OnlineResource></gmd:transferOptions>
         </gmd:distributionInfo>
-    </gmd:MD_Metadata>'''
+    </gmd:MD_Metadata>"""
 
     with patch("scripts.geoportal_import.requests.get") as mock_get:
-
         mock_get.side_effect = [
             Mock(content=get_all_response.encode()),
             Mock(content=get_conditions_response.encode()),
@@ -893,15 +889,14 @@ def test_geoportal_import__distribution_conditions_update():
 )
 def test_geoportal_import__existing_publisher(app: DjangoTestApp, role: str):
     organization = OrganizationFactory(
-        title="Viešoji įstaiga Statybos sektoriaus vystymo agentūra",
-        company_code="305997589"
+        title="Viešoji įstaiga Statybos sektoriaus vystymo agentūra", company_code="305997589"
     )
     coordinator = RepresentativeFactory(
         role=role, content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
     )
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -918,9 +913,9 @@ def test_geoportal_import__existing_publisher(app: DjangoTestApp, role: str):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -933,7 +928,7 @@ def test_geoportal_import__existing_publisher(app: DjangoTestApp, role: str):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -953,8 +948,8 @@ def test_geoportal_import__existing_publisher(app: DjangoTestApp, role: str):
 def test_geoportal_import__not_existing_publisher(app: DjangoTestApp):
     UserFactory(is_superuser=True)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -971,9 +966,9 @@ def test_geoportal_import__not_existing_publisher(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -986,7 +981,7 @@ def test_geoportal_import__not_existing_publisher(app: DjangoTestApp):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1008,8 +1003,8 @@ def test_geoportal_import__not_existing_publisher(app: DjangoTestApp):
 def test_geoportal_import__existing_creator(app: DjangoTestApp):
     organization = OrganizationFactory(title="VšĮ Statybos sektoriaus vystymo agentūra")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1026,9 +1021,9 @@ def test_geoportal_import__existing_creator(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1046,7 +1041,7 @@ def test_geoportal_import__existing_creator(app: DjangoTestApp):
                 </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1064,8 +1059,8 @@ def test_geoportal_import__existing_creator(app: DjangoTestApp):
 def test_geoportal_import__existing_creator_municipality(app: DjangoTestApp):
     organization = OrganizationFactory(title="Jonavos rajono savivaldybės administracija")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1082,9 +1077,9 @@ def test_geoportal_import__existing_creator_municipality(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1102,7 +1097,7 @@ def test_geoportal_import__existing_creator_municipality(app: DjangoTestApp):
                 </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1119,12 +1114,11 @@ def test_geoportal_import__existing_creator_municipality(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_geoportal_import__existing_creator_alternative_title(app: DjangoTestApp):
     organization = OrganizationFactory(
-        title="Jonavos rajono savivaldybės administracija",
-        alternative_titles="Jonavos rajonas"
+        title="Jonavos rajono savivaldybės administracija", alternative_titles="Jonavos rajonas"
     )
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1141,9 +1135,9 @@ def test_geoportal_import__existing_creator_alternative_title(app: DjangoTestApp
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1161,7 +1155,7 @@ def test_geoportal_import__existing_creator_alternative_title(app: DjangoTestApp
                 </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1179,8 +1173,8 @@ def test_geoportal_import__existing_creator_alternative_title(app: DjangoTestApp
 def test_geoportal_import__not_existing_creator(app: DjangoTestApp):
     UserFactory(is_superuser=True)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1197,9 +1191,9 @@ def test_geoportal_import__not_existing_creator(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1217,7 +1211,7 @@ def test_geoportal_import__not_existing_creator(app: DjangoTestApp):
                 </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1242,8 +1236,8 @@ def test_geoportal_import__distribution_create_with_url(app: DjangoTestApp):
     geo_frm = GeoportalFormatFactory(format=frm)
     GeoportalFormatValueFactory(geoportal_format=geo_frm, value="csv")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1256,9 +1250,9 @@ def test_geoportal_import__distribution_create_with_url(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1281,7 +1275,7 @@ def test_geoportal_import__distribution_create_with_url(app: DjangoTestApp):
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1303,8 +1297,8 @@ def test_geoportal_import__distribution_create_with_url(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__distribution_create_without_url(app: DjangoTestApp):
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1318,9 +1312,9 @@ def test_geoportal_import__distribution_create_without_url(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1337,7 +1331,7 @@ def test_geoportal_import__distribution_create_without_url(app: DjangoTestApp):
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1359,8 +1353,8 @@ def test_geoportal_import__distribution_create_without_url(app: DjangoTestApp):
 def test_geoportal_import__distribution_create_with_not_existing_format(app: DjangoTestApp):
     UserFactory(is_superuser=True)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1373,9 +1367,9 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1398,7 +1392,7 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1422,7 +1416,6 @@ def test_geoportal_import__distribution_create_with_not_existing_format(app: Dja
     assert 'Nerastas formatas: "CSV"' in task.description
 
 
-
 @pytest.mark.django_db
 def test_geoportal_import__distribution_create_with_multiple_formats(app: DjangoTestApp):
     frm1 = FileFormat(extension="CSV")
@@ -1433,8 +1426,8 @@ def test_geoportal_import__distribution_create_with_multiple_formats(app: Django
     geo_frm2 = GeoportalFormatFactory(format=frm2)
     GeoportalFormatValueFactory(geoportal_format=geo_frm2, value="json")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1447,9 +1440,9 @@ def test_geoportal_import__distribution_create_with_multiple_formats(app: Django
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1472,7 +1465,7 @@ def test_geoportal_import__distribution_create_with_multiple_formats(app: Django
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1484,14 +1477,12 @@ def test_geoportal_import__distribution_create_with_multiple_formats(app: Django
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
     assert dataset.datasetdistribution_set.count() == 2
-    assert sorted(list(dataset.datasetdistribution_set.values_list('download_url', flat=True))) == sorted([
-        "https://example.com/file.zip",
-        "https://example.com/file.zip"
-    ])
-    assert sorted(list(dataset.datasetdistribution_set.values_list('format__pk', flat=True))) == sorted([
-        frm1.pk,
-        frm2.pk
-    ])
+    assert sorted(list(dataset.datasetdistribution_set.values_list("download_url", flat=True))) == sorted(
+        ["https://example.com/file.zip", "https://example.com/file.zip"]
+    )
+    assert sorted(list(dataset.datasetdistribution_set.values_list("format__pk", flat=True))) == sorted(
+        [frm1.pk, frm2.pk]
+    )
     assert dataset.status == Dataset.HAS_DATA
     assert dataset.comments.count() == 1
     assert dataset.comments.first().type == Comment.STATUS
@@ -1506,8 +1497,8 @@ def test_geoportal_import__distribution_update_with_url(app: DjangoTestApp):
 
     dataset = DatasetFactory(geoportal_id="1")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1520,9 +1511,9 @@ def test_geoportal_import__distribution_update_with_url(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1545,7 +1536,7 @@ def test_geoportal_import__distribution_update_with_url(app: DjangoTestApp):
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1572,8 +1563,8 @@ def test_geoportal_import__distribution_update_with_format(app: DjangoTestApp):
 
     dataset = DatasetFactory(geoportal_id="1")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1586,9 +1577,9 @@ def test_geoportal_import__distribution_update_with_format(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1611,7 +1602,7 @@ def test_geoportal_import__distribution_update_with_format(app: DjangoTestApp):
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1635,8 +1626,8 @@ def test_geoportal_import__distribution_update_with_not_existing_format(app: Dja
     UserFactory(is_superuser=True)
     dataset = DatasetFactory(geoportal_id="1")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1649,9 +1640,9 @@ def test_geoportal_import__distribution_update_with_not_existing_format(app: Dja
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1674,7 +1665,7 @@ def test_geoportal_import__distribution_update_with_not_existing_format(app: Dja
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1708,14 +1699,10 @@ def test_geoportal_import__distribution_update_with_multiple_formats(app: Django
     GeoportalFormatValueFactory(geoportal_format=geo_frm2, value="json")
 
     dataset = DatasetFactory(geoportal_id="1")
-    DatasetDistributionFactory(
-        dataset=dataset,
-        download_url="https://example.com/file.zip",
-        format=frm1
-    )
+    DatasetDistributionFactory(dataset=dataset, download_url="https://example.com/file.zip", format=frm1)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1728,9 +1715,9 @@ def test_geoportal_import__distribution_update_with_multiple_formats(app: Django
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -1753,7 +1740,7 @@ def test_geoportal_import__distribution_update_with_multiple_formats(app: Django
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1763,14 +1750,12 @@ def test_geoportal_import__distribution_update_with_multiple_formats(app: Django
     assert Dataset.objects.exclude(id=1).count() == 1
     # dataset = Dataset.objects.first()
     assert dataset.datasetdistribution_set.count() == 2
-    assert sorted(list(dataset.datasetdistribution_set.values_list('download_url', flat=True))) == sorted([
-        "https://example.com/file.zip",
-        "https://example.com/file.zip"
-    ])
-    assert sorted(list(dataset.datasetdistribution_set.values_list('format__pk', flat=True))) == sorted([
-        frm1.pk,
-        frm2.pk
-    ])
+    assert sorted(list(dataset.datasetdistribution_set.values_list("download_url", flat=True))) == sorted(
+        ["https://example.com/file.zip", "https://example.com/file.zip"]
+    )
+    assert sorted(list(dataset.datasetdistribution_set.values_list("format__pk", flat=True))) == sorted(
+        [frm1.pk, frm2.pk]
+    )
     assert dataset.status == Dataset.HAS_DATA
     assert dataset.comments.count() == 1
     assert dataset.comments.first().type == Comment.STATUS
@@ -1783,8 +1768,8 @@ def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
     geo_service_type = GeoportalFormatFactory(format=service_type)
     GeoportalFormatValueFactory(geoportal_format=geo_service_type, value="wms")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1797,9 +1782,9 @@ def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:hierarchyLevel>
                 <gmd:MD_ScopeCode>service</gmd:MD_ScopeCode>
@@ -1825,7 +1810,7 @@ def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1849,8 +1834,8 @@ def test_geoportal_import__service_create_with_url(app: DjangoTestApp):
 
 @pytest.mark.django_db
 def test_geoportal_import__service_create_without_url(app: DjangoTestApp):
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1864,9 +1849,9 @@ def test_geoportal_import__service_create_without_url(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:hierarchyLevel>
                 <gmd:MD_ScopeCode>service</gmd:MD_ScopeCode>
@@ -1886,13 +1871,12 @@ def test_geoportal_import__service_create_without_url(app: DjangoTestApp):
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
-
 
     dataset_objects = Dataset.objects.exclude(id=1)
 
@@ -1912,8 +1896,8 @@ def test_geoportal_import__service_create_without_url(app: DjangoTestApp):
 def test_geoportal_import__service_create_with_not_existing_format(app: DjangoTestApp):
     UserFactory(is_superuser=True)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -1926,9 +1910,9 @@ def test_geoportal_import__service_create_with_not_existing_format(app: DjangoTe
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:hierarchyLevel>
                 <gmd:MD_ScopeCode>service</gmd:MD_ScopeCode>
@@ -1954,7 +1938,7 @@ def test_geoportal_import__service_create_with_not_existing_format(app: DjangoTe
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -1985,14 +1969,10 @@ def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
     geo_service_type = GeoportalFormatFactory(format=service_type)
     GeoportalFormatValueFactory(geoportal_format=geo_service_type, value="wms")
 
-    dataset = DatasetFactory(
-        geoportal_id="1",
-        endpoint_url="https://test.com",
-        endpoint_type=service_type
-    )
+    dataset = DatasetFactory(geoportal_id="1", endpoint_url="https://test.com", endpoint_type=service_type)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2005,9 +1985,9 @@ def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:hierarchyLevel>
                 <gmd:MD_ScopeCode>service</gmd:MD_ScopeCode>
@@ -2033,7 +2013,7 @@ def test_geoportal_import__service_update_with_url(app: DjangoTestApp):
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2064,8 +2044,8 @@ def test_geoportal_import__service_update_with_format(app: DjangoTestApp):
         endpoint_url="https://test.com",
     )
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2078,9 +2058,9 @@ def test_geoportal_import__service_update_with_format(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:hierarchyLevel>
                 <gmd:MD_ScopeCode>service</gmd:MD_ScopeCode>
@@ -2106,7 +2086,7 @@ def test_geoportal_import__service_update_with_format(app: DjangoTestApp):
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2131,8 +2111,8 @@ def test_geoportal_import__service_update_with_not_existing_format(app: DjangoTe
     UserFactory(is_superuser=True)
     dataset = DatasetFactory(geoportal_id="1")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2145,9 +2125,9 @@ def test_geoportal_import__service_update_with_not_existing_format(app: DjangoTe
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:hierarchyLevel>
                 <gmd:MD_ScopeCode>service</gmd:MD_ScopeCode>
@@ -2173,7 +2153,7 @@ def test_geoportal_import__service_update_with_not_existing_format(app: DjangoTe
                 </gmd:transferOptions>
             </gmd:distributionInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2209,8 +2189,8 @@ def test_geoportal_import__categories_create_existing_values(app: DjangoTestApp)
     mapping2.categories.add(category2)
     mapping2.categories.add(category3)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2227,9 +2207,9 @@ def test_geoportal_import__categories_create_existing_values(app: DjangoTestApp)
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2248,7 +2228,7 @@ def test_geoportal_import__categories_create_existing_values(app: DjangoTestApp)
                 </gmd:topicCategory>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2259,10 +2239,10 @@ def test_geoportal_import__categories_create_existing_values(app: DjangoTestApp)
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
     assert dataset.category.count() == 3
-    assert sorted(list(dataset.category.values_list('title', flat=True))) == [
-        'Energetika',
-        'Flora ir fauna',
-        'Transportas ir ryšiai'
+    assert sorted(list(dataset.category.values_list("title", flat=True))) == [
+        "Energetika",
+        "Flora ir fauna",
+        "Transportas ir ryšiai",
     ]
 
 
@@ -2273,8 +2253,8 @@ def test_geoportal_import__categories_create_not_existing_values(app: DjangoTest
     mapping = GeoportalCategoryFactory(title="utilitiesCommunication")
     mapping.categories.add(category)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2291,9 +2271,9 @@ def test_geoportal_import__categories_create_not_existing_values(app: DjangoTest
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2312,7 +2292,7 @@ def test_geoportal_import__categories_create_not_existing_values(app: DjangoTest
                 </gmd:topicCategory>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2324,7 +2304,7 @@ def test_geoportal_import__categories_create_not_existing_values(app: DjangoTest
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
     assert dataset.category.count() == 1
-    assert sorted(list(dataset.category.values_list('title', flat=True))) == ['Energetika']
+    assert sorted(list(dataset.category.values_list("title", flat=True))) == ["Energetika"]
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
@@ -2346,8 +2326,8 @@ def test_geoportal_import__categories_update(app: DjangoTestApp):
     mapping2.categories.add(category2)
     mapping2.categories.add(category3)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2364,9 +2344,9 @@ def test_geoportal_import__categories_update(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2385,7 +2365,7 @@ def test_geoportal_import__categories_update(app: DjangoTestApp):
                 </gmd:topicCategory>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2395,10 +2375,10 @@ def test_geoportal_import__categories_update(app: DjangoTestApp):
     dataset.refresh_from_db()
     assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.category.count() == 3
-    assert sorted(list(dataset.category.values_list('title', flat=True))) == [
-        'Energetika',
-        'Flora ir fauna',
-        'Transportas ir ryšiai'
+    assert sorted(list(dataset.category.values_list("title", flat=True))) == [
+        "Energetika",
+        "Flora ir fauna",
+        "Transportas ir ryšiai",
     ]
 
 
@@ -2419,8 +2399,8 @@ def test_geoportal_import__removed_categories_update(app: DjangoTestApp):
     dataset.category.add(category2)
     dataset.category.add(category3)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2437,9 +2417,9 @@ def test_geoportal_import__removed_categories_update(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2455,7 +2435,7 @@ def test_geoportal_import__removed_categories_update(app: DjangoTestApp):
                 </gmd:topicCategory>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2465,9 +2445,7 @@ def test_geoportal_import__removed_categories_update(app: DjangoTestApp):
     dataset.refresh_from_db()
     assert Dataset.objects.exclude(id=1).count() == 1
     assert dataset.category.count() == 1
-    assert sorted(list(dataset.category.values_list('title', flat=True))) == [
-        'Flora ir fauna'
-    ]
+    assert sorted(list(dataset.category.values_list("title", flat=True))) == ["Flora ir fauna"]
 
 
 @pytest.mark.django_db
@@ -2475,8 +2453,8 @@ def test_geoportal_import__recurring_error_message(app: DjangoTestApp):
     user = UserFactory(is_superuser=True)
     dataset = DatasetFactory(geoportal_id="1")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2493,9 +2471,9 @@ def test_geoportal_import__recurring_error_message(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2511,7 +2489,7 @@ def test_geoportal_import__recurring_error_message(app: DjangoTestApp):
                 </gmd:topicCategory>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2541,8 +2519,8 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
     user = UserFactory(is_superuser=True)
     dataset = DatasetFactory(geoportal_id="1")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2559,9 +2537,9 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2577,14 +2555,14 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
                 </gmd:topicCategory>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
         get_data.side_effect = [get_all_mock, get_conditions_mock, get_one_mock]
         geoportal_import()
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2600,7 +2578,7 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
                 </gmd:topicCategory>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2611,9 +2589,9 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
     assert dataset.category.count() == 0
 
     assert Task.objects.count() == 2
-    task1 = Task.objects.order_by('pk')[0]
+    task1 = Task.objects.order_by("pk")[0]
     assert 'Nerasta kategorija: "test"' in task1.description
-    task2 = Task.objects.order_by('pk')[1]
+    task2 = Task.objects.order_by("pk")[1]
     assert 'Nerasta kategorija: "test2"' in task2.description
 
     assert len(mail.outbox) == 2
@@ -2642,8 +2620,8 @@ def test_geoportal_import__subscription_create(app: DjangoTestApp, role: str):
         dataset_update_sub=True,
     )
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2660,9 +2638,9 @@ def test_geoportal_import__subscription_create(app: DjangoTestApp, role: str):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2680,7 +2658,7 @@ def test_geoportal_import__subscription_create(app: DjangoTestApp, role: str):
                 </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2713,10 +2691,10 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp, role: str):
         object_id=organization.pk,
         dataset_update_sub=True,
     )
-    dataset = DatasetFactory(geoportal_id="1", organization=organization)
+    DatasetFactory(geoportal_id="1", organization=organization)
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2733,9 +2711,9 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp, role: str):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2753,7 +2731,7 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp, role: str):
                 </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2795,8 +2773,8 @@ def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp, ro
     dataset.description = "New dataset description"
     dataset.save()
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2810,9 +2788,9 @@ def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp, ro
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2830,7 +2808,7 @@ def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp, ro
                 </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2844,8 +2822,8 @@ def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp, ro
 
 @pytest.mark.django_db
 def test_geoportal_import__history_create(app: DjangoTestApp):
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2862,9 +2840,9 @@ def test_geoportal_import__history_create(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2877,7 +2855,7 @@ def test_geoportal_import__history_create(app: DjangoTestApp):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2897,8 +2875,8 @@ def test_geoportal_import__history_create(app: DjangoTestApp):
 def test_geoportal_import__history_update(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2915,9 +2893,9 @@ def test_geoportal_import__history_update(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2930,7 +2908,7 @@ def test_geoportal_import__history_update(app: DjangoTestApp):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -2957,8 +2935,8 @@ def test_geoportal_import__history_update_no_changes(app: DjangoTestApp):
     dataset.description = "New dataset description"
     dataset.save()
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -2972,9 +2950,9 @@ def test_geoportal_import__history_update_no_changes(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -2987,7 +2965,7 @@ def test_geoportal_import__history_update_no_changes(app: DjangoTestApp):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -3004,8 +2982,8 @@ def test_geoportal_import__add_to_geoportal_catalog(app: DjangoTestApp):
     relation = RelationFactory(name=Relation.CATALOG)
     geoportal_catalog = DatasetFactory(title="Lietuvos erdvinės informacijos portalas")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
         <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
             xmlns:dct="http://purl.org/dc/terms/"
             xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -3022,9 +3000,9 @@ def test_geoportal_import__add_to_geoportal_catalog(app: DjangoTestApp):
                 </csw:Record>
             </csw:SearchResults>
         </csw:GetRecordsResponse>              
-        '''
+        """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -3037,7 +3015,7 @@ def test_geoportal_import__add_to_geoportal_catalog(app: DjangoTestApp):
                 </gmd:abstract>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None
@@ -3058,8 +3036,8 @@ def test_geoportal_import__deleted_dataset(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1", access_rights=Dataset.RESTRICTED)
     OrganizationFactory(title="VšĮ Statybos sektoriaus vystymo agentūra")
 
-    with patch('scripts.geoportal_import.requests.get') as get_data:
-        get_all = '''
+    with patch("scripts.geoportal_import.requests.get") as get_data:
+        get_all = """
             <csw:GetRecordsResponse xmlns:csw="http://www.opengis.net/cat/csw/2.0.2"
                 xmlns:dct="http://purl.org/dc/terms/"
                 xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -3076,9 +3054,9 @@ def test_geoportal_import__deleted_dataset(app: DjangoTestApp):
                     </csw:Record>
                 </csw:SearchResults>
             </csw:GetRecordsResponse>              
-            '''
+            """
 
-        get_one = '''
+        get_one = """
         <gmd:MD_Metadata xmlns:gmd="http://www.isotc211.org/2005/gmd" xmlns:gco="http://www.isotc211.org/2005/gco">
             <gmd:identificationInfo>
                 <gmd:title>
@@ -3096,7 +3074,7 @@ def test_geoportal_import__deleted_dataset(app: DjangoTestApp):
                 </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
-        '''
+        """
         get_all_mock = Mock(content=get_all)
         get_one_mock = Mock(content=get_one)
         get_conditions_mock = None

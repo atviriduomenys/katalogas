@@ -1,6 +1,3 @@
-import json
-from unittest.mock import patch, Mock
-
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core import mail
@@ -44,7 +41,7 @@ def test_comment_is_not_public_user_staff(app: DjangoTestApp):
     form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
+    resp = form.submit().follow().follow()  # comment form → dataset view → versioned dataset view
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert Comment.objects.filter(content_type=ct, object_id=dataset.pk).count() == 1
     assert created_comment.first() in list(resp.context["comments"])[0]
@@ -59,7 +56,7 @@ def test_comment_is_public(app: DjangoTestApp):
     form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = True
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
+    resp = form.submit().follow().follow()  # comment form → dataset view → versioned dataset view
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert created_comment.count() == 1
     assert created_comment.first() in list(resp.context["comments"])[0]
@@ -81,14 +78,14 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
         http_method="POST",
         path=form.action,
         args=list(match.args),
-        kwargs=match.kwargs
+        kwargs=match.kwargs,
     )
     form["is_public"] = True
     form["register_request"] = True
     form["increase_frequency"] = frequency
     form["request_title"] = "Test request title"
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
+    resp = form.submit().follow().follow()  # comment form → dataset view → versioned dataset view
     created_request = Request.objects.filter(requestobject__object_id=dataset.pk, requestobject__content_type=ct)
     created_comment = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
 
@@ -104,7 +101,9 @@ def test_dataset_comment_with_register_request(app: DjangoTestApp):
     assert created_request.first().requestassignment_set.first().organization == dataset.organization
     assert created_request.first().periodicity == frequency.title
     assert Version.objects.get_for_object(created_request.first()).count() == 1
-    assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
+    assert (
+        Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
+    )
 
 
 @pytest.mark.django_db
@@ -164,7 +163,7 @@ def test_reply_is_public(app: DjangoTestApp):
     form = app.get(comment.content_object.get_absolute_url()).follow().forms[f"reply-form-{comment.pk}"]
     form["is_public"] = True
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
+    resp = form.submit().follow().follow()  # comment form → dataset view → versioned dataset view
     comments = Comment.objects.filter(content_type=comment.content_type, object_id=comment.object_id)
     reply = Comment.objects.filter(content_type=comment.content_type, parent=comment).first()
     assert comments.count() == 2
@@ -218,7 +217,7 @@ def test_model_comment_with_register_request(app: DjangoTestApp):
         http_method="POST",
         path=form.action,
         args=list(match.args),
-        kwargs=match.kwargs
+        kwargs=match.kwargs,
     )
     form["is_public"] = True
     form["register_request"] = True
@@ -237,7 +236,9 @@ def test_model_comment_with_register_request(app: DjangoTestApp):
     assert created_request.first().title == model.title
     assert created_request.first().description == created_comment.first().body
     assert Version.objects.get_for_object(created_request.first()).count() == 1
-    assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
+    assert (
+        Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
+    )
 
 
 @pytest.mark.django_db
@@ -276,7 +277,7 @@ def test_property_comment_with_register_request(app: DjangoTestApp):
         http_method="POST",
         path=form.action,
         args=list(match.args),
-        kwargs=match.kwargs
+        kwargs=match.kwargs,
     )
     form["is_public"] = True
     form["register_request"] = True
@@ -295,7 +296,9 @@ def test_property_comment_with_register_request(app: DjangoTestApp):
     assert created_request.first().title == prop.title
     assert created_request.first().description == created_comment.first().body
     assert Version.objects.get_for_object(created_request.first()).count() == 1
-    assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
+    assert (
+        Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
+    )
 
 
 @pytest.mark.django_db
@@ -310,7 +313,7 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         object_id=model.pk,
         dataset=dataset,
         name="test/dataset/TestModel",
-        metadata_version=metadata_version
+        metadata_version=metadata_version,
     )
     prop = PropertyFactory(model=model, metadata_version=metadata_version)
     MetadataFactory(
@@ -319,7 +322,7 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         dataset=dataset,
         name="prop",
         type="string",
-        metadata_version=metadata_version
+        metadata_version=metadata_version,
     )
 
     form = app.get(
@@ -332,15 +335,13 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
         http_method="POST",
         path=form.action,
         args=list(match.args),
-        kwargs=match.kwargs
+        kwargs=match.kwargs,
     )
     form["is_public"] = True
     form["register_request"] = True
     form["body"] = "Test comment"
     resp = form.submit().follow()
-    created_request = Request.objects.filter(
-        requestobject__external_object_id=model_metadata.uuid
-    )
+    created_request = Request.objects.filter(requestobject__external_object_id=model_metadata.uuid)
     created_comment = Comment.objects.filter(external_object_id=model_metadata.uuid)
 
     assert created_comment.count() == 1
@@ -353,7 +354,9 @@ def test_object_data_comment_with_register_request(app: DjangoTestApp):
     assert created_request.first().title == str(model_metadata.uuid)
     assert created_request.first().description == created_comment.first().body
     assert Version.objects.get_for_object(created_request.first()).count() == 1
-    assert Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
+    assert (
+        Version.objects.get_for_object(created_request.first()).first().revision.comment == revision_comment.to_json()
+    )
 
 
 @pytest.mark.django_db
@@ -477,7 +480,7 @@ def test_view_author_comment_not_public(app: DjangoTestApp):
     form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
+    resp = form.submit().follow().follow()  # comment form → dataset view → versioned dataset view
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk, user=user)
     assert comments.count() == 1
     assert [comment for comment, _, _ in resp.context["comments"]] == list(comments)
@@ -553,7 +556,7 @@ def test_view_reply_to_comment_not_public_without_permission(app: DjangoTestApp)
     [
         (Representative.OPEN_DATA_MANAGER),
         (Representative.RESOURCE_MANAGER),
-    ]
+    ],
 )
 def test_view_reply_to_comment_not_public_with_resource_permission(app: DjangoTestApp, role: str):
     dataset = DatasetFactory()
@@ -664,7 +667,7 @@ def test_subscription_about_comment(app: DjangoTestApp):
     form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
     form["is_public"] = False
     form["body"] = "Test comment"
-    resp = form.submit().follow().follow() # comment form → dataset view → versioned dataset view
+    resp = form.submit().follow().follow()  # comment form → dataset view → versioned dataset view
     comments = Comment.objects.filter(content_type=ct, object_id=dataset.pk)
     assert comments.count() == 1
     assert [comment for comment, _, _ in resp.context["comments"]] == [comments.first()]
@@ -897,10 +900,10 @@ def test_edit_comment_wrong_http_method(client):
 @pytest.mark.parametrize(
     "access_rights, expected_status_code",
     (
-        (Dataset.PUBLIC, 302), # Allow
-        (Dataset.RESTRICTED, 302), # Allow
-        (Dataset.NON_PUBLIC, 403), # Disallow
-        (Dataset.CONFIDENTIAL, 403), # Disallow
+        (Dataset.PUBLIC, 302),  # Allow
+        (Dataset.RESTRICTED, 302),  # Allow
+        (Dataset.NON_PUBLIC, 403),  # Disallow
+        (Dataset.CONFIDENTIAL, 403),  # Disallow
     ),
 )
 def test_comment_based_on_access_rights(app: DjangoTestApp, access_rights, expected_status_code):
@@ -909,20 +912,14 @@ def test_comment_based_on_access_rights(app: DjangoTestApp, access_rights, expec
 
     org2 = OrganizationFactory()
     dataset2 = DatasetFactory(organization=org2, access_rights=access_rights)
-    RepresentativeFactory(
-        user=user2,
-        content_type=ContentType.objects.get_for_model(dataset2),
-        object_id=dataset2.pk
-    )
+    RepresentativeFactory(user=user2, content_type=ContentType.objects.get_for_model(dataset2), object_id=dataset2.pk)
 
     ct = ContentType.objects.get_for_model(dataset2)
 
     # User1 (not owner) tries to comment
     app.set_user(user1)
     resp = app.post(
-        reverse("comment", args=[ct.pk, dataset2.pk]),
-        {"is_public": True, "body": "Test comment"},
-        expect_errors=True
+        reverse("comment", args=[ct.pk, dataset2.pk]), {"is_public": True, "body": "Test comment"}, expect_errors=True
     )
 
     assert resp.status_code == expected_status_code
@@ -937,9 +934,7 @@ def test_comment_nonexistent_dataset(app: DjangoTestApp):
     ct = ContentType.objects.get_for_model(Dataset)
 
     resp = app.post(
-        reverse("comment", args=[ct.pk, 99999]),
-        {"is_public": True, "body": "IDOR test"},
-        expect_errors=True
+        reverse("comment", args=[ct.pk, 99999]), {"is_public": True, "body": "IDOR test"}, expect_errors=True
     )
 
     assert resp.status_code == 404
@@ -958,13 +953,12 @@ def test_comment_on_private_dataset_model(app: DjangoTestApp):
 
     app.set_user(user1)
     resp = app.post(
-        reverse("comment", args=[ct.pk, model.pk]),
-        {"is_public": True, "body": "IDOR test"},
-        expect_errors=True
+        reverse("comment", args=[ct.pk, model.pk]), {"is_public": True, "body": "IDOR test"}, expect_errors=True
     )
 
     assert resp.status_code == 403
     assert Comment.objects.filter(object_id=model.pk).count() == 0
+
 
 @pytest.mark.django_db
 def test_comment_on_non_public_project(app: DjangoTestApp):
@@ -979,9 +973,7 @@ def test_comment_on_non_public_project(app: DjangoTestApp):
     # User1 tries to comment
     app.set_user(user1)
     resp = app.post(
-        reverse("comment", args=[ct.pk, project.pk]),
-        {"is_public": True, "body": "IDOR test"},
-        expect_errors=True
+        reverse("comment", args=[ct.pk, project.pk]), {"is_public": True, "body": "IDOR test"}, expect_errors=True
     )
 
     assert resp.status_code == 403
@@ -1021,13 +1013,12 @@ def test_comment_on_private_dataset_property(app: DjangoTestApp):
     # User1 tries to comment on the property
     app.set_user(user1)
     resp = app.post(
-        reverse("comment", args=[ct.pk, prop.pk]),
-        {"is_public": True, "body": "IDOR test"},
-        expect_errors=True
+        reverse("comment", args=[ct.pk, prop.pk]), {"is_public": True, "body": "IDOR test"}, expect_errors=True
     )
 
     assert resp.status_code == 403
     assert Comment.objects.filter(object_id=prop.pk).count() == 0
+
 
 @pytest.mark.django_db
 def test_comment_on_unapproved_project(app: DjangoTestApp):
@@ -1040,9 +1031,7 @@ def test_comment_on_unapproved_project(app: DjangoTestApp):
 
     app.set_user(user1)
     resp = app.post(
-        reverse("comment", args=[ct.pk, project.pk]),
-        {"is_public": True, "body": "Test"},
-        expect_errors=True
+        reverse("comment", args=[ct.pk, project.pk]), {"is_public": True, "body": "Test"}, expect_errors=True
     )
 
     assert resp.status_code == 403

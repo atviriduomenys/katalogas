@@ -109,7 +109,7 @@ class TestList:
     ):
         another_dataset = DatasetFactory()
         version = dataset.metadata.first().metadata_version
-        another_version = another_dataset.metadata.first().metadata_version  # Would be returned as well, if not for the specific query parameters.
+        another_dataset.metadata.first().metadata_version  # Would be returned as well, if not for the specific query parameters.
 
         response = app.get(
             url_version,
@@ -169,7 +169,6 @@ class TestList:
             "additionalProperties": None,
         }
 
-
     def test_organization_id_missing_from_token(
         self,
         app: DjangoTestApp,
@@ -225,9 +224,7 @@ class TestList:
         valid_token: str,
     ):
         response = app.get(
-            url_version,
-            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
-            expect_errors=True
+            url_version, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True
         )
 
         assert response.status_code == status.HTTP_200_OK
@@ -245,9 +242,7 @@ class TestList:
         VersionFactory(dataset=dataset)
 
         response = app.get(
-            url_version,
-            extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
-            expect_errors=True
+            url_version, extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"}, expect_errors=True
         )
 
         assert response.status_code == status.HTTP_200_OK

@@ -38,7 +38,9 @@ def non_public_but_public_access_dataset():
 @pytest.fixture
 def representative_on_dataset(public_dataset):
     ct = ContentType.objects.get_for_model(public_dataset)
-    return RepresentativeFactory(content_type=ct, object_id=public_dataset.pk, role=Representative.OPEN_DATA_COORDINATOR)
+    return RepresentativeFactory(
+        content_type=ct, object_id=public_dataset.pk, role=Representative.OPEN_DATA_COORDINATOR
+    )
 
 
 @pytest.mark.django_db
@@ -68,17 +70,13 @@ def test_has_perm__is_staff():
     [
         (Representative.OPEN_DATA_MANAGER, False),
         (Representative.RESOURCE_MANAGER, False),
-    ]
+    ],
 )
 def test_organization_edit_permission_managers(role: str, expected: bool):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)
 
-    manager = RepresentativeFactory(
-        content_type=ct,
-        object_id=organization.pk,
-        role=role
-    )
+    manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
 
     res = has_perm(manager.user, Action.UPDATE, organization)
 
@@ -91,7 +89,7 @@ def test_organization_edit_permission_managers(role: str, expected: bool):
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_organization_edit_permission_coordinator(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -107,7 +105,7 @@ def test_organization_edit_permission_coordinator(role: str, expected: bool):
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_create_permission_organization_manager(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -123,7 +121,7 @@ def test_dataset_create_permission_organization_manager(role: str, expected: boo
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_create_permission_organization_coordinator(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -183,7 +181,10 @@ def test_dataset_permissions(role, action, dataset_fixture, expected, request):
     dataset = request.getfixturevalue(dataset_fixture)
     user = UserFactory(is_staff=(role == "global_manager"))
     ct = ContentType.objects.get_for_model(dataset)
-    rep_roles = {"open_data_manager": Representative.OPEN_DATA_MANAGER, "resource_manager": Representative.RESOURCE_MANAGER}
+    rep_roles = {
+        "open_data_manager": Representative.OPEN_DATA_MANAGER,
+        "resource_manager": Representative.RESOURCE_MANAGER,
+    }
     if role in rep_roles:
         RepresentativeFactory(
             content_type=ct,
@@ -228,7 +229,7 @@ def test_representative_update_permissions_fixed(role, action, obj_fixture, expe
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_history_view_permission_manager(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -244,7 +245,7 @@ def test_dataset_history_view_permission_manager(role: str, expected: bool):
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_history_view_permission_coordinator(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -306,7 +307,7 @@ def test_project_edit_permission_author():
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_distribution_create_permission_organization_manager(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -322,14 +323,12 @@ def test_dataset_distribution_create_permission_organization_manager(role: str, 
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_distribution_create_permission_organization_coordinator(role: str, expected: bool):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset.organization)
-    coordinator = RepresentativeFactory(
-        content_type=ct, object_id=dataset.organization.pk, role=role
-    )
+    coordinator = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=role)
     res = has_perm(coordinator.user, Action.CREATE, DatasetDistribution, dataset)
     assert res is expected
 
@@ -340,7 +339,7 @@ def test_dataset_distribution_create_permission_organization_coordinator(role: s
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_distribution_create_permission_dataset_manager(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -356,7 +355,7 @@ def test_dataset_distribution_create_permission_dataset_manager(role: str, expec
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_distribution_create_permission_dataset_coordinator(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -372,14 +371,12 @@ def test_dataset_distribution_create_permission_dataset_coordinator(role: str, e
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_distribution_edit_permission_organization_manager(role: str, expected: bool):
     dataset_distribution = DatasetDistributionFactory()
     ct = ContentType.objects.get_for_model(dataset_distribution.dataset.organization)
-    manager = RepresentativeFactory(
-        content_type=ct, object_id=dataset_distribution.dataset.organization.pk, role=role
-    )
+    manager = RepresentativeFactory(content_type=ct, object_id=dataset_distribution.dataset.organization.pk, role=role)
     res = has_perm(manager.user, Action.UPDATE, dataset_distribution)
     assert res is expected
 
@@ -390,7 +387,7 @@ def test_dataset_distribution_edit_permission_organization_manager(role: str, ex
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_distribution_edit_permission_organization_coordinator(role: str, expected: bool):
     dataset_distribution = DatasetDistributionFactory()
@@ -408,14 +405,12 @@ def test_dataset_distribution_edit_permission_organization_coordinator(role: str
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_distribution_edit_permission_dataset_manager(role: str, expected: bool):
     dataset_distribution = DatasetDistributionFactory()
     ct = ContentType.objects.get_for_model(dataset_distribution.dataset)
-    manager = RepresentativeFactory(
-        content_type=ct, object_id=dataset_distribution.dataset.pk, role=role
-    )
+    manager = RepresentativeFactory(content_type=ct, object_id=dataset_distribution.dataset.pk, role=role)
     res = has_perm(manager.user, Action.UPDATE, dataset_distribution)
     assert res is expected
 
@@ -426,14 +421,12 @@ def test_dataset_distribution_edit_permission_dataset_manager(role: str, expecte
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_distribution_edit_permission_dataset_coordinator(role: str, expected: bool):
     dataset_distribution = DatasetDistributionFactory()
     ct = ContentType.objects.get_for_model(dataset_distribution.dataset)
-    coordinator = RepresentativeFactory(
-        content_type=ct, object_id=dataset_distribution.dataset.pk, role=role
-    )
+    coordinator = RepresentativeFactory(content_type=ct, object_id=dataset_distribution.dataset.pk, role=role)
     res = has_perm(coordinator.user, Action.UPDATE, dataset_distribution)
     assert res is expected
 
@@ -444,7 +437,7 @@ def test_dataset_distribution_edit_permission_dataset_coordinator(role: str, exp
     [
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
-    ]
+    ],
 )
 def test_organization_representative_create_permission_manager(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -462,7 +455,7 @@ def test_organization_representative_create_permission_manager(role: str, expect
         (Representative.OPEN_DATA_COORDINATOR, True),
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
-    ]
+    ],
 )
 def test_organization_representative_create_permission_representative(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -480,7 +473,7 @@ def test_organization_representative_create_permission_representative(role: str,
         (Representative.OPEN_DATA_COORDINATOR, True),
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
-    ]
+    ],
 )
 def test_organization_representative_edit_permission_representative(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -496,7 +489,7 @@ def test_organization_representative_edit_permission_representative(role: str, e
     [
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
-    ]
+    ],
 )
 def test_organization_representative_view_permission_manager(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -512,7 +505,7 @@ def test_organization_representative_view_permission_manager(role: str, expected
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_organization_representative_view_permission_coordinator(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -528,7 +521,7 @@ def test_organization_representative_view_permission_coordinator(role: str, expe
     [
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
-    ]
+    ],
 )
 def test_dataset_representative_create_permission_organization_manager(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -544,14 +537,12 @@ def test_dataset_representative_create_permission_organization_manager(role: str
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_representative_create_permission_organization_coordinator(role: str, expected: bool):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset.organization)
-    coordinator = RepresentativeFactory(
-        content_type=ct, object_id=dataset.organization.pk, role=role
-    )
+    coordinator = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=role)
     res = has_perm(coordinator.user, Action.CREATE, Representative, dataset)
     assert res is expected
 
@@ -562,7 +553,7 @@ def test_dataset_representative_create_permission_organization_coordinator(role:
     [
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
-    ]
+    ],
 )
 def test_dataset_representative_create_permission_dataset_manager(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -578,7 +569,7 @@ def test_dataset_representative_create_permission_dataset_manager(role: str, exp
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_representative_create_permission_dataset_coordinator(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -594,15 +585,13 @@ def test_dataset_representative_create_permission_dataset_coordinator(role: str,
     [
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
-    ]
+    ],
 )
 def test_dataset_representative_edit_permission_organization_manager(role: str, expected: bool):
     dataset = DatasetFactory()
     organization_ct = ContentType.objects.get_for_model(dataset.organization)
     dataset_ct = ContentType.objects.get_for_model(dataset)
-    manager = RepresentativeFactory(
-        content_type=organization_ct, object_id=dataset.organization.pk, role=role
-    )
+    manager = RepresentativeFactory(content_type=organization_ct, object_id=dataset.organization.pk, role=role)
     representative = RepresentativeFactory(content_type=dataset_ct, object_id=dataset.pk)
     res = has_perm(manager.user, Action.UPDATE, representative)
     assert res is expected
@@ -614,15 +603,13 @@ def test_dataset_representative_edit_permission_organization_manager(role: str, 
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_representative_edit_permission_organization_coordinator(role: str, expected: bool):
     dataset = DatasetFactory()
     organization_ct = ContentType.objects.get_for_model(dataset.organization)
     dataset_ct = ContentType.objects.get_for_model(dataset)
-    coordinator = RepresentativeFactory(
-        content_type=organization_ct, object_id=dataset.organization.pk, role=role
-    )
+    coordinator = RepresentativeFactory(content_type=organization_ct, object_id=dataset.organization.pk, role=role)
     representative = RepresentativeFactory(content_type=dataset_ct, object_id=dataset.pk)
     res = has_perm(coordinator.user, Action.UPDATE, representative)
     assert res is expected
@@ -634,7 +621,7 @@ def test_dataset_representative_edit_permission_organization_coordinator(role: s
     [
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
-    ]
+    ],
 )
 def test_dataset_representative_edit_permission_dataset_manager(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -651,7 +638,7 @@ def test_dataset_representative_edit_permission_dataset_manager(role: str, expec
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_representative_edit_permission_dataset_coordinator(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -668,7 +655,7 @@ def test_dataset_representative_edit_permission_dataset_coordinator(role: str, e
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_representative_view_permission_organization_manager(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -684,14 +671,12 @@ def test_dataset_representative_view_permission_organization_manager(role: str, 
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_representative_view_permission_organization_coordinator(role: str, expected: bool):
     dataset = DatasetFactory()
     ct = ContentType.objects.get_for_model(dataset.organization)
-    coordinator = RepresentativeFactory(
-        content_type=ct, object_id=dataset.organization.pk, role=role
-    )
+    coordinator = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=role)
     res = has_perm(coordinator.user, Action.VIEW, Representative, dataset)
     assert res is expected
 
@@ -702,7 +687,7 @@ def test_dataset_representative_view_permission_organization_coordinator(role: s
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_representative_view_permission_dataset_manager(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -718,7 +703,7 @@ def test_dataset_representative_view_permission_dataset_manager(role: str, expec
     [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_representative_view_permission_dataset_coordinator(role: str, expected: bool):
     dataset = DatasetFactory()
@@ -770,7 +755,7 @@ def test_user_view_permission_author():
         (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
         (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
         (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_structure_create_permission_dataset_manager(access_rights: str, role: str, expected: bool):
     dataset = DatasetFactory(access_rights=access_rights)
@@ -792,7 +777,7 @@ def test_dataset_structure_create_permission_dataset_manager(access_rights: str,
         (Dataset.RESTRICTED, Representative.RESOURCE_COORDINATOR, True),
         (Dataset.NON_PUBLIC, Representative.RESOURCE_COORDINATOR, True),
         (Dataset.CONFIDENTIAL, Representative.RESOURCE_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_structure_create_permission_dataset_coordinator(access_rights: str, role: str, expected: bool):
     dataset = DatasetFactory(access_rights=access_rights)
@@ -814,7 +799,7 @@ def test_dataset_structure_create_permission_dataset_coordinator(access_rights: 
         (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
         (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
         (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_structure_create_permission_organization_manager(access_rights: str, role: str, expected: bool):
     dataset = DatasetFactory(access_rights=access_rights)
@@ -836,7 +821,7 @@ def test_dataset_structure_create_permission_organization_manager(access_rights:
         (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
         (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
         (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_structure_update_permission_manager(access_rights: str, role: str, expected: bool):
     org = DatasetFactory().organization
@@ -867,14 +852,12 @@ def test_dataset_structure_update_permission_manager(access_rights: str, role: s
         (Dataset.RESTRICTED, Representative.RESOURCE_COORDINATOR, True),
         (Dataset.NON_PUBLIC, Representative.RESOURCE_COORDINATOR, True),
         (Dataset.CONFIDENTIAL, Representative.RESOURCE_COORDINATOR, True),
-    ]
+    ],
 )
 def test_dataset_structure_create_permission_organization_coordinator(access_rights: str, role: str, expected: bool):
     dataset = DatasetFactory(access_rights=access_rights)
     ct = ContentType.objects.get_for_model(dataset.organization)
-    coordinator = RepresentativeFactory(
-        content_type=ct, object_id=dataset.organization.pk, role=role
-    )
+    coordinator = RepresentativeFactory(content_type=ct, object_id=dataset.organization.pk, role=role)
     res = has_perm(coordinator.user, Action.CREATE, DatasetStructure, dataset)
     assert res is expected
 
@@ -936,7 +919,7 @@ def test_pre_representative_delete__different_organization_dataset():
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_create_permission_dataset_publisher(role: str, expected: bool):
     dataset = DatasetFactory(is_public=False)
@@ -963,7 +946,7 @@ def test_dataset_create_permission_dataset_publisher(role: str, expected: bool):
     [
         (Representative.RESOURCE_MANAGER, True),
         (Representative.OPEN_DATA_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_create_permission_organization_publisher(role: str, expected: bool):
     dataset = DatasetFactory(is_public=False)
@@ -996,8 +979,7 @@ def test_dataset_create_permission_organization_publisher(role: str, expected: b
         (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
         (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
         (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
-
-    ]
+    ],
 )
 def test_dataset_edit_permission_dataset_publisher(access_rights: str, role: str, expected: bool):
     dataset = DatasetFactory(is_public=False, access_rights=access_rights)
@@ -1030,8 +1012,7 @@ def test_dataset_edit_permission_dataset_publisher(access_rights: str, role: str
         (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
         (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
         (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
-
-    ]
+    ],
 )
 def test_dataset_edit_permission_organization_publisher(access_rights: str, role: str, expected: bool):
     dataset = DatasetFactory(is_public=False, access_rights=access_rights)
@@ -1064,8 +1045,7 @@ def test_dataset_edit_permission_organization_publisher(access_rights: str, role
         (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
         (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
         (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
-
-    ]
+    ],
 )
 def test_dataset_history_view_permission_publisher(access_rights: str, role: str, expected: bool):
     organization = OrganizationFactory()
@@ -1075,9 +1055,7 @@ def test_dataset_history_view_permission_publisher(access_rights: str, role: str
 
     dataset = DatasetFactory(access_rights=access_rights)
     ct = ContentType.objects.get_for_model(dataset)
-    RepresentativeFactory(
-        organization=organization, content_type=ct, object_id=dataset.pk, role=role, user=user
-    )
+    RepresentativeFactory(organization=organization, content_type=ct, object_id=dataset.pk, role=role, user=user)
     res = has_perm(user, Action.HISTORY_VIEW, dataset)
     assert res is expected
 
@@ -1088,7 +1066,7 @@ def test_dataset_history_view_permission_publisher(access_rights: str, role: str
     [
         (Representative.OPEN_DATA_MANAGER, False),
         (Representative.RESOURCE_MANAGER, False),
-    ]
+    ],
 )
 def test_organization_representative_view_permission_publisher(role: str, expected: bool):
     user_organization = OrganizationFactory()
@@ -1099,7 +1077,7 @@ def test_organization_representative_view_permission_publisher(role: str, expect
     organization = OrganizationFactory()
 
     ct = ContentType.objects.get_for_model(organization)
-    manager = RepresentativeFactory(
+    RepresentativeFactory(
         organization=user_organization,
         content_type=ct,
         object_id=organization.pk,
@@ -1116,7 +1094,7 @@ def test_organization_representative_view_permission_publisher(role: str, expect
     [
         (Representative.OPEN_DATA_MANAGER, False),
         (Representative.RESOURCE_MANAGER, False),
-    ]
+    ],
 )
 def test_organization_create_publisher(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -1142,7 +1120,7 @@ def test_organization_create_publisher(role: str, expected: bool):
     [
         (Representative.OPEN_DATA_MANAGER, False),
         (Representative.RESOURCE_MANAGER, False),
-    ]
+    ],
 )
 def test_organization_edit_publisher(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -1174,8 +1152,7 @@ def test_organization_edit_publisher(role: str, expected: bool):
         (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
         (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
         (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
-
-    ]
+    ],
 )
 def test_dataset_distribution_create_permission_organization_publisher(access_rights: str, role: str, expected: bool):
     dataset = DatasetFactory(access_rights=access_rights)
@@ -1201,7 +1178,7 @@ def test_dataset_distribution_create_permission_organization_publisher(access_ri
     [
         (Representative.OPEN_DATA_MANAGER, True),
         (Representative.RESOURCE_MANAGER, True),
-    ]
+    ],
 )
 def test_dataset_distribution_edit_permission_organization_publisher(role: str, expected: bool):
     organization = OrganizationFactory()
@@ -1229,18 +1206,20 @@ class TestHasDatasetPerm:
         representative = RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
-            role=Representative.OPEN_DATA_MANAGER
+            role=Representative.OPEN_DATA_MANAGER,
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
 
-    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+    @pytest.mark.parametrize(
+        "access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL]
+    )
     def test_permissions_with_dataset_resource_representative(self, access_rights: str):
         dataset = DatasetFactory(access_rights=access_rights)
         representative = RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
-            role=Representative.RESOURCE_MANAGER
+            role=Representative.RESOURCE_MANAGER,
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
@@ -1252,23 +1231,24 @@ class TestHasDatasetPerm:
         representative = RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
-            role=Representative.OPEN_DATA_MANAGER
+            role=Representative.OPEN_DATA_MANAGER,
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
 
-    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+    @pytest.mark.parametrize(
+        "access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL]
+    )
     def test_permissions_with_organization_resource_representative(self, access_rights: str):
         organization = OrganizationFactory()
         dataset = DatasetFactory(access_rights=access_rights, organization=organization)
         representative = RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
-            role=Representative.RESOURCE_MANAGER
+            role=Representative.RESOURCE_MANAGER,
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
-
 
     def test_permission_with_organization_representative_for_all_related_datasets(self):
         parent_organization = OrganizationFactory()
@@ -1292,11 +1272,7 @@ class TestViispOrganizationPermissions:
     def test_superuser_bypasses_viisp_check_organization_update(self):
         organization = OrganizationFactory()
         other_org = OrganizationFactory()
-        superuser = UserFactory(
-            is_superuser=True,
-            is_viisp_login=True,
-            viisp_company_code=other_org.company_code
-        )
+        superuser = UserFactory(is_superuser=True, is_viisp_login=True, viisp_company_code=other_org.company_code)
 
         res = has_perm(superuser, Action.UPDATE, organization)
         assert res is True
@@ -1304,22 +1280,14 @@ class TestViispOrganizationPermissions:
     def test_staff_bypasses_viisp_check_organization_update(self):
         organization = OrganizationFactory()
         other_org = OrganizationFactory()
-        staff_user = UserFactory(
-            is_staff=True,
-            is_viisp_login=True,
-            viisp_company_code=other_org.company_code
-        )
+        staff_user = UserFactory(is_staff=True, is_viisp_login=True, viisp_company_code=other_org.company_code)
 
         res = has_perm(staff_user, Action.UPDATE, organization)
         assert res is True
 
     def test_coordinator_with_matching_viisp_org_can_update(self):
         organization = OrganizationFactory()
-        user = UserFactory(
-            organization=organization,
-            is_viisp_login=True,
-            viisp_company_code=organization.company_code
-        )
+        user = UserFactory(organization=organization, is_viisp_login=True, viisp_company_code=organization.company_code)
         ct = ContentType.objects.get_for_model(organization)
         RepresentativeFactory(
             organization=organization,
@@ -1334,11 +1302,7 @@ class TestViispOrganizationPermissions:
     def test_coordinator_with_mismatched_viisp_org_cannot_update(self):
         organization = OrganizationFactory()
         other_org = OrganizationFactory()
-        user = UserFactory(
-            organization=organization,
-            is_viisp_login=True,
-            viisp_company_code=other_org.company_code
-        )
+        user = UserFactory(organization=organization, is_viisp_login=True, viisp_company_code=other_org.company_code)
         ct = ContentType.objects.get_for_model(organization)
         RepresentativeFactory(
             organization=organization,
@@ -1354,7 +1318,7 @@ class TestViispOrganizationPermissions:
         organization = OrganizationFactory()
         user = UserFactory(
             organization=organization,
-            is_viisp_login=False  # This makes viisp_organization None
+            is_viisp_login=False,  # This makes viisp_organization None
         )
         ct = ContentType.objects.get_for_model(organization)
         RepresentativeFactory(
@@ -1384,11 +1348,7 @@ class TestViispOrganizationPermissions:
 
     def test_viisp_check_for_representative_update_with_org_parent(self):
         organization = OrganizationFactory()
-        user = UserFactory(
-            organization=organization,
-            is_viisp_login=True,
-            viisp_company_code=organization.company_code
-        )
+        user = UserFactory(organization=organization, is_viisp_login=True, viisp_company_code=organization.company_code)
         ct = ContentType.objects.get_for_model(organization)
         RepresentativeFactory(
             organization=organization,
@@ -1403,11 +1363,7 @@ class TestViispOrganizationPermissions:
     def test_viisp_check_fails_for_representative_update_mismatched_org(self):
         organization = OrganizationFactory()
         other_org = OrganizationFactory()
-        user = UserFactory(
-            organization=organization,
-            is_viisp_login=True,
-            viisp_company_code=other_org.company_code
-        )
+        user = UserFactory(organization=organization, is_viisp_login=True, viisp_company_code=other_org.company_code)
         ct = ContentType.objects.get_for_model(organization)
         RepresentativeFactory(
             organization=organization,
@@ -1422,18 +1378,14 @@ class TestViispOrganizationPermissions:
     def test_viisp_check_not_applied_to_dataset_create(self):
         organization = OrganizationFactory()
         other_org = OrganizationFactory()
-        user = UserFactory(
-            organization=organization,
-            is_viisp_login=True,
-            viisp_company_code=other_org.company_code
-        )
+        user = UserFactory(organization=organization, is_viisp_login=True, viisp_company_code=other_org.company_code)
         ct = ContentType.objects.get_for_model(organization)
         RepresentativeFactory(
             organization=organization,
             content_type=ct,
             object_id=organization.pk,
             user=None,
-            role=Representative.OPEN_DATA_MANAGER
+            role=Representative.OPEN_DATA_MANAGER,
         )
 
         res = has_perm(user, Action.CREATE, Dataset, organization)

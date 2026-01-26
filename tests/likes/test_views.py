@@ -114,6 +114,7 @@ def test_like_with_public_dataset_with_access(app: DjangoTestApp):
     assert response.status_code == 302
     assert response.url == dataset.get_absolute_url()
 
+
 @pytest.mark.django_db
 def test_like_with_non_public_dataset_without_access(app: DjangoTestApp):
     dataset = DatasetFactory(is_public=False)

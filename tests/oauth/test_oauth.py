@@ -16,7 +16,7 @@ from vitrina.api.oauth import (
     IsOAuthTokenValid,
     OAuthTokenHasScopes,
     OAuthTokenHasValidOrganizationClaim,
-    OAuthClientAuthenticator
+    OAuthClientAuthenticator,
 )
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.uapi.factories import AgentFactory
@@ -33,12 +33,12 @@ def request_factory():
     return APIRequestFactory()
 
 
-
 @pytest.fixture
 def rsa_keypair():
     private = JsonWebKey.generate_key("RSA", 2048, is_private=True)
     public = JsonWebKey.import_key(private.as_dict(is_private=False))
     return private.as_dict(), public.as_dict()
+
 
 @pytest.fixture
 def download_only_oauth_settings(settings):
@@ -68,12 +68,13 @@ def decoded_jwt() -> JWTClaims:
         "sub": "client",
         "scope": "test_scope",
         "iat": int(time.time()),
-        "exp": int(time.time()) + 300
+        "exp": int(time.time()) + 300,
     }
     encoded = jwt.encode({"alg": "HS256"}, claims, key).decode()
     decoded = jwt.decode(encoded, key)
 
     return decoded
+
 
 def test_authentication_with_local_jwk_authenticate_success(request_factory: APIRequestFactory, decoded_jwt: JWTClaims):
     request = request_factory.get("/", HTTP_AUTHORIZATION="Bearer <token>")
@@ -89,23 +90,17 @@ def test_authentication_with_local_jwk_authenticate_success(request_factory: API
     "raised_exception, exception_message",
     [
         [BadSignatureError("Very bad signature"), "bad_signature"],
-        [TokenExpiredError("Very expired token"), "token_expired"]
-    ]
+        [TokenExpiredError("Very expired token"), "token_expired"],
+    ],
 )
 def test_authentication_with_local_jwk_authenticate_exception_raised(
-    raised_exception: Exception,
-    exception_message: str,
-    request_factory: APIRequestFactory
+    raised_exception: Exception, exception_message: str, request_factory: APIRequestFactory
 ):
     request = request_factory.get("/", HTTP_AUTHORIZATION="Bearer <token>")
 
     with (
-        patch.object(
-            OAuthClientAuthenticator,
-            "retrieve_and_verify_token",
-            side_effect=raised_exception
-        ),
-        pytest.raises(AuthenticationFailed) as exc_info
+        patch.object(OAuthClientAuthenticator, "retrieve_and_verify_token", side_effect=raised_exception),
+        pytest.raises(AuthenticationFailed) as exc_info,
     ):
         OAuth2Authentication().authenticate(request)
 
@@ -118,7 +113,7 @@ def test_authentication_with_local_jwk_authenticate_exception_raised(
         None,  # No Authorization header
         "InvalidHeaderWithoutSpace",  # Header causes ValueError when splitting
         "Basic <token>",  # Header not starting with `Bearer`
-    ]
+    ],
 )
 def test_authentication_with_local_jwk_authenticate_no_access_token_in_request(
     auth_header: Optional[str],
@@ -143,7 +138,7 @@ def test_authentication_with_local_jwk_authenticate_token_not_verified(request_f
             "retrieve_and_verify_token",
             return_value=None,
         ),
-        pytest.raises(AuthenticationFailed) as exc_info
+        pytest.raises(AuthenticationFailed) as exc_info,
     ):
         OAuth2Authentication().authenticate(request)
 
@@ -225,9 +220,9 @@ def test_token_has_permissions_view_has_no_scopes(
 @pytest.mark.parametrize(
     "required_scopes, token_scopes, expected_result",
     [
-        ([], "read write", True),           # No required scopes
-        (["admin"], "read write", False),   # Required scope not in token scopes
-        (["read"], "read write", True),     # Required scope in token scopes
+        ([], "read write", True),  # No required scopes
+        (["admin"], "read write", False),  # Required scope not in token scopes
+        (["read"], "read write", True),  # Required scope in token scopes
     ],
 )
 def test_token_has_permissions_invalid_scopes(

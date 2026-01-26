@@ -1,7 +1,6 @@
 import pytest
-from django.urls import reverse
 
-from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory, OrganizationFactory
+from vitrina.datasets.factories import DatasetFactory, OrganizationFactory
 from vitrina.datasets.views import DatasetDetailView, ResourceSubclassCreateView
 from vitrina.datasets.mixins import Crumb
 

@@ -234,6 +234,7 @@ def test_sanitize_html_preserves_aria():
     assert "aria-label" in result
     assert "aria-current" in result
 
+
 @pytest.mark.parametrize(
     "role",
     [

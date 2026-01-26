@@ -1,5 +1,4 @@
 import pytest
-from django_webtest import DjangoTestApp
 from django.test import override_settings
 from vitrina.structure.models import ManifestValidationEntry
 from vitrina.users.factories import UserFactory
@@ -14,10 +13,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
     CELERY_TASK_EAGER_PROPAGATES=True,
 )
 @pytest.mark.django_db(transaction=True)
-@pytest.mark.parametrize(
-    "include_user",
-    [True,False]
-)
+@pytest.mark.parametrize("include_user", [True, False])
 def test_celery_tasks_create_versions_with_or_without_user(include_user: bool):
     user = UserFactory() if include_user else None
     dummy_csv = SimpleUploadedFile(
@@ -31,7 +27,7 @@ def test_celery_tasks_create_versions_with_or_without_user(include_user: bool):
         source=RevisionSource.TASK,
         action="vitrina.structure.tasks.validate_manifest_task",
         args=[manifest_validation_entry.pk],
-        kwargs={}
+        kwargs={},
     )
     if user:
         validate_manifest_task.delay(manifest_validation_entry.pk, _reversion_user_id=user.id)

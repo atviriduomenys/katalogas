@@ -59,7 +59,7 @@ def test_pagination_disabled_when_limit_query_param_not_given(paginator: UAPIPag
                 "_txn": "",
                 "_created": ANY,
                 "_updated": ANY,
-                "@context": ""
+                "@context": "",
             },
             {
                 "name": use_case_client2.name,
@@ -74,6 +74,7 @@ def test_pagination_disabled_when_limit_query_param_not_given(paginator: UAPIPag
             },
         ],
     }
+
 
 def test_limits_results_and_return_next_page_if_limit_query_param_given(paginator: UAPIPagination):
     use_case_client1 = UseCaseClientFactory(uuid=UUID_1)
@@ -95,7 +96,7 @@ def test_limits_results_and_return_next_page_if_limit_query_param_given(paginato
                 "_txn": "",
                 "_created": ANY,
                 "_updated": ANY,
-                "@context": ""
+                "@context": "",
             },
         ],
     }
@@ -114,11 +115,12 @@ def test_returns_all_results_and_next_page_none_if_limit_is_greater_than_result_
 
 
 @pytest.mark.parametrize(
-    "limit, err_message", [
+    "limit, err_message",
+    [
         (-1, 'Query parameter "_limit" must be a positive integer.'),
         (0, 'Query parameter "_limit" must be between 0 and 1000.'),
-        (1000, 'Query parameter "_limit" must be between 0 and 1000.')
-    ]
+        (1000, 'Query parameter "_limit" must be between 0 and 1000.'),
+    ],
 )
 def test_raise_error_if_limit_is_less_than_zero_or_more_than_max(
     paginator: UAPIPagination, limit: int, err_message: str
@@ -156,7 +158,7 @@ def test_sort_by__id_asc_if_sort_not_given(paginator: UAPIPagination):
         ([(UUID_2, "A_name"), (UUID_3, "B_name"), (UUID_4, "B_name"), (UUID_1, "C_name")], "_sort=name,_id"),
         ([(UUID_2, "A_name"), (UUID_4, "B_name"), (UUID_3, "B_name"), (UUID_1, "C_name")], "_sort=name,-_id"),
         ([(UUID_1, "C_name"), (UUID_3, "B_name"), (UUID_4, "B_name"), (UUID_2, "A_name")], "_sort=-name,_id"),
-    ]
+    ],
 )
 def test_sort_asc_desc(paginator: UAPIPagination, sort_query: str, result: list[tuple[str, str]]):
     UseCaseClientFactory(uuid=UUID_4, name="B_name")
@@ -249,9 +251,10 @@ def test_page_encoding_decoding(paginator: UAPIPagination):
     data = get_use_case_client_data(paginator, query_str="?_limit=1")
     paginated_data = paginator.get_paginated_response(data).data
 
-    assert paginator._encode_uapi_urlsafe_base64(
-        paginator._decode_uapi_urlsafe_base64(paginated_data["_next"])
-    ) == paginated_data["_next"]
+    assert (
+        paginator._encode_uapi_urlsafe_base64(paginator._decode_uapi_urlsafe_base64(paginated_data["_next"]))
+        == paginated_data["_next"]
+    )
 
 
 @pytest.mark.parametrize("incorrect_page_value", ["test", "dGVzdA..", "-a-d-a-d-s"])

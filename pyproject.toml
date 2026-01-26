@@ -101,7 +101,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.ruff]
 include = [
-    "vitrina/*.py",
+    "vitrina/*.py", "tests/*.py"
 ]
 exclude = [
     "**/migrations/*.py",

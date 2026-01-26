@@ -5,11 +5,9 @@ from unittest.mock import patch
 import pytest
 from django.urls import reverse
 from django_webtest import DjangoTestApp
-from django.contrib.contenttypes.models import ContentType
 from vitrina.api.models import ApiKey
 from vitrina.datasets.factories import DatasetFactory, AgentFactory
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.structure.factories import MetadataFactory
 from vitrina.uapi import AgentType, Environment
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization

@@ -180,6 +180,11 @@ def url_agent() -> str:
 
 
 @pytest.fixture
+def agreement_url() -> str:
+    return _build_reverse_uapi_url("uapi-agreement")
+
+
+@pytest.fixture
 def dsa() -> str:
     return """id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description
 ,test/dataset,,,,,,,,,,,,,,,,,

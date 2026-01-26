@@ -26,15 +26,15 @@ from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandle
 
 
 class AgreementQueryParameterSerializer(serializers.Serializer):
-    dataset = serializers.ListField(child=serializers.UUIDField(), required=False)
+    datasets = serializers.ListField(child=serializers.UUIDField(), required=False)
 
     def to_internal_value(self, data: dict) -> dict:
         data = data.copy()
-        if "dataset._id" in data:
-            data.setlist("dataset", data.getlist("dataset._id"))
+        if "datasets._id" in data:
+            data.setlist("datasets", data.getlist("datasets._id"))
         return super().to_internal_value(data)
 
-    def validate_dataset(self, dataset_uuids: list[UUID]) -> list[UUID]:
+    def validate_datasets(self, dataset_uuids: list[UUID]) -> list[UUID]:
         if not dataset_uuids:
             return dataset_uuids
 
@@ -43,7 +43,7 @@ class AgreementQueryParameterSerializer(serializers.Serializer):
                 code="invalid_agreement_query_filter",
                 type="InvalidAgreementQueryFilter",
                 template="Given query filter is invalid.",
-                message=f"dataset._id values: {', '.join(map(str, non_agent_dataset_uuids))} are invalid.",
+                message=f"datasets._id values: {', '.join(map(str, non_agent_dataset_uuids))} are invalid.",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -64,14 +64,28 @@ class UAPIAgreementListSerializer(BaseUUIDObjectMixin, serializers.ModelSerializ
     def get_clients(self, obj: Agreement) -> list[dict]:
         return UAPIClientListSerializer(obj.project.client_set.all(), many=True).data
 
-    def get_agreement_file_url(self, obj: Agreement) -> str | None:
+    def get_agreement_file_url(self, obj: Agreement) -> str:
         if not (agreement_adoc := obj.latest_agreement_adoc):
-            return None
+            raise UAPIException(
+                code="agreement_file_does_not_exist",
+                type="AgreementFileDoesNotExist",
+                template="Agreement file does not exist.",
+                message=f"Agreement adoc file does not exist for agreement (_id={obj.uuid})",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         return reverse("uapi-agreement-file-download", kwargs={"agreement_file_uuid": agreement_adoc.uuid})
 
-    def get_agreement_scopes(self, obj: Agreement) -> list[str] | None:
+    def get_agreement_scopes(self, obj: Agreement) -> list[str]:
         if not (agreement_adoc := obj.latest_agreement_adoc):
-            return None
+            raise UAPIException(
+                code="agreement_file_does_not_exist",
+                type="AgreementFileDoesNotExist",
+                template="Agreement file does not exist.",
+                message=f"Agreement adoc file does not exist for agreement (_id={obj.uuid})",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
         try:
             scopes = extract_elements_from_adoc(agreement_adoc.file.path, SCOPES_REGEX)
         except InvalidAdocError as error:
@@ -119,7 +133,7 @@ class AgreementViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewset
                 data=request_params, context={"agent_dataset_uuids": self.get_agent_dataset_uuids}
             )
             query_parameter_serializer.is_valid(raise_exception=True)
-            if validated_dataset_uuids := query_parameter_serializer.validated_data.get("dataset"):
+            if validated_dataset_uuids := query_parameter_serializer.validated_data.get("datasets"):
                 dataset_uuids = validated_dataset_uuids
 
         queryset = (
@@ -136,17 +150,8 @@ class AgreementViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewset
         return queryset
 
     def list(self, request: Request, *args: Any, **kwargs: Any) -> Response:
-        if not (agreements := self.get_queryset()):
-            raise UAPIException(
-                code="agreement_not_found",
-                type="AgreementNotFound",
-                template="The requested Agreement could not be found.",
-                message="No agreement matched the provided query.",
-                status_code=status.HTTP_404_NOT_FOUND,
-            )
-
         serializer = BaseObjectListSerializer(
-            instance=self.paginate_queryset(agreements),
+            instance=self.paginate_queryset(self.get_queryset()),
             context=self.get_serializer_context(),
             data_serializer_class=UAPIAgreementListSerializer,
             _type=extract_type_from_url(self.request.build_absolute_uri()),

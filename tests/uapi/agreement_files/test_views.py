@@ -3,11 +3,10 @@ from uuid import UUID, uuid4
 import pytest
 from authlib.jose import RSAKey
 from django.conf import settings
-from django.urls import reverse
 from django_webtest import DjangoTestApp
 from rest_framework import status
 
-from tests.uapi.conftest import _generate_test_token
+from tests.uapi.conftest import _generate_test_token, _build_reverse_uapi_url
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
@@ -17,7 +16,7 @@ from vitrina.smart_contracts.factories import AgreementFileFactory, AgreementFac
 
 
 def agreement_file_url(agreement_file_uuid: UUID) -> str:
-    return reverse("uapi-agreement-file-download", kwargs={"agreement_file_uuid": agreement_file_uuid})
+    return _build_reverse_uapi_url("uapi-agreement-file-download", agreement_file_uuid=agreement_file_uuid)
 
 
 class TestAgreementFileDownloadUAPIView:

@@ -34,7 +34,6 @@ https://github.com/atviriduomenys/katalogas/pull/2275
 
 - A number of changes regarding UAPI.
 
-
 https://github.com/atviriduomenys/katalogas/pull/2149
 
 - Structure tab navigation rewritten to accept version_id.

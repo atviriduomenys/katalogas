@@ -5404,9 +5404,6 @@ msgstr "Delete comment"
 msgid "Ištrinti komentarą?"
 msgstr "Delete comment?"
 
-msgid "Šis veiksmas negrąžinamas."
-msgstr "This action cannot be undone."
-
 msgid "Komentarai"
 msgstr "Comments"
 

@@ -15,9 +15,18 @@ from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import VersionStatus
 from vitrina.structure.factories import VersionFactory
-from vitrina.structure.models import (Base, Enum, EnumItem, Metadata, Model,
-                                      Param, ParamItem, Prefix, Property,
-                                      PropertyList)
+from vitrina.structure.models import (
+    Base,
+    Enum,
+    EnumItem,
+    Metadata,
+    Model,
+    Param,
+    ParamItem,
+    Prefix,
+    Property,
+    PropertyList,
+)
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 
@@ -1492,31 +1501,21 @@ def test_structure_export__dataset_name(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
-        '1,,,,,,prefix,spinta,,,,,,,,https://github.com/atviriduomenys/spinta/issues/,,,\n'
-        '2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n'
-        '3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\n'
-        '4,,,,,,,dct,,,,,,,,http://purl.org/dc/terms/,,,'
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,,,,,,prefix,spinta,,,,,,,,https://github.com/atviriduomenys/spinta/issues/,,,\n"
+        "2,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\n"
+        "4,,,,,,,dct,,,,,,,,http://purl.org/dc/terms/,,,"
     )
     structure = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename='file.csv', data=manifest)
-        ),
-        dataset=DatasetFactory(
-            title="Title",
-            description="Description"
-        )
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(title="Title", description="Description"),
     )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = VersionFactory(dataset=structure.dataset, major=3, status=VersionStatus.PRE_RELEASE)
     create_structure_objects(structure, version)
-    resp = app.get(
-        reverse(
-            "dataset-structure-export",
-            args=[structure.dataset.pk, version.pk]
-        )
-    )
+    resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, version.pk]))
     assert "datasets/gov/ivpk/adp/3" in resp.text
 
 
@@ -1543,20 +1542,10 @@ def test_structure_export__prefixes(app: DjangoTestApp, use_version):
     if use_version:
         metadata_version = VersionFactory(dataset=structure.dataset)
         create_structure_objects(structure, metadata_version)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export",
-                args=[structure.dataset.pk, metadata_version.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, metadata_version.pk]))
     else:
         create_structure_objects(structure)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export-no-version",
-                args=[structure.dataset.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export-no-version", args=[structure.dataset.pk]))
 
     assert resp.text == (
         "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
@@ -1616,27 +1605,21 @@ def test_structure_export__multiple_versions(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
-    dataset = DatasetFactory(
-        title="Multi-Version Dataset",
-        description="Dataset with multiple versions"
-    )
+    dataset = DatasetFactory(title="Multi-Version Dataset", description="Dataset with multiple versions")
 
     # Version 1: one model, one property, one prefix, one enum, and one param
     version1 = VersionFactory(dataset=dataset, version=1)
     manifest_v1 = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
-        '1,datasets/gov/test/multi,,,,,,,,,,,,,,,,Multi-Version Dataset,Multi-Version Dataset description\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/test/multi,,,,,,,,,,,,,,,,Multi-Version Dataset,Multi-Version Dataset description\n"
+        "2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n"
         '3,,,,,,enum,Status,,"ACTIVE",,,,,,,,,\n'
         '4,,,,,,param,Filter,,"all",,,,,,,,,\n'
-        '5,,,,Person,,,id,,,,,,,,,,,Person Model,\n'
-        '6,,,,,id,integer,,,,,5,,,open,dct:identifier,,Person ID,'
+        "5,,,,Person,,,id,,,,,,,,,,,Person Model,\n"
+        "6,,,,,id,integer,,,,,5,,,open,dct:identifier,,Person ID,"
     )
     structure_v1 = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename='v1.csv', data=manifest_v1)
-        ),
-        dataset=dataset
+        file=FilerFileFactory(file=FileField(filename="v1.csv", data=manifest_v1)), dataset=dataset
     )
     dataset.current_structure = structure_v1
     dataset.save()
@@ -1645,25 +1628,22 @@ def test_structure_export__multiple_versions(app: DjangoTestApp):
     # Version 2: Add another prefix, enum item, param item, property to Person, and add City model
     version2 = VersionFactory(dataset=dataset, version=2)
     manifest_v2 = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
-        '1,datasets/gov/test/multi,,,,,,,,,,,,,,,,Multi-Version Dataset,Multi-Version Dataset description\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
-        '3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\n'
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/test/multi,,,,,,,,,,,,,,,,Multi-Version Dataset,Multi-Version Dataset description\n"
+        "2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n"
+        "3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\n"
         '4,,,,,,enum,Status,,"ACTIVE",,,,,,,,,\n'
         '5,,,,,,,,,"INACTIVE",,,,,,,,,\n'
         '6,,,,,,param,Filter,,"all",,,,,,,,,\n'
         '7,,,,,,,,,"recent",,,,,,,,,\n'
-        '8,,,,Person,,,id,,,,,,,,,,,Person Model,\n'
-        '9,,,,,id,integer,,,,,5,,,open,dct:identifier,,Person ID,\n'
-        '10,,,,,name,string,,,,,2,,,open,dct:title,,Person Name,\n'
-        '11,,,,City,,,id,,,,,,,,,,,City Model,\n'
-        '12,,,,,id,integer,,,,,5,,,open,dct:identifier,,City ID,'
+        "8,,,,Person,,,id,,,,,,,,,,,Person Model,\n"
+        "9,,,,,id,integer,,,,,5,,,open,dct:identifier,,Person ID,\n"
+        "10,,,,,name,string,,,,,2,,,open,dct:title,,Person Name,\n"
+        "11,,,,City,,,id,,,,,,,,,,,City Model,\n"
+        "12,,,,,id,integer,,,,,5,,,open,dct:identifier,,City ID,"
     )
     structure_v2 = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename='v2.csv', data=manifest_v2)
-        ),
-        dataset=dataset
+        file=FilerFileFactory(file=FileField(filename="v2.csv", data=manifest_v2)), dataset=dataset
     )
     dataset.current_structure = structure_v2
     dataset.save()
@@ -1672,31 +1652,28 @@ def test_structure_export__multiple_versions(app: DjangoTestApp):
     # Version 3: Add another prefix, enum, param, property to City, and add Country model
     version3 = VersionFactory(dataset=dataset, version=3)
     manifest_v3 = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n'
-        '1,datasets/gov/test/multi,,,,,,,,,,,,,,,,Multi-Version Dataset,Multi-Version Dataset description\n'
-        '2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n'
-        '3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\n'
-        '4,,,,,,prefix,foaf,,,,,,,,http://xmlns.com/foaf/0.1/,,,\n'
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/test/multi,,,,,,,,,,,,,,,,Multi-Version Dataset,Multi-Version Dataset description\n"
+        "2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n"
+        "3,,,,,,prefix,dcat,,,,,,,,http://www.w3.org/ns/dcat#,,,\n"
+        "4,,,,,,prefix,foaf,,,,,,,,http://xmlns.com/foaf/0.1/,,,\n"
         '5,,,,,,enum,Status,,"ACTIVE",,,,,,,,,\n'
         '6,,,,,,,,,"INACTIVE",,,,,,,,,\n'
         '7,,,,,,enum,Priority,,"HIGH",,,,,,,,,\n'
         '8,,,,,,param,Filter,,"all",,,,,,,,,\n'
         '9,,,,,,,,,"recent",,,,,,,,,\n'
         '10,,,,,,param,Sort,,"name",,,,,,,,,\n'
-        '11,,,,Person,,,id,,,,,,,,,,,Person Model,\n'
-        '12,,,,,id,integer,,,,,5,,,open,dct:identifier,,Person ID,\n'
-        '13,,,,,name,string,,,,,2,,,open,dct:title,,Person Name,\n'
-        '14,,,,City,,,id,,,,,,,,,,,City Model,\n'
-        '15,,,,,id,integer,,,,,5,,,open,dct:identifier,,City ID,\n'
-        '16,,,,,name,string,,,,,2,,,open,dct:title,,City Name,\n'
-        '17,,,,Country,,,id,,,,,,,,,,,Country Model,\n'
-        '18,,,,,id,integer,,,,,5,,,open,dct:identifier,,Country ID,'
+        "11,,,,Person,,,id,,,,,,,,,,,Person Model,\n"
+        "12,,,,,id,integer,,,,,5,,,open,dct:identifier,,Person ID,\n"
+        "13,,,,,name,string,,,,,2,,,open,dct:title,,Person Name,\n"
+        "14,,,,City,,,id,,,,,,,,,,,City Model,\n"
+        "15,,,,,id,integer,,,,,5,,,open,dct:identifier,,City ID,\n"
+        "16,,,,,name,string,,,,,2,,,open,dct:title,,City Name,\n"
+        "17,,,,Country,,,id,,,,,,,,,,,Country Model,\n"
+        "18,,,,,id,integer,,,,,5,,,open,dct:identifier,,Country ID,"
     )
     structure_v3 = DatasetStructureFactory(
-        file=FilerFileFactory(
-            file=FileField(filename='v3.csv', data=manifest_v3)
-        ),
-        dataset=dataset
+        file=FilerFileFactory(file=FileField(filename="v3.csv", data=manifest_v3)), dataset=dataset
     )
     dataset.current_structure = structure_v3
     dataset.save()
@@ -1704,99 +1681,77 @@ def test_structure_export__multiple_versions(app: DjangoTestApp):
 
     version_expectations = {
         version1: {
-            'present': {
-                'models': ['Person'],
-                'properties': ['Person ID'],
-                'prefixes': ['dct'],
-                'enums': ['Status'],
-                'enum_values': ['ACTIVE'],
-                'params': ['Filter'],
-                'param_values': ['all'],
+            "present": {
+                "models": ["Person"],
+                "properties": ["Person ID"],
+                "prefixes": ["dct"],
+                "enums": ["Status"],
+                "enum_values": ["ACTIVE"],
+                "params": ["Filter"],
+                "param_values": ["all"],
             },
-            'absent': {
-                'models': ['City', 'Country'],
-                'properties': [
-                    'Person Name', 'City ID', 'City Name', 'Country ID'
-                ],
-                'prefixes': ['dcat', 'foaf'],
-                'enums': ['Priority'],
-                'enum_values': ['INACTIVE', 'HIGH'],
-                'params': ['Sort'],
-                'param_values': ['recent'],
+            "absent": {
+                "models": ["City", "Country"],
+                "properties": ["Person Name", "City ID", "City Name", "Country ID"],
+                "prefixes": ["dcat", "foaf"],
+                "enums": ["Priority"],
+                "enum_values": ["INACTIVE", "HIGH"],
+                "params": ["Sort"],
+                "param_values": ["recent"],
             },
         },
         version2: {
-            'present': {
-                'models': ['Person', 'City'],
-                'properties': ['Person ID', 'Person Name', 'City ID'],
-                'prefixes': ['dct', 'dcat'],
-                'enums': ['Status'],
-                'enum_values': ['ACTIVE', 'INACTIVE'],
-                'params': ['Filter'],
-                'param_values': ['all', 'recent'],
+            "present": {
+                "models": ["Person", "City"],
+                "properties": ["Person ID", "Person Name", "City ID"],
+                "prefixes": ["dct", "dcat"],
+                "enums": ["Status"],
+                "enum_values": ["ACTIVE", "INACTIVE"],
+                "params": ["Filter"],
+                "param_values": ["all", "recent"],
             },
-            'absent': {
-                'models': ['Country'],
-                'properties': ['City Name', 'Country ID'],
-                'prefixes': ['foaf'],
-                'enums': ['Priority'],
-                'enum_values': ['HIGH'],
-                'params': ['Sort'],
+            "absent": {
+                "models": ["Country"],
+                "properties": ["City Name", "Country ID"],
+                "prefixes": ["foaf"],
+                "enums": ["Priority"],
+                "enum_values": ["HIGH"],
+                "params": ["Sort"],
             },
         },
         version3: {
-            'present': {
-                'models': ['Person', 'City', 'Country'],
-                'properties': [
-                    'Person ID', 'Person Name', 'City ID',
-                    'City Name', 'Country ID'
-                ],
-                'prefixes': ['dct', 'dcat', 'foaf'],
-                'enums': ['Status', 'Priority'],
-                'enum_values': ['ACTIVE', 'INACTIVE', 'HIGH'],
-                'params': ['Filter', 'Sort'],
-                'param_values': ['all', 'recent'],
+            "present": {
+                "models": ["Person", "City", "Country"],
+                "properties": ["Person ID", "Person Name", "City ID", "City Name", "Country ID"],
+                "prefixes": ["dct", "dcat", "foaf"],
+                "enums": ["Status", "Priority"],
+                "enum_values": ["ACTIVE", "INACTIVE", "HIGH"],
+                "params": ["Filter", "Sort"],
+                "param_values": ["all", "recent"],
             },
-            'absent': {},
+            "absent": {},
         },
     }
 
     exports = {}
     for version, expectations in version_expectations.items():
-        resp = app.get(
-            reverse(
-                "dataset-structure-export",
-                args=[dataset.pk, version.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export", args=[dataset.pk, version.pk]))
         exports[version] = resp.text
         text = resp.text
 
-        for category, items in expectations['present'].items():
+        for category, items in expectations["present"].items():
             for item in items:
-                msg = (
-                    f"Version {version.version}: "
-                    f"Expected '{item}' in {category} but not found"
-                )
+                msg = f"Version {version.version}: Expected '{item}' in {category} but not found"
                 assert item in text, msg
 
-        for category, items in expectations['absent'].items():
+        for category, items in expectations["absent"].items():
             for item in items:
-                msg = (
-                    f"Version {version.version}: "
-                    f"Unexpected '{item}' found in {category}"
-                )
+                msg = f"Version {version.version}: Unexpected '{item}' found in {category}"
                 assert item not in text, msg
 
-    assert exports[version1] != exports[version2], (
-        "Version 1 and Version 2 exports should be different"
-    )
-    assert exports[version2] != exports[version3], (
-        "Version 2 and Version 3 exports should be different"
-    )
-    assert exports[version1] != exports[version3], (
-        "Version 1 and Version 3 exports should be different"
-    )
+    assert exports[version1] != exports[version2], "Version 1 and Version 2 exports should be different"
+    assert exports[version2] != exports[version3], "Version 2 and Version 3 exports should be different"
+    assert exports[version1] != exports[version3], "Version 1 and Version 3 exports should be different"
 
 
 @pytest.mark.django_db
@@ -1825,37 +1780,27 @@ def test_structure_export__models_and_props(app: DjangoTestApp, use_version):
     structure.dataset.save()
 
     expected_output = (
-        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
-        '4,,,,Licence,,,id,,,page(id),,,,develop,,,,,Licence,\r\n'
-        '5,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n'
-        '6,,,,,title,string,,,,,,,2,develop,,open,dct:title,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '7,,,,Catalog,,,id,,,,,,,develop,,,,,Catalog,\r\n'
-        '8,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n"
+        "2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n"
+        "4,,,,Licence,,,id,,,page(id),,,,develop,,,,,Licence,\r\n"
+        "5,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+        "6,,,,,title,string,,,,,,,2,develop,,open,dct:title,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "7,,,,Catalog,,,id,,,,,,,develop,,,,,Catalog,\r\n"
+        "8,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
     if use_version:
         metadata_version = VersionFactory(dataset=structure.dataset)
         create_structure_objects(structure, metadata_version)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export",
-                args=[structure.dataset.pk, metadata_version.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, metadata_version.pk]))
     else:
         create_structure_objects(structure)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export-no-version",
-                args=[structure.dataset.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export-no-version", args=[structure.dataset.pk]))
 
     assert resp.text == expected_output
 
@@ -1886,37 +1831,27 @@ def test_structure_export__base_model(app: DjangoTestApp, use_version):
     structure.dataset.save()
 
     expected_output = (
-        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
-        '4,,,,Base,,,,,,,,,,develop,,,,,,\r\n'
-        '5,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '6,,,Base,,,,,,,,,,,,,,,,,\r\n'
-        '7,,,,Catalog,,,,,,,,,,develop,,,,,,\r\n'
-        '8,,,,,title,string,,,,,,,2,develop,,open,dct:title,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n"
+        "2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n"
+        "4,,,,Base,,,,,,,,,,develop,,,,,,\r\n"
+        "5,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "6,,,Base,,,,,,,,,,,,,,,,,\r\n"
+        "7,,,,Catalog,,,,,,,,,,develop,,,,,,\r\n"
+        "8,,,,,title,string,,,,,,,2,develop,,open,dct:title,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
     if use_version:
         metadata_version = VersionFactory(dataset=structure.dataset)
         create_structure_objects(structure, metadata_version)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export",
-                args=[structure.dataset.pk, metadata_version.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, metadata_version.pk]))
     else:
         create_structure_objects(structure)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export-no-version",
-                args=[structure.dataset.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export-no-version", args=[structure.dataset.pk]))
 
     assert resp.text == expected_output
 
@@ -1947,38 +1882,28 @@ def test_structure_export__property_ref(app: DjangoTestApp, use_version):
     structure.dataset.save()
 
     expected_output = (
-        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
-        '4,,,,Country,,,,,,,,,,develop,,,,,,\r\n'
-        '5,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n'
-        '6,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n'
-        '7,,,,,continent,ref,Continent[id],,,,,,5,develop,,open,dct:continent,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '8,,,,Continent,,,,,,,,,,develop,,,,,,\r\n'
-        '9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n"
+        "2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n"
+        "4,,,,Country,,,,,,,,,,develop,,,,,,\r\n"
+        "5,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+        "6,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
+        "7,,,,,continent,ref,Continent[id],,,,,,5,develop,,open,dct:continent,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "8,,,,Continent,,,,,,,,,,develop,,,,,,\r\n"
+        "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
     if use_version:
         metadata_version = VersionFactory(dataset=structure.dataset)
         create_structure_objects(structure, metadata_version)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export",
-                args=[structure.dataset.pk, metadata_version.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, metadata_version.pk]))
     else:
         create_structure_objects(structure)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export-no-version",
-                args=[structure.dataset.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export-no-version", args=[structure.dataset.pk]))
 
     assert resp.text == expected_output
 
@@ -2007,11 +1932,11 @@ def test_structure_export__model_ref(app: DjangoTestApp, use_version):
     structure.dataset.save()
 
     expected_output = (
-        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
+        "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n"
+        "2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n"
         '4,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
         "5,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
         "6,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
@@ -2022,20 +1947,10 @@ def test_structure_export__model_ref(app: DjangoTestApp, use_version):
     if use_version:
         metadata_version = VersionFactory(dataset=structure.dataset)
         create_structure_objects(structure, metadata_version)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export",
-                args=[structure.dataset.pk, metadata_version.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, metadata_version.pk]))
     else:
         create_structure_objects(structure)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export-no-version",
-                args=[structure.dataset.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export-no-version", args=[structure.dataset.pk]))
 
     assert resp.text == expected_output
 
@@ -2105,43 +2020,34 @@ def test_structure_export__enums(app: DjangoTestApp, use_version):
     structure.dataset.save()
 
     expected_output = (
-        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '3,,,,,,enum,Size,,,SMALL,,,,develop,,,,,,\r\n'
-        '4,,,,,,,,,,MEDIUM,,,,develop,,,,,,\r\n'
-        '5,,,,,,,,,,BIG,,,,develop,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
-        '7,,,,City,,,,,,,,,,develop,,,,,,\r\n'
-        '8,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n'
-        '9,,,,,size,Size,,,,,,,5,develop,,open,dct:size,,,\r\n'
-        '10,,,,,type,string,,,,,,,5,develop,,open,dct:type,,,\r\n'
-        '11,,,,,,enum,Type,,,CREATED,,,,develop,,,,,,\r\n'
-        '12,,,,,,,,,,MODIFIED,,,,develop,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n"
+        "2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "3,,,,,,enum,Size,,,SMALL,,,,develop,,,,,,\r\n"
+        "4,,,,,,,,,,MEDIUM,,,,develop,,,,,,\r\n"
+        "5,,,,,,,,,,BIG,,,,develop,,,,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "6,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n"
+        "7,,,,City,,,,,,,,,,develop,,,,,,\r\n"
+        "8,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+        "9,,,,,size,Size,,,,,,,5,develop,,open,dct:size,,,\r\n"
+        "10,,,,,type,string,,,,,,,5,develop,,open,dct:type,,,\r\n"
+        "11,,,,,,enum,Type,,,CREATED,,,,develop,,,,,,\r\n"
+        "12,,,,,,,,,,MODIFIED,,,,develop,,,,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
     if use_version:
         metadata_version = VersionFactory(dataset=structure.dataset)
         create_structure_objects(structure, metadata_version)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export",
-                args=[structure.dataset.pk, metadata_version.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, metadata_version.pk]))
     else:
         create_structure_objects(structure)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export-no-version",
-                args=[structure.dataset.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export-no-version", args=[structure.dataset.pk]))
 
     assert resp.text == expected_output
+
 
 @pytest.mark.django_db
 @pytest.mark.parametrize("use_version", [False, True])
@@ -2170,42 +2076,33 @@ def test_structure_export__params(app: DjangoTestApp, use_version):
     structure.dataset.save()
 
     expected_output = (
-        'id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n'
-        '1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n'
-        '2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '3,,,,,,param,country,,,lt,,,,develop,,,,,,\r\n'
-        '4,,,,,,,,,,lv,,,,develop,,,,,,\r\n'
-        '5,,,,,,,,,,ee,,,,develop,,,,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
-        '6,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n'
-        '7,,,,City,,,,,,,,,,develop,,,,,,\r\n'
-        '8,,,,,,param,type,,,created,,,,develop,,,,,,\r\n'
-        '9,,,,,,,,,,modified,,,,develop,,,,,,\r\n'
-        '10,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n'
-        '11,,,,,type,string,,,,,,,5,develop,,open,dct:type,,,\r\n'
-        ',,,,,,,,,,,,,,,,,,,,\r\n'
+        "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,,Title,Description\r\n"
+        "2,,,,,,prefix,dct,,,,,,,,,,http://purl.org/dc/terms/,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "3,,,,,,param,country,,,lt,,,,develop,,,,,,\r\n"
+        "4,,,,,,,,,,lv,,,,develop,,,,,,\r\n"
+        "5,,,,,,,,,,ee,,,,develop,,,,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
+        "6,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n"
+        "7,,,,City,,,,,,,,,,develop,,,,,,\r\n"
+        "8,,,,,,param,type,,,created,,,,develop,,,,,,\r\n"
+        "9,,,,,,,,,,modified,,,,develop,,,,,,\r\n"
+        "10,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+        "11,,,,,type,string,,,,,,,5,develop,,open,dct:type,,,\r\n"
+        ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
     if use_version:
         metadata_version = VersionFactory(dataset=structure.dataset)
         create_structure_objects(structure, metadata_version)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export",
-                args=[structure.dataset.pk, metadata_version.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export", args=[structure.dataset.pk, metadata_version.pk]))
     else:
         create_structure_objects(structure)
-        resp = app.get(
-            reverse(
-                "dataset-structure-export-no-version",
-                args=[structure.dataset.pk]
-            )
-        )
+        resp = app.get(reverse("dataset-structure-export-no-version", args=[structure.dataset.pk]))
 
     assert resp.text == expected_output
+
 
 @pytest.mark.django_db
 def test_import_structure_with_wrong_datasets_name(app: DjangoTestApp):

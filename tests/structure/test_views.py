@@ -4400,7 +4400,7 @@ def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
         object_id=structure.dataset.pk,
     )
     app.set_user(representative.user)
-    resp = app.get(reverse('dataset-structure-export-openapi', args=[structure.dataset.pk, version.pk]))
+    resp = app.get(reverse("dataset-structure-export-openapi", args=[structure.dataset.pk, version.pk]))
 
     assert resp.status_code == 200
     assert resp.content_type == "application/json"

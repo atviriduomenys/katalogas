@@ -115,11 +115,7 @@ def dataset(organization: Organization) -> Dataset:
         organization=organization,
         title="Title of the Dataset",
         description="Description of the Dataset.",
-<<<<<<< HEAD
-        metadata="test/dataset/TestModel",
-=======
         metadata="test/dataset"
->>>>>>> 8d4a8e55 ([1906]: fix failing uapi tests)
     )
     return dataset
 

@@ -3551,16 +3551,12 @@ def test_dataset_structure_history_url(app: DjangoTestApp):
     history_url = view.get_history_url()
 
     assert history_url == reverse(
-        "dataset-structure-history",
-        kwargs={"pk": dataset.pk, "version_id": metadata_version.pk}
+        "dataset-structure-history", kwargs={"pk": dataset.pk, "version_id": metadata_version.pk}
     )
 
     view.metadata_version = None
     history_url_no_version = view.get_history_url()
-    assert history_url_no_version == reverse(
-        "dataset-structure-history-no-version",
-        kwargs={"pk": dataset.pk}
-    )
+    assert history_url_no_version == reverse("dataset-structure-history-no-version", kwargs={"pk": dataset.pk})
 
 
 def test_dataset_assign_new_category_without_permission(app: DjangoTestApp):

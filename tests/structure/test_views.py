@@ -601,8 +601,8 @@ def test_history_tab_from_dataset_structure(app: DjangoTestApp, structure_view: 
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
-        name='prop',
-        type='string',
+        name="prop",
+        type="string",
         metadata_version=version,
     )
 
@@ -610,7 +610,7 @@ def test_history_tab_from_dataset_structure(app: DjangoTestApp, structure_view: 
     view = resp.context["view"]
 
     history_url = view.get_history_url()
-    resp = resp.click(linkid='history-tab')
+    resp = resp.click(linkid="history-tab")
     assert resp.request.path == history_url
 
 
@@ -640,16 +640,16 @@ def test_history_tab_from_model_history(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
-        name='prop',
-        type='string',
+        name="prop",
+        type="string",
         metadata_version=version,
     )
 
-    resp = app.get(reverse('model-history', args=[dataset.pk, version.pk, 'TestModel']))
+    resp = app.get(reverse("model-history", args=[dataset.pk, version.pk, "TestModel"]))
     view = resp.context["view"]
 
     history_url = view.get_history_url()
-    resp = resp.click(linkid='history-tab')
+    resp = resp.click(linkid="history-tab")
     assert resp.request.path == history_url
 
 
@@ -679,16 +679,16 @@ def test_history_tab_from_property_history(app: DjangoTestApp):
         content_type=ContentType.objects.get_for_model(prop),
         object_id=prop.pk,
         dataset=dataset,
-        name='prop',
-        type='string',
+        name="prop",
+        type="string",
         metadata_version=version,
     )
 
-    resp = app.get(reverse('property-history', args=[dataset.pk, version.pk, 'TestModel', 'prop']))
+    resp = app.get(reverse("property-history", args=[dataset.pk, version.pk, "TestModel", "prop"]))
     view = resp.context["view"]
 
     history_url = view.get_history_url()
-    resp = resp.click(linkid='history-tab')
+    resp = resp.click(linkid="history-tab")
     assert resp.request.path == history_url
 
 

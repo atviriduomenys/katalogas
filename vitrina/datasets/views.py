@@ -1578,6 +1578,20 @@ class DatasetStructureImportView(
             )
         return reverse("dataset-structure-no-version", kwargs={"pk": self.dataset.pk})
 
+    def get_history_url(self):
+        if self.metadata_version:
+            return reverse(
+                "dataset-structure-history",
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk},
+            )
+        else:
+            return reverse(
+                "dataset-structure-history-no-version",
+                kwargs={
+                    "pk": self.dataset.pk,
+                },
+            )
+
 
 class DatasetMembersView(
     LoginRequiredMixin,
@@ -1942,7 +1956,7 @@ class DatasetProjectsView(DatasetStructureMixin, PermissionRequiredMixin, Histor
     context_object_name = "projects"
     paginate_by = 20
 
-    # HistroyMixin
+    # HistoryMixin
     object: Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
@@ -3487,7 +3501,7 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
 class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
-    history_url_name = "dataset-history"
+    history_url_name = "dataset-plans-history"
     plan_url_name = "dataset-plans"
     tabs_template_name = "vitrina/datasets/tabs.html"
 

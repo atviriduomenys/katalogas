@@ -3537,6 +3537,32 @@ def test_dataset_structure_import_with_version(app: DjangoTestApp):
     assert structure.file.original_filename == "file.csv"
 
 
+def test_dataset_structure_history_url(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    dataset = DatasetFactory()
+    metadata_version = VersionFactory(dataset=dataset)
+    app.set_user(user)
+    resp = app.get(reverse("dataset-structure", args=[dataset.pk, metadata_version.pk]))
+
+    view = resp.context["view"]
+    view.object = dataset
+    view.metadata_version = metadata_version
+
+    history_url = view.get_history_url()
+
+    assert history_url == reverse(
+        "dataset-structure-history",
+        kwargs={"pk": dataset.pk, "version_id": metadata_version.pk}
+    )
+
+    view.metadata_version = None
+    history_url_no_version = view.get_history_url()
+    assert history_url_no_version == reverse(
+        "dataset-structure-history-no-version",
+        kwargs={"pk": dataset.pk}
+    )
+
+
 def test_dataset_assign_new_category_without_permission(app: DjangoTestApp):
     user = UserFactory()
     app.set_user(user)

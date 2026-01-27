@@ -313,6 +313,20 @@ class DatasetStructureView(
     def get_api_url(self):
         return self.models[0].get_api_url() if self.models else None
 
+    def get_history_url(self) -> str:
+        if self.metadata_version:
+            return reverse(
+                "dataset-structure-history",
+                kwargs={"pk": self.object.pk, "version_id": self.metadata_version.pk},
+            )
+        else:
+            return reverse(
+                "dataset-structure-history-no-version",
+                kwargs={
+                    "pk": self.object.pk,
+                },
+            )
+
 
 class ModelStructureView(
     DatasetBreadcrumbsMixin, HistoryMixin, StructureMixin, PlanMixin, PermissionRequiredMixin, TemplateView
@@ -3030,7 +3044,7 @@ class ParamDeleteView(PermissionRequiredMixin, DeleteView):
 class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
-    history_url_name = "dataset-history"
+    history_url_name = "dataset-structure-history"
     plan_url_name = "dataset-plans"
     tabs_template_name = "vitrina/datasets/tabs.html"
 
@@ -3135,6 +3149,15 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
     def get_api_url(self):
         return self.models[0].get_api_url() if self.models else None
 
+    def get_history_url(self) -> str:
+        if self.metadata_version:
+            return reverse(
+                "dataset-structure-history",
+                kwargs={"pk": self.kwargs.get("pk"), "version_id": self.metadata_version.pk},
+            )
+        else:
+            return reverse("dataset-structure-history-no-version", kwargs={"pk": self.kwargs.get("pk")})
+
     def get_history_objects(self):
         model_ids = self.models.values_list("pk", flat=True)
         allowed_visibilities = get_allowed_visibilities(
@@ -3167,7 +3190,7 @@ class DatasetStructureHistoryView(StructureMixin, PlanMixin, HistoryView):
 class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
-    history_url_name = "dataset-history"
+    history_url_name = "model-history"
     plan_url_name = "dataset-plans"
     tabs_template_name = "vitrina/datasets/tabs.html"
 
@@ -3309,11 +3332,23 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         history_objects = property_history_objects | model_history_objects
         return history_objects.order_by("-revision__date_created")
 
+    def get_history_url(self) -> str | None:
+        if self.model_obj.name:
+            return reverse(
+                self.history_url_name,
+                kwargs={
+                    "pk": self.kwargs.get("pk"),
+                    "version_id": self.metadata_version.pk,
+                    "model": self.model_obj.name,
+                },
+            )
+        return None
+
 
 class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
-    history_url_name = "dataset-history"
+    history_url_name = "property-history"
     plan_url_name = "dataset-plans"
     tabs_template_name = "vitrina/datasets/tabs.html"
 
@@ -3458,6 +3493,19 @@ class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):
 
     def get_api_url(self):
         return self.model_obj.get_api_url()
+
+    def get_history_url(self) -> str | None:
+        if self.model.name and self.property.name:
+            return reverse(
+                self.history_url_name,
+                kwargs={
+                    "pk": self.kwargs.get("pk"),
+                    "version_id": self.metadata_version.pk,
+                    "model": self.model_obj.name,
+                    "prop": self.property.name,
+                },
+            )
+        return None
 
     def get_history_objects(self):
         return Version.objects.get_for_object(self.property).order_by("-revision__date_created")

@@ -75,7 +75,7 @@ bleach = "^6.2.0"
 requests-mock = "^1.12.1"
 celery = "^5.5.3"
 workalendar = "^17.0.0"
-spinta = {version = "*", allow-prereleases = true}
+spinta = { git = "https://github.com/atviriduomenys/spinta.git", branch = "bg/2315-add-params-to-schema" }  # TODO: Do not merge.
 django-flags = "^5.1.0"
 
 [tool.poetry.group.dev.dependencies]

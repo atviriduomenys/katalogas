@@ -10,6 +10,12 @@ https://github.com/atviriduomenys/katalogas/issues/1906
 
 - Export Dataset structure for a specific version.
 
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2296
+
+- Fixed menu-items in Organization and Dataset views.
+
 v 1.13.0 (2026-01-26)
 ==================
 

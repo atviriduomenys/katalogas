@@ -39,7 +39,7 @@ class DatasetIndex(SearchIndex, Indexable):
     project_title = MultiValueField(model_attr="get_project_title_list", boost=0.9)
     category = MultiValueField(model_attr="category__pk", faceted=True, boost=0.8)
     organization = MultiValueField(model_attr="organization__pk", faceted=True, null=True, boost=0.8)
-    resource_description = MultiValueField(model_attr="get_resource_titles", boost=0.7)
+    resource_description = MultiValueField(model_attr="get_resource_description", boost=0.7)
     model_description = MultiValueField(model_attr="get_model_title_description", boost=0.7)
     property_description = MultiValueField(model_attr="get_property_title_description", boost=0.7)
     request_description = MultiValueField(model_attr="get_request_title_description", boost=0.7)

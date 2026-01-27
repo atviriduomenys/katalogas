@@ -4331,7 +4331,7 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
     structure.dataset.save()
-    create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
 
     ct = ContentType.objects.get_for_model(structure.dataset)
     representative = RepresentativeFactory(
@@ -4339,7 +4339,7 @@ def test_manifest_export_openapi(app: DjangoTestApp):
         object_id=structure.dataset.pk,
     )
     app.set_user(representative.user)
-    resp = app.get(reverse("dataset-structure-export-openapi", args=[structure.dataset.pk]))
+    resp = app.get(reverse("dataset-structure-export-openapi", args=[structure.dataset.pk, version.pk]))
 
     assert resp.status_code == 200
     assert resp.content_type == "application/json"

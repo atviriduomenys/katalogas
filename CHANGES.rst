@@ -4,6 +4,11 @@ Changes
 v 1.14.0 (unreleased)
 ==================
 
+Improvements:
+
+https://github.com/atviriduomenys/katalogas/issues/1906
+
+- Export Dataset structure for a specific version.
 
 v 1.13.0 (2026-01-26)
 ==================

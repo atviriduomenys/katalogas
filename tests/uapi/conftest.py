@@ -115,7 +115,7 @@ def dataset(organization: Organization) -> Dataset:
         organization=organization,
         title="Title of the Dataset",
         description="Description of the Dataset.",
-        metadata="test/dataset"
+        metadata="test/dataset",
     )
     return dataset
 

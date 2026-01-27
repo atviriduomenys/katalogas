@@ -7,3 +7,6 @@
 
 # Run at 9AM on the first Monday of each month
 0 9 */100,1-7 * MON cd /srv/vitrina && docker compose exec vitrina django-admin send_monthly_newsletter --settings=vitrina.settings >> /var/log/vitrina-cron.log 2>&1
+
+# Run byweekly at 2AM
+0 2 */14 * * cd /srv/vitrina && docker compose exec vitrina python scripts/geoportal_import.py >> /var/log/vitrina-cron.log 2>&1

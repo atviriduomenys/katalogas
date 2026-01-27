@@ -1,4 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Prefetch
+from vitrina.resources.models import DatasetDistribution
+from vitrina.structure.models import Model
 from haystack.fields import (
     CharField,
     IntegerField,
@@ -80,6 +83,36 @@ class DatasetIndex(SearchIndex, Indexable):
                 organization_id__isnull=False,
                 translations__title__isnull=False,
             )
+            .select_related(
+                "organization",
+                "organization__jurisdiction",
+                "frequency",
+                "subclass",
+            )
+            .prefetch_related(
+                "tags",
+                "translations",
+                "subclass__translations",
+                "category",
+                "category__datasetgroupcategoryuri_set",
+                "excluded_groups",
+                "type",
+                "part_of",
+                "related_datasets",
+                "metadata",
+                "representatives",
+                "project_set",
+                Prefetch(
+                    "datasetdistribution_set", queryset=DatasetDistribution.objects.prefetch_related("translations")
+                ),
+                Prefetch(
+                    "model_set",
+                    queryset=Model.objects.prefetch_related(
+                        "model_properties",
+                    ),
+                ),
+                Prefetch("dataset_request", queryset=Request.objects.prefetch_related("translations")),
+            )
             .distinct()
         )
 
@@ -89,6 +122,42 @@ class DatasetIndex(SearchIndex, Indexable):
             categories.extend([cat.pk for cat in category.get_ancestors() if cat.dataset_set.exists()])
             categories.append(category.pk)
         return categories
+
+    def prepare_tags(self, obj):
+        if hasattr(obj, "_cached_tag_list"):
+            return obj._cached_tag_list
+        return [t.pk for t in obj.tags.all()]
+
+    def prepare(self, obj):
+        if not hasattr(obj, "_cached_tag_list"):
+            self._bulk_load_tags([obj])
+        return super().prepare(obj)
+
+    def update_object(self, instance, using=None, **kwargs):
+        self._bulk_load_tags([instance])
+        super().update_object(instance, using, **kwargs)
+
+    def update(self, using=None):
+        backend = self.get_backend(using)
+        if backend is not None:
+            batch_size = 100
+            qs = self.index_queryset(using=using)
+            total = qs.count()
+
+            for start in range(0, total, batch_size):
+                batch = list(qs[start : start + batch_size])
+                self._bulk_load_tags(batch)
+                backend.update(self, batch)
+
+    def _bulk_load_tags(self, datasets):
+        if not datasets:
+            return
+
+        for ds in datasets:
+            tags = list(ds.tags.all())
+
+            ds._cached_tag_list = [t.pk for t in tags]
+            ds._cached_tag_object_list = [{"pk": t.pk, "name": t.name} for t in tags]
 
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):

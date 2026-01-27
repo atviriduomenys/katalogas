@@ -670,10 +670,18 @@ class Dataset(Resource):
         return reverse("dataset-detail", kwargs={"pk": self.pk})
 
     def get_tag_object_list(self):
-        return list(self.tags.all().values("name", "pk"))
+        if not hasattr(self, "_cached_tag_object_list"):
+            self._cached_tag_object_list = list(self.tags.all().values("name", "pk"))
+        return self._cached_tag_object_list
 
     def get_tag_list(self):
-        return list(self.tags.all().values_list("pk", flat=True))
+        if not hasattr(self, "_cached_tag_list"):
+            prefetched = getattr(self, "_prefetched_objects_cache", {})
+            if "tags" in prefetched:
+                self._cached_tag_list = [tag.pk for tag in prefetched["tags"]]
+            else:
+                self._cached_tag_list = [tag.pk for tag in self.tags.all()]
+        return self._cached_tag_list
 
     def get_tag_title(self, tag_id):
         if tag := self.tags.tag_model.objects.filter(pk=tag_id).first():
@@ -681,37 +689,67 @@ class Dataset(Resource):
         return ""
 
     def get_resource_titles(self):
-        return list(self.datasetdistribution_set.all().values_list("translations__title", flat=True))
+        titles = []
+        for dist in self.datasetdistribution_set.all():
+            for trans in dist.translations.all():
+                if trans.title:
+                    titles.append(trans.title)
+        return titles
 
     def get_model_title_list(self):
-        return list(model.title for model in self.model_set.all())
+        return [model.title for model in self.model_set.all()]
 
     def get_model_name_list(self):
-        return list(model.full_name for model in self.model_set.all() if model.name)
+        return [model.full_name for model in self.model_set.all() if model.name]
 
     def get_property_title_list(self):
-        return list(item.title for item in Property.objects.filter(model__in=self.model_set.all()))
+        titles = []
+        for model in self.model_set.all():
+            for prop in model.model_properties.all():
+                if prop.title:
+                    titles.append(prop.title)
+        return titles
 
     def get_request_title_list(self):
-        return [request.title for request in self.dataset_request.prefetch_related("translations")]
+        titles = []
+        for request in self.dataset_request.all():
+            for trans in request.translations.all():
+                if trans.title:
+                    titles.append(trans.title)
+        return titles
 
     def get_project_title_list(self):
-        return list(self.project_set.all().values_list("title", flat=True))
+        return [project.title for project in self.project_set.all()]
 
     def get_resource_description(self):
-        return list(self.datasetdistribution_set.all().values_list("translations__description", flat=True))
+        descriptions = []
+        for dist in self.datasetdistribution_set.all():
+            for trans in dist.translations.all():
+                if trans.description:
+                    descriptions.append(trans.description)
+        return descriptions
 
     def get_model_title_description(self):
-        return list(model.description for model in self.model_set.all())
+        return [model.description for model in self.model_set.all()]
 
     def get_property_title_description(self):
-        return list(item.description for item in Property.objects.filter(model__in=self.model_set.all()))
+        descriptions = []
+        for model in self.model_set.all():
+            for prop in model.model_properties.all():
+                if prop.description:
+                    descriptions.append(prop.description)
+        return descriptions
 
     def get_request_title_description(self):
-        return [request.description for request in self.dataset_request.prefetch_related("translations")]
+        descriptions = []
+        for request in self.dataset_request.all():
+            for trans in request.translations.all():
+                if trans.description:
+                    descriptions.append(trans.description)
+        return descriptions
 
     def get_project_title_description(self):
-        return list(self.project_set.all().values_list("description", flat=True))
+        return [project.description for project in self.project_set.all()]
 
     def get_all_groups(self):
         ids = (
@@ -722,15 +760,17 @@ class Dataset(Resource):
         return DatasetGroup.objects.filter(pk__in=ids).exclude(pk__in=self.get_excluded_groups())
 
     def get_group_list(self):
-        return list(
-            self.category.filter(datasetgroupcategoryuri__group__isnull=False)
-            .values_list("datasetgroupcategoryuri__group__pk", flat=True)
-            .distinct()
-            .exclude(pk__in=self.get_excluded_groups())
-        )
+        excluded_pks = {eg.group_id for eg in self.excluded_groups.all()}
+
+        group_pks = set()
+        for category in self.category.all():
+            for uri in category.datasetgroupcategoryuri_set.all():
+                if uri.group_id is not None and uri.group_id not in excluded_pks:
+                    group_pks.add(uri.group_id)
+        return list(group_pks)
 
     def get_excluded_groups(self):
-        return DatasetExcludedGroups.objects.filter(dataset=self).values_list("group__pk", flat=True)
+        return [eg.group_id for eg in self.excluded_groups.all()]
 
     def get_parent_organization_title(self):
         if self.organization:
@@ -853,25 +893,25 @@ class Dataset(Resource):
 
     @property
     def resource_managers(self) -> set[int]:
-        return set(
-            self.get_managers_queryset(
-                [
-                    Representative.RESOURCE_COORDINATOR,
-                    Representative.RESOURCE_MANAGER,
-                ]
-            )
-        )
+        if not hasattr(self, "_cached_resource_managers"):
+            resource_roles = {Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER}
+            self._cached_resource_managers = {
+                rep.user_id
+                for rep in self.representatives.all()
+                if rep.role in resource_roles and rep.user_id is not None
+            }
+        return self._cached_resource_managers
 
     @property
     def open_data_managers(self) -> set[int]:
-        return set(
-            self.get_managers_queryset(
-                [
-                    Representative.OPEN_DATA_COORDINATOR,
-                    Representative.OPEN_DATA_MANAGER,
-                ]
-            )
-        )
+        if not hasattr(self, "_cached_open_data_managers"):
+            open_data_roles = {Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER}
+            self._cached_open_data_managers = {
+                rep.user_id
+                for rep in self.representatives.all()
+                if rep.role in open_data_roles and rep.user_id is not None
+            }
+        return self._cached_open_data_managers
 
     @property
     def language_array(self):
@@ -908,11 +948,6 @@ class Dataset(Resource):
                 metadata.average_level = sum(levels) / len(levels)
                 metadata.save()
 
-    def get_level(self):
-        if metadata := self.metadata.first():
-            return metadata.average_level
-        return None
-
     def published_created_sort(self):
         return self.published or self.created
 
@@ -934,11 +969,26 @@ class Dataset(Resource):
                 return category.icon
         return None
 
+    def _get_first_metadata(self):
+        prefetched = getattr(self, "_prefetched_objects_cache", {})
+        if "metadata" in prefetched:
+            if not hasattr(self, "_cached_first_metadata"):
+                metadata_list = list(self.metadata.all())
+                self._cached_first_metadata = metadata_list[0] if metadata_list else None
+            return self._cached_first_metadata
+        else:
+            return self.metadata.first()
+
     @property
     def name(self):
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.name
         return ""
+
+    def get_level(self):
+        if metadata := self._get_first_metadata():
+            return metadata.average_level
+        return None
 
     @property
     def identifier(self) -> str | None:
@@ -947,7 +997,7 @@ class Dataset(Resource):
         )
 
     def public_types(self):
-        return list(self.type.filter(show_filter=True).values_list("pk", flat=True))
+        return [t.pk for t in self.type.all() if t.show_filter]
 
     def type_order(self):
         order = 0

@@ -262,7 +262,7 @@ class HistoryMixin:
         obj = self.get_detail_object()
         return reverse("dataset-child-resources", args=[obj.pk])
 
-    def get_history_url(self):
+    def get_history_url(self) -> str:
         obj = self.get_history_object()
         url_name = self.get_history_url_name()
         return reverse(url_name, args=[obj.pk])

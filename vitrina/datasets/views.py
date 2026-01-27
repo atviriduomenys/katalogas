@@ -1578,7 +1578,7 @@ class DatasetStructureImportView(
             )
         return reverse("dataset-structure-no-version", kwargs={"pk": self.dataset.pk})
 
-    def get_history_url(self):
+    def get_history_url(self) -> str:
         if self.metadata_version:
             return reverse(
                 "dataset-structure-history",

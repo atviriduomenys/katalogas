@@ -1054,7 +1054,7 @@ class TestActionGetDatasetStructure:
         )
         dataset.current_structure = structure
         dataset.save()
-        create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+        version = create_structure_objects(structure)
 
         response = app.get(
             url_dataset_structure,
@@ -1064,11 +1064,11 @@ class TestActionGetDatasetStructure:
         assert response.status_code == status.HTTP_200_OK
         assert response.headers["Content-Type"] == "text/csv"
 
-        metadata_to_id_map = dict(Metadata.objects.all().values_list("name", "uuid"))
+        metadata_to_id_map = dict(Metadata.objects.filter(metadata_version=version).values_list("name", "uuid"))
         expected_csv = f"""id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description
-{metadata_to_id_map["example70"]},example70,,,,,,,,,,,,,,,,,,Title of the Dataset,Description of the Dataset.
+{metadata_to_id_map["test/dataset"]},test/dataset,,,,,,,,,,,,,,,,,,Title of the Dataset,Description of the Dataset.
 {metadata_to_id_map["users"]},,users,,,,dask/json,,/path,,,,,,,,,,,users,
-{metadata_to_id_map["example70/User"]},,,,User,,,id,users,,,,,4,completed,package,open,,,Pavadinimas,
+{metadata_to_id_map["test/dataset/User"]},,,,User,,,id,users,,,,,4,completed,package,open,,,Pavadinimas,
 {metadata_to_id_map["id"]},,,,,id,integer,,id,,,,,,develop,,,,,,
 {metadata_to_id_map["full_name"]},,,,,full_name,string,,name,,,,,,develop,,,,,,
 {metadata_to_id_map["email_address"]},,,,,email_address,string,,email,,,,,,develop,,,,,,

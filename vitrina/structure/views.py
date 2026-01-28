@@ -281,6 +281,7 @@ class DatasetStructureView(
         context["can_manage_structure"] = self.can_manage_structure
         context["models"] = self.models
         context["version"] = dataset.dataset_version.filter(deployed__isnull=False).order_by("-deployed").first()
+        context["version_id"] = self.metadata_version.pk if self.metadata_version else None
         return context
 
     def get_structure_url(self):
@@ -1759,29 +1760,34 @@ class ChangesApiView(ApiView):
         return crumbs
 
 
-class DatasetStructureExportView(PermissionRequiredMixin, View):
+class DatasetStructureExportView(DatasetStructureMixin, PermissionRequiredMixin, View):
     def has_permission(self):
-        dataset = get_object_or_404(Dataset, pk=self.kwargs.get("pk"))
-        return has_perm(self.request.user, Action.STRUCTURE, Dataset, dataset)
+        return has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
 
     def get(self, request, *args, **kwargs):
-        dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-        stream = export_dataset_structure(dataset)
+        version = self.metadata_version or self.dataset.latest_version()
+        stream = export_dataset_structure(self.dataset, version=version)
+
+        filename = (
+            "dsa_manifest_draft.csv"
+            if version.status == VersionStatus.DRAFT
+            else f"dsa_manifest_{version.external_version}.csv"
+            if version
+            else "dsa_manifest.csv"
+        )
 
         response = StreamingHttpResponse(stream, content_type="text/csv")
-        response["Content-Disposition"] = "attachment; filename=manifest.csv"
+        response["Content-Disposition"] = f"attachment; filename={filename}"
         return response
 
 
-class DatasetStructureExportOpenAPIView(PermissionRequiredMixin, View):
+class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequiredMixin, View):
     def has_permission(self):
-        dataset = get_object_or_404(Dataset, pk=self.kwargs.get("pk"))
-        return has_perm(self.request.user, Action.STRUCTURE, Dataset, dataset)
+        return has_perm(self.request.user, Action.STRUCTURE, Dataset, self.dataset)
 
     def get(self, request, *args, **kwargs):
-        dataset = get_object_or_404(Dataset, pk=kwargs.get("pk"))
-
-        manifest_stream = _export_dataset_structure_to_stringio(dataset)
+        version = self.metadata_version or self.dataset.latest_version()
+        manifest_stream = _export_dataset_structure_to_stringio(self.dataset, version=version)
         manifest_path = ManifestPath(file=manifest_stream)
         openapi_spec = create_openapi_manifest(manifest_path)
 

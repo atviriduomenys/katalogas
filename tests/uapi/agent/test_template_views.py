@@ -55,8 +55,8 @@ class TestAgentList:
         app.set_user(user)
         response = app.get(reverse("agent-list", args=[organization.pk]))
 
-        assert "can_view_agents" in response.context
-        assert "can_view_keys" in response.context
+        expected_keys = {"can_view_agents", "can_view_keys"}
+        assert all(key in response.context for key in expected_keys)
 
 
 class TestDetail:

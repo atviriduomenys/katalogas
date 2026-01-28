@@ -264,8 +264,7 @@ class HistoryMixin:
 
     def get_history_url(self) -> str:
         obj = self.get_history_object()
-        url_name = self.get_history_url_name()
-        return reverse(url_name, args=[obj.pk])
+        return reverse(self.get_history_url_name(), args=[obj.pk])
 
     def get_history_object(self):
         return self.object

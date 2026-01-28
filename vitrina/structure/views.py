@@ -3333,16 +3333,16 @@ class ModelHistoryView(StructureMixin, PlanMixin, HistoryView):
         return history_objects.order_by("-revision__date_created")
 
     def get_history_url(self) -> str | None:
-        if self.model_obj.name:
-            return reverse(
-                self.history_url_name,
-                kwargs={
-                    "pk": self.kwargs.get("pk"),
-                    "version_id": self.metadata_version.pk,
-                    "model": self.model_obj.name,
-                },
-            )
-        return None
+        if not self.model_obj.name:
+            return None
+        return reverse(
+            self.history_url_name,
+            kwargs={
+                "pk": self.kwargs.get("pk"),
+                "version_id": self.metadata_version.pk,
+                "model": self.model_obj.name,
+            },
+        )
 
 
 class PropertyHistoryView(StructureMixin, PlanMixin, HistoryView):

@@ -13,9 +13,9 @@ from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandle
 
 
 class AgreementFileDownloadUAPIView(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, APIView):
-    action = "get"
+    action = "retrieve"
     required_scopes = {
-        "get": ["uapi:/datasets/gov/vssa/dcat/AgreementFile/:getone"],
+        "retrieve": ["uapi:/datasets/gov/vssa/dcat/AgreementFile/:getone"],
     }
 
     def get(self, request: Request, *args: Any, **kwargs: Any) -> FileResponse:

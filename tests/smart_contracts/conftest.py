@@ -8,6 +8,8 @@ from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
+from vitrina.smart_contracts.factories import AgreementFactory
+from vitrina.smart_contracts.models import Agreement
 from vitrina.smart_contracts.services import SAFE_PARSER, SIGNATURE_NAMESPACES
 
 
@@ -139,3 +141,8 @@ def certificate() -> x509.Certificate:
 @pytest.fixture
 def certificate_no_first_name() -> x509.Certificate:
     return x509.load_der_x509_certificate(b64decode(CERTIFICATE_ENCODED_NO_FIRST_NAME))
+
+
+@pytest.fixture
+def agreement() -> Agreement:
+    return AgreementFactory()

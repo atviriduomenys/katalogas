@@ -71,7 +71,9 @@ OAUTH_CLIENT_SECRET_BASE64 = base64.b64encode(f"{OAUTH_CLIENT_NAME}:{OAUTH_CLIEN
 OAUTH_CLIENTS_MANAGEMENT_SCOPE = env("OAUTH_CLIENTS_MANAGEMENT_SCOPE", default="spinta_auth_clients")
 OAUTH_AGENT_DEFAULT_SCOPES = (
     "uapi:/datasets/gov/vssa/dcat/Agent/:getall",
+    "uapi:/datasets/gov/vssa/dcat/Agreement/:getall",
     "uapi:/datasets/gov/vssa/dcat/Agreement/:patch",
+    "uapi:/datasets/gov/vssa/dcat/AgreementFile/:getone",
     "uapi:/datasets/gov/vssa/dcat/Dataset/:getall",
     "uapi:/datasets/gov/vssa/dcat/Dataset/:create",
     "uapi:/datasets/gov/vssa/dcat/Distribution/:getall",

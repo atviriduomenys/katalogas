@@ -4,7 +4,8 @@ import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 
-from vitrina.smart_contracts.models import SmartContractTemplate
+from vitrina.smart_contracts.factories import AgreementFileFactory
+from vitrina.smart_contracts.models import SmartContractTemplate, Agreement
 from vitrina.orgs.factories import OrganizationFactory
 
 
@@ -34,3 +35,22 @@ def test_invalid_file_extension_raises_validation_error():
     with pytest.raises(ValidationError) as exc_info:
         template.full_clean()
     assert "Failas turi būti Markdown formato (.md)." in str(exc_info.value)
+
+
+class TestAgreement:
+    def test_latest_agreement_adoc_return_only_adoc(self, agreement: Agreement):
+        agreement_file1 = AgreementFileFactory(agreement=agreement)
+        AgreementFileFactory(agreement=agreement, file_extension="md")
+
+        assert agreement.latest_agreement_adoc == agreement_file1
+
+    def test_latest_agreement_adoc_returns_latest_adoc(self, agreement: Agreement):
+        AgreementFileFactory(agreement=agreement)
+        agreement_file2 = AgreementFileFactory(agreement=agreement)
+
+        assert agreement.latest_agreement_adoc == agreement_file2
+
+    def test_latest_agreement_adoc_returns_none_if_no_adocs_exist(self, agreement: Agreement):
+        AgreementFileFactory(agreement=agreement, file_extension="md")
+
+        assert agreement.latest_agreement_adoc is None

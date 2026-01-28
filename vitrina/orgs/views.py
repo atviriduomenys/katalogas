@@ -123,6 +123,8 @@ logger = logging.getLogger()
 
 
 class OrganizationBaseViewMixin:
+    plan_url_name = "organization-plans"
+
     def setup(self, request, *args, **kwargs):
         self.organization = get_object_or_404(Organization, pk=kwargs.get("pk"))
         return super().setup(request, *args, **kwargs)
@@ -138,6 +140,9 @@ class OrganizationBaseViewMixin:
         context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
         context_data["organization"] = self.organization
         return context_data
+
+    def get_plan_object(self) -> Organization:
+        return self.organization
 
 
 class RepresentativeRequestApproveView(PermissionRequiredMixin, TemplateView):
@@ -504,6 +509,7 @@ class OrganizationMembersView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     OrganizationBaseViewMixin,
+    PlanMixin,
     ListView,
 ):
     template_name = "vitrina/orgs/members.html"
@@ -542,6 +548,7 @@ class OrganizationContactsView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     OrganizationBaseViewMixin,
+    PlanMixin,
     ListView,
 ):
     template_name = "vitrina/orgs/contacts.html"
@@ -577,6 +584,7 @@ class ContactCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     OrganizationBaseViewMixin,
+    PlanMixin,
     CreateView,
 ):
     model = Contact
@@ -628,7 +636,7 @@ class ContactCreateView(
         return HttpResponseRedirect(self.get_success_url())
 
 
-class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, UpdateView):
+class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, PlanMixin, UpdateView):
     model = Contact
     form_class = ContactUpdateForm
     template_name = "base_form.html"
@@ -714,6 +722,7 @@ class OrganizationProjectsView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     OrganizationBaseViewMixin,
+    PlanMixin,
     ListView,
 ):
     template_name = "vitrina/orgs/projects_list.html"
@@ -742,7 +751,7 @@ class OrganizationProjectsView(
         return context_data
 
 
-class OrganizationBasedAgreementListView(OrganizationBaseViewMixin, BaseAgreementListView):
+class OrganizationBasedAgreementListView(OrganizationBaseViewMixin, PlanMixin, BaseAgreementListView):
     template_name = "vitrina/orgs/organization_agreements.html"
     parent_type = "organization"
 
@@ -1052,6 +1061,7 @@ class RepresentativeCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
     OrganizationBaseViewMixin,
+    PlanMixin,
     CreateView,
 ):
     model = Representative
@@ -1168,7 +1178,9 @@ class RepresentativeCreateView(
         return HttpResponseRedirect(self.get_success_url())
 
 
-class RepresentativeUpdateView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, UpdateView):
+class RepresentativeUpdateView(
+    LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, PlanMixin, UpdateView
+):
     model = Representative
     form_class = RepresentativeUpdateForm
     template_name = "base_form.html"
@@ -1529,7 +1541,9 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, OrganizationBaseViewMi
         return redirect(reverse("organization-plans", args=[self.organization.pk]))
 
 
-class OrganizationApiKeysView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, TemplateView):
+class OrganizationApiKeysView(
+    LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, PlanMixin, TemplateView
+):
     template_name = "vitrina/orgs/apikeys.html"
 
     organization: Organization
@@ -1623,7 +1637,7 @@ class OrganizationApiKeysView(LoginRequiredMixin, PermissionRequiredMixin, Organ
 
 
 class OrganizationApiKeysDetailView(
-    LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, TemplateView
+    LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, PlanMixin, TemplateView
 ):
     template_name = "vitrina/orgs/apikeys_detail.html"
     pk_url_kwarg = "apikey_id"

@@ -574,6 +574,124 @@ def test_data_tab_from_dataset_structure(app: DjangoTestApp):
     assert resp.request.path == model.get_data_url()
 
 
+@pytest.mark.parametrize("structure_view", ["dataset-structure", "dataset-structure-history"])
+@pytest.mark.django_db
+def test_history_tab_from_dataset_structure(app: DjangoTestApp, structure_view: str):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="string",
+        metadata_version=version,
+    )
+
+    resp = app.get(reverse(structure_view, args=[dataset.pk, version.pk]))
+    view = resp.context["view"]
+
+    history_url = view.get_history_url()
+    resp = resp.click(linkid="history-tab")
+    assert resp.request.path == history_url
+
+
+@pytest.mark.django_db
+def test_history_tab_from_model_history(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="string",
+        metadata_version=version,
+    )
+
+    resp = app.get(reverse("model-history", args=[dataset.pk, version.pk, "TestModel"]))
+    view = resp.context["view"]
+
+    history_url = view.get_history_url()
+    resp = resp.click(linkid="history-tab")
+    assert resp.request.path == history_url
+
+
+@pytest.mark.django_db
+def test_history_tab_from_property_history(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="string",
+        metadata_version=version,
+    )
+
+    resp = app.get(reverse("property-history", args=[dataset.pk, version.pk, "TestModel", "prop"]))
+    view = resp.context["view"]
+
+    history_url = view.get_history_url()
+    resp = resp.click(linkid="history-tab")
+    assert resp.request.path == history_url
+
+
 @pytest.mark.django_db
 def test_data_tab_from_model_structure(app: DjangoTestApp):
     version = VersionFactory()

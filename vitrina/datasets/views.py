@@ -70,11 +70,12 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
     CatalogResourceForm,
 )
-from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name
+from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name, is_child_resources_list
 from vitrina.structure import VersionStatus
 from vitrina.structure.views import DatasetStructureMixin
 
 from vitrina.tasks.models import Task
+from vitrina.uapi.models import Agent
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.mixins import DatasetBreadcrumbsMixin, Crumb
 from vitrina.datasets.services import (
@@ -391,6 +392,10 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 Dataset,
                 self.organization,
             )
+            extra_context["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
+            extra_context["can_view_keys"] = has_perm(
+                self.request.user, Action.MANAGE_KEYS, Organization, self.organization
+            )
             context["organization_id"] = self.organization.pk
             if not form.selected_facets:
                 form.selected_facets.append("organization_exact:{0}".format(self.organization.id))
@@ -437,11 +442,12 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
         context["sort"] = sorting
         return context
 
-    def get_plan_url(self):
+    def get_plan_url(self) -> str | None:
         if is_org_dataset_list(self.request):
             return reverse("organization-plans", args=[self.organization.pk])
-        else:
-            return None
+        if is_child_resources_list(self.request):
+            return reverse("dataset-plans", args=[self.dataset.pk])
+        return None
 
 
 class DatasetRedirectView(View):
@@ -1572,6 +1578,20 @@ class DatasetStructureImportView(
             )
         return reverse("dataset-structure-no-version", kwargs={"pk": self.dataset.pk})
 
+    def get_history_url(self) -> str:
+        if self.metadata_version:
+            return reverse(
+                "dataset-structure-history",
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk},
+            )
+        else:
+            return reverse(
+                "dataset-structure-history-no-version",
+                kwargs={
+                    "pk": self.dataset.pk,
+                },
+            )
+
 
 class DatasetMembersView(
     LoginRequiredMixin,
@@ -1635,6 +1655,7 @@ class CreateMemberView(
     HistoryMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    PlanMixin,
     CreateView,
 ):
     model = Representative
@@ -1643,6 +1664,7 @@ class CreateMemberView(
 
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
+    plan_url_name = "dataset-plans"
 
     def has_permission(self):
         subclass = self.dataset.subclass
@@ -1684,6 +1706,9 @@ class CreateMemberView(
         return self.dataset
 
     def get_history_object(self):
+        return self.dataset
+
+    def get_plan_object(self) -> Dataset:
         return self.dataset
 
     def form_valid(self, form):
@@ -1750,6 +1775,7 @@ class UpdateMemberView(
     HistoryMixin,
     LoginRequiredMixin,
     PermissionRequiredMixin,
+    PlanMixin,
     UpdateView,
 ):
     model = Representative
@@ -1759,6 +1785,7 @@ class UpdateMemberView(
 
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
+    plan_url_name = "dataset-plans"
 
     def has_permission(self):
         subclass = self.dataset.subclass
@@ -1803,6 +1830,9 @@ class UpdateMemberView(
         return self.dataset
 
     def get_history_object(self):
+        return self.dataset
+
+    def get_plan_object(self) -> Dataset:
         return self.dataset
 
     def form_valid(self, form):
@@ -1926,7 +1956,7 @@ class DatasetProjectsView(DatasetStructureMixin, PermissionRequiredMixin, Histor
     context_object_name = "projects"
     paginate_by = 20
 
-    # HistroyMixin
+    # HistoryMixin
     object: Dataset
     detail_url_name = "dataset-detail"
     history_url_name = "dataset-history"
@@ -3471,7 +3501,7 @@ class DatasetDeletePlanDetailView(DatasetDeletePlanView):
 class DatasetPlansHistoryView(DatasetStructureMixin, PlanMixin, HistoryView):
     model = Dataset
     detail_url_name = "dataset-detail"
-    history_url_name = "dataset-history"
+    history_url_name = "dataset-plans-history"
     plan_url_name = "dataset-plans"
     tabs_template_name = "vitrina/datasets/tabs.html"
 
@@ -3724,7 +3754,11 @@ class DatasetRepresentativeApiKeyView(PermissionRequiredMixin, TemplateView):
 
 
 class DatasetChildResourceListView(
-    DatasetBreadcrumbsMixin, LanguageChoiceMixin, HistoryMixin, DatasetStructureMixin, DatasetListView
+    DatasetBreadcrumbsMixin,
+    LanguageChoiceMixin,
+    HistoryMixin,
+    DatasetStructureMixin,
+    DatasetListView,
 ):
     model = Dataset
     detail_url_name = DatasetDetailView.detail_url_name
@@ -3761,6 +3795,12 @@ class DatasetChildResourceListView(
                 self.request.user,
                 action,
                 Dataset,
+                self.object,
+            ),
+            "can_view_members": has_perm(
+                self.request.user,
+                Action.VIEW,
+                Representative,
                 self.object,
             ),
             "parent_dataset_id": self.parent_dataset_id,

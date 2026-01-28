@@ -262,20 +262,9 @@ class HistoryMixin:
         obj = self.get_detail_object()
         return reverse("dataset-child-resources", args=[obj.pk])
 
-    def get_history_url(self):
+    def get_history_url(self) -> str:
         obj = self.get_history_object()
-        if hasattr(self, "metadata_version") and self.metadata_version:
-            return reverse(
-                "dataset-structure-history",
-                kwargs={"pk": obj.pk, "version_id": self.metadata_version.pk},
-            )
-        else:
-            return reverse(
-                "dataset-structure-history-no-version",
-                kwargs={
-                    "pk": obj.pk,
-                },
-            )
+        return reverse(self.get_history_url_name(), args=[obj.pk])
 
     def get_history_object(self):
         return self.object

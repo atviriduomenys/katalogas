@@ -12,6 +12,7 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.orgs.views import OrganizationBaseViewMixin
 from vitrina.plans.models import Plan
 from vitrina.plans.services import has_plan_close_permission
+from vitrina.uapi.models import Agent
 from vitrina.views import PlanMixin, HistoryView
 
 
@@ -46,6 +47,8 @@ class PlanDetailView(PlanMixin, DetailView):
         context["plan_datasets"] = self.object.plandataset_set.all()
         context["history_url"] = reverse("plan-history", args=[self.organization.pk, self.object.pk])
         context["history_url_name"] = "plan-hisotry"
+        context["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
+        context["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
         return context
 
 

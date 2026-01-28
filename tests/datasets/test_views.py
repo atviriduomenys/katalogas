@@ -451,6 +451,31 @@ class TestDatasetListView:
         resp = app.get(reverse("dataset-list"))
         assert not resp.html.find(id="org-dataset-url")
 
+    @pytest.mark.parametrize(
+        "is_staff,can_view",
+        [
+            (True, True),
+            (False, False),
+        ],
+    )
+    def test_organization_datasets_context_flags_present(
+        self,
+        app: DjangoTestApp,
+        is_staff: bool,
+        can_view: bool,
+    ):
+        organization = OrganizationFactory()
+        user = UserFactory(is_staff=is_staff)
+
+        app.set_user(user)
+        resp = app.get(reverse("organization-datasets", args=[organization.pk]))
+
+        assert "can_view_agents" in resp.context
+        assert "can_view_keys" in resp.context
+
+        assert resp.context["can_view_agents"] is can_view
+        assert resp.context["can_view_keys"] is can_view
+
     def test_manager_dataset_url_is_hidden_for_normal_user(self, app: DjangoTestApp):
         user = User.objects.create_user(email="test@test.com", password="test123")
         app.set_user(user)
@@ -3510,6 +3535,28 @@ def test_dataset_structure_import_with_version(app: DjangoTestApp):
     assert dataset.current_structure == structure
     assert File.objects.count() == 1
     assert structure.file.original_filename == "file.csv"
+
+
+def test_dataset_structure_history_url(app: DjangoTestApp):
+    user = UserFactory(is_staff=True)
+    dataset = DatasetFactory()
+    metadata_version = VersionFactory(dataset=dataset)
+    app.set_user(user)
+    resp = app.get(reverse("dataset-structure", args=[dataset.pk, metadata_version.pk]))
+
+    view = resp.context["view"]
+    view.object = dataset
+    view.metadata_version = metadata_version
+
+    history_url = view.get_history_url()
+
+    assert history_url == reverse(
+        "dataset-structure-history", kwargs={"pk": dataset.pk, "version_id": metadata_version.pk}
+    )
+
+    view.metadata_version = None
+    history_url_no_version = view.get_history_url()
+    assert history_url_no_version == reverse("dataset-structure-history-no-version", kwargs={"pk": dataset.pk})
 
 
 def test_dataset_assign_new_category_without_permission(app: DjangoTestApp):

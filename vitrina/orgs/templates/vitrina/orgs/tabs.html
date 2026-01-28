@@ -14,7 +14,7 @@
         </li>
         {% endif %}
         {% if can_view_contacts %}
-        <li class="{%if request.resolver_match.url_name == 'organization-contacts' or request.resolver_match.url_name == 'contacts-create' or request.resolver_match.url_name == 'contacts-update' %} is-active {% endif %}">
+        <li class="{%if request.resolver_match.url_name == 'organization-contacts' or request.resolver_match.url_name == 'contact-create' or request.resolver_match.url_name == 'contact-update' %} is-active {% endif %}">
             <a href="{% url 'organization-contacts' organization.id %}">
                 {% translate "Kontaktai" %}
             </a>
@@ -43,7 +43,7 @@
             </li>
         {% endif %}
         {% if can_view_agents %}
-            <li class="{% if request.resolver_match.url_name == 'agent-list' %} is-active {% endif %}">
+            <li class="{% if request.resolver_match.url_name == 'agent-list' or request.resolver_match.url_name == 'agent-create' or request.resolver_match.url_name == 'agent-update' %} is-active {% endif %}">
                 <a href="{% url 'agent-list' organization.id %}">
                     {% translate "Agentai" %}
                 </a>

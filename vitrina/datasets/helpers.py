@@ -9,6 +9,10 @@ from vitrina.orgs.models import Organization
 from vitrina.datasets.models import Dataset, Metadata
 
 
+def is_child_resources_list(request: HttpRequest) -> bool:
+    return request.resolver_match.url_name == "dataset-child-resources"
+
+
 def is_manager_dataset_list(request: HttpRequest):
     return request.resolver_match.url_name == "manager-dataset-list"
 

@@ -13,6 +13,7 @@ from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
 from vitrina.uapi.models import Agent, RequestHistory
 from vitrina.orgs.services import hash_api_key
+from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
 
@@ -43,6 +44,19 @@ class TestAgentList:
         assert agent_2 in returned_agents
         assert archived_agent not in returned_agents
         assert different_organization_agent not in returned_agents
+
+    def test_agent_view_exposes_can_view_agents_flag(
+        self,
+        app: DjangoTestApp,
+    ):
+        organization = OrganizationFactory()
+        user = UserFactory(is_staff=True)
+
+        app.set_user(user)
+        response = app.get(reverse("agent-list", args=[organization.pk]))
+
+        expected_keys = {"can_view_agents", "can_view_keys"}
+        assert all(key in response.context for key in expected_keys)
 
 
 class TestDetail:

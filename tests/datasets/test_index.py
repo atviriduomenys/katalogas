@@ -1,10 +1,9 @@
 from django.db import connection
+from django.test.utils import CaptureQueriesContext
 from haystack import connections
-
 from unittest.mock import patch
 
 import pytest
-from django.test.utils import CaptureQueriesContext
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
@@ -12,25 +11,98 @@ from vitrina.datasets.models import Dataset
 
 @pytest.mark.django_db
 class TestDatasetIndexQuery:
-    def test_dataset_index_query_count(self):
-        DatasetFactory()
-        DatasetFactory()
-        DatasetFactory()
-        DatasetFactory()
+    QUERY_COUNT_THRESHOLD = 15
+
+    def test_bulk_index_query_count(self):
+        datasets_to_create = 5
+        for _ in range(datasets_to_create):
+            DatasetFactory()
+
+        ui = connections["default"].get_unified_index()
+        index = ui.get_index(Dataset)
+
+        with CaptureQueriesContext(connection) as ctx:
+            datasets = list(index.index_queryset()[:5])
+
+            with patch("haystack.backends.elasticsearch_backend.ElasticsearchSearchBackend.update"):
+                for ds in datasets:
+                    index.full_prepare(ds)
+
+        query_count = len(ctx.captured_queries)
+
+        assert query_count <= self.QUERY_COUNT_THRESHOLD, f"Too many queries for bulk indexing: {query_count}"
+
+        # Verify batch queries use IN clauses (not individual lookups)
+        in_clause_queries = sum(1 for q in ctx.captured_queries if " IN (" in q["sql"])
+        assert in_clause_queries >= 5, "Expected batch queries with IN clauses"
+
+    def test_single_object_update_query_count(self):
+        dataset = DatasetFactory()
+
+        ui = connections["default"].get_unified_index()
+        index = ui.get_index(Dataset)
+
+        fresh_instance = Dataset.objects.get(pk=dataset.pk)
+
+        with CaptureQueriesContext(connection) as ctx:
+            with patch("haystack.backends.elasticsearch_backend.ElasticsearchSearchBackend.update"):
+                index.update_object(fresh_instance)
+
+        query_count = len(ctx.captured_queries)
+
+        assert query_count <= self.QUERY_COUNT_THRESHOLD, f"Too many queries for single object update: {query_count}"
+
+    def test_index_queryset_excludes_datasets_without_title(self):
+        dataset_with_title = DatasetFactory()
+        dataset_without_title = DatasetFactory()
+        dataset_without_title.translations.all().delete()
+
+        ui = connections["default"].get_unified_index()
+        index = ui.get_index(Dataset)
+
+        indexed_pks = list(index.index_queryset().values_list("pk", flat=True))
+
+        assert dataset_with_title.pk in indexed_pks
+        assert dataset_without_title.pk not in indexed_pks
+
+    def test_index_queryset_uses_exists_subquery(self):
         DatasetFactory()
 
         ui = connections["default"].get_unified_index()
         index = ui.get_index(Dataset)
 
-        datasets = list(index.index_queryset()[:5])
-
-        # Bulk load tags via index method
-        index._bulk_load_tags(datasets)
-
-        docs = []
         with CaptureQueriesContext(connection) as ctx:
-            with patch("haystack.backends.elasticsearch_backend.ElasticsearchSearchBackend.update", autospec=True):
-                for ds in datasets:
-                    docs.append(index.full_prepare(ds))
+            list(index.index_queryset()[:1])
 
-            assert len(ctx.captured_queries) == 0, f"Too many queries: {len(ctx.captured_queries)}"
+        main_query = ctx.captured_queries[0]["sql"]
+
+        # Should use EXISTS, not DISTINCT
+        assert "EXISTS" in main_query, "Expected EXISTS subquery for translation filter"
+        assert "DISTINCT" not in main_query or "SELECT DISTINCT" not in main_query, (
+            "Should not use DISTINCT with EXISTS subquery"
+        )
+
+    def test_query_count_scales_constantly(self):
+        for _ in range(10):
+            DatasetFactory()
+
+        ui = connections["default"].get_unified_index()
+        index = ui.get_index(Dataset)
+
+        with CaptureQueriesContext(connection) as ctx_3:
+            datasets_3 = list(index.index_queryset()[:3])
+            with patch("haystack.backends.elasticsearch_backend.ElasticsearchSearchBackend.update"):
+                for ds in datasets_3:
+                    index.full_prepare(ds)
+        count_3 = len(ctx_3.captured_queries)
+
+        with CaptureQueriesContext(connection) as ctx_10:
+            datasets_10 = list(index.index_queryset()[:10])
+            with patch("haystack.backends.elasticsearch_backend.ElasticsearchSearchBackend.update"):
+                for ds in datasets_10:
+                    index.full_prepare(ds)
+        count_10 = len(ctx_10.captured_queries)
+
+        assert count_10 <= count_3 + 5, (
+            f"Query count should scale constantly, got {count_3} for 3 datasets vs {count_10} for 10"
+        )

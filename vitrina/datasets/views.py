@@ -549,18 +549,6 @@ class DatasetDetailView(
                 Q(metadata_version=metadata_version) | Q(format__extension="UAPI")
             ).order_by("-period_start")
 
-        distributions_with_conditions_ids = (
-            dataset.datasetdistribution_set.filter(
-                translations__conditions__isnull=False, metadata_version=metadata_version
-            )
-            .exclude(translations__conditions="")
-            .values_list("id", flat=True)
-        )
-
-        extra_context_data["distributions_with_conditions"] = dataset.datasetdistribution_set.filter(
-            pk__in=distributions_with_conditions_ids
-        )
-
         part_of = dataset.part_of.order_by("relation")
         part_of = itertools.groupby(part_of, lambda x: x.relation)
         extra_context_data["part_of"] = [(relation, list(values)) for relation, values in part_of]

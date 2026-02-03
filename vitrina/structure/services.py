@@ -120,9 +120,24 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
         content_type=ct, object_id=dataset.pk, metadata_version=metadata_version
     )
     loaded_metadata = []
-
     _clean_errors(dataset.current_structure)
-    for order, meta in enumerate(state.manifest.datasets.values(), 1):
+    datasets = list(state.manifest.datasets.values())
+    for order, meta in enumerate(datasets, 1):
+        is_last = order == len(datasets)
+        # Import logic for handling dependency datasets:
+        # - Export with dependencies: dependent datasets appear first, main dataset is last
+        # - First import: dataset.name may be empty/generic, so can't match by name
+        # - Re-import: dataset.name matches the CSV name
+        #
+        # Process dataset if:
+        # 1. Name matches dataset.name (re-import case), OR
+        # 2. Is the last dataset (first import OR main dataset in export with dependencies)
+        #
+        # This automatically skips dependency datasets since they:
+        # - Don't match dataset.name (different datasets)
+        # - Are not last (main dataset is always last in export)
+        if meta.name != dataset.name and not is_last:
+            continue
         if (
             metadata := Metadata.objects.filter(content_type=ct, name=meta.name, metadata_version=metadata_version)
             .exclude(dataset=dataset)
@@ -794,7 +809,6 @@ def _link_properties(
                 if ref_model := Model.objects.filter(
                     metadata__name=prop_meta.ref,
                     metadata__content_type=model_ct,
-                    metadata__metadata_version=metadata_version,
                 ).first():
                     prop.ref_model = ref_model
                     prop.save()
@@ -1015,7 +1029,235 @@ def _export_dataset_structure_to_stringio(dataset: Dataset, version: Version) ->
 def datasets_to_tabular(dataset: Dataset, version: Version | None = None) -> Generator:
     if dataset.current_structure:
         yield from _prefixes_to_tabular(dataset.current_structure, separator=True, version=version)
+    dependent_models = dataset.get_dependent_models(version=version)
+    if dependent_models:
+        yield from _dependent_models_to_tabular(dependent_models)
     yield from _dataset_to_tabular(dataset, separator=True, version=version)
+
+
+def _dependent_models_to_tabular(dependent_models: list) -> Generator:
+    """
+    Render dependent (child) models in tabular format.
+    """
+    if not dependent_models:
+        return
+
+    child_model_ids = {dep["child_model_id"] for dep in dependent_models}
+    models = (
+        Model.objects.filter(pk__in=child_model_ids)
+        .select_related("dataset", "metadata_version", "base")
+        .prefetch_related("metadata", "property_list__property__metadata", "base__metadata")
+    )
+
+    def _pick_metadata(meta_qs, version: Version | None):
+        if version is None:
+            return meta_qs.first()
+        return meta_qs.filter(metadata_version=version).first()
+
+    models_by_dataset: dict[int, dict] = {}
+    dependent_model_ids: set[int] = set()
+    for model in models:
+        meta = _pick_metadata(model.metadata.all(), model.metadata_version)
+        if not meta:
+            continue
+        dependent_model_ids.add(model.id)
+
+        dataset = model.dataset
+        dataset_meta = _pick_metadata(dataset.metadata.all(), model.metadata_version)
+        dataset_name = dataset_meta.name if dataset_meta else ""
+        if (
+            dataset_meta
+            and model.metadata_version
+            and model.metadata_version.status != VersionStatus.DRAFT
+            and model.metadata_version.major is not None
+        ):
+            dataset_name = f"{dataset_meta.name}/{model.metadata_version.major}"
+
+        prop_names = set()
+        prop_list_qs = model.property_list.all()
+        if model.metadata_version is not None:
+            prop_list_qs = prop_list_qs.filter(metadata_version=model.metadata_version)
+
+        for prop_list_item in prop_list_qs:
+            prop_meta_qs = prop_list_item.property.metadata.all()
+            if model.metadata_version is not None:
+                prop_meta_qs = prop_meta_qs.filter(metadata_version=model.metadata_version)
+            if prop_meta := prop_meta_qs.first():
+                prop_names.add(prop_meta.name)
+
+        dataset_bucket = models_by_dataset.setdefault(
+            dataset.id,
+            {
+                "dataset": dataset,
+                "dataset_meta": dataset_meta,
+                "dataset_name": dataset_name,
+                "models": [],
+            },
+        )
+        if dataset_bucket["dataset_meta"] is None and dataset_meta is not None:
+            dataset_bucket["dataset_meta"] = dataset_meta
+            dataset_bucket["dataset_name"] = dataset_name
+
+        dataset_bucket["models"].append(
+            {
+                "model": model,
+                "meta": meta,
+                "prop_names": prop_names,
+            }
+        )
+
+    def _dataset_sort_key(entry):
+        dataset_name = entry["dataset_name"] or entry["dataset"].name or ""
+        return dataset_name
+
+    def _model_sort_key(entry):
+        meta = entry["meta"]
+        order = meta.order if meta.order is not None else 0
+        return (order, meta.name)
+
+    def _parse_ref_keys(ref_value: str | None) -> list[str]:
+        if not ref_value:
+            return []
+        return [key.strip() for key in ref_value.split(",") if key.strip()]
+
+    def _yield_pk_properties(target_model: Model, target_meta: Metadata, version: Version | None) -> Generator:
+        prop_filter = {"model": target_model, "given": True}
+        if version is not None:
+            prop_filter["metadata_version"] = version
+        pk_props = Property.objects.filter(**prop_filter).prefetch_related("metadata")
+        pk_prop_meta_by_name = {}
+        for prop in pk_props:
+            prop_meta_qs = prop.metadata.all()
+            if version is not None:
+                prop_meta_qs = prop_meta_qs.filter(metadata_version=version)
+            if prop_meta := prop_meta_qs.first():
+                pk_prop_meta_by_name[prop_meta.name] = (prop, prop_meta)
+
+        for ref_key in _parse_ref_keys(target_meta.ref):
+            if ref_key in pk_prop_meta_by_name:
+                prop, prop_meta = pk_prop_meta_by_name[ref_key]
+                yield to_row(
+                    DATASET,
+                    {
+                        "id": prop_meta.uuid,
+                        "property": prop_meta.name,
+                        "type": get_type_repr(prop_meta),
+                        "level": prop_meta.level_given,
+                        "access": _get_access(prop_meta.access),
+                        "uri": prop_meta.uri,
+                        "title": prop_meta.title,
+                        "description": prop_meta.description,
+                        "source": prop_meta.source,
+                        "prepare": prop_meta.prepare,
+                        "ref": _prop_ref_to_tabular(prop, prop_meta),
+                        "status": _get_title(prop_meta.status),
+                        "visibility": _get_visibility(prop_meta.visibility),
+                        "eli": prop_meta.eli,
+                        "count": prop_meta.count,
+                    },
+                )
+
+    sorted_datasets = sorted(models_by_dataset.values(), key=_dataset_sort_key)
+    for dataset_index, dataset_entry in enumerate(sorted_datasets):
+        dataset = dataset_entry["dataset"]
+        dataset_meta = dataset_entry["dataset_meta"]
+
+        if dataset_meta:
+            if lang := get_language():
+                dataset.set_current_language(lang)
+            yield to_row(
+                DATASET,
+                {
+                    "id": dataset_meta.uuid,
+                    "dataset": dataset_entry["dataset_name"],
+                    "level": dataset_meta.level_given,
+                    "access": _get_access(dataset_meta.access),
+                    "title": dataset.title,
+                    "description": dataset.description,
+                },
+            )
+
+        rendered_model_ids: set[int] = set()
+        base_models: list[dict] = []
+        for model_entry in dataset_entry["models"]:
+            base = model_entry["model"].base.model if model_entry["model"].base else None
+            if base and base.id not in dependent_model_ids:
+                base_meta = _pick_metadata(base.metadata.all(), base.metadata_version)
+                if base_meta:
+                    base_models.append(
+                        {
+                            "model": base,
+                            "meta": base_meta,
+                            "prop_names": set(),
+                        }
+                    )
+
+        for base_entry in sorted(base_models, key=_model_sort_key):
+            base_model = base_entry["model"]
+            base_meta = base_entry["meta"]
+            if base_model.id in rendered_model_ids:
+                continue
+            yield to_row(
+                DATASET,
+                {
+                    "id": base_meta.uuid,
+                    "model": _to_relative_model_name(base_meta.name, dataset),
+                    "level": base_meta.level_given,
+                    "access": _get_access(base_meta.access),
+                    "title": base_meta.title,
+                    "description": base_meta.description,
+                    "uri": base_meta.uri,
+                    "source": base_meta.source,
+                    "status": _get_title(base_meta.status),
+                    "visibility": _get_visibility(base_meta.visibility),
+                    "count": base_meta.count,
+                    "eli": base_meta.eli,
+                    "prepare": base_meta.prepare,
+                    "ref": base_meta.ref or "",
+                },
+            )
+            yield from _yield_pk_properties(base_model, base_meta, base_model.metadata_version)
+            rendered_model_ids.add(base_model.id)
+
+        current_base_key: tuple[int, int | None] | None = None
+        for model_entry in sorted(dataset_entry["models"], key=_model_sort_key):
+            model = model_entry["model"]
+            meta = model_entry["meta"]
+            if model.id in rendered_model_ids:
+                continue
+            next_base_key = None
+            if model.base:
+                base_version_id = model.metadata_version_id or model.base.metadata_version_id
+                next_base_key = (model.base.id, base_version_id)
+            if next_base_key != current_base_key:
+                if current_base_key is not None:
+                    yield from _end_marker("base")
+                if model.base:
+                    base_version = model.metadata_version or model.base.metadata_version
+                    yield from _base_to_tabular(model.base, version=base_version)
+                current_base_key = next_base_key
+            yield to_row(
+                DATASET,
+                {
+                    "id": meta.uuid,
+                    "model": _to_relative_model_name(meta.name, dataset),
+                    "level": meta.level_given,
+                    "access": _get_access(meta.access),
+                    "title": meta.title,
+                    "description": meta.description,
+                    "uri": meta.uri,
+                    "source": meta.source,
+                    "status": _get_title(meta.status),
+                    "visibility": _get_visibility(meta.visibility),
+                    "count": meta.count,
+                    "eli": meta.eli,
+                    "prepare": meta.prepare,
+                    "ref": meta.ref or "",
+                },
+            )
+            yield from _yield_pk_properties(model, meta, model.metadata_version)
+        if current_base_key is not None and dataset_index < len(sorted_datasets) - 1:
+            yield from _end_marker("base")
 
 
 def to_row(keys, values) -> Dict:
@@ -1256,7 +1498,6 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Versi
             for prop_list_item in model.property_list.all():
                 if prop_meta := prop_list_item.property.metadata.first():
                     prop_names.add(prop_meta.name)
-
             yield to_row(
                 DATASET,
                 {

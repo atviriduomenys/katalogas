@@ -8,7 +8,7 @@ from uuid import uuid4
 
 from django.contrib.contenttypes.fields import GenericRelation, GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
-from django.db import models
+from django.db import models, connection
 from django.db.models import Sum, QuerySet, Q
 from django.urls import reverse
 from django.utils.safestring import mark_safe
@@ -38,7 +38,7 @@ from vitrina.datasets.managers import (
 from vitrina.models import UUIDBaseModel
 from vitrina.orgs.models import Organization, Representative
 from vitrina.structure import VersionStatus
-from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem
+from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem, Version
 from vitrina.users.models import User
 from vitrina.datasets.tasks import update_applicable_legislation_description
 
@@ -1407,6 +1407,35 @@ class Dataset(Resource):
             documentations.append(documentation)
 
         self.documentation.set(documentations)
+
+    def get_dependent_models(self, version: Version | None = None) -> list[dict]:
+        """
+        Get dependent (child) models for this dataset by querying the
+        dsa_model_dependencies database view.
+        """
+        with connection.cursor() as cursor:
+            query = """
+                SELECT DISTINCT
+                    root_model_id,
+                    root_version_id,
+                    child_model_id,
+                    path,
+                    depth,
+                    root_dataset_id
+                FROM dsa_model_dependencies
+                WHERE root_dataset_id = %s
+            """
+            params = [self.id]
+
+            if version is not None:
+                query += " AND root_version_id = %s"
+                params.append(version.id)
+
+            query += " ORDER BY root_model_id, depth DESC, child_model_id"
+
+            cursor.execute(query, params)
+            columns = ["root_model_id", "root_version_id", "child_model_id", "path", "depth", "root_dataset_id"]
+            return [dict(zip(columns, row)) for row in cursor.fetchall()]
 
 
 class DatasetReport(Dataset):

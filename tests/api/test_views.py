@@ -33,6 +33,8 @@ from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.resources.factories import FileFormat
 from vitrina.utils import RevisionComment, RevisionSource
 
+from vitrina.api.helpers import _encode_xml_control_chars
+
 
 @pytest.mark.django_db
 def test_retrieve_catalog_list_without_api_key(app: DjangoTestApp):
@@ -2217,3 +2219,64 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     </dcat:Dataset>
 </rdf:RDF>"""
     )
+
+
+class EncodeXmlControlCharsTests(TestCase):
+    def test_encode_xml_control_chars_encodes_tabs(self):
+        result = _encode_xml_control_chars("Hello\tWorld")
+        self.assertEqual(result, "Hello&#x9;World")
+
+    def test_encode_xml_control_chars_encodes_multiple_tabs(self):
+        result = _encode_xml_control_chars("Col1\tCol2\tCol3")
+        self.assertEqual(result, "Col1&#x9;Col2&#x9;Col3")
+
+    def test_encode_xml_control_chars_no_tabs(self):
+        result = _encode_xml_control_chars("No tabs here")
+        self.assertEqual(result, "No tabs here")
+
+    def test_encode_xml_control_chars_empty_string(self):
+        result = _encode_xml_control_chars("")
+        self.assertEqual(result, "")
+
+
+class EdpDcatApRdfTabEncodingTests(TestCase):
+    def test_edp_dcat_ap_rdf_encodes_tabs_in_rights_statement(self):
+        organization = OrganizationFactory()
+        dataset = Dataset.objects.create(
+            title="Dataset with tabs",
+            access_rights=Dataset.PUBLIC,
+            deleted=None,
+            deleted_on=None,
+            organization_id=organization.pk,
+        )
+        DatasetDistributionFactory(
+            dataset=dataset,
+            conditions="Legal document\thttps://example.com/legal",
+        )
+
+        response = self.client.get(reverse("edp-dcat-ap-rdf"))
+
+        self.assertEqual(response.status_code, 200)
+
+        self.assertIn(b"&#x9;", response.content)
+        self.assertNotIn(b"Legal document\t", response.content)
+
+    def test_edp_dcat_ap_restricted_rdf_encodes_tabs_in_rights_statement(self):
+        organization = OrganizationFactory()
+        dataset = Dataset.objects.create(
+            title="Restricted Dataset with tabs",
+            access_rights=Dataset.RESTRICTED,
+            deleted=None,
+            deleted_on=None,
+            organization_id=organization.pk,
+        )
+        DatasetDistributionFactory(
+            dataset=dataset,
+            conditions="Document name\thttps://example.com/doc",
+        )
+
+        response = self.client.get(reverse("edp-dcat-ap-restricted-rdf"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(b"&#x9;", response.content)
+        self.assertNotIn(b"Document name\t", response.content)

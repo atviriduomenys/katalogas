@@ -48,7 +48,7 @@ from reversion import add_to_revision
 from reversion.models import Version
 
 from vitrina.structure.models import Version as _Version
-from vitrina.api.helpers import get_datasets_for_rdf
+from vitrina.api.helpers import render_rdf_response
 from vitrina.api.models import ApiKey
 from vitrina.comments.models import Comment
 from vitrina.datasets.forms import (
@@ -623,15 +623,7 @@ class DatasetRDFDownloadView(PermissionRequiredMixin, View):
         return has_perm(self.request.user, Action.VIEW, dataset)
 
     def get(self, request, **kwargs):
-        dataset = Dataset.objects.filter(pk=kwargs.get("pk"))
-        return render(
-            request,
-            "vitrina/api/edp/dcat_ap_rdf.html",
-            {
-                "datasets": get_datasets_for_rdf(dataset),
-            },
-            content_type="application/rdf+xml",
-        )
+        return render_rdf_response(request, Dataset.objects.filter(pk=kwargs.get("pk")))
 
 
 class OpenDataPortalDatasetDetailView(View):

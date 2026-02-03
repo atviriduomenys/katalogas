@@ -6997,5 +6997,5 @@ class TestStructureExportDependentModels:
         assert "OrphanModel" not in resp.text
 
         lines = resp.text.split("\r\n")
-        no_pk_model_line = [l for l in lines if "NoPkModel" in l][0]
+        no_pk_model_line = [line for line in lines if "NoPkModel" in line][0]
         assert no_pk_model_line == "11,,,,NoPkModel,,,,,,,,,,develop,,,,,,"

@@ -124,19 +124,7 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
     datasets = list(state.manifest.datasets.values())
     for order, meta in enumerate(datasets, 1):
         is_last = order == len(datasets)
-        # Import logic for handling dependency datasets:
-        # - Export with dependencies: dependent datasets appear first, main dataset is last
-        # - First import: dataset.name may be empty/generic, so can't match by name
-        # - Re-import: dataset.name matches the CSV name
-        #
-        # Process dataset if:
-        # 1. Name matches dataset.name (re-import case), OR
-        # 2. Is the last dataset (first import OR main dataset in export with dependencies)
-        #
-        # This automatically skips dependency datasets since they:
-        # - Don't match dataset.name (different datasets)
-        # - Are not last (main dataset is always last in export)
-        if meta.name != dataset.name and not is_last:
+        if not _should_process_manifest_dataset(meta, dataset, is_last):
             continue
         if (
             metadata := Metadata.objects.filter(content_type=ct, name=meta.name, metadata_version=metadata_version)
@@ -179,6 +167,25 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
         meta.delete()
 
     return metadata_version
+
+
+def _should_process_manifest_dataset(meta: struct.Dataset, dataset: Dataset, is_last: bool) -> bool:
+    """
+    Decide whether to process a manifest dataset entry, accounting for dependency exports.
+
+    - Export with dependencies: dependent datasets appear first, main dataset is last.
+    - First import: dataset.name may be empty/generic, so can't match by name.
+    - Re-import: dataset.name matches the CSV name.
+
+    Process dataset if:
+    1. Name matches dataset.name (re-import case), OR
+    2. Is the last dataset (first import OR main dataset in export with dependencies).
+
+    This automatically skips dependency datasets since they:
+    - Don't match dataset.name (different datasets).
+    - Are not last (main dataset is always last in export).
+    """
+    return meta.name == dataset.name or is_last
 
 
 def _load_prefixes(
@@ -1049,7 +1056,7 @@ def _dependent_models_to_tabular(dependent_models: list) -> Generator:
         .prefetch_related("metadata", "property_list__property__metadata", "base__metadata")
     )
 
-    def _pick_metadata(meta_qs, version: Version | None):
+    def _pick_metadata(meta_qs, version: Version | None) -> Metadata | None:
         if version is None:
             return meta_qs.first()
         return meta_qs.filter(metadata_version=version).first()
@@ -1106,11 +1113,11 @@ def _dependent_models_to_tabular(dependent_models: list) -> Generator:
             }
         )
 
-    def _dataset_sort_key(entry):
+    def _dataset_sort_key(entry: dict) -> str:
         dataset_name = entry["dataset_name"] or entry["dataset"].name or ""
         return dataset_name
 
-    def _model_sort_key(entry):
+    def _model_sort_key(entry: dict) -> tuple[int, str]:
         meta = entry["meta"]
         order = meta.order if meta.order is not None else 0
         return (order, meta.name)

@@ -1414,7 +1414,7 @@ class Dataset(Resource):
         dsa_model_dependencies database view.
         """
         with connection.cursor() as cursor:
-            query = """
+            model_dependency_query = """
                 SELECT DISTINCT
                     root_model_id,
                     root_version_id,
@@ -1424,14 +1424,29 @@ class Dataset(Resource):
                     root_dataset_id
                 FROM dsa_model_dependencies
                 WHERE root_dataset_id = %s
+                ORDER BY root_model_id, depth DESC, child_model_id
             """
-            params = [self.id]
+
+            versioned_model_dependency_query = """
+                SELECT DISTINCT
+                    root_model_id,
+                    root_version_id,
+                    child_model_id,
+                    path,
+                    depth,
+                    root_dataset_id
+                FROM dsa_model_dependencies
+                WHERE root_dataset_id = %s
+                    AND root_version_id = %s
+                ORDER BY root_model_id, depth DESC, child_model_id
+            """
 
             if version is not None:
-                query += " AND root_version_id = %s"
-                params.append(version.id)
-
-            query += " ORDER BY root_model_id, depth DESC, child_model_id"
+                query = versioned_model_dependency_query
+                params = [self.id, version.id]
+            else:
+                query = model_dependency_query
+                params = [self.id]
 
             cursor.execute(query, params)
             columns = ["root_model_id", "root_version_id", "child_model_id", "path", "depth", "root_dataset_id"]

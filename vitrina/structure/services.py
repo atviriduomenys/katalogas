@@ -1,5 +1,6 @@
 import csv
 import json
+import logging
 import uuid
 from io import StringIO
 from json import JSONDecodeError
@@ -48,6 +49,8 @@ from vitrina.structure.models import (
 )
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
+
+logger = logging.getLogger(__name__)
 
 
 def create_structure_objects(structure: DatasetStructure, metadata_version: Version = None) -> Version:
@@ -1066,6 +1069,12 @@ def _dependent_models_to_tabular(dependent_models: list) -> Generator:
     for model in models:
         meta = _pick_metadata(model.metadata.all(), model.metadata_version)
         if not meta:
+            logger.warning(
+                "Missing metadata for dependent model (model_id=%s, dataset_id=%s, metadata_version_id=%s).",
+                model.id,
+                model.dataset_id,
+                model.metadata_version_id,
+            )
             continue
         dependent_model_ids.add(model.id)
 

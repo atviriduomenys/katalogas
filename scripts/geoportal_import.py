@@ -197,6 +197,9 @@ def main():
                     )
                 geoportal_dataset_ids.append(dataset.pk)
 
+                # access rights
+                dataset.access_rights = Dataset.PUBLIC
+
                 # resource_subclass
                 dataset_resource_subclass = _get_elem("{%s}hierarchyLevel" % gmd, xml)
                 dataset_resource_subclass = _get_elem(
@@ -296,15 +299,6 @@ def main():
                             errors.append(
                                 f'Nerastas atnaujinimo periodiškumas: "{frequency_value.text}"'
                             )
-
-                # access rights
-                access_rights = dataset.access_rights
-                if "atviri duomenys" in keyword_list or "open data" in keyword_list:
-                    dataset.access_rights = Dataset.PUBLIC
-                else:
-                    dataset.access_rights = Dataset.RESTRICTED
-                if dataset.access_rights != access_rights:
-                    changed = True
 
                 # organization
                 if created:

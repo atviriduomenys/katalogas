@@ -6,7 +6,7 @@ from json import JSONDecodeError
 from typing import Union, Tuple, List, Dict, Generator
 
 import requests
-from django.db.models import Q, Prefetch
+from django.db.models import Q, Prefetch, QuerySet
 from pyproj import Transformer
 
 import vitrina.datasets.structure as struct
@@ -1056,7 +1056,7 @@ def _dependent_models_to_tabular(dependent_models: list) -> Generator:
         .prefetch_related("metadata", "property_list__property__metadata", "base__metadata")
     )
 
-    def _pick_metadata(meta_qs, version: Version | None) -> Metadata | None:
+    def _pick_metadata(meta_qs: QuerySet[Metadata], version: Version | None) -> Metadata | None:
         if version is None:
             return meta_qs.first()
         return meta_qs.filter(metadata_version=version).first()

@@ -1,0 +1,83 @@
+services:
+  katalogas:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command:
+      - ./auto-entrypoint.sh
+    environment:
+      - REDIS_URL=redis://katalogas-redis:6379/
+      - DATABASE_URL=postgres://admin:admin123@katalogas-database:5432/katalogas
+      - SEARCH_URL=elasticsearch://katalogas-elasticsearch:9200/haystack
+      - CELERY_BROKER_URL=redis://katalogas-redis:6379/3
+      - DEBUG=true
+      - DJANGO_SETTINGS_MODULE=vitrina.settings
+      - STATIC_ROOT=/app/static
+      - RUN_MODE=GUNICORN
+      - ALLOWED_HOSTS=*,127.0.0.0
+      - SPINTA_SERVER_URL=https://test.data.gov.lt
+      - SPINTA_SERVER_NAME='Test Data Gov'
+      - USE_OTP_VALIDATION=False
+    depends_on:
+      - katalogas-database
+      - katalogas-redis
+      - katalogas-elasticsearch
+    volumes:
+      - /tmp/static:/app/static
+
+  katalogas-elasticsearch:
+    image: elasticsearch:7.8.1
+    environment:
+      discovery.type: 'single-node'
+      indices.query.bool.max_clause_count: 8192
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
+
+  katalogas-database:
+    image: postgres:16
+    environment:
+      - POSTGRES_DB=katalogas
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin123
+    volumes:
+      - postgres:/var/lib/postgresql/data
+
+  katalogas-redis:
+    image: redis:latest
+    restart: always
+
+  katalogas-nginx:
+    build:
+      context: .
+      dockerfile: nginx/dev.Dockerfile
+    volumes:
+      - /tmp/static:/usr/share/nginx/html/static
+    ports:
+      - "80:80"
+
+  katalogas-celery:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: celery -A vitrina worker -l info
+    environment:
+      - REDIS_URL=redis://katalogas-redis:6379/
+      - DATABASE_URL=postgres://admin:admin123@katalogas-database:5432/katalogas
+      - SEARCH_URL=elasticsearch://katalogas-elasticsearch:9200/haystack
+      - CELERY_BROKER_URL=redis://katalogas-redis:6379/3
+      - DEBUG=true
+      - DJANGO_SETTINGS_MODULE=vitrina.settings
+      - STATIC_ROOT=/app/static
+      - RUN_MODE=GUNICORN
+      - ALLOWED_HOSTS=*,127.0.0.0
+      - SPINTA_SERVER_URL=https://test.data.gov.lt
+      - SPINTA_SERVER_NAME='Test Data Gov'
+      - USE_OTP_VALIDATION=False
+    depends_on:
+      - katalogas-redis
+      - katalogas-database
+    restart: always
+
+volumes:
+  postgres:
+  elasticsearch:

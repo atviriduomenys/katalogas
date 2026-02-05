@@ -134,7 +134,7 @@ urlpatterns = [
     path(
         "datasets/<int:pk>/data/<str:model>/table-data/",
         get_model_data,
-        name="model-data-table-data",  # not used
+        name="model-data-table-data",
     ),
     path(
         "datasets/<int:pk>/versions/<int:version_id>/data/<str:model>/<str:uuid>/",

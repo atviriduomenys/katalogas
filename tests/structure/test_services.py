@@ -135,6 +135,7 @@ def test_structure_datasets(app: DjangoTestApp):
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
         ",datasets/gov/ivpk/adp1,,,,,,,,,,,,,,,,,\n"
         ",datasets/gov/ivpk/adp2,,,,,,,,,,,,,,,,,\n"
+        ",datasets/gov/ivpk/adp3,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
 
@@ -144,10 +145,9 @@ def test_structure_datasets(app: DjangoTestApp):
     metadata = Metadata.objects.filter(
         content_type=ContentType.objects.get_for_model(Dataset), metadata_version=metadata_version
     )
-    assert metadata.count() == 2
+    assert metadata.count() == 1
     assert sorted(list(metadata.values_list("name", flat=True))) == [
-        "datasets/gov/ivpk/adp1",
-        "datasets/gov/ivpk/adp2",
+        "datasets/gov/ivpk/adp3",
     ]
 
 
@@ -480,7 +480,7 @@ def test_structure_with_existing_structure(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     metadata_version = create_structure_objects(structure)
-    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 10
+    assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=metadata_version).count() == 9
 
     new_manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"

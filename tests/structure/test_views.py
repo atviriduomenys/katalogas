@@ -6674,3 +6674,328 @@ class TestModelDelete:
 
         resp = app.get(reverse("model-delete", args=[dataset.pk, metadata_version.pk, "TestModel"]), expect_errors=True)
         assert resp.status_code == 405
+
+
+class TestStructureExportDependentModels:
+    def _create_manifest(self, manifest: str, title: str, description: str):
+        dataset = DatasetFactory(
+            title=title,
+            description=description,
+            metadata=False,
+        )
+        structure = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+        )
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        create_structure_objects(structure)
+        dataset.refresh_from_db()
+        return dataset
+
+    @pytest.mark.django_db
+    def test_structure_export_dependent_models(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        ref_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,\n"
+            "8,,,,Continent,,,id,,,,,,,,,,,\n"
+            "9,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "10,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+        )
+        ref_dataset = self._create_manifest(ref_manifest, "Referenced Dataset", "Dataset that will be referenced")
+
+        main_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
+            '3,,,,Country,,,"id,title",,,,,,,,,,,\n'
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "5,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
+        )
+        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Dataset with reference to other dataset")
+
+        country_model = Model.objects.get(dataset=main_dataset, metadata__name="datasets/gov/main/dataset/Country")
+        continent_model = Model.objects.get(dataset=ref_dataset, metadata__name="datasets/gov/ref/dataset/Continent")
+        assert country_model is not None
+        assert continent_model is not None
+
+        assert Property.objects.filter(
+            model=country_model,
+            ref_model=continent_model,
+        ).exists()
+
+        resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
+        assert resp.text == (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,Referenced Dataset,Dataset that will be referenced\r\n"
+            "8,,,,Continent,,,id,,,,,,,develop,,,,,,\r\n"
+            "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Dataset with reference to other dataset\r\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
+            '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
+            "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
+            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            ",,,,,,,,,,,,,,,,,,,,\r\n"
+        )
+
+    @pytest.mark.django_db
+    def test_structure_export_dependent_models_multiple_pk(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        ref_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,\n"
+            '8,,,,Continent,,,"id, title",,,,,,,,,,,\n'
+            "9,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "10,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+            "11,,,,,other,string,,,,5,,,open,dct:other,,,,\n"
+        )
+        self._create_manifest(ref_manifest, "Referenced Dataset", "Dataset that will be referenced")
+
+        main_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
+            '3,,,,Country,,,"id,title",,,,,,,,,,,\n'
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "5,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
+        )
+        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Dataset with reference to other dataset")
+
+        resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
+        assert resp.text == (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,Referenced Dataset,Dataset that will be referenced\r\n"
+            '8,,,,Continent,,,"id, title",,,,,,,develop,,,,,,\r\n'
+            "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "10,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Dataset with reference to other dataset\r\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
+            '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
+            "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
+            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            ",,,,,,,,,,,,,,,,,,,,\r\n"
+        )
+
+    @pytest.mark.django_db
+    def test_structure_export_dependent_models__depth_2(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        other_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "12,datasets/gov/other/dataset,,,,,,,,,,,,,,,,,\n"
+            "13,,,,Other,,,title,,,,,,,,,,,\n"
+            "14,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+            "15,,,,,other,string,,,,5,,,open,dct:other,,,,\n"
+        )
+        self._create_manifest(other_manifest, "Other Dataset", "Dependent dataset depth 2")
+        ref_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,\n"
+            '8,,,,Continent,,,"id, title",,,,,,,,,,,\n'
+            "9,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "10,,,,,title,ref,/datasets/gov/other/dataset/Other,,,5,,,open,dct:title,,,,\n"
+            "11,,,,,other,string,,,,5,,,open,dct:other,,,,\n"
+        )
+        self._create_manifest(ref_manifest, "Referenced Dataset", "Dependent dataset depth 1")
+
+        main_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
+            '3,,,,Country,,,"id,title",,,,,,,,,,,\n'
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "5,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
+        )
+        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Root dataset")
+
+        resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
+        assert resp.text == (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+            "12,datasets/gov/other/dataset,,,,,,,,,,,,,,,,,,Other Dataset,Dependent dataset depth 2\r\n"
+            "13,,,,Other,,,title,,,,,,,develop,,,,,,\r\n"
+            "14,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
+            "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,Referenced Dataset,Dependent dataset depth 1\r\n"
+            '8,,,,Continent,,,"id, title",,,,,,,develop,,,,,,\r\n'
+            "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "10,,,,,title,ref,datasets/gov/other/dataset/Other,,,,,,5,develop,,open,dct:title,,,\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Root dataset\r\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
+            '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
+            "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
+            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            ",,,,,,,,,,,,,,,,,,,,\r\n"
+        )
+
+    @pytest.mark.django_db
+    def test_structure_export_dependent_models__ref_non_existent(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        main_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
+            '3,,,,Country,,,"id,title",,,,,,,,,,,\n'
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "5,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
+        )
+        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Dataset with reference to other dataset")
+
+        resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
+        assert resp.text == (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Dataset with reference to other dataset\r\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
+            '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
+            "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
+            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            ",,,,,,,,,,,,,,,,,,,,\r\n"
+        )
+
+    @pytest.mark.django_db
+    def test_structure_export_dependent_models__with_base(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        ref_depth_1_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "7,datasets/gov/ref/d1,,,,,,,,,,,,,,,,,\n"
+            "8,,,,D1BaseModel,,,id,,,,,,,,,,,\n"
+            "9,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "10,,,,,prop1,string,,,,5,,,open,dct:prop1,,,,\n"
+            "11,,,D1BaseModel,,,,,,,,,,,,,,\n"
+            "12,,,,D1Model1,,,id,,,,,,,,,,,\n"
+            "13,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "14,,,,,prop1,string,,,,5,,,open,dct:prop1,,,,\n"
+            '15,,,,D1Model2,,,"id, prop2",,,,,,,,,,,\n'
+            "16,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "17,,,,,prop2,string,,,,5,,,open,dct:prop2,,,,\n"
+        )
+        self._create_manifest(ref_depth_1_manifest, "Referenced Dataset", "Dataset with reference to other dataset")
+        main_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
+            '3,,,,MainModel,,,"id,prop1",,,,,,,,,,,\n'
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "5,,,,,prop1,string,,,,5,,,open,dct:prop1,,,,\n"
+            "6,,,,,prop2,ref,/datasets/gov/ref/d1/D1Model1,,,5,,,open,dct:prop2,,,,\n"
+            "7,,,,,prop3,ref,/datasets/gov/ref/d1/D1Model2,,,5,,,open,dct:prop3,,,,\n"
+        )
+        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Dataset with reference to other dataset")
+        resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
+        assert resp.text == (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
+            "7,datasets/gov/ref/d1,,,,,,,,,,,,,,,,,,Referenced Dataset,Dataset with reference to other dataset\r\n"
+            "8,,,,D1BaseModel,,,id,,,,,,,develop,,,,,,\r\n"
+            "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "11,,,D1BaseModel,,,,,,,,,,,,,,,,,\r\n"
+            "12,,,,D1Model1,,,id,,,,,,,develop,,,,,,\r\n"
+            "13,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            '15,,,,D1Model2,,,"id, prop2",,,,,,,develop,,,,,,\r\n'
+            "16,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "17,,,,,prop2,string,,,,,,,5,develop,,open,dct:prop2,,,\r\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Dataset with reference to other dataset\r\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
+            '3,,,,MainModel,,,"id, prop1",,,,,,,develop,,,,,,\r\n'
+            "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
+            "5,,,,,prop1,string,,,,,,,5,develop,,open,dct:prop1,,,\r\n"
+            "6,,,,,prop2,ref,datasets/gov/ref/d1/D1Model1,,,,,,5,develop,,open,dct:prop2,,,\r\n"
+            "7,,,,,prop3,ref,datasets/gov/ref/d1/D1Model2,,,,,,5,develop,,open,dct:prop3,,,\r\n"
+            ",,,,,,,,,,,,,,,,,,,,\r\n"
+        )
+
+    @pytest.mark.django_db
+    def test_structure_export_dependent_models__non_pk_ref_not_followed(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        orphan_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "20,datasets/gov/orphan,,,,,,,,,,,,,,,,,\n"
+            "21,,,,Orphan,,,id,,,,,,,,,,,\n"
+            "22,,,,,id,integer,,,,5,,,open,,,,,\n"
+        )
+        self._create_manifest(orphan_manifest, "Orphan Dataset", "Should not be included")
+
+        ref_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "10,datasets/gov/ref,,,,,,,,,,,,,,,,,\n"
+            "11,,,,RefModel,,,id,,,,,,,,,,,\n"
+            "12,,,,,id,integer,,,,5,,,open,,,,,\n"
+            "13,,,,,non_pk_ref,ref,/datasets/gov/orphan/Orphan,,,5,,,open,,,,,\n"
+        )
+        self._create_manifest(ref_manifest, "Ref Dataset", "Has non-PK ref")
+
+        main_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main,,,,,,,,,,,,,,,,,\n"
+            "2,,,,Main,,,id,,,,,,,,,,,\n"
+            "3,,,,,id,integer,,,,5,,,open,,,,,\n"
+            "4,,,,,ref_prop,ref,/datasets/gov/ref/RefModel,,,5,,,open,,,,,\n"
+        )
+        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Root")
+
+        resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
+
+        assert "datasets/gov/ref" in resp.text
+        assert "RefModel" in resp.text
+        assert "datasets/gov/orphan" not in resp.text
+        assert "Orphan" not in resp.text
+
+    @pytest.mark.django_db
+    def test_structure_export_dependent_models__no_pk_included_but_no_traversal(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        orphan_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "20,datasets/gov/orphan,,,,,,,,,,,,,,,,,\n"
+            "21,,,,OrphanModel,,,id,,,,,,,,,,,\n"
+            "22,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
+        )
+        self._create_manifest(orphan_manifest, "Orphan Dataset", "Should NOT be included - no path through no-PK model")
+
+        ref_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "10,datasets/gov/ref,,,,,,,,,,,,,,,,,\n"
+            "11,,,,NoPkModel,,,,,,,,,,,,,,\n"  # No PK defined (empty ref column)
+            "12,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
+            "13,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
+            "14,,,,,orphan_ref,ref,/datasets/gov/orphan/OrphanModel,,,5,,,open,dct:orphan,,,,\n"
+        )
+        self._create_manifest(ref_manifest, "Ref Dataset", "Has no PK, refs to orphan")
+
+        main_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main,,,,,,,,,,,,,,,,,\n"
+            "2,,,,MainModel,,,id,,,,,,,,,,,\n"
+            "3,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
+            "4,,,,,no_pk_ref,ref,/datasets/gov/ref/NoPkModel,,,5,,,open,dct:ref,,,,\n"
+        )
+        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Root")
+
+        resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
+
+        assert "datasets/gov/ref" in resp.text
+        assert "NoPkModel" in resp.text
+
+        assert "datasets/gov/orphan" not in resp.text
+        assert "OrphanModel" not in resp.text
+
+        lines = resp.text.split("\r\n")
+        no_pk_model_line = [line for line in lines if "NoPkModel" in line][0]
+        assert no_pk_model_line == "11,,,,NoPkModel,,,,,,,,,,develop,,,,,,"

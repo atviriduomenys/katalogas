@@ -14,6 +14,10 @@ https://github.com/atviriduomenys/spinta/issues/1656
 
 - Add endpoints for Agreement and Client synchronization
 
+https://github.com/atviriduomenys/katalogas/issues/2276
+
+- Export dependent models in Dataset structure.
+
 Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/2296

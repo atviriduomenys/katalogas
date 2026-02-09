@@ -12,13 +12,15 @@
             {% for org in orgs %}
             <div class="column is-flex">
                 <div class="card">
+                  {% if org.image %}
+                  <div class="card-image">
+                      <figure class="image is-3by2">
+                          <img src="{{ org.image|thumbnail_url:'list' }}" alt="{{ org.title }}">
+                      </figure>
+                  </div>
+                  {% endif %}
                   <div class="card-content">
                     <div class="content">
-                        {% if org.image %}
-                        <figure class="image is-3by2">
-                            <img src="{{ org.image|thumbnail_url:'list' }}" alt="{{ org.title }}">
-                        </figure>
-                        {% endif %}
                         <p>
                           <a href="{{ org.get_absolute_url }}" class="has-text-info-dark is-size-5">
                             {{ org.title }}

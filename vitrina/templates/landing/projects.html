@@ -13,24 +13,26 @@
             {% for project in projects %}
             <div class="column is-flex">
                 <div class="card">
+                  {% if project.image %}
+                  <div class="card-image">
+                      <figure class="image is-3by2">
+                          <img src="{{ project.image|thumbnail_url:'list' }}" alt="{{ project.get_title }}">
+                      </figure>
+                  </div>
+                  {% endif %}
                   <div class="card-content">
                     <div class="content">
-                        {% if project.image %}
-                        <figure class="image is-3by2">
-                            <img src="{{ project.image|thumbnail_url:'list' }}" alt="{{ project.get_title }}">
-                        </figure>
-                        {% endif %}
                         <p>
                           <a href="{{ project.get_absolute_url }}" class="has-text-info-dark is-size-5">
                             {{ project.get_title }}
                           </a>
                         </p>
-                        <p>
-                          <span class="icon is-small">
-                            <i class="fas fa-thumbs-up"></i>
-                            &nbsp;{{ project.get_likes }}
-                          </span>
-                        </p>
+                    </div>
+                    <div class="card-actions">
+                        <span class="icon is-small">
+                          <i class="fas fa-thumbs-up"></i>
+                          &nbsp;{{ project.get_likes }}
+                        </span>
                     </div>
                   </div>
                 </div>

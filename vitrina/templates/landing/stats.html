@@ -15,13 +15,15 @@
           {% for stat_route in stat_routes %}
             <div class="column is-flex">
               <div class="card">
-                <div class="card-content">
-                  <div class="content">
-                    {% if stat_route.image %}
+                {% if stat_route.image %}
+                <div class="card-image">
                     <figure class="image is-3by2">
                         <img src="{{ stat_route.image|thumbnail_url:'list' }}" alt="{{ stat_route.title }}">
                     </figure>
-                    {% endif %}
+                </div>
+                {% endif %}
+                <div class="card-content">
+                  <div class="content">
                     <p>
                       <a href="{{ stat_route.url }}" class="has-text-info-dark is-size-5">
                         {{ stat_route.title }}
@@ -31,7 +33,7 @@
                        {{ stat_route.description }}
                     </p>
                   </div>
-                  <div class="content has-text-right">
+                  <div class="card-actions has-text-right">
                     <a href="{{ stat_route.url }}" class="button">
                       <span>{% translate "Rodyti" %}</span>
                       <span class="icon is-small">

@@ -27,7 +27,7 @@
             <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
         </dcatap:applicableLegislation>
         {% for category in dataset.hvd_categories %}
-        <dcat:hvdCategory>
+        <dcatap:hvdCategory>
             {% if category.uri %}
             <skos:Concept rdf:about="{{ category.uri|cut:' ' }}"/>
             {% else %}
@@ -37,7 +37,7 @@
                 {% endfor %}
             </skos:Concept>
             {% endif %}
-        </dcat:hvdCategory>
+        </dcatap:hvdCategory>
         {% endfor %}
         {% endif %}
         {% for category in dataset.categories %}
@@ -123,7 +123,7 @@
             <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
         </dcatap:applicableLegislation>
         {% for category in dataset.hvd_categories %}
-        <dcat:hvdCategory>
+        <dcatap:hvdCategory>
             {% if category.uri %}
             <skos:Concept rdf:about="{{ category.uri|cut:' ' }}"/>
             {% else %}
@@ -133,7 +133,7 @@
                 {% endfor %}
             </skos:Concept>
             {% endif %}
-        </dcat:hvdCategory>
+        </dcatap:hvdCategory>
         {% endfor %}
         {% endif %}
         {% for category in dataset.categories %}

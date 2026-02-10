@@ -4552,9 +4552,13 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     assert info["summary"] == structure.dataset.title, "Info summary should match dataset title"
     assert info["description"] == structure.dataset.description, "Info description should match dataset description"
     assert info["version"] == "1.0.0", "API version should be 1.0.0"
-
     schemas = set(openapi_spec["components"]["schemas"].keys())
-    expected_schemas = {"Country", "CountryCollection", "CountryChange", "CountryChanges"}
+    expected_schemas = {
+        "datasets_gov_ivpk_adp_Country",
+        "datasets_gov_ivpk_adp_CountryCollection",
+        "datasets_gov_ivpk_adp_CountryChange",
+        "datasets_gov_ivpk_adp_CountryChanges",
+    }
     assert expected_schemas <= schemas, f"Missing required schemas: {expected_schemas - schemas}"
 
     tag_names = {tag["name"] for tag in openapi_spec["tags"]}
@@ -4572,6 +4576,57 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     assert actual_paths == expected_paths, (
         f"Paths mismatch. Missing: {expected_paths - actual_paths}, Extra: {actual_paths - expected_paths}"
     )
+
+
+@pytest.mark.django_db
+def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
+    """Test OpenAPI manifest export returns valid spec with correct metadata, schemas, tags, and paths."""
+
+    city_manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/test/city,,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,id,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+    )
+    city_structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=city_manifest))
+    )
+    city_structure.dataset.current_structure = city_structure
+    city_structure.dataset.save()
+    create_structure_objects(city_structure, city_structure.dataset.metadata.first().metadata_version)
+
+    main_manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,city,ref,/datasets/gov/test/city/City,,,,5,,,private,dct:title,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=main_manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+    resp = app.get(reverse("dataset-structure-export-openapi", args=[structure.dataset.pk, version.pk]))
+
+    assert resp.status_code == 200
+    assert resp.content_type == "application/json"
+
+    openapi_spec = resp.json
+    schemas = set(openapi_spec["components"]["schemas"].keys())
+    assert "datasets_gov_test_city_City" in schemas, "City schema should be included in the spec"
+    paths = openapi_spec["paths"]
+    assert "datasets/gov/test/city/City" not in paths, "City should not be included in the paths"
 
 
 @pytest.mark.django_db

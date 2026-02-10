@@ -1805,14 +1805,11 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
         version = self.metadata_version or self.dataset.latest_version()
         manifest_stream = _export_dataset_structure_to_stringio(self.dataset, version=version)
         main_dataset_name = self._get_main_dataset_name(manifest_stream, self.dataset)
-        
+
         manifest_stream.seek(0)
         manifest_path = ManifestPath(file=manifest_stream)
-        
-        openapi_spec = create_openapi_manifest(
-            manifest_path,
-            main_dataset_name=main_dataset_name
-        )
+
+        openapi_spec = create_openapi_manifest(manifest_path, main_dataset_name=main_dataset_name)
 
         response = JsonResponse(openapi_spec, json_dumps_params={"indent": 2, "ensure_ascii": False})
         response["Content-Disposition"] = "attachment; filename=manifest.json"
@@ -1829,7 +1826,7 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
             return None
         _, meta = datasets[0]
         return meta.name
-        
+
         return None
 
 

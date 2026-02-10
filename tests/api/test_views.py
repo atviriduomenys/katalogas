@@ -2191,9 +2191,9 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
         <dcatap:applicableLegislation>
             <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
         </dcatap:applicableLegislation>
-        <dcat:hvdCategory>
+        <dcatap:hvdCategory>
             <skos:Concept rdf:about="http://data.europa.eu/bna/c_dd313021"/>
-        </dcat:hvdCategory>
+        </dcatap:hvdCategory>
         <dcat:theme>
             <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         </dcat:theme>

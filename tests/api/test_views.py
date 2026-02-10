@@ -33,6 +33,8 @@ from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.resources.factories import FileFormat
 from vitrina.utils import RevisionComment, RevisionSource
 
+from vitrina.api.helpers import _encode_xml_control_chars
+
 
 @pytest.mark.django_db
 def test_retrieve_catalog_list_without_api_key(app: DjangoTestApp):
@@ -2217,3 +2219,45 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     </dcat:Dataset>
 </rdf:RDF>"""
     )
+
+
+@pytest.mark.parametrize(
+    "input_str, expected",
+    [
+        ("Hello\tWorld", "Hello&#x9;World"),
+        ("Col1\tCol2\tCol3", "Col1&#x9;Col2&#x9;Col3"),
+        ("No tabs here", "No tabs here"),
+        ("", ""),
+    ],
+)
+def test_encode_xml_control_chars(input_str, expected):
+    assert _encode_xml_control_chars(input_str) == expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "access_rights, url_name",
+    [
+        (Dataset.PUBLIC, "edp-dcat-ap-rdf"),
+        (Dataset.RESTRICTED, "edp-dcat-ap-restricted-rdf"),
+    ],
+)
+def test_edp_dcat_ap_rdf_encodes_tabs_in_rights_statement(app: DjangoTestApp, access_rights, url_name):
+    organization = OrganizationFactory()
+    dataset = Dataset.objects.create(
+        title="Dataset with tabs",
+        access_rights=access_rights,
+        deleted=None,
+        deleted_on=None,
+        organization_id=organization.pk,
+    )
+    DatasetDistributionFactory(
+        dataset=dataset,
+        conditions="Legal document\thttps://example.com/legal",
+    )
+
+    response = app.get(reverse(url_name))
+
+    assert response.status_code == 200
+    assert b"&#x9;" in response.content
+    assert b"Legal document\t" not in response.content

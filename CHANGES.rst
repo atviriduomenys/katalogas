@@ -24,6 +24,10 @@ https://github.com/atviriduomenys/katalogas/issues/2296
 
 - Fixed menu-items in Organization and Dataset views.
 
+https://github.com/atviriduomenys/katalogas/issues/2326
+
+- Encode TAB spaces for RDF exports.
+
 https://github.com/atviriduomenys/katalogas/issues/2340
 
 - Card content alignment fixes in home page.

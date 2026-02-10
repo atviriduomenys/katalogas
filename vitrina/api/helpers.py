@@ -1,5 +1,9 @@
 from typing import Optional
 
+from django.db.models import QuerySet
+from django.http import HttpRequest, HttpResponse
+from django.template.loader import render_to_string
+
 from vitrina.datasets.models import Dataset, Relation, DatasetRelation, DatasetGroup
 from vitrina.datasets.services import DynamicResourceService
 from vitrina.resources.models import DatasetDistribution as Distribution
@@ -8,6 +12,9 @@ from vitrina.resources.models import FormatName
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
 from vitrina.classifiers.models import Licence
+
+
+DCAT_AP_RDF_TEMPLATE_NAME = "vitrina/api/edp/dcat_ap_rdf.html"
 
 
 def get_datasets_for_rdf(qs):
@@ -71,6 +78,20 @@ def get_datasets_for_rdf(qs):
             "subclass": dataset.subclass,
             "is_hvd": dataset.is_hvd,
         }
+
+
+def _encode_xml_control_chars(content: str) -> str:
+    return content.replace("\t", "&#x9;")
+
+
+def render_rdf_response(request: HttpRequest, datasets: QuerySet[Dataset]) -> HttpResponse:
+    content = render_to_string(
+        DCAT_AP_RDF_TEMPLATE_NAME,
+        {"datasets": get_datasets_for_rdf(datasets)},
+        request=request,
+    )
+    content = _encode_xml_control_chars(content)
+    return HttpResponse(content, content_type="application/rdf+xml")
 
 
 def _get_distribution(dataset: Dataset, dist: Distribution):

@@ -2,7 +2,6 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.utils import IntegrityError
 from django.http import HttpRequest
 from django.http import HttpResponse
-from django.shortcuts import render
 from django.templatetags.static import static
 from django.utils import timezone
 from django.apps import apps
@@ -26,7 +25,7 @@ from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from reversion import set_user
 
-from vitrina.api.helpers import get_datasets_for_rdf
+from vitrina.api.helpers import render_rdf_response
 from vitrina.api.models import ApiDescription
 from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
 from vitrina.api.serializers import (
@@ -746,26 +745,9 @@ class DatasetModelDownloadViewSet(CreateModelMixin, UpdateModelMixin, GenericVie
         return Response(serializer.data, status=status.HTTP_200_OK, headers=headers)
 
 
-DCAT_AP_RDF_TEMPLATE_NAME = "vitrina/api/edp/dcat_ap_rdf.html"
-
-
 def edp_dcat_ap_rdf(request: HttpRequest) -> HttpResponse:
-    return render(
-        request,
-        DCAT_AP_RDF_TEMPLATE_NAME,
-        {
-            "datasets": get_datasets_for_rdf(Dataset.edp_public.all()),
-        },
-        content_type="application/rdf+xml",
-    )
+    return render_rdf_response(request, Dataset.edp_public.all())
 
 
 def edp_dcat_ap_restricted_rdf(request: HttpRequest) -> HttpResponse:
-    return render(
-        request,
-        DCAT_AP_RDF_TEMPLATE_NAME,
-        {
-            "datasets": get_datasets_for_rdf(Dataset.edp_restricted.all()),
-        },
-        content_type="application/rdf+xml",
-    )
+    return render_rdf_response(request, Dataset.edp_restricted.all())

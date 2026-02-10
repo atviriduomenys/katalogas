@@ -124,11 +124,7 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
     )
     loaded_metadata = []
     _clean_errors(dataset.current_structure)
-    datasets = list(state.manifest.datasets.values())
-    for order, meta in enumerate(datasets, 1):
-        is_last = order == len(datasets)
-        if not _should_process_manifest_dataset(meta, dataset, is_last):
-            continue
+    for order, meta in _get_manifest_datasets_to_process(state, dataset):
         if (
             metadata := Metadata.objects.filter(content_type=ct, name=meta.name, metadata_version=metadata_version)
             .exclude(dataset=dataset)
@@ -172,9 +168,9 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
     return metadata_version
 
 
-def _should_process_manifest_dataset(meta: struct.Dataset, dataset: Dataset, is_last: bool) -> bool:
+def _get_manifest_datasets_to_process(state: struct.State, dataset: Dataset) -> list[tuple[int, struct.Dataset]]:
     """
-    Decide whether to process a manifest dataset entry, accounting for dependency exports.
+    Get manifest datasets to process, accounting for dependency exports.
 
     - Export with dependencies: dependent datasets appear first, main dataset is last.
     - First import: dataset.name may be empty/generic, so can't match by name.
@@ -188,7 +184,13 @@ def _should_process_manifest_dataset(meta: struct.Dataset, dataset: Dataset, is_
     - Don't match dataset.name (different datasets).
     - Are not last (main dataset is always last in export).
     """
-    return meta.name == dataset.name or is_last
+    datasets = list(state.manifest.datasets.values())
+    result: list[tuple[int, struct.Dataset]] = []
+    for order, meta in enumerate(datasets, 1):
+        is_last = order == len(datasets)
+        if meta.name == dataset.name or is_last:
+            result.append((order, meta))
+    return result
 
 
 def _load_prefixes(

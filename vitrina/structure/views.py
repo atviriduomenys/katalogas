@@ -1,6 +1,8 @@
+import csv
 import datetime
 import uuid
 import json
+from io import StringIO
 from typing import List, Union
 from urllib import parse
 from urllib.parse import unquote, urlencode
@@ -74,12 +76,14 @@ from vitrina.structure.services import (
     get_data_from_spinta,
     export_dataset_structure,
     _export_dataset_structure_to_stringio,
+    _get_manifest_datasets_to_process,
     get_model_name,
     get_srid,
     transform_coordinates,
     get_data_from_spinta_async,
     get_allowed_visibilities,
 )
+from vitrina.datasets.structure import read as read_structure
 from vitrina.tasks.models import Task
 from spinta.manifests.open_api.helpers import create_openapi_manifest
 from spinta.manifests.components import ManifestPath
@@ -1800,12 +1804,33 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
     def get(self, request, *args, **kwargs):
         version = self.metadata_version or self.dataset.latest_version()
         manifest_stream = _export_dataset_structure_to_stringio(self.dataset, version=version)
+        main_dataset_name = self._get_main_dataset_name(manifest_stream, self.dataset)
+        
+        manifest_stream.seek(0)
         manifest_path = ManifestPath(file=manifest_stream)
-        openapi_spec = create_openapi_manifest(manifest_path)
+        
+        openapi_spec = create_openapi_manifest(
+            manifest_path,
+            main_dataset_name=main_dataset_name
+        )
 
         response = JsonResponse(openapi_spec, json_dumps_params={"indent": 2, "ensure_ascii": False})
         response["Content-Disposition"] = "attachment; filename=manifest.json"
         return response
+
+    def _get_main_dataset_name(self, manifest_stream: StringIO, dataset: Dataset) -> str | None:
+        """
+        Identify the main dataset name from the exported manifest.
+        """
+        manifest_stream.seek(0)
+        state = read_structure(csv.DictReader(manifest_stream))
+        datasets = _get_manifest_datasets_to_process(state, dataset)
+        if not datasets:
+            return None
+        _, meta = datasets[0]
+        return meta.name
+        
+        return None
 
 
 class EnumCreateView(PermissionRequiredMixin, CreateView):

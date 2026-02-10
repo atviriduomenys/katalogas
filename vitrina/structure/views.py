@@ -1137,6 +1137,7 @@ class ModelDataView(
         context["dataset"] = self.object
         context["model"] = self.model
         context["models"] = self.models
+        context["version_id"] = self.metadata_version.pk
         context["can_view_members"] = has_perm(
             self.request.user,
             Action.VIEW,

@@ -319,6 +319,48 @@ def test_model_data_with_string_operators(app: DjangoTestApp, operator: str):
     assert resp.context["selected_cols"] == ["prop_1"]
 
 
+def test_model_data_page_contains_correct_table_url(client):
+    user = UserFactory(is_staff=True)
+    client.force_login(user)
+
+    dataset = DatasetFactory(metadata="test/dataset")
+    dataset_metadata = Metadata.objects.get(object_id=dataset.pk, dataset=dataset)
+    version = dataset_metadata.metadata_version
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+
+    resp = client.get(
+        reverse(
+            "model-data",
+            kwargs={
+                "pk": dataset.pk,
+                "version_id": version.pk,
+                "model": model.name,
+            },
+        )
+    )
+
+    assert resp.status_code == 200
+
+    expected_url = reverse(
+        "model-data-table",
+        kwargs={
+            "pk": dataset.pk,
+            "version_id": version.pk,
+            "model": model.name,
+        },
+    )
+
+    assert expected_url in resp.content.decode()
+
+
 @pytest.mark.django_db
 def test_object_data(app: DjangoTestApp):
     version = VersionFactory()

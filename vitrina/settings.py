@@ -84,11 +84,6 @@ OAUTH_AGENT_DEFAULT_SCOPES = (
     "uapi:/datasets/gov/vssa/dcat/Version/:getall",
 )
 
-SPINTA_EXECUTABLE = BASE_DIR / env("SPINTA_EXECUTABLE")
-SPINTA_SERVER_URL = env("SPINTA_SERVER_URL")
-SPINTA_SERVER_NAME = env("SPINTA_SERVER_NAME")
-SPINTA_PATH = BASE_DIR / env("SPINTA_PATH")
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = env.bool("DEBUG", default=False)
 
@@ -481,9 +476,12 @@ TRANSLATION_CLIENT_ID = env("TRANSLATION_CLIENT_ID", default="")
 TRANSLATION_URL = env("TRANSLATION_URL", default="https://vertimas.vu.lt/ws/service.svc/json/Translate")
 TRANSLATION_REQUEST_TIMEOUT = env("TRANSLATION_REQUEST_TIMEOUT", default=1)
 
-SPINTA_SERVER_URL = env("SPINTA_SERVER_URL", default="https://get-test.data.gov.lt")
+SPINTA_SERVER_NAME = env("SPINTA_SERVER_NAME", default="https://get.data.gov.lt")
+SPINTA_SERVER_URL = env("SPINTA_SERVER_URL", default="https://get.data.gov.lt")
 SPINTA_SERVER_CLIENT_ID = env("SPINTA_SERVER_CLIENT_ID", default="")
 SPINTA_SERVER_CLIENT_SECRET = env("SPINTA_SERVER_CLIENT_SECRET", default="")
+SPINTA_EXECUTABLE = BASE_DIR / env("SPINTA_EXECUTABLE", default="spinta-env/bin/spinta")
+SPINTA_PATH = BASE_DIR / env("SPINTA_PATH", default="spinta-env/data")
 
 SECURE_HSTS_SECONDS = 63072000  # 2 years (recommended for HSTS preload list)
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True

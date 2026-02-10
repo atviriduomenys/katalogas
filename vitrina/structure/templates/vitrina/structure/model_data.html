@@ -35,10 +35,9 @@
 
 {% block scripts %}
     <script type="text/javascript">
-
+        const MODEL_DATA_TABLE_URL = "{% url 'model-data-table' pk=dataset.pk version_id=version_id model=model.name %}";
         $(function () {
             let datasetId = {{ dataset.pk }};
-            let model = "{{model.name}}";
             let modelFullName = "{{model.full_name}}";
             modelFullName = modelFullName.replaceAll('/', '-')
             let search = location.search;
@@ -47,7 +46,7 @@
                 url: `/datasets/${datasetId}/data/${modelFullName}/table-data/${search}`,
             }).then(response => {
                 $.ajax({
-                    url: `/datasets/${datasetId}/data/${model}/table/`,
+                    url: `${MODEL_DATA_TABLE_URL}`,
                     type: "POST",
                     data: {
                         'csrfmiddlewaretoken': '{{csrf_token }}',

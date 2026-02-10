@@ -32,6 +32,11 @@ https://github.com/atviriduomenys/katalogas/issues/2340
 
 - Card content alignment fixes in home page.
 
+https://github.com/atviriduomenys/katalogas/issues/2332
+
+- Use correct url for AJAX requests in `model_data.html`.
+- Clean `SPINTA_*` variables in `settings.py`.
+
 v 1.13.0 (2026-01-26)
 ==================
 

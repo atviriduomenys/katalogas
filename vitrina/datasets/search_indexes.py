@@ -1,7 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
 from django.db.models import Prefetch, Exists, OuterRef
 from vitrina.resources.models import DatasetDistribution
-from vitrina.structure.models import Model
+from vitrina.structure.models import Model, Property
 from haystack.fields import (
     CharField,
     IntegerField,
@@ -105,12 +105,17 @@ class DatasetIndex(SearchIndex, Indexable):
                 "organization__representatives",
                 "project_set",
                 Prefetch(
-                    "datasetdistribution_set", queryset=DatasetDistribution.objects.prefetch_related("translations")
+                    "datasetdistribution_set",
+                    queryset=DatasetDistribution.objects.select_related("format").prefetch_related("translations"),
                 ),
                 Prefetch(
                     "model_set",
                     queryset=Model.objects.prefetch_related(
-                        "model_properties",
+                        "metadata",
+                        Prefetch(
+                            "model_properties",
+                            queryset=Property.objects.prefetch_related("metadata"),
+                        ),
                     ),
                 ),
                 Prefetch("dataset_request", queryset=Request.objects.prefetch_related("translations")),

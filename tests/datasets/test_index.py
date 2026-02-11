@@ -7,16 +7,25 @@ import pytest
 
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
+from vitrina.projects.factories import ProjectFactory
+from vitrina.requests.factories import RequestFactory
+from vitrina.resources.factories import DatasetDistributionFactory
+from vitrina.structure.factories import ModelFactory, PropertyFactory
 
 
 @pytest.mark.django_db
 class TestDatasetIndexQuery:
-    QUERY_COUNT_THRESHOLD = 16
+    QUERY_COUNT_THRESHOLD = 23
 
     def test_bulk_index_query_count(self):
         datasets_to_create = 5
         for _ in range(datasets_to_create):
-            DatasetFactory()
+            dataset = DatasetFactory()
+            DatasetDistributionFactory(dataset=dataset)
+            model = ModelFactory(metadata_version__dataset=dataset)
+            PropertyFactory(model=model, metadata_version=model.metadata_version)
+            RequestFactory(dataset=dataset)
+            ProjectFactory(datasets=[dataset])
 
         ui = connections["default"].get_unified_index()
         index = ui.get_index(Dataset)

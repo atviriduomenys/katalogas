@@ -766,7 +766,7 @@ class Dataset(Resource):
         return list(group_pks)
 
     def get_excluded_groups(self) -> list[int]:
-        return [excluded_groups.group_id for excluded_groups in self.excluded_groups.all()]
+        return [excluded_group.group_id for excluded_group in self.excluded_groups.all()]
 
     def get_parent_organization_title(self):
         if self.organization:

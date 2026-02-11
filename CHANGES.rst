@@ -18,6 +18,10 @@ https://github.com/atviriduomenys/katalogas/issues/2276
 
 - Export dependent models in Dataset structure.
 
+https://github.com/atviriduomenys/katalogas/issues/2378
+
+- Adding a connection-check endpoint.
+
 Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/2296

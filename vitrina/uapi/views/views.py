@@ -1,4 +1,5 @@
 import uuid
+from http import HTTPStatus
 from typing import Any
 
 from django.contrib.contenttypes.models import ContentType
@@ -15,7 +16,7 @@ from rest_framework.request import Request
 from rest_framework.serializers import Serializer
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ViewSet
 
 from vitrina.api.serializers import PostDatasetDistributionSerializer
 from vitrina.datasets.models import Dataset, DatasetStructure, DCATResourceSubclass
@@ -25,7 +26,8 @@ from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.models import Metadata, Version
 from vitrina.structure.services import create_structure_objects, export_dataset_structure
-from vitrina.uapi.models import Agent
+from vitrina.uapi import HTTPMethods, PossibleResults
+from vitrina.uapi.models import Agent, RequestHistory
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer
 from vitrina.uapi.serializers.serializers import (
     UAPIDatasetSerializer,
@@ -36,9 +38,34 @@ from vitrina.uapi.serializers.serializers import (
     UAPIVersionSerializer,
     VersionQueryParameterSerializer,
     UAPIAgentSerializer,
+    ConnectionCheckSerializer,
 )
 from vitrina.uapi.utils.utils import extract_type_from_url
 from vitrina.uapi.views.mixins import AgentAuthViewSetMixin, UAPIExceptionHandlerMixin
+
+
+class ConnectionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ViewSet):
+    @action(detail=False, methods=["post"])
+    def check(self, request: Request, *args: Any, **kwargs: Any) -> Response:
+        serializer = ConnectionCheckSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        agent = get_object_or_404(
+            Agent, is_archived=False, organization=self.request.organization, oauth_client_id=self.request.auth["sub"]
+        )
+        # TODO: Currently hard-coding the logging;
+        #   Implement a better solution in the future: https://github.com/atviriduomenys/katalogas/issues/1896.
+        RequestHistory.objects.create(
+            agent=agent,
+            endpoint=request.build_absolute_uri(),
+            method=HTTPMethods(self.request.method.upper()),
+            http_result=HTTPStatus.NO_CONTENT,
+            result=PossibleResults.STATUS_ALIVE,
+            details=f"Spinta: {serializer.validated_data['spinta_version']}",
+            error=None,
+        )
+
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class DatasetViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSet):

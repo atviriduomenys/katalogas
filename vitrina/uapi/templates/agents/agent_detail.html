@@ -260,12 +260,14 @@ backends:
                 <th>
                     {% translate "Tipas" %}
                 </th>
-
                 <th>
                     {% translate "Adresas" %}
                 </th>
                 <th>
                     {% translate "Rezultatas" %}
+                <th>
+                    {% translate "Informacija" %}
+                </th>
                 <th>
                     {% translate "Klaidos pranešimas" %}
                 </th>
@@ -281,7 +283,7 @@ backends:
                             </a>
                         </td>
                         <td>{{ request.method }}</td>
-                        <td>{{ request.endpoint|truncatechars:40 }}</td>
+                        <td title="{{ request.endpoint }}">{{ request.endpoint|truncatechars:20 }}</td>
                         <td>
                             {% if request.result in "UPDATED STATUS_ALIVE UPDATED_WITHOUT_CHANGES UPDATED_WITH_CONFLICT" %}
                                 <span class="has-text-success">
@@ -293,6 +295,13 @@ backends:
                                     <i class="fas fa-exclamation-circle"></i>
                                     {% translate "Nesėkminga" %}
                                 </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if request.details %}
+                                {{ request.details|truncatechars:20 }}
+                            {% else %}
+                                -
                             {% endif %}
                         </td>
                         <td class="has-text-info has-text-weight-semibold is-size-6">

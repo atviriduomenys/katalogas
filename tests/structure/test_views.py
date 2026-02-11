@@ -4531,6 +4531,8 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+    version.external_version = "1.0.0"
+    version.save()
 
     ct = ContentType.objects.get_for_model(structure.dataset)
     representative = RepresentativeFactory(

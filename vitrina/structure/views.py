@@ -1809,7 +1809,11 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
         manifest_stream.seek(0)
         manifest_path = ManifestPath(file=manifest_stream)
 
-        openapi_spec = create_openapi_manifest(manifest_path, main_dataset_name=main_dataset_name)
+        openapi_spec = create_openapi_manifest(
+            manifest_path,
+            main_dataset_name=main_dataset_name,
+            api_version=version.external_version or "draft",
+        )
 
         response = JsonResponse(openapi_spec, json_dumps_params={"indent": 2, "ensure_ascii": False})
         response["Content-Disposition"] = "attachment; filename=manifest.json"

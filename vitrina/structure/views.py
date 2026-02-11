@@ -1827,8 +1827,6 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
         _, meta = datasets[0]
         return meta.name
 
-        return None
-
 
 class EnumCreateView(PermissionRequiredMixin, CreateView):
     model = EnumItem

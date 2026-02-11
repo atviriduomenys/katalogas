@@ -11,7 +11,7 @@ from vitrina.datasets.models import Dataset
 
 @pytest.mark.django_db
 class TestDatasetIndexQuery:
-    QUERY_COUNT_THRESHOLD = 15
+    QUERY_COUNT_THRESHOLD = 16
 
     def test_bulk_index_query_count(self):
         datasets_to_create = 5

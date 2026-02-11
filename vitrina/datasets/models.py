@@ -756,7 +756,7 @@ class Dataset(Resource):
         return DatasetGroup.objects.filter(pk__in=ids).exclude(pk__in=self.get_excluded_groups())
 
     def get_group_list(self) -> list[int]:
-        excluded_pks = {eg.group_id for eg in self.excluded_groups.all()}
+        excluded_pks = self.get_excluded_groups()
         group_pks = {
             uri.group_id
             for category in self.category.all()
@@ -766,7 +766,7 @@ class Dataset(Resource):
         return list(group_pks)
 
     def get_excluded_groups(self) -> list[int]:
-        return [eg.group_id for eg in self.excluded_groups.all()]
+        return [excluded_groups.group_id for excluded_groups in self.excluded_groups.all()]
 
     def get_parent_organization_title(self):
         if self.organization:
@@ -887,26 +887,53 @@ class Dataset(Resource):
             .distinct()
         )
 
+    def _ensure_managers_cached(self) -> None:
+        if hasattr(self, "_cached_resource_managers"):
+            return
+
+        resource_roles = {Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER}
+        open_data_roles = {Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER}
+
+        ancestors = list(self.get_ancestors().only("pk", "organization_id"))
+
+        if not ancestors:
+            all_reps = list(self.representatives.all())
+            if self.organization:
+                all_reps.extend(self.organization.representatives.all())
+        else:
+            all_roles = resource_roles | open_data_roles
+            dataset_ct = ContentType.objects.get_for_model(Dataset)
+            organization_ct = ContentType.objects.get_for_model(Organization)
+
+            dataset_ids = {self.id}
+            organization_ids = {self.organization_id}
+            for parent in ancestors:
+                dataset_ids.add(parent.pk)
+                organization_ids.add(parent.organization_id)
+
+            all_reps = list(
+                Representative.objects.filter(
+                    Q(content_type=dataset_ct, object_id__in=dataset_ids, role__in=all_roles)
+                    | Q(content_type=organization_ct, object_id__in=organization_ids, role__in=all_roles),
+                    user__isnull=False,
+                )
+            )
+
+        self._cached_resource_managers = {
+            rep.user_id for rep in all_reps if rep.role in resource_roles and rep.user_id is not None
+        }
+        self._cached_open_data_managers = {
+            rep.user_id for rep in all_reps if rep.role in open_data_roles and rep.user_id is not None
+        }
+
     @property
     def resource_managers(self) -> set[int]:
-        if not hasattr(self, "_cached_resource_managers"):
-            resource_roles = {Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER}
-            self._cached_resource_managers = {
-                rep.user_id
-                for rep in self.representatives.all()
-                if rep.role in resource_roles and rep.user_id is not None
-            }
+        self._ensure_managers_cached()
         return self._cached_resource_managers
 
     @property
     def open_data_managers(self) -> set[int]:
-        if not hasattr(self, "_cached_open_data_managers"):
-            open_data_roles = {Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER}
-            self._cached_open_data_managers = {
-                rep.user_id
-                for rep in self.representatives.all()
-                if rep.role in open_data_roles and rep.user_id is not None
-            }
+        self._ensure_managers_cached()
         return self._cached_open_data_managers
 
     @property

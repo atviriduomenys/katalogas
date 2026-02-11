@@ -102,6 +102,7 @@ class DatasetIndex(SearchIndex, Indexable):
                 "related_datasets",
                 "metadata",
                 "representatives",
+                "organization__representatives",
                 "project_set",
                 Prefetch(
                     "datasetdistribution_set", queryset=DatasetDistribution.objects.prefetch_related("translations")

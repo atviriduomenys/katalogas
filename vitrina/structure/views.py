@@ -266,7 +266,7 @@ class DatasetStructureView(
         structure = dataset.current_structure
         context["publish_button"] = flag_enabled("publish_button", request=self.request)
         context["selected_version"] = self.metadata_version
-        context["is_disabled"] = not self.metadata_version.is_draft()
+        context["is_disabled"] = not self.metadata_version.is_draft() if self.metadata_version else True
         context["versions"] = _Version.objects.filter(dataset=dataset).order_by("version")
         context["errors"] = []
         context["manifest"] = None

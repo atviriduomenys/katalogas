@@ -41,6 +41,12 @@ https://github.com/atviriduomenys/katalogas/issues/2332
 - Use correct url for AJAX requests in `model_data.html`.
 - Clean `SPINTA_*` variables in `settings.py`.
 
+https://github.com/atviriduomenys/katalogas/issues/2382
+
+- Fix incorrect email for error pages.
+- Github check fix for redis and elasticsearch
+- `NoneType` object has no attribute `is_draft` fix.
+
 v 1.13.0 (2026-01-26)
 ==================
 

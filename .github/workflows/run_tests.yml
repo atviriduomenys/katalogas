@@ -15,6 +15,7 @@ jobs:
         ports:
           - 6379:6379
         options: >-
+          --name redis
           --health-cmd "redis-cli ping"
           --health-interval 10s
           --health-timeout 5s
@@ -26,6 +27,7 @@ jobs:
         env:
           discovery.type: single-node
           xpack.security.enabled: "false"
+          ES_JAVA_OPTS: "-Xms256m -Xmx512m"
         options: >-
           --health-cmd "curl -f http://localhost:9200/_cluster/health || exit 1"
           --health-interval 10s

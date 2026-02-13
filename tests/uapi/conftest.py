@@ -180,6 +180,11 @@ def url_agent() -> str:
 
 
 @pytest.fixture
+def url_connection_check() -> str:
+    return _build_reverse_uapi_url("connection-check")
+
+
+@pytest.fixture
 def agreement_url() -> str:
     return _build_reverse_uapi_url("uapi-agreement")
 

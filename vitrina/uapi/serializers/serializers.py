@@ -7,6 +7,10 @@ from vitrina.uapi.models import Agent
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin, BaseUUIDObjectMixin
 
 
+class ConnectionCheckSerializer(serializers.Serializer):
+    spinta_version = serializers.CharField(required=False, max_length=50)
+
+
 class UAPIAgentSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
     class Meta:
         model = Agent

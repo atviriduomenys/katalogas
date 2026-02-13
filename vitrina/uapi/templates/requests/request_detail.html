@@ -94,6 +94,21 @@
 
 <hr>
 
+<p class="title is-5 mb-4">{% translate "Informacija" %}</p>
+{% if request_history.details %}
+    <div class="notification is-light" style="border-radius: 12px;">
+        <p class="is-size-7 mb-2">
+            <span class="is-size-6 has-text-dark">{{ request_history.details|linebreaksbr }}</span>
+        </p>
+    </div>
+{% else %}
+    <p class="is-size-7 has-text-grey">
+        {% translate "Papildomos informacijos nėra" %}
+    </p>
+{% endif %}
+
+<hr>
+
 <p class="title is-5 mb-4">{% translate "Klaidos" %}</p>
 {% if formatted_error %}
     <div class="notification is-danger is-light" style="border: 2px solid #ff9999; border-radius: 12px;">

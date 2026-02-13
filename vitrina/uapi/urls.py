@@ -17,6 +17,7 @@ from vitrina.uapi.views.views import (
     AgentSyncDoneViewSet,
     VersionViewSet,
     AgentViewSet,
+    ConnectionViewSet,
 )
 
 
@@ -53,6 +54,11 @@ urlpatterns = [
         "organizations/<int:organization_id>/agents/<uuid:pk>/delete/",
         AgentDeleteView.as_view(),
         name="agent-delete",
+    ),
+    path(
+        f"{STATIC_UAPI_BASE_PATH}Connection/check",
+        ConnectionViewSet.as_view({"post": "check"}),
+        name="connection-check",
     ),
     path(
         f"{STATIC_UAPI_BASE_PATH}Dataset/",

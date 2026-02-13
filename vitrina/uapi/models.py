@@ -148,6 +148,7 @@ class RequestHistory(UUIDBaseModel):
     method = models.CharField(max_length=10, choices=HTTPMethods.choices, verbose_name=_("HTTP metodas"))
     http_result = models.IntegerField(verbose_name=_("HTTP rezultatas"))
     result = models.CharField(max_length=30, choices=PossibleResults.choices, verbose_name=_("Rezultatas"))
+    details = models.TextField(blank=True, null=True, verbose_name=_("Informacija"))
     error = models.TextField(blank=True, null=True, verbose_name=_("Klaida"))
 
     class Meta:

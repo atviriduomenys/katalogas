@@ -14,7 +14,7 @@ class AgentAdmin(RevisionCommentVersionAdmin):
     list_display = ["agent_name", "organization"]
     autocomplete_fields = ["service", "organization"]
     search_fields = ["codename", "service", "organization"]
-    readonly_fields = ["codename", "synchronized_at", "is_last_sync_successful"]
+    readonly_fields = ["codename"]
 
     @staticmethod
     def agent_name(obj: Agent) -> str:

@@ -11,15 +11,9 @@ class AgentForm(ModelForm):
         model = Agent
         fields = [
             "title",
-            "is_enabled",
             "is_open_data_published",
-            "open_data_publish_url",
             "object_type",
             "service",
-            "environment",
-            "auth_server_url",
-            "api_gate_server_url",
-            "agent_address",
         ]
 
     def __init__(self, *args, **kwargs) -> None:
@@ -30,7 +24,6 @@ class AgentForm(ModelForm):
             organization=self.organization,
             service=True,
         )
-        self.fields["agent_address"].required = True
 
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
@@ -38,13 +31,7 @@ class AgentForm(ModelForm):
             Field("title"),
             Field("object_type"),
             Field("service"),
-            Field("environment"),
-            Field("agent_address"),
-            Field("auth_server_url"),
-            Field("api_gate_server_url"),
-            Field("is_enabled"),
             Field("is_open_data_published"),
-            Field("open_data_publish_url"),
             Submit(
                 "submit",
                 _("Sukurti") if self.instance._state.adding else _("Redaguoti"),

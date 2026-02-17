@@ -8,18 +8,6 @@ from django.utils.translation import gettext_lazy as _
 
 
 class Agent(UUIDBaseModel):
-    synchronized_at = models.DateTimeField(
-        verbose_name=_("Paskutinės sinchronizacijos data"),
-        blank=True,
-        null=True,
-        help_text=_("Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."),
-    )
-    is_last_sync_successful = models.BooleanField(
-        verbose_name=_("Ar paskutinė sinchronizacija įvyko sėkmingai?"),
-        blank=True,
-        null=True,
-        help_text=_("Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo klaidų."),
-    )
     title = models.CharField(
         verbose_name=_("Pavadinimas"),
         max_length=255,
@@ -43,18 +31,6 @@ class Agent(UUIDBaseModel):
         default=False,
         help_text=_("Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų duomenų Saugyklą."),
     )
-    open_data_publish_url = models.URLField(
-        _("Atvirų duomenų publikavimo nuoroda"),
-        max_length=1024,
-        blank=True,
-        default="https://get.data.gov.lt/",
-        help_text=_("Nuoroda, kur turėtų būti publikuojami atviri duomenys."),
-    )
-    is_enabled = models.BooleanField(
-        verbose_name=_("Agentas įjungtas"),
-        default=False,
-        help_text=_("Nurodoma, ar Agentas yra įjungtas ar išjungtas."),
-    )
     is_archived = models.BooleanField(
         verbose_name=_("Agentas archyvuotas"),
         default=False,
@@ -73,39 +49,6 @@ class Agent(UUIDBaseModel):
         verbose_name=_("Organizacija"),
         on_delete=models.CASCADE,
         help_text=_("Nurodoma organizacija, kuriai priskirtas Agentas."),
-    )
-    oauth_client_id = models.CharField(
-        verbose_name=_("Autorizacijos kliento identifikatorius"),
-        max_length=255,
-        blank=True,
-        help_text=_("Jei kliento identifikatorius egzistuoja - agentas gali vykdyti užklausas į katalogą."),
-    )
-    environment = models.CharField(
-        verbose_name=_("Aplinka"),
-        max_length=32,
-        choices=Environment.choices,
-        default=Environment.DEVELOPMENT,
-        help_text=_("Aplinka, kurioje diegiamas agentas."),
-    )
-    auth_server_url = models.URLField(
-        verbose_name=_("Autorizacijos serverio adresas"),
-        max_length=255,
-        blank=True,
-        help_text=_("Nurodomas autorizacijos serverio adresas."),
-    )
-    api_gate_server_url = models.URLField(
-        verbose_name=_("API vartų serverio adresas"),
-        max_length=255,
-        blank=True,
-        help_text=_("Nurodomas API vartų serverio adresas."),
-    )
-    agent_address = models.CharField(
-        verbose_name=_("Agento adresas"),
-        max_length=255,
-        blank=True,
-        help_text=_(
-            "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas išorinis agento adresas"
-        ),
     )
 
     class Meta:
@@ -138,6 +81,67 @@ class Agent(UUIDBaseModel):
     @property
     def global_codename(self) -> str:
         return f"{self.codename}_{self.organization_id}"
+
+
+class AgentEnv(UUIDBaseModel):
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, verbose_name=_("Agentas"), related_name="environments")
+    synchronized_at = models.DateTimeField(
+        verbose_name=_("Paskutinės sinchronizacijos data"),
+        blank=True,
+        null=True,
+        help_text=_("Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."),
+    )
+    is_last_sync_successful = models.BooleanField(
+        verbose_name=_("Ar paskutinė sinchronizacija įvyko sėkmingai?"),
+        blank=True,
+        null=True,
+        help_text=_("Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo klaidų."),
+    )
+    open_data_publish_url = models.URLField(
+        _("Atvirų duomenų publikavimo nuoroda"),
+        max_length=1024,
+        blank=True,
+        default="https://get.data.gov.lt/",
+        help_text=_("Nuoroda, kur turėtų būti publikuojami atviri duomenys."),
+    )
+    oauth_client_id = models.CharField(
+        verbose_name=_("Autorizacijos kliento identifikatorius"),
+        max_length=255,
+        blank=True,
+        help_text=_("Jei kliento identifikatorius egzistuoja - agentas gali vykdyti užklausas į katalogą."),
+    )
+    environment = models.CharField(
+        verbose_name=_("Aplinka"),
+        max_length=32,
+        choices=Environment.choices,
+        default=Environment.DEVELOPMENT,
+        help_text=_("Aplinka, kurioje diegiamas fizinis agentas."),
+    )
+    auth_server_url = models.URLField(
+        verbose_name=_("Autorizacijos serverio adresas"),
+        max_length=255,
+        blank=True,
+        help_text=_("Nurodomas autorizacijos serverio adresas."),
+    )
+    api_gate_server_url = models.URLField(
+        verbose_name=_("API vartų serverio adresas"),
+        max_length=255,
+        blank=True,
+        help_text=_("Nurodomas API vartų serverio adresas."),
+    )
+    agent_address = models.CharField(
+        verbose_name=_("Agento adresas"),
+        max_length=255,
+        blank=True,
+        help_text=_(
+            "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas išorinis agento adresas"
+        ),
+    )
+    is_enabled = models.BooleanField(
+        verbose_name=_("Agentas įjungtas"),
+        default=False,
+        help_text=_("Nurodoma, ar Agento aplinka yra įjungta ar išjungta."),
+    )
 
 
 class RequestHistory(UUIDBaseModel):

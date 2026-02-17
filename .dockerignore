@@ -11,3 +11,8 @@ __pycache__
 .github
 .poetry
 .envrc
+build.sh
+var
+static
+dist
+*.tar.gz

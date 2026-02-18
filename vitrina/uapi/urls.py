@@ -10,6 +10,10 @@ from vitrina.uapi.views.template_views import (
     AgentDetailView,
     AgentListView,
     RequestDetailView,
+    AgentEnvDetailView,
+    AgentEnvUpdateView,
+    AgentEnvDeleteView,
+    AgentEnvCreateView,
 )
 from vitrina.uapi.views.views import (
     DatasetViewSet,
@@ -54,6 +58,26 @@ urlpatterns = [
         "organizations/<int:organization_id>/agents/<uuid:pk>/delete/",
         AgentDeleteView.as_view(),
         name="agent-delete",
+    ),
+    path(
+        "organizations/<int:organization_id>/agents/<uuid:agent_id>/environments/add/",
+        AgentEnvCreateView.as_view(),
+        name="agent-env-create",
+    ),
+    path(
+        "organizations/<int:organization_id>/agents/<uuid:agent_id>/environments/<uuid:pk>/",
+        AgentEnvDetailView.as_view(),
+        name="agent-env-detail",
+    ),
+    path(
+        "organizations/<int:organization_id>/agents/<uuid:agent_id>/environments/<uuid:pk>/update/",
+        AgentEnvUpdateView.as_view(),
+        name="agent-env-update",
+    ),
+    path(
+        "organizations/<int:organization_id>/agents/<uuid:agent_id>/environments/<uuid:pk>/delete/",
+        AgentEnvDeleteView.as_view(),
+        name="agent-env-delete",
     ),
     path(
         f"{STATIC_UAPI_BASE_PATH}Connection/check",

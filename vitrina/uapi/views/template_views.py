@@ -8,7 +8,6 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.contrib.contenttypes.models import ContentType
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
-from django.db import transaction
 from django.forms import ModelForm, BaseForm
 from django.http import HttpResponseRedirect, HttpResponse
 from django.shortcuts import get_object_or_404, redirect
@@ -20,10 +19,7 @@ from django.views.generic import (
     DeleteView,
     TemplateView,
 )
-from django_otp.plugins.otp_email.conf import settings
-from requests.exceptions import ConnectionError as RequestsConnectionError
 
-from vitrina.api.oauth import Secret, OAuthClientManagement
 from vitrina.datasets.models import Dataset, Contact, Type, DCATResourceSubclass
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import (
@@ -31,10 +27,9 @@ from vitrina.orgs.services import (
     Action,
 )
 from vitrina.structure.models import Metadata
-from vitrina.uapi.models import RequestHistory
+from vitrina.uapi.models import RequestHistory, Agent, AgentEnv
 from vitrina.resources.models import Format
 from vitrina.uapi.forms import AgentForm
-from vitrina.uapi.models import Agent
 from vitrina.views import PlanMixin
 
 logger = logging.getLogger(__name__)
@@ -131,11 +126,6 @@ class AgentDetailView(BaseAgentView):
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
 
-        request_history = self.object.requesthistory.all()
-        paginator = Paginator(request_history, 10)
-        page_number = self.request.GET.get("page")
-        page = paginator.get_page(page_number)
-
         context.update(
             {
                 "parent_links": {
@@ -145,17 +135,11 @@ class AgentDetailView(BaseAgentView):
                     reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
                     None: _("Agentas"),
                 },
-                "page_obj": page,
-                "paginator": paginator,
                 "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
                 "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
                 "agent": self.object,
                 "dataset": self.object.service,
-                "secret": self.request.session.pop("secret", None),
-                "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
-                "auth_server_host": settings.OAUTH_SERVER_HOST,
-                "resource_server_host": f"{self.request.scheme}://{self.request.get_host()}",
-                "request_history": page.object_list,
+                "can_create_agent_env": has_perm(self.request.user, Action.CREATE, AgentEnv, self.organization),
             }
         )
 
@@ -320,6 +304,22 @@ class AgentDeleteView(DeleteView, BaseAgentView):
 
     def get_success_url(self) -> str:
         return reverse("agent-list", kwargs={"organization_id": self.organization.id})
+
+
+class AgentEnvDetailView(BaseAgentView):
+    pass
+
+
+class AgentEnvCreateView(BaseAgentView):
+    pass
+
+
+class AgentEnvUpdateView(BaseAgentView):
+    pass
+
+
+class AgentEnvDeleteView(BaseAgentView):
+    pass
 
 
 class RequestDetailView(BaseAgentView):

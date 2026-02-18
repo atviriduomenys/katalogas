@@ -62,6 +62,7 @@ from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, VersionFactory
 from vitrina.structure import VersionStatus
+from vitrina.structure.models import Metadata
 from vitrina.testing.templates import strip_empty_lines
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
@@ -3459,82 +3460,108 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     assert resp.context["history"][0]["user"] == user
 
 
-def test_dataset_structure_import_without_permission(app: DjangoTestApp):
-    user = UserFactory()
-    dataset = DatasetFactory()
-    metadata_version = VersionFactory(dataset=dataset)
-    app.set_user(user)
-    url = reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk])
-    resp = app.get(url, expect_errors=True)
+class TestDatasetStructureImport:
+    def test_dataset_structure_import_without_permission(self, app: DjangoTestApp):
+        user = UserFactory()
+        dataset = DatasetFactory()
+        metadata_version = VersionFactory(dataset=dataset)
+        app.set_user(user)
+        url = reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk])
+        resp = app.get(url, expect_errors=True)
 
-    assert resp.status_code == 403
+        assert resp.status_code == 403
 
+    @pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+    def test_dataset_import_in_not_draft_version(self, app: DjangoTestApp, status: str):
+        version = VersionFactory(status=status)
+        user = UserFactory(is_staff=True)
+        dataset = version.dataset
 
-@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
-def test_dataset_import_in_not_draft_version(app: DjangoTestApp, status: str):
-    version = VersionFactory(status=status)
-    user = UserFactory(is_staff=True)
-    dataset = version.dataset
+        app.set_user(user)
+        url = reverse("dataset-structure-import", args=[dataset.pk, version.pk])
+        response = app.get(url)
+        assert response.status_code == 302
+        assert response.location == dataset.get_absolute_url()
 
-    app.set_user(user)
-    url = reverse("dataset-structure-import", args=[dataset.pk, version.pk])
-    response = app.get(url)
-    assert response.status_code == 302
-    assert response.location == dataset.get_absolute_url()
+    def test_dataset_structure_import_not_standardized(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+        metadata_version = VersionFactory(dataset=dataset)
 
+        app.set_user(user)
+        resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
+        form = resp.forms["dataset-structure-form"]
+        form["file"] = Upload("manifest.csv", b"Column\nValue")
+        form.submit()
 
-def test_dataset_structure_import_not_standardized(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    dataset = DatasetFactory()
-    metadata_version = VersionFactory(dataset=dataset)
+        dataset.refresh_from_db()
+        structure = DatasetStructure.objects.get(dataset=dataset)
+        assert dataset.current_structure == structure
+        assert File.objects.count() == 1
+        assert structure.file.original_filename == "manifest.csv"
 
-    app.set_user(user)
-    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
-    form = resp.forms["dataset-structure-form"]
-    form["file"] = Upload("manifest.csv", b"Column\nValue")
-    form.submit()
+    def test_dataset_structure_import_standardized(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+        metadata_version = VersionFactory(dataset=dataset)
 
-    dataset.refresh_from_db()
-    structure = DatasetStructure.objects.get(dataset=dataset)
-    assert dataset.current_structure == structure
-    assert File.objects.count() == 1
-    assert structure.file.original_filename == "manifest.csv"
+        app.set_user(user)
+        resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
+        form = resp.forms["dataset-structure-form"]
+        form["file"] = Upload("file.csv", MANIFEST.encode())
+        form.submit()
 
+        dataset.refresh_from_db()
+        structure = DatasetStructure.objects.get(dataset=dataset)
+        assert dataset.current_structure == structure
+        assert File.objects.count() == 1
+        assert structure.file.original_filename == "file.csv"
 
-def test_dataset_structure_import_standardized(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    dataset = DatasetFactory()
-    metadata_version = VersionFactory(dataset=dataset)
+    def test_dataset_structure_import_with_version(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+        version = VersionFactory(dataset=dataset, status=VersionStatus.DRAFT)
 
-    app.set_user(user)
-    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
-    form = resp.forms["dataset-structure-form"]
-    form["file"] = Upload("file.csv", MANIFEST.encode())
-    form.submit()
+        app.set_user(user)
+        resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, version.pk]))
+        form = resp.forms["dataset-structure-form"]
+        form["file"] = Upload("file.csv", MANIFEST.encode())
+        form.submit()
 
-    dataset.refresh_from_db()
-    structure = DatasetStructure.objects.get(dataset=dataset)
-    assert dataset.current_structure == structure
-    assert File.objects.count() == 1
-    assert structure.file.original_filename == "file.csv"
+        dataset.refresh_from_db()
+        structure = DatasetStructure.objects.get(dataset=dataset)
+        assert dataset.current_structure == structure
+        assert File.objects.count() == 1
+        assert structure.file.original_filename == "file.csv"
 
+    def test_dataset_structure_import_ref_property_ref_column_does_not_lose_prefixes(self, app: DjangoTestApp):
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
+            '3,,,,Country,,,"id,title",,,,,,,,,,,\n'
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "5,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
+        )
 
-def test_dataset_structure_import_with_version(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    dataset = DatasetFactory()
-    version = VersionFactory(dataset=dataset, status=VersionStatus.DRAFT)
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+        version = VersionFactory(dataset=dataset)
 
-    app.set_user(user)
-    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, version.pk]))
-    form = resp.forms["dataset-structure-form"]
-    form["file"] = Upload("file.csv", MANIFEST.encode())
-    form.submit()
+        app.set_user(user)
 
-    dataset.refresh_from_db()
-    structure = DatasetStructure.objects.get(dataset=dataset)
-    assert dataset.current_structure == structure
-    assert File.objects.count() == 1
-    assert structure.file.original_filename == "file.csv"
+        resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, version.pk]))
+        form = resp.forms["dataset-structure-form"]
+        form["file"] = Upload("manifest.csv", manifest.encode())
+
+        form.submit()
+
+        dataset.refresh_from_db()
+        structure = DatasetStructure.objects.get(dataset=dataset)
+
+        assert dataset.current_structure == structure
+        assert structure.file.original_filename == "manifest.csv"
+        assert Metadata.objects.get(dataset=dataset, uuid=5).ref == "/datasets/gov/ref/dataset/Continent"
 
 
 def test_dataset_structure_history_url(app: DjangoTestApp):

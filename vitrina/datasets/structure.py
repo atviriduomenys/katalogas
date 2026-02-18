@@ -710,7 +710,7 @@ def _read_property(
 
     if prop.ref and prop.type in ("ref", "backref", "generic"):
         ref_model, ref_props = _parse_property_ref(prop.ref)
-        prop.ref = get_relative_model_name(state.dataset, ref_model)
+        prop.ref = get_relative_model_name_for_ref(state.dataset, ref_model)
         prop.ref_props = ref_props
 
     prop.model = state.model
@@ -926,12 +926,14 @@ def get_relative_model_name(dataset: Dataset, name: str) -> str:
     elif dataset is None:
         return name
     else:
-        return "/".join(
-            [
-                dataset.name,
-                name,
-            ]
-        )
+        return f"{dataset.name}/{name}"
+
+
+def get_relative_model_name_for_ref(dataset: Dataset, name: str) -> str:
+    if name.startswith("/") or dataset is None:
+        return name
+    else:
+        return f"{dataset.name}/{name}"
 
 
 def _get_level(row: Row) -> str:

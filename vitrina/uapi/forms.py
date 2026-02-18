@@ -41,11 +41,6 @@ class AgentForm(ModelForm):
 
     def clean(self) -> None:
         cleaned_data = super().clean()
-        if cleaned_data.get("is_open_data_published") and not cleaned_data.get("open_data_publish_url"):
-            self.add_error(
-                "open_data_publish_url",
-                _('Šis laukas yra privalomas, jei nustatytas požymis "Atviri duomenys publikuojami Saugykloje".'),
-            )
 
         if (title := cleaned_data.get("title")) and self.organization:
             existing_agent = (

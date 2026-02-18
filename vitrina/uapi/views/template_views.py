@@ -182,77 +182,48 @@ class AgentCreateView(CreateView, BaseAgentView):
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE, Agent, self.organization)
 
-    @staticmethod
-    def _create_oauth_client(agent: Agent) -> Secret:
-        client_id, secret = OAuthClientManagement.create_oauth_client(
-            client_name=agent.global_codename, scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES
-        )
-        agent.oauth_client_id = client_id
-        agent.save()
-        return secret
-
-    @transaction.atomic
     def form_valid(self, form: ModelForm) -> HttpResponse:
         title = form.cleaned_data["title"]
         service = form.cleaned_data.get("service")
         form.instance.organization = self.organization
-        try:
-            with transaction.atomic():
-                if not service:
-                    service = Dataset.add_root(
-                        title=f'Agento "{title}" Duomenų Paslauga',
-                        description="Ši duomenų paslauga buvo automatiškai sukurta kuriant Agentą.",
-                        access_rights=Dataset.NON_PUBLIC,
-                        organization=self.organization,
-                        service=True,
-                        subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE),
-                        endpoint_url=None,
-                        endpoint_type=Format.objects.filter(extension="UAPI").first(),
-                        endpoint_description="https://ivpk.github.io/uapi",
-                        endpoint_description_type=Format.objects.filter(extension="Open API").first(),
-                        is_public=False,
-                    )
-                    form.instance.service = service
-                    form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
-                    form.instance.service.save_translations()
-                    self.object = form.save()
 
-                    Metadata.objects.create(
-                        uuid=str(uuid.uuid4()),
-                        dataset=service,
-                        content_type=ContentType.objects.get_for_model(Dataset),
-                        object_id=service.pk,
-                        name=self.object.codename,
-                        title=title,
-                        description=_("Duomenų paslauga automatiškai sukurta kuriant agentą."),
-                        prepare_ast={},
-                        version=1,
-                    )
+        if not service:
+            service = Dataset.add_root(
+                title=f'Agento "{title}" Duomenų Paslauga',
+                description="Ši duomenų paslauga buvo automatiškai sukurta kuriant Agentą.",
+                access_rights=Dataset.NON_PUBLIC,
+                organization=self.organization,
+                service=True,
+                subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE),
+                endpoint_url=None,
+                endpoint_type=Format.objects.filter(extension="UAPI").first(),
+                endpoint_description="https://ivpk.github.io/uapi",
+                endpoint_description_type=Format.objects.filter(extension="Open API").first(),
+                is_public=False,
+            )
+            form.instance.service = service
+            form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
+            form.instance.service.save_translations()
+            self.object = form.save()
 
-                if not hasattr(self, "object") or self.object is None:
-                    self.object = form.save()
+            Metadata.objects.create(
+                uuid=str(uuid.uuid4()),
+                dataset=service,
+                content_type=ContentType.objects.get_for_model(Dataset),
+                object_id=service.pk,
+                name=self.object.codename,
+                title=title,
+                description=_("Duomenų paslauga automatiškai sukurta kuriant agentą."),
+                prepare_ast={},
+                version=1,
+            )
 
-                self.request.session["secret"] = self._create_oauth_client(agent=self.object)
-                self.request.session["scopes"] = settings.OAUTH_AGENT_DEFAULT_SCOPES
+        if not hasattr(self, "object") or self.object is None:
+            self.object = form.save()
 
-                messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))
-                messages.error(
-                    self.request,
-                    _(
-                        "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį kartą!\n "
-                        'Jei pasirinkote rūšį "Spinta", raktas vaizduojamas šalia stulpelio "secret" credentials.cfg '
-                        "failo pavyzdyje"
-                    ),
-                )
-                return redirect(reverse("agent-detail", args=[self.organization.pk, self.object.pk]))
-        except RequestsConnectionError:
-            error = _("Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento kūrimas nepavyko.")
-            messages.error(self.request, error % {"url": settings.OAUTH_SERVER_CLIENTS_URL})
-            return self.form_invalid(form)
-        except Exception as general_exception:
-            error = _("Įvyko klaida, nepavyko sukurti agento. Klaida: %(exception)s")
-            messages.error(self.request, error % {"exception": str(general_exception)})
-            return self.form_invalid(form)
+        messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))
+
+        return redirect(reverse("agent-detail", args=[self.organization.pk, self.object.pk]))
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)

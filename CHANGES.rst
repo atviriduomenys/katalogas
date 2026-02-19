@@ -4,6 +4,9 @@ Changes
 v 1.15.0 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2397
+
+- Fix url for `Dataset` landing page.
 
 v 1.14.0 (2026-02-17)
 ==================

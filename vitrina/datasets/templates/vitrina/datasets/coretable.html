@@ -306,12 +306,12 @@
                     <i class="fas fa-info-circle"></i>
                 </span>
             </th>
-            <td><a href="dataset.landing_page">{{ dataset.landing_page|truncatechars:50 }}</a></td>
+            <td><a href="{{ dataset.landing_page }}">{{ dataset.landing_page|truncatechars:50 }}</a></td>
         </tr>
       {% else %}
         <tr>
             <th>{% translate "Prieigos nuoroda" %}</th>
-            <td><a href="dataset.landing_page">{{ dataset.landing_page|truncatechars:50 }}</a></td>
+            <td><a href="{{ dataset.landing_page }}">{{ dataset.landing_page|truncatechars:50 }}</a></td>
         </tr>
      {% endif %}
     {% endif %}

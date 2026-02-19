@@ -23,7 +23,7 @@ services:
       - katalogas-redis
       - katalogas-elasticsearch
     volumes:
-      - /tmp/static:/app/static
+      - /tmp/static:/app/static:Z
 
   katalogas-elasticsearch:
     image: elasticsearch:7.8.1
@@ -51,7 +51,7 @@ services:
       context: .
       dockerfile: nginx/dev.Dockerfile
     volumes:
-      - /tmp/static:/usr/share/nginx/html/static
+      - /tmp/static:/usr/share/nginx/html/static:Z
     ports:
       - "80:80"
 

@@ -116,7 +116,7 @@ class PlanDeleteView(PermissionRequiredMixin, DeleteView):
         return context
 
 
-class PlanHistoryView(PlanMixin, OrganizationBaseViewMixin, HistoryView):
+class PlanHistoryView(OrganizationBaseViewMixin, HistoryView):
     model = Organization
     detail_url_name = "organization-detail"
     history_url_name = "plan-history"

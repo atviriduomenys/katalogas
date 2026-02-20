@@ -4905,3 +4905,257 @@ class TestDatasetMemberUpdate:
 
         user.refresh_from_db()
         assert user.organization is None, "User's org should not be assigned during update"
+
+
+class TestDatasetChangeSubclassView:
+    def test_anonymous_access_denied(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        response = app.get(reverse("dataset-change-subclass", kwargs={"pk": dataset.id}))
+        assert response.status_code == 302
+        assert settings.LOGIN_URL in response.location
+
+    def test_unauthorized_access_denied(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        user = User.objects.create_user(email="test@test.com", password="test123")
+        app.set_user(user)
+        response = app.get(reverse("dataset-change-subclass", kwargs={"pk": dataset.id}), expect_errors=True)
+        assert response.status_code == 403
+
+    def test_get_shows_form_with_current_subclass(self, app: DjangoTestApp):
+        dataset = DatasetFactory()
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        url = reverse("dataset-change-subclass", kwargs={"pk": dataset.id})
+        response = app.get(url)
+        assert response.status_code == 200
+        assert "subclass" in response.forms["change-subclass-form"].fields
+
+    def test_change_catalog_to_dataset(self, app: DjangoTestApp):
+        catalog_subclass = DCATResourceSubclassFactory(name="catalog")
+        dataset_subclass = DCATResourceSubclassFactory(name="dataset")
+        org = OrganizationFactory()
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=catalog_subclass,
+        )
+        dataset.set_current_language("lt")
+        dataset.conditions = "Test conditions LT"
+        dataset.save()
+        dataset.set_current_language("en")
+        dataset.conditions = "Test conditions EN"
+        dataset.save()
+        dataset.rights_relation = "http://example.com/rights"
+        dataset.save()
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change-subclass", kwargs={"pk": dataset.id})
+        form = app.get(url).forms["change-subclass-form"]
+        form["subclass"] = dataset_subclass.pk
+        resp = form.submit()
+
+        assert resp.status_code == 302
+        assert resp.url == reverse("dataset-change", kwargs={"pk": dataset.id})
+
+        dataset.refresh_from_db()
+        assert dataset.subclass == dataset_subclass
+        assert dataset.rights_relation is None
+        dataset.set_current_language("lt")
+        assert not dataset.conditions
+        dataset.set_current_language("en")
+        assert not dataset.conditions
+
+    def test_change_service_to_dataset(self, app: DjangoTestApp):
+        service_subclass = DCATResourceSubclassFactory(name="service")
+        dataset_subclass = DCATResourceSubclassFactory(name="dataset")
+        org = OrganizationFactory()
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=service_subclass,
+            service=True,
+            endpoint_url="http://api.example.com",
+            endpoint_description="http://api.example.com/docs",
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change-subclass", kwargs={"pk": dataset.id})
+        form = app.get(url).forms["change-subclass-form"]
+        form["subclass"] = dataset_subclass.pk
+        resp = form.submit()
+
+        assert resp.status_code == 302
+        dataset.refresh_from_db()
+        assert dataset.subclass == dataset_subclass
+        assert dataset.service is False
+        assert dataset.endpoint_url is None
+        assert dataset.endpoint_description is None
+
+    def test_change_information_system_to_dataset(self, app: DjangoTestApp):
+        is_subclass = DCATResourceSubclassFactory(name="information_system")
+        dataset_subclass = DCATResourceSubclassFactory(name="dataset")
+        org = OrganizationFactory()
+
+        information_system_type_concept_schema = ConceptSchema.objects.get(
+            uri=Dataset.INFORMATION_SYSTEM_TYPE_SCHEMA_URI
+        )
+        information_system_type_concept = ConceptFactory(concept_schemas=[information_system_type_concept_schema])
+        information_system_importance_concept_schema = ConceptSchema.objects.get(
+            uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI
+        )
+        information_system_importance_concept = ConceptFactory(
+            concept_schemas=[information_system_importance_concept_schema]
+        )
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=is_subclass,
+            information_system_type=information_system_type_concept,
+            information_system_importance=information_system_importance_concept,
+            information_system_creator=org,
+            information_system_publisher=org,
+        )
+        dataset.set_current_language("lt")
+        dataset.conditions = "Sąlygos LT"
+        dataset.save()
+        dataset.set_current_language("en")
+        dataset.conditions = "Conditions EN"
+        dataset.save()
+
+        risr_agency = Agency.objects.filter(code="risr").first()
+        if risr_agency:
+            IdentifierFactory(resource=dataset, notation="1234", scheme_agency=risr_agency)
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change-subclass", kwargs={"pk": dataset.id})
+        form = app.get(url).forms["change-subclass-form"]
+        form["subclass"] = dataset_subclass.pk
+        resp = form.submit()
+
+        assert resp.status_code == 302
+        dataset.refresh_from_db()
+        assert dataset.subclass == dataset_subclass
+        assert dataset.information_system_publisher is None
+        assert dataset.information_system_creator is None
+        assert dataset.rights_relation is None
+        dataset.set_current_language("lt")
+        assert not dataset.conditions
+        dataset.set_current_language("en")
+        assert not dataset.conditions
+        if risr_agency:
+            assert not dataset.identifiers.filter(scheme_agency=risr_agency).exists()
+
+    def test_same_subclass_is_noop(self, app: DjangoTestApp):
+        dataset_subclass = DCATResourceSubclassFactory(name="dataset")
+        org = OrganizationFactory()
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=dataset_subclass,
+            temporal_start=date(2024, 1, 1),
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change-subclass", kwargs={"pk": dataset.id})
+        form = app.get(url).forms["change-subclass-form"]
+        form["subclass"] = dataset_subclass.pk
+        resp = form.submit()
+
+        assert resp.status_code == 302
+        dataset.refresh_from_db()
+        assert dataset.subclass == dataset_subclass
+        assert dataset.temporal_start == date(2024, 1, 1)
+
+    def test_common_fields_preserved(self, app: DjangoTestApp):
+        catalog_subclass = DCATResourceSubclassFactory(name="catalog")
+        dataset_subclass = DCATResourceSubclassFactory(name="dataset")
+        org = OrganizationFactory()
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=catalog_subclass,
+        )
+        dataset.set_current_language("lt")
+        dataset.title = "Test Title LT"
+        dataset.description = "Test Description LT"
+        dataset.save()
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change-subclass", kwargs={"pk": dataset.id})
+        form = app.get(url).forms["change-subclass-form"]
+        form["subclass"] = dataset_subclass.pk
+        form.submit()
+
+        dataset.refresh_from_db()
+        dataset.set_current_language("lt")
+        assert dataset.title == "Test Title LT"
+        assert dataset.description == "Test Description LT"
+        assert dataset.organization == org
+
+    def test_change_to_service_sets_flag(self, app: DjangoTestApp):
+        dataset_subclass = DCATResourceSubclassFactory(name="dataset")
+        service_subclass = DCATResourceSubclassFactory(name="service")
+        org = OrganizationFactory()
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=dataset_subclass,
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change-subclass", kwargs={"pk": dataset.id})
+        form = app.get(url).forms["change-subclass-form"]
+        form["subclass"] = service_subclass.pk
+        form.submit()
+
+        dataset.refresh_from_db()
+        assert dataset.subclass == service_subclass
+        assert dataset.service is True
+
+    def test_change_to_series_sets_flag(self, app: DjangoTestApp):
+        dataset_subclass = DCATResourceSubclassFactory(name="dataset")
+        series_subclass = DCATResourceSubclassFactory(name="series")
+        org = OrganizationFactory()
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=dataset_subclass,
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change-subclass", kwargs={"pk": dataset.id})
+        form = app.get(url).forms["change-subclass-form"]
+        form["subclass"] = series_subclass.pk
+        form.submit()
+
+        dataset.refresh_from_db()
+        assert dataset.subclass == series_subclass
+        assert dataset.series is True
+
+    def test_reversion_entry_created(self, app: DjangoTestApp):
+        catalog_subclass = DCATResourceSubclassFactory(name="catalog")
+        dataset_subclass = DCATResourceSubclassFactory(name="dataset")
+        org = OrganizationFactory()
+        dataset = DatasetFactory(
+            organization=org,
+            subclass=catalog_subclass,
+        )
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        before_count = Version.objects.get_for_object(dataset).count()
+
+        url = reverse("dataset-change-subclass", kwargs={"pk": dataset.id})
+        form = app.get(url).forms["change-subclass-form"]
+        form["subclass"] = dataset_subclass.pk
+        form.submit()
+
+        assert Version.objects.get_for_object(dataset).count() == before_count + 1

@@ -61,6 +61,7 @@ from vitrina.datasets.views import (
     DatasetChildResourceListView,
     ResourceSubclassCreateView,
     DatasetChildResourceCreateView,
+    DatasetChangeSubclassView,
 )
 
 urlpatterns = [
@@ -184,6 +185,7 @@ urlpatterns = [
         name="child-dataset-add",
     ),
     path("datasets/<int:pk>/update/", DatasetUpdateView.as_view(), name="dataset-change"),
+    path("datasets/<int:pk>/change-subclass/", DatasetChangeSubclassView.as_view(), name="dataset-change-subclass"),
     path("datasets/<int:pk>/", DatasetDetailView.as_view(), name="dataset-detail"),
     path(
         "datasets/<int:dataset_id>/preview/<int:distribution_id>/",

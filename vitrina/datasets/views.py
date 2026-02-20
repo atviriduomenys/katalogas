@@ -69,6 +69,7 @@ from vitrina.datasets.forms import (
     InformationSystemResourceForm,
     DatasetResourceForm,
     CatalogResourceForm,
+    DatasetChangeSubclassForm,
 )
 from vitrina.datasets.helpers import is_manager_dataset_list, generate_unique_dataset_name, is_child_resources_list
 from vitrina.structure import VersionStatus
@@ -93,6 +94,7 @@ from vitrina.datasets.services import (
     manage_subscriptions_for_representative,
     RepresentativeCreationError,
     DatasetRepresentativeService,
+    change_dataset_subclass,
 )
 from vitrina.datasets.models import (
     Dataset,
@@ -779,7 +781,6 @@ class DatasetCreateView(
                 "information_description": subclass.translated_description,
                 "button": _("Sukurti"),
                 "current_step": 2,
-                "current_percentage": 100,
                 "selected_subclass_uuid": str(subclass_uuid),
                 "service_subclass": str(DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE).pk),
             }
@@ -1049,7 +1050,6 @@ class ResourceSubclassCreateView(
                     self.object,
                 ),
                 "current_step": 1,
-                "current_percentage": 50,
             }
         )
 
@@ -1069,6 +1069,70 @@ class ResourceSubclassCreateView(
                 reverse("child-dataset-add", kwargs={"pk": pk, "parent_id": parent_id, "subclass_uuid": subclass.uuid})
             )
         return redirect(reverse("dataset-add", kwargs={"pk": pk, "subclass_uuid": subclass.uuid}))
+
+
+class DatasetChangeSubclassView(
+    DatasetBreadcrumbsMixin,
+    LoginRequiredMixin,
+    PermissionRequiredMixin,
+    View,
+):
+    template_name = "vitrina/datasets/change_subclass_form.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.dataset = get_object_or_404(Dataset, pk=self.kwargs["pk"])
+        return super().dispatch(request, *args, **kwargs)
+
+    def has_permission(self):
+        subclass = self.dataset.subclass
+        action = Action.INFORMATION_SYSTEM_UPDATE if subclass.is_information_system else Action.UPDATE
+        return has_perm(self.request.user, action, self.dataset)
+
+    def get_breadcrumbs(self) -> list[Crumb]:
+        crumbs = self.dataset_hierarchy(self.dataset, include_home=True, make_current=False)
+        crumbs.append(Crumb(title=_("Redaguoti"), url=None, is_current=True))
+        return crumbs
+
+    def get(self, request, *args, **kwargs):
+        form = DatasetChangeSubclassForm(request=request, dataset=self.dataset)
+        return render(request, self.template_name, self._get_context(form))
+
+    def post(self, request, *args, **kwargs):
+        form = DatasetChangeSubclassForm(request.POST, request=request, dataset=self.dataset)
+        if form.is_valid():
+            new_subclass = form.cleaned_data["subclass"]
+            changed = change_dataset_subclass(self.dataset, new_subclass)
+            if changed:
+                messages.success(request, _("Duomenų ištekliaus rūšis sėkmingai pakeista"))
+            return redirect(reverse("dataset-change", kwargs={"pk": self.dataset.pk}))
+        return render(request, self.template_name, self._get_context(form))
+
+    def _get_context(self, form):
+        return {
+            "form": form,
+            "dataset": self.dataset,
+            "breadcrumbs": self.get_breadcrumbs(),
+            "information_title": _("Pasirinkite duomenų ištekliaus rūšį"),
+            "current_title": _("Duomenų ištekliaus redagavimas"),
+            "form_title": _("Duomenų ištekliaus rūšis"),
+            "form_description": _("Pasirinkite duomenų ištekliaus rūšį"),
+            "current_step": 1,
+            "detail_url_name": "dataset-detail",
+            "detail_url": reverse("dataset-detail", args=[self.dataset.pk]),
+            "child_resources_url": reverse("dataset-child-resources", args=[self.dataset.pk]),
+            "history_url": reverse("dataset-history", args=[self.dataset.pk]),
+            "can_manage_history": has_perm(
+                self.request.user,
+                Action.HISTORY_VIEW,
+                self.dataset,
+            ),
+            "can_view_members": has_perm(
+                self.request.user,
+                Action.VIEW,
+                Representative,
+                self.dataset,
+            ),
+        }
 
 
 class DatasetUpdateView(
@@ -1119,6 +1183,7 @@ class DatasetUpdateView(
                 "selected_subclass_uuid": str(subclass_uuid),
                 "service_subclass": str(DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE).pk),
                 "button": _("Redaguoti"),
+                "current_step": 2,
                 "request_user": (self.request.user if self.request.user.is_authenticated else None),
                 "can_view_members": has_perm(
                     self.request.user,

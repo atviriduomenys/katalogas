@@ -21,6 +21,7 @@ from itsdangerous import URLSafeSerializer
 
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.helpers import get_filter_url, get_current_domain
+from vitrina.identifiers.models import Agency
 from vitrina.api.models import ApiKey
 from vitrina.helpers import email
 from vitrina.messages.models import Subscription, SentMail
@@ -527,6 +528,58 @@ class DynamicResourceService:
             "period_end": self.uapi_distribution.period_end if self.uapi_distribution else None,
             "geo_location": self.uapi_distribution.geo_location if self.uapi_distribution else None,
         }
+
+
+@transaction.atomic
+def change_dataset_subclass(dataset: Dataset, new_subclass: DCATResourceSubclass) -> bool:
+    old_subclass = dataset.subclass
+
+    if old_subclass == new_subclass:
+        return False
+
+    old_name = old_subclass.name
+    new_name = new_subclass.name
+
+    # Clear type-specific fields for the old subclass
+    if old_name == DCATResourceSubclass.SERVICE:
+        dataset.endpoint_url = None
+        dataset.endpoint_type = None
+        dataset.endpoint_description = None
+        dataset.endpoint_description_type = None
+        dataset.service_type.clear()
+
+    elif old_name == DCATResourceSubclass.INFORMATION_SYSTEM:
+        dataset.information_system_type = None
+        dataset.information_system_importance = None
+        dataset.information_system_publisher = None
+        dataset.information_system_creator = None
+        dataset.rights_relation = None
+        for lang_code, _ in settings.LANGUAGES:
+            dataset.set_current_language(lang_code)
+            dataset.conditions = None
+        risr_agency = Agency.objects.filter(code="risr").first()
+        if risr_agency:
+            dataset.identifiers.filter(scheme_agency=risr_agency).delete()
+
+    elif old_name == DCATResourceSubclass.DATASET:
+        dataset.temporal_start = None
+        dataset.temporal_end = None
+        dataset.temporal_resolution = None
+        dataset.spatial_resolution = None
+
+    elif old_name == DCATResourceSubclass.CATALOG:
+        dataset.rights_relation = None
+        for lang_code, _ in settings.LANGUAGES:
+            dataset.set_current_language(lang_code)
+            dataset.conditions = None
+
+    # Set boolean flags for the new subclass
+    dataset.service = new_name == DCATResourceSubclass.SERVICE
+    dataset.series = new_name == DCATResourceSubclass.SERIES
+
+    dataset.subclass = new_subclass
+    dataset.save()
+    return True
 
 
 class RepresentativeCreationError(Exception):

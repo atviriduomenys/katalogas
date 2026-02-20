@@ -26,10 +26,10 @@
           {{ form_title }}
         </p>
       </div>
-      {% if organization_id %}
+      {% if current_step %}
         <div class="is-flex is-align-items-center" style="width: 20%;">
           <div class="is-flex-grow-1 mr-2" style="display: flex; align-items: center;">
-            <progress class="progress is-info is-small" value="{{ current_percentage }}" max="100"></progress>
+            <progress class="progress is-info is-small" value="{{ current_step }}" max="2"></progress>
           </div>
           <p class="mb-0" style="line-height: 1;">
             {{ current_step }}/2

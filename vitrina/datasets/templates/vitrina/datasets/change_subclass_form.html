@@ -1,0 +1,50 @@
+{% extends "base_form.html" %}
+{% load i18n %}
+
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block content %}
+
+  {% include 'vitrina/datasets/tabs.html' %}
+  {% include 'vitrina/datasets/resource_information.html' %}
+
+  <form method="post" id="change-subclass-form" novalidate>
+    {% csrf_token %}
+
+    {% if form.subclass.errors %}
+      <p class="help is-danger">{{ form.subclass.errors.as_text }}</p>
+    {% endif %}
+
+    <div class="field">
+      <div class="columns is-multiline">
+        {% for radio in form.subclass %}
+          <div class="column is-one-third">
+            <label class="box" style="cursor: pointer;">
+              {{ radio.tag }}
+              {{ radio.choice_label|safe }}
+            </label>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="buttons is-right">
+      <a href="{% url 'dataset-detail' pk=dataset.id %}"
+         class="has-text-info mr-4"
+         style="align-self: center;">
+        {% translate "Atšaukti" %}
+      </a>
+      <button type="submit" class="button is-primary">
+        {% translate "Toliau" %}
+      </button>
+    </div>
+  </form>
+
+{% endblock %}

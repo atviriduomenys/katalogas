@@ -19,6 +19,12 @@
          style="align-self: center;">
         {% translate "Grįžti" %}
       </a>
+    {% elif dataset.pk %}
+      <a href="{% url 'dataset-change-subclass' pk=dataset.pk %}"
+         class="has-text-info mr-4"
+         style="align-self: center;">
+        {% translate "Grįžti" %}
+      </a>
     {% endif %}
     <button type="submit" class="button is-primary">
       {{ button }}

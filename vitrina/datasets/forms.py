@@ -97,6 +97,34 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
         return subclass
 
 
+class DatasetChangeSubclassForm(forms.Form):
+    subclass = ResourceSubclassTypeField(
+        label=_("Duomenų ištekliaus rūšis"),
+        queryset=DCATResourceSubclass.objects.all(),
+        widget=forms.RadioSelect,
+    )
+
+    def __init__(self, *args, request=None, dataset=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dataset = dataset
+
+        if dataset:
+            self.fields["subclass"].initial = dataset.subclass_id
+
+        if request and dataset and request.user:
+            organization = dataset.organization
+            if organization and request.user.is_open_data_representative_for(organization):
+                self.fields["subclass"].queryset = DCATResourceSubclass.objects.exclude(
+                    name=DCATResourceSubclass.INFORMATION_SYSTEM
+                )
+
+    def clean_subclass(self):
+        subclass = self.cleaned_data.get("subclass")
+        if not subclass:
+            raise ValidationError(_("Šis laukas yra privalomas."))
+        return subclass
+
+
 class BaseResourceForm(TranslatableModelForm):
     title = TranslatedField(
         form_class=CharField,

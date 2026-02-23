@@ -468,22 +468,9 @@ def _create_or_update_metadata(
     obj_meta: struct.Metadata,
     obj: models.Model,
     order: int = None,
-    use_existing_meta: bool = False,
     metadata_version: Version = None,
 ) -> Tuple[models.Model, struct.Metadata]:
     ct = ContentType.objects.get_for_model(obj)
-
-    if (
-        use_existing_meta
-        and obj.pk
-        and Metadata.objects.filter(
-            object_id=obj.pk, content_type=ct, dataset=dataset, metadata_version=metadata_version
-        ).exists()
-    ):
-        metadata = Metadata.objects.filter(
-            object_id=obj.pk, content_type=ct, dataset=dataset, metadata_version=metadata_version
-        ).first()
-        return metadata.object, metadata
 
     if (
         obj_meta.id
@@ -643,11 +630,8 @@ def _link_resource_distributions(dataset_meta: struct.Dataset, dataset: Dataset,
             resource_meta,
             distribution,
             i,
-            use_existing_meta=True,
             metadata_version=metadata_version,
         )
-        metadata.name = resource_meta.name
-        metadata.save()
 
         _load_params(dataset, resource_meta.params, distribution, metadata_version)
         _clean_errors(distribution)
@@ -1344,25 +1328,27 @@ def _dataset_to_tabular(dataset: Dataset, separator: bool = False, version: Vers
     yield from _prefixes_to_tabular(dataset, separator=separator, version=version)
     yield from _enums_to_tabular(dataset, separator=separator, version=version)
     yield from _params_to_tabular(dataset, separator=separator, version=version)
-    yield from _dataset_resources_to_tabular(dataset, separator=separator, version=version)
+    yield from _dataset_resources_to_tabular(dataset, version=version)
     yield from _models_to_tabular(dataset, separator=separator, version=version)
 
 
-def _dataset_resources_to_tabular(
-    dataset: Dataset, separator: bool = False, version: Version | None = None
-) -> Generator:
+def _dataset_resources_to_tabular(dataset: Dataset, version: Version | None = None) -> Generator:
     distribution_filter = {"dataset": dataset, "model__isnull": True}
+    model_filter = {"dataset": dataset, "distribution__isnull": False}
     metadata_queryset = Metadata.objects.all()
     if version is not None:
         distribution_filter["metadata_version"] = version
+        model_filter["metadata__metadata_version"] = version
         metadata_queryset = metadata_queryset.filter(metadata_version=version)
     distributions = (
         DatasetDistribution.objects.filter(**distribution_filter)
         .prefetch_related(Prefetch("metadata", queryset=metadata_queryset.order_by("order")))
         .order_by("metadata__order")
     )
+    distributions_with_models = set(Model.objects.filter(**model_filter).values_list("distribution_id", flat=True))
     for distribution in distributions:
-        yield from _resource_to_tabular(distribution, version=version)
+        if distribution.pk not in distributions_with_models:
+            yield from _resource_to_tabular(distribution, version=version)
 
 
 def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Version | None = None) -> Generator:
@@ -1496,12 +1482,12 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Versi
     resource = None
     base = None
     for model in dataset_models:
-        if model.distribution and not resource:
-            yield from _resource_to_tabular(model.distribution, version=version)
+        if model.distribution != resource:
+            if resource:
+                yield from _end_marker("resource")
+            if model.distribution:
+                yield from _resource_to_tabular(model.distribution, version=version)
             resource = model.distribution
-        elif not model.distribution and resource:
-            yield from _end_marker("resource")
-            resource = None
 
         if model.base and not base:
             yield from _base_to_tabular(model.base, version=version)

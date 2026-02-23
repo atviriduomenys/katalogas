@@ -11,6 +11,15 @@ https://github.com/atviriduomenys/katalogas/issues/2353
 - Do not strip `/` prefix from `property.ref` during import/export.
 
 
+https://github.com/atviriduomenys/katalogas/issues/2339
+
+- Adjust export logic for the `resource` column of manifest:
+    - More explicit filtering on distributions;
+    - Removing short-circuit which caused some resources to not be exported;
+    - Adjusting the logic for `_to_relative_model_name`;
+    - Additional improvements on `_dataset_resources_to_tabular` to avoid early exports for some rows (which caused missing some data)
+
+
 v 1.14.1 (2026-02-23)
 ==================
 

@@ -6841,6 +6841,47 @@ class TestStructure(BaseTestCreateManifest):
             "2,,service,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,service,",
         ]
 
+    def test_export__duplicated_source_exports_resources_correctly(self, app: DjangoTestApp):
+        """Ensure that resources that have an identical source column value are exported correctly."""
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,dataset,,,,,,,,,,,\n"
+            "2,,nested_read,,,,dask/xml,,,eval(param(nested_xml)),,,,,,,,\n"
+            "3,,,,,,param,nested_xml,GetData,read().response_data,,,,,,,,\n"
+            "4,,,,,,param,action_type,input/ActionType,input(),,,,,,,,\n"
+            "5,,,,Country,,,,countries/countryData,,,,,open,,,,\n"
+            "6,,,,,id,string,,id,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,\n"
+            "7,,nested_read_multiple,,,,dask/xml,,,eval(param(nested_xml)),,,,,,,,\n"
+            "8,,,,,,param,nested_xml,GetDataMultiple,read().response_data,,,,,,,,\n"
+            "9,,,,CountryMultiple,,,,countries/countryData,,,,,public,,,,\n"
+            "10,,,,,id,string,,id,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,nested_read,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,nested_read,",
+            "3,,,,,,param,nested_xml,GetData,,read().response_data,,,,develop,,,,,,",
+            "4,,,,,,param,action_type,input/ActionType,,input(),,,,develop,,,,,,",
+            "5,,,,Country,,,,countries/countryData,,,,,,develop,,open,,,,",
+            "6,,,,,id,string,,id,,,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            ",,/,,,,,,,,,,,,,,,,,,",
+            "7,,nested_read_multiple,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,nested_read_multiple,",
+            "8,,,,,,param,nested_xml,GetDataMultiple,,read().response_data,,,,develop,,,,,,",
+            "9,,,,CountryMultiple,,,,countries/countryData,,,,,,develop,,public,,,,",
+            "10,,,,,id,string,,id,,,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
 
 class TestStructureExportDependentModels(BaseTestCreateManifest):
     @pytest.mark.django_db

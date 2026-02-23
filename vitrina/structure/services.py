@@ -600,14 +600,22 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
 
 def _link_resource_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata_version: Version):
     """Link each resource as a separate distribution."""
+    distribution_content_type = ContentType.objects.get_for_model(DatasetDistribution)
     for i, resource_meta in enumerate(dataset_meta.resources.values()):
         title = resource_meta.title or dataset_meta.title or resource_meta.name
 
-        distribution = DatasetDistribution.objects.filter(
-            dataset=dataset,
-            download_url=resource_meta.source,
-            metadata_version=metadata_version,
-        ).first()
+        distribution = (
+            DatasetDistribution.objects.filter(
+                dataset=dataset,
+                download_url=resource_meta.source,
+                metadata_version=metadata_version,
+            )
+            .filter(
+                Q(metadata__name=resource_meta.name, metadata__content_type=distribution_content_type)
+                | Q(metadata__isnull=True)
+            )
+            .first()
+        )
 
         if not distribution:
             distribution = _create_distribution_with_status_update(
@@ -1705,11 +1713,13 @@ def _properties_to_tabular(model: Model, version: Version | None = None) -> Gene
 
 
 def _to_relative_model_name(name: str, dataset: Dataset) -> str:
-    if dataset.name and name.startswith(dataset.name):
-        prefix = dataset.name
-        return name[len(prefix) + 1 :]
-    else:
-        return name
+    if dataset.name:
+        if name == dataset.name:
+            return name
+        prefix = dataset.name + "/"
+        if name.startswith(prefix):
+            return name[len(prefix) :]
+    return name
 
 
 def _get_access(acess: int) -> str:

@@ -1,11 +1,12 @@
 from django.contrib.contenttypes.models import ContentType
+from django.core.exceptions import PermissionDenied
 from django.db.utils import IntegrityError
 from django.http import HttpRequest
 from django.http import HttpResponse
 from django.templatetags.static import static
 from django.utils import timezone
 from django.apps import apps
-
+from haystack.query import SearchQuerySet
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.renderers import _SpecRenderer
@@ -48,6 +49,8 @@ from vitrina.api.serializers import (
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
+from vitrina.datasets.services import filter_out_non_public_datasets_for_user
+from vitrina.orgs.models import Representative
 from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
 from vitrina.structure.models import Metadata
@@ -190,11 +193,30 @@ class DatasetViewSet(ModelViewSet):
     lookup_url_kwarg = "datasetId"
     organization = None
     user = None
+    publisher = None
+    organization_role = None
 
     def get_queryset(self):
-        if self.organization:
-            return Dataset.objects.filter(organization=self.organization, deleted__isnull=True)
-        return Dataset.objects.none()
+        if not self.organization:
+            return Dataset.objects.none()
+        queryset = Dataset.objects.filter(organization=self.organization, deleted__isnull=True)
+        if self.user:
+            sqs = SearchQuerySet().models(Dataset).filter(django_id__in=queryset.values_list("id", flat=True))
+            datasets = filter_out_non_public_datasets_for_user(self.user, sqs)
+            ids = datasets.models(Dataset).values_list("pk", flat=True)
+            queryset = queryset.filter(pk__in=ids)
+        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
+            queryset = queryset.filter(access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
+
+        return queryset
+
+    def get_object(self):
+        dataset_id = self.kwargs.get("datasetId")
+        dataset = get_object_or_404(Dataset, organization=self.organization, pk=dataset_id, deleted__isnull=True)
+
+        if not self.get_queryset().filter(pk=dataset.pk).exists():
+            raise PermissionDenied()
+        return dataset
 
     @swagger_auto_schema(
         operation_summary="List all datasets",
@@ -267,7 +289,12 @@ class DatasetViewSet(ModelViewSet):
 class InternalDatasetViewSet(DatasetViewSet):
     def get_object(self):
         internal_id = self.kwargs.get("internalId")
-        obj = get_object_or_404(Dataset, organization=self.organization, internal_id=internal_id)
+
+        obj = get_object_or_404(Dataset, organization=self.organization, internal_id=internal_id, deleted__isnull=True)
+
+        if not self.get_queryset().filter(pk=obj.pk).exists():
+            raise PermissionDenied()
+
         return obj
 
     @swagger_auto_schema(
@@ -312,7 +339,20 @@ class DatasetDistributionViewSet(ModelViewSet):
         return queryset
 
     def get_dataset(self):
-        return get_object_or_404(Dataset, pk=self.kwargs.get("datasetId"))
+        dataset = get_object_or_404(Dataset, pk=self.kwargs.get("datasetId"), deleted__isnull=True)
+        if self.user:
+            sqs = SearchQuerySet().models(Dataset).filter(django_id=dataset.id)
+            accessible = filter_out_non_public_datasets_for_user(self.user, sqs)
+            if not accessible:
+                raise PermissionDenied()
+
+        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
+            if dataset.access_rights not in (Dataset.PUBLIC, Dataset.RESTRICTED):
+                raise PermissionDenied()
+        else:
+            raise PermissionDenied()
+
+        return dataset
 
     @swagger_auto_schema(
         operation_summary="Get all dataset distributions",
@@ -388,8 +428,20 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
     organization = None
 
     def get_dataset(self):
-        internal_id = self.kwargs.get("internalId")
-        dataset = get_object_or_404(Dataset, organization=self.organization, internal_id=internal_id)
+        dataset = get_object_or_404(
+            Dataset, organization=self.organization, internal_id=self.kwargs.get("internalId"), deleted__isnull=True
+        )
+        if self.user:
+            sqs = SearchQuerySet().models(Dataset).filter(django_id=dataset.id)
+            accessible = filter_out_non_public_datasets_for_user(self.user, sqs)
+            if not accessible:
+                raise PermissionDenied()
+        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
+            if dataset.access_rights not in (Dataset.PUBLIC, Dataset.RESTRICTED):
+                raise PermissionDenied()
+        else:
+            raise PermissionDenied()
+
         return dataset
 
     @swagger_auto_schema(
@@ -635,7 +687,20 @@ class DatasetStructureViewSet(CreateModelMixin, DestroyModelMixin, ListModelMixi
         return queryset
 
     def get_dataset(self):
-        return get_object_or_404(Dataset, pk=self.kwargs.get("datasetId"))
+        dataset = get_object_or_404(Dataset, pk=self.kwargs.get("datasetId"), deleted__isnull=True)
+
+        if self.user:
+            sqs = SearchQuerySet().models(Dataset).filter(django_id=dataset.id)
+            accessible = filter_out_non_public_datasets_for_user(self.user, sqs)
+            if not accessible:
+                raise PermissionDenied()
+        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
+            if dataset.access_rights not in (Dataset.PUBLIC, Dataset.RESTRICTED):
+                raise PermissionDenied()
+        else:
+            raise PermissionDenied()
+
+        return dataset
 
     @swagger_auto_schema(
         operation_summary="Get all dataset structure entries",
@@ -673,8 +738,24 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
     organization = None
 
     def get_dataset(self):
-        internal_id = self.kwargs.get("internalId")
-        dataset = get_object_or_404(Dataset, organization=self.organization, internal_id=internal_id)
+        dataset = get_object_or_404(
+            Dataset,
+            organization=self.organization,
+            internal_id=self.kwargs.get("internalId"),
+        )
+
+        if self.user:
+            sqs = SearchQuerySet().models(Dataset).filter(django_id=dataset.id)
+            accessible = filter_out_non_public_datasets_for_user(self.user, sqs)
+            if not accessible:
+                raise PermissionDenied()
+
+        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
+            if dataset.access_rights not in (Dataset.PUBLIC, Dataset.RESTRICTED):
+                raise PermissionDenied()
+        else:
+            raise PermissionDenied()
+
         return dataset
 
     @swagger_auto_schema(

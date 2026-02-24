@@ -21,7 +21,7 @@ from vitrina.users.models import User
 
 
 def get_api_key_organization_and_user(request: HttpRequest, raise_error: bool = True) -> (Organization, User):
-    organization = user = dataset = None
+    organization = user = dataset = organization_role = None
     publisher = False
 
     auth = request.META.get("HTTP_AUTHORIZATION", "")
@@ -58,9 +58,13 @@ def get_api_key_organization_and_user(request: HttpRequest, raise_error: bool = 
                             organization = content_object.organization
 
                         publisher = bool(representative.organization)
+
+                        if publisher:
+                            organization_role = representative.role
+
                         if not publisher:
                             user = representative.user
-    return organization, user, dataset, publisher
+    return organization, user, dataset, organization_role, publisher
 
 
 def is_duplicate_key(api_key: str) -> (Organization, bool):

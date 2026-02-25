@@ -2072,7 +2072,7 @@ def test_get_dataset_structures_with_internal_id(app: DjangoTestApp):
 
 @pytest.mark.parametrize("access_rights", [Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
 @pytest.mark.django_db
-def test_get_dataset_structures_with_internal_id(app: DjangoTestApp, access_rights):
+def test_get_dataset_structures_with_internal_id_open_data_representative(app: DjangoTestApp, access_rights):
     dataset = DatasetFactory(internal_id="test", access_rights=access_rights)
     DatasetStructureFactory(dataset=dataset)
     DatasetStructureFactory()

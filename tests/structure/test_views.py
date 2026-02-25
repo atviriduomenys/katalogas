@@ -6767,6 +6767,121 @@ class TestStructure(BaseTestCreateManifest):
             ",,,,,,,,,,,,,,,,,,,,",
         ]
 
+    def test_export__resource_and_param_rows_exported_with_all_columns(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,,,,,,,,,,,,,,,\n"
+            "2,,resource_wsdl,,,,wsdl,,http://127.0.0.1:8001/api/v1/test/testing/?wsdl,,,,,,,,,,,,\n"
+            "3,,resource_soap,,,,soap,,TestTesting.TestPort.TestPort.test,,wsdl(rc_wsdl),,,,,,,,,,\n"
+            "4,,,,,,param,action_type,input/ActionType,,input(),,,,,,,,,,\n"
+            "5,,,,Soap,,,,/,,,,,,,,open,,,,\n"
+            "6,,,,,response_data,string,,ResponseData,,base64(),,,,,,,,,,\n"
+            "7,,,,,action_type,string required,,,,param(action_type),,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,,,,\n"
+            "8,,resource_xml,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,\n"
+            "9,,,,,,param,nested_xml,Soap,,read().response_data,,,,,,,\n"
+            "10,,,,Approver,,,,,,,,,0,,,,,,Approver,\n"
+            "11,,,,,company_name,string,,ApproverCompanyName/text(),,,,,4,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Title", "Description")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Title,Description",
+            "2,,resource_wsdl,,,,wsdl,,http://127.0.0.1:8001/api/v1/test/testing/?wsdl,,,,,,,,,,,resource_wsdl,",
+            "3,,resource_soap,,,,soap,,TestTesting.TestPort.TestPort.test,,wsdl(rc_wsdl),,,,,,,,,resource_soap,",
+            "4,,,,,,param,action_type,input/ActionType,,input(),,,,develop,,,,,,",
+            "5,,,,Soap,,,,/,,,,,,develop,,open,,,,",
+            "6,,,,,response_data,string,,ResponseData,,base64(),,,,develop,,,,,,",
+            "7,,,,,action_type,string required,,,,param(action_type),,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            ",,/,,,,,,,,,,,,,,,,,,",
+            "8,,resource_xml,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,resource_xml,",
+            "9,,,,,,param,nested_xml,Soap,,read().response_data,,,,develop,,,,,,",
+            "10,,,,Approver,,,,,,,,,0,develop,,,,,Approver,",
+            "11,,,,,company_name,string,,ApproverCompanyName/text(),,,,,4,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__repeat_import_correctly_updates_manifest_rows(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest_no_prepare = (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,,,,,,,,,,,,,,,\n"
+            "2,,service,,,,dask/xml,,,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest_no_prepare, "Title", "Description")
+        version = dataset.latest_version()
+
+        manifest_with_prepare = (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,,,,,,,,,,,,,,,\n"
+            "2,,service,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,\n"
+        )
+
+        # Second import to test updates
+        structure = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest_with_prepare)), dataset=dataset
+        )
+        dataset.current_structure = structure
+        dataset.save()
+        create_structure_objects(structure, metadata_version=version)
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, version.pk]))
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Title,Description",
+            "2,,service,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,service,",
+        ]
+
+    def test_export__duplicated_source_exports_resources_correctly(self, app: DjangoTestApp):
+        """Ensure that resources that have an identical source column value are exported correctly."""
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,dataset,,,,,,,,,,,\n"
+            "2,,nested_read,,,,dask/xml,,,eval(param(nested_xml)),,,,,,,,\n"
+            "3,,,,,,param,nested_xml,GetData,read().response_data,,,,,,,,\n"
+            "4,,,,,,param,action_type,input/ActionType,input(),,,,,,,,\n"
+            "5,,,,Country,,,,countries/countryData,,,,,open,,,,\n"
+            "6,,,,,id,string,,id,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,\n"
+            "7,,nested_read_multiple,,,,dask/xml,,,eval(param(nested_xml)),,,,,,,,\n"
+            "8,,,,,,param,nested_xml,GetDataMultiple,read().response_data,,,,,,,,\n"
+            "9,,,,CountryMultiple,,,,countries/countryData,,,,,public,,,,\n"
+            "10,,,,,id,string,,id,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,nested_read,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,nested_read,",
+            "3,,,,,,param,nested_xml,GetData,,read().response_data,,,,develop,,,,,,",
+            "4,,,,,,param,action_type,input/ActionType,,input(),,,,develop,,,,,,",
+            "5,,,,Country,,,,countries/countryData,,,,,,develop,,open,,,,",
+            "6,,,,,id,string,,id,,,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            ",,/,,,,,,,,,,,,,,,,,,",
+            "7,,nested_read_multiple,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,nested_read_multiple,",
+            "8,,,,,,param,nested_xml,GetDataMultiple,,read().response_data,,,,develop,,,,,,",
+            "9,,,,CountryMultiple,,,,countries/countryData,,,,,,develop,,public,,,,",
+            "10,,,,,id,string,,id,,,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
 
 class TestStructureExportDependentModels(BaseTestCreateManifest):
     @pytest.mark.django_db

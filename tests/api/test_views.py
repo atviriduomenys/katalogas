@@ -1332,7 +1332,7 @@ def test_put_create_dataset_distribution_without_api_key(app: DjangoTestApp):
 @pytest.mark.parametrize("access_rights", [Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
 @pytest.mark.django_db
 def test_put_create_dataset_distribution_open_data_representative(app: DjangoTestApp, access_rights):
-    dataset = DatasetFactory(access_rights)
+    dataset = DatasetFactory(access_rights=access_rights)
     ct = ContentType.objects.get_for_model(dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
@@ -1576,6 +1576,28 @@ def test_update_dataset_distribution_with_wrong_dataset_id(app: DjangoTestApp):
     assert res.status_code == 404
 
 
+@pytest.mark.parametrize("access_rights", [Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+@pytest.mark.django_db
+def test_update_dataset_distribution_with_dataset_id_open_data_representative(app: DjangoTestApp, access_rights):
+    distribution = DatasetDistributionFactory()
+    distribution.dataset.access_rights = access_rights
+    distribution.dataset.save()
+    ct = ContentType.objects.get_for_model(distribution.dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=distribution.dataset.organization.pk,
+    )
+    APIKeyFactory(representative=representative)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.patch(
+        reverse(
+            "api-single-distribution", kwargs={"datasetId": distribution.dataset.pk, "distributionId": distribution.pk}
+        ),
+        expect_errors=True,
+    )
+    assert res.status_code == 403
+
+
 @pytest.mark.django_db
 def test_update_dataset_distribution_with_wrong_internal_id(app: DjangoTestApp):
     distribution = DatasetDistributionFactory()
@@ -1595,6 +1617,38 @@ def test_update_dataset_distribution_with_wrong_internal_id(app: DjangoTestApp):
         expect_errors=True,
     )
     assert res.status_code == 404
+
+
+@pytest.mark.parametrize("access_rights", [Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+@pytest.mark.django_db
+def test_update_dataset_distribution_with_internal_id_open_data_representative(app: DjangoTestApp, access_rights):
+    dataset = DatasetFactory(internal_id="test", access_rights=access_rights)
+    distribution = DatasetDistributionFactory(dataset=dataset)
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.organization.pk,
+    )
+    APIKeyFactory(representative=representative)
+    content_type, params = app.encode_multipart(
+        params=[
+            ("title", "Updated title"),
+            ("description", "Updated description"),
+            ("region", "Geo"),
+            ("municipality", "Location"),
+        ],
+        files=[("file", "updated_file.csv", b"test")],
+    )
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test", "CONTENT_TYPE": content_type})
+    res = app.patch(
+        reverse(
+            "api-single-distribution-internal",
+            kwargs={"internalId": dataset.internal_id, "distributionId": distribution.pk},
+        ),
+        params,
+        expect_errors=True,
+    )
+    assert res.status_code == 403
 
 
 @pytest.mark.django_db
@@ -1862,6 +1916,28 @@ def test_delete_dataset_distribution_with_wrong_internal_id(app: DjangoTestApp):
     assert res.status_code == 404
 
 
+@pytest.mark.parametrize("access_rights", [Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+@pytest.mark.django_db
+def test_delete_dataset_distribution_with_dataset_id_open_data_representative(app: DjangoTestApp, access_rights):
+    distribution = DatasetDistributionFactory()
+    dataset = distribution.dataset
+    dataset.access_rights = access_rights
+    dataset.save()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.organization.pk,
+    )
+    APIKeyFactory(representative=representative)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.delete(
+        reverse("api-single-distribution", kwargs={"datasetId": dataset.pk, "distributionId": distribution.pk}),
+        expect_errors=True,
+    )
+    assert res.status_code == 403
+    assert dataset.datasetdistribution_set.count() == 1
+
+
 @pytest.mark.django_db
 def test_delete_dataset_distribution_with_dataset_id(app: DjangoTestApp):
     distribution = DatasetDistributionFactory()
@@ -1897,6 +1973,29 @@ def test_delete_dataset_distribution_with_internal_id(app: DjangoTestApp):
     assert dataset.datasetdistribution_set.count() == 0
 
 
+@pytest.mark.parametrize("access_rights", [Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+@pytest.mark.django_db
+def test_delete_dataset_distribution_with_internal_id_open_data_representative(app: DjangoTestApp, access_rights):
+    dataset = DatasetFactory(internal_id="test", access_rights=access_rights)
+    distribution = DatasetDistributionFactory(dataset=dataset)
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.organization.pk,
+    )
+    APIKeyFactory(representative=representative)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.delete(
+        reverse(
+            "api-single-distribution-internal",
+            kwargs={"internalId": dataset.internal_id, "distributionId": distribution.pk},
+        ),
+        expect_errors=True,
+    )
+    assert res.status_code == 403
+    assert dataset.datasetdistribution_set.count() == 1
+
+
 @pytest.mark.django_db
 def test_get_dataset_structures_without_api_key(app: DjangoTestApp):
     structure = DatasetStructureFactory()
@@ -1927,6 +2026,26 @@ def test_get_dataset_structures_with_dataset_id(app: DjangoTestApp):
     ]
 
 
+@pytest.mark.parametrize("access_rights", [Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+@pytest.mark.django_db
+def test_get_dataset_structures_on_non_public_datasets_with_dataset_id_open_data_representative(
+    app: DjangoTestApp, access_rights
+):
+    structure = DatasetStructureFactory()
+    DatasetStructureFactory()
+    structure.dataset.access_rights = access_rights
+    structure.dataset.save()
+    ct = ContentType.objects.get_for_model(structure.dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.organization.pk,
+    )
+    APIKeyFactory(representative=representative)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-structure", kwargs={"datasetId": structure.dataset.pk}), expect_errors=True)
+    assert res.status_code == 403
+
+
 @pytest.mark.django_db
 def test_get_dataset_structures_with_internal_id(app: DjangoTestApp):
     dataset = DatasetFactory(internal_id="test")
@@ -1949,6 +2068,23 @@ def test_get_dataset_structures_with_internal_id(app: DjangoTestApp):
             "title": structure.title,
         }
     ]
+
+
+@pytest.mark.parametrize("access_rights", [Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL])
+@pytest.mark.django_db
+def test_get_dataset_structures_with_internal_id(app: DjangoTestApp, access_rights):
+    dataset = DatasetFactory(internal_id="test", access_rights=access_rights)
+    DatasetStructureFactory(dataset=dataset)
+    DatasetStructureFactory()
+    ct = ContentType.objects.get_for_model(dataset.organization)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=dataset.organization.pk,
+    )
+    APIKeyFactory(representative=representative)
+    app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
+    res = app.get(reverse("api-structure-internal", kwargs={"internalId": dataset.internal_id}), expect_errors=True)
+    assert res.status_code == 403
 
 
 @pytest.mark.django_db

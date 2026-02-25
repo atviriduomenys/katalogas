@@ -45,6 +45,23 @@ from vitrina.structure.models import Version as _Version
 from vitrina.utils import RevisionComment, RevisionSource
 
 
+class BaseTestCreateManifest:
+    def _create_manifest(self, manifest: str, title: str, description: str):
+        dataset = DatasetFactory(
+            title=title,
+            description=description,
+            metadata=False,
+        )
+        structure = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+        )
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        create_structure_objects(structure)
+        dataset.refresh_from_db()
+        return dataset
+
+
 @pytest.mark.django_db
 def test_model_data(app: DjangoTestApp):
     version = VersionFactory()
@@ -6718,22 +6735,40 @@ class TestModelDelete:
         assert resp.status_code == 405
 
 
-class TestStructureExportDependentModels:
-    def _create_manifest(self, manifest: str, title: str, description: str):
-        dataset = DatasetFactory(
-            title=title,
-            description=description,
-            metadata=False,
-        )
-        structure = DatasetStructureFactory(
-            file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
-        )
-        structure.dataset.current_structure = structure
-        structure.dataset.save()
-        create_structure_objects(structure)
-        dataset.refresh_from_db()
-        return dataset
+class TestStructure(BaseTestCreateManifest):
+    def test_import_and_export_does_not_strip_ref_property_source_prefixes(self, app: DjangoTestApp):
+        """The problem is that type `ref` property.ref removed prefixes `/`, they should not be removed.
 
+        Incorrect: `/datasets/gov/ref/dataset/Continent` -> `datasets/gov/ref/dataset/Continent`
+        Correct:   `/datasets/gov/ref/dataset/Continent` -> `/datasets/gov/ref/dataset/Continent`
+        """
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
+            '3,,,,Country,,,"id,title",,,,,,,,,,,\n'
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "5,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,",
+            "3,,,,Country,,,id,,,,,,,develop,,,,,,",
+            "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,",
+            "5,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+
+class TestStructureExportDependentModels(BaseTestCreateManifest):
     @pytest.mark.django_db
     def test_structure_export_dependent_models(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
@@ -6780,7 +6815,7 @@ class TestStructureExportDependentModels:
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 
@@ -6822,7 +6857,7 @@ class TestStructureExportDependentModels:
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 
@@ -6869,13 +6904,13 @@ class TestStructureExportDependentModels:
             "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,Referenced Dataset,Dependent dataset depth 1\r\n"
             '8,,,,Continent,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
-            "10,,,,,title,ref,datasets/gov/other/dataset/Other,,,,,,5,develop,,open,dct:title,,,\r\n"
+            "10,,,,,title,ref,/datasets/gov/other/dataset/Other,,,,,,5,develop,,open,dct:title,,,\r\n"
             "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Root dataset\r\n"
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 
@@ -6903,7 +6938,7 @@ class TestStructureExportDependentModels:
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 
@@ -6955,8 +6990,8 @@ class TestStructureExportDependentModels:
             '3,,,,MainModel,,,"id, prop1",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,prop1,string,,,,,,,5,develop,,open,dct:prop1,,,\r\n"
-            "6,,,,,prop2,ref,datasets/gov/ref/d1/D1Model1,,,,,,5,develop,,open,dct:prop2,,,\r\n"
-            "7,,,,,prop3,ref,datasets/gov/ref/d1/D1Model2,,,,,,5,develop,,open,dct:prop3,,,\r\n"
+            "6,,,,,prop2,ref,/datasets/gov/ref/d1/D1Model1,,,,,,5,develop,,open,dct:prop2,,,\r\n"
+            "7,,,,,prop3,ref,/datasets/gov/ref/d1/D1Model2,,,,,,5,develop,,open,dct:prop3,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 

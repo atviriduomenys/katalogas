@@ -815,9 +815,10 @@ def _link_properties(
                 PropertyList.objects.filter(
                     content_type=ct, object_id=prop.pk, metadata_version=metadata_version
                 ).delete()
-
+                # Stripping `property.ref` is needed during linking to find the related model, if it exists.
+                property_meta_ref = prop_meta.ref.lstrip("/")
                 if ref_model := Model.objects.filter(
-                    metadata__name=prop_meta.ref,
+                    metadata__name=property_meta_ref,
                     metadata__content_type=model_ct,
                 ).first():
                     prop.ref_model = ref_model

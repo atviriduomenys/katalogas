@@ -4,9 +4,17 @@ Changes
 v 1.15.0 (unreleased)
 ==================
 
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2353
+
+- Do not strip `/` prefix from `property.ref` during import/export.
+
 
 v 1.14.1 (2026-02-23)
 ==================
+
+Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/2397
 

@@ -87,9 +87,7 @@ class TestDatasetIndexQuery:
 
         # Should use EXISTS, not DISTINCT
         assert "EXISTS" in main_query, "Expected EXISTS subquery for translation filter"
-        assert "DISTINCT" not in main_query or "SELECT DISTINCT" not in main_query, (
-            "Should not use DISTINCT with EXISTS subquery"
-        )
+        assert "SELECT DISTINCT" not in main_query, "Should not use DISTINCT with EXISTS subquery"
 
     def test_query_count_scales_constantly(self):
         for _ in range(10):

@@ -195,8 +195,10 @@ class Model(models.Model):
     def _get_first_metadata(self) -> Metadata | None:
         prefetched = getattr(self, "_prefetched_objects_cache", {})
         if "metadata" in prefetched:
-            metadata_list = list(self.metadata.all())
-            return metadata_list[0] if metadata_list else None
+            if not hasattr(self, "_cached_first_metadata"):
+                metadata_list = list(self.metadata.all())
+                self._cached_first_metadata = metadata_list[0] if metadata_list else None
+            return self._cached_first_metadata
         return self.metadata.first()
 
     def __str__(self) -> str:
@@ -384,8 +386,10 @@ class Property(models.Model):
     def _get_first_metadata(self) -> Metadata | None:
         prefetched = getattr(self, "_prefetched_objects_cache", {})
         if "metadata" in prefetched:
-            metadata_list = list(self.metadata.all())
-            return metadata_list[0] if metadata_list else None
+            if not hasattr(self, "_cached_first_metadata"):
+                metadata_list = list(self.metadata.all())
+                self._cached_first_metadata = metadata_list[0] if metadata_list else None
+            return self._cached_first_metadata
         return self.metadata.first()
 
     def __str__(self):

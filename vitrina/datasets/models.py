@@ -693,12 +693,7 @@ class Dataset(Resource):
         return ""
 
     def get_resource_titles(self) -> list[str]:
-        titles = []
-        for dist in self.datasetdistribution_set.all():
-            for trans in dist.translations.all():
-                if trans.title:
-                    titles.append(trans.title)
-        return titles
+        return [dist.title for dist in self.datasetdistribution_set.all() if dist.title]
 
     def get_model_title_list(self) -> list[str]:
         return [model.title for model in self.model_set.all()]
@@ -710,20 +705,13 @@ class Dataset(Resource):
         return [prop.title for model in self.model_set.all() for prop in model.model_properties.all() if prop.title]
 
     def get_request_title_list(self) -> list[str]:
-        return [
-            trans.title for request in self.dataset_request.all() for trans in request.translations.all() if trans.title
-        ]
+        return [request.title for request in self.dataset_request.all() if request.title]
 
     def get_project_title_list(self) -> list[str]:
         return [project.title for project in self.project_set.all()]
 
     def get_resource_description(self) -> list[str]:
-        return [
-            trans.description
-            for dist in self.datasetdistribution_set.all()
-            for trans in dist.translations.all()
-            if trans.description
-        ]
+        return [dist.description for dist in self.datasetdistribution_set.all() if dist.description]
 
     def get_model_title_description(self) -> list[str]:
         return [model.description for model in self.model_set.all()]
@@ -737,12 +725,7 @@ class Dataset(Resource):
         ]
 
     def get_request_title_description(self) -> list[str]:
-        return [
-            trans.description
-            for request in self.dataset_request.all()
-            for trans in request.translations.all()
-            if trans.description
-        ]
+        return [request.description for request in self.dataset_request.all() if request.description]
 
     def get_project_title_description(self) -> list[str]:
         return [project.description for project in self.project_set.all()]
@@ -825,7 +808,7 @@ class Dataset(Resource):
     def filter_formats(self):
         formats = [obj.get_format().pk for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
-        if self.model_set.exists() and any(
+        if list(self.model_set.all()) and any(
             dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format
         ):
             from vitrina.resources.models import Format
@@ -894,7 +877,10 @@ class Dataset(Resource):
         resource_roles = {Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER}
         open_data_roles = {Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER}
 
-        ancestors = list(self.get_ancestors().only("pk", "organization_id"))
+        if self.depth == 1:
+            ancestors = []
+        else:
+            ancestors = list(self.get_ancestors().only("pk", "organization_id"))
 
         if not ancestors:
             all_reps = list(self.representatives.all())

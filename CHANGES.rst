@@ -19,6 +19,10 @@ https://github.com/atviriduomenys/katalogas/issues/2339
     - Adjusting the logic for `_to_relative_model_name`;
     - Additional improvements on `_dataset_resources_to_tabular` to avoid early exports for some rows (which caused missing some data)
 
+https://github.com/atviriduomenys/katalogas/issues/2429
+
+- Comment button fix for reply/edit/delete buttons to work.
+
 
 v 1.14.1 (2026-02-23)
 ==================

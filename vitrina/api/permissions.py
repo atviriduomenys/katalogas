@@ -15,6 +15,7 @@ class APIKeyPermission(BasePermission):
             view.user = user
             view.dataset = dataset
             view.publisher = publisher
+            view.organization_role = organization_role
             return True
 
         if organization and (user or publisher) and not dataset:

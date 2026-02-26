@@ -27,6 +27,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from reversion import set_user
 
 from vitrina.api.helpers import render_rdf_response
+from vitrina.api.mixins import OpenDataRepresentativeMixin
 from vitrina.api.models import ApiDescription
 from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
 from vitrina.api.serializers import (
@@ -187,7 +188,7 @@ class LicenceViewSet(ListModelMixin, GenericViewSet):
         return super().list(request, *args, **kwargs)
 
 
-class DatasetViewSet(ModelViewSet):
+class DatasetViewSet(OpenDataRepresentativeMixin, ModelViewSet):
     serializer_class = DatasetSerializer
     permission_classes = (APIKeyPermission,)
     lookup_url_kwarg = "datasetId"
@@ -200,15 +201,7 @@ class DatasetViewSet(ModelViewSet):
         if not self.organization:
             return Dataset.objects.none()
         queryset = Dataset.objects.filter(organization=self.organization, deleted__isnull=True)
-        if self.user:
-            sqs = SearchQuerySet().models(Dataset).filter(django_id__in=queryset.values_list("id", flat=True))
-            datasets = filter_out_non_public_datasets_for_user(self.user, sqs)
-            ids = datasets.models(Dataset).values_list("pk", flat=True)
-            queryset = queryset.filter(pk__in=ids)
-        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
-            queryset = queryset.filter(access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
-
-        return queryset
+        return self._filter_queryset_by_access(queryset)
 
     def get_object(self):
         dataset_id = self.kwargs.get("datasetId")
@@ -261,6 +254,8 @@ class DatasetViewSet(ModelViewSet):
     )
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
+        if self._is_open_data_representative() and instance.subclass.is_information_system:
+            raise PermissionDenied()
         serializer = PatchDatasetSerializer(instance, data=request.data, context={"user": self.user}, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
@@ -274,6 +269,8 @@ class DatasetViewSet(ModelViewSet):
     )
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
+        if self._is_open_data_representative() and instance.subclass.is_information_system:
+            raise PermissionDenied()
         instance.deleted = True
         instance.deleted_on = timezone.now()
 
@@ -327,7 +324,7 @@ class InternalDatasetViewSet(DatasetViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class DatasetDistributionViewSet(ModelViewSet):
+class DatasetDistributionViewSet(OpenDataRepresentativeMixin, ModelViewSet):
     serializer_class = DatasetDistributionSerializer
     permission_classes = (APIKeyPermission,)
     parser_classes = [MultiPartParser, JSONParser]
@@ -340,18 +337,7 @@ class DatasetDistributionViewSet(ModelViewSet):
 
     def get_dataset(self):
         dataset = get_object_or_404(Dataset, pk=self.kwargs.get("datasetId"), deleted__isnull=True)
-        if self.user:
-            sqs = SearchQuerySet().models(Dataset).filter(django_id=dataset.id)
-            accessible = filter_out_non_public_datasets_for_user(self.user, sqs)
-            if not accessible:
-                raise PermissionDenied()
-
-        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
-            if dataset.access_rights not in (Dataset.PUBLIC, Dataset.RESTRICTED):
-                raise PermissionDenied()
-        else:
-            raise PermissionDenied()
-
+        self._check_dataset_access(dataset)
         return dataset
 
     @swagger_auto_schema(
@@ -379,6 +365,8 @@ class DatasetDistributionViewSet(ModelViewSet):
     )
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
+        if self._is_open_data_representative() and instance.dataset.subclass.is_information_system:
+            raise PermissionDenied()
         serializer = PatchDatasetDistributionSerializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         updated_instance = serializer.save()
@@ -393,6 +381,8 @@ class DatasetDistributionViewSet(ModelViewSet):
         responses={status.HTTP_200_OK: DatasetDistributionSerializer()},
     )
     def create(self, request, *args, **kwargs):
+        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+            raise PermissionDenied()
         serializer = PostDatasetDistributionSerializer(data=request.data, context={"dataset": self.get_dataset()})
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
@@ -408,6 +398,8 @@ class DatasetDistributionViewSet(ModelViewSet):
         responses={status.HTTP_200_OK: DatasetDistributionSerializer()},
     )
     def create_with_put(self, request, *args, **kwargs):
+        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+            raise PermissionDenied()
         serializer = PutDatasetDistributionSerializer(data=request.data, context={"dataset": self.get_dataset()})
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
@@ -421,6 +413,8 @@ class DatasetDistributionViewSet(ModelViewSet):
         tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
+        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+            raise PermissionDenied()
         return super().destroy(request, *args, **kwargs)
 
 
@@ -431,17 +425,7 @@ class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
         dataset = get_object_or_404(
             Dataset, organization=self.organization, internal_id=self.kwargs.get("internalId"), deleted__isnull=True
         )
-        if self.user:
-            sqs = SearchQuerySet().models(Dataset).filter(django_id=dataset.id)
-            accessible = filter_out_non_public_datasets_for_user(self.user, sqs)
-            if not accessible:
-                raise PermissionDenied()
-        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
-            if dataset.access_rights not in (Dataset.PUBLIC, Dataset.RESTRICTED):
-                raise PermissionDenied()
-        else:
-            raise PermissionDenied()
-
+        self._check_dataset_access(dataset)
         return dataset
 
     @swagger_auto_schema(
@@ -675,7 +659,9 @@ class TaskViewSet(ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class DatasetStructureViewSet(CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet):
+class DatasetStructureViewSet(
+    OpenDataRepresentativeMixin, CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet
+):
     serializer_class = DatasetStructureSerializer
     permission_classes = (APIKeyPermission,)
     parser_classes = [MultiPartParser]
@@ -688,18 +674,7 @@ class DatasetStructureViewSet(CreateModelMixin, DestroyModelMixin, ListModelMixi
 
     def get_dataset(self):
         dataset = get_object_or_404(Dataset, pk=self.kwargs.get("datasetId"), deleted__isnull=True)
-
-        if self.user:
-            sqs = SearchQuerySet().models(Dataset).filter(django_id=dataset.id)
-            accessible = filter_out_non_public_datasets_for_user(self.user, sqs)
-            if not accessible:
-                raise PermissionDenied()
-        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
-            if dataset.access_rights not in (Dataset.PUBLIC, Dataset.RESTRICTED):
-                raise PermissionDenied()
-        else:
-            raise PermissionDenied()
-
+        self._check_dataset_access(dataset)
         return dataset
 
     @swagger_auto_schema(
@@ -718,6 +693,8 @@ class DatasetStructureViewSet(CreateModelMixin, DestroyModelMixin, ListModelMixi
         responses={status.HTTP_200_OK: DatasetStructureSerializer()},
     )
     def create(self, request, *args, **kwargs):
+        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+            raise PermissionDenied()
         serializer = PostDatasetStructureSerializer(data=request.data, context={"dataset": self.get_dataset()})
         serializer.is_valid(raise_exception=True)
         instance = serializer.save()
@@ -731,6 +708,8 @@ class DatasetStructureViewSet(CreateModelMixin, DestroyModelMixin, ListModelMixi
         tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
+        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+            raise PermissionDenied()
         return super().destroy(request, *args, **kwargs)
 
 
@@ -743,19 +722,7 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
             organization=self.organization,
             internal_id=self.kwargs.get("internalId"),
         )
-
-        if self.user:
-            sqs = SearchQuerySet().models(Dataset).filter(django_id=dataset.id)
-            accessible = filter_out_non_public_datasets_for_user(self.user, sqs)
-            if not accessible:
-                raise PermissionDenied()
-
-        elif self.organization_role and self.organization_role in Representative.OPEN_DATA_ROLE_KEYS:
-            if dataset.access_rights not in (Dataset.PUBLIC, Dataset.RESTRICTED):
-                raise PermissionDenied()
-        else:
-            raise PermissionDenied()
-
+        self._check_dataset_access(dataset)
         return dataset
 
     @swagger_auto_schema(

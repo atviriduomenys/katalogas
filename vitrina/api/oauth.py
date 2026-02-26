@@ -21,7 +21,7 @@ from rest_framework.request import Request
 from rest_framework.viewsets import GenericViewSet
 
 from vitrina.orgs.models import Organization
-from vitrina.uapi.models import Agent
+from vitrina.uapi.models import AgentEnv
 
 Secret = str
 ClientId = str
@@ -225,8 +225,8 @@ class OAuthClientAuthenticator:
     def resolve_organization_from_token(decoded_token: JWTClaims) -> Organization | None:
         if not (client_id := OAuthClientAuthenticator.resolve_client_id_from_token(decoded_token)):
             return None
-        agent = Agent.objects.filter(oauth_client_id=client_id).select_related("organization").first()
-        return agent.organization if agent else None
+        agent_env = AgentEnv.not_archived.filter(oauth_client_id=client_id).select_related("agent__organization").first()
+        return agent_env.agent.organization if agent_env else None
 
     @staticmethod
     def resolve_client_id_from_token(decoded_token: JWTClaims) -> str:

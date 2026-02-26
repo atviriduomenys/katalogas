@@ -9,7 +9,7 @@
 
     {% include 'vitrina/orgs/tabs.html' %}
 
-    {% if has_permission %}
+    {% if can_create_agents %}
         <div class="buttons is-right">
             <a class="button is-primary m-t-xs m-b-lg" href="{% url 'agent-create' organization.pk %}">{% translate "Pridėti agentą" %}</a>
         </div>
@@ -43,14 +43,6 @@
                         </span>
                     </th>
 
-                    <th>
-                        {% translate "Duomenų Paslauga" %}
-                        <span class="icon info-icon has-tooltip-multiline is-middle"
-                              data-tooltip="{% translate 'Agentui priskirta duomenų paslauga.' %}">
-                            <i class="fas fa-info-circle"></i>
-                        </span>
-                    </th>
-
                     <th colspan="3">
                         {% translate "Veiksmai" %}
                         <span class="icon info-icon has-tooltip-multiline is-middle"
@@ -70,9 +62,6 @@
                         </td>
                         <td>{{ agent.title|truncatechars:15 }}</td>
                         <td>{{ agent.created_at|date:"Y-m-d H:i" }}</td>
-                        <td>
-                            {{ agent.service|truncatechars:20 }}
-                        </td>
                         <td>
                             <a href="{% url 'agent-update' organization.pk agent.pk %}" class="button is-primary is-small">
                                 {% translate "Redaguoti" %}

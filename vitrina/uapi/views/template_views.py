@@ -1,124 +1,107 @@
 import codecs
 import logging
-import uuid
 from typing import Any
+from functools import cached_property
 
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
-from django.contrib.contenttypes.models import ContentType
-from django.core.handlers.wsgi import WSGIRequest
 from django.core.paginator import Paginator
 from django.forms import ModelForm, BaseForm
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import get_object_or_404
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
     CreateView,
     UpdateView,
     DeleteView,
-    TemplateView,
+    ListView,
+    DetailView,
 )
 
-from vitrina.datasets.models import Dataset, Contact, Type, DCATResourceSubclass
-from vitrina.orgs.models import Organization, Representative
+from django_otp.plugins.otp_email.conf import settings
+from requests.exceptions import ConnectionError as RequestsConnectionError
+from vitrina.api.oauth import OAuthClientManagement
 from vitrina.orgs.services import (
     has_perm,
     Action,
 )
-from vitrina.structure.models import Metadata
 from vitrina.uapi.models import RequestHistory, Agent, AgentEnv
-from vitrina.resources.models import Format
-from vitrina.uapi.forms import AgentForm
+from vitrina.uapi.forms import AgentForm, AgentEnvForm
 from vitrina.views import PlanMixin
+from vitrina.orgs.views import OrganizationBaseViewMixin
 
 logger = logging.getLogger(__name__)
 
 
-class BaseAgentView(LoginRequiredMixin, PermissionRequiredMixin, PlanMixin, TemplateView):
+class BaseAgentMixin(OrganizationBaseViewMixin):
     organization_url_kwarg = "organization_id"
-    template_name = "base_form.html"
-    plan_url_name = "organization-plans"
-
-    def setup(self, request, *args, **kwargs) -> None:
-        super().setup(request, *args, **kwargs)
-        self.organization = get_object_or_404(Organization, pk=kwargs.get(self.organization_url_kwarg))
-
-    def get_form_kwargs(self) -> dict:
-        kwargs = super().get_form_kwargs()
-        kwargs["organization"] = self.organization
-        return kwargs
+    agent: Agent
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context.update(
+        context["parent_links"].update(
             {
-                "organization": self.organization,
-                "organization_id": self.organization.pk,
-                "can_view_members": has_perm(self.request.user, Action.VIEW, Representative, self.organization),
-                "can_view_contacts": has_perm(self.request.user, Action.VIEW, Contact, self.organization),
-                "can_update_organization": has_perm(
-                    self.request.user, Action.UPDATE, Representative, self.organization
-                ),
-                "can_manage_keys": has_perm(self.request.user, Action.MANAGE_KEYS, self.organization),
-                "can_view_agents": has_perm(self.request.user, Action.VIEW, Agent, self.organization),
-                "can_view_keys": has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization),
+                reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
+                reverse("agent-detail", args=[self.organization.pk, self.agent.pk]): self.agent.title,
             }
         )
-
         return context
 
-    def get_plan_object(self) -> Organization:
-        return self.organization
+    @property
+    def agent(self) -> Agent:
+        return self.object
 
 
-class AgentListView(BaseAgentView):
+class BaseAgentEnvMixin(BaseAgentMixin):
+    agent_env: AgentEnv
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+        context["parent_links"].update(
+            {
+                reverse(
+                    "agent-env-detail", args=[self.organization.pk, self.agent_env.pk]
+                ): self.agent_env.get_environment_display()
+            }
+        )
+        return context
+
+    @property
+    def agent(self) -> Agent:
+        return self.agent_env.agent
+
+    @property
+    def agent_env(self) -> Agent:
+        return self.object
+
+
+class AgentListView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, PlanMixin, ListView):
+    model = Agent
     template_name = "agents/agent_list.html"
+    context_object_name = "agents"
+    paginate_by = 10
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
 
+    def get_queryset(self):
+        return super().get_queryset().filter(organization=self.organization).order_by("-created_at")
+
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-
-        organization_agents = (
-            Agent.objects.filter(organization=self.organization, is_archived=False).order_by("-created_at").all()
-        )
-
-        paginator = Paginator(organization_agents, 10)
-        page_number = self.request.GET.get("page")
-        page = paginator.get_page(page_number)
-
-        context.update(
-            {
-                "agents": page.object_list,
-                "page_obj": page,
-                "paginator": paginator,
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("organization-list"): _("Organizacijos"),
-                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    None: _("Agentai"),
-                },
-                "has_permission": has_perm(self.request.user, Action.CREATE, Agent, self.organization),
-            }
-        )
+        context["can_create_agents"] = has_perm(self.request.user, Action.CREATE, Agent, self.organization)
+        context["parent_links"].update({None: _("Agentai")})
 
         return context
 
 
-class AgentDetailView(BaseAgentView):
+class AgentDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixin, PlanMixin, DetailView):
     template_name = "agents/agent_detail.html"
     model = Agent
 
-    def setup(self, request, *args, **kwargs) -> None:
-        super().setup(request, *args, **kwargs)
-        self.object = get_object_or_404(
-            Agent.objects.select_related("service").prefetch_related(("requesthistory")),
-            pk=kwargs.get("pk"),
-            organization=self.organization,
-            is_archived=False,
-        )
+    def get_queryset(self):
+        return super().get_queryset().filter(organization=self.organization).prefetch_related("environments")
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
@@ -128,211 +111,288 @@ class AgentDetailView(BaseAgentView):
 
         context.update(
             {
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("organization-list"): _("Organizacijos"),
-                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
-                    None: _("Agentas"),
-                },
                 "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
                 "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
-                "agent": self.object,
-                "dataset": self.object.service,
                 "can_create_agent_env": has_perm(self.request.user, Action.CREATE, AgentEnv, self.organization),
             }
+        )
+        context["parent_links"].update(
+            {None: context["parent_links"].pop(reverse("agent-detail", args=[self.organization.pk, self.object.pk]))}
         )
 
         return context
 
 
-class AgentCreateView(CreateView, BaseAgentView):
+class AgentCreateView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationBaseViewMixin, PlanMixin, CreateView):
     model = Agent
     form_class = AgentForm
     title = _("Pridėti Agentą")
-
-    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
-        super().setup(request, *args, **kwargs)
-        self.object = None
-
-    def get_form(self, form_class: AgentForm | None = None) -> ModelForm:
-        form = super().get_form(form_class)
-        form.fields["service"].help_text = _(
-            "Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei nenurodyta, duomenų paslauga bus sukurta automatiškai."
-        )
-        form.fields["service"].required = False
-        return form
+    template_name = "base_form.html"
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE, Agent, self.organization)
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["organization"] = self.organization
+        return kwargs
+
     def form_valid(self, form: ModelForm) -> HttpResponse:
-        title = form.cleaned_data["title"]
-        service = form.cleaned_data.get("service")
         form.instance.organization = self.organization
+        response = super().form_valid(form)
+        messages.success(self.request, _(f"Agentas '{self.object.title}' sukurtas sėkmingai!"))
 
-        if not service:
-            service = Dataset.add_root(
-                title=f'Agento "{title}" Duomenų Paslauga',
-                description="Ši duomenų paslauga buvo automatiškai sukurta kuriant Agentą.",
-                access_rights=Dataset.NON_PUBLIC,
-                organization=self.organization,
-                service=True,
-                subclass=DCATResourceSubclass.objects.get(name=DCATResourceSubclass.SERVICE),
-                endpoint_url=None,
-                endpoint_type=Format.objects.filter(extension="UAPI").first(),
-                endpoint_description="https://ivpk.github.io/uapi",
-                endpoint_description_type=Format.objects.filter(extension="Open API").first(),
-                is_public=False,
-            )
-            form.instance.service = service
-            form.instance.service.type.set(Type.objects.filter(name=Type.SERVICE).values_list("pk", flat=True))
-            form.instance.service.save_translations()
-            self.object = form.save()
-
-            Metadata.objects.create(
-                uuid=str(uuid.uuid4()),
-                dataset=service,
-                content_type=ContentType.objects.get_for_model(Dataset),
-                object_id=service.pk,
-                name=self.object.codename,
-                title=title,
-                description=_("Duomenų paslauga automatiškai sukurta kuriant agentą."),
-                prepare_ast={},
-                version=1,
-            )
-
-        if not hasattr(self, "object") or self.object is None:
-            self.object = form.save()
-
-        messages.success(self.request, _(f"Agentas {self.object.title} sukurtas sėkmingai!"))
-
-        return redirect(reverse("agent-detail", args=[self.organization.pk, self.object.pk]))
+        return response
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context.update(
+        context["current_title"] = self.title
+        context["parent_links"].update(
             {
-                "current_title": self.title,
-                "tabs": "vitrina/orgs/tabs.html",
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("organization-list"): _("Organizacijos"),
-                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
-                    None: self.title,
-                },
+                reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
+                None: _("Pridėti"),
             }
         )
         return context
 
+    def get_success_url(self):
+        return reverse("agent-detail", args=[self.organization.pk, self.object.pk])
 
-class AgentUpdateView(UpdateView, BaseAgentView):
+
+class AgentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixin, PlanMixin, UpdateView):
     model = Agent
     form_class = AgentForm
     title = _("Redaguoti Agentą")
+    template_name = "base_form.html"
 
-    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
-        super().setup(request, *args, **kwargs)
-        self.object = get_object_or_404(Agent, pk=kwargs["pk"], organization=self.organization, is_archived=False)
+    def get_queryset(self):
+        return super().get_queryset().filter(organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, Agent, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context.update(
+        context["current_title"] = self.title
+        context["parent_links"].update(
             {
-                "current_title": self.title,
-                "tabs": "vitrina/orgs/tabs.html",
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("organization-list"): _("Organizacijos"),
-                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
-                    None: self.title,
-                },
+                None: _("Redaguoti"),
             }
         )
         return context
 
     def form_valid(self, form: ModelForm) -> HttpResponse:
-        self.object = form.save()
-        messages.success(self.request, _(f"Agentas {self.object.title} atnaujintas sėkmingai!"))
-        return redirect(reverse("agent-list", args=[self.organization.pk]))
+        response = super().form_valid(form)
+        messages.success(self.request, _(f"Agentas '{self.object.title}' atnaujintas sėkmingai!"))
+        return response
+
+    def get_success_url(self):
+        return reverse("agent-list", args=[self.organization.pk])
 
 
-class AgentDeleteView(DeleteView, BaseAgentView):
+class AgentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixin, PlanMixin, DeleteView):
     model = Agent
     template_name = "confirm_delete.html"
 
-    def setup(self, request: WSGIRequest, *args: Any, **kwargs: Any) -> None:
-        super().setup(request, *args, **kwargs)
-        self.object = get_object_or_404(Agent, pk=kwargs["pk"], organization=self.organization, is_archived=False)
+    def get_queryset(self):
+        return super().get_queryset().filter(organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.DELETE, Agent, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context.update(
+        context["parent_links"].update(
             {
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("organization-list"): _("Organizacijos"),
-                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
-                    None: _("Pašalinti Agentą"),
-                },
-                "delete_text": _(f"Ar tikrai norite ištrinti Agentą: {self.object}?"),
+                None: _("Pašalinti"),
             }
         )
         return context
-
-    def get_form_kwargs(self) -> dict:
-        kwargs = super().get_form_kwargs()
-        kwargs.pop("organization")
-
-        return kwargs
 
     def form_valid(self, form: BaseForm) -> HttpResponse:
         """Object is soft-deleted (archived) so to not lose the related service and other related objects."""
         self.object.is_archived = True
         self.object.save(update_fields=["is_archived", "updated_at"])
-        messages.success(self.request, _(f"Agentas {self.object.title} pašalintas sėkmingai!"))
+        messages.success(self.request, _(f"Agentas '{self.object.title}' pašalintas sėkmingai!"))
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self) -> str:
-        return reverse("agent-list", kwargs={"organization_id": self.organization.id})
+        return reverse("agent-list", args=[self.organization.id])
 
 
-class AgentEnvDetailView(BaseAgentView):
-    pass
+class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEnvMixin, PlanMixin, DetailView):
+    model = AgentEnv
+    template_name = "agents/agent_env_detail.html"
+    context_object_name = "agent_env"
+
+    def get_queryset(self):
+        return super().get_queryset().filter(agent__organization=self.organization).prefetch_related("requesthistory")
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.VIEW, AgentEnv, self.organization)
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+
+        request_history = self.object.requesthistory.all().order_by("-created_at")
+        paginator = Paginator(request_history, 10)
+        page_number = self.request.GET.get("page")
+        page = paginator.get_page(page_number)
+
+        context.update(
+            {
+                "page_obj": page,
+                "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
+                "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
+                "secret": self.request.session.pop("secret", None),
+                "scopes": self.request.session.pop("scopes", None) or settings.OAUTH_AGENT_DEFAULT_SCOPES,
+                "auth_server_host": settings.OAUTH_SERVER_HOST,
+                "resource_server_host": f"{self.request.scheme}://{self.request.get_host()}",
+                "request_history": page.object_list,
+            }
+        )
+        context["parent_links"].update(
+            {
+                None: context["parent_links"].pop(
+                    reverse("agent-env-detail", args=[self.organization.pk, self.object.pk])
+                )
+            }
+        )
+
+        return context
 
 
-class AgentEnvCreateView(BaseAgentView):
-    pass
+class AgentEnvCreateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixin, PlanMixin, CreateView):
+    model = AgentEnv
+    form_class = AgentEnvForm
+    template_name = "base_form.html"
+    title = _("Pridėti aplinką")
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.CREATE, AgentEnv, self.organization)
+
+    def form_valid(self, form: ModelForm) -> HttpResponse:
+        form.instance.agent = self.agent
+        self.object: AgentEnv = form.save(commit=False)
+        try:
+            client_id, secret = OAuthClientManagement.create_oauth_client(
+                scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES
+            )
+            self.object.oauth_client_id = client_id
+            self.object.save()
+            self.request.session["secret"] = secret
+            self.request.session["scopes"] = settings.OAUTH_AGENT_DEFAULT_SCOPES
+
+            messages.success(
+                self.request,
+                _(f"Aplinka '{self.object}' sukurta sėkmingai!"),
+            )
+            messages.warning(
+                self.request,
+                _(
+                    "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį kartą!\n "
+                    'Jei pasirinkote rūšį "Spinta", raktas vaizduojamas šalia stulpelio "secret" credentials.cfg '
+                    "failo pavyzdyje"
+                ),
+            )
+        except RequestsConnectionError:
+            error = _("Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento aplinkos kūrimas nepavyko.")
+            messages.error(self.request, error % {"url": settings.OAUTH_SERVER_CLIENTS_URL})
+            return self.form_invalid(form)
+
+        except Exception as general_exception:
+            error = _("Įvyko klaida, nepavyko sukurti Agento aplinkos. Klaida: %(exception)s")
+            messages.error(self.request, error % {"exception": str(general_exception)})
+            return self.form_invalid(form)
+
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+        context["current_title"] = self.title
+        context["parent_links"].update({None: self.title})
+        return context
+
+    def get_success_url(self):
+        return reverse(
+            "agent-env-detail",
+            kwargs={"organization_id": self.organization.pk, "pk": self.object.pk},
+        )
+
+    @cached_property
+    def agent(self) -> Agent:
+        return get_object_or_404(Agent, organization=self.organization, pk=self.kwargs.get("pk"))
 
 
-class AgentEnvUpdateView(BaseAgentView):
-    pass
+class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEnvMixin, PlanMixin, UpdateView):
+    model = AgentEnv
+    form_class = AgentEnvForm
+    template_name = "base_form.html"
+    title = _("Redaguoti aplinką")
+
+    def get_queryset(self):
+        return super().get_queryset().filter(agent__organization=self.organization)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.UPDATE, AgentEnv, self.organization)
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+        context["current_title"] = self.title
+
+        context["parent_links"].update(
+            {
+                None: self.title,
+            }
+        )
+        return context
+
+    def form_valid(self, form: ModelForm) -> HttpResponse:
+        response = super().form_valid(form)
+        messages.success(self.request, _(f"'{self.object}' aplinka atnaujinta sėkmingai!"))
+        return response
+
+    def get_success_url(self) -> str:
+        return reverse("agent-detail", args=[self.organization.pk, self.object.agent.pk])
 
 
-class AgentEnvDeleteView(BaseAgentView):
-    pass
+class AgentEnvDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEnvMixin, PlanMixin, DeleteView):
+    model = AgentEnv
+    template_name = "confirm_delete.html"
+
+    def get_queryset(self):
+        return super().get_queryset().filter(agent__organization=self.organization)
+
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.DELETE, AgentEnv, self.organization)
+
+    def get_context_data(self, **kwargs: Any) -> dict:
+        context = super().get_context_data(**kwargs)
+        context["delete_text"] = _(f"Ar tikrai norite ištrinti aplinką: {self.object}?")
+        context["parent_links"].update(
+            {
+                None: _("Pašalinti"),
+            }
+        )
+        return context
+
+    def form_valid(self, form: BaseForm) -> HttpResponse:
+        """Object is soft-deleted (archived) so to not lose the related service and other related objects."""
+        self.object.is_archived = True
+        self.object.save(update_fields=["is_archived", "updated_at"])
+        messages.success(self.request, _(f"'{self.object}' aplinka pašalinta sėkmingai!"))
+        return HttpResponseRedirect(self.get_success_url())
+
+    def get_success_url(self) -> str:
+        return reverse("agent-detail", kwargs={"organization_id": self.organization.id, "pk": self.agent.pk})
 
 
-class RequestDetailView(BaseAgentView):
+class RequestDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEnvMixin, PlanMixin, DetailView):
     template_name = "requests/request_detail.html"
     model = RequestHistory
 
-    def setup(self, request, *args, **kwargs) -> None:
-        self.object = get_object_or_404(
-            RequestHistory.objects.select_related("agent__organization"),
-            pk=kwargs.get("pk"),
-        )
-        kwargs[self.organization_url_kwarg] = self.object.agent.organization_id
-        super().setup(request, *args, **kwargs)
+    def get_queryset(self):
+        return super().get_queryset().filter(agent_env__agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
@@ -348,21 +408,10 @@ class RequestDetailView(BaseAgentView):
         else:
             context["formatted_error"] = self.object.error
 
-        context.update(
-            {
-                "request_history": self.object,
-                "formatted_error": context["formatted_error"],
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("organization-list"): _("Organizacijos"),
-                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    reverse("agent-list", args=[self.organization.pk]): _("Agentai"),
-                    reverse(
-                        "agent-detail",
-                        args=[self.organization.pk, self.object.agent.pk],
-                    ): self.object.agent.title,
-                    None: _("Užklausa"),
-                },
-            }
-        )
+        context.update({"request_history": self.object, "formatted_error": context["formatted_error"]})
+        context["parent_links"].update({None: _("Užklausa")})
         return context
+
+    @property
+    def agent_env(self) -> AgentEnv:
+        return self.object.agent_env

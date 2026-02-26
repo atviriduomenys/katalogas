@@ -2,9 +2,13 @@ from django.db import models
 
 from vitrina.models import UUIDBaseModel
 from django.utils.text import slugify
-from django.core.exceptions import ValidationError
 from vitrina.uapi import AgentType, ChangedBy, ChangeType, PossibleResults, HTTPMethods, Environment
 from django.utils.translation import gettext_lazy as _
+
+
+class NotArchivedAgentManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        return super().get_queryset().filter(is_archived=False)
 
 
 class Agent(UUIDBaseModel):
@@ -26,23 +30,12 @@ class Agent(UUIDBaseModel):
         default=AgentType.SPINTA,
         help_text=_('Nurodoma Agento rūšis t.y. ar bus naudojama "Spinta" ar kitas sprendimas.'),
     )
-    is_open_data_published = models.BooleanField(
-        verbose_name=_("Atviri duomenys publikuojami Saugykloje"),
-        default=False,
-        help_text=_("Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų duomenų Saugyklą."),
-    )
     is_archived = models.BooleanField(
         verbose_name=_("Agentas archyvuotas"),
         default=False,
         help_text=_(
             "Nurodo ar Agentas yra archyvuotas. Archyvuoti agentai nėra pasiekiami įprastiems platformos vartotojams"
         ),
-    )
-    service = models.ForeignKey(
-        "vitrina_datasets.Dataset",
-        verbose_name=_("Duomenų paslauga"),
-        on_delete=models.CASCADE,
-        help_text=_("Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService."),
     )
     organization = models.ForeignKey(
         "vitrina_orgs.Organization",
@@ -66,9 +59,6 @@ class Agent(UUIDBaseModel):
         if (update_fields := kwargs.get("update_fields")) and "title" in update_fields:
             kwargs["update_fields"] = set(update_fields) | {"codename"}
 
-        if not self.service.service:
-            raise ValidationError(_('Susietas duomenų išteklius turi būti "paslaugos" tipo.'))
-
         return super().save(*args, **kwargs)
 
     def __str__(self) -> str:
@@ -78,9 +68,20 @@ class Agent(UUIDBaseModel):
     def get_codename(title: str) -> str:
         return slugify(title).replace("-", "_")
 
-    @property
-    def global_codename(self) -> str:
-        return f"{self.codename}_{self.organization_id}"
+    not_archived = NotArchivedAgentManager()
+    objects = models.Manager()
+
+class NotArchivedAgentEnvManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        not_archived_agent_ids = Agent.not_archived.values_list("pk", flat=True)
+        return (
+            super()
+            .get_queryset()
+            .filter(
+                is_archived=False,
+                agent_id__in=not_archived_agent_ids,
+            )
+        )
 
 
 class AgentEnv(UUIDBaseModel):
@@ -96,6 +97,13 @@ class AgentEnv(UUIDBaseModel):
         blank=True,
         null=True,
         help_text=_("Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo klaidų."),
+    )
+    is_open_data_published = models.BooleanField(
+        verbose_name=_("Atviri duomenys publikuojami Saugykloje"),
+        default=False,
+        help_text=_(
+            "Nurodo, ar agento aplinka papildomai publikuoja `access=open` duomenis į atvirų duomenų Saugyklą."
+        ),
     )
     open_data_publish_url = models.URLField(
         _("Atvirų duomenų publikavimo nuoroda"),
@@ -129,10 +137,9 @@ class AgentEnv(UUIDBaseModel):
         blank=True,
         help_text=_("Nurodomas API vartų serverio adresas."),
     )
-    agent_address = models.CharField(
+    agent_address = models.URLField(
         verbose_name=_("Agento adresas"),
         max_length=255,
-        blank=True,
         help_text=_(
             "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas išorinis agento adresas"
         ),
@@ -142,11 +149,33 @@ class AgentEnv(UUIDBaseModel):
         default=False,
         help_text=_("Nurodoma, ar Agento aplinka yra įjungta ar išjungta."),
     )
+    is_archived = models.BooleanField(
+        verbose_name=_("Agento aplinka archyvuota"),
+        default=False,
+        help_text=_(
+            "Nurodo ar Agento aplinka yra archyvuota. Archyvuotos aplinkos nėra pasiekiamos įprastiems platformos vartotojams."
+        ),
+    )
+
+    def __str__(self) -> str:
+        return f"{self.agent.title} - {self.get_environment_display()}"
+
+    not_archived = NotArchivedAgentEnvManager()
+    objects = models.Manager()
+
+
+class VisibleRequestHistoryManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        not_archived_env_ids = AgentEnv.not_archived.values_list("pk", flat=True)
+        return super().get_queryset().filter(agent_env_id__in=not_archived_env_ids)
 
 
 class RequestHistory(UUIDBaseModel):
-    agent = models.ForeignKey(
-        "vitrina_uapi.Agent", on_delete=models.CASCADE, verbose_name=_("Agentas"), related_name="requesthistory"
+    agent_env = models.ForeignKey(
+        "vitrina_uapi.AgentEnv",
+        on_delete=models.CASCADE,
+        verbose_name=_("Agento aplinka"),
+        related_name="requesthistory",
     )
     endpoint = models.CharField(max_length=255, verbose_name=_("API galinis taškas"))
     method = models.CharField(max_length=10, choices=HTTPMethods.choices, verbose_name=_("HTTP metodas"))
@@ -158,6 +187,15 @@ class RequestHistory(UUIDBaseModel):
     class Meta:
         verbose_name = _("Užklausų istorija")
         verbose_name_plural = _("Užklausų istorijos")
+
+    visible = VisibleRequestHistoryManager()
+    objects = models.Manager()
+
+
+class VisibleRequestHistoryChangesManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        visible_history_ids = RequestHistory.not_archived.values_list("pk", flat=True)
+        return super().get_queryset().filter(request_history_id__in=visible_history_ids)
 
 
 class RequestHistoryChanges(UUIDBaseModel):
@@ -171,3 +209,6 @@ class RequestHistoryChanges(UUIDBaseModel):
     class Meta:
         verbose_name = _("Užklausų istorijos pakeitimas")
         verbose_name_plural = _("Užklausų istorijos pakeitimai")
+
+    visible = VisibleRequestHistoryChangesManager()
+    objects = models.Manager()

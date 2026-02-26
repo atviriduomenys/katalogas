@@ -3,7 +3,7 @@ from crispy_forms.layout import Layout, Field, Submit
 from django.forms import ModelForm
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.uapi.models import Agent
+from vitrina.uapi.models import Agent, AgentEnv
 
 
 class AgentForm(ModelForm):
@@ -11,27 +11,18 @@ class AgentForm(ModelForm):
         model = Agent
         fields = [
             "title",
-            "is_open_data_published",
             "object_type",
-            "service",
         ]
 
     def __init__(self, *args, **kwargs) -> None:
         self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
 
-        self.fields["service"].queryset = self.fields["service"].queryset.filter(
-            organization=self.organization,
-            service=True,
-        )
-
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.layout = Layout(
             Field("title"),
             Field("object_type"),
-            Field("service"),
-            Field("is_open_data_published"),
             Submit(
                 "submit",
                 _("Sukurti") if self.instance._state.adding else _("Redaguoti"),
@@ -44,10 +35,9 @@ class AgentForm(ModelForm):
 
         if (title := cleaned_data.get("title")) and self.organization:
             existing_agent = (
-                Agent.objects.filter(
+                Agent.not_archived.filter(
                     organization=self.organization,
                     codename=Agent.get_codename(title),
-                    is_archived=False,
                 )
                 .exclude(
                     pk=self.instance.pk,
@@ -59,3 +49,46 @@ class AgentForm(ModelForm):
                     "title",
                     _("Agentas su tokiu pavadinimu jau registruotas organizacijoje, pasirinkite kitą pavadinimą."),
                 )
+
+
+class AgentEnvForm(ModelForm):
+    class Meta:
+        model = AgentEnv
+        fields = [
+            "is_open_data_published",
+            "open_data_publish_url",
+            "environment",
+            "auth_server_url",
+            "api_gate_server_url",
+            "agent_address",
+            "is_enabled",
+        ]
+
+    def __init__(self, *args, **kwargs) -> None:
+        self.organization = kwargs.pop("organization", None)
+        super().__init__(*args, **kwargs)
+
+        self.helper = FormHelper()
+        self.helper.attrs["novalidate"] = ""
+        self.helper.layout = Layout(
+            Field("environment"),
+            Field("agent_address"),
+            Field("auth_server_url"),
+            Field("api_gate_server_url"),
+            Field("is_open_data_published"),
+            Field("open_data_publish_url"),
+            Field("is_enabled"),
+            Submit(
+                "submit",
+                _("Sukurti") if self.instance._state.adding else _("Redaguoti"),
+                css_class="button is-primary",
+            ),
+        )
+
+    def clean(self) -> None:
+        cleaned_data = super().clean()
+        if cleaned_data.get("is_open_data_published") and not cleaned_data.get("open_data_publish_url"):
+            self.add_error(
+                "open_data_publish_url",
+                _('Šis laukas yra privalomas, jei nustatytas požymis "Atviri duomenys publikuojami Saugykloje".'),
+            )

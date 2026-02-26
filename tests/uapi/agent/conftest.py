@@ -1,12 +1,10 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
 
-from vitrina.datasets.factories import DatasetFactory
-from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import Role
-from vitrina.uapi.models import Agent, RequestHistory
+from vitrina.uapi.models import AgentEnv, RequestHistory
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -22,19 +20,9 @@ def representative_user(organization: Organization) -> User:
 
 
 @pytest.fixture
-def data_service(organization: Organization) -> Dataset:
-    return DatasetFactory(service=True, organization=organization)
-
-
-@pytest.fixture
-def agent(organization: Organization, data_service: Dataset) -> Agent:
-    return Agent.objects.create(title="Agent", organization=organization, service=data_service)
-
-
-@pytest.fixture
-def request_history(agent: Agent) -> RequestHistory:
+def request_history(agent_env: AgentEnv) -> RequestHistory:
     return RequestHistory.objects.create(
-        agent=agent,
+        agent_env=agent_env,
         endpoint="/api/v1/resource",
         method="GET",
         http_result=200,

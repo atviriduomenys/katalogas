@@ -32,15 +32,6 @@
         </div>
 
         <div class="columns is-mobile mb-1">
-            <div class="column is-3 has-text-weight-semibold">{% translate "Duomenų paslauga" %}:</div>
-            <div class="column is-7">
-                <a href="{% url 'dataset-detail' dataset.pk %}" class="has-text-link" target="_blank">
-                    {{ agent.service }} <span class="icon is-small"><i class="fas fa-external-link-alt"></i></span>
-                </a>
-            </div>
-        </div>
-
-        <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Kodinis pavadinimas" %}:</div>
             <div class="column is-7">{{ agent.codename }}</div>
         </div>
@@ -50,16 +41,6 @@
             <div class="column is-7">{{ agent.get_object_type_display }}</div>
         </div>
 
-        <div class="columns is-mobile mb-1">
-            <div class="column is-3 has-text-weight-semibold">{% translate "Publikuojami atviri duomenys" %}:</div>
-            <div class="column is-7">
-                {% if agent.is_open_data_published %}
-                    <span class="tag is-success is-light">{% translate "Taip" %}</span>
-                {% else %}
-                    <span class="tag is-danger is-light">{% translate "Ne" %}</span>
-                {% endif %}
-            </div>
-        </div>
     </div>
 
     <hr>
@@ -143,17 +124,17 @@
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'agent-env-detail' organization.pk agent.pk agent_env.pk %}" class="button is-small">
+                            <a href="{% url 'agent-env-detail' organization.pk agent_env.pk %}" class="button is-small">
                                 {% translate "Žurnalas" %}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'agent-env-update' organization.pk agent.pk agent_env.pk %}" class="button is-primary is-small">
+                            <a href="{% url 'agent-env-update' organization.pk agent_env.pk %}" class="button is-primary is-small">
                                 {% translate "Redaguoti" %}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'agent-env-delete' organization.pk agent.pk agent_env.pk %}" class="button is-danger is-small">
+                            <a href="{% url 'agent-env-delete' organization.pk agent_env.pk %}" class="button is-danger is-small">
                                 {% translate "Pašalinti" %}
                             </a>
                         </td>

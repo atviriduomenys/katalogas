@@ -18,7 +18,7 @@ from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.models import Agreement
 from vitrina.smart_contracts.services import extract_elements_from_adoc
-from vitrina.uapi.models import Agent
+from vitrina.uapi.models import AgentEnv
 from vitrina.uapi.pagination import UAPIPagination
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer, BaseUUIDObjectMixin
 from vitrina.uapi.utils.utils import extract_type_from_url
@@ -116,11 +116,15 @@ class AgreementViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewset
 
     @cached_property
     def get_agent_dataset_uuids(self) -> set[str]:
-        agent = Agent.objects.select_related("service").get(
-            oauth_client_id=OAuthClientAuthenticator.resolve_client_id_from_token(self.request.auth)
+        agent_env = (
+            AgentEnv.not_archived.select_related("agent")
+            .prefetch_related("agent__services")
+            .get(oauth_client_id=OAuthClientAuthenticator.resolve_client_id_from_token(self.request.auth))
         )
-        agent_datasets_uuids = {agent.service.uuid}
-        agent_datasets_uuids.update(list(agent.service.get_descendants().values_list("uuid", flat=True)))
+        agent_datasets_uuids = set()
+        for service in agent_env.agent.services.all():
+            agent_datasets_uuids.add(service.uuid)
+            agent_datasets_uuids.update(service.get_descendants().values_list("uuid", flat=True))
 
         return agent_datasets_uuids
 

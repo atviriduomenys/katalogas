@@ -8,7 +8,7 @@ from rest_framework import status
 from tests.uapi.conftest import _generate_test_token
 from vitrina.orgs.models import Organization
 from vitrina.uapi import HTTPMethods, PossibleResults
-from vitrina.uapi.factories import AgentFactory
+from vitrina.uapi.factories import AgentEnvFactory
 from vitrina.uapi.models import RequestHistory
 
 
@@ -21,8 +21,8 @@ class TestConnectionCheck:
         test_jwk: RSAKey,
     ):
         spinta_version = "1.2.3"
-        agent = AgentFactory(
-            organization=organization,
+        agent_env = AgentEnvFactory(
+            agent__organization=organization,
             oauth_client_id="test-client-id",
             is_archived=False,
             is_enabled=True,
@@ -32,7 +32,7 @@ class TestConnectionCheck:
             test_jwk,
             organization=organization,
             scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-            agent=agent,
+            agent_env=agent_env,
         )
 
         payload = {"spinta_version": spinta_version}
@@ -46,22 +46,22 @@ class TestConnectionCheck:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
         history = RequestHistory.objects.get()
-        assert history.agent == agent
+        assert history.agent_env == agent_env
         assert history.method == HTTPMethods.POST
         assert history.http_result == HTTPStatus.NO_CONTENT
         assert history.result == PossibleResults.STATUS_ALIVE
         assert spinta_version in history.details
         assert history.error is None
 
-    def test_agent_archived_not_found(
+    def test_agent_archived_forbidden(
         self,
         app: DjangoTestApp,
         organization: Organization,
         url_connection_check: str,
         test_jwk: RSAKey,
     ):
-        agent = AgentFactory(
-            organization=organization,
+        agent_env = AgentEnvFactory(
+            agent__organization=organization,
             oauth_client_id="test-client-id",
             is_archived=True,
             is_enabled=True,
@@ -71,7 +71,7 @@ class TestConnectionCheck:
             test_jwk,
             organization=organization,
             scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-            agent=agent,
+            agent_env=agent_env,
         )
 
         response = app.post_json(
@@ -81,5 +81,4 @@ class TestConnectionCheck:
             expect_errors=True,
         )
 
-        assert response.status_code == status.HTTP_404_NOT_FOUND
-        assert not RequestHistory.objects.exists()
+        assert response.status_code == status.HTTP_403_FORBIDDEN

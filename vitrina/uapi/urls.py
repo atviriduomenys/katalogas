@@ -30,24 +30,19 @@ STATIC_UAPI_BASE_PATH = "uapi/datasets/gov/vssa/ror/dcat/"
 
 urlpatterns = [
     path(
-        "organizations/<int:organization_id>/agents/<uuid:agent_id>/history/<uuid:pk>/",
-        RequestDetailView.as_view(),
-        name="request-history",
-    ),
-    path(
-        "organizations/<int:organization_id>/agents/",
+        "organizations/<int:pk>/agents/",
         AgentListView.as_view(),
         name="agent-list",
+    ),
+    path(
+        "organizations/<int:pk>/agents/add/",
+        AgentCreateView.as_view(),
+        name="agent-create",
     ),
     path(
         "organizations/<int:organization_id>/agents/<uuid:pk>/",
         AgentDetailView.as_view(),
         name="agent-detail",
-    ),
-    path(
-        "organizations/<int:organization_id>/agents/add/",
-        AgentCreateView.as_view(),
-        name="agent-create",
     ),
     path(
         "organizations/<int:organization_id>/agents/<uuid:pk>/update/",
@@ -60,24 +55,29 @@ urlpatterns = [
         name="agent-delete",
     ),
     path(
-        "organizations/<int:organization_id>/agents/<uuid:agent_id>/environments/add/",
+        "organizations/<int:organization_id>/agents/<uuid:pk>/environments/add/",
         AgentEnvCreateView.as_view(),
         name="agent-env-create",
     ),
     path(
-        "organizations/<int:organization_id>/agents/<uuid:agent_id>/environments/<uuid:pk>/",
+        "organizations/<int:organization_id>/environments/<uuid:pk>/",
         AgentEnvDetailView.as_view(),
         name="agent-env-detail",
     ),
     path(
-        "organizations/<int:organization_id>/agents/<uuid:agent_id>/environments/<uuid:pk>/update/",
+        "organizations/<int:organization_id>/environments/<uuid:pk>/update/",
         AgentEnvUpdateView.as_view(),
         name="agent-env-update",
     ),
     path(
-        "organizations/<int:organization_id>/agents/<uuid:agent_id>/environments/<uuid:pk>/delete/",
+        "organizations/<int:organization_id>/environments/<uuid:pk>/delete/",
         AgentEnvDeleteView.as_view(),
         name="agent-env-delete",
+    ),
+    path(
+        "organizations/<int:organization_id>/requests/<uuid:pk>/",
+        RequestDetailView.as_view(),
+        name="request-history",
     ),
     path(
         f"{STATIC_UAPI_BASE_PATH}Connection/check",

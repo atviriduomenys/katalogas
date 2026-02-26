@@ -2,7 +2,7 @@ import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
 
-from vitrina.api.mixins import OpenDataRepresentativeMixin
+from vitrina.api.mixins import DatasetAccessMixin
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
@@ -20,7 +20,7 @@ def test_is_open_data_representative_user_is_none_with_open_data_role(
     app: DjangoTestApp, representative_role: Representative
 ):
     org = OrganizationFactory()
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = representative_role
@@ -42,7 +42,7 @@ def test_is_open_data_representative_with_user(app: DjangoTestApp, role: Represe
     user = UserFactory()
     ct = ContentType.objects.get_for_model(org)
     RepresentativeFactory(user=user, organization=org, content_type=ct, object_id=org.pk, role=role)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = user
     view.organization = org
     view.organization_role = None
@@ -53,7 +53,7 @@ def test_is_open_data_representative_with_user(app: DjangoTestApp, role: Represe
 def test_is_open_data_representative_with_non_representative_user(app: DjangoTestApp):
     org = OrganizationFactory()
     user = UserFactory()
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = user
     view.organization = org
     view.organization_role = None
@@ -74,7 +74,7 @@ def test_filter_queryset_by_access_with_user(app: DjangoTestApp, access_rights: 
     org = OrganizationFactory()
     user = UserFactory()
     DatasetFactory(organization=org, access_rights=access_rights)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = user
     view.organization = org
     view.organization_role = None
@@ -89,7 +89,7 @@ def test_check_dataset_access_passes_for_user_with_access(app: DjangoTestApp, ac
     org = OrganizationFactory()
     user = UserFactory()
     dataset = DatasetFactory(organization=org, access_rights=access_rights)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = user
     view.organization = org
     view.organization_role = None
@@ -102,7 +102,7 @@ def test_check_dataset_access_raises_for_user_without_access(app: DjangoTestApp,
     org = OrganizationFactory()
     user = UserFactory()
     dataset = DatasetFactory(organization=org, access_rights=access_rights)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = user
     view.organization = org
     view.organization_role = None
@@ -113,7 +113,7 @@ def test_check_dataset_access_raises_for_user_without_access(app: DjangoTestApp,
 @pytest.mark.django_db
 def test_is_open_data_representative_user_is_none_no_role(app: DjangoTestApp):
     org = OrganizationFactory()
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = None
@@ -127,7 +127,7 @@ def test_is_open_data_representative_user_is_none_no_role(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_is_open_data_representative_user_is_none_with_resource_role(app: DjangoTestApp, representative_role: str):
     org = OrganizationFactory()
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = representative_role
@@ -147,7 +147,7 @@ def test_is_open_data_representative_user_is_none_with_resource_role(app: Django
 def test_filter_queryset_by_access_with_open_data_role(app: DjangoTestApp, access_rights: str, expected_count: int):
     org = OrganizationFactory()
     DatasetFactory(organization=org, access_rights=access_rights)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = Representative.OPEN_DATA_MANAGER
@@ -163,7 +163,7 @@ def test_filter_queryset_by_access_with_open_data_role(app: DjangoTestApp, acces
 def test_filter_queryset_by_access_with_resource_role(app: DjangoTestApp, access_rights: str):
     org = OrganizationFactory()
     DatasetFactory(organization=org, access_rights=access_rights)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = Representative.RESOURCE_MANAGER
@@ -176,7 +176,7 @@ def test_filter_queryset_by_access_with_resource_role(app: DjangoTestApp, access
 def test_filter_queryset_by_access_no_user_no_role_returns_none(app: DjangoTestApp):
     org = OrganizationFactory()
     DatasetFactory(organization=org)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = None
@@ -190,7 +190,7 @@ def test_filter_queryset_by_access_no_user_no_role_returns_none(app: DjangoTestA
 def test_check_dataset_access_passes_for_open_data_role(app: DjangoTestApp, access_rights: str):
     org = OrganizationFactory()
     dataset = DatasetFactory(organization=org, access_rights=access_rights)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = Representative.OPEN_DATA_MANAGER
@@ -202,7 +202,7 @@ def test_check_dataset_access_passes_for_open_data_role(app: DjangoTestApp, acce
 def test_check_dataset_access_raises_for_open_data_role(app: DjangoTestApp, access_rights: str):
     org = OrganizationFactory()
     dataset = DatasetFactory(organization=org, access_rights=access_rights)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = Representative.OPEN_DATA_MANAGER
@@ -217,7 +217,7 @@ def test_check_dataset_access_raises_for_open_data_role(app: DjangoTestApp, acce
 def test_check_dataset_access_raises_for_resource_role(app: DjangoTestApp, access_rights: str):
     org = OrganizationFactory()
     dataset = DatasetFactory(organization=org, access_rights=access_rights)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = Representative.RESOURCE_MANAGER
@@ -229,7 +229,7 @@ def test_check_dataset_access_raises_for_resource_role(app: DjangoTestApp, acces
 def test_check_dataset_access_raises_with_no_user_no_role(app: DjangoTestApp):
     org = OrganizationFactory()
     dataset = DatasetFactory(organization=org, access_rights=Dataset.PUBLIC)
-    view = OpenDataRepresentativeMixin()
+    view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = None

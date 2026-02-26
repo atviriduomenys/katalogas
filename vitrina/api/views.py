@@ -26,7 +26,7 @@ from rest_framework.viewsets import GenericViewSet, ModelViewSet
 from reversion import set_user
 
 from vitrina.api.helpers import render_rdf_response
-from vitrina.api.mixins import OpenDataRepresentativeMixin
+from vitrina.api.mixins import DatasetAccessMixin
 from vitrina.api.models import ApiDescription
 from vitrina.api.permissions import APIKeyPermission, HasStatsPostPermission
 from vitrina.api.serializers import (
@@ -185,7 +185,7 @@ class LicenceViewSet(ListModelMixin, GenericViewSet):
         return super().list(request, *args, **kwargs)
 
 
-class DatasetViewSet(OpenDataRepresentativeMixin, ModelViewSet):
+class DatasetViewSet(DatasetAccessMixin, ModelViewSet):
     serializer_class = DatasetSerializer
     permission_classes = (APIKeyPermission,)
     lookup_url_kwarg = "datasetId"
@@ -321,7 +321,7 @@ class InternalDatasetViewSet(DatasetViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class DatasetDistributionViewSet(OpenDataRepresentativeMixin, ModelViewSet):
+class DatasetDistributionViewSet(DatasetAccessMixin, ModelViewSet):
     serializer_class = DatasetDistributionSerializer
     permission_classes = (APIKeyPermission,)
     parser_classes = [MultiPartParser, JSONParser]
@@ -656,9 +656,7 @@ class TaskViewSet(ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 
-class DatasetStructureViewSet(
-    OpenDataRepresentativeMixin, CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet
-):
+class DatasetStructureViewSet(DatasetAccessMixin, CreateModelMixin, DestroyModelMixin, ListModelMixin, GenericViewSet):
     serializer_class = DatasetStructureSerializer
     permission_classes = (APIKeyPermission,)
     parser_classes = [MultiPartParser]

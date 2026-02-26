@@ -7,7 +7,7 @@ from vitrina.orgs.models import Representative
 from haystack.query import SearchQuerySet
 
 
-class OpenDataRepresentativeMixin:
+class DatasetAccessMixin:
     def _is_open_data_representative(self) -> bool:
         if self.user:
             return self.user.is_open_data_representative_for(self.organization)

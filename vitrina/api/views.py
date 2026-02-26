@@ -6,7 +6,6 @@ from django.http import HttpResponse
 from django.templatetags.static import static
 from django.utils import timezone
 from django.apps import apps
-from haystack.query import SearchQuerySet
 from drf_yasg import openapi
 from drf_yasg.generators import OpenAPISchemaGenerator
 from drf_yasg.renderers import _SpecRenderer
@@ -50,8 +49,6 @@ from vitrina.api.serializers import (
 from vitrina.catalogs.models import Catalog
 from vitrina.classifiers.models import Category, Licence
 from vitrina.datasets.models import Dataset, DatasetStructure
-from vitrina.datasets.services import filter_out_non_public_datasets_for_user
-from vitrina.orgs.models import Representative
 from vitrina.resources.models import DatasetDistribution
 from vitrina.statistics.models import ModelDownloadStats
 from vitrina.structure.models import Metadata

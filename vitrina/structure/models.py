@@ -192,38 +192,47 @@ class Model(models.Model):
         db_table = "model"
         verbose_name = _("Modelis")
 
+    def _get_first_metadata(self) -> Metadata | None:
+        prefetched = getattr(self, "_prefetched_objects_cache", {})
+        if "metadata" in prefetched:
+            if not hasattr(self, "_cached_first_metadata"):
+                metadata_list = list(self.metadata.all())
+                self._cached_first_metadata = metadata_list[0] if metadata_list else None
+            return self._cached_first_metadata
+        return self.metadata.first()
+
     def __str__(self) -> str:
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.name
         return ""
 
     @property
     def name(self) -> str:
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.name.split("/")[-1]
         return ""
 
     @property
     def full_name(self) -> str:
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.name
         return ""
 
     @property
     def title(self) -> str:
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.title
         return ""
 
     @property
     def description(self) -> str:
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.description
         return ""
 
     @property
     def visibility(self) -> int | None:
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.visibility
         return None
 
@@ -374,8 +383,17 @@ class Property(models.Model):
         db_table = "property"
         verbose_name = _("Savybė")
 
+    def _get_first_metadata(self) -> Metadata | None:
+        prefetched = getattr(self, "_prefetched_objects_cache", {})
+        if "metadata" in prefetched:
+            if not hasattr(self, "_cached_first_metadata"):
+                metadata_list = list(self.metadata.all())
+                self._cached_first_metadata = metadata_list[0] if metadata_list else None
+            return self._cached_first_metadata
+        return self.metadata.first()
+
     def __str__(self):
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.name
         return ""
 
@@ -394,25 +412,25 @@ class Property(models.Model):
 
     @builtins.property
     def name(self):
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.name
         return ""
 
     @builtins.property
     def title(self):
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.title
         return ""
 
     @builtins.property
     def description(self):
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.description
         return ""
 
     @builtins.property
     def visibility(self) -> int | None:
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.visibility
         return None
 

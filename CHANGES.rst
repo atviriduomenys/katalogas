@@ -23,6 +23,9 @@ https://github.com/atviriduomenys/katalogas/issues/2429
 
 - Comment button fix for reply/edit/delete buttons to work.
 
+https://github.com/atviriduomenys/katalogas/issues/2257
+
+- Index query optimization to fix N+1 problem.
 
 v 1.14.1 (2026-02-23)
 ==================

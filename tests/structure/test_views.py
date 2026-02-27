@@ -4556,10 +4556,10 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     assert info["version"] == "1.0.0", "API version should be 1.0.0"
     schemas = set(openapi_spec["components"]["schemas"].keys())
     expected_schemas = {
-        "datasets_gov_ivpk_adp_Country",
-        "datasets_gov_ivpk_adp_CountryCollection",
-        "datasets_gov_ivpk_adp_CountryChange",
-        "datasets_gov_ivpk_adp_CountryChanges",
+        "Country",
+        "CountryCollection",
+        "CountryChange",
+        "CountryChanges",
     }
     assert expected_schemas <= schemas, f"Missing required schemas: {expected_schemas - schemas}"
 

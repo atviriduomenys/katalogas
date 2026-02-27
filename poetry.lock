@@ -5778,15 +5778,13 @@ files = [
 
 [[package]]
 name = "spinta"
-version = "0.2.dev16"
+version = "0.2dev17"
 description = "A platform for describing, extracting, transforming, loading and serving open data."
 optional = false
 python-versions = "^3.10"
 groups = ["main"]
-files = [
-    {file = "spinta-0.2.dev16-py3-none-any.whl", hash = "sha256:48561618f6128acecb6fa3497feb08acecfb3883e19efa9f958131ff94922be1"},
-    {file = "spinta-0.2.dev16.tar.gz", hash = "sha256:f2f951a782263c40b5a89fb902ed7fd6938f8755f59c0530a6e345ce93a68166"},
-]
+files = []
+develop = false
 
 [package.dependencies]
 aiofiles = "*"
@@ -5852,7 +5850,7 @@ migrations = ["alembic (>=1.11.0,<1.12.0)"]
 type = "git"
 url = "https://github.com/atviriduomenys/spinta.git"
 reference = "ft/2299-export-openapi-versions-refs"
-resolved_reference = "fb5f0d78a3e4be89fee966635872932effe79672"
+resolved_reference = "db76b8a6aa59fe151601b526a3b88033becd807f"
 
 [[package]]
 name = "sqlalchemy"

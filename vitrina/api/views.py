@@ -1,5 +1,6 @@
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import PermissionDenied
+from django.db.models import QuerySet
 from django.db.utils import IntegrityError
 from django.http import HttpRequest
 from django.http import HttpResponse
@@ -194,13 +195,13 @@ class DatasetViewSet(DatasetAccessMixin, ModelViewSet):
     publisher = None
     organization_role = None
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Dataset]:
         if not self.organization:
             return Dataset.objects.none()
         queryset = Dataset.objects.filter(organization=self.organization, deleted__isnull=True)
         return self._filter_queryset_by_access(queryset)
 
-    def get_object(self):
+    def get_object(self) -> Dataset:
         dataset_id = self.kwargs.get("datasetId")
         dataset = get_object_or_404(Dataset, organization=self.organization, pk=dataset_id, deleted__isnull=True)
 
@@ -281,15 +282,17 @@ class DatasetViewSet(DatasetAccessMixin, ModelViewSet):
 
 
 class InternalDatasetViewSet(DatasetViewSet):
-    def get_object(self):
+    def get_object(self) -> Dataset:
         internal_id = self.kwargs.get("internalId")
 
-        obj = get_object_or_404(Dataset, organization=self.organization, internal_id=internal_id, deleted__isnull=True)
+        dataset = get_object_or_404(
+            Dataset, organization=self.organization, internal_id=internal_id, deleted__isnull=True
+        )
 
         if not self.get_queryset().filter(pk=obj.pk).exists():
             raise PermissionDenied()
 
-        return obj
+        return dataset
 
     @swagger_auto_schema(
         operation_summary="Get a single dataset",
@@ -327,12 +330,12 @@ class DatasetDistributionViewSet(DatasetAccessMixin, ModelViewSet):
     parser_classes = [MultiPartParser, JSONParser]
     lookup_url_kwarg = "distributionId"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[Dataset]:
         dataset = self.get_dataset()
         queryset = DatasetDistribution.objects.filter(dataset=dataset)
         return queryset
 
-    def get_dataset(self):
+    def get_dataset(self) -> Dataset:
         dataset = get_object_or_404(Dataset, pk=self.kwargs.get("datasetId"), deleted__isnull=True)
         self._check_dataset_access(dataset)
         return dataset
@@ -418,7 +421,7 @@ class DatasetDistributionViewSet(DatasetAccessMixin, ModelViewSet):
 class InternalDatasetDistributionViewSet(DatasetDistributionViewSet):
     organization = None
 
-    def get_dataset(self):
+    def get_dataset(self) -> Dataset:
         dataset = get_object_or_404(
             Dataset, organization=self.organization, internal_id=self.kwargs.get("internalId"), deleted__isnull=True
         )
@@ -662,12 +665,12 @@ class DatasetStructureViewSet(DatasetAccessMixin, CreateModelMixin, DestroyModel
     parser_classes = [MultiPartParser]
     lookup_url_kwarg = "structureId"
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet[DatasetStructure]:
         dataset = self.get_dataset()
         queryset = DatasetStructure.objects.filter(dataset=dataset)
         return queryset
 
-    def get_dataset(self):
+    def get_dataset(self) -> Dataset:
         dataset = get_object_or_404(Dataset, pk=self.kwargs.get("datasetId"), deleted__isnull=True)
         self._check_dataset_access(dataset)
         return dataset
@@ -711,7 +714,7 @@ class DatasetStructureViewSet(DatasetAccessMixin, CreateModelMixin, DestroyModel
 class InternalDatasetStructureViewSet(DatasetStructureViewSet):
     organization = None
 
-    def get_dataset(self):
+    def get_dataset(self) -> Dataset:
         dataset = get_object_or_404(
             Dataset,
             organization=self.organization,

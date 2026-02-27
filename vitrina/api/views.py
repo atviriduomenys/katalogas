@@ -289,7 +289,7 @@ class InternalDatasetViewSet(DatasetViewSet):
             Dataset, organization=self.organization, internal_id=internal_id, deleted__isnull=True
         )
 
-        if not self.get_queryset().filter(pk=obj.pk).exists():
+        if not self.get_queryset().filter(pk=dataset.pk).exists():
             raise PermissionDenied()
 
         return dataset

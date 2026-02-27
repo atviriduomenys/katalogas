@@ -609,6 +609,7 @@ def test_create_dataset(app: DjangoTestApp):
     version = Version.objects.get_for_object(dataset).select_related("revision").first()
     assert version.revision.comment == revision_comment.to_json()
     assert version.revision.user == representative.user
+    assert dataset.metadata.count() == 1
     assert res.json == {
         "created": timezone.localtime(dataset.created).isoformat(),
         "id": str(dataset.pk),

@@ -1,8 +1,15 @@
+import uuid
+
+from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.utils import timezone
 from filer.models import Folder, File
 from rest_framework import serializers
 from rest_framework.validators import UniqueValidator
+
+from vitrina.datasets.helpers import generate_unique_dataset_name
+from vitrina.structure import VersionStatus
+from vitrina.structure.models import Version as _Version, Metadata
 
 from django.utils.translation import gettext_lazy as _
 from reversion import set_user
@@ -242,6 +249,26 @@ class PostDatasetSerializer(DatasetSerializer):
                 instance.category.add(category)
         for tag in keywords:
             instance.tags.add(tag)
+
+        draft_metadata_version = _Version.objects.create(
+            dataset=instance,
+            version=1,
+            status=VersionStatus.DRAFT,
+        )
+        dataset_name = generate_unique_dataset_name(instance.organization, instance)
+        Metadata.objects.create(
+            uuid=str(uuid.uuid4()),
+            dataset=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+            name=dataset_name,
+            title=instance.title,
+            description=instance.description,
+            prepare_ast={},
+            version=1,
+            metadata_version=draft_metadata_version,
+        )
+
         instance.save()
         set_user(self.context.get("user"))
         return instance

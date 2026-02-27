@@ -1571,10 +1571,16 @@ def test_property_enum_item_create__string(app: DjangoTestApp):
         EnumItem.objects.filter(
             enum__content_type=ContentType.objects.get_for_model(prop), enum__object_id=prop.pk
         ).values(
-            "metadata__prepare", "metadata__source", "metadata__access", "metadata__title", "metadata__description"
+            "metadata_version_id",
+            "metadata__prepare",
+            "metadata__source",
+            "metadata__access",
+            "metadata__title",
+            "metadata__description",
         )
     ) == [
         {
+            "metadata_version_id": version.pk,
             "metadata__prepare": '"test"',
             "metadata__source": "TEST",
             "metadata__access": Metadata.OPEN,
@@ -1630,10 +1636,16 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
         EnumItem.objects.filter(
             enum__content_type=ContentType.objects.get_for_model(prop), enum__object_id=prop.pk
         ).values(
-            "metadata__prepare", "metadata__source", "metadata__access", "metadata__title", "metadata__description"
+            "metadata_version_id",
+            "metadata__prepare",
+            "metadata__source",
+            "metadata__access",
+            "metadata__title",
+            "metadata__description",
         )
     ) == [
         {
+            "metadata_version_id": version.pk,
             "metadata__prepare": "1",
             "metadata__source": "TEST",
             "metadata__access": Metadata.OPEN,

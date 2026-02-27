@@ -1884,7 +1884,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         self.object: EnumItem = form.save(commit=False)
-        self.object.version_id = self.metadata_version.pk
+        self.object.metadata_version_id = self.metadata_version.pk
         if self.enum:
             self.object.enum = self.enum
         else:

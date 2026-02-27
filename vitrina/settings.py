@@ -186,6 +186,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "allauth.account.middleware.AccountMiddleware",
     "django_otp.middleware.OTPMiddleware",
     "reversion.middleware.RevisionMiddleware",
     "vitrina.middleware.AutoRevisionCommentMiddleware",

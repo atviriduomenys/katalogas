@@ -147,7 +147,7 @@ resource_server = {{ resource_server_host }}
 organization = {{ organization.name }}
 organization_type = {{ organization.kind }}
 client_id = {{ agent_env.oauth_client_id }}
-client = {{ agent_env.oautch_client_id }}
+client = {{ agent_env.oauth_client_id }}
 secret = {{ secret|default:"******" }}
 scopes =
 {% for scope in scopes %}    {{ scope }}

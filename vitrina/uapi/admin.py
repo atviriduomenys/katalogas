@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.uapi.models import Agent, RequestHistory, AgentEnv
+from vitrina.uapi.models import Agent, RequestHistory, RequestHistoryChanges, AgentEnv
 from vitrina.admin import RevisionCommentVersionAdmin
 
 
@@ -41,3 +41,8 @@ class AgentEnvAdmin(RevisionCommentVersionAdmin):
     list_display = ["environment", "agent"]
     readonly_fields = ["synchronized_at", "is_last_sync_successful", "oauth_client_id"]
     autocomplete_fields = ["agent"]
+
+
+@admin.register(RequestHistoryChanges)
+class RequestHistoryChangesAdmin(RevisionCommentVersionAdmin):
+    pass

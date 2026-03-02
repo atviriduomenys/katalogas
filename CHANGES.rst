@@ -8,6 +8,33 @@ https://github.com/atviriduomenys/katalogas/issues/2435
 
 - Change recipient for reply comment.
 
+https://github.com/atviriduomenys/katalogas/issues/2438
+
+Security: Fix open Dependabot vulnerability alerts across pip and npm dependencies:
+
+- Bump Django from 4.2.26 to 4.2.28 (CVE-2026-1207 SQL injection, and 5 other CVEs).
+- Bump django-allauth from 0.51.0 to 65.14.3 (CVE-2025-65430 inactive user token bypass, CVE-2025-65431 mutable identifier auth).
+- Bump cryptography from 44.0.0 to 46.0.5 (SECT curves subgroup attack).
+- Bump weasyprint from 62.0 to 68.1 (SSRF protection bypass).
+- Bump pillow to 12.1.1 (out-of-bounds write on PSD images).
+- Bump authlib from 1.6.0 to 1.6.8 (account takeover via login CSRF).
+- Bump sqlparse to 0.5.5 (DoS via tuple list formatting).
+- Bump aiohttp to 3.13.3 (cookie parser vulnerability, and 6 other CVEs).
+- Bump pyasn1 to 0.6.2 (DoS via malformed RELATIVE-OID).
+- Bump urllib3 to 2.6.3 (decompression bomb bypass on redirects).
+- Bump python-multipart to 0.0.22 (arbitrary file write via path traversal).
+- Bump setuptools from 75.7.0 to 78.1.1 (path traversal).
+- Bump django-filer from 3.2.3 to 3.4.4 (unrestricted dangerous file upload).
+- Bump brotli to 1.2.0 (DoS via malicious decompression).
+- Bump djangorestframework to 3.16.1 (XSS).
+- Bump django-select2 to 8.4.8 (secret cache key leakage).
+- Replace node-sass with Dart Sass to fix transitive npm vulnerabilities (minimatch, tar).
+- Bump webpack to 5.105.3 (SSRF via HTTP redirects).
+- Remove lodash (prototype pollution).
+- Add `allauth.account.middleware.AccountMiddleware` required by new django-allauth.
+- Add `oauthlib` as explicit dependency (previously transitive via old django-allauth).
+- Add dependency review CI workflow for PR vulnerability scanning.
+
 v 1.15.0 (2026-02-27)
 ==================
 

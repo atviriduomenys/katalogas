@@ -4959,6 +4959,10 @@ msgstr ""
 msgid "Invalid"
 msgstr ""
 
+msgid ""
+"Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+msgstr "Ensure, that it exists and has a confirmed (stable) version."
+
 #, python-brace-format
 msgid "Duomenų išteklius \"{meta.name}\" jau egzistuoja."
 msgstr "Data resource \"{meta.name}\" already exists."

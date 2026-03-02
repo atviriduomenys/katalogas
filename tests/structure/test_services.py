@@ -1165,7 +1165,7 @@ def test_structure_with_existing_enums(app: DjangoTestApp):
             type=Comment.STRUCTURE_ERROR,
             content_type=ContentType.objects.get_for_model(structure),
         ).values_list("body", flat=True)
-    ) == ['Galima reikšmė "SMALL" jau egzistuoja.']
+    ) == ['Galima reikšmė (source: "") "SMALL" jau egzistuoja.']
 
 
 @pytest.mark.django_db
@@ -2416,7 +2416,7 @@ def test_structure_export__visibility_row(app: DjangoTestApp):
         "3,,,,Pavadinimas,,,id,,,,4,,package,protected,,,Pavadinimas,\n"
         "4,,,,,id,integer,,,,,4,,package,protected,,,ID,\n"
         "5,,,,,class,integer,,,,,4,,package,protected,,,class,\n"
-        "6,,,,,,enum,,1,,,4,,package,protected,,,Class One,\n"
+        "6,,,,,,enum,,1,1,,4,,package,protected,,,Class One,\n"
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
@@ -2435,7 +2435,7 @@ def test_structure_export__visibility_row(app: DjangoTestApp):
         "3,,,,Pavadinimas,,,id,,,,,,4,develop,package,protected,,,Pavadinimas,\r\n"
         "4,,,,,id,integer,,,,,,,4,develop,package,protected,,,ID,\r\n"
         "5,,,,,class,integer,,,,,,,4,develop,package,protected,,,class,\r\n"
-        "6,,,,,,enum,,1,,,,,,develop,package,protected,,,Class One,\r\n"
+        "6,,,,,,enum,,1,,1,,,,develop,package,protected,,,Class One,\r\n"
         ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
@@ -2453,7 +2453,7 @@ def test_structure_export__eli_row(app: DjangoTestApp):
         "3,,,,Pavadinimas,,,id,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\n"
         "4,,,,,id,integer,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\n"
         "5,,,,,class,integer,,,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\n"
-        "6,,,,,,enum,,1,,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\n"
+        "6,,,,,,enum,,1,1,,4,,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\n"
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
@@ -2472,7 +2472,7 @@ def test_structure_export__eli_row(app: DjangoTestApp):
         "3,,,,Pavadinimas,,,id,,,,,,4,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\r\n"
         "4,,,,,id,integer,,,,,,,4,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\r\n"
         "5,,,,,class,integer,,,,,,,4,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\r\n"
-        "6,,,,,,enum,,1,,,,,,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\r\n"
+        "6,,,,,,enum,,1,,1,,,,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\r\n"
         ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
@@ -2490,7 +2490,7 @@ def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_d
         "3,,,,Pavadinimas,,,id,,,,4,completed,,protected,,,Pavadinimas,\n"
         "4,,,,,id,integer,,,,,4,withdrawn,,protected,,,ID,\n"
         "5,,,,,class,integer,,,,,4,deprecated,,protected,,,class,\n"
-        "6,,,,,,enum,,1,,,4,discont,,protected,,,Class One,\n"
+        "6,,,,,,enum,,1,1,,4,discont,,protected,,,Class One,\n"
     )
     structure = DatasetStructureFactory(
         file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
@@ -2509,7 +2509,7 @@ def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_d
         "3,,,,Pavadinimas,,,id,,,,,,4,completed,,protected,,,Pavadinimas,\r\n"
         "4,,,,,id,integer,,,,,,,4,withdrawn,,protected,,,ID,\r\n"
         "5,,,,,class,integer,,,,,,,4,deprecated,,protected,,,class,\r\n"
-        "6,,,,,,enum,,1,,,,,,discont,,protected,,,Class One,\r\n"
+        "6,,,,,,enum,,1,,1,,,,discont,,protected,,,Class One,\r\n"
         ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
@@ -2524,7 +2524,7 @@ def test_structure_models_props_and_enums_with_visibility_status_eli(app: Django
         "3,,,,Pavadinimas,,,id,,,4,completed,package,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,,\n"
         "4,,,,,id,integer,,,,4,completed,package,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,,\n"
         "5,,,,,class,integer,,,,4,discont,protected,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,,\n"
-        "6,,,,,,enum,,1,,4,deprecated,protected,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,,\n"
+        "6,,,,,,enum,,1,1,4,deprecated,protected,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
 
@@ -2599,7 +2599,7 @@ def test_structure_with_enum_level_higher_then_property(app: DjangoTestApp):
         "3,,,,Pavadinimas,,,id,,,4,,package,protected,,,Pavadinimas,,\n"
         "4,,,,,id,integer,,,,4,,package,protected,,,ID,,\n"
         "5,,,,,class,integer,,,,4,,package,protected,,,class,,\n"
-        "6,,,,,,enum,,1,,4,,public,protected,,,Class One,,\n"
+        "6,,,,,,enum,,1,1,4,,public,protected,,,Class One,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
@@ -2625,7 +2625,7 @@ def test_structure_with_enum_level_higher_then_model(app: DjangoTestApp):
         "3,,,,Pavadinimas,,,id,,,4,,package,protected,,,Pavadinimas,,\n"
         "4,,,,,id,integer,,,,4,,package,protected,,,ID,,\n"
         "5,,,,,class,integer,,,,4,,,protected,,,class,,\n"
-        "6,,,,,,enum,,1,,4,,public,protected,,,Class One,,\n"
+        "6,,,,,,enum,,1,1,4,,public,protected,,,Class One,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure

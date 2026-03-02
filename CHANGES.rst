@@ -1,6 +1,20 @@
 Changes
 #######
 
+v 1.18.0 (current)
+==================
+
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2324
+
+- Several issues related to enum item handling:
+    - When creating an enum item via the UI, the metadata version is now correctly set.
+    - Importing a manifest that contains non-string enum items without prepare values will now add an error indicating that a prepare column is required.
+    - Importing a manifest with string enum items and no prepare values will now automatically use the source column as the prepare value.
+    - Creating enum items via the UI will now return an error if a value already exists in the enum.
+
+
 v 1.17.0 (2026-03-16)
 ==================
 

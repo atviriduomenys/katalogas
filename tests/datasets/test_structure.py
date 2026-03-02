@@ -200,16 +200,16 @@ def test_update_parent_visibility_from_enum(
 
 def test_import_property_enum():
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',example,,,,,,,,,,,,,\n'
-        ',,,,Dataset,,,id,,,,,,,\n'
-        ',,,,,id,integer,,,,,,,,\n'
-        ',,,,,str_enum,string,,STR_ENUM,,,,,,\n'
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n"
+        ",example,,,,,,,,,,,,,\n"
+        ",,,,Dataset,,,id,,,,,,,\n"
+        ",,,,,id,integer,,,,,,,,\n"
+        ",,,,,str_enum,string,,STR_ENUM,,,,,,\n"
         ',,,,,,enum,,one,"""One""",,,,,\n'
         ',,,,,,,,two,"""Two""",,,,,\n'
-        ',,,,,int_enum,integer,,INT_ENUM,,,,,,\n'
-        ',,,,,,enum,,1,1,,,,,\n'
-        ',,,,,,,,2,2,,,,,\n'
+        ",,,,,int_enum,integer,,INT_ENUM,,,,,,\n"
+        ",,,,,,enum,,1,1,,,,,\n"
+        ",,,,,,,,2,2,,,,,\n"
     )
     reader = csv.DictReader(io.StringIO(manifest))
     model = "example/Dataset"
@@ -238,13 +238,13 @@ def test_import_property_enum():
 
 def test_import_property_string_enum_without_prepare_uses_source_value():
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',example,,,,,,,,,,,,,\n'
-        ',,,,Dataset,,,id,,,,,,,\n'
-        ',,,,,id,integer,,,,,,,,\n'
-        ',,,,,str_enum,string,,STR_ENUM,,,,,,\n'
-        ',,,,,,enum,,one,,,,,,\n'
-        ',,,,,,,,two,,,,,,\n'
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n"
+        ",example,,,,,,,,,,,,,\n"
+        ",,,,Dataset,,,id,,,,,,,\n"
+        ",,,,,id,integer,,,,,,,,\n"
+        ",,,,,str_enum,string,,STR_ENUM,,,,,,\n"
+        ",,,,,,enum,,one,,,,,,\n"
+        ",,,,,,,,two,,,,,,\n"
     )
     reader = csv.DictReader(io.StringIO(manifest))
     model = "example/Dataset"
@@ -264,13 +264,13 @@ def test_import_property_string_enum_without_prepare_uses_source_value():
 
 def test_import_property_not_string_enum_without_prepare_results_in_error():
     manifest = (
-        'id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n'
-        ',example,,,,,,,,,,,,,\n'
-        ',,,,Dataset,,,id,,,,,,,\n'
-        ',,,,,id,integer,,,,,,,,\n'
-        ',,,,,int_enum,integer,,INT_ENUM,,,,,,\n'
-        ',,,,,,enum,,1,,,,,,\n'
-        ',,,,,,,,2,,,,,,\n'
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n"
+        ",example,,,,,,,,,,,,,\n"
+        ",,,,Dataset,,,id,,,,,,,\n"
+        ",,,,,id,integer,,,,,,,,\n"
+        ",,,,,int_enum,integer,,INT_ENUM,,,,,,\n"
+        ",,,,,,enum,,1,,,,,,\n"
+        ",,,,,,,,2,,,,,,\n"
     )
     reader = csv.DictReader(io.StringIO(manifest))
     model = "example/Dataset"

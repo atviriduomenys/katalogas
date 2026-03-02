@@ -608,6 +608,10 @@ def test_create_dataset(app: DjangoTestApp):
     assert dataset.organization == organization
     assert Version.objects.get_for_object(dataset).count() == 1
     assert dataset.metadata.first().metadata_version.status == VersionStatus.DRAFT
+    assert dataset.metadata.first().title == "Test dataset"
+    assert dataset.metadata.first().description == "Test dataset"
+    assert dataset.metadata.first().version == 1
+    assert dataset.metadata.first().object_id == dataset.pk
     version = Version.objects.get_for_object(dataset).select_related("revision").first()
     assert version.revision.comment == revision_comment.to_json()
     assert version.revision.user == representative.user

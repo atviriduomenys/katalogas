@@ -14,6 +14,7 @@ class VIISPProvider(OAuth2Provider):
     id = "viisp"
     name = "Viisp"
     account_class = VIISPAccount
+    uses_apps = False
 
     def extract_uid(self, data):
         return str(data["ticket_id"])

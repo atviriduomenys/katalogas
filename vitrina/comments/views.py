@@ -308,16 +308,23 @@ class ReplyView(LoginRequiredMixin, PermissionRequiredMixin, View):
             )
             create_subscription(request.user, comment)
 
-            send_mail_and_create_tasks_for_subs(
-                REPLY_COMMENT,
-                comment_ct,
-                parent_id,
-                request.user,
-                link,
-                obj=obj,
-                comment_object=parent_comment,
-                text=comment.body,
-            )
+            # Only notify the parent comment author about the reply
+            if parent_comment.user != request.user and parent_comment.user.email:
+                email(
+                    [parent_comment.user.email],
+                    "replay-comment-for-sub",
+                    "vitrina/comments/emails/sub/replay.md",
+                    {"object": obj, "link": link, "text": comment.body},
+                )
+                create_task(
+                    comment_type=REPLY_COMMENT,
+                    content_type=content_type,
+                    object_id=object_id,
+                    user=parent_comment.user,
+                    obj=obj,
+                    comment_object=parent_comment,
+                    comment_ct=comment_ct,
+                )
             comment_task = Task.objects.filter(comment_object=parent_comment).first()
             if comment_task:
                 comment_task.status = Task.COMPLETED

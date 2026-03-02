@@ -4,6 +4,9 @@ Changes
 v 1.16.0 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2435
+
+- Change recipient for reply comment.
 
 v 1.15.0 (2026-02-27)
 ==================

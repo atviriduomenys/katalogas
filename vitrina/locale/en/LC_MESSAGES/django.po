@@ -1269,6 +1269,14 @@ msgstr "The organization can only be assigned the role of a data editor"
 msgid "Naudotojui išsiųstas laiškas dėl registracijos"
 msgstr "The user has been sent an email for registration"
 
+#, python-brace-format
+msgid ""
+"Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
+"aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "
+msgstr ""
+"Data field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
+"the model metadata visibility level \"{2}\". "
+
 msgid ""
 "Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
 "aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "
@@ -4203,9 +4211,6 @@ msgstr "Dataset title"
 msgid "Duomenų rinkinio ar vardų erdvės aprašymas."
 msgstr "Dataset or namespace description."
 
-msgid "Reikšmė turi būti integer tipo."
-msgstr "Value must be integer."
-
 msgid "Aprašymas neatitinka Markdown formato."
 msgstr "Description doesn't match Markdown format."
 
@@ -4748,13 +4753,13 @@ msgid "Metaduomenų versija"
 msgstr "Metadata version"
 
 msgid "Pending"
-msgstr ""
+msgstr "Pending"
 
 msgid "Valid"
-msgstr ""
+msgstr "Valid"
 
 msgid "Invalid"
-msgstr ""
+msgstr "Invalid"
 
 msgid ""
 "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
@@ -4906,6 +4911,9 @@ msgstr "Estimated changes"
 
 msgid "Galiojantys keitimai"
 msgstr "Deployed changes"
+
+msgid "Savybės reikšmės tipas nėra palaikomas."
+msgstr "Type of property value is not implemented."
 
 msgid "Kiekis"
 msgstr "Amount"

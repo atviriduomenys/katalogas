@@ -15,8 +15,7 @@ class TypeChecker(ABC, Generic[T]):
 
 
 class StringTypeChecker(TypeChecker[str]):
-    def check_enum_item_value(self, value: str) -> None:
-        pass
+    pass
 
 
 class IntegerTypeChecker(TypeChecker[int]):

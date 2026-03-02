@@ -19,7 +19,7 @@ from vitrina.api.oauth import (
     OAuthClientAuthenticator,
 )
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.uapi.factories import AgentFactory, AgentEnvFactory
+from vitrina.uapi.factories import AgentEnvFactory
 
 
 class TestView:

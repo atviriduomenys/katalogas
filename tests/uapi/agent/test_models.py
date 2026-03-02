@@ -2,8 +2,9 @@ import pytest
 from django.db import IntegrityError
 
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.uapi.models import Agent
-from vitrina.uapi.factories import AgentFactory
+from vitrina.uapi.models import Agent, AgentEnv, RequestHistory
+from vitrina.uapi.factories import AgentFactory, AgentEnvFactory, RequestHistoryFactory
+from vitrina.datasets.factories import DatasetFactory
 
 
 pytestmark = pytest.mark.django_db
@@ -38,3 +39,52 @@ class TestAgent:
 
         agent.refresh_from_db()
         assert agent.codename == "foo"
+
+    def test_not_archived_manager(self):
+        agent_not_archived = AgentFactory(is_archived=False)
+        AgentFactory(is_archived=True)
+
+        assert Agent.objects.count() == 2
+        assert Agent.not_archived.count() == 1
+        assert Agent.not_archived.first() == agent_not_archived
+
+    def test_services_unassigned_when_archived(self):
+        agent = AgentFactory()
+
+        DatasetFactory(agent=agent)
+        DatasetFactory(agent=agent)
+
+        assert agent.services.count() == 2
+
+        agent.is_archived = True
+        agent.save()
+
+        assert agent.services.count() == 0
+
+
+class TestAgentEnv:
+    def test_not_archived_manager(self):
+        agent = AgentFactory(is_archived=True)
+
+        agent_env_not_archived = AgentEnvFactory(is_archived=False)
+        AgentEnvFactory(is_archived=True)
+        AgentEnvFactory(is_archived=False, agent=agent)
+
+        assert AgentEnv.objects.count() == 3
+        assert AgentEnv.not_archived.count() == 1
+        assert AgentEnv.not_archived.first() == agent_env_not_archived
+
+
+class TestRequestHistory:
+    def test_visible_manager(self):
+        agent_archived = AgentFactory(is_archived=True)
+        agent_env_archived = AgentEnvFactory(is_archived=True)
+        agent_env_archived_agent = AgentEnvFactory(is_archived=False, agent=agent_archived)
+
+        request_history = RequestHistoryFactory()
+        RequestHistoryFactory(agent_env=agent_env_archived)
+        RequestHistoryFactory(agent_env=agent_env_archived_agent)
+
+        assert RequestHistory.objects.count() == 3
+        assert RequestHistory.visible.count() == 1
+        assert RequestHistory.visible.first() == request_history

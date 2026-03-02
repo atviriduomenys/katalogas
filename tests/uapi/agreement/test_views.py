@@ -315,7 +315,7 @@ class TestAgreementViewSetList:
         assert response.status_code == status.HTTP_200_OK
         assert response.json == {"_data": []}
 
-    def test_return_agreements_related_to_agent_service(
+    def test_do_not_return_agreements_unrelated_to_agent_service(
         self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
     ):
         dataset = DatasetFactory(organization=organization)

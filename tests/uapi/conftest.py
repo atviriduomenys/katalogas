@@ -12,8 +12,8 @@ from django.urls import reverse
 
 from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.orgs.factories import OrganizationFactory
-from vitrina.orgs.models import Organization
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.models import Organization, Representative
 from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
@@ -208,3 +208,18 @@ def dsa() -> str:
 ,,,,,email_address,string,,email,,,,,,,,,,
 ,,,,,active,boolean,,isActive,,,,,,,,,,
 """
+
+
+@pytest.fixture
+def coordinator(organization: Organization) -> User:
+    return RepresentativeFactory(content_object=organization, role=Representative.RESOURCE_COORDINATOR).user
+
+
+@pytest.fixture
+def manager(organization: Organization) -> User:
+    return RepresentativeFactory(content_object=organization, role=Representative.RESOURCE_MANAGER).user
+
+
+@pytest.fixture
+def admin() -> User:
+    return UserFactory(is_staff=True)

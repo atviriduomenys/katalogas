@@ -70,6 +70,7 @@ from vitrina.identifiers.factories import IdentifierFactory
 from vitrina.identifiers.models import Identifier, Agency
 from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.utils import RevisionComment, RevisionSource
+from vitrina.uapi.factories import AgentFactory
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -1640,6 +1641,25 @@ class TestDatasetUpdateView:
         assert dataset.dataset_files.all().exists()
         assert form.enctype == "multipart/form-data"
 
+    def test_dataset_update_service_agent(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="service")
+        dataset = DatasetFactory(subclass=subclass, organization=organization, endpoint_url="http://www.example.com")
+        agent = AgentFactory(organization=organization)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change", kwargs={"pk": dataset.id})
+
+        form = app.get(url).forms["dataset-form"]
+        form["agent"] = agent.pk
+
+        assert not dataset.agent
+        response = form.submit()
+        assert response.status_code == 302
+        dataset.refresh_from_db()
+        assert dataset.agent == agent
+
 
 class TestDatasetCreateView:
     def test_add_form_no_login(self, app: DjangoTestApp):
@@ -2284,6 +2304,39 @@ class TestDatasetCreateView:
 
         assert rep is not None
         assert rep.role == Representative.OPEN_DATA_COORDINATOR
+
+    @pytest.mark.parametrize(
+        "with_agent",
+        [True, False],
+    )
+    def test_create_service_with_and_without_agent(self, app: DjangoTestApp, with_agent: bool) -> None:
+        frequency = FrequencyFactory()
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="service")
+        if with_agent:
+            agent = AgentFactory(organization=organization)
+        else:
+            agent = None
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})
+
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Some title"
+        form["description"] = "Some description"
+        form["frequency"] = frequency.pk
+        form["access_rights"] = Dataset.PUBLIC
+        form["endpoint_url"] = "http://www.example.com"
+        form["agent"] = agent.pk if agent else ""
+
+        response = form.submit()
+
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.filter(translations__title="Some title").first()
+
+        assert dataset.agent == agent
 
 
 class TestDatasetDeleteView:

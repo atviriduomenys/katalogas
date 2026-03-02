@@ -1,7 +1,7 @@
 import pytest
 
-from vitrina.uapi import AgentType
-from vitrina.uapi.forms import AgentForm
+from vitrina.uapi import Environment, AgentType
+from vitrina.uapi.forms import AgentForm, AgentEnvForm
 from vitrina.uapi.models import Agent
 
 
@@ -55,3 +55,38 @@ class TestAgentForm:
             organization=organization,
         )
         assert form.is_valid()
+
+
+class TestAgentEnvForm:
+    def test_success(self, organization):
+        form_data = {
+            "environment": Environment.DEVELOPMENT,
+            "agent_address": "http://agent-address.test",
+            "auth_server_url": "http://auth-server.test",
+            "api_gate_server_url": "http://api-gate-server.test",
+            "is_open_data_published": True,
+            "open_data_publish_url": "http://open-data.test",
+            "is_enabled": True,
+        }
+        form = AgentEnvForm(data=form_data, organization=organization)
+        assert form.is_valid()
+
+    def test_failure_open_data_is_published_but_no_url_is_provided(self, organization):
+        form_data = {
+            "environment": Environment.DEVELOPMENT,
+            "agent_address": "http://agent-address.test",
+            "auth_server_url": "http://auth-server.test",
+            "api_gate_server_url": "http://api-gate-server.test",
+            "is_open_data_published": True,
+            "open_data_publish_url": "",
+            "is_enabled": True,
+        }
+
+        form = AgentEnvForm(data=form_data, organization=organization)
+
+        assert not form.is_valid()
+        assert form.errors == {
+            "open_data_publish_url": [
+                'Šis laukas yra privalomas, jei nustatytas požymis "Atviri duomenys publikuojami Saugykloje".'
+            ]
+        }

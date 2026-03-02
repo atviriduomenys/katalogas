@@ -203,10 +203,7 @@ class DatasetViewSet(DatasetAccessMixin, ModelViewSet):
 
     def get_object(self) -> Dataset:
         dataset_id = self.kwargs.get("datasetId")
-        dataset = get_object_or_404(Dataset, organization=self.organization, pk=dataset_id, deleted__isnull=True)
-
-        if not self.get_queryset().filter(pk=dataset.pk).exists():
-            raise PermissionDenied()
+        dataset = get_object_or_404(self.get_queryset(), pk=dataset_id)
         return dataset
 
     @swagger_auto_schema(
@@ -252,7 +249,7 @@ class DatasetViewSet(DatasetAccessMixin, ModelViewSet):
     )
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if self._is_open_data_representative() and instance.subclass.is_information_system:
+        if self._is_restricted_information_system(instance):
             raise PermissionDenied()
         serializer = PatchDatasetSerializer(instance, data=request.data, context={"user": self.user}, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -267,7 +264,7 @@ class DatasetViewSet(DatasetAccessMixin, ModelViewSet):
     )
     def destroy(self, request, *args, **kwargs):
         instance = self.get_object()
-        if self._is_open_data_representative() and instance.subclass.is_information_system:
+        if self._is_restricted_information_system(instance):
             raise PermissionDenied()
         instance.deleted = True
         instance.deleted_on = timezone.now()
@@ -284,15 +281,7 @@ class DatasetViewSet(DatasetAccessMixin, ModelViewSet):
 class InternalDatasetViewSet(DatasetViewSet):
     def get_object(self) -> Dataset:
         internal_id = self.kwargs.get("internalId")
-
-        dataset = get_object_or_404(
-            Dataset, organization=self.organization, internal_id=internal_id, deleted__isnull=True
-        )
-
-        if not self.get_queryset().filter(pk=dataset.pk).exists():
-            raise PermissionDenied()
-
-        return dataset
+        return get_object_or_404(self.get_queryset(), internal_id=internal_id)
 
     @swagger_auto_schema(
         operation_summary="Get a single dataset",
@@ -365,7 +354,7 @@ class DatasetDistributionViewSet(DatasetAccessMixin, ModelViewSet):
     )
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
-        if self._is_open_data_representative() and instance.dataset.subclass.is_information_system:
+        if self._is_restricted_information_system(instance.dataset):
             raise PermissionDenied()
         serializer = PatchDatasetDistributionSerializer(instance, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
@@ -381,7 +370,7 @@ class DatasetDistributionViewSet(DatasetAccessMixin, ModelViewSet):
         responses={status.HTTP_200_OK: DatasetDistributionSerializer()},
     )
     def create(self, request, *args, **kwargs):
-        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+        if self._is_restricted_information_system(self.get_dataset()):
             raise PermissionDenied()
         serializer = PostDatasetDistributionSerializer(data=request.data, context={"dataset": self.get_dataset()})
         serializer.is_valid(raise_exception=True)
@@ -398,7 +387,7 @@ class DatasetDistributionViewSet(DatasetAccessMixin, ModelViewSet):
         responses={status.HTTP_200_OK: DatasetDistributionSerializer()},
     )
     def create_with_put(self, request, *args, **kwargs):
-        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+        if self._is_restricted_information_system(self.get_dataset()):
             raise PermissionDenied()
         serializer = PutDatasetDistributionSerializer(data=request.data, context={"dataset": self.get_dataset()})
         serializer.is_valid(raise_exception=True)
@@ -413,7 +402,7 @@ class DatasetDistributionViewSet(DatasetAccessMixin, ModelViewSet):
         tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
-        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+        if self._is_restricted_information_system(self.get_dataset()):
             raise PermissionDenied()
         return super().destroy(request, *args, **kwargs)
 
@@ -691,7 +680,7 @@ class DatasetStructureViewSet(DatasetAccessMixin, CreateModelMixin, DestroyModel
         responses={status.HTTP_200_OK: DatasetStructureSerializer()},
     )
     def create(self, request, *args, **kwargs):
-        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+        if self._is_restricted_information_system(self.get_dataset()):
             raise PermissionDenied()
         serializer = PostDatasetStructureSerializer(data=request.data, context={"dataset": self.get_dataset()})
         serializer.is_valid(raise_exception=True)
@@ -706,7 +695,7 @@ class DatasetStructureViewSet(DatasetAccessMixin, CreateModelMixin, DestroyModel
         tags=[REMOVING_DATA_TAG],
     )
     def destroy(self, request, *args, **kwargs):
-        if self._is_open_data_representative() and self.get_dataset().subclass.is_information_system:
+        if self._is_restricted_information_system(self.get_dataset()):
             raise PermissionDenied()
         return super().destroy(request, *args, **kwargs)
 
@@ -716,9 +705,7 @@ class InternalDatasetStructureViewSet(DatasetStructureViewSet):
 
     def get_dataset(self) -> Dataset:
         dataset = get_object_or_404(
-            Dataset,
-            organization=self.organization,
-            internal_id=self.kwargs.get("internalId"),
+            Dataset, organization=self.organization, internal_id=self.kwargs.get("internalId"), deleted__isnull=True
         )
         self._check_dataset_access(dataset)
         return dataset

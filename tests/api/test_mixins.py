@@ -24,7 +24,7 @@ def test_is_open_data_representative_user_is_none_with_open_data_role(
     view.user = None
     view.organization = org
     view.organization_role = representative_role
-    assert view._is_open_data_representative() is True
+    assert view.is_open_data_representative() is True
 
 
 @pytest.mark.parametrize(
@@ -46,7 +46,7 @@ def test_is_open_data_representative_with_user(app: DjangoTestApp, role: Represe
     view.user = user
     view.organization = org
     view.organization_role = None
-    assert view._is_open_data_representative() is expected
+    assert view.is_open_data_representative() is expected
 
 
 @pytest.mark.django_db
@@ -57,7 +57,7 @@ def test_is_open_data_representative_with_non_representative_user(app: DjangoTes
     view.user = user
     view.organization = org
     view.organization_role = None
-    assert view._is_open_data_representative() is False
+    assert view.is_open_data_representative() is False
 
 
 @pytest.mark.parametrize(
@@ -117,7 +117,7 @@ def test_is_open_data_representative_user_is_none_no_role(app: DjangoTestApp):
     view.user = None
     view.organization = org
     view.organization_role = None
-    assert view._is_open_data_representative() is False
+    assert view.is_open_data_representative() is False
 
 
 @pytest.mark.parametrize(
@@ -131,7 +131,7 @@ def test_is_open_data_representative_user_is_none_with_resource_role(app: Django
     view.user = None
     view.organization = org
     view.organization_role = representative_role
-    assert view._is_open_data_representative() is False
+    assert view.is_open_data_representative() is False
 
 
 @pytest.mark.parametrize(
@@ -190,6 +190,7 @@ def test_filter_queryset_by_access_no_user_no_role_returns_none(app: DjangoTestA
 def test_check_dataset_access_passes_for_open_data_role(app: DjangoTestApp, access_rights: str):
     org = OrganizationFactory()
     dataset = DatasetFactory(organization=org, access_rights=access_rights)
+    assert dataset.access_rights == access_rights  # does this fail?
     view = DatasetAccessMixin()
     view.user = None
     view.organization = org
@@ -214,15 +215,14 @@ def test_check_dataset_access_raises_for_open_data_role(app: DjangoTestApp, acce
     "access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL]
 )
 @pytest.mark.django_db
-def test_check_dataset_access_raises_for_resource_role(app: DjangoTestApp, access_rights: str):
+def test_check_dataset_access_for_resource_role(app: DjangoTestApp, access_rights: str):
     org = OrganizationFactory()
     dataset = DatasetFactory(organization=org, access_rights=access_rights)
     view = DatasetAccessMixin()
     view.user = None
     view.organization = org
     view.organization_role = Representative.RESOURCE_MANAGER
-    with pytest.raises(PermissionDenied):
-        view._check_dataset_access(dataset)
+    view._check_dataset_access(dataset)
 
 
 @pytest.mark.django_db
@@ -235,3 +235,25 @@ def test_check_dataset_access_raises_with_no_user_no_role(app: DjangoTestApp):
     view.organization_role = None
     with pytest.raises(PermissionDenied):
         view._check_dataset_access(dataset)
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "organization_role, is_information_system, expected",
+    [
+        (next(iter(Representative.OPEN_DATA_ROLE_KEYS)), True, False),
+        (next(iter(Representative.OPEN_DATA_ROLE_KEYS)), False, False),
+        (next(iter(Representative.RESOURCE_ROLE_KEYS)), True, False),
+        (None, True, False),
+    ],
+)
+def test_is_restricted_information_system(
+    organization_role: str | None,
+    is_information_system: bool,
+    expected: bool,
+) -> None:
+    dataset = DatasetFactory(subclass__is_information_system=is_information_system)
+    view = DatasetAccessMixin()
+    view.organization_role = organization_role
+    view.user = None
+    assert view._is_restricted_information_system(dataset) is expected

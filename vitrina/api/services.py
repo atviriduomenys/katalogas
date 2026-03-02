@@ -10,7 +10,7 @@ from vitrina.api.models import ApiKey
 from vitrina.api.exceptions import DuplicateAPIKeyException
 from vitrina.datasets.models import Dataset
 from vitrina.helpers import get_current_domain
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import hash_api_key
 from vitrina.settings import (
     SPINTA_SERVER_CLIENT_SECRET,
@@ -20,7 +20,9 @@ from vitrina.settings import (
 from vitrina.users.models import User
 
 
-def get_api_key_organization_and_user(request: HttpRequest, raise_error: bool = True) -> (Organization, User):
+def get_api_key_organization_and_user(
+    request: HttpRequest, raise_error: bool = True
+) -> tuple[Organization | None, User | None, Dataset | None, Representative | None, bool]:
     organization = user = dataset = organization_role = None
     publisher = False
 

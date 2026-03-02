@@ -421,7 +421,7 @@ def test_get_non_public_dataset_with_dataset_id_open_data_representative(app: Dj
     app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-single-dataset", kwargs={"datasetId": dataset.pk}), expect_errors=True)
     dataset.refresh_from_db()
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 @pytest.mark.parametrize(
@@ -441,7 +441,7 @@ def test_get_non_public_dataset_with_dataset_id_open_data_representative_organiz
     APIKeyFactory(representative=representative)
     app.extra_environ.update({"HTTP_AUTHORIZATION": "ApiKey test"})
     res = app.get(reverse("api-single-dataset", kwargs={"datasetId": dataset.pk}), expect_errors=True)
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 @pytest.mark.django_db
@@ -517,7 +517,7 @@ def test_get_non_public_dataset_with_internal_id_open_data_representative(app: D
         reverse("api-single-dataset-internal", kwargs={"internalId": dataset.internal_id}), expect_errors=True
     )
     dataset.refresh_from_db()
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 @pytest.mark.parametrize(
@@ -543,7 +543,7 @@ def test_get_non_public_dataset_with_dataset_internal_id_open_data_representativ
         reverse("api-single-dataset-internal", kwargs={"internalId": dataset.internal_id}), expect_errors=True
     )
     dataset.refresh_from_db()
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 @pytest.mark.django_db
@@ -723,7 +723,7 @@ def test_update_non_public_dataset_with_dataset_id_open_data_representative(app:
     dataset.refresh_from_db()
     assert dataset.title != "Updated title"
     assert dataset.description != "Updated description"
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 @pytest.mark.django_db
@@ -813,7 +813,7 @@ def test_update_non_public_dataset_with_internal_id_open_data_representative(app
     dataset.refresh_from_db()
     assert dataset.title != "Updated title"
     assert dataset.description != "Updated description"
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 @pytest.mark.django_db
@@ -903,7 +903,7 @@ def test_delete_non_public_dataset_with_dataset_id_open_data_representative(app:
     url = reverse("api-single-dataset", kwargs={"datasetId": dataset.pk})
     res = app.delete(url, expect_errors=True)
     dataset.refresh_from_db()
-    assert res.status_code == 403
+    assert res.status_code == 404
     assert dataset.internal_id == "test"
     assert dataset.slug == "test"
     assert dataset.deleted is None
@@ -979,7 +979,7 @@ def test_delete_non_public_dataset_with_internal_id_open_data_representative(app
     url = reverse("api-single-dataset-internal", kwargs=kwargs_dict)
     res = app.delete(url, expect_errors=True)
     dataset.refresh_from_db()
-    res.status_code == 403
+    assert res.status_code == 404
     assert dataset.internal_id == "test"
     assert dataset.slug == "test"
     assert dataset.deleted is None
@@ -1002,7 +1002,7 @@ def test_delete_information_system_with_internal_id_open_data_representative(app
     url = reverse("api-single-dataset-internal", kwargs=kwargs_dict)
     res = app.delete(url, expect_errors=True)
     dataset.refresh_from_db()
-    res.status_code == 403
+    assert res.status_code == 403
     assert dataset.internal_id == "test"
     assert dataset.slug == "test"
     assert dataset.deleted is None
@@ -2161,7 +2161,7 @@ def test_delete_non_public_dataset_distribution_with_dataset_id_open_data_repres
     distribution = DatasetDistributionFactory()
     dataset = distribution.dataset
     dataset.access_rights = access_rights
-    dataset.save(update_fields=["subclass"])
+    dataset.save(update_fields=["access_rights"])
     ct = ContentType.objects.get_for_model(dataset.organization)
     representative = RepresentativeFactory(
         content_type=ct,
@@ -2999,7 +2999,7 @@ def test_get_dataset_publisher_non_public_datasets(app: DjangoTestApp, access_ri
     assert res.status_code == 403
 
     res = app.get(reverse("api-single-dataset", kwargs={"datasetId": ds1.pk}), expect_errors=True)
-    assert res.status_code == 403
+    assert res.status_code == 404
 
 
 class EdpDcatApRestrictedRdfTests(TestCase):

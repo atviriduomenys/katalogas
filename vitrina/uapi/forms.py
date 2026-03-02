@@ -69,6 +69,7 @@ class AgentEnvForm(ModelForm):
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
+        self.helper.form_id = "agent-env-form"
         self.helper.attrs["novalidate"] = ""
         self.helper.layout = Layout(
             Field("environment"),

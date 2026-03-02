@@ -1,7 +1,7 @@
 import factory
 from factory.django import DjangoModelFactory
 
-from vitrina.uapi.models import Agent, AgentEnv
+from vitrina.uapi.models import Agent, AgentEnv, RequestHistory
 from vitrina.uapi import Environment
 from vitrina.orgs.factories import OrganizationFactory
 
@@ -23,3 +23,11 @@ class AgentEnvFactory(DjangoModelFactory):
     agent = factory.SubFactory(AgentFactory)
     environment = Environment.DEVELOPMENT
     is_enabled = True
+
+
+class RequestHistoryFactory(DjangoModelFactory):
+    class Meta:
+        model = RequestHistory
+
+    agent_env = factory.SubFactory(AgentEnvFactory)
+    http_result = factory.Faker("random_int")

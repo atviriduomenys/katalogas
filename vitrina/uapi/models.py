@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 
 from vitrina.models import UUIDBaseModel
 from django.utils.text import slugify
@@ -54,12 +54,19 @@ class Agent(UUIDBaseModel):
         ]
 
     def save(self, *args, **kwargs) -> None:
-        self.codename = self.get_codename(self.title)
+        with transaction.atomic():
+            self.codename = self.get_codename(self.title)
 
-        if (update_fields := kwargs.get("update_fields")) and "title" in update_fields:
-            kwargs["update_fields"] = set(update_fields) | {"codename"}
+            if (update_fields := kwargs.get("update_fields")) and "title" in update_fields:
+                kwargs["update_fields"] = set(update_fields) | {"codename"}
 
-        return super().save(*args, **kwargs)
+            super().save(*args, **kwargs)
+
+            if self.is_archived:
+                # Using loop and .save() on each instance so that django-reversion can pick it up.
+                for service in self.services.only("pk", "agent"):
+                    service.agent = None
+                    service.save(update_fields=["agent"])
 
     def __str__(self) -> str:
         return f"{self.title} ({self.codename})"
@@ -70,6 +77,7 @@ class Agent(UUIDBaseModel):
 
     not_archived = NotArchivedAgentManager()
     objects = models.Manager()
+
 
 class NotArchivedAgentEnvManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
@@ -192,12 +200,6 @@ class RequestHistory(UUIDBaseModel):
     objects = models.Manager()
 
 
-class VisibleRequestHistoryChangesManager(models.Manager):
-    def get_queryset(self) -> models.QuerySet:
-        visible_history_ids = RequestHistory.not_archived.values_list("pk", flat=True)
-        return super().get_queryset().filter(request_history_id__in=visible_history_ids)
-
-
 class RequestHistoryChanges(UUIDBaseModel):
     request_history = models.ForeignKey(
         "RequestHistory", on_delete=models.CASCADE, related_name="changes", verbose_name=_("Užklausų istorija")
@@ -209,6 +211,3 @@ class RequestHistoryChanges(UUIDBaseModel):
     class Meta:
         verbose_name = _("Užklausų istorijos pakeitimas")
         verbose_name_plural = _("Užklausų istorijos pakeitimai")
-
-    visible = VisibleRequestHistoryChangesManager()
-    objects = models.Manager()

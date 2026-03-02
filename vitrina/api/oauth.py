@@ -225,7 +225,9 @@ class OAuthClientAuthenticator:
     def resolve_organization_from_token(decoded_token: JWTClaims) -> Organization | None:
         if not (client_id := OAuthClientAuthenticator.resolve_client_id_from_token(decoded_token)):
             return None
-        agent_env = AgentEnv.not_archived.filter(oauth_client_id=client_id).select_related("agent__organization").first()
+        agent_env = (
+            AgentEnv.not_archived.filter(oauth_client_id=client_id).select_related("agent__organization").first()
+        )
         return agent_env.agent.organization if agent_env else None
 
     @staticmethod

@@ -1,14 +1,8 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.uapi.models import Agent, RequestHistory, RequestHistoryChanges, AgentEnv
+from vitrina.uapi.models import Agent, RequestHistory, AgentEnv
 from vitrina.admin import RevisionCommentVersionAdmin
-
-
-class AgentEnvInline(admin.TabularInline):
-    model = AgentEnv
-    extra = 1
-    readonly_fields = ["synchronized_at", "is_last_sync_successful", "oauth_client_id"]
 
 
 @admin.register(Agent)
@@ -19,14 +13,12 @@ class AgentAdmin(RevisionCommentVersionAdmin):
 
     list_display = ["agent_name", "organization"]
     autocomplete_fields = ["organization"]
-    search_fields = ["codename", "organization"]
+    search_fields = ["codename", "organization__title"]
     readonly_fields = ["codename"]
-    inlines = [AgentEnvInline]
 
     @staticmethod
     def agent_name(obj: Agent) -> str:
         return str(obj)
-
 
 
 @admin.register(RequestHistory)
@@ -35,14 +27,17 @@ class RequestHistoryAdmin(RevisionCommentVersionAdmin):
     list_filter = ["agent_env"]
 
 
-@admin.register(RequestHistoryChanges)
-class RequestHistoryChangesAdmin(RevisionCommentVersionAdmin):
-    pass
-
-
 @admin.register(AgentEnv)
 class AgentEnvAdmin(RevisionCommentVersionAdmin):
+    class Meta:
+        verbose_name = _("Agento aplinka")
+        verbose_name_plural = _("Agento aplinkos")
+
     search_fields = [
         "agent__title",
-        "agent__codename",
+        "agent__organization__title",
+        "environment",
     ]
+    list_display = ["environment", "agent"]
+    readonly_fields = ["synchronized_at", "is_last_sync_successful", "oauth_client_id"]
+    autocomplete_fields = ["agent"]

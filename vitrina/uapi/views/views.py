@@ -37,7 +37,7 @@ from vitrina.uapi.serializers.serializers import (
     UAPIDatasetCreateSerializer,
     UAPIVersionSerializer,
     VersionQueryParameterSerializer,
-    UAPIAgentSerializer,
+    UAPIAgentEnvSerializer,
     ConnectionCheckSerializer,
 )
 from vitrina.uapi.utils.utils import extract_type_from_url
@@ -422,7 +422,7 @@ class AgentViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSe
         serializer = BaseObjectListSerializer(
             instance=self.get_queryset(),
             context=self.get_serializer_context(),
-            data_serializer_class=UAPIAgentSerializer,
+            data_serializer_class=UAPIAgentEnvSerializer,
             _type=extract_type_from_url(self.request.build_absolute_uri()),
         )
         return Response(serializer.data, status=status.HTTP_200_OK)

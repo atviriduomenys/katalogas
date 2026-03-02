@@ -11,12 +11,12 @@ class ConnectionCheckSerializer(serializers.Serializer):
     spinta_version = serializers.CharField(required=False, max_length=50)
 
 
-class UAPIAgentSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
+class UAPIAgentEnvSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
     title = serializers.CharField(source="agent.title", read_only=True)
     codename = serializers.CharField(source="agent.codename", read_only=True)
     object_type = serializers.CharField(source="agent.object_type", read_only=True)
     organization = serializers.IntegerField(source="agent.organization.id", read_only=True)
-    services = serializers.PrimaryKeyRelatedField(source="agent.services",many=True, read_only=True)
+    services = serializers.PrimaryKeyRelatedField(source="agent.services", many=True, read_only=True)
 
     class Meta:
         model = AgentEnv

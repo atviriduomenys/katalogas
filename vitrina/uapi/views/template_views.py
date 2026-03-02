@@ -275,9 +275,7 @@ class AgentEnvCreateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentM
         form.instance.agent = self.agent
         self.object: AgentEnv = form.save(commit=False)
         try:
-            client_id, secret = OAuthClientManagement.create_oauth_client(
-                scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES
-            )
+            client_id, secret = OAuthClientManagement.create_oauth_client(scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
             self.object.oauth_client_id = client_id
             self.object.save()
             self.request.session["secret"] = secret

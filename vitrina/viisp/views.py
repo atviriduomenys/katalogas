@@ -5,7 +5,6 @@ from django.views import View
 from django.views.generic import TemplateView
 from django.urls import reverse
 from django.shortcuts import render, redirect
-from allauth.socialaccount import providers
 from allauth.socialaccount.providers.oauth2.views import (
     OAuth2LoginView,
     OAuth2CallbackView,
@@ -65,7 +64,7 @@ class VIISPCompleteLoginView(View):
     def post(self, request, token=None):
         encoded_key = ViispKey.objects.first().key_content
         key = b64decode(encoded_key).decode("ascii")
-        provider = providers.registry.by_id(VIISPProvider.id, request)
+        provider = VIISPProvider(request)
         ticket_id = self.request.POST.get("ticket")
         user_data = get_response_with_user_data(ticket_id, key)
         if token:
@@ -230,7 +229,7 @@ class VIISPAccountMergeView(View):
                 }
             except IndexError:
                 return redirect("change-email")
-            provider = providers.registry.by_id(VIISPProvider.id, request)
+            provider = VIISPProvider(request)
             login = provider.sociallogin_from_response(request, merge_data_dict)
             user = User.objects.filter(email=merge_data_dict.get("email")).first()
             return perform_login(

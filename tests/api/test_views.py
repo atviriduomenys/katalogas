@@ -10,6 +10,7 @@ from django.utils import timezone
 from django_webtest import DjangoTestApp
 from reversion.models import Version
 
+from vitrina.structure import VersionStatus
 from vitrina.testing.templates import strip_empty_lines
 from vitrina.api.exceptions import DuplicateAPIKeyException
 from vitrina.api.factories import APIKeyFactory
@@ -606,6 +607,7 @@ def test_create_dataset(app: DjangoTestApp):
     assert list(dataset.category.all()) == [category]
     assert dataset.organization == organization
     assert Version.objects.get_for_object(dataset).count() == 1
+    assert dataset.metadata.first().metadata_version.status == VersionStatus.DRAFT
     version = Version.objects.get_for_object(dataset).select_related("revision").first()
     assert version.revision.comment == revision_comment.to_json()
     assert version.revision.user == representative.user

@@ -29,7 +29,7 @@ class VIISPProvider(OAuth2Provider):
         if data.get("last_name"):
             ret["last_name"] = data.get("last_name")
         if data.get("email"):
-            ret["email"] = data.get("email")
+            ret["email"] = data.get("email").lower()
         if data.get("phone_number"):
             ret["phone"] = data.get("phone_number")
         return ret
@@ -41,7 +41,7 @@ class VIISPProvider(OAuth2Provider):
         return dict(
             personal_code=hash.decode("utf-8"),
             coordinator_phone_number=data.get("phone"),
-            coordinator_email=data.get("email"),
+            coordinator_email=data.get("email", "").lower(),
             password_not_set=True,
         )
 

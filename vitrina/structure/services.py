@@ -752,8 +752,8 @@ def resolve_base_model(base_metadata: struct.Base, metadata_version: Version) ->
     It handles two scenarios for model import:
         1.  Model and Base in the same file: In this case, the function expects to find the model
             with the same `metadata_version` as provided.
-        2.  Model imported before Base: If the model is defined in a separate file and then referenced
-            as a base, their `metadata_version`s might differ. In this scenario,
+        2.  Model imported after being referenced as Base: If the model is defined in a separate file and then
+            referenced as a base, their `metadata_version`s might differ. In this scenario,
             the function falls back to searching for the newest `STABLE` version of the model.
     """
     model_content_type = ContentType.objects.get_for_model(Model)

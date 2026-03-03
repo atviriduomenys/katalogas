@@ -3155,7 +3155,7 @@ msgstr "Delete scope"
 msgid "Organizacijų sujungimas"
 msgstr "Organization merge"
 
-msgid "Organiacijų sujungimas"
+msgid "Organizacijų sujungimas"
 msgstr "Organization merge"
 
 msgid "Ryšiai su duomenų ištekliais"

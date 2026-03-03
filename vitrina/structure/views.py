@@ -3,7 +3,7 @@ import uuid
 import json
 from typing import List, Union
 from urllib import parse
-from urllib.parse import unquote
+from urllib.parse import unquote, urlencode
 from flags.decorators import flag_required
 from django.utils.decorators import method_decorator
 
@@ -1098,14 +1098,9 @@ class ModelDataView(
     def get(self, request, *args, **kwargs):
         for frm in FORMATS.keys():
             if f"format({frm})" in request.GET:
-                query = []
-                for key, val in self.request.GET.items():
-                    if val == "":
-                        query.append(key)
-                    else:
-                        query.append(f"{key}={val}")
-                query = "&".join(query)
-                return redirect(f"https://get.data.gov.lt/{self.model}?{query}")
+                query = urlencode(request.GET, doseq=True)
+                url = f"https://get.data.gov.lt/{self.model}?{query}"
+                return HttpResponseRedirect(url)
         return super().get(request, *args, **kwargs)
 
     def get_breadcrumbs(self) -> List[Crumb]:

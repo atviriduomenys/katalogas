@@ -34,6 +34,8 @@ Security: Fix open Dependabot vulnerability alerts across pip and npm dependenci
 - Add `allauth.account.middleware.AccountMiddleware` required by new django-allauth.
 - Add `oauthlib` as explicit dependency (previously transitive via old django-allauth).
 - Add dependency review CI workflow for PR vulnerability scanning.
+- Override `serialize-javascript` version to ^7.0.3
+
 
 v 1.15.0 (2026-02-27)
 ==================

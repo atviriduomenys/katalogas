@@ -182,7 +182,7 @@ def test_update_model_visibility_from_property(model_visibility, property_visibi
     ],
 )
 def test_update_parent_visibility_from_enum(
-    model_visibility, property_visibility, enum_visibility, expected_model, expected_property
+    model_visibility, property_visibility, enum_visibility, expected_model_visibility, expected_property_visibility
 ):
     model = Model(visibility=model_visibility)
     property = Property(visibility=property_visibility)
@@ -194,5 +194,5 @@ def test_update_parent_visibility_from_enum(
 
     _update_parent_visibility_from_enum(state, enum)
 
-    assert model.visibility == expected_model
-    assert property.visibility == expected_property
+    assert model.visibility == expected_model_visibility
+    assert property.visibility == expected_property_visibility

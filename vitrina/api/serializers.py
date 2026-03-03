@@ -535,7 +535,7 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
             try:
                 validate_file(file)
             except ValidationError as e:
-                raise serializers.ValidationError({"file": e})
+                raise serializers.ValidationError({"file": e.messages})
         if file and url:
             raise serializers.ValidationError(
                 {
@@ -607,7 +607,7 @@ class PostDatasetStructureSerializer(serializers.ModelSerializer):
             try:
                 validate_file(file)
             except ValidationError as e:
-                raise serializers.ValidationError({"file": e})
+                raise serializers.ValidationError({"file": e.messages})
         return data
 
     def create(self, validated_data):

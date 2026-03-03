@@ -20,6 +20,7 @@ from django.forms import BaseForm
 from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.views import View
@@ -1100,7 +1101,8 @@ class ModelDataView(
             if f"format({frm})" in request.GET:
                 query = urlencode(request.GET, doseq=True)
                 url = f"https://get.data.gov.lt/{self.model}?{query}"
-                return HttpResponseRedirect(url)
+                if url_has_allowed_host_and_scheme(url, allowed_hosts={"get.data.gov.lt"}, require_https=True):
+                    return HttpResponseRedirect(url)
         return super().get(request, *args, **kwargs)
 
     def get_breadcrumbs(self) -> List[Crumb]:

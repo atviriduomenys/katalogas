@@ -11,7 +11,7 @@ from vitrina.orgs.models import Organization
 from vitrina.uapi.models import Agent, RequestHistory, Environment, AgentEnvironment
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
-from vitrina.uapi.factories import AgentFactory, AgentEnvFactory
+from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
 
 
 pytestmark = pytest.mark.django_db
@@ -153,7 +153,7 @@ class TestDetail:
     ):
         app.set_user(representative_user)
         url = reverse("agent-detail", args=[organization.pk, agent.pk])
-        archived_env = AgentEnvFactory(agent=agent, is_archived=True)
+        archived_env = AgentEnvironmentFactory(agent=agent, is_archived=True)
 
         response = app.get(url)
 
@@ -448,18 +448,18 @@ class TestAgentEnvCreate:
         assert AgentEnvironment.objects.filter(agent=agent).count() == 1
         assert mock_create_oauth_client.called
 
-        agent_env = AgentEnvironment.objects.filter(agent=agent).first()
+        agent_environment = AgentEnvironment.objects.filter(agent=agent).first()
 
-        assert agent_env.oauth_client_id == mocked_id
-        assert agent_env.auth_server_url == data["auth_server_url"]
-        assert agent_env.api_gate_server_url == data["api_gate_server_url"]
-        assert agent_env.agent_address == data["agent_address"]
-        assert agent_env.is_enabled is data["is_enabled"]
-        assert agent_env.environment == data["environment"]
-        assert agent_env.is_open_data_published
-        assert agent_env.open_data_publish_url == data["open_data_publish_url"]
-        assert not agent_env.is_archived
-        assert agent_env.is_enabled
+        assert agent_environment.oauth_client_id == mocked_id
+        assert agent_environment.auth_server_url == data["auth_server_url"]
+        assert agent_environment.api_gate_server_url == data["api_gate_server_url"]
+        assert agent_environment.agent_address == data["agent_address"]
+        assert agent_environment.is_enabled is data["is_enabled"]
+        assert agent_environment.environment == data["environment"]
+        assert agent_environment.is_open_data_published
+        assert agent_environment.open_data_publish_url == data["open_data_publish_url"]
+        assert not agent_environment.is_archived
+        assert agent_environment.is_enabled
 
     @pytest.mark.parametrize(
         "user_fixture_name, expected_status",
@@ -512,11 +512,11 @@ class TestAgentEnvUpdate:
         app: DjangoTestApp,
         representative_user: User,
         organization: Organization,
-        agent_env: AgentEnvironment,
+        agent_environment: AgentEnvironment,
     ):
         app.set_user(representative_user)
 
-        url = reverse("agent-env-update", args=[organization.pk, agent_env.pk])
+        url = reverse("agent-env-update", args=[organization.pk, agent_environment.pk])
         data = {
             "is_enabled": False,
             "environment": Environment.PRODUCTION,
@@ -530,16 +530,16 @@ class TestAgentEnvUpdate:
         response = app.post(url, data)
 
         assert response.status_code == HTTPStatus.FOUND
-        agent_env.refresh_from_db()
+        agent_environment.refresh_from_db()
 
-        assert agent_env.auth_server_url == data["auth_server_url"]
-        assert agent_env.api_gate_server_url == data["api_gate_server_url"]
-        assert agent_env.agent_address == data["agent_address"]
-        assert agent_env.is_enabled is data["is_enabled"]
-        assert agent_env.environment == data["environment"]
-        assert not agent_env.is_open_data_published
-        assert agent_env.open_data_publish_url == data["open_data_publish_url"]
-        assert not agent_env.is_enabled
+        assert agent_environment.auth_server_url == data["auth_server_url"]
+        assert agent_environment.api_gate_server_url == data["api_gate_server_url"]
+        assert agent_environment.agent_address == data["agent_address"]
+        assert agent_environment.is_enabled is data["is_enabled"]
+        assert agent_environment.environment == data["environment"]
+        assert not agent_environment.is_open_data_published
+        assert agent_environment.open_data_publish_url == data["open_data_publish_url"]
+        assert not agent_environment.is_enabled
 
     @pytest.mark.parametrize(
         "user_fixture_name, expected_status",
@@ -558,16 +558,18 @@ class TestAgentEnvUpdate:
         user_fixture_name: str | None,
         expected_status: int,
         request: FixtureRequest,
-        agent_env: AgentEnvironment,
+        agent_environment: AgentEnvironment,
     ):
         if user_fixture_name:
             app.set_user(request.getfixturevalue(user_fixture_name))
 
-        response = app.get(reverse("agent-env-update", args=[organization.pk, agent_env.pk]), expect_errors=True)
+        response = app.get(
+            reverse("agent-env-update", args=[organization.pk, agent_environment.pk]), expect_errors=True
+        )
 
         assert response.status_code == expected_status
 
-    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_env: AgentEnvironment):
+    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_environment: AgentEnvironment):
         breadcrumb_url_names_expected = [
             "home",
             "organization-list",
@@ -577,7 +579,7 @@ class TestAgentEnvUpdate:
             "agent-env-detail",
         ]
 
-        url = reverse("agent-env-update", args=[organization.pk, agent_env.pk])
+        url = reverse("agent-env-update", args=[organization.pk, agent_environment.pk])
         user = UserFactory(is_staff=True)
         app.set_user(user)
         response = app.get(url)
@@ -589,19 +591,23 @@ class TestAgentEnvUpdate:
 
 class TestAgentEnvDelete:
     def test_success(
-        self, app: DjangoTestApp, representative_user: User, organization: Organization, agent_env: AgentEnvironment
+        self,
+        app: DjangoTestApp,
+        representative_user: User,
+        organization: Organization,
+        agent_environment: AgentEnvironment,
     ):
         app.set_user(representative_user)
-        url = reverse("agent-env-delete", args=[organization.pk, agent_env.pk])
+        url = reverse("agent-env-delete", args=[organization.pk, agent_environment.pk])
 
-        assert not agent_env.is_archived
+        assert not agent_environment.is_archived
 
         response = app.post(url)
 
         assert response.status_code == HTTPStatus.FOUND
         assert AgentEnvironment.objects.count() == 1
-        agent_env = AgentEnvironment.objects.first()
-        assert agent_env.is_archived is True
+        agent_environment = AgentEnvironment.objects.first()
+        assert agent_environment.is_archived is True
 
     @pytest.mark.parametrize(
         "user_fixture_name, expected_status",
@@ -620,16 +626,18 @@ class TestAgentEnvDelete:
         user_fixture_name: str | None,
         expected_status: int,
         request: FixtureRequest,
-        agent_env: AgentEnvironment,
+        agent_environment: AgentEnvironment,
     ):
         if user_fixture_name:
             app.set_user(request.getfixturevalue(user_fixture_name))
 
-        response = app.get(reverse("agent-env-delete", args=[organization.pk, agent_env.pk]), expect_errors=True)
+        response = app.get(
+            reverse("agent-env-delete", args=[organization.pk, agent_environment.pk]), expect_errors=True
+        )
 
         assert response.status_code == expected_status
 
-    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_env: AgentEnvironment):
+    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_environment: AgentEnvironment):
         breadcrumb_url_names_expected = [
             "home",
             "organization-list",
@@ -639,7 +647,7 @@ class TestAgentEnvDelete:
             "agent-env-detail",
         ]
 
-        url = reverse("agent-env-delete", args=[organization.pk, agent_env.pk])
+        url = reverse("agent-env-delete", args=[organization.pk, agent_environment.pk])
         user = UserFactory(is_staff=True)
         app.set_user(user)
         response = app.get(url)
@@ -655,15 +663,15 @@ class TestAgentEnvDetail:
         app: DjangoTestApp,
         representative_user: User,
         organization: Organization,
-        agent_env: AgentEnvironment,
+        agent_environment: AgentEnvironment,
     ):
         app.set_user(representative_user)
-        url = reverse("agent-env-detail", args=[organization.pk, agent_env.pk])
+        url = reverse("agent-env-detail", args=[organization.pk, agent_environment.pk])
 
         response = app.get(url)
 
         assert response.status_code == HTTPStatus.OK
-        assert response.context["agent_env"] == agent_env
+        assert response.context["agent_environment"] == agent_environment
         assert not response.context["secret"]
 
     @pytest.mark.parametrize("is_archived_agent", [True, False])
@@ -677,9 +685,9 @@ class TestAgentEnvDetail:
         app.set_user(representative_user)
 
         agent = AgentFactory(is_archived=is_archived_agent, organization=organization)
-        agent_env = AgentEnvFactory(agent=agent, is_archived=not is_archived_agent)
+        agent_environment = AgentEnvironmentFactory(agent=agent, is_archived=not is_archived_agent)
 
-        url = reverse("agent-env-detail", args=[organization.pk, agent_env.pk])
+        url = reverse("agent-env-detail", args=[organization.pk, agent_environment.pk])
         response = app.get(url, expect_errors=True)
 
         assert response.status_code == HTTPStatus.NOT_FOUND
@@ -689,17 +697,17 @@ class TestAgentEnvDetail:
         app: DjangoTestApp,
         representative_user: User,
         organization: Organization,
-        agent_env: AgentEnvironment,
+        agent_environment: AgentEnvironment,
         request_history: RequestHistory,
     ):
         app.set_user(representative_user)
-        url = reverse("agent-env-detail", args=[organization.pk, agent_env.pk])
+        url = reverse("agent-env-detail", args=[organization.pk, agent_environment.pk])
 
         response = app.get(url)
 
         assert response.status_code == HTTPStatus.OK
-        assert list(response.context["agent_env"].requesthistory.all()) == [request_history]
-        assert response.context["agent_env"] == agent_env
+        assert list(response.context["agent_environment"].requesthistory.all()) == [request_history]
+        assert response.context["agent_environment"] == agent_environment
         assert not response.context["secret"]
 
     def test_wrong_agent_detail_view_request_history_(
@@ -712,16 +720,16 @@ class TestAgentEnvDetail:
     ):
         """Request_history is created for an agent which is not the one making the request."""
 
-        another_agent_env = AgentEnvFactory()
+        another_agent_env = AgentEnvironmentFactory()
         app.set_user(representative_user)
         url = reverse("agent-env-detail", args=[another_agent_env.agent.organization.pk, another_agent_env.pk])
 
         response = app.get(url)
 
         assert response.status_code == HTTPStatus.OK
-        assert response.context["agent_env"] == another_agent_env
+        assert response.context["agent_environment"] == another_agent_env
         assert not response.context["secret"]
-        assert list(response.context["agent_env"].requesthistory.all()) == []
+        assert list(response.context["agent_environment"].requesthistory.all()) == []
 
     @pytest.mark.parametrize(
         "user_fixture_name, expected_status",
@@ -740,16 +748,18 @@ class TestAgentEnvDetail:
         user_fixture_name: str | None,
         expected_status: int,
         request: FixtureRequest,
-        agent_env: AgentEnvironment,
+        agent_environment: AgentEnvironment,
     ):
         if user_fixture_name:
             app.set_user(request.getfixturevalue(user_fixture_name))
 
-        response = app.get(reverse("agent-env-detail", args=[organization.pk, agent_env.pk]), expect_errors=True)
+        response = app.get(
+            reverse("agent-env-detail", args=[organization.pk, agent_environment.pk]), expect_errors=True
+        )
 
         assert response.status_code == expected_status
 
-    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_env: AgentEnvironment):
+    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_environment: AgentEnvironment):
         breadcrumb_url_names_expected = [
             "home",
             "organization-list",
@@ -758,7 +768,7 @@ class TestAgentEnvDetail:
             "agent-detail",
         ]
 
-        url = reverse("agent-env-detail", args=[organization.pk, agent_env.pk])
+        url = reverse("agent-env-detail", args=[organization.pk, agent_environment.pk])
         user = UserFactory(is_staff=True)
         app.set_user(user)
         response = app.get(url)

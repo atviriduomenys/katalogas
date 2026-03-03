@@ -15,7 +15,7 @@ class AgentFactory(DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
 
 
-class AgentEnvFactory(DjangoModelFactory):
+class AgentEnvironmentFactory(DjangoModelFactory):
     class Meta:
         model = AgentEnvironment
         django_get_or_create = ("agent", "environment")
@@ -29,5 +29,5 @@ class RequestHistoryFactory(DjangoModelFactory):
     class Meta:
         model = RequestHistory
 
-    agent_environment = factory.SubFactory(AgentEnvFactory)
+    agent_environment = factory.SubFactory(AgentEnvironmentFactory)
     http_result = factory.Faker("random_int")

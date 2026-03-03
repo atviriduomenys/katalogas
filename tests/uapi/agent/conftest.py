@@ -20,9 +20,9 @@ def representative_user(organization: Organization) -> User:
 
 
 @pytest.fixture
-def request_history(agent_env: AgentEnvironment) -> RequestHistory:
+def request_history(agent_environment: AgentEnvironment) -> RequestHistory:
     return RequestHistory.objects.create(
-        agent_environment=agent_env,
+        agent_environment=agent_environment,
         endpoint="/api/v1/resource",
         method="GET",
         http_result=200,

@@ -50,7 +50,7 @@ class ConnectionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ViewSe
         serializer = ConnectionCheckSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        agent_env = get_object_or_404(
+        agent_environment = get_object_or_404(
             AgentEnvironment,
             agent__organization=self.request.organization,
             oauth_client_id=self.request.auth["sub"],
@@ -58,7 +58,7 @@ class ConnectionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ViewSe
         # TODO: Currently hard-coding the logging;
         #   Implement a better solution in the future: https://github.com/atviriduomenys/katalogas/issues/1896.
         RequestHistory.objects.create(
-            agent_environment=agent_env,
+            agent_environment=agent_environment,
             endpoint=request.build_absolute_uri(),
             method=HTTPMethods(self.request.method.upper()),
             http_result=HTTPStatus.NO_CONTENT,

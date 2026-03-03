@@ -9,7 +9,7 @@
 {% include 'vitrina/orgs/tabs.html' %}
 
 <p>
-        <a href="{% url 'agent-detail' organization.pk agent_env.agent.pk %}">
+        <a href="{% url 'agent-detail' organization.pk agent_environment.agent.pk %}">
             ← {% translate "Grįžti į agentą" %}
         </a>
     </p>
@@ -23,10 +23,10 @@
                 </span>
             </div>
             <div>
-                <p class="title is-5 mb-1">{{ agent_env.get_environment_display }}</p>
+                <p class="title is-5 mb-1">{{ agent_environment.get_environment_display }}</p>
                 <p class="is-size-7 has-text-grey">
-                    {% translate "Sukurta" %}: <strong>{{ agent_env.created_at|date:"Y-m-d H:i" }}</strong> |
-                    {% translate "Atnaujinta" %}: <strong>{{ agent_env.updated_at|date:"Y-m-d H:i" }}</strong>
+                    {% translate "Sukurta" %}: <strong>{{ agent_environment.created_at|date:"Y-m-d H:i" }}</strong> |
+                    {% translate "Atnaujinta" %}: <strong>{{ agent_environment.updated_at|date:"Y-m-d H:i" }}</strong>
                 </p>
             </div>
         </div>
@@ -34,7 +34,7 @@
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Būsena" %}:</div>
             <div class="column is-7">
-                {% if agent_env.is_enabled %}
+                {% if agent_environment.is_enabled %}
                     <span class="tag is-success is-light">{% translate "Įjungtas" %}</span>
                 {% else %}
                     <span class="tag is-danger is-light">{% translate "Išjungtas" %}</span>
@@ -44,25 +44,25 @@
 
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Agento adresas" %}:</div>
-            <div class="column is-7">{{ agent_env.agent_address }}</div>
+            <div class="column is-7">{{ agent_environment.agent_address }}</div>
         </div>
 
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Autorizacijos serverio adresas" %}:</div>
-            <div class="column is-7">{{ agent_env.auth_server_url }}</div>
+            <div class="column is-7">{{ agent_environment.auth_server_url }}</div>
         </div>
 
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "API vartų serverio adresas" %}:</div>
-            <div class="column is-7">{{ agent_env.api_gate_server_url }}</div>
+            <div class="column is-7">{{ agent_environment.api_gate_server_url }}</div>
         </div>
 
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos rezultatas" %}:</div>
             <div class="column is-7">
-                {% if agent_env.is_last_sync_successful %}
+                {% if agent_environment.is_last_sync_successful %}
                     <span class="tag is-success is-light">{% translate "Pavyko" %}</span>
-                {% elif agent_env.is_last_sync_successful == False %}
+                {% elif agent_environment.is_last_sync_successful == False %}
                     <span class="tag is-danger is-light">{% translate "Nepavyko" %}</span>
                 {% else %}
                     <span class="tag is-info is-light">{% translate "Nevykdyta" %}</span>
@@ -73,8 +73,8 @@
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos data" %}:</div>
             <div class="column is-7">
-                {% if agent_env.synchronized_at %}
-                    {{ agent_env.synchronized_at|date:"Y-m-d H:i" }}
+                {% if agent_environment.synchronized_at %}
+                    {{ agent_environment.synchronized_at|date:"Y-m-d H:i" }}
                 {% else %}
                     <span class="has-text-grey">—</span>
                 {% endif %}
@@ -84,7 +84,7 @@
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Publikuojami atviri duomenys" %}:</div>
             <div class="column is-7">
-                {% if agent_env.is_open_data_published %}
+                {% if agent_environment.is_open_data_published %}
                     <span class="tag is-success is-light">{% translate "Taip" %}</span>
                 {% else %}
                     <span class="tag is-danger is-light">{% translate "Ne" %}</span>
@@ -95,9 +95,9 @@
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold">{% translate "Atvirų duomenų publikavimo nuoroda" %}:</div>
             <div class="column is-7">
-                {% if agent_env.open_data_publish_url %}
-                    <a href="{{ agent_env.open_data_publish_url }}" class="has-text-link" target="_blank">
-                        {{ agent_env.open_data_publish_url }}
+                {% if agent_environment.open_data_publish_url %}
+                    <a href="{{ agent_environment.open_data_publish_url }}" class="has-text-link" target="_blank">
+                        {{ agent_environment.open_data_publish_url }}
                     </a>
                 {% else %}
                     <span class="has-text-grey">—</span>
@@ -108,7 +108,7 @@
 
     <hr>
 
-    {% if agent_env.agent.object_type == "SPINTA" %}
+    {% if agent_environment.agent.object_type == "SPINTA" %}
         <p><strong>credentials.cfg</strong></p>
         <div class="columns is-align-items-start mb-5 mt-4">
             <div class="column is-5">
@@ -146,8 +146,8 @@ server = {{ auth_server_host }}
 resource_server = {{ resource_server_host }}
 organization = {{ organization.name }}
 organization_type = {{ organization.kind }}
-client_id = {{ agent_env.oauth_client_id }}
-client = {{ agent_env.oauth_client_id }}
+client_id = {{ agent_environment.oauth_client_id }}
+client = {{ agent_environment.oauth_client_id }}
 secret = {{ secret|default:"******" }}
 scopes =
 {% for scope in scopes %}    {{ scope }}
@@ -316,7 +316,7 @@ backends:
 
 
 <p class="is-flex is-justify-content-flex-end">
-    <a href="{% url 'agent-detail' organization.pk agent_env.agent.pk %}">
+    <a href="{% url 'agent-detail' organization.pk agent_environment.agent.pk %}">
         ← {% translate "Grįžti į agentą" %}
     </a>
 </p>

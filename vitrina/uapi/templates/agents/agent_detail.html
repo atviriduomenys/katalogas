@@ -97,44 +97,44 @@
                 </tr>
             </thead>
             <tbody>
-                {% for agent_env in agent.environments.all %}
+                {% for agent_environment in agent.environments.all %}
                     <tr>
                         <td>
-                            {% if agent_env.is_enabled %}
+                            {% if agent_environment.is_enabled %}
                                 <span class="tag is-success is-light">{% translate "Įjungta" %}</span>
                             {% else %}
                                 <span class="tag is-danger is-light">{% translate "Išjungta" %}</span>
                             {% endif %}
                         </td>
-                        <td>{{ agent_env.get_environment_display }}</td>
+                        <td>{{ agent_environment.get_environment_display }}</td>
                         <td>
-                            {% if agent_env.synchronized_at %}
-                                {{ agent_env.synchronized_at|date:"Y-m-d H:i" }}
+                            {% if agent_environment.synchronized_at %}
+                                {{ agent_environment.synchronized_at|date:"Y-m-d H:i" }}
                             {% else %}
                                 -
                             {% endif %}
                         </td>
                         <td>
-                            {% if agent_env.is_last_sync_successful %}
+                            {% if agent_environment.is_last_sync_successful %}
                                 <span class="tag is-success is-light">{% translate "Pavyko" %}</span>
-                            {% elif agent_env.is_last_sync_successful == False %}
+                            {% elif agent_environment.is_last_sync_successful == False %}
                                 <span class="tag is-danger is-light">{% translate "Nepavyko" %}</span>
                             {% else %}
                                 <span class="tag is-info is-light">{% translate "Nevykdyta" %}</span>
                             {% endif %}
                         </td>
                         <td>
-                            <a href="{% url 'agent-env-detail' organization.pk agent_env.pk %}" class="button is-small">
+                            <a href="{% url 'agent-env-detail' organization.pk agent_environment.pk %}" class="button is-small">
                                 {% translate "Žurnalas" %}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'agent-env-update' organization.pk agent_env.pk %}" class="button is-primary is-small">
+                            <a href="{% url 'agent-env-update' organization.pk agent_environment.pk %}" class="button is-primary is-small">
                                 {% translate "Redaguoti" %}
                             </a>
                         </td>
                         <td>
-                            <a href="{% url 'agent-env-delete' organization.pk agent_env.pk %}" class="button is-danger is-small">
+                            <a href="{% url 'agent-env-delete' organization.pk agent_environment.pk %}" class="button is-danger is-small">
                                 {% translate "Pašalinti" %}
                             </a>
                         </td>

@@ -54,25 +54,25 @@ class BaseAgentMixin(OrganizationBaseViewMixin):
 
 
 class BaseAgentEnvMixin(BaseAgentMixin):
-    agent_env: AgentEnvironment
+    agent_environment: AgentEnvironment
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
         context["parent_links"].update(
             {
                 reverse(
-                    "agent-env-detail", args=[self.organization.pk, self.agent_env.pk]
-                ): self.agent_env.get_environment_display()
+                    "agent-env-detail", args=[self.organization.pk, self.agent_environment.pk]
+                ): self.agent_environment.get_environment_display()
             }
         )
         return context
 
     @property
     def agent(self) -> Agent:
-        return self.agent_env.agent
+        return self.agent_environment.agent
 
     @property
-    def agent_env(self) -> Agent:
+    def agent_environment(self) -> Agent:
         return self.object
 
 
@@ -223,7 +223,7 @@ class AgentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
 class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEnvMixin, PlanMixin, DetailView):
     model = AgentEnvironment
     template_name = "agents/agent_env_detail.html"
-    context_object_name = "agent_env"
+    context_object_name = "agent_environment"
 
     def get_queryset(self):
         return super().get_queryset().filter(agent__organization=self.organization).prefetch_related("requesthistory")
@@ -411,5 +411,5 @@ class RequestDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEn
         return context
 
     @property
-    def agent_env(self) -> AgentEnvironment:
+    def agent_environment(self) -> AgentEnvironment:
         return self.object.agent_environment

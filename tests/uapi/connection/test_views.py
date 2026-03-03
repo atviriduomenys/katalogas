@@ -8,7 +8,7 @@ from rest_framework import status
 from tests.uapi.conftest import _generate_test_token
 from vitrina.orgs.models import Organization
 from vitrina.uapi import HTTPMethods, PossibleResults
-from vitrina.uapi.factories import AgentEnvFactory
+from vitrina.uapi.factories import AgentEnvironmentFactory
 from vitrina.uapi.models import RequestHistory
 
 
@@ -21,7 +21,7 @@ class TestConnectionCheck:
         test_jwk: RSAKey,
     ):
         spinta_version = "1.2.3"
-        agent_env = AgentEnvFactory(
+        agent_environment = AgentEnvironmentFactory(
             agent__organization=organization,
             oauth_client_id="test-client-id",
             is_archived=False,
@@ -32,7 +32,7 @@ class TestConnectionCheck:
             test_jwk,
             organization=organization,
             scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-            agent_env=agent_env,
+            agent_environment=agent_environment,
         )
 
         payload = {"spinta_version": spinta_version}
@@ -46,7 +46,7 @@ class TestConnectionCheck:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
         history = RequestHistory.objects.get()
-        assert history.agent_environment == agent_env
+        assert history.agent_environment == agent_environment
         assert history.method == HTTPMethods.POST
         assert history.http_result == HTTPStatus.NO_CONTENT
         assert history.result == PossibleResults.STATUS_ALIVE
@@ -60,7 +60,7 @@ class TestConnectionCheck:
         url_connection_check: str,
         test_jwk: RSAKey,
     ):
-        agent_env = AgentEnvFactory(
+        agent_environment = AgentEnvironmentFactory(
             agent__organization=organization,
             oauth_client_id="test-client-id",
             is_archived=True,
@@ -71,7 +71,7 @@ class TestConnectionCheck:
             test_jwk,
             organization=organization,
             scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES,
-            agent_env=agent_env,
+            agent_environment=agent_environment,
         )
 
         response = app.post_json(

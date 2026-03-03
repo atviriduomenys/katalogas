@@ -116,13 +116,13 @@ class AgreementViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, viewset
 
     @cached_property
     def get_agent_dataset_uuids(self) -> set[str]:
-        agent_env = (
+        agent_environment = (
             AgentEnvironment.not_archived.select_related("agent")
             .prefetch_related("agent__services")
             .get(oauth_client_id=OAuthClientAuthenticator.resolve_client_id_from_token(self.request.auth))
         )
         agent_datasets_uuids = set()
-        for service in agent_env.agent.services.all():
+        for service in agent_environment.agent.services.all():
             agent_datasets_uuids.add(service.uuid)
             agent_datasets_uuids.update(service.get_descendants().values_list("uuid", flat=True))
 

@@ -601,17 +601,18 @@ def test_create_dataset(app: DjangoTestApp):
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
+    dataset_metadata = dataset.metadata.first()
     assert dataset.language == "en lt"
     assert list(dataset.tags.all()) == ["tag1", "tag2"]
     assert dataset.frequency == frequency
     assert list(dataset.category.all()) == [category]
     assert dataset.organization == organization
     assert Version.objects.get_for_object(dataset).count() == 1
-    assert dataset.metadata.first().metadata_version.status == VersionStatus.DRAFT
-    assert dataset.metadata.first().title == "Test dataset"
-    assert dataset.metadata.first().description == "Test dataset"
-    assert dataset.metadata.first().version == 1
-    assert dataset.metadata.first().object_id == dataset.pk
+    assert dataset_metadata.metadata_version.status == VersionStatus.DRAFT
+    assert dataset_metadata.title == "Test dataset"
+    assert dataset_metadata.description == "Test dataset"
+    assert dataset_metadata.version == 1
+    assert dataset_metadata.object_id == dataset.pk
     version = Version.objects.get_for_object(dataset).select_related("revision").first()
     assert version.revision.comment == revision_comment.to_json()
     assert version.revision.user == representative.user

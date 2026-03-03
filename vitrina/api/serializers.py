@@ -227,6 +227,7 @@ class PostDatasetSerializer(DatasetSerializer):
             "theme",
         )
 
+    @transaction.atomic
     def create(self, validated_data):
         languages = validated_data.pop("language_array", [])
         periodicity = validated_data.pop("frequency", None)
@@ -238,42 +239,39 @@ class PostDatasetSerializer(DatasetSerializer):
         validated_data.pop("contactPoint", None)
         validated_data.pop("landingPage", None)
 
-        with transaction.atomic():
-            instance = super().create(validated_data)
-            instance.origin = Dataset.API_ORIGIN
-            instance.organization = self.context.get("organization")
-            if languages:
-                instance.language = " ".join(languages)
-            if periodicity:
-                frequency = Frequency.objects.filter(title=periodicity["title"]).first()
-                if frequency:
-                    instance.frequency = frequency
-            if theme:
-                for category in Category.objects.filter(title__in=theme):
-                    instance.category.add(category)
-            for tag in keywords:
-                instance.tags.add(tag)
+        instance = super().create(validated_data)
+        instance.origin = Dataset.API_ORIGIN
+        instance.organization = self.context.get("organization")
+        instance.language = " ".join(languages) or None
+        if periodicity:
+            frequency = Frequency.objects.filter(title=periodicity["title"]).first()
+            if frequency:
+                instance.frequency = frequency
+        if theme:
+            categories = list(Category.objects.filter(title__in=theme))
+            instance.category.add(*categories)
+            instance.tags.add(*keywords)
 
-            draft_metadata_version = _Version.objects.create(
-                dataset=instance,
-                version=1,
-                status=VersionStatus.DRAFT,
-            )
-            dataset_name = generate_unique_dataset_name(instance.organization, instance)
-            Metadata.objects.create(
-                uuid=str(uuid.uuid4()),
-                dataset=instance,
-                content_type=ContentType.objects.get_for_model(instance),
-                object_id=instance.pk,
-                name=dataset_name,
-                title=instance.title,
-                description=instance.description,
-                prepare_ast={},
-                version=1,
-                metadata_version=draft_metadata_version,
-            )
+        draft_metadata_version = _Version.objects.create(
+            dataset=instance,
+            version=1,
+            status=VersionStatus.DRAFT,
+        )
+        dataset_name = generate_unique_dataset_name(instance.organization, instance)
+        Metadata.objects.create(
+            uuid=str(uuid.uuid4()),
+            dataset=instance,
+            content_type=ContentType.objects.get_for_model(instance),
+            object_id=instance.pk,
+            name=dataset_name,
+            title=instance.title,
+            description=instance.description,
+            prepare_ast={},
+            version=1,
+            metadata_version=draft_metadata_version,
+        )
 
-            instance.save()
+        instance.save()
         set_user(self.context.get("user"))
         return instance
 

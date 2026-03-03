@@ -156,3 +156,7 @@ def get_type_repr(meta):
     if meta.type_args:
         args = f"({meta.type_args})"
     return f"{type}{args}{unique}{required}"
+
+
+def is_quoted(value: str) -> bool:
+    return len(value) > 1 and value[0] == value[-1] and value[0] in ('"', "'")

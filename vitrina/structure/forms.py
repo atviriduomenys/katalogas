@@ -18,7 +18,7 @@ from lark import ParseError
 from vitrina.classifiers.models import Status
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna, AccessType
-from vitrina.structure.helpers import is_time_unit, is_si_unit
+from vitrina.structure.helpers import is_time_unit, is_si_unit, is_quoted
 from vitrina.structure.models import (
     EnumItem,
     Metadata,
@@ -221,6 +221,9 @@ class EnumForm(forms.ModelForm):
             return value
 
         if metadata := self.prop.metadata.first():
+            if metadata.type == "string" and not is_quoted(value):
+                value = f'"{value}"'
+
             checker = metadata.get_type_checker()
             try:
                 checker.check_enum_item_value(value)
@@ -233,9 +236,8 @@ class EnumForm(forms.ModelForm):
             raise ValidationError(e)
 
         # If enum does not exist yet, there is no point checking for uniqueness of its items
-        compare_value = f'"{value}"' if metadata.type == "string" else value
         exclude_id = self.instance.id if self.instance and self.instance.pk else None
-        if self.enum and self._is_value_unique(compare_value, exclude_enum_item_id=exclude_id):
+        if self.enum and self._is_value_unique(value, exclude_enum_item_id=exclude_id):
             raise ValidationError(_(f'Galima reikšmė "{value}" jau egzistuoja.'))
 
         return value

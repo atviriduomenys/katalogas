@@ -1921,8 +1921,6 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         visibility = form.cleaned_data.get("visibility")
         status = form.cleaned_data.get("status") or Status.objects.filter(is_default=True).first()
         eli = form.cleaned_data.get("eli")
-        if (metadata := self.property.metadata.first()) and metadata.type == "string":
-            value = f'"{value}"'
 
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
@@ -1935,7 +1933,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
             visibility=visibility,
             status=status,
             eli=eli,
-            prepare_ast=spyna.parse(form.cleaned_data.get("value")),
+            prepare_ast=spyna.parse(value),
             source=form.cleaned_data.get("source"),
             access=form.cleaned_data.get("access") or None,
             title=form.cleaned_data.get("title"),
@@ -2046,14 +2044,11 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         self.object: EnumItem = form.save()
         value = form.cleaned_data.get("value")
-        if (metadata := self.property.metadata.first()) and metadata.type == "string":
-            value = f'"{value}"'
-
         old_metadata = self.get_object().metadata.first()
 
         if metadata := self.object.metadata.first():
             metadata.prepare = value
-            metadata.prepare_ast = spyna.parse(form.cleaned_data.get("value"))
+            metadata.prepare_ast = spyna.parse(value)
             metadata.source = form.cleaned_data.get("source")
             metadata.access = form.cleaned_data.get("access") or None
             metadata.title = form.cleaned_data.get("title")

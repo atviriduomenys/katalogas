@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.structure.utils import get_type_checker_for_type, NotImplementedTypeChecker, TypeCheckerError
+
 DIMS = [
     "dataset",
     "resource",
@@ -809,8 +811,10 @@ def _read_enum(
 
     enum.meta = last
 
+    enum_type = getattr(enum.meta, "type")
+
     # If string enum prepare is empty, use source as prepare value
-    if enum.prepare == "" and getattr(enum.meta, "type") == "string":
+    if enum.prepare == "" and enum_type == "string":
         enum.prepare = f'"{enum.source}"'
 
     if enum.prepare == "":
@@ -818,6 +822,14 @@ def _read_enum(
 
     _update_parent_visibility_from_enum(state, enum)
 
+    # Validate if enum item value matches enum type
+    if (type_checker := get_type_checker_for_type(enum_type)) and type(type_checker) is not NotImplementedTypeChecker:
+        try:
+            type_checker.check_enum_item_value(enum.prepare)
+        except TypeCheckerError as e:
+            enum.errors.append(str(e))
+
+    # Validate enum item value uniqueness
     if enum.meta.enums.get(name):
         if enum.prepare in [e.prepare for e in enum.meta.enums[name]]:
             enum.errors.append(_(f'Galima reikšmė (source: "{enum.source}") "{enum.prepare}" jau egzistuoja.'))

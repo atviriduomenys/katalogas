@@ -3,6 +3,8 @@ from typing import TypeVar, Generic, Any
 
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.structure.helpers import is_quoted
+
 T = TypeVar("T")
 
 
@@ -15,7 +17,9 @@ class TypeChecker(ABC, Generic[T]):
 
 
 class StringTypeChecker(TypeChecker[str]):
-    pass
+    def check_enum_item_value(self, value: str) -> None:
+        if not is_quoted(value):
+            raise TypeCheckerError(_(f'Reikšmė "{value}" turi būti string tipo.'))
 
 
 class IntegerTypeChecker(TypeChecker[int]):

@@ -71,6 +71,44 @@ def integer_property(model: Model) -> Property:
 
 
 class TestEnumForm:
+    @pytest.mark.parametrize(
+        "given_value, saved_value",
+        [
+            ("First", '"First"'),
+            ("'First'", "'First'"),
+            ('"First"', '"First"'),
+        ],
+    )
+    def test_creating_string_enum_automatically_adds_quotes_if_not_quoted(
+        self, app: DjangoTestApp, string_property: Property, given_value: str, saved_value: str
+    ):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        version = string_property.metadata_version
+        model = string_property.model
+        dataset = model.dataset
+
+        enum = EnumFactory(
+            content_type=ContentType.objects.get_for_model(string_property),
+            object_id=string_property.pk,
+            metadata_version=version,
+        )
+
+        form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, string_property.name])).forms[
+            "enum-form"
+        ]
+        form["value"] = given_value
+        form["source"] = "TEST"
+        form["access"] = Metadata.OPEN
+        form["title"] = "Test value"
+        form["description"] = "For testing"
+        resp = form.submit()
+
+        assert resp.url == string_property.get_absolute_url()
+        enum_item_metadata = enum.enumitem_set.all().first().metadata.first()
+        assert enum_item_metadata.prepare == saved_value
+
     def test_cannot_create_enum_item_if_value_already_exists(self, app: DjangoTestApp, string_property: Property):
         user = UserFactory(is_staff=True)
         app.set_user(user)
@@ -109,7 +147,7 @@ class TestEnumForm:
 
         form = resp.context["form"]
         assert not form.is_valid()
-        assert form.errors == {"value": ['Galima reikšmė "First" jau egzistuoja.']}
+        assert form.errors == {"value": ['Galima reikšmė ""First"" jau egzistuoja.']}
 
     def test_cannot_update_enum_item_if_value_already_exists(self, app: DjangoTestApp, string_property: Property):
         user = UserFactory(is_staff=True)
@@ -157,7 +195,7 @@ class TestEnumForm:
 
         form = resp.context["form"]
         assert not form.is_valid()
-        assert form.errors == {"value": ['Galima reikšmė "First" jau egzistuoja.']}
+        assert form.errors == {"value": ['Galima reikšmė ""First"" jau egzistuoja.']}
 
     def test_enum_item_value_unique_check_excludes_current_item(self, app: DjangoTestApp, string_property: Property):
         user = UserFactory(is_staff=True)

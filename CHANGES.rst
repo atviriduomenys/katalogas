@@ -46,6 +46,10 @@ Security: Fix open Dependabot vulnerability alerts across pip and npm dependenci
   - Remove dead commented-out code with insecure CDN references.
 
 
+https://github.com/atviriduomenys/katalogas/issues/2349
+
+- Fix issues with Base row not being linked correctly, if model is imported with one manifest and referenced with base with another.
+
 v 1.15.0 (2026-02-27)
 ==================
 

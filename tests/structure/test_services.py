@@ -2584,15 +2584,9 @@ def test_structure_with_property_level_higher_then_model(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert list(
-        Comment.objects.filter(
-            type=Comment.STRUCTURE_ERROR,
-            content_type=ContentType.objects.get_for_model(Model),
-        ).values_list("body", flat=True)
-    ) == [
-        'Duomenų lauko "id" metaduomenų matomumo lygis "public" '
-        'negali būti aukštesnis už modelio metaduomenų matomumo lygį "package". '
-    ]
+    model = Model.objects.get(metadata__uuid="3")
+    prop = Property.objects.get(metadata__uuid="4")
+    assert prop.visibility == model.visibility
 
 
 @pytest.mark.django_db
@@ -2611,15 +2605,11 @@ def test_structure_with_enum_level_higher_then_property(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert list(
-        Comment.objects.filter(
-            type=Comment.STRUCTURE_ERROR,
-            content_type=ContentType.objects.get_for_model(Property),
-        ).values_list("body", flat=True)
-    ) == [
-        'Duomenų reikšmės "Class One" metaduomenų matomumo lygis "public" '
-        'negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "package". '
-    ]
+    model = Model.objects.get(metadata__uuid="3")
+    property = Property.objects.get(metadata__uuid="5")
+    property_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(property), object_id=property.pk)
+    assert property_enum.visibility == property.visibility
+    assert property_enum.visibility == model.visibility
 
 
 @pytest.mark.django_db
@@ -2638,15 +2628,11 @@ def test_structure_with_enum_level_higher_then_model(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure)
-    assert list(
-        Comment.objects.filter(
-            type=Comment.STRUCTURE_ERROR,
-            content_type=ContentType.objects.get_for_model(Property),
-        ).values_list("body", flat=True)
-    ) == [
-        'Duomenų reikšmės "Class One" metaduomenų matomumo lygis "public" '
-        'negali būti aukštesnis už duomenų modelio metaduomenų matomumo lygį "package". '
-    ]
+    model = Model.objects.get(metadata__uuid="3")
+    property = Property.objects.get(metadata__uuid="5")
+    property_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(property), object_id=property.pk)
+    assert property_enum.visibility == property.visibility
+    assert property_enum.visibility == model.visibility
 
 
 @pytest.mark.django_db

@@ -873,15 +873,13 @@ msgstr "Both \"Organization\" and \"Agent\" fields cannot be assigned."
 msgid "Privaloma užpildyti \"Organizacija\" arba \"Agentas\" lauką."
 msgstr "\"Organization\" or \"Agent\" field must be assigned."
 
-#, fuzzy, python-brace-format
-#| msgid "Pasirinkta organizacija egzistuoja"
+#, python-brace-format
 msgid "Ryšys \"{attribution}\" su šia organizacija jau egzistuoja."
-msgstr "Selected organization exists"
+msgstr "Relation \"{attribution}\" with this organization already exists."
 
-#, fuzzy, python-brace-format
-#| msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
+#, python-brace-format
 msgid "Ryšys \"{attribution}\" su šiuo agentu jau egzistuoja."
-msgstr "Dataset with this code name already exists."
+msgstr "Relation \"{attribution}\" with this agent already exists."
 
 msgid "Pridėti"
 msgstr "Add"
@@ -922,10 +920,9 @@ msgid ""
 "\"{relation.inversive_title}\" ryšys su šiuo duomenų rinkiniu jau egzistuoja."
 msgstr ""
 
-#, fuzzy, python-brace-format
-#| msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
+#, python-brace-format
 msgid "\"{relation.title}\" ryšys su šiuo duomenų rinkiniu jau egzistuoja."
-msgstr "Dataset with this code name already exists."
+msgstr "\"{relation.title}\" relation with this dataset already exists."
 
 msgid "Terminas"
 msgstr "Deadline"
@@ -1295,10 +1292,9 @@ msgstr "The organization can only be assigned the role of a data editor"
 msgid "Naudotojui išsiųstas laiškas dėl registracijos"
 msgstr "The user has been sent an email for registration"
 
-#, fuzzy, python-brace-format
-#| msgid "Modelis su tokiu kodiniu pavadinimu jau egzistuoja."
+#, python-brace-format
 msgid "Modelis \"{model.name}\" jau egzistuoja."
-msgstr "Model with this code name already exists."
+msgstr "Model \"{model.name}\" already exists."
 
 #, python-brace-format
 msgid "Savybė \"{name}\" jau egzistuoja."
@@ -1312,10 +1308,9 @@ msgstr ""
 "Data field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
 "the model metadata visibility level \"{2}\". "
 
-#, fuzzy, python-brace-format
-#| msgid "Pasirinkta organizacija egzistuoja"
+#, python-brace-format
 msgid "Prefiksas \"{name}\" jau egzistuoja."
-msgstr "Selected organization exists"
+msgstr "Prefix \"{name}\" already exists."
 
 #, python-brace-format
 msgid ""
@@ -1341,41 +1336,33 @@ msgstr ""
 msgid "Parametras \"{param.prepare}\" jau egzistuoja."
 msgstr ""
 
-#, fuzzy, python-brace-format
-#| msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
+#, python-brace-format
 msgid ""
 "\"{name}\" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-msgstr "Code name can only include latin characters."
+msgstr "Code name \"{name}\" can only include latin characters."
 
-#, fuzzy, python-brace-format
-#| msgid "Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."
+#, python-brace-format
 msgid ""
 "Pirmas modelio kodinio pavadinimo simbolis turi būti didžioji raidė: "
 "\"{name}\"."
-msgstr "First symbol of code name must be capital letter."
+msgstr "First symbol of model code name must be a capital letter: \"{name}\"."
 
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
 "skaičiai, "
 msgstr "Model code name can contain uppercase/lowercase letters and numbers. "
 
-#, fuzzy, python-brace-format
-#| msgid "Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."
+#, python-brace-format
 msgid "Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė: \"{name}\"."
-msgstr "First symbol of code name must be lowercase letter."
+msgstr "First symbol of code name must be a lowercase letter: \"{name}\"."
 
-#, fuzzy, python-brace-format
-#| msgid "Kodiniame pavadinime negali būti naudojamos didžiosios raidės."
+#, python-brace-format
 msgid ""
 "Kodiniame pavadinime negali būti naudojamos didžiosios raidės: \"{name}\"."
-msgstr "Code name can not include upper case letters."
+msgstr "Code name can not include upper case letters: \"{name}\"."
 
-#, fuzzy
-#| msgid ""
-#| "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
-#| "skaičiai, "
 msgid "Pavadinime gali būti mažosios raidės ir skaičiai, "
-msgstr "Model code name can contain uppercase/lowercase letters and numbers. "
+msgstr "Name can only contain lowercase letters and numbers, "
 
 msgid "Duomenų rinkinių atvėrimo progresas"
 msgstr "Progress of opening datasets"
@@ -1926,15 +1913,13 @@ msgstr "Add manager"
 msgid "Tvarkytojo redagavimas"
 msgstr "Edit user"
 
-#, fuzzy, python-brace-format
-#| msgid "Ar tikrai norite pašalinti naudotoją?"
+#, python-brace-format
 msgid "Ar tikrai norite pašalinti \"{obj.organization.title}\" iš {role}?"
-msgstr "Are you sure you want to delete the user?"
+msgstr "Are you sure you want to remove \"{obj.organization.title}\" from {role}?"
 
-#, fuzzy, python-brace-format
-#| msgid "Ar tikrai norite ištrinti?"
+#, python-brace-format
 msgid "Ar tikrai norite ištrinti \"{obj}\" {role}?"
-msgstr "Are you sure you want to delete?"
+msgstr "Are you sure you want to delete \"{obj}\" {role}?"
 
 msgid "Poreikių pridėjimas"
 msgstr "Add requests"
@@ -2860,10 +2845,8 @@ msgstr "Does the organization exist?"
 msgid "*Pastaba: Bus sukurta nauja organizacija."
 msgstr "*Note: A new organization will be created."
 
-#, fuzzy
-#| msgid "Koordinatoriai"
 msgid "Koordinatorius"
-msgstr "Coordinators"
+msgstr "Coordinator"
 
 msgid "Pasirinkite duomenų rinkino kūrėją"
 msgstr "Assign the creator of the dataset"
@@ -3172,8 +3155,6 @@ msgstr "Delete scope"
 msgid "Organizacijų sujungimas"
 msgstr "Organization merge"
 
-#, fuzzy
-#| msgid "Organizacijų sujungimas"
 msgid "Organiacijų sujungimas"
 msgstr "Organization merge"
 
@@ -4041,11 +4022,9 @@ msgstr "Agreement is created. Agreement document is not created yet."
 msgid "Pateiktas pasiūlymas iš duomenų gavėjo pusės."
 msgstr "Agreement document is signed by data receiver."
 
-#, fuzzy
-#| msgid "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų teikėjo."
 msgid ""
 "Duomenų gavėjo pasiūlymas duomenims gauti yra patvirtintas duomenų teikėjo."
-msgstr "Agreement document is signed by data receiver and data provider."
+msgstr "Data receiver's request for data has been approved by the data provider."
 
 msgid "Sutarties dokumentas sukurtas, bet nepasirašytas."
 msgstr "Agreement document is created, but not signed yet."
@@ -4980,33 +4959,29 @@ msgstr ""
 msgid "Invalid"
 msgstr ""
 
-#, fuzzy, python-brace-format
-#| msgid "Duomenų išteklius viešinamas"
+#, python-brace-format
 msgid "Duomenų išteklius \"{meta.name}\" jau egzistuoja."
-msgstr "The resource is public"
+msgstr "Data resource \"{meta.name}\" already exists."
 
-#, fuzzy, python-brace-format
-#| msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
+#, python-brace-format
 msgid ""
 "\"{meta.name}\" kodiniame pavadinime gali būti naudojamos tik lotyniškos "
 "raidės."
-msgstr "Code name can only include latin characters."
+msgstr "Code name \"{meta.name}\" can only include latin characters."
 
-#, fuzzy, python-brace-format
-#| msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
+#, python-brace-format
 msgid ""
 "\"{meta.name}\" kodiniame pavadinime gali būti naudojamos tik mažosios "
 "raidės."
-msgstr "Code name can only include lowercase letters."
+msgstr "Code name \"{meta.name}\" can only include lowercase letters."
 
 #, python-brace-format
 msgid "Klaida skaitant formulę \"{prepare}\"\": {e}"
 msgstr ""
 
-#, fuzzy, python-brace-format
-#| msgid "Neteisingas telefono numerio formatas."
+#, python-brace-format
 msgid "Neteisingas uri \"{uri}\" formatas."
-msgstr "Invalid uri \"{uri}\" format."
+msgstr "Invalid URI \"{uri}\" format."
 
 #, python-brace-format
 msgid "Prefiksas \"{prefix}\" duomenų ištekliuje neegzistuoja."
@@ -5989,10 +5964,9 @@ msgstr ""
 msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."
 msgstr "Data service automatically created with the agent."
 
-#, fuzzy, python-brace-format
-#| msgid "Klientas \"{0}\" sukurtas sėkmingai."
+#, python-brace-format
 msgid "Agentas {self.object.title} sukurtas sėkmingai!"
-msgstr "Client \"{0}\" created successfully."
+msgstr "Agent {self.object.title} created successfully!"
 
 msgid ""
 "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį "
@@ -6020,23 +5994,20 @@ msgstr ""
 msgid "Redaguoti Agentą"
 msgstr "Edit agent"
 
-#, fuzzy, python-brace-format
-#| msgid "Klientas \"{0}\" atnaujintas sėkmingai"
+#, python-brace-format
 msgid "Agentas {self.object.title} atnaujintas sėkmingai!"
-msgstr "Client \"{0}\" changed successfully"
+msgstr "Agent {self.object.title} updated successfully!"
 
 msgid "Pašalinti Agentą"
 msgstr "Delete agent"
 
-#, fuzzy, python-brace-format
-#| msgid "Ar tikrai norite ištrinti kontaktą \"{contact}\"?"
+#, python-brace-format
 msgid "Ar tikrai norite ištrinti Agentą: {self.object}?"
-msgstr "Are you sure you want to delete the contact \"{contact}\"?"
+msgstr "Are you sure you want to delete agent: {self.object}?"
 
-#, fuzzy, python-brace-format
-#| msgid "Klientas \"{0}\" atnaujintas sėkmingai"
+#, python-brace-format
 msgid "Agentas {self.object.title} pašalintas sėkmingai!"
-msgstr "Client \"{0}\" changed successfully"
+msgstr "Agent {self.object.title} deleted successfully!"
 
 msgid "Asmeninė informacija"
 msgstr "Personal information"

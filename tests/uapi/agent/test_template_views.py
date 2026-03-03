@@ -672,15 +672,12 @@ class TestAgentEnvDetail:
         app: DjangoTestApp,
         representative_user: User,
         organization: Organization,
-        is_archived_agent: str,
+        is_archived_agent: bool,
     ):
         app.set_user(representative_user)
-        if is_archived_agent:
-            agent = AgentFactory(is_archived=True, organization=organization)
-            agent_env = AgentEnvFactory(agent=agent, is_archived=False)
-        else:
-            agent = AgentFactory(is_archived=False, organization=organization)
-            agent_env = AgentEnvFactory(agent=agent, is_archived=True)
+
+        agent = AgentFactory(is_archived=is_archived_agent, organization=organization)
+        agent_env = AgentEnvFactory(agent=agent, is_archived=not is_archived_agent)
 
         url = reverse("agent-env-detail", args=[organization.pk, agent_env.pk])
         response = app.get(url, expect_errors=True)

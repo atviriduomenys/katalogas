@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.uapi.models import Agent, RequestHistory, RequestHistoryChanges, AgentEnv
+from vitrina.uapi.models import Agent, RequestHistory, RequestHistoryChanges, AgentEnvironment
 from vitrina.admin import RevisionCommentVersionAdmin
 
 
@@ -23,11 +23,11 @@ class AgentAdmin(RevisionCommentVersionAdmin):
 
 @admin.register(RequestHistory)
 class RequestHistoryAdmin(RevisionCommentVersionAdmin):
-    autocomplete_fields = ["agent_env"]
-    list_filter = ["agent_env"]
+    autocomplete_fields = ["agent_environment"]
+    list_filter = ["agent_environment"]
 
 
-@admin.register(AgentEnv)
+@admin.register(AgentEnvironment)
 class AgentEnvAdmin(RevisionCommentVersionAdmin):
     class Meta:
         verbose_name = _("Agento aplinka")

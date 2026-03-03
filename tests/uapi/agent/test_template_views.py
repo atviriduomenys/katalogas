@@ -8,7 +8,7 @@ from django_webtest import DjangoTestApp
 from vitrina.uapi import AgentType
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.models import Organization
-from vitrina.uapi.models import Agent, RequestHistory, Environment, AgentEnv
+from vitrina.uapi.models import Agent, RequestHistory, Environment, AgentEnvironment
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 from vitrina.uapi.factories import AgentFactory, AgentEnvFactory
@@ -445,10 +445,10 @@ class TestAgentEnvCreate:
             response = app.post(url, data)
 
         assert response.status_code == HTTPStatus.FOUND
-        assert AgentEnv.objects.filter(agent=agent).count() == 1
+        assert AgentEnvironment.objects.filter(agent=agent).count() == 1
         assert mock_create_oauth_client.called
 
-        agent_env = AgentEnv.objects.filter(agent=agent).first()
+        agent_env = AgentEnvironment.objects.filter(agent=agent).first()
 
         assert agent_env.oauth_client_id == mocked_id
         assert agent_env.auth_server_url == data["auth_server_url"]
@@ -512,7 +512,7 @@ class TestAgentEnvUpdate:
         app: DjangoTestApp,
         representative_user: User,
         organization: Organization,
-        agent_env: AgentEnv,
+        agent_env: AgentEnvironment,
     ):
         app.set_user(representative_user)
 
@@ -558,7 +558,7 @@ class TestAgentEnvUpdate:
         user_fixture_name: str | None,
         expected_status: int,
         request: FixtureRequest,
-        agent_env: AgentEnv,
+        agent_env: AgentEnvironment,
     ):
         if user_fixture_name:
             app.set_user(request.getfixturevalue(user_fixture_name))
@@ -567,7 +567,7 @@ class TestAgentEnvUpdate:
 
         assert response.status_code == expected_status
 
-    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_env: AgentEnv):
+    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_env: AgentEnvironment):
         breadcrumb_url_names_expected = [
             "home",
             "organization-list",
@@ -589,7 +589,7 @@ class TestAgentEnvUpdate:
 
 class TestAgentEnvDelete:
     def test_success(
-        self, app: DjangoTestApp, representative_user: User, organization: Organization, agent_env: AgentEnv
+        self, app: DjangoTestApp, representative_user: User, organization: Organization, agent_env: AgentEnvironment
     ):
         app.set_user(representative_user)
         url = reverse("agent-env-delete", args=[organization.pk, agent_env.pk])
@@ -599,8 +599,8 @@ class TestAgentEnvDelete:
         response = app.post(url)
 
         assert response.status_code == HTTPStatus.FOUND
-        assert AgentEnv.objects.count() == 1
-        agent_env = AgentEnv.objects.first()
+        assert AgentEnvironment.objects.count() == 1
+        agent_env = AgentEnvironment.objects.first()
         assert agent_env.is_archived is True
 
     @pytest.mark.parametrize(
@@ -620,7 +620,7 @@ class TestAgentEnvDelete:
         user_fixture_name: str | None,
         expected_status: int,
         request: FixtureRequest,
-        agent_env: AgentEnv,
+        agent_env: AgentEnvironment,
     ):
         if user_fixture_name:
             app.set_user(request.getfixturevalue(user_fixture_name))
@@ -629,7 +629,7 @@ class TestAgentEnvDelete:
 
         assert response.status_code == expected_status
 
-    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_env: AgentEnv):
+    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_env: AgentEnvironment):
         breadcrumb_url_names_expected = [
             "home",
             "organization-list",
@@ -655,7 +655,7 @@ class TestAgentEnvDetail:
         app: DjangoTestApp,
         representative_user: User,
         organization: Organization,
-        agent_env: AgentEnv,
+        agent_env: AgentEnvironment,
     ):
         app.set_user(representative_user)
         url = reverse("agent-env-detail", args=[organization.pk, agent_env.pk])
@@ -692,7 +692,7 @@ class TestAgentEnvDetail:
         app: DjangoTestApp,
         representative_user: User,
         organization: Organization,
-        agent_env: AgentEnv,
+        agent_env: AgentEnvironment,
         request_history: RequestHistory,
     ):
         app.set_user(representative_user)
@@ -743,7 +743,7 @@ class TestAgentEnvDetail:
         user_fixture_name: str | None,
         expected_status: int,
         request: FixtureRequest,
-        agent_env: AgentEnv,
+        agent_env: AgentEnvironment,
     ):
         if user_fixture_name:
             app.set_user(request.getfixturevalue(user_fixture_name))
@@ -752,7 +752,7 @@ class TestAgentEnvDetail:
 
         assert response.status_code == expected_status
 
-    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_env: AgentEnv):
+    def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent_env: AgentEnvironment):
         breadcrumb_url_names_expected = [
             "home",
             "organization-list",

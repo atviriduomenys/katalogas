@@ -22,7 +22,7 @@ from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.factories import MetadataFactory
 from vitrina.uapi.factories import AgentFactory, AgentEnvFactory
-from vitrina.uapi.models import Agent, AgentEnv
+from vitrina.uapi.models import Agent, AgentEnvironment
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -36,7 +36,7 @@ def _generate_test_token(
     scopes: Iterable[str] = ("datasets:write",),
     organization: Organization | None = None,
     expires_in: int = 900,
-    agent_env: AgentEnv | None = None,
+    agent_env: AgentEnvironment | None = None,
     create_agent: bool = True,
     agent_is_enabled: bool = True,
 ):
@@ -86,12 +86,12 @@ def agent(organization: Organization) -> Agent:
 
 
 @pytest.fixture()
-def agent_env(agent: Agent) -> AgentEnv:
+def agent_env(agent: Agent) -> AgentEnvironment:
     return AgentEnvFactory(agent=agent, oauth_client_id=str(uuid.uuid4()))
 
 
 @pytest.fixture()
-def valid_token(test_jwk: RSAKey, organization: Organization, agent_env: AgentEnv) -> str:
+def valid_token(test_jwk: RSAKey, organization: Organization, agent_env: AgentEnvironment) -> str:
     return _generate_test_token(
         test_jwk, agent_env=agent_env, organization=organization, scopes=OAUTH_AGENT_DEFAULT_SCOPES
     )

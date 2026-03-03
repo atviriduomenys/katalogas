@@ -27,7 +27,7 @@ from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.models import Metadata, Version
 from vitrina.structure.services import create_structure_objects, export_dataset_structure
 from vitrina.uapi import HTTPMethods, PossibleResults
-from vitrina.uapi.models import AgentEnv, RequestHistory
+from vitrina.uapi.models import AgentEnvironment, RequestHistory
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer
 from vitrina.uapi.serializers.serializers import (
     UAPIDatasetSerializer,
@@ -51,14 +51,14 @@ class ConnectionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ViewSe
         serializer.is_valid(raise_exception=True)
 
         agent_env = get_object_or_404(
-            AgentEnv,
+            AgentEnvironment,
             agent__organization=self.request.organization,
             oauth_client_id=self.request.auth["sub"],
         )
         # TODO: Currently hard-coding the logging;
         #   Implement a better solution in the future: https://github.com/atviriduomenys/katalogas/issues/1896.
         RequestHistory.objects.create(
-            agent_env=agent_env,
+            agent_environment=agent_env,
             endpoint=request.build_absolute_uri(),
             method=HTTPMethods(self.request.method.upper()),
             http_result=HTTPStatus.NO_CONTENT,
@@ -412,7 +412,7 @@ class AgentViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSe
 
     def get_queryset(self) -> QuerySet:
         jwt_subject = self.request.auth["sub"]
-        queryset = AgentEnv.not_archived.filter(
+        queryset = AgentEnvironment.not_archived.filter(
             agent__organization=self.request.organization,
             oauth_client_id=jwt_subject,
         )

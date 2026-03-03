@@ -82,17 +82,10 @@ class Agent(UUIDBaseModel):
 class NotArchivedAgentEnvManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
         not_archived_agent_ids = Agent.not_archived.values_list("pk", flat=True)
-        return (
-            super()
-            .get_queryset()
-            .filter(
-                is_archived=False,
-                agent_id__in=not_archived_agent_ids,
-            )
-        )
+        return super().get_queryset().filter(is_archived=False, agent_id__in=not_archived_agent_ids)
 
 
-class AgentEnv(UUIDBaseModel):
+class AgentEnvironment(UUIDBaseModel):
     agent = models.ForeignKey(Agent, on_delete=models.CASCADE, verbose_name=_("Agentas"), related_name="environments")
     synchronized_at = models.DateTimeField(
         verbose_name=_("Paskutinės sinchronizacijos data"),
@@ -153,7 +146,7 @@ class AgentEnv(UUIDBaseModel):
         ),
     )
     is_enabled = models.BooleanField(
-        verbose_name=_("Agentas įjungtas"),
+        verbose_name=_("Agento aplinka įjungta"),
         default=False,
         help_text=_("Nurodoma, ar Agento aplinka yra įjungta ar išjungta."),
     )
@@ -174,13 +167,13 @@ class AgentEnv(UUIDBaseModel):
 
 class VisibleRequestHistoryManager(models.Manager):
     def get_queryset(self) -> models.QuerySet:
-        not_archived_env_ids = AgentEnv.not_archived.values_list("pk", flat=True)
-        return super().get_queryset().filter(agent_env_id__in=not_archived_env_ids)
+        not_archived_env_ids = AgentEnvironment.not_archived.values_list("pk", flat=True)
+        return super().get_queryset().filter(agent_environment_id__in=not_archived_env_ids)
 
 
 class RequestHistory(UUIDBaseModel):
-    agent_env = models.ForeignKey(
-        "vitrina_uapi.AgentEnv",
+    agent_environment = models.ForeignKey(
+        "vitrina_uapi.AgentEnvironment",
         on_delete=models.CASCADE,
         verbose_name=_("Agento aplinka"),
         related_name="requesthistory",

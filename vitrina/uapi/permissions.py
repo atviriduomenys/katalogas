@@ -3,7 +3,7 @@ from rest_framework.permissions import BasePermission
 from rest_framework.request import Request
 
 from vitrina.api.oauth import OAuthClientAuthenticator
-from vitrina.uapi.models import AgentEnv
+from vitrina.uapi.models import AgentEnvironment
 
 
 class IsAgentEnabled(BasePermission):
@@ -13,7 +13,7 @@ class IsAgentEnabled(BasePermission):
         if not (oauth_client_id := OAuthClientAuthenticator.resolve_client_id_from_token(request.auth)):
             return False
 
-        if AgentEnv.not_archived.filter(oauth_client_id=oauth_client_id, is_enabled=True).exists():
+        if AgentEnvironment.not_archived.filter(oauth_client_id=oauth_client_id, is_enabled=True).exists():
             return True
 
         return False

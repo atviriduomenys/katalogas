@@ -46,7 +46,7 @@ class TestConnectionCheck:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
         history = RequestHistory.objects.get()
-        assert history.agent_env == agent_env
+        assert history.agent_environment == agent_env
         assert history.method == HTTPMethods.POST
         assert history.http_result == HTTPStatus.NO_CONTENT
         assert history.result == PossibleResults.STATUS_ALIVE

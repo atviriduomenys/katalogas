@@ -2,7 +2,7 @@ import pytest
 from django.db import IntegrityError
 
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.uapi.models import Agent, AgentEnv, RequestHistory
+from vitrina.uapi.models import Agent, AgentEnvironment, RequestHistory
 from vitrina.uapi.factories import AgentFactory, AgentEnvFactory, RequestHistoryFactory
 from vitrina.datasets.factories import DatasetFactory
 
@@ -62,7 +62,7 @@ class TestAgent:
         assert agent.services.count() == 0
 
 
-class TestAgentEnv:
+class TestAgentEnvironment:
     def test_not_archived_manager(self):
         agent = AgentFactory(is_archived=True)
 
@@ -70,9 +70,9 @@ class TestAgentEnv:
         AgentEnvFactory(is_archived=True)
         AgentEnvFactory(is_archived=False, agent=agent)
 
-        assert AgentEnv.objects.count() == 3
-        assert AgentEnv.not_archived.count() == 1
-        assert AgentEnv.not_archived.first() == agent_env_not_archived
+        assert AgentEnvironment.objects.count() == 3
+        assert AgentEnvironment.not_archived.count() == 1
+        assert AgentEnvironment.not_archived.first() == agent_env_not_archived
 
 
 class TestRequestHistory:
@@ -82,8 +82,8 @@ class TestRequestHistory:
         agent_env_archived_agent = AgentEnvFactory(is_archived=False, agent=agent_archived)
 
         request_history = RequestHistoryFactory()
-        RequestHistoryFactory(agent_env=agent_env_archived)
-        RequestHistoryFactory(agent_env=agent_env_archived_agent)
+        RequestHistoryFactory(agent_environment=agent_env_archived)
+        RequestHistoryFactory(agent_environment=agent_env_archived_agent)
 
         assert RequestHistory.objects.count() == 3
         assert RequestHistory.visible.count() == 1

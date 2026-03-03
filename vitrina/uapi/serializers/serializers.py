@@ -3,7 +3,7 @@ from rest_framework import serializers
 from vitrina.api.serializers import DatasetSerializer, DatasetDistributionSerializer, PostDatasetSerializer
 from vitrina.datasets.models import DCATResourceSubclass
 from vitrina.structure.models import Version
-from vitrina.uapi.models import AgentEnv
+from vitrina.uapi.models import AgentEnvironment
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin, BaseUUIDObjectMixin
 
 
@@ -19,7 +19,7 @@ class UAPIAgentEnvSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
     services = serializers.PrimaryKeyRelatedField(source="agent.services", many=True, read_only=True)
 
     class Meta:
-        model = AgentEnv
+        model = AgentEnvironment
         fields = (
             "synchronized_at",
             "is_last_sync_successful",

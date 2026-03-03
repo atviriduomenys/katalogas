@@ -26,8 +26,8 @@ from vitrina.orgs.services import (
     has_perm,
     Action,
 )
-from vitrina.uapi.models import RequestHistory, Agent, AgentEnv
-from vitrina.uapi.forms import AgentForm, AgentEnvForm
+from vitrina.uapi.models import RequestHistory, Agent, AgentEnvironment
+from vitrina.uapi.forms import AgentForm, AgentEnvironmentForm
 from vitrina.views import PlanMixin
 from vitrina.orgs.views import OrganizationBaseViewMixin
 
@@ -54,7 +54,7 @@ class BaseAgentMixin(OrganizationBaseViewMixin):
 
 
 class BaseAgentEnvMixin(BaseAgentMixin):
-    agent_env: AgentEnv
+    agent_env: AgentEnvironment
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -113,7 +113,7 @@ class AgentDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
             {
                 "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
                 "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
-                "can_create_agent_env": has_perm(self.request.user, Action.CREATE, AgentEnv, self.organization),
+                "can_create_agent_env": has_perm(self.request.user, Action.CREATE, AgentEnvironment, self.organization),
             }
         )
         context["parent_links"].update(
@@ -221,7 +221,7 @@ class AgentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
 
 
 class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEnvMixin, PlanMixin, DetailView):
-    model = AgentEnv
+    model = AgentEnvironment
     template_name = "agents/agent_env_detail.html"
     context_object_name = "agent_env"
 
@@ -229,7 +229,7 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
         return super().get_queryset().filter(agent__organization=self.organization).prefetch_related("requesthistory")
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.VIEW, AgentEnv, self.organization)
+        return has_perm(self.request.user, Action.VIEW, AgentEnvironment, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -263,17 +263,17 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
 
 
 class AgentEnvCreateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixin, PlanMixin, CreateView):
-    model = AgentEnv
-    form_class = AgentEnvForm
+    model = AgentEnvironment
+    form_class = AgentEnvironmentForm
     template_name = "base_form.html"
     title = _("Pridėti aplinką")
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.CREATE, AgentEnv, self.organization)
+        return has_perm(self.request.user, Action.CREATE, AgentEnvironment, self.organization)
 
     def form_valid(self, form: ModelForm) -> HttpResponse:
         form.instance.agent = self.agent
-        self.object: AgentEnv = form.save(commit=False)
+        self.object: AgentEnvironment = form.save(commit=False)
         try:
             client_id, secret = OAuthClientManagement.create_oauth_client(scopes=settings.OAUTH_AGENT_DEFAULT_SCOPES)
             self.object.oauth_client_id = client_id
@@ -323,8 +323,8 @@ class AgentEnvCreateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentM
 
 
 class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEnvMixin, PlanMixin, UpdateView):
-    model = AgentEnv
-    form_class = AgentEnvForm
+    model = AgentEnvironment
+    form_class = AgentEnvironmentForm
     template_name = "base_form.html"
     title = _("Redaguoti aplinką")
 
@@ -332,7 +332,7 @@ class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
         return super().get_queryset().filter(agent__organization=self.organization)
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.UPDATE, AgentEnv, self.organization)
+        return has_perm(self.request.user, Action.UPDATE, AgentEnvironment, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -355,14 +355,14 @@ class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
 
 
 class AgentEnvDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEnvMixin, PlanMixin, DeleteView):
-    model = AgentEnv
+    model = AgentEnvironment
     template_name = "confirm_delete.html"
 
     def get_queryset(self):
         return super().get_queryset().filter(agent__organization=self.organization)
 
     def has_permission(self) -> bool:
-        return has_perm(self.request.user, Action.DELETE, AgentEnv, self.organization)
+        return has_perm(self.request.user, Action.DELETE, AgentEnvironment, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -390,7 +390,7 @@ class RequestDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEn
     model = RequestHistory
 
     def get_queryset(self):
-        return super().get_queryset().filter(agent_env__agent__organization=self.organization)
+        return super().get_queryset().filter(agent_environment__agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
@@ -411,5 +411,5 @@ class RequestDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEn
         return context
 
     @property
-    def agent_env(self) -> AgentEnv:
-        return self.object.agent_env
+    def agent_env(self) -> AgentEnvironment:
+        return self.object.agent_environment

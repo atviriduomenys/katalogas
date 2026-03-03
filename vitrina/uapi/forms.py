@@ -3,7 +3,7 @@ from crispy_forms.layout import Layout, Field, Submit
 from django.forms import ModelForm
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.uapi.models import Agent, AgentEnv
+from vitrina.uapi.models import Agent, AgentEnvironment
 
 
 class AgentForm(ModelForm):
@@ -51,9 +51,9 @@ class AgentForm(ModelForm):
                 )
 
 
-class AgentEnvForm(ModelForm):
+class AgentEnvironmentForm(ModelForm):
     class Meta:
-        model = AgentEnv
+        model = AgentEnvironment
         fields = [
             "is_open_data_published",
             "open_data_publish_url",

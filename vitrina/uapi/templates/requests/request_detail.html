@@ -9,7 +9,7 @@
 
 
 <p class="is-flex is-justify-content-flex-start mb-5">
-    <a href="{% url 'agent-env-detail' organization.pk request_history.agent_env.pk %}">
+    <a href="{% url 'agent-env-detail' organization.pk request_history.agent_environment.pk %}">
         ← {% translate "Grįžti į agento aplinką" %}
     </a>
 </p>
@@ -26,7 +26,7 @@
         <div class="columns is-mobile mb-1">
             <div class="column is-3 has-text-weight-semibold"> <strong> {% translate "Agento aplinka" %}: </strong> </div>
             <div class="column is-7">
-                {{ request_history.agent_env }}
+                {{ request_history.agent_environment }}
             </div>
         </div>
 

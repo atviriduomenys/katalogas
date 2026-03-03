@@ -10,7 +10,7 @@ from rest_framework import status
 from tests.uapi.conftest import _generate_test_token
 from vitrina.orgs.models import Organization
 from vitrina.uapi.factories import AgentEnvFactory
-from vitrina.uapi.models import AgentEnv
+from vitrina.uapi.models import AgentEnvironment
 from vitrina.datasets.models import Dataset
 
 
@@ -21,7 +21,7 @@ class TestList:
         organization: Organization,
         url_agent: str,
         test_jwk: RSAKey,
-        agent_env: AgentEnv,
+        agent_env: AgentEnvironment,
         dataset: Dataset,
     ):
         token = _generate_test_token(
@@ -69,7 +69,7 @@ class TestList:
         organization: Organization,
         url_agent: str,
         test_jwk: RSAKey,
-        agent_env: AgentEnv,
+        agent_env: AgentEnvironment,
     ):
         token = _generate_test_token(
             test_jwk,

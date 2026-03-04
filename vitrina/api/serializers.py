@@ -571,6 +571,7 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
             instance.type = "URL"
             instance.download_url = url
             instance.file = None
+        instance.issued = timezone.now()
         instance.save()
         return instance
 

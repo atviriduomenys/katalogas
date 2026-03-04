@@ -1872,7 +1872,10 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
             return redirect(self.property.get_absolute_url())
 
         if (metadata := self.property.metadata.first()) and metadata.type not in TYPE_CHECKER_MAP:
-            messages.error(request, _(f'Reikšmių duomenų lauko tipui "{metadata.type}" kurti negalima'))
+            error_msg = _('Reikšmių duomenų lauko tipui "{metadata_type}" kurti negalima').format(
+                metadata_type=metadata.type
+            )
+            messages.error(request, error_msg)
             return redirect(self.property.get_absolute_url())
 
         self.enum = self.property.enums.first()
@@ -2009,7 +2012,10 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
             return redirect(self.property.get_absolute_url())
 
         if (metadata := self.property.metadata.first()) and metadata.type not in TYPE_CHECKER_MAP:
-            messages.error(request, _(f'Reikšmių duomenų lauko tipui "{metadata.type}" keisti negalima'))
+            error_msg = _('Reikšmių duomenų lauko tipui "{metadata_type}" keisti negalima').format(
+                metadata_type=metadata.type
+            )
+            messages.error(request, error_msg)
             return redirect(self.property.get_absolute_url())
 
         return super().dispatch(request, *args, **kwargs)

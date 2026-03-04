@@ -288,7 +288,12 @@ class EnumForm(forms.ModelForm):
         # If enum does not exist yet, there is no point checking for uniqueness of its items
         exclude_id = self.instance.id if self.instance and self.instance.pk else None
         if self.enum and self._is_value_unique((source, prepare), exclude_enum_item_id=exclude_id):
-            self.add_error("value", _(f'Galima reikšmė "{prepare}" su reikšme šaltinyje "{source}" jau egzistuoja.'))
+            error_msg = _(
+                'Galima reikšmė "{prepare}" su reikšme šaltinyje "{source}" jau egzistuoja.'.format(
+                    prepare=prepare, source=source
+                )
+            )
+            self.add_error("value", error_msg)
 
 
 MODEL_LEVEL_CHOICES = (

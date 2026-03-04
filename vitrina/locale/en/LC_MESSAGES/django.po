@@ -4220,6 +4220,12 @@ msgstr ""
 "The visibility of the metadata '{0}' should not be greater than the "
 "visibility of the data field '{1}'."
 
+#, python-brace-format
+msgid ""
+"Galima reikšmė \"{prepare}\" su reikšme šaltinyje \"{source}\" jau "
+"egzistuoja."
+msgstr "Enum item \"{prepare}\" with source \"{source}\" already exists."
+
 msgid "Nėra per ką sieti"
 msgstr "Nothing to link to"
 
@@ -4904,6 +4910,18 @@ msgstr "Estimated changes"
 msgid "Galiojantys keitimai"
 msgstr "Deployed changes"
 
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti string tipo."
+msgstr "Enum item \"{value}\" must be string type."
+
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti integer tipo."
+msgstr "Enum item \"{value}\" must be integer type."
+
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti boolean tipo. Viena iš: {possible_values}"
+msgstr "Enum item \"{value}\" must be boolean type. One of: {possible_values}"
+
 msgid "Savybės reikšmės tipas nėra palaikomas."
 msgstr "Type of property value is not implemented."
 
@@ -4916,11 +4934,19 @@ msgstr "API: all records"
 msgid "Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."
 msgstr "Can not create a new enum, when the version status is not draft."
 
+#, python-brace-format
+msgid "Reikšmių duomenų lauko tipui \"{metadata_type}\" kurti negalima"
+msgstr "Cannot create enum items for property with type \"{metadata_type}\""
+
 msgid "Galimos reikšmės pridėjimas"
 msgstr "Add enum item"
 
 msgid "Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."
 msgstr "Can not edit the enum, when the version status is not draft."
+
+#, python-brace-format
+msgid "Reikšmių duomenų lauko tipui \"{metadata_type}\" keisti negalima"
+msgstr "Cannot change enum items for property with type \"{metadata_type}\""
 
 msgid "Galimos reikšmės redagavimas"
 msgstr "Edit enum item"

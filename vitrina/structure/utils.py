@@ -22,7 +22,8 @@ class TypeChecker(ABC, Generic[T]):
 class StringTypeChecker(TypeChecker[str]):
     def check_enum_item_value(self, value: str) -> None:
         if not is_quoted(value):
-            raise TypeCheckerError(_(f'Reikšmė "{value}" turi būti string tipo.'))
+            error_msg = _('Reikšmė "{value}" turi būti string tipo.').format(value=value)
+            raise TypeCheckerError(error_msg)
 
 
 class IntegerTypeChecker(TypeChecker[int]):
@@ -30,14 +31,18 @@ class IntegerTypeChecker(TypeChecker[int]):
         try:
             int(value)
         except (TypeError, ValueError):
-            raise TypeCheckerError(_(f'Reikšmė "{value}" turi būti integer tipo.'))
+            error_msg = _('Reikšmė "{value}" turi būti integer tipo.').format(value=value)
+            raise TypeCheckerError(error_msg)
 
 
 class BooleanTypeChecker(TypeChecker[bool]):
     def check_enum_item_value(self, value: str) -> None:
         if value not in VALID_BOOLEAN_PREPARE_VALUES:
             possible_values = ", ".join(VALID_BOOLEAN_PREPARE_VALUES)
-            raise TypeCheckerError(_(f'Reikšmė "{value}" turi būti boolean tipo. Viena iš: {possible_values}'))
+            error_msg = _('Reikšmė "{value}" turi būti boolean tipo. Viena iš: {possible_values}').format(
+                value=value, possible_values=possible_values
+            )
+            raise TypeCheckerError(error_msg)
 
 
 class NotImplementedTypeChecker(TypeChecker[Any]):

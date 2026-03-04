@@ -14,7 +14,7 @@ import vitrina.datasets.structure as struct
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.translation import gettext_lazy as _, get_language
+from django.utils.translation import gettext, gettext_lazy as _, get_language
 
 from vitrina import settings
 from vitrina.classifiers.models import Status
@@ -892,15 +892,17 @@ def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str 
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:
-        return {"errors": [f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"]}
-    except requests.RequestException as e:
-        return {"errors": [str(e)]}
+        return {"errors": [gettext("Nepavyko gauti duomenų iš Saugyklos per nustatytą laiką")]}
+    except requests.RequestException:
+        logger.exception("Failed to fetch data from Spinta: %s", url)
+        return {"errors": [gettext("Nepavyko gauti duomenų iš Saugyklos")]}
 
     try:
         data = json.loads(res.content)
         return data
-    except JSONDecodeError as e:
-        return {"errors": [str(e)]}
+    except JSONDecodeError:
+        logger.exception("Invalid JSON response from Spinta: %s", url)
+        return {"errors": [gettext("Gautas neteisingas duomenų formatas iš Saugyklos")]}
 
 
 async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30):
@@ -911,15 +913,17 @@ async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None,
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:
-        return {"errors": [f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"]}
-    except requests.RequestException as e:
-        return {"errors": [str(e)]}
+        return {"errors": [gettext("Nepavyko gauti duomenų iš Saugyklos per nustatytą laiką")]}
+    except requests.RequestException:
+        logger.exception("Failed to fetch data from Spinta: %s", url)
+        return {"errors": [gettext("Nepavyko gauti duomenų iš Saugyklos")]}
 
     try:
         data = json.loads(res.content)
         return data
-    except JSONDecodeError as e:
-        return {"errors": [str(e)]}
+    except JSONDecodeError:
+        logger.exception("Invalid JSON response from Spinta: %s", url)
+        return {"errors": [gettext("Gautas neteisingas duomenų formatas iš Saugyklos")]}
 
 
 def _parse_access(value: str):

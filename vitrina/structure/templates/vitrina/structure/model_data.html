@@ -198,7 +198,9 @@
                 }
             }
 
-            location.href = location.search ? `${location.href}&${compare}` : `${location.href}?${compare}`;
+            let url = new URL(location.pathname, location.origin);
+            url.search = location.search ? `${location.search}&${compare}` : `?${compare}`;
+            location.href = url.href;
         };
 
         function removeFilter(tag, idx) {
@@ -212,13 +214,15 @@
                     query = query ? `${query}&${param}` : `?${param}`;
                 }
             }
-            location.href = `${location.origin}${location.pathname}${query}`;
+            let url = new URL(location.pathname, location.origin);
+            url.search = query;
+            location.href = url.href;
         };
 
         function select() {
             let selected_cols = [];
             $('.dropdown-menu li input:checked').each(function() {
-                let value = $(this).siblings('label')[0].innerText;
+                let value = $(this).siblings('label')[0].textContent;
                 selected_cols.push(value);
             });
 
@@ -234,8 +238,9 @@
             let select = `select(${selected_cols.join(',')})`;
             query = query ? `${query}&${select}` : `?${select}`;
 
-            let url = `${location.origin}${location.pathname}${query}`;
-            location.href = url;
+            let url = new URL(location.pathname, location.origin);
+            url.search = query;
+            location.href = url.href;
         }
 
         function hide(col) {
@@ -256,21 +261,17 @@
             select = `select(${select.join(',')})`;
             query = query ? `${query}&${select}` : `?${select}`;
 
-            let url = `${location.origin}${location.pathname}${query}`;
-            location.href = url;
+            let url = new URL(location.pathname, location.origin);
+            url.search = query;
+            location.href = url.href;
         };
 
         function downloadData() {
             let select = $("select#select_format_id");
             let format = select.val();
-            let url = '';
-            if (location.search ){
-                url = location.href + `&format(${format})`;
-            }
-            else {
-                url = location.href + `?format(${format})`;
-            }
-            location.href = url;
+            let url = new URL(location.pathname, location.origin);
+            url.search = location.search ? `${location.search}&format(${format})` : `?format(${format})`;
+            location.href = url.href;
         };
     </script>
 {% endblock %}

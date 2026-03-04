@@ -35,6 +35,15 @@ Security: Fix open Dependabot vulnerability alerts across pip and npm dependenci
 - Add `oauthlib` as explicit dependency (previously transitive via old django-allauth).
 - Add dependency review CI workflow for PR vulnerability scanning.
 - Override `serialize-javascript` version to ^7.0.3
+- Fix GitHub CodeQL code scanning alerts:
+
+  - Add explicit `permissions: contents: read` to `run_tests.yml` workflow.
+  - Fix stack trace exposure in Spinta API responses (`structure/services.py`).
+  - Fix stack trace exposure in API serializer validation (`api/serializers.py`).
+  - Fix URL redirection from user input in `ModelDataView`.
+  - Fix DOM XSS in `model_data.html` by using `URL` API for safe navigation.
+  - Add SRI integrity hashes to CDN-loaded CodeMirror resources.
+  - Remove dead commented-out code with insecure CDN references.
 
 
 v 1.15.0 (2026-02-27)

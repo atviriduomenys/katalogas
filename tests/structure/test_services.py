@@ -2460,7 +2460,7 @@ def test_structure_export__visibility_row(app: DjangoTestApp):
         "3,,,,Pavadinimas,,,id,,,,,,4,develop,package,protected,,,Pavadinimas,\r\n"
         "4,,,,,id,integer,,,,,,,4,develop,package,protected,,,ID,\r\n"
         "5,,,,,class,integer,,,,,,,4,develop,package,protected,,,class,\r\n"
-        "6,,,,,,enum,,1,,1,,,,develop,package,protected,,,Class One,\r\n"
+        "6,,,,,,enum,,1,,1,,,4,develop,package,protected,,,Class One,\r\n"
         ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
@@ -2497,7 +2497,7 @@ def test_structure_export__eli_row(app: DjangoTestApp):
         "3,,,,Pavadinimas,,,id,,,,,,4,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.1,Pavadinimas,\r\n"
         "4,,,,,id,integer,,,,,,,4,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.2,ID,\r\n"
         "5,,,,,class,integer,,,,,,,4,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3,class,\r\n"
-        "6,,,,,,enum,,1,,1,,,,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\r\n"
+        "6,,,,,,enum,,1,,1,,,4,develop,,protected,,https://e-seimas.lrs.lt/portal/legalAct/lt/TAD/TAIS.296815/asr#11.3.1,Class One,\r\n"
         ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
@@ -2534,7 +2534,7 @@ def test_structure_export__status_row(app: DjangoTestApp, setup_default_status_d
         "3,,,,Pavadinimas,,,id,,,,,,4,completed,,protected,,,Pavadinimas,\r\n"
         "4,,,,,id,integer,,,,,,,4,withdrawn,,protected,,,ID,\r\n"
         "5,,,,,class,integer,,,,,,,4,deprecated,,protected,,,class,\r\n"
-        "6,,,,,,enum,,1,,1,,,,discont,,protected,,,Class One,\r\n"
+        "6,,,,,,enum,,1,,1,,,4,discont,,protected,,,Class One,\r\n"
         ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 

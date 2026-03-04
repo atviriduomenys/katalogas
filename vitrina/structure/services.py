@@ -1417,6 +1417,7 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Versi
                         "ref": enum.name if first else "",
                         "source": meta.source,
                         "prepare": meta.prepare,
+                        "level": meta.level_given,
                         "access": _get_access(meta.access),
                         "title": meta.title,
                         "description": meta.description,

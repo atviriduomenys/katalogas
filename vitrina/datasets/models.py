@@ -420,7 +420,7 @@ class Dataset(Resource):
         blank=True,
         related_name="services",
         help_text=_(
-            "Duomenų publikavimo paslaugą teikiantis agentas. Atitinka prov:SoftwareAgent, schema:SoftwareApplication"
+            "Duomenų publikavimo paslaugą teikiantis agentas. Atitinka prov:SoftwareAgent, schema:SoftwareApplication."
         ),
     )
     endpoint_url = models.URLField(

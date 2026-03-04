@@ -159,8 +159,9 @@ class TestDetail:
 
         assert response.status_code == HTTPStatus.OK
         context_agent: Agent = response.context["agent"]
+        context_environments = response.context["environments"]
         assert context_agent == agent
-        assert archived_env not in context_agent.environments.all()
+        assert archived_env not in context_environments
 
     def test_breadcrumbs(self, app: DjangoTestApp, organization: Organization, agent: Agent):
         breadcrumb_url_names_expected = ["home", "organization-list", "organization-detail", "agent-list"]

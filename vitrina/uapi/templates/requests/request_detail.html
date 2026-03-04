@@ -2,10 +2,11 @@
 {% load i18n %}
 
 {% block current_title %}
-    {% translate "Užklausa" %}
+    {% include "component/page_title.html" %}
 {% endblock %}
 
 {% block content %}
+{% include 'vitrina/orgs/tabs.html' %}
 
 
 <p class="is-flex is-justify-content-flex-start mb-5">

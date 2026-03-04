@@ -75,8 +75,8 @@ class Agent(UUIDBaseModel):
     def get_codename(title: str) -> str:
         return slugify(title).replace("-", "_")
 
-    not_archived = NotArchivedAgentManager()
     objects = models.Manager()
+    not_archived = NotArchivedAgentManager()
 
 
 class NotArchivedAgentEnvManager(models.Manager):
@@ -161,8 +161,8 @@ class AgentEnvironment(UUIDBaseModel):
     def __str__(self) -> str:
         return f"{self.agent.title} - {self.get_environment_display()}"
 
-    not_archived = NotArchivedAgentEnvManager()
     objects = models.Manager()
+    not_archived = NotArchivedAgentEnvManager()
 
 
 class VisibleRequestHistoryManager(models.Manager):
@@ -189,8 +189,8 @@ class RequestHistory(UUIDBaseModel):
         verbose_name = _("Užklausų istorija")
         verbose_name_plural = _("Užklausų istorijos")
 
-    visible = VisibleRequestHistoryManager()
     objects = models.Manager()
+    visible = VisibleRequestHistoryManager()
 
 
 class RequestHistoryChanges(UUIDBaseModel):

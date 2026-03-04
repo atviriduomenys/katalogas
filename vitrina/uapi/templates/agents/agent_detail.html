@@ -2,7 +2,7 @@
 {% load i18n %}
 
 {% block current_title %}
-    {% translate "Agentas" %}
+    {% include "component/page_title.html" %}
 {% endblock %}
 
 {% block content %}
@@ -17,11 +17,6 @@
 
     <div class="box is-max-desktop has-background-light">
         <div class="is-flex is-align-items-center mb-4">
-            <div class="mr-4">
-                <span class="icon is-large has-text-grey-light">
-                    <i class="fas fa-user-circle fa-2x"></i>
-                </span>
-            </div>
             <div>
                 <p class="title is-5 mb-1">{{ agent.title }}</p>
                 <p class="is-size-7 has-text-grey">
@@ -51,7 +46,7 @@
         </div>
     {% endif %}
 
-    {% if agent.environments.all %}
+    {% if environments %}
         <table class="table is-fullwidth">
             <thead>
                 <tr>
@@ -97,7 +92,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for agent_environment in agent.environments.all %}
+                {% for agent_environment in environments %}
                     <tr>
                         <td>
                             {% if agent_environment.is_enabled %}
@@ -143,7 +138,7 @@
             </tbody>
         </table>
     {% else %}
-        <p>{% translate "Nėra registruotų agentų." %}</p>
+        <p>{% translate "Nėra registruotų agento aplinkų." %}</p>
     {% endif %}
 
 {% endblock %}

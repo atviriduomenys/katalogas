@@ -86,10 +86,11 @@ class AgentListView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationBas
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
 
     def get_queryset(self):
-        return super().get_queryset().filter(organization=self.organization).order_by("-created_at")
+        return self.model.not_archived.filter(organization=self.organization).order_by("-created_at")
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
+        context["current_title"] = _("Agentai")
         context["can_create_agents"] = has_perm(self.request.user, Action.CREATE, Agent, self.organization)
         context["parent_links"].update({None: _("Agentai")})
 
@@ -101,19 +102,20 @@ class AgentDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
     model = Agent
 
     def get_queryset(self):
-        return super().get_queryset().filter(organization=self.organization).prefetch_related("environments")
+        return self.model.not_archived.filter(organization=self.organization).prefetch_related("environments")
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-
         context.update(
             {
+                "page_title": {"title": self.object.title, "object_type": _("Agentas")},
                 "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
                 "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
                 "can_create_agent_env": has_perm(self.request.user, Action.CREATE, AgentEnvironment, self.organization),
+                "environments": self.object.environments.filter(is_archived=False),
             }
         )
         context["parent_links"].update(
@@ -166,7 +168,7 @@ class AgentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
     template_name = "base_form.html"
 
     def get_queryset(self):
-        return super().get_queryset().filter(organization=self.organization)
+        return self.model.not_archived.filter(organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, Agent, self.organization)
@@ -195,7 +197,7 @@ class AgentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
     template_name = "confirm_delete.html"
 
     def get_queryset(self):
-        return super().get_queryset().filter(organization=self.organization)
+        return self.model.not_archived.filter(organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.DELETE, Agent, self.organization)
@@ -226,7 +228,7 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     context_object_name = "agent_environment"
 
     def get_queryset(self):
-        return super().get_queryset().filter(agent__organization=self.organization).prefetch_related("requesthistory")
+        return self.model.not_archived.filter(agent__organization=self.organization).prefetch_related("requesthistory")
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, AgentEnvironment, self.organization)
@@ -241,6 +243,7 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
 
         context.update(
             {
+                "page_title": {"title": self.object.get_environment_display(), "object_type": _("Aplinka")},
                 "page_obj": page,
                 "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
                 "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.
@@ -329,7 +332,7 @@ class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     title = _("Redaguoti aplinką")
 
     def get_queryset(self):
-        return super().get_queryset().filter(agent__organization=self.organization)
+        return self.model.not_archived.filter(agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, AgentEnvironment, self.organization)
@@ -359,7 +362,7 @@ class AgentEnvDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     template_name = "confirm_delete.html"
 
     def get_queryset(self):
-        return super().get_queryset().filter(agent__organization=self.organization)
+        return self.model.not_archived.filter(agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.DELETE, AgentEnvironment, self.organization)
@@ -390,13 +393,15 @@ class RequestDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEn
     model = RequestHistory
 
     def get_queryset(self):
-        return super().get_queryset().filter(agent_environment__agent__organization=self.organization)
+        return self.model.visible.filter(agent_environment__agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
+
+        context["page_title"] = {"title": _("Užklausa"), "object_type": _("Užklausa")}
 
         if isinstance(self.object.error, str):
             try:

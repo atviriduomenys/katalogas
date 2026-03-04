@@ -84,6 +84,7 @@ from vitrina.structure.services import (
     get_allowed_visibilities,
 )
 from vitrina.datasets.structure import read as read_structure
+from vitrina.structure.utils import TYPE_CHECKER_MAP
 from vitrina.tasks.models import Task
 from spinta.manifests.open_api.helpers import create_openapi_manifest
 from spinta.manifests.components import ManifestPath
@@ -762,6 +763,7 @@ class PropertyStructureView(
         )
         context["can_manage_structure"] = self.can_manage_structure
         context["is_disabled"] = self.metadata_version is not None and not self.metadata_version.is_draft()
+        context["allowed_enum_types"] = TYPE_CHECKER_MAP.keys()
 
         allowed_enum_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Enum
@@ -1868,6 +1870,11 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         if self.metadata_version and not self.metadata_version.is_draft():
             messages.error(request, _("Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."))
             return redirect(self.property.get_absolute_url())
+
+        if (metadata := self.property.metadata.first()) and metadata.type not in TYPE_CHECKER_MAP:
+            messages.error(request, _(f'Reikšmių duomenų lauko tipui "{metadata.type}" kurti negalima'))
+            return redirect(self.property.get_absolute_url())
+
         self.enum = self.property.enums.first()
         return super().dispatch(request, *args, **kwargs)
 
@@ -2000,6 +2007,11 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
         if self.metadata_version and not self.metadata_version.is_draft():
             messages.error(request, _("Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."))
             return redirect(self.property.get_absolute_url())
+
+        if (metadata := self.property.metadata.first()) and metadata.type not in TYPE_CHECKER_MAP:
+            messages.error(request, _(f'Reikšmių duomenų lauko tipui "{metadata.type}" keisti negalima'))
+            return redirect(self.property.get_absolute_url())
+
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):

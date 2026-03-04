@@ -820,6 +820,34 @@ def test_structure_with_enum_and_null_value(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_structure_with_two_enums_with_different_source_same_prepare_create_two_different_enum_items(
+    app: DjangoTestApp,
+):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "5,,,,City,,,,,,,,,,,,,,\n"
+        "6,,,,,id,integer,,,,5,,,open,,,,,\n"
+        "8,,,,,type,integer,,,,5,,,open,,,,,\n"
+        "9,,,,,,enum,,1,1,,,,,,,,,\n"
+        "10,,,,,,,,2,1,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    prop = Property.objects.get(metadata__uuid="8")
+    prop_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(prop), object_id=prop.pk)
+    assert prop_enum.count() == 1
+    assert prop_enum[0].name == ""
+    assert list(prop_enum[0].enumitem_set.values_list("metadata__source", "metadata__prepare")) == [
+        ("1", "1"),
+        ("2", "1"),
+    ]
+
+
+@pytest.mark.django_db
 def test_structure_with_enum_without_prepare_value_adds_comment_about_error(app: DjangoTestApp):
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
@@ -841,6 +869,30 @@ def test_structure_with_enum_without_prepare_value_adds_comment_about_error(app:
     assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
         'Reikšmė "" turi būti integer tipo.',
         'Duomenų reikšmė (source: "one") privalo turėti nurodytą "prepare" stulpelį.',
+    ]
+
+
+@pytest.mark.django_db
+def test_structure_with_boolean_enum_with_invalid_value_adds_comment_about_error(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,,,,\n"
+        "1,,,,,type,boolean,,,,5,,,,,,,,\n"
+        ",,,,,,enum,,taip,taip,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    prop = Property.objects.get(metadata__uuid="1")
+    prop_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(prop), object_id=prop.pk)
+    assert prop_enum.count() == 1
+    assert prop_enum[0].name == ""
+    assert not prop_enum[0].enumitem_set.exists()
+    assert list(Comment.objects.filter(type=Comment.STRUCTURE_ERROR).values_list("body", flat=True)) == [
+        'Reikšmė "taip" turi būti boolean tipo. Viena iš: true, false',
     ]
 
 

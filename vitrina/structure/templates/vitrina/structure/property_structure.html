@@ -199,170 +199,166 @@
             </div>
         {% endif %}
 
-        {% if metadata.type == 'string' or metadata.type == 'integer' %}
-        <div>
-            <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Reikšmių sąrašas" %}</h4>
-            {% if prop.filtered_enums %}
+        {% if metadata.type in allowed_enum_types %}
+            <div>
+                <h4 class="custom-title is-size-4-mobile no-margin-bottom">{% translate "Reikšmių sąrašas" %}</h4>
                 {% for enum in prop.filtered_enums %}
                     {% for enum_item in enum.filtered_items %}
-                    {% define enum_item.metadata.first as enum_meta %}
-                    <div class="columns no-margin-bottom">
-                        <div class="column is-6">
-                            {% if enum_meta.visibility is not None %}
-                                {% if enum_meta.visibility == 0 %}
-                                    <span class="mr-1 tag is-light is-rounded">
-                                        <span class="icon is-small has-tooltip-right has-text-grey"
-                                              data-tooltip="{% translate 'Metaduomenys nepublikuojami' %}">
-                                            <i class="fas fa-eye-slash"></i>
+                        {% define enum_item.metadata.first as enum_meta %}
+                        <div class="columns no-margin-bottom">
+                            <div class="column is-6">
+                                {% if enum_meta.visibility is not None %}
+                                    {% if enum_meta.visibility == 0 %}
+                                        <span class="mr-1 tag is-light is-rounded">
+                                            <span class="icon is-small has-tooltip-right has-text-grey"
+                                                  data-tooltip="{% translate 'Metaduomenys nepublikuojami' %}">
+                                                <i class="fas fa-eye-slash"></i>
+                                            </span>
                                         </span>
-                                    </span>
-                                {% elif enum_meta.visibility == 1 %}
-                                    <span class="mr-1 tag is-warning is-light is-rounded">
-                                        <span class="icon is-small has-tooltip-right"
-                                              data-tooltip="{% translate 'Naudojamas informacinės sistemos (IS) lygmeniu' %}">
-                                            <strong class="has-text-warning-dark">IS</strong>
+                                    {% elif enum_meta.visibility == 1 %}
+                                        <span class="mr-1 tag is-warning is-light is-rounded">
+                                            <span class="icon is-small has-tooltip-right"
+                                                  data-tooltip="{% translate 'Naudojamas informacinės sistemos (IS) lygmeniu' %}">
+                                                <strong class="has-text-warning-dark">IS</strong>
+                                            </span>
                                         </span>
-                                    </span>
-                                {% elif enum_meta.visibility == 2 %}
-                                    <span class="mr-1 tag is-success is-light is-rounded">
-                                        <span class="icon is-small has-tooltip-right"
-                                              data-tooltip="{% translate 'Naudojamas LT lygmeniu' %}">
-                                            <strong class="has-text-success-dark">LT</strong>
+                                    {% elif enum_meta.visibility == 2 %}
+                                        <span class="mr-1 tag is-success is-light is-rounded">
+                                            <span class="icon is-small has-tooltip-right"
+                                                  data-tooltip="{% translate 'Naudojamas LT lygmeniu' %}">
+                                                <strong class="has-text-success-dark">LT</strong>
+                                            </span>
                                         </span>
-                                    </span>
-                                {% elif enum_meta.visibility == 3 %}
-                                    <span class="mr-1 tag is-info is-light is-rounded">
-                                        <span class="icon is-small has-tooltip-right is-info"
-                                              data-tooltip="{% translate 'Naudojamas EU lygmeniu' %}">
-                                            <strong class="has-text-info-dark">EU</strong>
+                                    {% elif enum_meta.visibility == 3 %}
+                                        <span class="mr-1 tag is-info is-light is-rounded">
+                                            <span class="icon is-small has-tooltip-right is-info"
+                                                  data-tooltip="{% translate 'Naudojamas EU lygmeniu' %}">
+                                                <strong class="has-text-info-dark">EU</strong>
+                                            </span>
                                         </span>
-                                    </span>
+                                    {% endif %}
                                 {% endif %}
-                            {% endif %}
-                            {% if enum_meta.prepare %}
-                                <span class="pr-5 has-text-weight-semibold">{{ enum_meta.prepare }}</span>
-                            {% endif %}
-                            {% if enum_meta.title %}
-                                <span class="has-text-weight-semibold">{{ enum_meta.title }}</span>
-                            {% endif %}
-                            <div class="ml-4">
-                                {% if enum_meta.source %}
-                                    <span>source: </span>
-                                    <span class="has-text-weight-semibold">{{ enum_meta.source }}</span>
+                                {% if enum_meta.prepare %}
+                                    <span class="pr-5 has-text-weight-semibold">{{ enum_meta.prepare }}</span>
+                                {% endif %}
+                                {% if enum_meta.title %}
+                                    <span class="has-text-weight-semibold">{{ enum_meta.title }}</span>
+                                {% endif %}
+                                <div class="ml-4">
+                                    {% if enum_meta.source %}
+                                        <span>source: </span>
+                                        <span class="has-text-weight-semibold">{{ enum_meta.source }}</span>
+                                    {% endif %}
+                                </div>
+                                {% if enum_meta.description %}
+                                    <div class="ml-4"><p>{{ enum_meta.description | markdown | safe }}</p></div>
                                 {% endif %}
                             </div>
-                            {% if enum_meta.description %}
-                                <div class="ml-4"><p>{{ enum_meta.description | markdown | safe }}</p></div>
-                            {% endif %}
-                        </div>
-                        <div class="column is-2">
-                            {% if enum_meta.status.codename %}
-                                {% if enum_meta.status.codename == "develop" %}
-                                    <span class="tag has-tooltip"
-                                          data-tooltip="{% translate 'Būsena' %}" style="background-color: #eaedfa; color: #304cd3;">
-                                        {{ enum_meta.status.name }}
-                                    </span>
-                                {% elif enum_meta.status.codename == "completed" %}
-                                    <span class="tag has-tooltip is-success is-light"
-                                          data-tooltip="{% translate 'Būsena' %}">
-                                        {{ enum_meta.status.name }}
-                                    </span>
-                                {% elif enum_meta.status.codename == "discont" %}
-                                    <span class="tag has-tooltip"
-                                          data-tooltip="{% translate 'Būsena' %}" style="background-color: #fff5e5; color: #ffa525;">
-                                        {{ enum_meta.status.name }}
-                                    </span>
-                                {% elif enum_meta.status.codename == "deprecated" %}
-                                    <span class="tag has-tooltip is-warning is-light"
-                                          data-tooltip="{% translate 'Būsena' %}">
-                                        {{ enum_meta.status.name }}
-                                    </span>
-                                {% elif enum_meta.status.codename == "withdrawn" %}
-                                    <span class="tag has-tooltip is-danger is-light"
-                                          data-tooltip="{% translate 'Būsena' %}">
-                                        {{ enum_meta.status.name }}
-                                    </span>
+                            <div class="column is-2">
+                                {% if enum_meta.status.codename %}
+                                    {% if enum_meta.status.codename == "develop" %}
+                                        <span class="tag has-tooltip"
+                                              data-tooltip="{% translate 'Būsena' %}" style="background-color: #eaedfa; color: #304cd3;">
+                                            {{ enum_meta.status.name }}
+                                        </span>
+                                    {% elif enum_meta.status.codename == "completed" %}
+                                        <span class="tag has-tooltip is-success is-light"
+                                              data-tooltip="{% translate 'Būsena' %}">
+                                            {{ enum_meta.status.name }}
+                                        </span>
+                                    {% elif enum_meta.status.codename == "discont" %}
+                                        <span class="tag has-tooltip"
+                                              data-tooltip="{% translate 'Būsena' %}" style="background-color: #fff5e5; color: #ffa525;">
+                                            {{ enum_meta.status.name }}
+                                        </span>
+                                    {% elif enum_meta.status.codename == "deprecated" %}
+                                        <span class="tag has-tooltip is-warning is-light"
+                                              data-tooltip="{% translate 'Būsena' %}">
+                                            {{ enum_meta.status.name }}
+                                        </span>
+                                    {% elif enum_meta.status.codename == "withdrawn" %}
+                                        <span class="tag has-tooltip is-danger is-light"
+                                              data-tooltip="{% translate 'Būsena' %}">
+                                            {{ enum_meta.status.name }}
+                                        </span>
+                                    {% endif %}
                                 {% endif %}
-                            {% endif %}
-                        </div>
-                        <div class="column is-1">
-                            {% if enum_meta.eli %}
-                                <a href="{{ enum_meta.eli }}"
-                                   class="tag is-white has-tooltip"
-                                   data-tooltip="{% translate 'ELI nuoroda' %}"
-                                   target="_blank" rel="noopener noreferrer">
-                                    <span class="ml-3 icon is-small has-text-grey">
-                                        <i class="fas fa-link mr-1"></i>
-                                        <span>ELI</span>
-                                    </span>
-                                </a>
-                            {% endif %}
-                        </div>
-                        <div class="column is-1">
-                        {% if enum_meta.metadata_version %}
-                            {% if enum_meta.metadata_version.status == "DRAFT" %}
-                                <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
-                            {% elif enum_meta.draft and enum_meta.metadata_version.status != "DRAFT"%}
-                                <span class="tag is-danger is-light">{{ enum_meta.metadata_version.external_version}} ({% translate "rengiama" %})</span>
-                            {% elif enum_meta.metadata_version.external_version and not enum_meta.draft %}
-                                <span class="tag is-success is-light">{{ enum_meta.metadata_version.external_version }}</span>
-                            {% endif %}
-                        {% endif %}
-                        </div>
-                        <div class="column is-2">
-                            {% if enum_meta.prepare or enum_meta.title %}
-                                {% if prop.name and model.name and can_manage_structure %}
-                                {% if not is_disabled %}
-                                    <a href="{% url 'enum-update' dataset.pk version_id.pk model.name prop.name enum_item.pk %}"
-                                       class="button is-primary is-small">
-                                        {% translate "Keisti" %}
-                                    </a>
-                                    <a href="{% url 'enum-delete' dataset.pk version_id.pk model.name prop.name enum_item.pk %}"
-                                       onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti?' %})"
-                                       class="button is-link is-small"
-                                       id="delete_enum">
-                                        {% translate "Ištrinti" %}
-                                    </a>
-                                {% else %}
-                                    <a class="button is-primary is-small is-disabled"
-                                       style="pointer-events: none; opacity: 0.5;"
-                                       aria-disabled="true">
-                                        {% translate "Keisti" %}
-                                    </a>
-                                    <a class="button is-link is-small is-disabled"
-                                       style="pointer-events: none; opacity: 0.5;"
-                                       aria-disabled="true">
-                                        {% translate "Ištrinti" %}
+                            </div>
+                            <div class="column is-1">
+                                {% if enum_meta.eli %}
+                                    <a href="{{ enum_meta.eli }}"
+                                       class="tag is-white has-tooltip"
+                                       data-tooltip="{% translate 'ELI nuoroda' %}"
+                                       target="_blank" rel="noopener noreferrer">
+                                        <span class="ml-3 icon is-small has-text-grey">
+                                            <i class="fas fa-link mr-1"></i>
+                                            <span>ELI</span>
+                                        </span>
                                     </a>
                                 {% endif %}
+                            </div>
+                            <div class="column is-1">
+                            {% if enum_meta.metadata_version %}
+                                {% if enum_meta.metadata_version.status == "DRAFT" %}
+                                    <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+                                {% elif enum_meta.draft and enum_meta.metadata_version.status != "DRAFT"%}
+                                    <span class="tag is-danger is-light">{{ enum_meta.metadata_version.external_version}} ({% translate "rengiama" %})</span>
+                                {% elif enum_meta.metadata_version.external_version and not enum_meta.draft %}
+                                    <span class="tag is-success is-light">{{ enum_meta.metadata_version.external_version }}</span>
                                 {% endif %}
                             {% endif %}
+                            </div>
+                            <div class="column is-2">
+                                {% if enum_meta.prepare or enum_meta.title %}
+                                    {% if prop.name and model.name and can_manage_structure %}
+                                    {% if not is_disabled %}
+                                        <a href="{% url 'enum-update' dataset.pk version_id.pk model.name prop.name enum_item.pk %}"
+                                           class="button is-primary is-small">
+                                            {% translate "Keisti" %}
+                                        </a>
+                                        <a href="{% url 'enum-delete' dataset.pk version_id.pk model.name prop.name enum_item.pk %}"
+                                           onclick="return confirm({% translate 'Ar jūs tikrai norite ištrinti?' %})"
+                                           class="button is-link is-small"
+                                           id="delete_enum">
+                                            {% translate "Ištrinti" %}
+                                        </a>
+                                    {% else %}
+                                        <a class="button is-primary is-small is-disabled"
+                                           style="pointer-events: none; opacity: 0.5;"
+                                           aria-disabled="true">
+                                            {% translate "Keisti" %}
+                                        </a>
+                                        <a class="button is-link is-small is-disabled"
+                                           style="pointer-events: none; opacity: 0.5;"
+                                           aria-disabled="true">
+                                            {% translate "Ištrinti" %}
+                                        </a>
+                                    {% endif %}
+                                    {% endif %}
+                                {% endif %}
+                            </div>
                         </div>
-                    </div>
+                    {% endfor %}
+                {% empty %}
+                    <p>{% translate "Galimos reikšmės neapibrėžtos." %}</p>
                 {% endfor %}
-            {% endfor %}
-            {% else %}
-                <p>
-                    {% translate "Galimos reikšmės neapibrėžtos." %}
-                </p>
-            {% endif %}
-            {% if model.name and prop.name and can_manage_structure %}
-                <div class="buttons is-right mt-5">
-                    {% if not is_disabled %}
-                        <a href="{% url 'enum-create' dataset.pk version_id.pk model.name prop.name %}"
-                           class="button is-primary">
-                            {% translate "Nauja reikšmė" %}
-                        </a>
-                    {% else %}
-                        <a class="button is-primary is-disabled"
-                           style="pointer-events: none; opacity: 0.5;"
-                           aria-disabled="true">
-                            {% translate "Nauja reikšmė" %}
-                        </a>
-                    {% endif %}
-                </div>
-            {% endif %}
-        </div>
+                {% if model.name and prop.name and can_manage_structure %}
+                    <div class="buttons is-right mt-5">
+                        {% if not is_disabled %}
+                            <a href="{% url 'enum-create' dataset.pk version_id.pk model.name prop.name %}"
+                               class="button is-primary">
+                                {% translate "Nauja reikšmė" %}
+                            </a>
+                        {% else %}
+                            <a class="button is-primary is-disabled"
+                               style="pointer-events: none; opacity: 0.5;"
+                               aria-disabled="true">
+                                {% translate "Nauja reikšmė" %}
+                            </a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
         {% endif %}
 
         {% if metadata.description %}

@@ -259,6 +259,7 @@ def _load_enums(
                 if en := existing_enum_items.filter(
                     metadata__content_type=enum_ct,
                     metadata__name=meta.name,
+                    metadata__source=meta.source,
                     metadata__prepare=meta.prepare,
                     metadata__dataset=dataset,
                 ).first():

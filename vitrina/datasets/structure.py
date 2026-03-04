@@ -831,7 +831,7 @@ def _read_enum(
 
     # Validate enum item value uniqueness
     if enum.meta.enums.get(name):
-        if enum.prepare in [e.prepare for e in enum.meta.enums[name]]:
+        if (enum.source, enum.prepare) in [(e.source, e.prepare) for e in enum.meta.enums[name]]:
             enum.errors.append(_(f'Galima reikšmė (source: "{enum.source}") "{enum.prepare}" jau egzistuoja.'))
 
         enum.meta.enums[name].append(enum)

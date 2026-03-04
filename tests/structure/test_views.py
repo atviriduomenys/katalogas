@@ -4475,6 +4475,50 @@ def test_property_enum_item_create__higher_visibility_then_model_with_error(app:
     ]
 
 
+# Not all types tested. Only a few of them
+@pytest.mark.django_db
+@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "number", "object"])
+def test_property_enum_item_create__not_allowed_for_types_that_have_no_type_checker_class(
+    app: DjangoTestApp, not_allowed_type: str
+):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE,
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type=not_allowed_type,
+        metadata_version=version,
+    )
+    response = app.get(
+        reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name]),
+    )
+
+    assert response.status_code == 302
+    assert response.url == prop.get_absolute_url()
+
+
 @pytest.mark.django_db
 def test_manifest_export_openapi(app: DjangoTestApp):
     """Test OpenAPI manifest export returns valid spec with correct metadata, schemas, tags, and paths."""
@@ -5067,6 +5111,66 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
         assert enum_metadata.status.codename == "develop"
+
+
+# Not all types tested. Only a few of them
+@pytest.mark.django_db
+@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "number", "object"])
+def test_property_enum_item_update__not_allowed_for_types_that_have_no_type_checker_class(
+    app: DjangoTestApp, not_allowed_type: str
+):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE,
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type=not_allowed_type,
+        metadata_version=version,
+    )
+    enum = EnumFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        metadata_version=version,
+    )
+    enum_item = EnumItemFactory(enum=enum, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(enum_item),
+        object_id=enum_item.pk,
+        dataset=dataset,
+        title="Test value",
+        description="For testing",
+        prepare="",
+        access=Metadata.OPEN,
+        source="TEST",
+        metadata_version=version,
+    )
+
+    response = app.get(reverse("enum-update", args=[dataset.pk, version.pk, model.name, prop.name, enum_item.pk]))
+
+    assert response.status_code == 302
+    assert response.url == prop.get_absolute_url()
 
 
 @pytest.mark.django_db

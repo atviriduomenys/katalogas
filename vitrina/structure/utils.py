@@ -8,6 +8,9 @@ from vitrina.structure.helpers import is_quoted
 T = TypeVar("T")
 
 
+VALID_BOOLEAN_PREPARE_VALUES = ("true", "false")
+
+
 class TypeCheckerError(Exception):
     pass
 
@@ -30,6 +33,13 @@ class IntegerTypeChecker(TypeChecker[int]):
             raise TypeCheckerError(_(f'Reikšmė "{value}" turi būti integer tipo.'))
 
 
+class BooleanTypeChecker(TypeChecker[bool]):
+    def check_enum_item_value(self, value: str) -> None:
+        if value not in VALID_BOOLEAN_PREPARE_VALUES:
+            possible_values = ", ".join(VALID_BOOLEAN_PREPARE_VALUES)
+            raise TypeCheckerError(_(f'Reikšmė "{value}" turi būti boolean tipo. Viena iš: {possible_values}'))
+
+
 class NotImplementedTypeChecker(TypeChecker[Any]):
     def check_enum_item_value(self, value: str) -> None:
         raise TypeCheckerError(_("Savybės reikšmės tipas nėra palaikomas."))
@@ -38,6 +48,7 @@ class NotImplementedTypeChecker(TypeChecker[Any]):
 TYPE_CHECKER_MAP = {
     "string": StringTypeChecker(),
     "integer": IntegerTypeChecker(),
+    "boolean": BooleanTypeChecker(),
 }
 
 

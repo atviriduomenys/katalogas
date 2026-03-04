@@ -4,6 +4,12 @@ Changes
 v 1.16.0 (unreleased)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2321
+
+- Refactor `Agent` by introducing `AgentEnvironment` model.
+- Move relation from `Agent.service` to `Dataset.agent`.
+
+
 https://github.com/atviriduomenys/katalogas/issues/2435
 
 - Change recipient for reply comment.

@@ -1,6 +1,7 @@
 import datetime
 import json
 import uuid
+from http import HTTPStatus
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -18,6 +19,7 @@ from reversion.models import Version
 
 from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
+from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
@@ -46,7 +48,7 @@ from vitrina.utils import RevisionComment, RevisionSource
 
 
 class BaseTestCreateManifest:
-    def _create_manifest(self, manifest: str, title: str, description: str):
+    def _create_manifest(self, manifest: str, title: str = "", description: str = ""):
         dataset = DatasetFactory(
             title=title,
             description=description,
@@ -6769,6 +6771,7 @@ class TestStructure(BaseTestCreateManifest):
 
         response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
 
+        assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
             "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
@@ -6802,6 +6805,7 @@ class TestStructure(BaseTestCreateManifest):
 
         response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
 
+        assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
             "1,dataset,,,,,,,,,,,,,,,,,,Title,Description",
@@ -6847,6 +6851,8 @@ class TestStructure(BaseTestCreateManifest):
         create_structure_objects(structure, metadata_version=version)
 
         response = app.get(reverse("dataset-structure-export", args=[dataset.pk, version.pk]))
+
+        assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
             "1,dataset,,,,,,,,,,,,,,,,,,Title,Description",
@@ -6877,6 +6883,7 @@ class TestStructure(BaseTestCreateManifest):
 
         response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
 
+        assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
             "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
@@ -6893,6 +6900,148 @@ class TestStructure(BaseTestCreateManifest):
             "10,,,,,id,string,,id,,,,,,develop,,,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
         ]
+
+    def test_export__model_and_reference_as_base_in_file(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example,,,,,,,,,,,,,,,,\n"
+            "2,,,,Animal,,,,,,0,completed,public,,,,,\n"
+            "3,,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
+            "4,,,Animal,,,,,,,1,completed,public,,,,,\n"
+            "5,,,,Dog,,,,,,0,completed,public,,,,,\n"
+            "6,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,,,Animal,,,,,,,,,0,completed,public,,,,,",
+            "3,,,,,id,string,,source_animal_id,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            "4,,,Animal,,,,,,,,,,,,,,,,,",
+            "5,,,,Dog,,,,,,,,,0,completed,public,,,,,",
+            "6,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__model_and_reference_as_base_in_two_different_files(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        model_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example,,,,,,,,,,,,,,,,\n"
+            "2,,,,Animal,,,,,,0,completed,public,,,,,\n"
+            "3,,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
+        )
+        model_dataset = self._create_manifest(model_manifest, "Model Dataset", "Dataset that defines base model.")
+        model_version = model_dataset.latest_version()
+        model_version.status = VersionStatus.STABLE
+        model_version.save()
+
+        base_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example2,,,,,,,,,,,,,,,,\n"
+            "2,,,example/Animal,,,,,,,1,completed,public,,,,,\n"
+            "3,,,,Dog,,,,,,0,completed,public,,,,,\n"
+            "4,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(base_manifest, "Base Dataset", "Dataset that references model with base")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
+            "2,,,example/Animal,,,,,,,,,,,,,,,,,",
+            "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
+            "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__model_and_reference_different_files_model_is_not_released(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        model_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example,,,,,,,,,,,,,,,,\n"
+            "2,,,,Animal,,,,,,0,completed,public,,,,,\n"
+            "3,,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
+        )
+        self._create_manifest(model_manifest, "Model Dataset", "Dataset that defines base model.")
+
+        base_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example2,,,,,,,,,,,,,,,,\n"
+            "2,,,example/Animal,,,,,,,1,completed,public,,,,,\n"
+            "3,,,,Dog,,,,,,0,completed,public,,,,,\n"
+            "4,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(base_manifest, "Base Dataset", "Dataset that references model with base")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
+            "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
+            "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+        error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
+        assert error_comment.type == Comment.STRUCTURE_ERROR
+        assert error_comment.body == (
+            "Nepavyko susieti bazinio modelio „example/Animal“. "
+            "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+        )
+
+    def test_export__base_reference_without_defined_model(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example,,,,,,,,,,,,,,,,\n"
+            "2,,,Animal,,,,,,,1,completed,public,,,,,\n"
+            "3,,,,Dog,,,,,,0,completed,public,,,,,\n"
+            "4,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [  # Base could not be linked, so it is missing.
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
+            "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+        error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
+        assert error_comment.type == Comment.STRUCTURE_ERROR
+        assert error_comment.body == (
+            "Nepavyko susieti bazinio modelio „example/Animal“. "
+            "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+        )
 
 
 class TestStructureExportDependentModels(BaseTestCreateManifest):

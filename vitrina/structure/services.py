@@ -745,30 +745,46 @@ def _link_models(dataset: Dataset, dataset_meta: struct.Dataset, metadata_versio
             model.update_level()
 
 
+def resolve_base_model(base_metadata: struct.Base, metadata_version: Version) -> Model | None:
+    """Retrieves a base model based on metadata, prioritizing specific version or stable status.
+
+    This function attempts to find a Model object associated with a given base_metadata.
+    It handles two scenarios for model import:
+        1.  Model and Base in the same file: In this case, the function expects to find the model
+            with the same `metadata_version` as provided.
+        2.  Model imported after being referenced as Base: If the model is defined in a separate file and then
+            referenced as a base, their `metadata_version`s might differ. In this scenario,
+            the function falls back to searching for the newest `STABLE` version of the model.
+    """
+    model_content_type = ContentType.objects.get_for_model(Model)
+    base_filter = Q(metadata__content_type=model_content_type, metadata__name=base_metadata.name)
+
+    queryset = Model.objects.filter(base_filter).order_by("-created")
+    return (
+        queryset.filter(metadata_version=metadata_version).first()
+        or queryset.filter(metadata_version__status=VersionStatus.STABLE).first()
+    )
+
+
 def _link_base(
     dataset: Dataset,
     meta: struct.Base,
     model: Model,
     metadata_version: Version,
 ):
-    base_ct = ContentType.objects.get_for_model(Base)
-    model_ct = ContentType.objects.get_for_model(Model)
-
     if meta:
         if meta.errors:
             _create_errors(meta.errors, model)
         else:
-            if base_model := Model.objects.filter(
-                metadata__content_type=model_ct, metadata__name=meta.name, metadata_version=metadata_version
-            ).first():
-                if base := Base.objects.filter(
-                    metadata__content_type=base_ct,
+            if base_model := resolve_base_model(meta, metadata_version):
+                if base_object := Base.objects.filter(
+                    metadata__content_type=ContentType.objects.get_for_model(Base),
                     metadata__name=meta.name,
                     model=base_model,
                     metadata_version=metadata_version,
                 ).first():
                     if not meta.id:
-                        meta.id = base.metadata.first().uuid
+                        meta.id = base_object.metadata.first().uuid
 
                 base = Base(model=base_model, metadata_version=metadata_version)
                 base, metadata = _create_or_update_metadata(dataset, meta, base, metadata_version=metadata_version)
@@ -777,6 +793,14 @@ def _link_base(
                 model.base = base
                 model.save()
                 _create_errors(meta.errors, base)
+            else:
+                meta.errors.append(
+                    _(
+                        f"Nepavyko susieti bazinio modelio „{meta.name}“. "
+                        f"Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+                    )
+                )
+                _create_errors(meta.errors, model)
 
     elif model.base:
         base = model.base

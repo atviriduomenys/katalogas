@@ -2669,3 +2669,150 @@ def test_structure_with_origin_source_type_headers(app: DjangoTestApp):
         "datasets/gov/ivpk/adp",
     ]
     assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR).count() == 0
+
+
+class TestStructureBaseModels:
+    @pytest.mark.django_db
+    def test_structure_base_and_model_defined_in_file(self, app: DjangoTestApp):
+        """Model for Base is defined in the same file."""
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            ",example,,,,,,,,,,,,,,,,\n"
+            ",,,,Animal,,,,,,0,completed,public,,,,,\n"
+            ",,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
+            ",,,Animal,,,,,,,1,completed,public,,,,,\n"
+            ",,,,Dog,,,,,,0,completed,public,,,,,\n"
+            ",,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        create_structure_objects(structure)
+
+        assert Base.objects.count() == 1
+        base_object = Base.objects.get(metadata__name="example/Animal")
+        assert Base.objects.first().model.name == "Animal"
+        assert Model.objects.count() == 2
+        assert Model.objects.get(metadata__name="example/Animal")
+        assert Model.objects.get(metadata__name="example/Dog").base == base_object
+
+    @pytest.mark.django_db
+    def test_structure_two_imports_first_model_secondly_reference_the_model_as_base(self, app: DjangoTestApp):
+        """Two imports: First one imports a manifest with a model. Second, uses the model as a base.
+
+        In this case, the model that was imported with the first file must have a Version status of STABLE.
+        """
+        manifest_with_model_definition = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            ",example,,,,,,,,,,,,,,,,\n"
+            ",,,,Animal,,,,,,0,completed,public,,,,,\n"
+            ",,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
+        )
+        structure_model = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest_with_model_definition))
+        )
+        structure_model.dataset.current_structure = structure_model
+        structure_model.dataset.save()
+        version = create_structure_objects(structure_model)
+        version.status = VersionStatus.STABLE
+        version.save()
+
+        manifest_with_base_reference = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            ",example2,,,,,,,,,,,,,,,,\n"
+            ",,,example/Animal,,,,,,,1,completed,public,,,,,\n"
+            ",,,,Dog,,,,,,0,completed,public,,,,,\n"
+            ",,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+        structure_base = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file2.csv", data=manifest_with_base_reference))
+        )
+        structure_base.dataset.current_structure = structure_base
+        structure_base.dataset.save()
+        create_structure_objects(structure_base)
+
+        assert Model.objects.count() == 2
+        animal_model = Model.objects.get(metadata__name="example/Animal")
+        dog_model = Model.objects.get(metadata__name="example2/Dog")
+
+        assert Base.objects.count() == 1
+        base_object = Base.objects.get(metadata__name="example/Animal")
+
+        assert base_object.model == animal_model
+        assert dog_model.base == base_object
+
+    @pytest.mark.django_db
+    def test_structure_two_imports_first_model_secondly_reference_the_model_as_base_model_not_released(
+        self, app: DjangoTestApp
+    ):
+        manifest_with_model_definition = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            ",example,,,,,,,,,,,,,,,,\n"
+            ",,,,Animal,,,,,,0,completed,public,,,,,\n"
+            ",,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
+        )
+        structure_model = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest_with_model_definition))
+        )
+        structure_model.dataset.current_structure = structure_model
+        structure_model.dataset.save()
+        version = create_structure_objects(structure_model)
+        version.status = VersionStatus.DRAFT
+        version.save()
+
+        manifest_with_base_reference = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            ",example2,,,,,,,,,,,,,,,,\n"
+            ",,,example/Animal,,,,,,,1,completed,public,,,,,\n"
+            ",,,,Dog,,,,,,0,completed,public,,,,,\n"
+            ",,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+        structure_base = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file2.csv", data=manifest_with_base_reference))
+        )
+        structure_base.dataset.current_structure = structure_base
+        structure_base.dataset.save()
+        create_structure_objects(structure_base)
+
+        assert Base.objects.count() == 0
+        assert Model.objects.count() == 2
+        assert Model.objects.get(metadata__name="example2/Dog").base is None
+
+        error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
+        assert error_comment.type == Comment.STRUCTURE_ERROR
+        assert error_comment.body == (
+            "Nepavyko susieti bazinio modelio „example/Animal“. "
+            "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+        )
+
+    @pytest.mark.django_db
+    def test_structure_base_defined_but_model_does_not_exist(self, app: DjangoTestApp):
+        """No model exists for the defined Base"""
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            ",example,,,,,,,,,,,,,,,,\n"
+            ",,,Animal,,,,,,,1,completed,public,,,,,\n"
+            ",,,,Dog,,,,,,0,completed,public,,,,,\n"
+            ",,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        create_structure_objects(structure)
+
+        assert Base.objects.count() == 0  # No model to link with - no base is created.
+        assert Model.objects.count() == 1
+        assert Model.objects.get(metadata__name="example/Dog").base is None
+
+        error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
+        assert error_comment.type == Comment.STRUCTURE_ERROR
+        assert error_comment.body == (
+            "Nepavyko susieti bazinio modelio „example/Animal“. "
+            "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+        )

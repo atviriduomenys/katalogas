@@ -596,7 +596,7 @@ def _read_base(
     if name == "/":
         base = state.base = None
     else:
-        name = get_relative_model_name(state.dataset, name)
+        name = get_relative_model_name_for_base(state.dataset, name)
         base = state.base = Base(
             id=row["id"],
             name=name,
@@ -918,6 +918,15 @@ def _parse_visibility(value: str) -> int:
         "public": StructureMetadata.VISIBILITY_PUBLIC,
     }
     return visibility_mapper.get(value)
+
+
+def get_relative_model_name_for_base(dataset: Dataset, name: str) -> str:
+    if name.startswith("/"):
+        return name[1:]
+    elif "/" in name or dataset is None:
+        return name
+    else:
+        return f"{dataset.name}/{name}"
 
 
 def get_relative_model_name(dataset: Dataset, name: str) -> str:

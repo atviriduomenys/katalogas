@@ -45,6 +45,16 @@ Security: Fix open Dependabot vulnerability alerts across pip and npm dependenci
   - Add SRI integrity hashes to CDN-loaded CodeMirror resources.
   - Remove dead commented-out code with insecure CDN references.
 
+https://github.com/atviriduomenys/katalogas/issues/2363
+
+- Introduce DatasetAccessMixin to centralize dataset access control logic
+previously scattered across viewsets.
+- `is_open_data_representative` – checks whether the current user or
+organization role has open data access
+- `_filter_queryset_by_access` – filters datasets based on access rights
+appropriate to the user or role
+- `_check_dataset_access` – raises `PermissionDenied` for inaccessible datasets
+- Changed Dataset access_right default value to PUBLIC from CONFIDENTIAL
 
 https://github.com/atviriduomenys/katalogas/issues/2349
 

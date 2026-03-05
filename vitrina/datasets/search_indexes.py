@@ -1,4 +1,8 @@
+import logging
+
 from django.contrib.contenttypes.models import ContentType
+from django.db import models, transaction
+
 from django.db.models import Prefetch, Exists, OuterRef
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.models import Model, Property
@@ -10,7 +14,6 @@ from haystack.fields import (
     EdgeNgramField,
     BooleanField,
 )
-from django.db import models
 
 from haystack import signals
 from haystack.exceptions import NotHandled
@@ -18,6 +21,8 @@ from haystack.indexes import SearchIndex, Indexable
 
 from vitrina.datasets.models import Dataset
 from vitrina.requests.models import RequestObject, Request
+
+logger = logging.getLogger(__name__)
 
 
 class DatasetIndex(SearchIndex, Indexable):
@@ -131,6 +136,8 @@ class DatasetIndex(SearchIndex, Indexable):
 
 
 class CustomSignalProcessor(signals.BaseSignalProcessor):
+    _on_commit = staticmethod(transaction.on_commit)
+
     def setup(self):
         models.signals.post_save.connect(self.handle_save)
         models.signals.post_delete.connect(self.handle_delete)
@@ -144,20 +151,48 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
 
         for using in using_backends:
             try:
-                index = self.connections[using].get_unified_index().get_index(sender)
-
-                if index.index_queryset().filter(pk=instance.pk):
-                    index.update_object(instance, using=using)
-                    if isinstance(instance, Dataset):
-                        req_index = self.connections[using].get_unified_index().get_index(Request)
-                        reqs = RequestObject.objects.filter(
-                            content_type=ContentType.objects.get_for_model(instance),
-                            object_id=instance.pk,
-                        )
-                        for req in reqs:
-                            req_index.update_object(req.request, using=using)
-                else:
-                    index.remove_object(instance, using=using)
-
+                self.connections[using].get_unified_index().get_index(sender)
             except NotHandled:
-                pass
+                continue
+
+            self._on_commit(lambda s=sender, inst=instance, u=using: self._index_instance(s, inst, u))
+
+    def handle_delete(self, sender, instance, **kwargs):
+        using_backends = self.connection_router.for_write(instance=instance)
+
+        for using in using_backends:
+            try:
+                index = self.connections[using].get_unified_index().get_index(sender)
+            except NotHandled:
+                continue
+
+            self._on_commit(lambda i=index, inst=instance, u=using: i.remove_object(inst, using=u))
+
+    def _index_instance(self, sender, instance, using):
+        try:
+            index = self.connections[using].get_unified_index().get_index(sender)
+        except NotHandled:
+            return
+
+        if not sender.objects.filter(pk=instance.pk).exists():
+            return
+
+        try:
+            if not index.index_queryset().filter(pk=instance.pk).exists():
+                index.remove_object(instance, using=using)
+                return
+
+            index.update_object(instance, using=using)
+            if isinstance(instance, Dataset):
+                self._reindex_related_requests(instance, using)
+        except Exception:
+            logger.warning("Failed to index %s pk=%s", sender.__name__, instance.pk, exc_info=True)
+
+    def _reindex_related_requests(self, dataset, using):
+        req_index = self.connections[using].get_unified_index().get_index(Request)
+        reqs = RequestObject.objects.filter(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+        )
+        for req in reqs:
+            req_index.update_object(req.request, using=using)

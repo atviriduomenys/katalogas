@@ -59,6 +59,23 @@ def _haystack_marker(request):
 
         call_command("clear_index", interactive=False, using=["default"])
 
+    yield
+
+
+@pytest.fixture(autouse=True)
+def _immediate_es_indexing(request):
+    django_db_marker = request.node.get_closest_marker("django_db")
+    uses_real_transactions = django_db_marker and django_db_marker.kwargs.get("transaction", False)
+
+    if uses_real_transactions:
+        yield
+    else:
+        with patch(
+            "vitrina.datasets.search_indexes.CustomSignalProcessor._on_commit",
+            staticmethod(lambda func: func()),
+        ):
+            yield
+
 
 @pytest.fixture(scope="session", autouse=True)
 def set_test_settings(tmp_path_factory):

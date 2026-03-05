@@ -717,14 +717,8 @@ def _read_property(
 
     if prop.model.properties.get(name):
         prop.errors.append(_(f'Savybė "{name}" jau egzistuoja.'))
-    model_visibility = _parse_visibility(prop.model.visibility)
-    prop_visibility = _parse_visibility(prop.visibility)
-    if model_visibility is not None and prop_visibility is not None and model_visibility < prop_visibility:
-        prop.errors.append(
-            _(
-                'Duomenų lauko "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už modelio metaduomenų matomumo lygį "{2}". '
-            ).format(name, prop.visibility, prop.model.visibility)
-        )
+
+    _update_model_visibility_from_property(prop)
     prop.model.properties[name] = prop
 
     return prop
@@ -815,27 +809,8 @@ def _read_enum(
 
     enum.meta = last
 
-    model_visibility = None
-    property_visibility = None
+    _update_parent_visibility_from_enum(state, enum)
 
-    if state.model:
-        model_visibility = _parse_visibility(state.model.visibility)
-    if enum.meta:
-        property_visibility = _parse_visibility(enum.meta.visibility)
-    enum_visibility = _parse_visibility(enum.visibility)
-
-    if property_visibility is not None and enum_visibility is not None and property_visibility < enum_visibility:
-        enum.errors.append(
-            _(
-                'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{2}". '
-            ).format(enum.title, enum.visibility, enum.meta.visibility)
-        )
-    elif model_visibility is not None and enum_visibility is not None and model_visibility < enum_visibility:
-        enum.errors.append(
-            _(
-                'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų modelio metaduomenų matomumo lygį "{2}". '
-            ).format(enum.title, enum.visibility, state.model.visibility)
-        )
     if enum.meta.enums.get(name):
         if enum.prepare in [e.prepare for e in enum.meta.enums[name]]:
             enum.errors.append(_(f'Galima reikšmė "{enum.prepare}" jau egzistuoja.'))
@@ -1038,3 +1013,22 @@ def _validate_resource_name(name: str, meta: Model):
         _validate_name(name, meta)
         if any([ch.isupper() for ch in name]):
             meta.errors.append(_(f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'))
+
+
+def _update_model_visibility_from_property(prop: Property) -> None:
+    model_visibility = _parse_visibility(prop.model.visibility)
+    prop_visibility = _parse_visibility(prop.visibility)
+    if model_visibility is not None and prop_visibility is not None and model_visibility < prop_visibility:
+        prop.model.visibility = prop.visibility
+
+
+def _update_parent_visibility_from_enum(state: State, enum: Enum) -> None:
+    model_visibility = _parse_visibility(state.model.visibility) if state.model else None
+    property_visibility = (
+        _parse_visibility(enum.meta.visibility) if enum.meta and isinstance(enum.meta, Property) else None
+    )
+    enum_visibility = _parse_visibility(enum.visibility)
+    if property_visibility is not None and enum_visibility is not None and property_visibility < enum_visibility:
+        enum.meta.visibility = enum.visibility
+    if model_visibility is not None and enum_visibility is not None and model_visibility < enum_visibility:
+        state.model.visibility = enum.visibility

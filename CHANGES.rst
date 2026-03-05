@@ -64,6 +64,12 @@ https://github.com/atviriduomenys/katalogas/issues/2434
 
 - Added metadata field for dataset when creating through post request
 
+https://github.com/atviriduomenys/katalogas/issues/2334
+
+- Propagate visibility upward from property to model
+- Added _update_model_visibility_from_property which ensures a model's visibility is automatically elevated when one of its properties has higher visibility.
+- Added _update_parent_visibility_from_enum which propagates visibility upward through the full chain — from enum to its parent property, and from property to the model — applying the same rule at each level.
+
 v 1.15.0 (2026-02-27)
 ==================
 

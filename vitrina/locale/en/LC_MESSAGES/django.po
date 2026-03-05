@@ -1251,30 +1251,6 @@ msgstr "The organization can only be assigned the role of a data editor"
 msgid "Naudotojui išsiųstas laiškas dėl registracijos"
 msgstr "The user has been sent an email for registration"
 
-#, python-brace-format
-msgid ""
-"Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-"Data field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
-"the model metadata visibility level \"{2}\". "
-
-#, python-brace-format
-msgid ""
-"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už duomenų lauko metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-"Enum field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
-"the property metadata visibility level \"{2}\" . "
-
-#, python-brace-format
-msgid ""
-"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už duomenų modelio metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-"Enum field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
-"the model metadata visibility level \"{2}\" . "
-
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
 "skaičiai, "

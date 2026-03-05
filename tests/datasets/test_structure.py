@@ -5,7 +5,15 @@ import pathlib
 import pytest
 
 from vitrina.datasets.factories import MANIFEST
-from vitrina.datasets.structure import detect_read_errors
+from vitrina.datasets.structure import (
+    detect_read_errors,
+    _update_model_visibility_from_property,
+    _update_parent_visibility_from_enum,
+    State,
+    Property,
+    Model,
+    Enum,
+)
 from vitrina.datasets.structure import precedes
 from vitrina.datasets.structure import read
 
@@ -141,3 +149,50 @@ id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri
 
     assert props["id"].type == "integer"
     assert len(props["description"].comments) == 1
+
+
+@pytest.mark.parametrize(
+    "model_visibility, property_visibility, expected",
+    [
+        ("private", "public", "public"),
+        ("private", "protected", "protected"),
+        ("private", "package", "package"),
+        ("public", "private", "public"),
+        ("protected", "protected", "protected"),
+    ],
+)
+def test_update_model_visibility_from_property(model_visibility, property_visibility, expected):
+    model = Model(visibility=model_visibility)
+    property = Property(visibility=property_visibility)
+    property.model = model
+
+    _update_model_visibility_from_property(property)
+
+    assert model.visibility == expected
+
+
+@pytest.mark.parametrize(
+    "model_visibility, property_visibility, enum_visibility, expected_model_visibility, expected_property_visibility",
+    [
+        ("private", "private", "public", "public", "public"),
+        ("private", "private", "protected", "protected", "protected"),
+        ("public", "public", "private", "public", "public"),
+        ("public", "private", "protected", "public", "protected"),
+        ("private", "public", "protected", "protected", "public"),
+    ],
+)
+def test_update_parent_visibility_from_enum(
+    model_visibility, property_visibility, enum_visibility, expected_model_visibility, expected_property_visibility
+):
+    model = Model(visibility=model_visibility)
+    property = Property(visibility=property_visibility)
+    property.model = model
+    enum = Enum(visibility=enum_visibility)
+    enum.meta = property
+    state = State()
+    state.model = model
+
+    _update_parent_visibility_from_enum(state, enum)
+
+    assert model.visibility == expected_model_visibility
+    assert property.visibility == expected_property_visibility

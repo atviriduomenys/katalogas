@@ -1,5 +1,6 @@
-from django.db import connection
+from django.db import connection, transaction
 from django.test.utils import CaptureQueriesContext
+from elasticsearch.exceptions import NotFoundError
 from haystack import connections
 from unittest.mock import patch
 
@@ -113,3 +114,43 @@ class TestDatasetIndexQuery:
         assert count_10 <= count_3 + 7, (
             f"Query count should scale constantly, got {count_3} for 3 datasets vs {count_10} for 10"
         )
+
+
+@pytest.mark.django_db(transaction=True)
+class TestSignalProcessorTransactionSafety:
+    @pytest.mark.haystack
+    def test_no_orphan_on_transaction_rollback(self):
+        backend = connections["default"].get_backend()
+
+        try:
+            with transaction.atomic():
+                dataset = DatasetFactory()
+                pk = dataset.pk
+                raise Exception("Force rollback")
+        except Exception:
+            pass
+
+        assert not Dataset.objects.filter(pk=pk).exists(), "DB record should not exist after rollback"
+
+        try:
+            backend.conn.indices.refresh(index=backend.index_name)
+            doc_id = f"vitrina_datasets.dataset.{pk}"
+            result = backend.conn.exists(index=backend.index_name, id=doc_id)
+        except NotFoundError:
+            result = False
+
+        assert result is False, (
+            f"Orphaned ES document found for pk={pk}. "
+            "The signal processor indexed the document inside a transaction that was rolled back."
+        )
+
+    @pytest.mark.haystack
+    def test_indexes_after_transaction_commit(self):
+        backend = connections["default"].get_backend()
+
+        dataset = DatasetFactory()
+
+        backend.conn.indices.refresh(index=backend.index_name)
+        doc_id = f"vitrina_datasets.dataset.{dataset.pk}"
+        result = backend.conn.exists(index=backend.index_name, id=doc_id)
+        assert result is True, "ES document should exist after a committed save"

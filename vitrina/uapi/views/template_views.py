@@ -142,7 +142,7 @@ class AgentCreateView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationB
     def form_valid(self, form: ModelForm) -> HttpResponse:
         form.instance.organization = self.organization
         response = super().form_valid(form)
-        messages.success(self.request, _(f"Agentas '{self.object.title}' sukurtas sėkmingai!"))
+        messages.success(self.request, _("Agentas '{0}' sukurtas sėkmingai!").format(self.object.title))
 
         return response
 
@@ -185,7 +185,7 @@ class AgentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
 
     def form_valid(self, form: ModelForm) -> HttpResponse:
         response = super().form_valid(form)
-        messages.success(self.request, _(f"Agentas '{self.object.title}' atnaujintas sėkmingai!"))
+        messages.success(self.request, _("Agentas '{0}' atnaujintas sėkmingai!").format(self.object.title))
         return response
 
     def get_success_url(self):
@@ -215,7 +215,7 @@ class AgentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
         """Object is soft-deleted (archived) so to not lose the related service and other related objects."""
         self.object.is_archived = True
         self.object.save(update_fields=["is_archived", "updated_at"])
-        messages.success(self.request, _(f"Agentas '{self.object.title}' pašalintas sėkmingai!"))
+        messages.success(self.request, _("Agentas '{0}' pašalintas sėkmingai!").format(self.object.title))
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self) -> str:
@@ -286,7 +286,7 @@ class AgentEnvCreateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentM
 
             messages.success(
                 self.request,
-                _(f"Aplinka '{self.object}' sukurta sėkmingai!"),
+                _("Aplinka '{0}' sukurta sėkmingai!").format(self.object),
             )
             messages.warning(
                 self.request,
@@ -350,7 +350,7 @@ class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
 
     def form_valid(self, form: ModelForm) -> HttpResponse:
         response = super().form_valid(form)
-        messages.success(self.request, _(f"'{self.object}' aplinka atnaujinta sėkmingai!"))
+        messages.success(self.request, _("'{0}' aplinka atnaujinta sėkmingai!").format(self.object))
         return response
 
     def get_success_url(self) -> str:
@@ -369,7 +369,7 @@ class AgentEnvDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context["delete_text"] = _(f"Ar tikrai norite ištrinti aplinką: {self.object}?")
+        context["delete_text"] = _("Ar tikrai norite ištrinti aplinką: {0}?").format(self.object)
         context["parent_links"].update(
             {
                 None: _("Pašalinti"),
@@ -381,7 +381,7 @@ class AgentEnvDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
         """Object is soft-deleted (archived) so to not lose the related service and other related objects."""
         self.object.is_archived = True
         self.object.save(update_fields=["is_archived", "updated_at"])
-        messages.success(self.request, _(f"'{self.object}' aplinka pašalinta sėkmingai!"))
+        messages.success(self.request, _("'{0}' aplinka pašalinta sėkmingai!").format(self.object))
         return HttpResponseRedirect(self.get_success_url())
 
     def get_success_url(self) -> str:

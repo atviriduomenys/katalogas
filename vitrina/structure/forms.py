@@ -276,7 +276,7 @@ class EnumForm(forms.ModelForm):
 
         return visibility
 
-    def clean(self):
+    def clean(self) -> dict:
         cleaned_data = super().clean()
 
         if self.errors:
@@ -294,6 +294,8 @@ class EnumForm(forms.ModelForm):
                 )
             )
             self.add_error("value", error_msg)
+
+        return cleaned_data
 
 
 MODEL_LEVEL_CHOICES = (

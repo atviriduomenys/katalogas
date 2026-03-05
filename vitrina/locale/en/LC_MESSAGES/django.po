@@ -1269,14 +1269,6 @@ msgstr "The organization can only be assigned the role of a data editor"
 msgid "Naudotojui išsiųstas laiškas dėl registracijos"
 msgstr "The user has been sent an email for registration"
 
-#, python-brace-format
-msgid ""
-"Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-"Data field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
-"the model metadata visibility level \"{2}\". "
-
 msgid ""
 "Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
 "aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "

@@ -172,7 +172,7 @@ def test_update_model_visibility_from_property(model_visibility, property_visibi
 
 
 @pytest.mark.parametrize(
-    "model_visibility, property_visibility, enum_visibility, expected_model, expected_property",
+    "model_visibility, property_visibility, enum_visibility, expected_model_visibility, expected_property_visibility",
     [
         ("private", "private", "public", "public", "public"),
         ("private", "private", "protected", "protected", "protected"),

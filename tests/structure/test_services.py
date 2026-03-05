@@ -2607,9 +2607,12 @@ def test_structure_with_enum_level_higher_then_property(app: DjangoTestApp):
     create_structure_objects(structure)
     model = Model.objects.get(metadata__uuid="3")
     property = Property.objects.get(metadata__uuid="5")
-    property_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(property), object_id=property.pk)
-    assert property_enum.visibility == property.visibility
-    assert property_enum.visibility == model.visibility
+    property_enum = Enum.objects.get(content_type=ContentType.objects.get_for_model(Property), object_id=property.pk)
+
+    enum_item_visibility = property_enum.enumitem_set.values_list("metadata__visibility", flat=True).first()
+
+    assert enum_item_visibility == property.visibility
+    assert enum_item_visibility == model.visibility
 
 
 @pytest.mark.django_db
@@ -2630,9 +2633,10 @@ def test_structure_with_enum_level_higher_then_model(app: DjangoTestApp):
     create_structure_objects(structure)
     model = Model.objects.get(metadata__uuid="3")
     property = Property.objects.get(metadata__uuid="5")
-    property_enum = Enum.objects.filter(content_type=ContentType.objects.get_for_model(property), object_id=property.pk)
-    assert property_enum.visibility == property.visibility
-    assert property_enum.visibility == model.visibility
+    property_enum = Enum.objects.get(content_type=ContentType.objects.get_for_model(Property), object_id=property.pk)
+
+    enum_item_visibility = property_enum.enumitem_set.values_list("metadata__visibility", flat=True).first()
+    assert enum_item_visibility == model.visibility
 
 
 @pytest.mark.django_db

@@ -14,7 +14,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('vitrina_uapi', '0006_remove_agent_agent_address_and_more'),
-        ('vitrina_datasets', '0039_dataset_agent'),
+        ('vitrina_datasets', '0040_dataset_agent'),
     ]
 
     operations = [

@@ -60,6 +60,10 @@ https://github.com/atviriduomenys/katalogas/issues/2349
 
 - Fix issues with Base row not being linked correctly, if model is imported with one manifest and referenced with base with another.
 
+https://github.com/atviriduomenys/katalogas/issues/2434
+
+- Added metadata field for dataset when creating through post request
+
 v 1.15.0 (2026-02-27)
 ==================
 

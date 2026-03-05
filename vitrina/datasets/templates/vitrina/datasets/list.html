@@ -178,6 +178,7 @@
 
             {% for i in page_obj %}
             {% get_current_language as LANGUAGE_CODE %}
+                {% if i.object %}
                 <article class="media adp-media is-block">
                     <div class="columns">
                         {% define i.object.get_icon as icon %}
@@ -300,6 +301,7 @@
                         </div>
                     </div>
                 </article>
+                {% endif %}
             {% endfor %}
             <br/>
             {% include "vitrina/common/pagination.html" %}

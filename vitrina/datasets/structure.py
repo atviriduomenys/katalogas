@@ -809,13 +809,6 @@ def _read_enum(
 
     enum.meta = last
 
-    # If string enum prepare is empty, use source as prepare value
-    if enum.prepare == "" and getattr(enum.meta, "type") == "string":
-        enum.prepare = f'"{enum.source}"'
-
-    if enum.prepare == "":
-        enum.errors.append(_(f'Duomenų reikšmė (source: "{enum.source}") privalo turėti nurodytą "prepare" stulpelį.'))
-
     _update_parent_visibility_from_enum(state, enum)
 
     if enum.meta.enums.get(name):

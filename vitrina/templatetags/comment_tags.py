@@ -1,6 +1,10 @@
+from typing import Any
+
 from django import template
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Q
+from django.utils.functional import SimpleLazyObject
 
 from vitrina.comments.forms import CommentForm
 from vitrina.comments.models import Comment
@@ -13,25 +17,33 @@ from vitrina.orgs.services import has_perm, Action
 from vitrina.requests.models import Request, RequestAssignment
 from vitrina.structure.models import Metadata, Model, Property
 
+
 register = template.Library()
 assignment_tag = getattr(register, "assignment_tag", register.simple_tag)
 
 
 @register.inclusion_tag("component/comments.html")
-def comments(obj, user, is_structure=False):
-    content_type = ContentType.objects.get_for_model(obj)
-    obj_comments = Comment.objects.filter(content_type=content_type, object_id=obj.pk, parent_id__isnull=True).order_by(
-        "-created"
-    )
+def comments(obj: "Model", user: SimpleLazyObject, is_structure: bool = False) -> dict[str, Any]:
+    object_content_type = ContentType.objects.get_for_model(obj)
+
+    query_filters = Q(content_type=object_content_type, object_id=obj.pk)
+    if isinstance(obj, Model) and obj.base:
+        base_obj = obj.base
+        base_content_type = ContentType.objects.get_for_model(base_obj)
+        query_filters |= Q(content_type=base_content_type, object_id=base_obj.pk)
+
+    object_comments = Comment.objects.filter(query_filters, parent_id__isnull=True).order_by("-created")
+
     if is_structure:
         can_manage_structure = has_perm(user, Action.STRUCTURE, Dataset, obj)
         if not can_manage_structure:
-            obj_comments = obj_comments.exclude(type=Comment.STRUCTURE, metadata__access__lt=Metadata.PUBLIC)
+            object_comments = object_comments.exclude(type=Comment.STRUCTURE, metadata__access__lt=Metadata.PUBLIC)
+
     comment_form_class = get_comment_form_class(obj, user)
     is_opened = obj.is_opened() if hasattr(obj, "is_opened") else None
 
     comments_array = []
-    for comment in obj_comments:
+    for comment in object_comments:
         if has_comment_view_perm(comment, obj, user):
             descendants = comment.descendants(include_self=True, permission=True)
             for reply in descendants:
@@ -43,7 +55,7 @@ def comments(obj, user, is_structure=False):
     return {
         "comments": comments_array,
         "user": user,
-        "content_type": content_type,
+        "content_type": object_content_type,
         "object": obj,
         "comment_form": comment_form_class(obj, is_opened=is_opened),
         "submit_button_id": "id_submit_button_request" if isinstance(obj, Request) else "id_submit_button",

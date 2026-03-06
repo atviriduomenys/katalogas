@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-04 09:29+0200\n"
+"POT-Creation-Date: 2026-03-06 10:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -52,9 +55,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -1054,6 +1054,16 @@ msgstr "Dataset relations"
 msgid "Duomenų ištekliaus poklasis"
 msgstr "Resource subclass"
 
+msgid "Agentas"
+msgstr "Agent"
+
+msgid ""
+"Duomenų publikavimo paslaugą teikiantis agentas. Atitinka "
+"prov:SoftwareAgent, schema:SoftwareApplication."
+msgstr ""
+"The agent providing the data publishing service. Corresponds to "
+"prov:SoftwareAgent, schema:SoftwareApplication."
+
 msgid "API formatas"
 msgstr "API format"
 
@@ -1169,9 +1179,6 @@ msgstr "Relation identification"
 
 msgid "Priskyrimo rūšis"
 msgstr "Attribution type"
-
-msgid "Agentas"
-msgstr "Agent"
 
 msgid "Apibūdinimas"
 msgstr "Description"
@@ -5378,12 +5385,11 @@ msgstr "Testing"
 msgid "Gamybinė"
 msgstr "Production"
 
-msgid ""
-"Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "
-"publikuojami Saugykloje\"."
-msgstr ""
-"This field is required if the property \"Open data is published in Open Data "
-"Repository\" is ticked."
+msgid "Agento aplinka"
+msgstr "Agent environment."
+
+msgid "Agento aplinkos"
+msgstr "Agent environments"
 
 msgid ""
 "Agentas su tokiu pavadinimu jau registruotas organizacijoje, pasirinkite "
@@ -5393,18 +5399,11 @@ msgstr ""
 "different name"
 
 msgid ""
-"Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."
-msgstr "Date when the last synchronization was attempted"
-
-msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
-msgstr "Was last synchronization successful?"
-
-msgid ""
-"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
-"klaidų."
+"Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "
+"publikuojami Saugykloje\"."
 msgstr ""
-"Indicates whether the last synchronization was successful, i.e. if no errors "
-"were raised during it"
+"This field is required if the property \"Open data is published in Open Data "
+"Repository\" is ticked."
 
 msgid "Nurodomas Agento pavadinimas."
 msgstr "The agent's title"
@@ -5419,28 +5418,6 @@ msgid ""
 "Nurodoma Agento rūšis t.y. ar bus naudojama \"Spinta\" ar kitas sprendimas."
 msgstr "Agent type, if \"Spinta\" or a different solution is used."
 
-msgid "Atviri duomenys publikuojami Saugykloje"
-msgstr "Open data is published in Open Data Repository"
-
-msgid ""
-"Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų "
-"duomenų Saugyklą."
-msgstr ""
-"Specifies if the Agent additionally publishes `access=open` data to Open "
-"Data Repository"
-
-msgid "Atvirų duomenų publikavimo nuoroda"
-msgstr "Open data publish URL"
-
-msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
-msgstr "URL, where open data is published to"
-
-msgid "Agentas įjungtas"
-msgstr "Agent is enabled"
-
-msgid "Nurodoma, ar Agentas yra įjungtas ar išjungtas."
-msgstr "Indicates whether the agent is enabled or disabled"
-
 msgid "Agentas archyvuotas"
 msgstr "Agent is archived"
 
@@ -5451,12 +5428,38 @@ msgstr ""
 "Indicates, whether the Agent is archived. Archived agents are not available "
 "to regular platform users"
 
-msgid "Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService."
-msgstr ""
-"The data service associated with the agent. Corresponds to DCAT:DataService."
-
 msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
-msgstr "The organization to which the agent is assigned"
+msgstr "The organization to which the agent is assigned."
+
+msgid ""
+"Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."
+msgstr "Date when the last synchronization was attempted."
+
+msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
+msgstr "Was last synchronization successful?"
+
+msgid ""
+"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
+"klaidų."
+msgstr ""
+"Indicates whether the last synchronization was successful, i.e. if no errors "
+"were raised during it."
+
+msgid "Atviri duomenys publikuojami Saugykloje"
+msgstr "Open data is published in Open Data Repository"
+
+msgid ""
+"Nurodo, ar agento aplinka papildomai publikuoja `access=open` duomenis į "
+"atvirų duomenų Saugyklą."
+msgstr ""
+"Specifies if the Agent additionally publishes `access=open` data to Open "
+"Data Repository"
+
+msgid "Atvirų duomenų publikavimo nuoroda"
+msgstr "Open data publish URL"
+
+msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
+msgstr "URL, where open data is published to"
 
 msgid "Autorizacijos kliento identifikatorius"
 msgstr "Authorization client identifier"
@@ -5469,8 +5472,8 @@ msgstr "If client identifier exists - agent can do requests to catalog"
 msgid "Aplinka"
 msgstr "Environment"
 
-msgid "Aplinka, kurioje diegiamas agentas."
-msgstr "The environment in which the agent is deployed."
+msgid "Aplinka, kurioje diegiamas fizinis agentas."
+msgstr "The environment in which the physical agent is deployed."
 
 msgid "Autorizacijos serverio adresas"
 msgstr "Authorization server address"
@@ -5496,8 +5499,21 @@ msgstr ""
 "address that the API gateway sees. If the API gateway is not specified, then "
 "an external agent address is specified"
 
-msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
-msgstr "The related data resource must be of type \"service\"."
+msgid "Agento aplinka įjungta"
+msgstr "Agent environemnt is enabled"
+
+msgid "Nurodoma, ar Agento aplinka yra įjungta ar išjungta."
+msgstr "Indicates whether the Agent environment is enabled or disabled."
+
+msgid "Agento aplinka archyvuota"
+msgstr "Agent environment is archived"
+
+msgid ""
+"Nurodo ar Agento aplinka yra archyvuota. Archyvuotos aplinkos nėra "
+"pasiekiamos įprastiems platformos vartotojams."
+msgstr ""
+"Indicates, whether the Agent environment is archived. Archived environments "
+"are not available to regular platform users."
 
 msgid "API galinis taškas"
 msgstr "API endpoint"
@@ -5535,14 +5551,32 @@ msgstr "Request history changes"
 msgid "Grįžti į agentus"
 msgstr "Go back"
 
-msgid "Įjungtas"
+msgid "Pridėti aplinką"
+msgstr "Add an environment"
+
+msgid "Nurodo ar aplinka yra įjungta/išjungta."
+msgstr "Indicates whether environment is enabled or disabled."
+
+msgid "Aplinka, kurioje diegiamas agentas."
+msgstr "The environment in which the physical agent is deployed."
+
+msgid "Data ir laikas, kada buvo atlikta paskutinė užklausa iš Agento."
+msgstr "Date and time, when the last request from the agent was made."
+
+msgid ""
+"Ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo klaidų?"
+msgstr ""
+"Indicates whether the last synchronization was successful, i.e. if no errors "
+"were raised during it."
+
+msgid "Galimi veiksmai su agento aplinka: žurnalas, redaguoti, pašalinti."
+msgstr "Available actions with the agent environment: journal, edit, remove."
+
+msgid "Įjungta"
 msgstr "Enabled"
 
-msgid "Išjungtas"
+msgid "Išjungta"
 msgstr "Disabled"
-
-msgid "Paskutinės sinchronizacijos rezultatas"
-msgstr "Date of last synchronization"
 
 msgid "Pavyko"
 msgstr "Success"
@@ -5553,11 +5587,26 @@ msgstr "Failure"
 msgid "Nevykdyta"
 msgstr "Not executed"
 
+msgid "Žurnalas"
+msgstr "Journal"
+
+msgid "Nėra registruotų agento aplinkų."
+msgstr "No registered agent environments."
+
+msgid "Grįžti į agentą"
+msgstr "Back to agent"
+
+msgid "Įjungtas"
+msgstr "Enabled"
+
+msgid "Išjungtas"
+msgstr "Disabled"
+
+msgid "Paskutinės sinchronizacijos rezultatas"
+msgstr "Result of last synchronization"
+
 msgid "Publikuojami atviri duomenys"
 msgstr "Open data is published"
-
-msgid "Atvirų duomenų servisas"
-msgstr "Open data service"
 
 msgid "Agento prisijungimo prie Katalogo konfigūracija"
 msgstr "Agent connection to the Catalog configuration"
@@ -5628,13 +5677,6 @@ msgstr "No requests were made"
 msgid "Pridėti agentą"
 msgstr "Add an Agent"
 
-msgid ""
-"Nurodo ar paskutinė sinchronizacija buvo sėkminga/nesėkminga. Taip pat, ar "
-"Agentas yra įjungtas/išjungtas."
-msgstr ""
-"Indicates whether the last synchronization was successful, i.e. if no errors "
-"were raised during it"
-
 msgid "Kodinis Pavadinimas"
 msgstr "Code name"
 
@@ -5650,25 +5692,13 @@ msgstr "Created"
 msgid "Data ir laikas, kada agentas buvo pridėtas į Katalogą."
 msgstr "Date and time, when the agent was added to the Catalogue"
 
-msgid "Data ir laikas, kada buvo atlikta paskutinė užklausa iš Agento."
-msgstr "Date and time, when the last request from the agent was made."
-
-msgid "Duomenų Paslauga"
-msgstr "Data service"
-
-msgid "Agentui priskirta duomenų paslauga."
-msgstr "The data service associated with the agent"
-
 msgid "Galimi veiksmai su agentu: žurnalas, redaguoti, pašalinti."
 msgstr "Available actions with the agent: journal, edit, remove."
-
-msgid "Žurnalas"
-msgstr "Journal"
 
 msgid "Nėra registruotų agentų."
 msgstr "No registered agents."
 
-msgid "Grįžti į agentą"
+msgid "Grįžti į agento aplinką"
 msgstr "Back to agent"
 
 msgid "Užklausos informacija"
@@ -5689,16 +5719,20 @@ msgstr "No errors"
 msgid "Pridėti Agentą"
 msgstr "Add an Agent"
 
-msgid ""
-"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei "
-"nenurodyta, duomenų paslauga bus sukurta automatiškai."
-msgstr ""
-"The data service associated with the Agent is specified. Corresponds to "
-"DCAT:DataService. If not specified, the data service will be created "
-"automatically."
+msgid "Agentas '{0}' sukurtas sėkmingai!"
+msgstr "Agent \"{0}\" created successfully."
 
-msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."
-msgstr "Data service automatically created with the agent."
+msgid "Redaguoti Agentą"
+msgstr "Edit agent"
+
+msgid "Agentas '{0}' atnaujintas sėkmingai!"
+msgstr "Agent \"{0}\" updated successfully"
+
+msgid "Agentas '{0}' pašalintas sėkmingai!"
+msgstr "Agent \"{0}\" deleted successfully"
+
+msgid "Aplinka '{0}' sukurta sėkmingai!"
+msgstr "Environment \"{0}\" created successfully."
 
 msgid ""
 "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį "
@@ -5712,22 +5746,29 @@ msgstr ""
 
 #, python-format
 msgid ""
-"Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento kūrimas "
-"nepavyko."
+"Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento aplinkos "
+"kūrimas nepavyko."
 msgstr ""
 "Failed to reach the authorization server (%(url)s), so creating the Agent "
-"failed."
+"environment failed."
 
 #, python-format
-msgid "Įvyko klaida, nepavyko sukurti agento. Klaida: %(exception)s"
+msgid "Įvyko klaida, nepavyko sukurti Agento aplinkos. Klaida: %(exception)s"
 msgstr ""
-"An error occurred; the agent could not be created. Error: %(exception)s"
+"An error occurred; the agent environment could not be created. Error: "
+"%(exception)s"
 
-msgid "Redaguoti Agentą"
-msgstr "Edit agent"
+msgid "Redaguoti aplinką"
+msgstr "Edit environment"
 
-msgid "Pašalinti Agentą"
-msgstr "Delete agent"
+msgid "'{0}' aplinka atnaujinta sėkmingai!"
+msgstr "\"{0}\" environment updated successfully"
+
+msgid "Ar tikrai norite ištrinti aplinką: {0}?"
+msgstr "Are you sure you want to delete environment: {0}?"
+
+msgid "'{0}' aplinka pašalinta sėkmingai!"
+msgstr "'{0}' environment deleted successfully!"
 
 msgid "Asmeninė informacija"
 msgstr "Personal information"

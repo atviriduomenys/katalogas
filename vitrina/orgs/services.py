@@ -27,7 +27,7 @@ from vitrina.resources.models import DatasetDistribution
 from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.models import Metadata, Model, Property, Enum as StructureEnum
 from vitrina.tasks.models import Task
-from vitrina.uapi.models import Agent
+from vitrina.uapi.models import Agent, AgentEnvironment
 from vitrina.users.models import User
 
 
@@ -374,6 +374,10 @@ acl: ACL = (
         (Agent, Action.VIEW): (Role.RESOURCE_COORDINATOR,),
         (Agent, Action.UPDATE): (Role.RESOURCE_COORDINATOR,),
         (Agent, Action.DELETE): (Role.RESOURCE_COORDINATOR,),
+        (AgentEnvironment, Action.CREATE): (Role.RESOURCE_COORDINATOR,),
+        (AgentEnvironment, Action.VIEW): (Role.RESOURCE_COORDINATOR,),
+        (AgentEnvironment, Action.UPDATE): (Role.RESOURCE_COORDINATOR,),
+        (AgentEnvironment, Action.DELETE): (Role.RESOURCE_COORDINATOR,),
         (Agreement, Action.CREATE): (Role.AUTHOR,),
         (Agreement, Action.VIEW): (Role.AUTHOR,),
         (Contact, Action.CREATE): (Role.RESOURCE_COORDINATOR, Role.OPEN_DATA_COORDINATOR),

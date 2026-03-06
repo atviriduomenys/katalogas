@@ -1,7 +1,8 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
-from django.urls import reverse
+from django.urls import reverse, resolve
 from django_webtest import DjangoTestApp
+from django.test import RequestFactory
 
 from vitrina.classifiers.factories import ConceptSchemaFactory, ConceptFactory
 from vitrina.classifiers.models import ConceptSchema
@@ -17,6 +18,8 @@ from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.factories import UserFactory
+from vitrina.uapi.factories import AgentFactory
+from vitrina.users.models import User
 
 pytestmark = pytest.mark.django_db
 
@@ -117,6 +120,23 @@ class TestServiceResourceForm:
         assert concept1 in form.fields["service_type"].queryset
         assert concept3 in form.fields["service_type"].queryset
         assert concept2 not in form.fields["service_type"].queryset
+
+    def test_correct_agents_appear_in_agent_selection(self, organization: Organization, user: User, rf: RequestFactory):
+        request = rf.get("/")
+        request.resolver_match = resolve("/")
+        request.user = user
+        form = ServiceResourceForm(request=request, organization=organization)
+
+        valid_agent = AgentFactory(organization=organization)
+        archived_agent = AgentFactory(organization=organization, is_archived=True)
+        different_org_agent = AgentFactory()
+
+        agents_queryset = form.fields["agent"].queryset
+
+        assert len(agents_queryset) == 1
+        assert valid_agent in agents_queryset
+        assert archived_agent not in agents_queryset
+        assert different_org_agent not in agents_queryset
 
 
 class TestCatalogResourceForm:

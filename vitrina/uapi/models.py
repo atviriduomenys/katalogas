@@ -1,25 +1,17 @@
-from django.db import models
+from django.db import models, transaction
 
 from vitrina.models import UUIDBaseModel
 from django.utils.text import slugify
-from django.core.exceptions import ValidationError
 from vitrina.uapi import AgentType, ChangedBy, ChangeType, PossibleResults, HTTPMethods, Environment
 from django.utils.translation import gettext_lazy as _
 
 
+class NotArchivedAgentManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        return super().get_queryset().filter(is_archived=False)
+
+
 class Agent(UUIDBaseModel):
-    synchronized_at = models.DateTimeField(
-        verbose_name=_("Paskutinės sinchronizacijos data"),
-        blank=True,
-        null=True,
-        help_text=_("Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."),
-    )
-    is_last_sync_successful = models.BooleanField(
-        verbose_name=_("Ar paskutinė sinchronizacija įvyko sėkmingai?"),
-        blank=True,
-        null=True,
-        help_text=_("Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo klaidų."),
-    )
     title = models.CharField(
         verbose_name=_("Pavadinimas"),
         max_length=255,
@@ -38,23 +30,6 @@ class Agent(UUIDBaseModel):
         default=AgentType.SPINTA,
         help_text=_('Nurodoma Agento rūšis t.y. ar bus naudojama "Spinta" ar kitas sprendimas.'),
     )
-    is_open_data_published = models.BooleanField(
-        verbose_name=_("Atviri duomenys publikuojami Saugykloje"),
-        default=False,
-        help_text=_("Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų duomenų Saugyklą."),
-    )
-    open_data_publish_url = models.URLField(
-        _("Atvirų duomenų publikavimo nuoroda"),
-        max_length=1024,
-        blank=True,
-        default="https://get.data.gov.lt/",
-        help_text=_("Nuoroda, kur turėtų būti publikuojami atviri duomenys."),
-    )
-    is_enabled = models.BooleanField(
-        verbose_name=_("Agentas įjungtas"),
-        default=False,
-        help_text=_("Nurodoma, ar Agentas yra įjungtas ar išjungtas."),
-    )
     is_archived = models.BooleanField(
         verbose_name=_("Agentas archyvuotas"),
         default=False,
@@ -62,17 +37,81 @@ class Agent(UUIDBaseModel):
             "Nurodo ar Agentas yra archyvuotas. Archyvuoti agentai nėra pasiekiami įprastiems platformos vartotojams"
         ),
     )
-    service = models.ForeignKey(
-        "vitrina_datasets.Dataset",
-        verbose_name=_("Duomenų paslauga"),
-        on_delete=models.CASCADE,
-        help_text=_("Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService."),
-    )
     organization = models.ForeignKey(
         "vitrina_orgs.Organization",
         verbose_name=_("Organizacija"),
         on_delete=models.CASCADE,
         help_text=_("Nurodoma organizacija, kuriai priskirtas Agentas."),
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["codename", "organization"],
+                condition=models.Q(is_archived=False),
+                name="unique_name_and_organization_for_not_archived_agents",
+            )
+        ]
+
+    def save(self, *args, **kwargs) -> None:
+        with transaction.atomic():
+            self.codename = self.get_codename(self.title)
+
+            if (update_fields := kwargs.get("update_fields")) and "title" in update_fields:
+                kwargs["update_fields"] = set(update_fields) | {"codename"}
+
+            super().save(*args, **kwargs)
+
+            if self.is_archived:
+                # Using loop and .save() on each instance so that django-reversion can pick it up.
+                for service in self.services.only("pk", "agent"):
+                    service.agent = None
+                    service.save(update_fields=["agent"])
+
+    def __str__(self) -> str:
+        return f"{self.title} ({self.codename})"
+
+    @staticmethod
+    def get_codename(title: str) -> str:
+        return slugify(title).replace("-", "_")
+
+    objects = models.Manager()
+    not_archived = NotArchivedAgentManager()
+
+
+class NotArchivedAgentEnvManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        not_archived_agent_ids = Agent.not_archived.values_list("pk", flat=True)
+        return super().get_queryset().filter(is_archived=False, agent_id__in=not_archived_agent_ids)
+
+
+class AgentEnvironment(UUIDBaseModel):
+    agent = models.ForeignKey(Agent, on_delete=models.CASCADE, verbose_name=_("Agentas"), related_name="environments")
+    synchronized_at = models.DateTimeField(
+        verbose_name=_("Paskutinės sinchronizacijos data"),
+        blank=True,
+        null=True,
+        help_text=_("Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."),
+    )
+    is_last_sync_successful = models.BooleanField(
+        verbose_name=_("Ar paskutinė sinchronizacija įvyko sėkmingai?"),
+        blank=True,
+        null=True,
+        help_text=_("Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo klaidų."),
+    )
+    is_open_data_published = models.BooleanField(
+        verbose_name=_("Atviri duomenys publikuojami Saugykloje"),
+        default=False,
+        help_text=_(
+            "Nurodo, ar agento aplinka papildomai publikuoja `access=open` duomenis į atvirų duomenų Saugyklą."
+        ),
+    )
+    open_data_publish_url = models.URLField(
+        _("Atvirų duomenų publikavimo nuoroda"),
+        max_length=1024,
+        blank=True,
+        default="https://get.data.gov.lt/",
+        help_text=_("Nuoroda, kur turėtų būti publikuojami atviri duomenys."),
     )
     oauth_client_id = models.CharField(
         verbose_name=_("Autorizacijos kliento identifikatorius"),
@@ -85,7 +124,7 @@ class Agent(UUIDBaseModel):
         max_length=32,
         choices=Environment.choices,
         default=Environment.DEVELOPMENT,
-        help_text=_("Aplinka, kurioje diegiamas agentas."),
+        help_text=_("Aplinka, kurioje diegiamas fizinis agentas."),
     )
     auth_server_url = models.URLField(
         verbose_name=_("Autorizacijos serverio adresas"),
@@ -99,50 +138,45 @@ class Agent(UUIDBaseModel):
         blank=True,
         help_text=_("Nurodomas API vartų serverio adresas."),
     )
-    agent_address = models.CharField(
+    agent_address = models.URLField(
         verbose_name=_("Agento adresas"),
         max_length=255,
-        blank=True,
         help_text=_(
             "Jei yra nurodytas vartų adresas, tada agento adresas yra vidinis adresas, kurį mato API vartai. Jei API vartai nenurodyti, tada yra nurodomas išorinis agento adresas"
         ),
     )
-
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=["codename", "organization"],
-                condition=models.Q(is_archived=False),
-                name="unique_name_and_organization_for_not_archived_agents",
-            )
-        ]
-
-    def save(self, *args, **kwargs) -> None:
-        self.codename = self.get_codename(self.title)
-
-        if (update_fields := kwargs.get("update_fields")) and "title" in update_fields:
-            kwargs["update_fields"] = set(update_fields) | {"codename"}
-
-        if not self.service.service:
-            raise ValidationError(_('Susietas duomenų išteklius turi būti "paslaugos" tipo.'))
-
-        return super().save(*args, **kwargs)
+    is_enabled = models.BooleanField(
+        verbose_name=_("Agento aplinka įjungta"),
+        default=False,
+        help_text=_("Nurodoma, ar Agento aplinka yra įjungta ar išjungta."),
+    )
+    is_archived = models.BooleanField(
+        verbose_name=_("Agento aplinka archyvuota"),
+        default=False,
+        help_text=_(
+            "Nurodo ar Agento aplinka yra archyvuota. Archyvuotos aplinkos nėra pasiekiamos įprastiems platformos vartotojams."
+        ),
+    )
 
     def __str__(self) -> str:
-        return f"{self.title} ({self.codename})"
+        return f"{self.agent.title} - {self.get_environment_display()}"
 
-    @staticmethod
-    def get_codename(title: str) -> str:
-        return slugify(title).replace("-", "_")
+    objects = models.Manager()
+    not_archived = NotArchivedAgentEnvManager()
 
-    @property
-    def global_codename(self) -> str:
-        return f"{self.codename}_{self.organization_id}"
+
+class VisibleRequestHistoryManager(models.Manager):
+    def get_queryset(self) -> models.QuerySet:
+        not_archived_env_ids = AgentEnvironment.not_archived.values_list("pk", flat=True)
+        return super().get_queryset().filter(agent_environment_id__in=not_archived_env_ids)
 
 
 class RequestHistory(UUIDBaseModel):
-    agent = models.ForeignKey(
-        "vitrina_uapi.Agent", on_delete=models.CASCADE, verbose_name=_("Agentas"), related_name="requesthistory"
+    agent_environment = models.ForeignKey(
+        "vitrina_uapi.AgentEnvironment",
+        on_delete=models.CASCADE,
+        verbose_name=_("Agento aplinka"),
+        related_name="requesthistory",
     )
     endpoint = models.CharField(max_length=255, verbose_name=_("API galinis taškas"))
     method = models.CharField(max_length=10, choices=HTTPMethods.choices, verbose_name=_("HTTP metodas"))
@@ -154,6 +188,9 @@ class RequestHistory(UUIDBaseModel):
     class Meta:
         verbose_name = _("Užklausų istorija")
         verbose_name_plural = _("Užklausų istorijos")
+
+    objects = models.Manager()
+    visible = VisibleRequestHistoryManager()
 
 
 class RequestHistoryChanges(UUIDBaseModel):

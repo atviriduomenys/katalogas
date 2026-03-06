@@ -57,6 +57,7 @@ from vitrina.plans.models import PlanDataset, Plan
 from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 from vitrina.projects.services import get_projects_linkable_to_dataset
+from vitrina.uapi.models import Agent
 
 
 class ResourceSubclassTypeField(ModelChoiceField):
@@ -446,6 +447,7 @@ class ServiceResourceForm(BaseResourceForm):
             "tags",
             "catalog",
             "frequency",
+            "agent",
             "access_rights",
             "endpoint_url",
             "endpoint_type",
@@ -471,6 +473,8 @@ class ServiceResourceForm(BaseResourceForm):
         self.fields["service_type"].label_from_instance = lambda obj: obj.safe_translation_getter(
             "label", any_language=True
         )
+        organization = self.organization if self.organization else self.instance.organization
+        self.fields["agent"].queryset = Agent.not_archived.filter(organization=organization)
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
@@ -481,6 +485,7 @@ class ServiceResourceForm(BaseResourceForm):
             Field("landing_page"),
             Field("catalog"),
             Field("frequency"),
+            Field("agent"),
             Field("endpoint_url"),
             Field("endpoint_type"),
             Field("endpoint_description"),

@@ -27,7 +27,7 @@ from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.models import Metadata, Version
 from vitrina.structure.services import create_structure_objects, export_dataset_structure
 from vitrina.uapi import HTTPMethods, PossibleResults
-from vitrina.uapi.models import Agent, RequestHistory
+from vitrina.uapi.models import AgentEnvironment, RequestHistory
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectListSerializer
 from vitrina.uapi.serializers.serializers import (
     UAPIDatasetSerializer,
@@ -37,7 +37,7 @@ from vitrina.uapi.serializers.serializers import (
     UAPIDatasetCreateSerializer,
     UAPIVersionSerializer,
     VersionQueryParameterSerializer,
-    UAPIAgentSerializer,
+    UAPIAgentEnvSerializer,
     ConnectionCheckSerializer,
 )
 from vitrina.uapi.utils.utils import extract_type_from_url
@@ -50,13 +50,15 @@ class ConnectionViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ViewSe
         serializer = ConnectionCheckSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
-        agent = get_object_or_404(
-            Agent, is_archived=False, organization=self.request.organization, oauth_client_id=self.request.auth["sub"]
+        agent_environment = get_object_or_404(
+            AgentEnvironment,
+            agent__organization=self.request.organization,
+            oauth_client_id=self.request.auth["sub"],
         )
         # TODO: Currently hard-coding the logging;
         #   Implement a better solution in the future: https://github.com/atviriduomenys/katalogas/issues/1896.
         RequestHistory.objects.create(
-            agent=agent,
+            agent_environment=agent_environment,
             endpoint=request.build_absolute_uri(),
             method=HTTPMethods(self.request.method.upper()),
             http_result=HTTPStatus.NO_CONTENT,
@@ -410,9 +412,8 @@ class AgentViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSe
 
     def get_queryset(self) -> QuerySet:
         jwt_subject = self.request.auth["sub"]
-        queryset = Agent.objects.filter(
-            is_archived=False,
-            organization=self.request.organization,
+        queryset = AgentEnvironment.not_archived.filter(
+            agent__organization=self.request.organization,
             oauth_client_id=jwt_subject,
         )
         return queryset
@@ -421,7 +422,7 @@ class AgentViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSe
         serializer = BaseObjectListSerializer(
             instance=self.get_queryset(),
             context=self.get_serializer_context(),
-            data_serializer_class=UAPIAgentSerializer,
+            data_serializer_class=UAPIAgentEnvSerializer,
             _type=extract_type_from_url(self.request.build_absolute_uri()),
         )
         return Response(serializer.data, status=status.HTTP_200_OK)

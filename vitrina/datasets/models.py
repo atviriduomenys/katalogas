@@ -42,6 +42,7 @@ from vitrina.structure import VersionStatus
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem, Version
 from vitrina.users.models import User
 from vitrina.datasets.tasks import update_applicable_legislation_description
+from vitrina.uapi.models import Agent
 
 logger = logging.getLogger(__name__)
 
@@ -410,6 +411,17 @@ class Dataset(Resource):
         models.PROTECT,
         verbose_name=_("Duomenų ištekliaus poklasis"),
         default=get_default_subclass,
+    )
+    agent = models.ForeignKey(
+        Agent,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Agentas"),
+        null=True,
+        blank=True,
+        related_name="services",
+        help_text=_(
+            "Duomenų publikavimo paslaugą teikiantis agentas. Atitinka prov:SoftwareAgent, schema:SoftwareApplication."
+        ),
     )
     endpoint_url = models.URLField(
         verbose_name=_("API adresas"),

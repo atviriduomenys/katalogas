@@ -43,7 +43,7 @@
             </li>
         {% endif %}
         {% if can_view_agents %}
-            <li class="{% if request.resolver_match.url_name in 'request-history, agent-list, agent-detail, agent-create, agent-update, agent-delete' %} is-active {% endif %}">
+            <li class="{% if request.resolver_match.url_name in 'request-history, agent-list, agent-detail, agent-create, agent-update, agent-delete, agent-env-create, agent-env-update, agent-env-detail' %} is-active {% endif %}">
                 <a href="{% url 'agent-list' organization.id %}">
                     {% translate "Agentai" %}
                 </a>

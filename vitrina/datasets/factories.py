@@ -24,7 +24,6 @@ from vitrina.datasets.models import (
     DatasetGroupCategoryUri,
 )
 from vitrina.structure.factories import MetadataFactory
-from vitrina.uapi.models import Agent
 
 MANIFEST = """\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count
@@ -252,22 +251,3 @@ class ContactFactory(DjangoModelFactory):
     content_type = factory.LazyAttribute(lambda o: ContentType.objects.get_for_model(o.organization))
     object_id = factory.SelfAttribute("organization.id")
     organization = factory.SubFactory(OrganizationFactory)
-
-
-class AgentFactory(DjangoModelFactory):
-    class Meta:
-        model = Agent
-        django_get_or_create = ("title",)
-
-    synchronized_at = factory.LazyFunction(timezone.now)
-    is_last_sync_successful = factory.Faker("boolean")
-    title = factory.Faker("company")
-    codename = factory.Faker("slug")
-    object_type = "SPINTA"
-    is_open_data_published = factory.Faker("boolean")
-    open_data_publish_url = "https://get.data.gov.lt/"
-    is_enabled = True
-    is_archived = False
-    service = factory.SubFactory(DatasetFactory, service=True)
-    organization = factory.SubFactory(OrganizationFactory)
-    oauth_client_id = factory.Faker("uuid4")

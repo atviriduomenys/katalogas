@@ -1,0 +1,328 @@
+{% extends "base.html" %}
+{% load i18n %}
+
+{% block current_title %}
+    {% include "component/page_title.html" %}
+{% endblock %}
+
+{% block content %}
+{% include 'vitrina/orgs/tabs.html' %}
+
+<p>
+        <a href="{% url 'agent-detail' organization.pk agent_environment.agent.pk %}">
+            ← {% translate "Grįžti į agentą" %}
+        </a>
+    </p>
+    <br>
+
+    <div class="box is-max-desktop has-background-light">
+        <div class="is-flex is-align-items-center mb-4">
+            <div>
+                <p class="title is-5 mb-1">{{ agent_environment }}</p>
+                <p class="is-size-7 has-text-grey">
+                    {% translate "Sukurta" %}: <strong>{{ agent_environment.created_at|date:"Y-m-d H:i" }}</strong> |
+                    {% translate "Atnaujinta" %}: <strong>{{ agent_environment.updated_at|date:"Y-m-d H:i" }}</strong>
+                </p>
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Būsena" %}:</div>
+            <div class="column is-7">
+                {% if agent_environment.is_enabled %}
+                    <span class="tag is-success is-light">{% translate "Įjungtas" %}</span>
+                {% else %}
+                    <span class="tag is-danger is-light">{% translate "Išjungtas" %}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Agento adresas" %}:</div>
+            <div class="column is-7">{{ agent_environment.agent_address }}</div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Autorizacijos serverio adresas" %}:</div>
+            <div class="column is-7">{{ agent_environment.auth_server_url }}</div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "API vartų serverio adresas" %}:</div>
+            <div class="column is-7">{{ agent_environment.api_gate_server_url }}</div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos rezultatas" %}:</div>
+            <div class="column is-7">
+                {% if agent_environment.is_last_sync_successful %}
+                    <span class="tag is-success is-light">{% translate "Pavyko" %}</span>
+                {% elif agent_environment.is_last_sync_successful == False %}
+                    <span class="tag is-danger is-light">{% translate "Nepavyko" %}</span>
+                {% else %}
+                    <span class="tag is-info is-light">{% translate "Nevykdyta" %}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Paskutinės sinchronizacijos data" %}:</div>
+            <div class="column is-7">
+                {% if agent_environment.synchronized_at %}
+                    {{ agent_environment.synchronized_at|date:"Y-m-d H:i" }}
+                {% else %}
+                    <span class="has-text-grey">—</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Publikuojami atviri duomenys" %}:</div>
+            <div class="column is-7">
+                {% if agent_environment.is_open_data_published %}
+                    <span class="tag is-success is-light">{% translate "Taip" %}</span>
+                {% else %}
+                    <span class="tag is-danger is-light">{% translate "Ne" %}</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="columns is-mobile mb-1">
+            <div class="column is-3 has-text-weight-semibold">{% translate "Atvirų duomenų publikavimo nuoroda" %}:</div>
+            <div class="column is-7">
+                {% if agent_environment.open_data_publish_url %}
+                    <a href="{{ agent_environment.open_data_publish_url }}" class="has-text-link" target="_blank">
+                        {{ agent_environment.open_data_publish_url }}
+                    </a>
+                {% else %}
+                    <span class="has-text-grey">—</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <hr>
+
+    {% if agent_environment.agent.object_type == "SPINTA" %}
+        <p><strong>credentials.cfg</strong></p>
+        <div class="columns is-align-items-start mb-5 mt-4">
+            <div class="column is-5">
+                <div class="has-background-info-light p-4">
+                    <p class="mb-2">
+                      <span class="has-text-info has-text-weight-bold">
+                        <i class="fas fa-info-circle"></i>
+                        {% translate "Agento prisijungimo prie Katalogo konfigūracija" %}
+                      </span>
+                    </p>
+                    <p class="mt-0">
+                        {% translate "Norint publikuoti duomenis į Saugyklą per Katalogą, būtina užregistruoti agentą – specialų techninį klientą, kuris gauna teisę rašyti duomenis į konkrečią vardų erdvę." %}
+                        <br>
+                        {% translate "Užregistravus Agentą būtina sukonfigūruoti jo prisijungimo duomenis, kitaip Agentas negalės pasiekti saugyklos." %}
+                        <br><br>
+                        <a href="https://atviriduomenys.readthedocs.io/agentas.html#agento-prisijungimas-prie-katalogo-spinta-konfiguracija">
+                            📖 {% translate "Daugiau apie credentials.cfg" %}
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-7">
+                <div class="has-background-light is-relative px-4 py-3" style="position: relative;">
+                    <button onclick="copyToClipboard('credentials-text')"
+                            class="button is-light is-small"
+                            style="position: absolute; top: 0.75rem; right: 0.75rem; z-index: 10;">
+                        <span class="icon is-small"><i class="fas fa-copy"></i></span>
+                        <span>Kopijuoti</span>
+                    </button>
+                    <pre style="overflow-x: auto; margin-bottom: 0;">
+                        <code id="credentials-text">
+[default]
+server = {{ auth_server_host }}
+resource_server = {{ resource_server_host }}
+organization = {{ organization.name }}
+organization_type = {{ organization.kind }}
+client_id = {{ agent_environment.oauth_client_id }}
+client = {{ agent_environment.oauth_client_id }}
+secret = {{ secret|default:"******" }}
+scopes =
+{% for scope in scopes %}    {{ scope }}
+{% endfor %}
+                        </code>
+                    </pre>
+                </div>
+            </div>
+        </div>
+        <hr>
+        <p><strong>config.yml</strong></p>
+        <div class="columns is-align-items-start mb-5 mt-4">
+            <div class="column is-5">
+                <div class="has-background-info-light p-4">
+                    <p class="mb-2">
+                      <span class="has-text-info has-text-weight-bold">
+                        <i class="fas fa-info-circle"></i>
+                        {% translate "Agento prisijungimo prie Duomenų šaltinio konfigūracija" %}
+                      </span>
+                    </p>
+                    <p class="mt-0">
+                        {% translate "Konfigūracijos failas, kuriame nurodomi prisijungimo parametrai, kurie nebuvo nurodyti struktūros apraše." %}
+                        <br><br>
+                        <a href="https://atviriduomenys.readthedocs.io/spinta.html?highlight=config%20yml#config-yml">
+                            📖 {% translate "Daugiau apie config.yml" %}
+                        </a>
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-7">
+                <div class="has-background-light is-relative px-4 py-3" style="position: relative;">
+                    <button onclick="copyToClipboard('config-text')"
+                            class="button is-light is-small"
+                            style="position: absolute; top: 0.75rem; right: 0.75rem; z-index: 10;">
+                        <span class="icon is-small"><i class="fas fa-copy"></i></span>
+                        <span>Kopijuoti</span>
+                    </button>
+                    <pre style="overflow-x: auto; margin-bottom: 0;">
+                        <code id="config-text">
+backends:
+    AR:
+        type: sql
+        dsn: sqlite:///sqlite.db
+                        </code>
+                    </pre>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <p><strong>Slaptas raktas</strong></p>
+        <div class="columns is-align-items-start mb-5 mt-4">
+            <div class="column is-5">
+                <div class="has-background-info-light p-4">
+                    <p class="mb-2">
+                        <span class="has-text-info has-text-weight-bold">
+                            <i class="fas fa-info-circle"></i>
+                            {% translate "Slaptas raktas" %}
+                        </span>
+                    </p>
+                    <p class="mt-0">
+                        {% translate "Šis raktas rodomas tik vieną kartą po Agento sukūrimo. Išsisaugokite jį saugiai – jis naudojamas autentifikacijai jungiantis prie API." %}
+                    </p>
+                </div>
+            </div>
+
+            <div class="column is-7">
+                <div class="has-background-light box p-4">
+                    <div class="is-flex is-align-items-center is-justify-content-space-between is-flex-wrap-wrap">
+                        {% if secret %}
+                            <code id="api-key-text"
+                                  class="has-text-dark is-family-monospace mr-4">{{ secret }}</code>
+                            <button onclick="copyToClipboard('api-key-text')"
+                                    class="button is-light is-small mt-2-mobile">
+                                <span class="icon is-small"><i class="fas fa-copy"></i></span>
+                                <span>{% translate "Kopijuoti" %}</span>
+                            </button>
+                        {% else %}
+                            <code id="api-key-text" class="has-text-dark is-family-monospace mr-4">******</code>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+    <hr>
+
+{% if request_history %}
+    <p class="is-size-4 has-text-weight-bold mb-3">{% translate "Užklausų istorija" %}</p>
+        <table class="table is-fullwidth">
+            <thead class="has-background-light">
+            <tr>
+                <th>
+                    {% translate "Data ir laikas" %}
+                </th>
+                <th>
+                    {% translate "Tipas" %}
+                </th>
+                <th>
+                    {% translate "Adresas" %}
+                </th>
+                <th>
+                    {% translate "Rezultatas" %}
+                <th>
+                    {% translate "Informacija" %}
+                </th>
+                <th>
+                    {% translate "Klaidos pranešimas" %}
+                </th>
+            </tr>
+            </thead>
+
+            <tbody>
+                {% for request in request_history %}
+                    <tr>
+                        <td class="has-text-info has-text-weight-semibold is-size-6">
+                            <a href="{% url 'request-history' organization.pk request.pk %}">
+                                {{ request.created_at|date:"Y-m-d H:i" }}
+                            </a>
+                        </td>
+                        <td>{{ request.method }}</td>
+                        <td title="{{ request.endpoint }}">{{ request.endpoint|truncatechars:20 }}</td>
+                        <td>
+                            {% if request.result in "UPDATED STATUS_ALIVE UPDATED_WITHOUT_CHANGES UPDATED_WITH_CONFLICT" %}
+                                <span class="has-text-success">
+                                    <i class="fas fa-check-circle"></i>
+                                    {% translate "Sėkminga" %}
+                                </span>
+                            {% else %}
+                                <span class="has-text-danger">
+                                    <i class="fas fa-exclamation-circle"></i>
+                                    {% translate "Nesėkminga" %}
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if request.details %}
+                                {{ request.details|truncatechars:20 }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td class="has-text-info has-text-weight-semibold is-size-6">
+                            {% if request.error %}
+                            <a href="{% url 'request-history' organization.pk request.pk %}">
+                                {% translate "Klaidos" %}
+                                    <span class="icon is-small ml-1">
+                                        <i class="fas fa-external-link-alt"></i>
+                                    </span>
+                                </a>
+                            {% else %}
+                                <span class="tag is-success is-light">
+                                    {% translate "Nėra klaidų" %}
+                                </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% include "vitrina/common/pagination.html" %}
+
+    {% else %}
+        <p><em>{% translate "Nė viena užklausa dar nebuvo įvykdyta." %}</em></p>
+    {% endif %}
+
+
+<p class="is-flex is-justify-content-flex-end">
+    <a href="{% url 'agent-detail' organization.pk agent_environment.agent.pk %}">
+        ← {% translate "Grįžti į agentą" %}
+    </a>
+</p>
+
+
+<script>
+        function copyToClipboard(id) {
+            const el = document.getElementById(id);
+            const text = el.innerText || el.textContent;
+            navigator.clipboard.writeText(text);
+        }
+    </script>
+
+{% endblock %}

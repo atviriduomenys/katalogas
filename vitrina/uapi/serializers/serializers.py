@@ -3,7 +3,7 @@ from rest_framework import serializers
 from vitrina.api.serializers import DatasetSerializer, DatasetDistributionSerializer, PostDatasetSerializer
 from vitrina.datasets.models import DCATResourceSubclass
 from vitrina.structure.models import Version
-from vitrina.uapi.models import Agent
+from vitrina.uapi.models import AgentEnvironment
 from vitrina.uapi.serializers.uapi_serializers import BaseObjectMixin, BaseUUIDObjectMixin
 
 
@@ -11,9 +11,15 @@ class ConnectionCheckSerializer(serializers.Serializer):
     spinta_version = serializers.CharField(required=False, max_length=50)
 
 
-class UAPIAgentSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
+class UAPIAgentEnvSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
+    title = serializers.CharField(source="agent.title", read_only=True)
+    codename = serializers.CharField(source="agent.codename", read_only=True)
+    object_type = serializers.CharField(source="agent.object_type", read_only=True)
+    organization = serializers.IntegerField(source="agent.organization.id", read_only=True)
+    services = serializers.PrimaryKeyRelatedField(source="agent.services", many=True, read_only=True)
+
     class Meta:
-        model = Agent
+        model = AgentEnvironment
         fields = (
             "synchronized_at",
             "is_last_sync_successful",
@@ -23,7 +29,7 @@ class UAPIAgentSerializer(BaseUUIDObjectMixin, serializers.ModelSerializer):
             "is_open_data_published",
             "open_data_publish_url",
             "is_enabled",
-            "service",
+            "services",
             "organization",
             "oauth_client_id",
             "environment",

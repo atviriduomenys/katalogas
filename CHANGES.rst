@@ -28,6 +28,8 @@ Security: Fix open Dependabot vulnerability alerts across pip and npm dependenci
 - Bump brotli to 1.2.0 (DoS via malicious decompression).
 - Bump djangorestframework to 3.16.1 (XSS).
 - Bump django-select2 to 8.4.8 (secret cache key leakage).
+- Bump Django from 4.2.28 to 4.2.29 (uncontrolled resource consumption, race condition).
+- Bump immutable from 5.1.4 to 5.1.5 (prototype pollution).
 - Replace node-sass with Dart Sass to fix transitive npm vulnerabilities (minimatch, tar).
 - Bump webpack to 5.105.3 (SSRF via HTTP redirects).
 - Remove lodash (prototype pollution).

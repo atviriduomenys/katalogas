@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-04 16:48+0200\n"
+"POT-Creation-Date: 2026-03-06 10:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -5385,7 +5385,6 @@ msgstr "Testing"
 msgid "Gamybinė"
 msgstr "Production"
 
-
 msgid "Agento aplinka"
 msgstr "Agent environment."
 
@@ -5513,8 +5512,8 @@ msgid ""
 "Nurodo ar Agento aplinka yra archyvuota. Archyvuotos aplinkos nėra "
 "pasiekiamos įprastiems platformos vartotojams."
 msgstr ""
-"Indicates, whether the Agent environment is archived. Archived environments are not available "
-"to regular platform users."
+"Indicates, whether the Agent environment is archived. Archived environments "
+"are not available to regular platform users."
 
 msgid "API galinis taškas"
 msgstr "API endpoint"
@@ -5558,7 +5557,7 @@ msgstr "Add an environment"
 msgid "Nurodo ar aplinka yra įjungta/išjungta."
 msgstr "Indicates whether environment is enabled or disabled."
 
-msgid "Aplinka, kurioje diegiamas fizinis agentas."
+msgid "Aplinka, kurioje diegiamas agentas."
 msgstr "The environment in which the physical agent is deployed."
 
 msgid "Data ir laikas, kada buvo atlikta paskutinė užklausa iš Agento."
@@ -5720,8 +5719,20 @@ msgstr "No errors"
 msgid "Pridėti Agentą"
 msgstr "Add an Agent"
 
+msgid "Agentas '{0}' sukurtas sėkmingai!"
+msgstr "Agent \"{0}\" created successfully."
+
 msgid "Redaguoti Agentą"
 msgstr "Edit agent"
+
+msgid "Agentas '{0}' atnaujintas sėkmingai!"
+msgstr "Agent \"{0}\" updated successfully"
+
+msgid "Agentas '{0}' pašalintas sėkmingai!"
+msgstr "Agent \"{0}\" deleted successfully"
+
+msgid "Aplinka '{0}' sukurta sėkmingai!"
+msgstr "Environment \"{0}\" created successfully."
 
 msgid ""
 "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį "
@@ -5733,6 +5744,7 @@ msgstr ""
 "only this one time! If you selected the \"Spinta\" type, the key is shown "
 "next to the \"secret\" column in the credentials.cfg file example."
 
+#, python-format
 msgid ""
 "Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento aplinkos "
 "kūrimas nepavyko."
@@ -5740,12 +5752,23 @@ msgstr ""
 "Failed to reach the authorization server (%(url)s), so creating the Agent "
 "environment failed."
 
+#, python-format
 msgid "Įvyko klaida, nepavyko sukurti Agento aplinkos. Klaida: %(exception)s"
 msgstr ""
-"An error occurred; the agent environment could not be created. Error: %(exception)s"
+"An error occurred; the agent environment could not be created. Error: "
+"%(exception)s"
 
 msgid "Redaguoti aplinką"
 msgstr "Edit environment"
+
+msgid "'{0}' aplinka atnaujinta sėkmingai!"
+msgstr "\"{0}\" environment updated successfully"
+
+msgid "Ar tikrai norite ištrinti aplinką: {0}?"
+msgstr "Are you sure you want to delete environment: {0}?"
+
+msgid "'{0}' aplinka pašalinta sėkmingai!"
+msgstr "'{0}' environment deleted successfully!"
 
 msgid "Asmeninė informacija"
 msgstr "Personal information"

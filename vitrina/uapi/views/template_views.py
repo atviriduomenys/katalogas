@@ -243,7 +243,7 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
 
         context.update(
             {
-                "page_title": {"title": self.object.get_environment_display(), "object_type": _("Aplinka")},
+                "page_title": {"title": self.object, "object_type": _("Aplinka")},
                 "page_obj": page,
                 "information_system": "",  # TODO: This will be added once Agent is not related to org. Add to template.
                 "information_subsystem": "",  # TODO: This will be added once Agent is not related to org. Add to template.

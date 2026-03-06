@@ -18,7 +18,7 @@
     <div class="box is-max-desktop has-background-light">
         <div class="is-flex is-align-items-center mb-4">
             <div>
-                <p class="title is-5 mb-1">{{ agent_environment.get_environment_display }}</p>
+                <p class="title is-5 mb-1">{{ agent_environment }}</p>
                 <p class="is-size-7 has-text-grey">
                     {% translate "Sukurta" %}: <strong>{{ agent_environment.created_at|date:"Y-m-d H:i" }}</strong> |
                     {% translate "Atnaujinta" %}: <strong>{{ agent_environment.updated_at|date:"Y-m-d H:i" }}</strong>

@@ -5778,7 +5778,7 @@ files = [
 
 [[package]]
 name = "spinta"
-version = "0.2dev17"
+version = "0.2dev18"
 description = "A platform for describing, extracting, transforming, loading and serving open data."
 optional = false
 python-versions = "^3.10"
@@ -5850,7 +5850,7 @@ migrations = ["alembic (>=1.11.0,<1.12.0)"]
 type = "git"
 url = "https://github.com/atviriduomenys/spinta.git"
 reference = "ft/2299-export-openapi-versions-refs"
-resolved_reference = "db76b8a6aa59fe151601b526a3b88033becd807f"
+resolved_reference = "29a974d9d6078cb11523baecbdfdb1f0d0d07d2c"
 
 [[package]]
 name = "sqlalchemy"
@@ -6894,4 +6894,4 @@ files = [
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.11"
-content-hash = "db9d932ba3bf52ed67f354c0604d12040b9fca6f027182a06770451e55dabfd7"
+content-hash = "aeb8a9faeef36642e4aea78d5ae8c723bf2b86ac692de31f935f24ded7d6f8a9"

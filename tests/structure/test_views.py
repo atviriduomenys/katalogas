@@ -4558,8 +4558,6 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     expected_schemas = {
         "Country",
         "CountryCollection",
-        "CountryChange",
-        "CountryChanges",
     }
     assert expected_schemas <= schemas, f"Missing required schemas: {expected_schemas - schemas}"
 
@@ -4571,7 +4569,6 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     model_paths = {
         "/datasets/gov/ivpk/adp/Country",
         "/datasets/gov/ivpk/adp/Country/{id}",
-        "/datasets/gov/ivpk/adp/Country/:changes/{cid}",
     }
     expected_paths = utility_paths | model_paths
     actual_paths = set(openapi_spec["paths"].keys())

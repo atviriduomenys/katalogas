@@ -3,10 +3,12 @@ from django.contrib.contenttypes.models import ContentType
 from django.db import models
 from django.urls import reverse
 from django.utils.safestring import mark_safe
+from django.utils.html import escape
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.comments.managers import PublicCommentManager
 from vitrina.requests.models import Request
+from vitrina.structure.models import Metadata
 
 
 class Comment(models.Model):
@@ -132,6 +134,18 @@ class Comment(models.Model):
             body_text = mark_safe(
                 f'Įtraukta į planą <a href="{self.rel_content_object.get_absolute_url()}">{self.rel_content_object}</a>'
             )
+        elif self.type == self.STRUCTURE:
+            body_text = _("""Struktūros importavimo metu sukurtas sisteminis komentaras.<br>
+                <b>Objektas:</b> {content_type} | {content_object}<br>
+                <b>Parengimas:</b> <pre><code>{prepare}</code></pre><br>
+                <b>Nuoroda:</b> <a href="{uri}">{uri}</a>
+            """).format(
+                content_type=str(self.content_type).split("|")[-1] if self.content_type else None,
+                content_object=self.content_object,
+                prepare=escape(self.prepare),
+                uri=escape(self.uri),
+            )
+            return mark_safe(body_text)
         else:
             body_text = self.body
         return body_text
@@ -145,6 +159,17 @@ class Comment(models.Model):
 
     def is_error(self):
         return self.type == self.STRUCTURE_ERROR
+
+    def _get_structure_metadata(self) -> Metadata | None:
+        return self.metadata.first() if self.type == self.STRUCTURE and self.metadata.exists() else None
+
+    @property
+    def prepare(self) -> str | None:
+        return meta.prepare if (meta := self._get_structure_metadata()) else None
+
+    @property
+    def uri(self) -> str | None:
+        return meta.uri if (meta := self._get_structure_metadata()) else None
 
 
 # TODO: To be removed.

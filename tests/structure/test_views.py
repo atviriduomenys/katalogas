@@ -991,8 +991,12 @@ def test_private_comment(app: DjangoTestApp):
     structure.dataset.save()
     version = create_structure_objects(structure)
 
-    resp = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
-    assert sorted([comment.body for comment, _, _ in resp.context["comments"]]) == ["Public comment"]
+    response = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
+
+    assert response.status_code == HTTPStatus.OK
+    comments = [comment_data[0] for comment_data in response.context["comments"]]
+    assert len(comments) == 1  # Private comment is hidden;
+    assert comments[0].body == "Public comment"
 
 
 @pytest.mark.django_db
@@ -7042,6 +7046,39 @@ class TestStructure(BaseTestCreateManifest):
             "Nepavyko susieti bazinio modelio „example/Animal“. "
             "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
         )
+
+    def test_export__comments_exported_correctly(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,,,,,,,,,,,,\n"
+            "2,,,,Animal,,,,source_animal_model,,,,,,,,,\n"
+            '3,,,,,,comment,model,,"update(model: ""Animal/:part"")",2,completed,protected,open,https://github.com/example/issues/1,,,\n'
+            "4,,,,,id,string,,source_animal_id,,4,,,,,,,\n"
+            "5,,,Animal,,,,,,,,,,,,,,\n"
+            '6,,,,,,comment,model,,"update(model: ""Animal"")",2,completed,protected,open,https://github.com/example/issues/2,,,\n'
+            "7,,,,Dog,,,,,,,,,,,,,\n"
+            "8,,,,,action,string,,source_dog_action,,4,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,,,Animal,,,,source_animal_model,,,,,,develop,,,,,,",
+            '3,,,,,,comment,model,,,"update(model: ""Animal/:part"")",,,2,develop,,open,https://github.com/example/issues/1,,,',
+            "4,,,,,id,string,,source_animal_id,,,,,4,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            "5,,,Animal,,,,,,,,,,,,,,,,,",
+            '6,,,,,,comment,model,,,"update(model: ""Animal"")",,,2,develop,,open,https://github.com/example/issues/2,,,',
+            "7,,,,Dog,,,,,,,,,,develop,,,,,,",
+            "8,,,,,action,string,,source_dog_action,,,,,4,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
 
 
 class TestStructureExportDependentModels(BaseTestCreateManifest):

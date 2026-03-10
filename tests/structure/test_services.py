@@ -1985,9 +1985,9 @@ def test_structure_export__comments(app: DjangoTestApp):
         ",,,,,,,,,,,,,,,,,,,,\r\n"
         "3,,resource,,,,,,http://www.example.com,,,,,,,,,,,Title,Description\r\n"
         "4,,,,Country,,,,,,,,,,develop,,,,,,\r\n"
-        "5,,,,,,comment,type,,,,,,,,,open,,,Model comment,\r\n"
+        "5,,,,,,comment,type,,,,,,,develop,,open,,,Model comment,\r\n"
         "6,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
-        "7,,,,,,comment,type,,,,,,,,,open,,,Property comment,\r\n"
+        "7,,,,,,comment,type,,,,,,,develop,,open,,,Property comment,\r\n"
         ",,,,,,,,,,,,,,,,,,,,\r\n"
     )
 
@@ -2806,3 +2806,35 @@ class TestStructureBaseModels:
             "Nepavyko susieti bazinio modelio „example/Animal“. "
             "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
         )
+
+
+class TestStructureComments:
+    @pytest.mark.django_db
+    def test_structure_comments_are_created(self, app: DjangoTestApp):
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            ",dataset,,,,,,,,,,,,,,,,\n"
+            ",,,,Animal,,,,source_animal_model,,,,,,,,,\n"
+            ',,,,,,comment,model,,"update(model: ""Animal/:part"")",2,completed,protected,open,https://github.com/example/issues/1,,,\n'
+            ",,,,,id,string,,source_animal_id,,4,,,,,,,\n"
+            ",,,Animal,,,,,,,,,,,,,,\n"
+            ',,,,,,comment,model,,"update(model: ""Animal"")",2,completed,protected,open,https://github.com/example/issues/2,,,\n'
+            ",,,,Dog,,,,,,,,,,,,,\n"
+            ",,,,,action,string,,source_dog_action,,4,,,,,,,\n"
+        )
+
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+
+        create_structure_objects(structure)
+
+        # Comments created for model.
+        comment_model = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
+        assert comment_model.prepare == 'update(model: "Animal/:part")'
+        assert comment_model.uri == "https://github.com/example/issues/1"
+
+        # Comments created for base.
+        comment_base = Comment.objects.get(content_type=ContentType.objects.get_for_model(Base))
+        assert comment_base.prepare == 'update(model: "Animal")'
+        assert comment_base.uri == "https://github.com/example/issues/2"

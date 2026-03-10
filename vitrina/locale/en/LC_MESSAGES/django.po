@@ -42,7 +42,6 @@ msgstr "client id"
 msgid "Nepriskirti"
 msgstr "Unassigned"
 
-#, python-brace-format
 msgid ""
 "Baigėsi Jūsų API rakto galiojimas. Raktą galite atsinaujinti savo "
 "organizacijos tvarkytojų sąraše: {url}"
@@ -516,6 +515,18 @@ msgstr "Evaluated"
 
 msgid "Viešas komentaras"
 msgstr "Public comment"
+
+msgid "Struktūros importavimo metu sukurtas sisteminis komentaras.<br>"
+msgstr "Comment imported with a manifest.<br>"
+
+msgid "<b>Objektas:</b> {content_type} | {content_object}"
+msgstr "<b>Object:</b> {content_type} | {content_object}"
+
+msgid "<b>Parengimas:</b> <pre><code>{prepare}</code></pre>"
+msgstr "<b>Prepare:</b> <pre><code>{prepare}</code></pre>"
+
+msgid "<b>Nuoroda:</b> <a href='{uri}'>{uri}</a>"
+msgstr "<b>URI:</b> <a href='{uri}'>{uri}</a>"
 
 msgid "Negalima atmesti — patvirtinti/atidaryti priskyrimai egzistuoja."
 msgstr "Cannot reject - approved/opened assignments exist"
@@ -1257,6 +1268,27 @@ msgstr "The organization can only be assigned the role of a data editor"
 
 msgid "Naudotojui išsiųstas laiškas dėl registracijos"
 msgstr "The user has been sent an email for registration"
+
+msgid ""
+"Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
+"aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "
+msgstr ""
+"Data field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
+"the model metadata visibility level \"{2}\". "
+
+msgid ""
+"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
+"aukštesnis už duomenų lauko metaduomenų matomumo lygį \"{2}\". "
+msgstr ""
+"Enum field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
+"the property metadata visibility level \"{2}\" . "
+
+msgid ""
+"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
+"aukštesnis už duomenų modelio metaduomenų matomumo lygį \"{2}\". "
+msgstr ""
+"Enum field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
+"the model metadata visibility level \"{2}\" . "
 
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
@@ -2897,7 +2929,6 @@ msgstr "Contact editing"
 msgid "Šio kontakto ištrinti negalima, nes jis yra naudojamas sutartyse."
 msgstr "This contact can not be deleted, because it is used in agreements."
 
-#, python-brace-format
 msgid "Ar tikrai norite ištrinti kontaktą \"{contact}\"?"
 msgstr "Are you sure you want to delete the contact \"{contact}\"?"
 
@@ -3223,11 +3254,9 @@ msgstr "API key will be shown only one time, so you must copy it. Created key:"
 msgid "Kurti klientą"
 msgstr "Create client"
 
-#, python-brace-format
 msgid "Klientas \"{0}\" sukurtas sėkmingai."
 msgstr "Client \"{0}\" created successfully."
 
-#, python-brace-format
 msgid "Kliento raktas - {0}. Butinai išsisaugokite raktą, jis nebebus rodomas!"
 msgstr ""
 "Client key – {0}. Be sure to save this key; it will not be shown again!"
@@ -3238,14 +3267,12 @@ msgstr "Client registration"
 msgid "Kliento redagavimas"
 msgstr "Client edit"
 
-#, python-brace-format
 msgid "Klientas \"{0}\" atnaujintas sėkmingai"
 msgstr "Client \"{0}\" changed successfully"
 
 msgid "Šiam klientui aktyvių leidimų nėra"
 msgstr "There are no active scopes for this client"
 
-#, python-brace-format
 msgid "Leidimas \"{0}\" sukurtas sėkmingai"
 msgstr "Use case \"{0}\" created successfully"
 
@@ -3851,7 +3878,6 @@ msgstr "Confirm proposal"
 msgid "Dokumentas turi būti adoc formato."
 msgstr "The document must be in adoc format."
 
-#, python-brace-format
 msgid "ADOC klaida: {error}"
 msgstr "ADOC error: {error}"
 
@@ -3864,7 +3890,6 @@ msgstr "Upload document signed by data receiver"
 msgid "Veiksmas įvykdytas sėkmingai."
 msgstr "Action was executed successfully"
 
-#, python-brace-format
 msgid ""
 "Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
 "{expected_status}.Dabartinė būsena: {current_status}."
@@ -3928,14 +3953,12 @@ msgstr "Legal basis for data provision (obligation)"
 msgid "Mokėjimo sąlygos"
 msgstr "Payment terms"
 
-#, python-brace-format
 msgid "Sutartis: {organization}"
 msgstr "Agreement: {organization}"
 
 msgid "Sutartis neturi sugeneruoto ODRL JSON failo."
 msgstr "The agreement does not have a generated ODRL JSON file."
 
-#, python-brace-format
 msgid ""
 "Nepavyko rasti 'assignee.ex:representative' sutarties '{0}' ODRL JSON faile. "
 "Klaida: {1}"
@@ -3943,7 +3966,6 @@ msgstr ""
 "Failed to find 'assignee.ex:representative' in the ODRL JSON file of "
 "agreement '{0}'. Error: {1}"
 
-#, python-brace-format
 msgid ""
 "Nepavyko rasti 'assigner.ex:representative' sutarties '{0}' ODRL JSON faile. "
 "Klaida: {1}"
@@ -4003,13 +4025,11 @@ msgstr "The uploaded agreement is not signed with the assigner's signature."
 msgid "Įkeltoje sutartyje rasti daugiau nei 2 parašai."
 msgstr "More than two signatures were found in the uploaded agreement."
 
-#, python-brace-format
 msgid ""
 "Pasirašyti galima tik sutartis su būsenomis `{formed}` arba `{initiated}`."
 msgstr ""
 "Only agreements with the statuses `{formed}` or `{initiated}` can be signed."
 
-#, python-brace-format
 msgid ""
 "Nesutampa pasirašiusių asmenų vardai ir pavardės. Reikalingi parašai: "
 "{expected}, ADOC rasti parašai: {found}."
@@ -4020,7 +4040,6 @@ msgstr ""
 msgid "Nerastas PDF failas."
 msgstr "PDF file not found."
 
-#, python-brace-format
 msgid "Blogas ADOC failas: {error}"
 msgstr "Invalid ADOC file: {error}"
 
@@ -4190,7 +4209,6 @@ msgstr "Value must be integer."
 msgid "Aprašymas neatitinka Markdown formato."
 msgstr "Description doesn't match Markdown format."
 
-#, python-brace-format
 msgid ""
 "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų modelio "
 "matomumas '{1}'."
@@ -4198,7 +4216,6 @@ msgstr ""
 "Metadata visibility '{0}' should not be higher than data model visibility "
 "'{1}'."
 
-#, python-brace-format
 msgid ""
 "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų lauko matomumas "
 "'{1}'."
@@ -4952,25 +4969,21 @@ msgstr "Published version can not be published again"
 msgid "Privalote publikuoti duomenų rinkinį."
 msgstr "You must publish the dataset"
 
-#, python-brace-format
 msgid ""
 "Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų "
 "ištekliuje."
 msgstr "Field {0} has a reference to an unpublished field in the same dataset."
 
-#, python-brace-format
 msgid ""
 "Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų "
 "ištekliuje."
 msgstr ""
 "Field {0} has a reference to an unpublished field {1} in the same dataset."
 
-#, python-brace-format
 msgid ""
 "Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį."
 msgstr "Field {0} must be published, because field {1} has a reference to it."
 
-#, python-brace-format
 msgid "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje."
 msgstr ""
 "Field {0} has a reference to an unpublished field in a different dataset."

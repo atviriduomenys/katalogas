@@ -414,7 +414,7 @@ def _load_comments(dataset: Dataset, comments: List[struct.Comment], obj: models
             content_type=ct,
             object_id=obj.pk,
             type=Comment.STRUCTURE,
-            body=meta.title,
+            body=meta.description or meta.title or "",
         )
         comment, metadata = _create_or_update_metadata(dataset, meta, comment, order)
         loaded_comments.append(comment)
@@ -1678,7 +1678,12 @@ def _comments_to_tabular(obj: models.Model) -> Generator:
                     "type": "comment" if first else "",
                     "ref": meta.ref,
                     "source": meta.source,
+                    "prepare": meta.prepare,
+                    "level": meta.level_given,
+                    "status": _get_title(meta.status),
+                    "visibility": _get_visibility(meta.visibility),
                     "access": _get_access(meta.access),
+                    "uri": meta.uri,
                     "title": meta.title,
                     "description": meta.description,
                 },
@@ -1699,6 +1704,7 @@ def _base_to_tabular(base: Base, version: Version | None = None) -> Generator:
                 "ref": meta.ref,
             },
         )
+        yield from _comments_to_tabular(base)
 
 
 def _properties_to_tabular(model: Model, version: Version | None = None) -> Generator:

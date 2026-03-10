@@ -414,7 +414,7 @@ def _load_comments(dataset: Dataset, comments: List[struct.Comment], obj: models
             content_type=ct,
             object_id=obj.pk,
             type=Comment.STRUCTURE,
-            body=meta.description or meta.title or "",
+            body=meta.description if meta.description else "",
         )
         comment, metadata = _create_or_update_metadata(dataset, meta, comment, order)
         loaded_comments.append(comment)

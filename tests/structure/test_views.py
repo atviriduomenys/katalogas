@@ -982,8 +982,8 @@ def test_private_comment(app: DjangoTestApp):
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         ",,,,Country,,,,,,,,,,,,,,\n"
-        ",,,,,,comment,type,,,,,,public,,,Public comment,,\n"
-        ",,,,,,comment,type,,,,,,private,,,Private comment,,\n"
+        ",,,,,,comment,type,,,,,,public,,,,Public comment,\n"
+        ",,,,,,comment,type,,,,,,private,,,,Private comment,\n"
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -994,9 +994,11 @@ def test_private_comment(app: DjangoTestApp):
     response = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
 
     assert response.status_code == HTTPStatus.OK
-    comments = [comment_data[0] for comment_data in response.context["comments"]]
+    comments = [comment for comment, _, _ in response.context["comments"]]
     assert len(comments) == 1  # Private comment is hidden;
-    assert comments[0].body == "Public comment"
+    comment = comments[0]
+    assert comment.is_public
+    assert comment.body == "Public comment"
 
 
 @pytest.mark.django_db
@@ -1006,8 +1008,8 @@ def test_private_comment_with_access(app: DjangoTestApp):
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         ",,,,Country,,,,,,,,,,,\n"
-        ",,,,,,comment,type,,,,public,,,,,Public comment,,\n"
-        ",,,,,,comment,type,,,,private,,,,,Private comment,,\n"
+        ",,,,,,comment,type,,,,public,,,,,,Public comment,\n"
+        ",,,,,,comment,type,,,,private,,,,,,Private comment,\n"
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -1022,11 +1024,13 @@ def test_private_comment_with_access(app: DjangoTestApp):
     )
     app.set_user(representative.user)
 
-    resp = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
-    assert sorted([comment.body for comment, _, _ in resp.context["comments"]]) == [
-        "Private comment",
-        "Public comment",
-    ]
+    response = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
+
+    assert response.status_code == HTTPStatus.OK
+    comments = [comment for comment, _, _ in response.context["comments"]]
+    assert len(comments) == 2
+    assert all(comment.is_public for comment in comments)
+    assert sorted([comment.body for comment in comments]) == ["Private comment", "Public comment"]
 
 
 @pytest.mark.django_db

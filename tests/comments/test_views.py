@@ -3,7 +3,9 @@ from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse, resolve
 from django_webtest import DjangoTestApp
+from vitrina.structure import VersionStatus
 from reversion.models import Version
+from vitrina.structure.models import Metadata
 
 from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.comments.factories import CommentFactory
@@ -16,7 +18,7 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
 from vitrina.requests.models import Request
-from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory, VersionFactory
+from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory, VersionFactory, BaseFactory
 from vitrina.users.factories import UserFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.utils import RevisionComment, RevisionSource
@@ -1103,3 +1105,73 @@ def test_comment_on_unapproved_project(app: DjangoTestApp):
     )
 
     assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_model_comments_exported_together_with_base_model_comments(app: DjangoTestApp):
+    user = UserFactory(is_superuser=True)
+    app.set_user(user)
+
+    dataset = DatasetFactory(is_public=True, access_rights=Dataset.PUBLIC)
+    metadata_version = VersionFactory(dataset=dataset, status=VersionStatus.STABLE)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=metadata_version,
+    )
+
+    base_model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(base_model),
+        object_id=base_model.pk,
+        dataset=dataset,
+        name="test/dataset/BaseModel",
+        metadata_version=metadata_version,
+    )
+    base_object = BaseFactory(model=base_model, metadata_version=metadata_version)
+
+    inheriting_model = ModelFactory(dataset=dataset, base=base_object, metadata_version=metadata_version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(inheriting_model),
+        object_id=inheriting_model.pk,
+        dataset=dataset,
+        name="test/dataset/InheritingModel",
+        metadata_version=metadata_version,
+    )
+
+    inheriting_property = PropertyFactory(
+        model=inheriting_model,
+        metadata_version=metadata_version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(inheriting_property),
+        object_id=inheriting_property.pk,
+        dataset=dataset,
+        name="InheritingProperty",
+        metadata_version=metadata_version,
+        access=Metadata.PUBLIC,
+    )
+
+    comment_base = CommentFactory(
+        content_type=ContentType.objects.get_for_model(base_object),
+        object_id=base_object.pk,
+        user=user,
+        body="Comment for base",
+        is_public=True,
+    )
+    comment_model = CommentFactory(
+        content_type=ContentType.objects.get_for_model(inheriting_model),
+        object_id=inheriting_model.pk,
+        user=user,
+        body="Comment for model",
+        is_public=True,
+    )
+
+    resp = app.get(inheriting_model.get_absolute_url())
+
+    comments = [comment_data[0] for comment_data in resp.context["comments"]]
+    assert len(comments) == 2
+    assert comment_base in comments
+    assert comment_model in comments

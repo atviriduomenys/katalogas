@@ -82,6 +82,10 @@ https://github.com/atviriduomenys/katalogas/issues/2336
 
 - Set all manifest fields on the imported Comment objects
 
+https://github.com/atviriduomenys/katalogas/issues/2467
+
+- Comments for `Base` manifest rows are now imported & displayed correctly in Catalog & after export.
+
 v 1.15.0 (2026-02-27)
 ==================
 

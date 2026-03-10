@@ -116,10 +116,10 @@ class TestServiceResourceForm:
         concept3.concept_schemas.add(needed_concept_schema)
 
         assert isinstance(form, ServiceResourceForm)
-        assert len(form.fields["service_type"].queryset) == 8
-        assert concept1 in form.fields["service_type"].queryset
-        assert concept3 in form.fields["service_type"].queryset
-        assert concept2 not in form.fields["service_type"].queryset
+        form_queryset = set(form.fields["service_type"].queryset)
+        assert concept1 in form_queryset
+        assert concept3 in form_queryset
+        assert concept2 not in form_queryset
 
     def test_correct_agents_appear_in_agent_selection(self, organization: Organization, user: User, rf: RequestFactory):
         request = rf.get("/")

@@ -271,6 +271,26 @@ class AgentEnvCreateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentM
     template_name = "base_form.html"
     title = _("Pridėti aplinką")
 
+    def dispatch(self, request, *args, **kwargs):
+        if not self.has_permission():
+            return self.handle_no_permission()
+
+        if not self.agent.missing_environments:
+            messages.error(
+                self.request,
+                _(
+                    "Agentas '{0}' jau turi visas galimas aplinkas. Norėdami pridėti naują aplinką pašalinkite esamą(-as) aplinką(-as)"
+                ).format(self.agent.title),
+            )
+            return HttpResponseRedirect(reverse("agent-detail", args=[self.organization.pk, self.agent.pk]))
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["agent"] = self.agent
+        return kwargs
+
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE, AgentEnvironment, self.organization)
 
@@ -336,6 +356,11 @@ class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, AgentEnvironment, self.organization)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["agent"] = self.agent
+        return kwargs
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)

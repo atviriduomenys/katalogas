@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from unittest.mock import patch
+import factory
 
 import pytest
 from _pytest.fixtures import FixtureRequest
@@ -505,6 +506,20 @@ class TestAgentEnvCreate:
         breadcrumbs = response.context["parent_links"]
         breadcrumb_url_names_actual = [resolve(path).url_name for path in breadcrumbs if path]
         assert breadcrumb_url_names_actual == breadcrumb_url_names_expected
+
+    def test_cannot_create_new_environment_when_all_environments_already_exist(
+        self, app: DjangoTestApp, organization: Organization
+    ):
+        agent = AgentFactory(organization=organization)
+
+        AgentEnvironmentFactory.create_batch(len(Environment), agent=agent, environment=factory.Iterator(Environment))
+
+        url = reverse("agent-env-create", args=[organization.pk, agent.pk])
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        response = app.get(url)
+
+        assert response.status_code == 302
 
 
 class TestAgentEnvUpdate:

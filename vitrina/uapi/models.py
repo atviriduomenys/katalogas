@@ -1,4 +1,5 @@
 from django.db import models, transaction
+from functools import cached_property
 
 from vitrina.models import UUIDBaseModel
 from django.utils.text import slugify
@@ -74,6 +75,17 @@ class Agent(UUIDBaseModel):
     @staticmethod
     def get_codename(title: str) -> str:
         return slugify(title).replace("-", "_")
+
+    @cached_property
+    def missing_environments(self) -> list[Environment] | None:
+        existing = AgentEnvironment.not_archived.filter(agent=self).values_list("environment", flat=True).distinct()
+
+        result = []
+        for env in Environment:
+            if env not in existing:
+                result.append(env)
+
+        return result or None
 
     objects = models.Manager()
     not_archived = NotArchivedAgentManager()

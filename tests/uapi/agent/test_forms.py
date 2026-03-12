@@ -3,6 +3,7 @@ import pytest
 from vitrina.uapi import Environment, AgentType
 from vitrina.uapi.forms import AgentForm, AgentEnvironmentForm
 from vitrina.uapi.models import Agent
+from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
 
 
 class TestAgentForm:
@@ -58,7 +59,7 @@ class TestAgentForm:
 
 
 class TestAgentEnvironmentForm:
-    def test_success(self, organization):
+    def test_success(self, organization, agent: Agent):
         form_data = {
             "environment": Environment.DEVELOPMENT,
             "agent_address": "http://agent-address.test",
@@ -68,10 +69,10 @@ class TestAgentEnvironmentForm:
             "open_data_publish_url": "http://open-data.test",
             "is_enabled": True,
         }
-        form = AgentEnvironmentForm(data=form_data, organization=organization)
+        form = AgentEnvironmentForm(data=form_data,agent=agent, organization=organization)
         assert form.is_valid()
 
-    def test_failure_open_data_is_published_but_no_url_is_provided(self, organization):
+    def test_failure_open_data_is_published_but_no_url_is_provided(self, organization, agent: Agent):
         form_data = {
             "environment": Environment.DEVELOPMENT,
             "agent_address": "http://agent-address.test",
@@ -82,7 +83,7 @@ class TestAgentEnvironmentForm:
             "is_enabled": True,
         }
 
-        form = AgentEnvironmentForm(data=form_data, organization=organization)
+        form = AgentEnvironmentForm(data=form_data, agent=agent, organization=organization)
 
         assert not form.is_valid()
         assert form.errors == {
@@ -90,3 +91,16 @@ class TestAgentEnvironmentForm:
                 'Šis laukas yra privalomas, jei nustatytas požymis "Atviri duomenys publikuojami Saugykloje".'
             ]
         }
+
+    def test_only_remaining_environments_available_for_select(self):
+        agent = AgentFactory()
+        AgentEnvironmentFactory(agent=agent, environment=Environment.TESTING)
+        AgentEnvironmentFactory(agent=agent, environment=Environment.PRODUCTION, is_archived=True)
+        form = AgentEnvironmentForm(agent=agent)
+
+        environment_choices = [value for value, _ in form.fields["environment"].choices]
+
+        assert len(environment_choices) == 2
+        assert Environment.TESTING not in environment_choices
+        assert Environment.PRODUCTION in environment_choices
+        assert Environment.DEVELOPMENT in environment_choices

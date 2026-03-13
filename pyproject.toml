@@ -76,9 +76,8 @@ bleach = "^6.2.0"
 requests-mock = "^1.12.1"
 celery = "^5.5.3"
 workalendar = "^17.0.0"
-# TODO: use released version after release
-spinta = {git = "https://github.com/atviriduomenys/spinta.git", rev = "ft/2299-export-openapi-versions-refs"}
 django-flags = "^5.1.0"
+spinta = {version = "^0.2.dev18", allow-prereleases = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"

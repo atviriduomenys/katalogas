@@ -117,7 +117,9 @@ class Metadata(models.Model):
         verbose_name = _("Metaduomenys")
         indexes = [
             models.Index(fields=["content_type", "object_id"], name="metadata_ct_obj_idx"),
-            models.Index(fields=["content_type", "dataset", "metadata_version", "uuid"], name="metadata_ct_ds_mv_uuid_idx"),
+            models.Index(
+                fields=["content_type", "dataset", "metadata_version", "uuid"], name="metadata_ct_ds_mv_uuid_idx"
+            ),
             models.Index(fields=["content_type", "object_id", "metadata_version"], name="metadata_ct_obj_mv_idx"),
             models.Index(fields=["content_type", "metadata_version", "name"], name="metadata_ct_mv_name_idx"),
         ]

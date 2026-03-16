@@ -5,6 +5,8 @@ import uuid
 from io import StringIO
 from json import JSONDecodeError
 from typing import Union, Tuple, List, Dict, Generator
+from functools import lru_cache
+import traceback
 
 import requests
 from django.db.models import Q, Prefetch, QuerySet
@@ -46,6 +48,7 @@ from vitrina.structure.models import (
     Base,
     Version,
     VersionStatus,
+    MetadataVersion,
 )
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
@@ -53,8 +56,14 @@ from vitrina.users.models import User
 logger = logging.getLogger(__name__)
 
 
+def _get_sys_user() -> User:
+    if not hasattr(_get_sys_user, "_cache"):
+        _get_sys_user._cache, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+    return _get_sys_user._cache
+
+
 def create_structure_objects(structure: DatasetStructure, metadata_version: Version = None) -> Version:
-    sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+    sys_user = _get_sys_user()
     ct = ContentType.objects.get_for_model(DatasetStructure)
     if structure.file:
         Comment.objects.filter(content_type=ct, object_id=structure.pk, type=Comment.STRUCTURE_ERROR).delete()
@@ -406,7 +415,7 @@ def _load_properties(
 
 def _load_comments(dataset: Dataset, comments: List[struct.Comment], obj: models.Model):
     ct = ContentType.objects.get_for_model(obj)
-    sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+    sys_user = _get_sys_user()
 
     existing_comments = Comment.objects.filter(content_type=ct, object_id=obj.pk, type=Comment.STRUCTURE)
     loaded_comments = []
@@ -436,7 +445,7 @@ def _clean_errors(obj: models.Model):
 
 def _create_errors(errors: List[str], obj: models.Model):
     ct = ContentType.objects.get_for_model(obj)
-    sys_user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+    sys_user = _get_sys_user()
 
     for error in errors:
         Comment.objects.create(
@@ -475,20 +484,33 @@ def _create_or_update_metadata(
 ) -> Tuple[models.Model, struct.Metadata]:
     ct = ContentType.objects.get_for_model(obj)
 
-    if (
-        obj_meta.id
-        and Metadata.objects.filter(
-            uuid=obj_meta.id, content_type=ct, dataset=dataset, metadata_version=metadata_version
-        ).exists()
-    ):
-        metadata = Metadata.objects.filter(
-            uuid=obj_meta.id, content_type=ct, dataset=dataset, metadata_version=metadata_version
-        ).first()
+    # Avoid double-reading the same row: use a single query instead of
+    # `exists()` followed by `first()`.
+    metadata = None
+    if obj_meta.id:
+        metadata = (
+            Metadata.objects.filter(
+                uuid=obj_meta.id,
+                content_type=ct,
+                dataset=dataset,
+                metadata_version=metadata_version,
+            )
+            .prefetch_related(
+                Prefetch(
+                    "metadataversion_set",
+                    queryset=MetadataVersion.objects.select_related("version").order_by("-version__created"),
+                    to_attr="_prefetched_metadataversions",
+                )
+            )
+            .first()
+        )
+    if metadata:
         type_args = ", ".join(obj_meta.type_args) if hasattr(obj_meta, "type_args") and obj_meta.type_args else None
         access = _parse_access(obj_meta.access)
         visibility = _parse_visibility(obj_meta.visibility)
         status = _get_status(obj_meta.status)
-        if latest_version := metadata.metadataversion_set.order_by("-version__created").first():
+        prefetched = getattr(metadata, "_prefetched_metadataversions", None)
+        if latest_version := (prefetched[0] if prefetched else None):
             if (
                 (isinstance(metadata.object, Dataset) and latest_version.name != obj_meta.name)
                 or (
@@ -977,7 +999,8 @@ def _parse_visibility(value: str) -> int:
     return visibility_mapper.get(value)
 
 
-def _get_status(value: str) -> Status:
+@lru_cache(maxsize=64)
+def _get_status(value: str) -> Status | None:
     if value:
         return Status.objects.filter(codename=value).first()
     return Status.objects.filter(is_default=True).first()

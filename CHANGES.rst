@@ -1,7 +1,11 @@
 Changes
 #######
 
-v 1.16.0 (unreleased)
+v 1.17.0 (2026-03-16)
+==================
+
+
+v 1.16.0 (2026-03-16)
 ==================
 
 https://github.com/atviriduomenys/katalogas/issues/2321

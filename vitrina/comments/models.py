@@ -86,6 +86,9 @@ class Comment(models.Model):
 
     class Meta:
         db_table = "comment"
+        indexes = [
+            models.Index(fields=["content_type", "object_id", "type"], name="comment_ct_obj_type_idx"),
+        ]
         ordering = ("-created",)
         get_latest_by = "created"
 

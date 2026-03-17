@@ -484,8 +484,6 @@ def _create_or_update_metadata(
 ) -> Tuple[models.Model, struct.Metadata]:
     ct = ContentType.objects.get_for_model(obj)
 
-    # Avoid double-reading the same row: use a single query instead of
-    # `exists()` followed by `first()`.
     metadata = None
     if obj_meta.id:
         metadata = (
@@ -504,6 +502,7 @@ def _create_or_update_metadata(
             )
             .first()
         )
+        
     if metadata:
         type_args = ", ".join(obj_meta.type_args) if hasattr(obj_meta, "type_args") and obj_meta.type_args else None
         access = _parse_access(obj_meta.access)

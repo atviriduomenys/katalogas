@@ -502,14 +502,14 @@ def _create_or_update_metadata(
             )
             .first()
         )
-        
+
     if metadata:
         type_args = ", ".join(obj_meta.type_args) if hasattr(obj_meta, "type_args") and obj_meta.type_args else None
         access = _parse_access(obj_meta.access)
         visibility = _parse_visibility(obj_meta.visibility)
         status = _get_status(obj_meta.status)
-        prefetched = getattr(metadata, "_prefetched_metadataversions", None)
-        if latest_version := (prefetched[0] if prefetched else None):
+        prefetched_versions = getattr(metadata, "_prefetched_metadataversions", None)
+        if latest_version := (prefetched_versions[0] if prefetched_versions else None):
             if (
                 (isinstance(metadata.object, Dataset) and latest_version.name != obj_meta.name)
                 or (

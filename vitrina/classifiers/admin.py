@@ -241,6 +241,11 @@ class ConceptAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         return super().get_queryset(request).prefetch_related("concept_schemas")
 
+    def has_delete_permission(self, request, obj=None):
+        if obj and obj.code == "UAPI":
+            return False
+        return super().has_delete_permission(request, obj)
+
 
 @admin.register(ApplicableLegislation)
 class ApplicableLegislationAdmin(RevisionCommentVersionAdmin):

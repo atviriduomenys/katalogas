@@ -550,6 +550,14 @@ class Dataset(Resource):
         null=True,
         related_name="contact_datasets",
     )
+    conforms_to = models.ForeignKey(
+        Concept,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Atitinka"),
+        null=True,
+        blank=True,
+        help_text=_("Nurodo, kokį standartą atitinka išteklius. Atitinka dct:conformsTo"),
+    )
 
     # TODO: To be removed:
     # ---------------------------8<-------------------------------------

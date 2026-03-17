@@ -60,6 +60,10 @@ from vitrina.projects.services import get_projects_linkable_to_dataset
 from vitrina.uapi.models import Agent
 
 
+DATA_SERVICE_STANDARD_URI = "https://data.gov.lt/id/non-standard/DataServiceStandard"
+UAPI_CONCEPT_CODE = "UAPI"
+
+
 class ResourceSubclassTypeField(ModelChoiceField):
     def label_from_instance(self, obj):
         if obj.description:
@@ -311,7 +315,7 @@ class BaseResourceForm(TranslatableModelForm):
     def _populate_contact_choices(self) -> None:
         """Populate contact choices grouped by organization."""
 
-        organization_id = self.instance.organization_id
+        organization_id = self.instance.organization_id or self.organization.id
         self.fields["contact"].choices = [("", "---------")]
 
         content_type_user = ContentType.objects.get_for_model(User)
@@ -449,7 +453,7 @@ class BaseResourceForm(TranslatableModelForm):
 class ServiceResourceForm(BaseResourceForm):
     endpoint_url = forms.CharField(
         label=_("API adresas"),
-        required=True,
+        required=False,
         help_text=_("Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."),
     )
     endpoint_description = forms.CharField(
@@ -460,6 +464,12 @@ class ServiceResourceForm(BaseResourceForm):
             "Įskaitant jų operacijas, parametrus ir t. t. Atitinka dcat:endpointDescription."
         ),
     )
+    conforms_to = forms.ModelChoiceField(
+        Concept.objects.filter(concept_schemas__uri=DATA_SERVICE_STANDARD_URI),
+        label=_("Atitinka"),
+        required=False,
+        help_text=_("Nurodo kokį standartą atitinka paslauga. Atitinka dct:conformsTo."),
+    )
 
     class Meta:
         model = Dataset
@@ -469,7 +479,6 @@ class ServiceResourceForm(BaseResourceForm):
             "is_public",
             "tags",
             "catalog",
-            "frequency",
             "agent",
             "access_rights",
             "endpoint_url",
@@ -485,6 +494,7 @@ class ServiceResourceForm(BaseResourceForm):
             "parent",
             "service_type",
             "is_hvd",
+            "conforms_to",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -496,6 +506,9 @@ class ServiceResourceForm(BaseResourceForm):
         self.fields["service_type"].label_from_instance = lambda obj: obj.safe_translation_getter(
             "label", any_language=True
         )
+        self.fields["description"].required = False
+        self.fields["tags"].required = True
+        self.fields["contact"].required = True
         organization = self.organization if self.organization else self.instance.organization
         self.fields["agent"].queryset = Agent.not_archived.filter(organization=organization)
         self.helper.layout = Layout(
@@ -507,8 +520,8 @@ class ServiceResourceForm(BaseResourceForm):
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
             Field("catalog"),
-            Field("frequency"),
             Field("agent"),
+            Field("conforms_to"),
             Field("endpoint_url"),
             Field("endpoint_type"),
             Field("endpoint_description"),
@@ -522,6 +535,47 @@ class ServiceResourceForm(BaseResourceForm):
             Field("applicable_legislation"),
             Field("is_hvd"),
         )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        agent = cleaned_data.get("agent")
+
+        conforms_to = cleaned_data.get("conforms_to")
+
+        if agent:
+            endpoint_fields = (
+                "endpoint_url",
+                "endpoint_type",
+                "endpoint_description",
+                "endpoint_description_type",
+            )
+            error_message = _("Pasirinkus agentą, šis laukas negali būti užpildytas.")
+            for field_name in endpoint_fields:
+                if cleaned_data.get(field_name):
+                    self.add_error(field_name, error_message)
+
+            if not conforms_to or conforms_to.code != "UAPI":
+                error_message = _("Su agentu susietos paslaugos privalo atitikti UDTS standartą.")
+                self.add_error("conforms_to", error_message)
+
+            return cleaned_data
+
+        if not cleaned_data.get("endpoint_url"):
+            error_message = _("Pasirinkite agentą, arba nurodykite API adresą.")
+            for field_name in ("agent", "endpoint_url"):
+                self.add_error(field_name, error_message)
+
+        if not cleaned_data.get("endpoint_description"):
+            self.add_error("endpoint_description", _("Pasirinkite agentą, arba nurodykite API specifikaciją."))
+
+        if conforms_to and conforms_to.code == UAPI_CONCEPT_CODE:
+            error_message = _(
+                "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+            )
+            self.add_error("agent", error_message)
+
+        return cleaned_data
 
 
 class CatalogResourceForm(BaseResourceForm):

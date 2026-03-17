@@ -502,7 +502,6 @@ def _create_or_update_metadata(
             )
             .first()
         )
-
     if metadata:
         type_args = ", ".join(obj_meta.type_args) if hasattr(obj_meta, "type_args") and obj_meta.type_args else None
         access = _parse_access(obj_meta.access)

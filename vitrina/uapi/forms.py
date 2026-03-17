@@ -36,7 +36,8 @@ class AgentForm(ModelForm):
 
         if (title := cleaned_data.get("title")) and self.organization:
             existing_agent = (
-                Agent.not_archived.filter(
+                Agent.objects.not_archived()
+                .filter(
                     organization=self.organization,
                     codename=Agent.get_codename(title),
                 )

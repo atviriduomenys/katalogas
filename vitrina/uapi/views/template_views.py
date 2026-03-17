@@ -86,7 +86,7 @@ class AgentListView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationBas
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
 
     def get_queryset(self):
-        return self.model.not_archived.filter(organization=self.organization).order_by("-created_at")
+        return self.model.objects.not_archived().filter(organization=self.organization).order_by("-created_at")
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -102,7 +102,7 @@ class AgentDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
     model = Agent
 
     def get_queryset(self):
-        return self.model.not_archived.filter(organization=self.organization).prefetch_related("environments")
+        return self.model.objects.not_archived().filter(organization=self.organization).prefetch_related("environments")
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
@@ -168,7 +168,7 @@ class AgentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
     template_name = "base_form.html"
 
     def get_queryset(self):
-        return self.model.not_archived.filter(organization=self.organization)
+        return self.model.objects.not_archived().filter(organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, Agent, self.organization)
@@ -197,7 +197,7 @@ class AgentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
     template_name = "confirm_delete.html"
 
     def get_queryset(self):
-        return self.model.not_archived.filter(organization=self.organization)
+        return self.model.objects.not_archived().filter(organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.DELETE, Agent, self.organization)
@@ -228,7 +228,11 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     context_object_name = "agent_environment"
 
     def get_queryset(self):
-        return self.model.not_archived.filter(agent__organization=self.organization).prefetch_related("requesthistory")
+        return (
+            self.model.objects.not_archived()
+            .filter(agent__organization=self.organization)
+            .prefetch_related("requesthistory")
+        )
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, AgentEnvironment, self.organization)
@@ -352,7 +356,7 @@ class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     title = _("Redaguoti aplinką")
 
     def get_queryset(self):
-        return self.model.not_archived.filter(agent__organization=self.organization)
+        return self.model.objects.not_archived().filter(agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, AgentEnvironment, self.organization)
@@ -387,7 +391,7 @@ class AgentEnvDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     template_name = "confirm_delete.html"
 
     def get_queryset(self):
-        return self.model.not_archived.filter(agent__organization=self.organization)
+        return self.model.objects.not_archived().filter(agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.DELETE, AgentEnvironment, self.organization)
@@ -418,7 +422,7 @@ class RequestDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEn
     model = RequestHistory
 
     def get_queryset(self):
-        return self.model.visible.filter(agent_environment__agent__organization=self.organization)
+        return self.model.objects.visible().filter(agent_environment__agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)

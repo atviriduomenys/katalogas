@@ -7,9 +7,9 @@ from vitrina.uapi import AgentType, ChangedBy, ChangeType, PossibleResults, HTTP
 from django.utils.translation import gettext_lazy as _
 
 
-class NotArchivedAgentManager(models.Manager):
-    def get_queryset(self) -> models.QuerySet:
-        return super().get_queryset().filter(is_archived=False)
+class NotArchivedAgentQueryset(models.QuerySet["Agent"]):
+    def not_archived(self) -> models.QuerySet:
+        return self.filter(is_archived=False)
 
 
 class Agent(UUIDBaseModel):
@@ -78,7 +78,7 @@ class Agent(UUIDBaseModel):
 
     @cached_property
     def missing_environments(self) -> list[Environment] | None:
-        existing = AgentEnvironment.not_archived.filter(agent=self).values_list("environment", flat=True).distinct()
+        existing = self.environments.not_archived().values_list("environment", flat=True).distinct()
 
         result = []
         for env in Environment:
@@ -87,14 +87,13 @@ class Agent(UUIDBaseModel):
 
         return result or None
 
-    objects = models.Manager()
-    not_archived = NotArchivedAgentManager()
+    objects: NotArchivedAgentQueryset = NotArchivedAgentQueryset.as_manager()
 
 
-class NotArchivedAgentEnvManager(models.Manager):
-    def get_queryset(self) -> models.QuerySet:
-        not_archived_agent_ids = Agent.not_archived.values_list("pk", flat=True)
-        return super().get_queryset().filter(is_archived=False, agent_id__in=not_archived_agent_ids)
+class NotArchivedAgentEnvQueryset(models.QuerySet["AgentEnvironment"]):
+    def not_archived(self) -> models.QuerySet:
+        not_archived_agent_ids = Agent.objects.not_archived().values_list("pk", flat=True)
+        return self.filter(is_archived=False, agent_id__in=not_archived_agent_ids)
 
 
 class AgentEnvironment(UUIDBaseModel):
@@ -173,14 +172,13 @@ class AgentEnvironment(UUIDBaseModel):
     def __str__(self) -> str:
         return f"{self.agent.title} - {self.get_environment_display()}"
 
-    objects = models.Manager()
-    not_archived = NotArchivedAgentEnvManager()
+    objects: NotArchivedAgentEnvQueryset = NotArchivedAgentEnvQueryset.as_manager()
 
 
-class VisibleRequestHistoryManager(models.Manager):
-    def get_queryset(self) -> models.QuerySet:
-        not_archived_env_ids = AgentEnvironment.not_archived.values_list("pk", flat=True)
-        return super().get_queryset().filter(agent_environment_id__in=not_archived_env_ids)
+class VisibleRequestHistoryQueryset(models.QuerySet["RequestHistory"]):
+    def visible(self) -> models.QuerySet:
+        not_archived_env_ids = AgentEnvironment.objects.not_archived().values_list("pk", flat=True)
+        return self.filter(agent_environment_id__in=not_archived_env_ids)
 
 
 class RequestHistory(UUIDBaseModel):
@@ -201,8 +199,7 @@ class RequestHistory(UUIDBaseModel):
         verbose_name = _("Užklausų istorija")
         verbose_name_plural = _("Užklausų istorijos")
 
-    objects = models.Manager()
-    visible = VisibleRequestHistoryManager()
+    objects: VisibleRequestHistoryQueryset = VisibleRequestHistoryQueryset.as_manager()
 
 
 class RequestHistoryChanges(UUIDBaseModel):

@@ -226,7 +226,8 @@ class OAuthClientAuthenticator:
         if not (client_id := OAuthClientAuthenticator.resolve_client_id_from_token(decoded_token)):
             return None
         agent_environment = (
-            AgentEnvironment.not_archived.filter(oauth_client_id=client_id)
+            AgentEnvironment.objects.not_archived()
+            .filter(oauth_client_id=client_id)
             .select_related("agent__organization")
             .first()
         )

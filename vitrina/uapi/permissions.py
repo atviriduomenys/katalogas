@@ -13,7 +13,7 @@ class IsAgentEnabled(BasePermission):
         if not (oauth_client_id := OAuthClientAuthenticator.resolve_client_id_from_token(request.auth)):
             return False
 
-        if AgentEnvironment.not_archived.filter(oauth_client_id=oauth_client_id, is_enabled=True).exists():
+        if AgentEnvironment.objects.not_archived().filter(oauth_client_id=oauth_client_id, is_enabled=True).exists():
             return True
 
         return False

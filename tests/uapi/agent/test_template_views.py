@@ -195,9 +195,9 @@ class TestAgentCreate:
         response = app.post(url, data)
 
         assert response.status_code == HTTPStatus.FOUND
-        assert Agent.not_archived.count() == 1
+        assert Agent.objects.not_archived().count() == 1
 
-        agent = Agent.not_archived.get(title=data["title"], organization=organization)
+        agent = Agent.objects.not_archived().get(title=data["title"], organization=organization)
 
         assert agent.object_type == AgentType.SPINTA
 

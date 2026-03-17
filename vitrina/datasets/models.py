@@ -420,7 +420,7 @@ class Dataset(Resource):
         blank=True,
         related_name="services",
         help_text=_(
-            "Duomenų publikavimo paslaugą teikiantis agentas. Atitinka prov:SoftwareAgent, schema:SoftwareApplication."
+            "Duomenų publikavimo paslaugą teikiantis agentas. Privaloma nurodyti arba Agentą arba API adresą. Atitinka dcat:endpointURL"
         ),
     )
     endpoint_url = models.URLField(
@@ -436,7 +436,7 @@ class Dataset(Resource):
         null=True,
         blank=True,
         related_name="format_endpoint_types",
-        help_text=_("Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."),
+        help_text=_("Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:format."),
     )
     endpoint_description = models.URLField(
         verbose_name=_("API specifikacija"),

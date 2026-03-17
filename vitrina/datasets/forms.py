@@ -185,7 +185,7 @@ class BaseResourceForm(TranslatableModelForm):
             "pvz., „#17.2“.<br>"
             "Tais atvejais, kai yra keli dokumentai su priedais: „#priedas1/17.2“, „17.2/17.2.5“, "
             "kur „priedas1“ yra dokumento failo pavadinimas.<br>"
-            "Atitinka eli:LegalResource."
+            "Atitinka dcatap:applicableLegislation."
         ),
         required=False,
         unique=True,

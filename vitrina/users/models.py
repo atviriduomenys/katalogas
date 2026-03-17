@@ -95,7 +95,7 @@ class User(AbstractUser):
     def organization_content_type(self):
         return ContentType.objects.get_for_model(Organization)
 
-    def get_representative_role_for_resource(self, resource: Dataset) -> str:
+    def get_representative_role_for_resource(self, resource: "Dataset") -> str:
         if self.pk in resource.get_managers_queryset([Representative.RESOURCE_COORDINATOR]):
             return Representative.RESOURCE_COORDINATOR
         if self.pk in resource.get_managers_queryset([Representative.OPEN_DATA_COORDINATOR]):

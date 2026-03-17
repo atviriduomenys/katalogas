@@ -4180,6 +4180,7 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
@@ -4222,7 +4223,9 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4245,7 +4248,9 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="{dataset.landing_page}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4339,6 +4344,7 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
@@ -4380,7 +4386,9 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4403,7 +4411,9 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4523,6 +4533,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
@@ -4565,7 +4576,9 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/json"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4589,7 +4602,9 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/jsonl"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4613,7 +4628,9 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/rdf"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4637,7 +4654,9 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/TestModel/:format/csv"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4717,6 +4736,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:DataService rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>

@@ -2849,6 +2849,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
@@ -2890,7 +2891,9 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -2913,7 +2916,9 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -3155,6 +3160,7 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>

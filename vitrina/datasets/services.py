@@ -276,6 +276,16 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
     org_ct = ContentType.objects.get_for_model(Organization)
     dataset_ct = ContentType.objects.get_for_model(Dataset)
 
+    # Collect organizations the user belongs to via Representative records and user.organization
+    user_org_ids = list(
+        Representative.objects.filter(
+            user=user,
+            content_type=org_ct,
+        ).values_list("object_id", flat=True)
+    )
+    if user.organization:
+        user_org_ids.append(user.organization.pk)
+
     representatives_qs = Representative.objects.filter(
         user=user,
         role__in=(
@@ -303,6 +313,27 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
                 resource_dataset_ids.add(obj_id)
             elif role in (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR):
                 open_data_dataset_ids.add(obj_id)
+
+    if user_org_ids:
+        resource_roles = (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR)
+        open_data_roles = (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR)
+
+        org_chain_qs = Representative.objects.filter(
+            organization__in=user_org_ids,
+            content_type__in=[org_ct, dataset_ct],
+        ).values_list("content_type_id", "role", "object_id")
+
+        for ct_id, role, obj_id in org_chain_qs:
+            if ct_id == org_ct.id:
+                if role in resource_roles:
+                    resource_org_ids.add(obj_id)
+                elif role in open_data_roles:
+                    open_data_org_ids.add(obj_id)
+            elif ct_id == dataset_ct.id:
+                if role in resource_roles:
+                    resource_dataset_ids.add(obj_id)
+                elif role in open_data_roles:
+                    open_data_dataset_ids.add(obj_id)
 
     if resource_org_ids:
         combined_filter |= SQ(organization__in=resource_org_ids)

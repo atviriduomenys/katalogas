@@ -478,29 +478,10 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.VISITOR
     if user.is_staff:
         return Role.GLOBAL_MANAGER
-    if (
-        resource.get_managers_queryset(
-            [
-                Representative.RESOURCE_COORDINATOR,
-                Representative.RESOURCE_MANAGER,
-            ]
-        )
-        .filter(user=user)
-        .exists()
-    ):
-        return Role.RESOURCE_COORDINATOR if user.is_resource_coordinator else Role.RESOURCE_MANAGER
-
-    if (
-        resource.get_managers_queryset(
-            [
-                Representative.OPEN_DATA_COORDINATOR,
-                Representative.OPEN_DATA_MANAGER,
-            ]
-        )
-        .filter(user=user)
-        .exists()
-    ):
-        return Role.OPEN_DATA_COORDINATOR if user.is_open_data_coordinator else Role.OPEN_DATA_MANAGER
+    if role := user.get_representative_role_for_resource(resource):
+        return Role(role)
+    if role := resource.get_effective_user_role_via_org(user):
+        return Role(role)
     if user.is_gov_organization_resource_manager:
         return Role.GLOBAL_RESOURCE_MANAGER
     return Role.AUTHENTICATED

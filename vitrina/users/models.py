@@ -1,4 +1,5 @@
 from functools import cached_property
+from typing import TYPE_CHECKING
 
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
@@ -10,6 +11,9 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.users.managers import UserManager, DeletedUserManager
 
 from django.utils.translation import gettext_lazy as _
+
+if TYPE_CHECKING:
+    from vitrina.datasets.models import Dataset
 
 
 class User(AbstractUser):
@@ -91,14 +95,16 @@ class User(AbstractUser):
     def organization_content_type(self):
         return ContentType.objects.get_for_model(Organization)
 
-    def get_representative_role(self) -> str:
-        if self.is_resource_coordinator:
+    def get_representative_role_for_resource(self, resource: Dataset) -> str:
+        if self.pk in resource.get_managers_queryset([Representative.RESOURCE_COORDINATOR]):
             return Representative.RESOURCE_COORDINATOR
-        if self.is_open_data_coordinator:
+        if self.pk in resource.get_managers_queryset([Representative.OPEN_DATA_COORDINATOR]):
             return Representative.OPEN_DATA_COORDINATOR
-        if self.is_manager:
+        if self.pk in resource.get_managers_queryset([Representative.RESOURCE_MANAGER]):
             return Representative.RESOURCE_MANAGER
-        return Representative.OPEN_DATA_MANAGER
+        if self.pk in resource.get_managers_queryset([Representative.OPEN_DATA_MANAGER]):
+            return Representative.OPEN_DATA_MANAGER
+        return None
 
     @property
     def is_manager(self) -> bool:
@@ -190,12 +196,33 @@ class User(AbstractUser):
     def is_open_data_representative_for(self, organization: Organization | None) -> bool:
         if organization is None:
             return False
-        org_type = self.organization_content_type
-        return Representative.objects.filter(
+
+        org_content_type = self.organization_content_type
+        open_data_roles = [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
+
+        # Case 1: user is directly a representative of the organization
+        if Representative.objects.filter(
             user=self,
-            content_type=org_type,
+            content_type=org_content_type,
             object_id=organization.pk,
-            role__in=[Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER],
+            role__in=open_data_roles,
+        ).exists():
+            return True
+
+        # Case 2: user represents an organization, and that organization represents the organization
+        user_org_ids = Representative.objects.filter(
+            user=self,
+            content_type=org_content_type,
+        ).values_list("object_id", flat=True)
+
+        if not user_org_ids.exists():
+            return False
+
+        return Representative.objects.filter(
+            content_type=org_content_type,
+            object_id=organization.pk,
+            role__in=open_data_roles,
+            organization__in=user_org_ids,
         ).exists()
 
 

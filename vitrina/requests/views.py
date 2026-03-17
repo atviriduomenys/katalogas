@@ -766,42 +766,42 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
         context["organizations"] = self.get_queryset()
         context["can_update_orgs"] = False
         user = self.request.user
-        role = user.get_representative_role() if user.is_authenticated else None
-        if user.is_authenticated and (user.is_staff or user.is_superuser):
+
+        if not user.is_authenticated:
+            return context
+
+        if user.is_staff or user.is_superuser:
             context["can_update_orgs"] = True
-        else:
-            if role in Representative.OPEN_DATA_ROLE_KEYS:
-                dataset_ids = RequestObject.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    request_id=self.request_obj.pk,
-                ).values_list("object_id", flat=True)
+            return context
 
-                if dataset_ids:
-                    qs = Dataset.objects.filter(pk__in=dataset_ids)
-                    non_public_exists = qs.exclude(access_rights__in=[Dataset.PUBLIC, Dataset.RESTRICTED]).exists()
-                else:
-                    non_public_exists = False
+        is_open_data_role = Representative.objects.filter(
+            user=user,
+            role__in=Representative.OPEN_DATA_ROLE_KEYS,
+        ).exists()
 
-                if not non_public_exists:
-                    for req_assignment in self.request_obj.requestassignment_set.all():
-                        if has_perm(
-                            user,
-                            Action.CREATE,
-                            RequestAssignment,
-                            req_assignment.organization,
-                        ):
-                            context["can_update_orgs"] = True
-                            break
-            else:
-                for req_assignment in self.request_obj.requestassignment_set.all():
-                    if has_perm(
-                        user,
-                        Action.CREATE,
-                        RequestAssignment,
-                        req_assignment.organization,
-                    ):
-                        context["can_update_orgs"] = True
-                        break
+        if is_open_data_role:
+            dataset_ids = RequestObject.objects.filter(
+                content_type=ContentType.objects.get_for_model(Dataset),
+                request_id=self.request_obj.pk,
+            ).values_list("object_id", flat=True)
+
+            non_public_exists = (
+                (
+                    Dataset.objects.filter(pk__in=dataset_ids)
+                    .exclude(access_rights__in=[Dataset.PUBLIC, Dataset.RESTRICTED])
+                    .exists()
+                )
+                if dataset_ids
+                else False
+            )
+
+            if non_public_exists:
+                return context
+
+        for req_assignment in self.request_obj.requestassignment_set.all():
+            if has_perm(user, Action.CREATE, RequestAssignment, req_assignment.organization):
+                context["can_update_orgs"] = True
+                break
 
         return context
 
@@ -1380,16 +1380,20 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         form = context_data.get("form")
-        role = self.request.user.get_representative_role()
-        if role in Representative.OPEN_DATA_ROLE_KEYS:
-            queryset = Dataset.objects.filter(
-                organization=self.request.user.organization, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
-            )[: self.dataset_query_limit]
-        else:
-            queryset = Dataset.objects.filter(
-                organization=self.request.user.organization,
-            )[: self.dataset_query_limit]
-        form.fields.get("datasets").queryset = queryset
+        user = self.request.user
+
+        is_open_data_role = Representative.objects.filter(
+            user=user,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=user.organization.pk,
+            role__in=Representative.OPEN_DATA_ROLE_KEYS,
+        ).exists()
+
+        dataset_filter = Q(organization=user.organization)
+        if is_open_data_role:
+            dataset_filter &= Q(access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
+
+        form.fields.get("datasets").queryset = Dataset.objects.filter(dataset_filter)[: self.dataset_query_limit]
 
         context_data["current_title"] = _("Poreikio duomenų rinkinių redagavimas")
         return context_data
@@ -1402,16 +1406,23 @@ class RequestDatasetsEditUpdateView(RequestDatasetsEditView):
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
         form = context_data.get("form")
+        user = self.request.user
         term = self.request.GET.get("q")
-        role = self.request.user.get_representative_role()
 
-        queryset = Dataset.objects.filter(organization=self.request.user.organization)
-        if role in Representative.OPEN_DATA_ROLE_KEYS:
+        is_open_data_role = Representative.objects.filter(
+            user=user,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=user.organization.pk,
+            role__in=Representative.OPEN_DATA_ROLE_KEYS,
+        ).exists()
+
+        queryset = Dataset.objects.filter(organization=user.organization)
+        if is_open_data_role:
             queryset = queryset.filter(access_rights__in=[Dataset.PUBLIC, Dataset.RESTRICTED])
         if term:
             queryset = queryset.filter(translations__title__istartswith=term)
-        queryset = queryset.order_by("translations__title")[: self.queryset_limit]
-        form.fields["datasets"].queryset = queryset
+
+        form.fields["datasets"].queryset = queryset.order_by("translations__title")[: self.queryset_limit]
         return context_data
 
 

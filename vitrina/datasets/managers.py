@@ -53,8 +53,17 @@ class PermittedDatasetManager(TranslatableManager):
         if user.is_staff or user.is_superuser:
             return datasets
 
-        resource_roles = (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR)
+        user_org_ids = list(
+            Representative.objects.filter(
+                user=user,
+                content_type=org_ct,
+            ).values_list("object_id", flat=True)
+        )
 
+        if user.organization:
+            user_org_ids.append(user.organization.pk)
+
+        resource_roles = (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR)
         resource_representatives = Representative.objects.filter(user_id=user.id, role__in=resource_roles)
 
         represented_dataset_ids = resource_representatives.filter(content_type=dataset_ct).values_list(
@@ -62,9 +71,26 @@ class PermittedDatasetManager(TranslatableManager):
         )
         represented_org_ids = resource_representatives.filter(content_type=org_ct).values_list("object_id", flat=True)
 
+        # Organizations that represent datasets with resource roles, that the user belongs to
+        org_represented_dataset_ids = Representative.objects.filter(
+            content_type=dataset_ct,
+            role__in=resource_roles,
+            organization__in=user_org_ids,
+        ).values_list("object_id", flat=True)
+
+        # Organizations that represent other organizations with resource roles, that the user belongs to
+        org_represented_org_ids = Representative.objects.filter(
+            content_type=org_ct,
+            role__in=resource_roles,
+            organization__in=user_org_ids,
+        ).values_list("object_id", flat=True)
+
         represented_paths = set(
             Dataset.objects.filter(
-                Q(pk__in=represented_dataset_ids) | Q(organization_id__in=represented_org_ids)
+                Q(pk__in=represented_dataset_ids)
+                | Q(organization_id__in=represented_org_ids)
+                | Q(pk__in=org_represented_dataset_ids)
+                | Q(organization_id__in=org_represented_org_ids)
             ).values_list("path", flat=True)
         )
 
@@ -79,9 +105,24 @@ class PermittedDatasetManager(TranslatableManager):
         )
         open_data_org_ids = open_data_representatives.filter(content_type=org_ct).values_list("object_id", flat=True)
 
+        org_represented_open_data_dataset_ids = Representative.objects.filter(
+            content_type=dataset_ct,
+            role__in=open_data_roles,
+            organization__in=user_org_ids,
+        ).values_list("object_id", flat=True)
+
+        org_represented_open_data_org_ids = Representative.objects.filter(
+            content_type=org_ct,
+            role__in=open_data_roles,
+            organization__in=user_org_ids,
+        ).values_list("object_id", flat=True)
+
         open_data_paths = set(
             Dataset.objects.filter(
-                Q(pk__in=open_data_dataset_ids) | Q(organization_id__in=open_data_org_ids)
+                Q(pk__in=open_data_dataset_ids)
+                | Q(organization_id__in=open_data_org_ids)
+                | Q(pk__in=org_represented_open_data_dataset_ids)
+                | Q(organization_id__in=org_represented_open_data_org_ids)
             ).values_list("path", flat=True)
         )
 

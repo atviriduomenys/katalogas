@@ -24,7 +24,7 @@ from vitrina.classifiers.factories import (
     DocumentationFactory,
 )
 from vitrina.classifiers.factories import LicenceFactory, ApplicableLegislationFactory
-from vitrina.classifiers.models import Category, AreaOfManagement, ConceptSchema
+from vitrina.classifiers.models import Category, AreaOfManagement, ConceptSchema, Concept
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import (
@@ -38,6 +38,7 @@ from vitrina.datasets.factories import (
     ContactFactory,
     DCATResourceSubclassFactory,
     DatasetGroupCategoryUriFactory,
+    DatasetServiceFactory,
 )
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.forms import (
@@ -1643,22 +1644,22 @@ class TestDatasetUpdateView:
 
     def test_dataset_update_service_agent(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
-        subclass = DCATResourceSubclassFactory(name="service")
-        dataset = DatasetFactory(subclass=subclass, organization=organization, endpoint_url="http://www.example.com")
+        dataservice = DatasetServiceFactory(organization=organization, endpoint_url=None, endpoint_description=None)
         agent = AgentFactory(organization=organization)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
-        url = reverse("dataset-change", kwargs={"pk": dataset.id})
+        url = reverse("dataset-change", kwargs={"pk": dataservice.id})
 
         form = app.get(url).forms["dataset-form"]
         form["agent"] = agent.pk
+        form["conforms_to"] = Concept.objects.get(code="UAPI").pk
 
-        assert not dataset.agent
+        assert not dataservice.agent
         response = form.submit()
         assert response.status_code == 302
-        dataset.refresh_from_db()
-        assert dataset.agent == agent
+        dataservice.refresh_from_db()
+        assert dataservice.agent == agent
 
 
 class TestDatasetCreateView:
@@ -2305,18 +2306,11 @@ class TestDatasetCreateView:
         assert rep is not None
         assert rep.role == Representative.OPEN_DATA_COORDINATOR
 
-    @pytest.mark.parametrize(
-        "with_agent",
-        [True, False],
-    )
-    def test_create_service_with_and_without_agent(self, app: DjangoTestApp, with_agent: bool) -> None:
-        frequency = FrequencyFactory()
+    def test_create_service_with_agent(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name="service")
-        if with_agent:
-            agent = AgentFactory(organization=organization)
-        else:
-            agent = None
+        agent = AgentFactory(organization=organization)
+        contact = ContactFactory(organization=organization)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -2324,11 +2318,10 @@ class TestDatasetCreateView:
 
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Some title"
-        form["description"] = "Some description"
-        form["frequency"] = frequency.pk
-        form["access_rights"] = Dataset.PUBLIC
-        form["endpoint_url"] = "http://www.example.com"
-        form["agent"] = agent.pk if agent else ""
+        form["tags"] = "test"
+        form["contact"] = contact.pk
+        form["agent"] = agent.pk
+        form["conforms_to"] = Concept.objects.get(code="UAPI").pk
 
         response = form.submit()
 
@@ -2337,6 +2330,34 @@ class TestDatasetCreateView:
         dataset = Dataset.objects.filter(translations__title="Some title").first()
 
         assert dataset.agent == agent
+        assert dataset.conforms_to == Concept.objects.get(code="UAPI")
+
+    def test_create_service_without_agent(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="service")
+        contact = ContactFactory(organization=organization)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})
+
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Some title"
+        form["tags"] = "test"
+        form["contact"] = contact.pk
+        form["endpoint_url"] = "https://data.gov.lt"
+        form["endpoint_description"] = "http://api.data.gov.lt"
+
+        response = form.submit()
+
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.filter(translations__title="Some title").first()
+
+        assert dataset.agent is None
+        assert dataset.conforms_to is None
+        assert dataset.endpoint_url == "https://data.gov.lt"
+        assert dataset.endpoint_description == "http://api.data.gov.lt"
 
 
 class TestDatasetDeleteView:

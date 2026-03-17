@@ -69,7 +69,7 @@ class TestAgentEnvironmentForm:
             "open_data_publish_url": "http://open-data.test",
             "is_enabled": True,
         }
-        form = AgentEnvironmentForm(data=form_data,agent=agent, organization=organization)
+        form = AgentEnvironmentForm(data=form_data, agent=agent, organization=organization)
         assert form.is_valid()
 
     def test_failure_open_data_is_published_but_no_url_is_provided(self, organization, agent: Agent):

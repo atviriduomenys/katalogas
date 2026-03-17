@@ -5,7 +5,7 @@ from django_webtest import DjangoTestApp
 from django.test import RequestFactory
 
 from vitrina.classifiers.factories import ConceptSchemaFactory, ConceptFactory
-from vitrina.classifiers.models import ConceptSchema
+from vitrina.classifiers.models import ConceptSchema, Concept
 from vitrina.datasets.factories import DCATResourceSubclassFactory, DatasetFactory
 from vitrina.datasets.forms import (
     InformationSystemResourceForm,
@@ -20,6 +20,7 @@ from vitrina.orgs.models import Organization, Representative
 from vitrina.users.factories import UserFactory
 from vitrina.uapi.factories import AgentFactory
 from vitrina.users.models import User
+from vitrina.resources.models import Format
 
 pytestmark = pytest.mark.django_db
 
@@ -137,6 +138,71 @@ class TestServiceResourceForm:
         assert valid_agent in agents_queryset
         assert archived_agent not in agents_queryset
         assert different_org_agent not in agents_queryset
+
+    def test_api_related_fields_must_be_empty_when_agent_selected(
+        self, organization: Organization, user: User, rf: RequestFactory
+    ):
+        request = rf.get("/")
+        request.resolver_match = resolve("/")
+        request.user = user
+        agent = AgentFactory(organization=organization)
+
+        data = {
+            "agent": agent,
+            "endpoint_url": "http://www.example.com",
+            "endpoint_type": Format.objects.first(),
+            "endpoint_description": "http://www.example.com",
+            "endpoint_description_type": Format.objects.first(),
+        }
+
+        form = ServiceResourceForm(data=data, request=request, organization=organization)
+
+        error_msg = "Pasirinkus agentą, šis laukas negali būti užpildytas."
+        assert "endpoint_url" in form.errors
+        assert "endpoint_type" in form.errors
+        assert "endpoint_description" in form.errors
+        assert "endpoint_description_type" in form.errors
+
+        assert error_msg in form.errors["endpoint_url"]
+        assert error_msg in form.errors["endpoint_type"]
+        assert error_msg in form.errors["endpoint_description"]
+        assert error_msg in form.errors["endpoint_description_type"]
+
+    def test_conforms_to_must_be_selected_when_agent_selected(
+        self, organization: Organization, user: User, rf: RequestFactory
+    ):
+        request = rf.get("/")
+        request.resolver_match = resolve("/")
+        request.user = user
+        agent = AgentFactory(organization=organization)
+
+        data = {
+            "agent": agent,
+        }
+
+        form = ServiceResourceForm(data=data, request=request, organization=organization)
+
+        assert "conforms_to" in form.errors
+        assert "Su agentu susietos paslaugos privalo atitikti UDTS standartą." in form.errors["conforms_to"]
+
+    def test_agent_must_be_selected_if_conforms_to_is_uapi(
+        self, organization: Organization, user: User, rf: RequestFactory
+    ):
+        request = rf.get("/")
+        request.resolver_match = resolve("/")
+        request.user = user
+
+        data = {
+            "conforms_to": Concept.objects.get(code="UAPI"),
+        }
+
+        form = ServiceResourceForm(data=data, request=request, organization=organization)
+
+        assert "agent" in form.errors
+        assert (
+            "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+            in form.errors["agent"]
+        )
 
 
 class TestCatalogResourceForm:

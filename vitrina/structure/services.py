@@ -5,8 +5,8 @@ import uuid
 from io import StringIO
 from json import JSONDecodeError
 from typing import Union, Tuple, List, Dict, Generator
-from functools import lru_cache
-import traceback
+from functools import lru_cache, cache
+
 
 import requests
 from django.db.models import Q, Prefetch, QuerySet
@@ -56,10 +56,10 @@ from vitrina.users.models import User
 logger = logging.getLogger(__name__)
 
 
+@cache
 def _get_sys_user() -> User:
-    if not hasattr(_get_sys_user, "_cache"):
-        _get_sys_user._cache, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
-    return _get_sys_user._cache
+    user, _ = User.objects.get_or_create(email=settings.SYSTEM_USER_EMAIL)
+    return user
 
 
 def create_structure_objects(structure: DatasetStructure, metadata_version: Version = None) -> Version:

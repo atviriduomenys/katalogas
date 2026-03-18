@@ -1372,7 +1372,7 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
         request_obj = get_object_or_404(Request, pk=self.kwargs.get("pk"))
         return has_perm(self.request.user, Action.ASSIGN, request_obj)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
         context_data = super().get_context_data(**kwargs)
         user = self.request.user
 

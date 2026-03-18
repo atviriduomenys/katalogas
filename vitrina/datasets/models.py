@@ -885,9 +885,7 @@ class Dataset(Resource):
         effective_roles = []
         for org_id, org_role in org_roles:
             user_role = user_org_map[org_id]
-            effective_roles.append(
-                max(org_role, user_role, key=Representative.ROLE_HIERARCHY.index)
-            )
+            effective_roles.append(max(org_role, user_role, key=Representative.ROLE_HIERARCHY.index))
 
         if not effective_roles:
             return None

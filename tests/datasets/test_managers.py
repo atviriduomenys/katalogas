@@ -290,40 +290,48 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             email="test2@test.com", password="test123", status=User.ACTIVE
         )
         RepresentativeFactory(
-            content_type=org_ct, object_id=self.random_rep_org.pk,
-            user=self.random_org_representative, organization=None,
+            content_type=org_ct,
+            object_id=self.random_rep_org.pk,
+            user=self.random_org_representative,
+            organization=None,
         )
 
         self.org_representative = User.objects.create_user(
             email="test3@test.com", password="test123", status=User.ACTIVE
         )
         RepresentativeFactory(
-            content_type=org_ct, object_id=self.main_rep_org.pk,
-            user=self.org_representative, organization=None,
+            content_type=org_ct,
+            object_id=self.main_rep_org.pk,
+            user=self.org_representative,
+            organization=None,
         )
 
         self.data_set_representative = User.objects.create_user(
             email="test4@test.com", password="test123", status=User.ACTIVE
         )
         RepresentativeFactory(
-            content_type=org_ct, object_id=self.grandchild_rep_org.pk,
-            user=self.data_set_representative, organization=None,
+            content_type=org_ct,
+            object_id=self.grandchild_rep_org.pk,
+            user=self.data_set_representative,
+            organization=None,
         )
 
         self.parent_representative = User.objects.create_user(
             email="test5@test.com", password="test123", status=User.ACTIVE
         )
         RepresentativeFactory(
-            content_type=org_ct, object_id=self.parent_rep_org.pk,
-            user=self.parent_representative, organization=None,
+            content_type=org_ct,
+            object_id=self.parent_rep_org.pk,
+            user=self.parent_representative,
+            organization=None,
         )
 
-        self.grandpa_rep = User.objects.create_user(
-            email="vssa2@vssa.com", password="vssa123", status=User.ACTIVE
-        )
+        self.grandpa_rep = User.objects.create_user(email="vssa2@vssa.com", password="vssa123", status=User.ACTIVE)
         RepresentativeFactory(
-            content_type=org_ct, object_id=self.grand_rep_org.pk,
-            user=self.grandpa_rep, organization=None,
+            content_type=org_ct,
+            object_id=self.grand_rep_org.pk,
+            user=self.grandpa_rep,
+            organization=None,
         )
 
     # Same parametrize cases and test bodies as the original class

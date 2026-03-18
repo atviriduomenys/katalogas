@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.core.paginator import Paginator
 from django.forms import ModelForm, BaseForm
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
@@ -195,6 +195,10 @@ class AgentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
 class AgentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixin, PlanMixin, DeleteView):
     model = Agent
     template_name = "confirm_delete.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # Temporary disable agent deletion
+        return redirect(self.get_success_url())
 
     def get_queryset(self):
         return self.model.objects.not_archived().filter(organization=self.organization)
@@ -389,6 +393,11 @@ class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
 class AgentEnvDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEnvMixin, PlanMixin, DeleteView):
     model = AgentEnvironment
     template_name = "confirm_delete.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        # Temporary disable agent environment deletion
+        self.object = self.get_object()
+        return redirect(self.get_success_url())
 
     def get_queryset(self):
         return self.model.objects.not_archived().filter(agent__organization=self.organization)

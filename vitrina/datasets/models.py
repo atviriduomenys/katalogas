@@ -856,18 +856,19 @@ class Dataset(Resource):
         return reverse("dataset-members", kwargs={"pk": self.pk})
 
     def get_effective_user_role_via_org(self, user: "User") -> str | None:
+        organization_ct = ContentType.objects.get_for_model(Organization)
+
         user_org_ids = set(
             Representative.objects.filter(
                 user=user,
-                organization__isnull=False,
-            ).values_list("organization_id", flat=True)
+                content_type=organization_ct,
+            ).values_list("object_id", flat=True)
         )
 
         if not user_org_ids:
             return None
 
         dataset_ct = self.dataset_content_type
-        organization_ct = ContentType.objects.get_for_model(Organization)
 
         dataset_ids = {self.id}
         organization_ids = {self.organization_id}
@@ -875,13 +876,14 @@ class Dataset(Resource):
             dataset_ids.add(parent.pk)
             organization_ids.add(parent.organization_id)
 
-        rep = Representative.objects.filter(
-            Q(content_type=dataset_ct, object_id__in=dataset_ids)
-            | Q(content_type=organization_ct, object_id__in=organization_ids),
-            organization_id__in=user_org_ids,
-        ).values_list("role", flat=True)
+        roles = list(
+            Representative.objects.filter(
+                Q(content_type=dataset_ct, object_id__in=dataset_ids)
+                | Q(content_type=organization_ct, object_id__in=organization_ids),
+                organization_id__in=user_org_ids,
+            ).values_list("role", flat=True)
+        )
 
-        roles = list(rep)
         if not roles:
             return None
 

@@ -603,6 +603,24 @@ def has_perm(
                     return user_viisp_org == parent
                 return True
 
+            representative_organization_ids = list(
+                Representative.objects.filter(where, organization__isnull=False).values_list(
+                    "organization_id", flat=True
+                )
+            )
+
+            if representative_organization_ids:
+                representative_organization_ct = ContentType.objects.get_for_model(Organization)
+                user_rep_orgs = Representative.objects.filter(
+                    user=user,
+                    content_type=representative_organization_ct,
+                    object_id__in=representative_organization_ids,
+                )
+
+                if user_rep_orgs.exists():
+                    if isinstance(obj, Representative):
+                        return obj.can_be_updated_by(user)
+                    return True
         return False
 
 

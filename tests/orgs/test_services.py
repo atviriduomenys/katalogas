@@ -119,6 +119,41 @@ def test_dataset_create_permission_organization_manager(role: str, expected: boo
 @pytest.mark.parametrize(
     "role,expected",
     [
+        (Representative.RESOURCE_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
+    ],
+)
+def test_dataset_create_permission_via_org_representative(role: str, expected: bool):
+    organization = OrganizationFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.CREATE, Dataset, organization)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
     ],
@@ -198,6 +233,67 @@ def test_dataset_permissions(role, action, dataset_fixture, expected, request):
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
+    "role,action,dataset_fixture,expected",
+    [
+        ("resource_manager", Action.CREATE, "public_dataset", True),
+        ("resource_manager", Action.CREATE, "non_public_dataset", True),
+        ("resource_manager", Action.CREATE, "confidential_dataset", True),
+        ("resource_manager", Action.UPDATE, "public_dataset", True),
+        ("resource_manager", Action.UPDATE, "non_public_dataset", True),
+        ("resource_manager", Action.UPDATE, "confidential_dataset", True),
+        ("resource_manager", Action.VIEW, "public_dataset", True),
+        ("resource_manager", Action.VIEW, "non_public_dataset", True),
+        ("resource_manager", Action.VIEW, "confidential_dataset", True),
+        ("resource_manager", Action.DELETE, "public_dataset", True),
+        ("resource_manager", Action.DELETE, "non_public_dataset", True),
+        ("resource_manager", Action.DELETE, "confidential_dataset", True),
+        ("open_data_manager", Action.CREATE, "public_dataset", True),
+        ("open_data_manager", Action.CREATE, "non_public_dataset", True),
+        ("open_data_manager", Action.CREATE, "confidential_dataset", True),
+        ("open_data_manager", Action.UPDATE, "public_dataset", True),
+        ("open_data_manager", Action.UPDATE, "non_public_dataset", False),
+        ("open_data_manager", Action.UPDATE, "confidential_dataset", False),
+        ("open_data_manager", Action.VIEW, "public_dataset", True),
+        ("open_data_manager", Action.VIEW, "non_public_dataset", False),
+        ("open_data_manager", Action.VIEW, "confidential_dataset", False),
+        ("open_data_manager", Action.DELETE, "public_dataset", True),
+        ("open_data_manager", Action.DELETE, "non_public_dataset", False),
+        ("open_data_manager", Action.DELETE, "confidential_dataset", False),
+    ],
+)
+def test_dataset_permissions_via_org_representative(role, action, dataset_fixture, expected, request):
+    dataset = request.getfixturevalue(dataset_fixture)
+
+    rep_roles = {
+        "open_data_manager": Representative.OPEN_DATA_MANAGER,
+        "resource_manager": Representative.RESOURCE_MANAGER,
+    }
+
+    representative_org = OrganizationFactory()
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset.pk,
+        role=rep_roles[role],
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=rep_roles[role],
+        user=user,
+        organization=None,
+    )
+
+    assert has_perm(user, action, dataset) is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
     "role,action,obj_fixture,expected",
     [
         ("resource_coordinator", Action.UPDATE, "representative_on_dataset", True),
@@ -236,6 +332,41 @@ def test_dataset_history_view_permission_manager(role: str, expected: bool):
     ct = ContentType.objects.get_for_model(dataset)
     manager = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=role)
     res = has_perm(manager.user, Action.HISTORY_VIEW, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.RESOURCE_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
+    ],
+)
+def test_dataset_history_view_permission_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory()
+
+    representative_org = OrganizationFactory()
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.HISTORY_VIEW, dataset)
     assert res is expected
 
 
@@ -321,6 +452,41 @@ def test_dataset_distribution_create_permission_organization_manager(role: str, 
 @pytest.mark.parametrize(
     "role,expected",
     [
+        (Representative.RESOURCE_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
+    ],
+)
+def test_dataset_distribution_create_permission_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(dataset.organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=dataset.organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.CREATE, DatasetDistribution, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
     ],
@@ -353,6 +519,41 @@ def test_dataset_distribution_create_permission_dataset_manager(role: str, expec
 @pytest.mark.parametrize(
     "role,expected",
     [
+        (Representative.RESOURCE_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
+    ],
+)
+def test_dataset_distribution_create_permission_dataset_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory()
+
+    representative_org = OrganizationFactory()
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.CREATE, DatasetDistribution, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
     ],
@@ -378,6 +579,41 @@ def test_dataset_distribution_edit_permission_organization_manager(role: str, ex
     ct = ContentType.objects.get_for_model(dataset_distribution.dataset.organization)
     manager = RepresentativeFactory(content_type=ct, object_id=dataset_distribution.dataset.organization.pk, role=role)
     res = has_perm(manager.user, Action.UPDATE, dataset_distribution)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.RESOURCE_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
+    ],
+)
+def test_dataset_distribution_edit_permission_via_org_representative(role: str, expected: bool):
+    dataset_distribution = DatasetDistributionFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(dataset_distribution.dataset.organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=dataset_distribution.dataset.organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.UPDATE, dataset_distribution)
     assert res is expected
 
 
@@ -419,6 +655,41 @@ def test_dataset_distribution_edit_permission_dataset_manager(role: str, expecte
 @pytest.mark.parametrize(
     "role,expected",
     [
+        (Representative.RESOURCE_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
+    ],
+)
+def test_dataset_distribution_edit_permission_dataset_via_org_representative(role: str, expected: bool):
+    dataset_distribution = DatasetDistributionFactory()
+
+    representative_org = OrganizationFactory()
+    dataset_ct = ContentType.objects.get_for_model(dataset_distribution.dataset)
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset_distribution.dataset.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.UPDATE, dataset_distribution)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
     ],
@@ -451,6 +722,41 @@ def test_organization_representative_create_permission_manager(role: str, expect
 @pytest.mark.parametrize(
     "role,expected",
     [
+        (Representative.RESOURCE_MANAGER, False),
+        (Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_organization_representative_create_permission_via_org_representative(role: str, expected: bool):
+    organization = OrganizationFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.CREATE, Representative, organization)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
         (Representative.RESOURCE_MANAGER, False),
@@ -462,6 +768,43 @@ def test_organization_representative_create_permission_representative(role: str,
     ct = ContentType.objects.get_for_model(organization)
     representative = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
     res = has_perm(representative.user, Action.CREATE, Representative, organization)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.RESOURCE_COORDINATOR, True),
+        (Representative.OPEN_DATA_COORDINATOR, True),
+        (Representative.RESOURCE_MANAGER, False),
+        (Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_organization_representative_create_permission_via_org_representative(role: str, expected: bool):
+    organization = OrganizationFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.CREATE, Representative, organization)
     assert res is expected
 
 
@@ -487,6 +830,43 @@ def test_organization_representative_edit_permission_representative(role: str, e
 @pytest.mark.parametrize(
     "role,expected",
     [
+        (Representative.RESOURCE_COORDINATOR, True),
+        (Representative.OPEN_DATA_COORDINATOR, True),
+        (Representative.RESOURCE_MANAGER, False),
+        (Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_organization_representative_edit_permission_via_org_representative(role: str, expected: bool):
+    organization = OrganizationFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.UPDATE, Representative, organization)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
         (Representative.RESOURCE_MANAGER, False),
         (Representative.OPEN_DATA_MANAGER, False),
     ],
@@ -496,6 +876,41 @@ def test_organization_representative_view_permission_manager(role: str, expected
     ct = ContentType.objects.get_for_model(organization)
     manager = RepresentativeFactory(content_type=ct, object_id=organization.pk, role=role)
     res = has_perm(manager.user, Action.VIEW, Representative, organization)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.RESOURCE_MANAGER, False),
+        (Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_organization_representative_view_permission_via_org_representative(role: str, expected: bool):
+    organization = OrganizationFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.VIEW, Representative, organization)
     assert res is expected
 
 
@@ -535,6 +950,41 @@ def test_dataset_representative_create_permission_organization_manager(role: str
 @pytest.mark.parametrize(
     "role,expected",
     [
+        (Representative.RESOURCE_MANAGER, False),
+        (Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_dataset_representative_create_permission_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(dataset.organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=dataset.organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.CREATE, Representative, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
     ],
@@ -560,6 +1010,41 @@ def test_dataset_representative_create_permission_dataset_manager(role: str, exp
     ct = ContentType.objects.get_for_model(dataset)
     manager = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=role)
     res = has_perm(manager.user, Action.CREATE, Representative, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.RESOURCE_MANAGER, False),
+        (Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_dataset_representative_create_permission_dataset_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory()
+
+    representative_org = OrganizationFactory()
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.CREATE, Representative, dataset)
     assert res is expected
 
 
@@ -594,6 +1079,44 @@ def test_dataset_representative_edit_permission_organization_manager(role: str, 
     manager = RepresentativeFactory(content_type=organization_ct, object_id=dataset.organization.pk, role=role)
     representative = RepresentativeFactory(content_type=dataset_ct, object_id=dataset.pk)
     res = has_perm(manager.user, Action.UPDATE, representative)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.RESOURCE_MANAGER, False),
+        (Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_dataset_representative_edit_permission_organization_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(dataset.organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=dataset.organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    representative = RepresentativeFactory(content_type=dataset_ct, object_id=dataset.pk)
+
+    res = has_perm(user, Action.UPDATE, representative)
     assert res is expected
 
 
@@ -636,6 +1159,43 @@ def test_dataset_representative_edit_permission_dataset_manager(role: str, expec
 @pytest.mark.parametrize(
     "role,expected",
     [
+        (Representative.RESOURCE_MANAGER, False),
+        (Representative.OPEN_DATA_MANAGER, False),
+    ],
+)
+def test_dataset_representative_edit_permission_dataset_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory()
+
+    representative_org = OrganizationFactory()
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    representative = RepresentativeFactory(content_type=dataset_ct, object_id=dataset.pk)
+
+    res = has_perm(user, Action.UPDATE, representative)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
     ],
@@ -669,6 +1229,41 @@ def test_dataset_representative_view_permission_organization_manager(role: str, 
 @pytest.mark.parametrize(
     "role,expected",
     [
+        (Representative.RESOURCE_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
+    ],
+)
+def test_dataset_representative_view_permission_organization_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory()
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(dataset.organization)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=dataset.organization.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.VIEW, Representative, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
         (Representative.RESOURCE_COORDINATOR, True),
         (Representative.OPEN_DATA_COORDINATOR, True),
     ],
@@ -694,6 +1289,41 @@ def test_dataset_representative_view_permission_dataset_manager(role: str, expec
     ct = ContentType.objects.get_for_model(dataset)
     manager = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=role)
     res = has_perm(manager.user, Action.VIEW, Representative, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.RESOURCE_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
+    ],
+)
+def test_dataset_representative_view_permission_dataset_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory()
+
+    representative_org = OrganizationFactory()
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.VIEW, Representative, dataset)
     assert res is expected
 
 
@@ -762,6 +1392,49 @@ def test_dataset_structure_create_permission_dataset_manager(access_rights: str,
     ct = ContentType.objects.get_for_model(dataset)
     manager = RepresentativeFactory(content_type=ct, object_id=dataset.pk, role=role)
     res = has_perm(manager.user, Action.CREATE, DatasetStructure, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "access_rights, role,expected",
+    [
+        (Dataset.PUBLIC, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.CONFIDENTIAL, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
+    ],
+)
+def test_dataset_structure_create_permission_dataset_via_org_representative(
+    access_rights: str, role: str, expected: bool
+):
+    dataset = DatasetFactory(access_rights=access_rights)
+
+    representative_org = OrganizationFactory()
+    dataset_ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        content_type=dataset_ct,
+        object_id=dataset.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.CREATE, DatasetStructure, dataset)
     assert res is expected
 
 
@@ -836,6 +1509,50 @@ def test_dataset_structure_update_permission_manager(access_rights: str, role: s
     dataset = DatasetFactory(organization=org, access_rights=access_rights)
 
     result = has_perm(manager.user, Action.UPDATE, DatasetStructure, dataset)
+
+    assert result == expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "access_rights,role,expected",
+    [
+        (Dataset.PUBLIC, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.OPEN_DATA_MANAGER, False),
+        (Dataset.CONFIDENTIAL, Representative.OPEN_DATA_MANAGER, False),
+        (Dataset.PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
+    ],
+)
+def test_dataset_structure_update_permission_via_org_representative(access_rights: str, role: str, expected: bool):
+    org = DatasetFactory().organization
+
+    representative_org = OrganizationFactory()
+    org_ct = ContentType.objects.get_for_model(org)
+    RepresentativeFactory(
+        content_type=org_ct,
+        object_id=org.pk,
+        role=role,
+        organization=representative_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(representative_org)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=representative_org.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    dataset = DatasetFactory(organization=org, access_rights=access_rights)
+
+    result = has_perm(user, Action.UPDATE, DatasetStructure, dataset)
 
     assert result == expected
 
@@ -948,6 +1665,40 @@ def test_dataset_create_permission_dataset_publisher(role: str, expected: bool):
         (Representative.OPEN_DATA_MANAGER, True),
     ],
 )
+def test_dataset_create_permission_dataset_publisher_via_org_representative(role: str, expected: bool):
+    dataset = DatasetFactory(is_public=False)
+
+    organization = OrganizationFactory()
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=role,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=organization.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.CREATE, Dataset, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.RESOURCE_MANAGER, True),
+        (Representative.OPEN_DATA_MANAGER, True),
+    ],
+)
 def test_dataset_create_permission_organization_publisher(role: str, expected: bool):
     dataset = DatasetFactory(is_public=False)
     user = UserFactory()
@@ -994,6 +1745,48 @@ def test_dataset_edit_permission_dataset_publisher(access_rights: str, role: str
         object_id=dataset.pk,
         user=user,
         role=role,
+    )
+
+    res = has_perm(user, Action.UPDATE, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "access_rights,role,expected",
+    [
+        (Dataset.PUBLIC, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.OPEN_DATA_MANAGER, False),
+        (Dataset.CONFIDENTIAL, Representative.OPEN_DATA_MANAGER, False),
+        (Dataset.PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
+    ],
+)
+def test_dataset_edit_permission_dataset_publisher_via_org_representative(
+    access_rights: str, role: str, expected: bool
+):
+    dataset = DatasetFactory(is_public=False, access_rights=access_rights)
+
+    organization = OrganizationFactory()
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        user=None,
+        role=role,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=organization.pk,
+        role=role,
+        user=user,
+        organization=None,
     )
 
     res = has_perm(user, Action.UPDATE, dataset)
@@ -1062,6 +1855,49 @@ def test_dataset_history_view_permission_publisher(access_rights: str, role: str
 
 @pytest.mark.django_db
 @pytest.mark.parametrize(
+    "access_rights,role,expected",
+    [
+        (Dataset.PUBLIC, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.OPEN_DATA_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.OPEN_DATA_MANAGER, False),
+        (Dataset.CONFIDENTIAL, Representative.OPEN_DATA_MANAGER, False),
+        (Dataset.PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.RESTRICTED, Representative.RESOURCE_MANAGER, True),
+        (Dataset.NON_PUBLIC, Representative.RESOURCE_MANAGER, True),
+        (Dataset.CONFIDENTIAL, Representative.RESOURCE_MANAGER, True),
+    ],
+)
+def test_dataset_history_view_permission_publisher_via_org_representative(
+    access_rights: str, role: str, expected: bool
+):
+    organization = OrganizationFactory()
+    dataset = DatasetFactory(access_rights=access_rights)
+
+    ct = ContentType.objects.get_for_model(dataset)
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ct,
+        object_id=dataset.pk,
+        role=role,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=organization.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.HISTORY_VIEW, dataset)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
     "role,expected",
     [
         (Representative.OPEN_DATA_MANAGER, False),
@@ -1084,6 +1920,41 @@ def test_organization_representative_view_permission_publisher(role: str, expect
         role=role,
         user=None,
     )
+    res = has_perm(user, Action.VIEW, Representative, organization)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.OPEN_DATA_MANAGER, False),
+        (Representative.RESOURCE_MANAGER, False),
+    ],
+)
+def test_organization_representative_view_permission_publisher_via_org_representative(role: str, expected: bool):
+    user_organization = OrganizationFactory()
+    organization = OrganizationFactory()
+
+    org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        organization=user_organization,
+        content_type=org_ct,
+        object_id=organization.pk,
+        role=role,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(user_organization)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=user_organization.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
     res = has_perm(user, Action.VIEW, Representative, organization)
     assert res is expected
 
@@ -1134,6 +2005,39 @@ def test_organization_edit_publisher(role: str, expected: bool):
         object_id=organization.pk,
         user=None,
         role=role,
+    )
+
+    res = has_perm(user, Action.UPDATE, organization)
+    assert res is expected
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.OPEN_DATA_MANAGER, False),
+        (Representative.RESOURCE_MANAGER, False),
+    ],
+)
+def test_organization_edit_publisher_via_org_representative(role: str, expected: bool):
+    organization = OrganizationFactory()
+
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ContentType.objects.get_for_model(Organization),
+        object_id=organization.pk,
+        user=None,
+        role=role,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=organization.pk,
+        role=role,
+        user=user,
+        organization=None,
     )
 
     res = has_perm(user, Action.UPDATE, organization)
@@ -1199,6 +2103,41 @@ def test_dataset_distribution_edit_permission_organization_publisher(role: str, 
     assert res is expected
 
 
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "role,expected",
+    [
+        (Representative.OPEN_DATA_MANAGER, True),
+        (Representative.RESOURCE_MANAGER, True),
+    ],
+)
+def test_dataset_distribution_edit_permission_organization_publisher_via_org_representative(role: str, expected: bool):
+    organization = OrganizationFactory()
+    dataset_distribution = DatasetDistributionFactory()
+
+    ct = ContentType.objects.get_for_model(dataset_distribution.dataset.organization)
+    RepresentativeFactory(
+        organization=organization,
+        content_type=ct,
+        object_id=dataset_distribution.dataset.organization.pk,
+        role=role,
+        user=None,
+    )
+
+    user = UserFactory()
+    rep_org_ct = ContentType.objects.get_for_model(organization)
+    RepresentativeFactory(
+        content_type=rep_org_ct,
+        object_id=organization.pk,
+        role=role,
+        user=user,
+        organization=None,
+    )
+
+    res = has_perm(user, Action.UPDATE, dataset_distribution)
+    assert res is expected
+
+
 class TestHasDatasetPerm:
     @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED])
     def test_permissions_with_dataset_open_data_representative(self, access_rights: str):
@@ -1210,6 +2149,31 @@ class TestHasDatasetPerm:
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
+
+    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED])
+    def test_permissions_with_dataset_open_data_via_org_representative(self, access_rights: str):
+        dataset = DatasetFactory(access_rights=access_rights)
+
+        representative_org = OrganizationFactory()
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            role=Representative.OPEN_DATA_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        rep_org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=rep_org_ct,
+            object_id=representative_org.pk,
+            role=Representative.OPEN_DATA_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert _has_dataset_perm(user, Action.UPDATE, dataset, dataset) is True
 
     @pytest.mark.parametrize(
         "access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL]
@@ -1224,6 +2188,33 @@ class TestHasDatasetPerm:
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
 
+    @pytest.mark.parametrize(
+        "access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL]
+    )
+    def test_permissions_with_dataset_resource_via_org_representative(self, access_rights: str):
+        dataset = DatasetFactory(access_rights=access_rights)
+
+        representative_org = OrganizationFactory()
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            role=Representative.RESOURCE_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        rep_org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=rep_org_ct,
+            object_id=representative_org.pk,
+            role=Representative.RESOURCE_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert _has_dataset_perm(user, Action.UPDATE, dataset, dataset) is True
+
     @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED])
     def test_permissions_with_organization_open_data_representative(self, access_rights: str):
         organization = OrganizationFactory()
@@ -1235,6 +2226,32 @@ class TestHasDatasetPerm:
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
+
+    @pytest.mark.parametrize("access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED])
+    def test_permissions_with_organization_open_data_via_org_representative(self, access_rights: str):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(access_rights=access_rights, organization=organization)
+
+        representative_org = OrganizationFactory()
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            role=Representative.OPEN_DATA_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        rep_org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=rep_org_ct,
+            object_id=representative_org.pk,
+            role=Representative.OPEN_DATA_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert _has_dataset_perm(user, Action.UPDATE, dataset, dataset) is True
 
     @pytest.mark.parametrize(
         "access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL]
@@ -1249,6 +2266,34 @@ class TestHasDatasetPerm:
         )
 
         assert _has_dataset_perm(representative.user, Action.UPDATE, dataset, dataset) is True
+
+    @pytest.mark.parametrize(
+        "access_rights", [Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC, Dataset.CONFIDENTIAL]
+    )
+    def test_permissions_with_organization_resource_via_org_representative(self, access_rights: str):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(access_rights=access_rights, organization=organization)
+
+        representative_org = OrganizationFactory()
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            role=Representative.RESOURCE_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        rep_org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=rep_org_ct,
+            object_id=representative_org.pk,
+            role=Representative.RESOURCE_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert _has_dataset_perm(user, Action.UPDATE, dataset, dataset) is True
 
     def test_permission_with_organization_representative_for_all_related_datasets(self):
         parent_organization = OrganizationFactory()

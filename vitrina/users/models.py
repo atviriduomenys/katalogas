@@ -210,12 +210,14 @@ class User(AbstractUser):
             return True
 
         # Case 2: user represents an organization, and that organization represents the organization
-        user_org_ids = Representative.objects.filter(
-            user=self,
-            content_type=org_content_type,
-        ).values_list("object_id", flat=True)
+        user_org_ids = list(
+            Representative.objects.filter(
+                user=self,
+                content_type=org_content_type,
+            ).values_list("object_id", flat=True)
+        )
 
-        if not user_org_ids.exists():
+        if not user_org_ids:
             return False
 
         return Representative.objects.filter(

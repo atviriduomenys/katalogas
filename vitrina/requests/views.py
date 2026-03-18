@@ -32,7 +32,7 @@ from django.views.generic import (
 )
 from haystack.generic_views import FacetedSearchView
 from reversion.models import Version
-from typing import List
+from typing import List, Any
 from urllib.parse import urlencode
 
 

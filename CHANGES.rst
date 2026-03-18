@@ -4,6 +4,10 @@ Changes
 v 1.17.0 (2026-03-16)
 ==================
 
+https://github.com/atviriduomenys/katalogas/issues/2335
+
+- Access level display adjustments; If value exists, display the initial provided value, otherwise, default to average.
+
 
 v 1.16.0 (2026-03-16)
 ==================

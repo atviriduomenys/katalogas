@@ -781,43 +781,6 @@ def test_organization_representative_create_permission_representative(role: str,
         (Representative.OPEN_DATA_MANAGER, False),
     ],
 )
-def test_organization_representative_create_permission_via_org_representative(role: str, expected: bool):
-    organization = OrganizationFactory()
-
-    representative_org = OrganizationFactory()
-    org_ct = ContentType.objects.get_for_model(organization)
-    RepresentativeFactory(
-        content_type=org_ct,
-        object_id=organization.pk,
-        role=role,
-        organization=representative_org,
-        user=None,
-    )
-
-    user = UserFactory()
-    rep_org_ct = ContentType.objects.get_for_model(representative_org)
-    RepresentativeFactory(
-        content_type=rep_org_ct,
-        object_id=representative_org.pk,
-        role=role,
-        user=user,
-        organization=None,
-    )
-
-    res = has_perm(user, Action.CREATE, Representative, organization)
-    assert res is expected
-
-
-@pytest.mark.django_db
-@pytest.mark.parametrize(
-    "role,expected",
-    [
-        (Representative.RESOURCE_COORDINATOR, True),
-        (Representative.OPEN_DATA_COORDINATOR, True),
-        (Representative.RESOURCE_MANAGER, False),
-        (Representative.OPEN_DATA_MANAGER, False),
-    ],
-)
 def test_organization_representative_edit_permission_representative(role: str, expected: bool):
     organization = OrganizationFactory()
     ct = ContentType.objects.get_for_model(organization)

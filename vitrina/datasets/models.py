@@ -858,14 +858,14 @@ class Dataset(Resource):
     def get_effective_user_role_via_org(self, user: "User") -> str | None:
         organization_ct = ContentType.objects.get_for_model(Organization)
 
-        user_org_ids = set(
+        user_org_map = dict(
             Representative.objects.filter(
                 user=user,
                 content_type=organization_ct,
-            ).values_list("object_id", flat=True)
+            ).values_list("object_id", "role")
         )
 
-        if not user_org_ids:
+        if not user_org_map:
             return None
 
         dataset_ct = self.dataset_content_type
@@ -876,18 +876,23 @@ class Dataset(Resource):
             dataset_ids.add(parent.pk)
             organization_ids.add(parent.organization_id)
 
-        roles = list(
-            Representative.objects.filter(
-                Q(content_type=dataset_ct, object_id__in=dataset_ids)
-                | Q(content_type=organization_ct, object_id__in=organization_ids),
-                organization_id__in=user_org_ids,
-            ).values_list("role", flat=True)
-        )
+        org_roles = Representative.objects.filter(
+            Q(content_type=dataset_ct, object_id__in=dataset_ids)
+            | Q(content_type=organization_ct, object_id__in=organization_ids),
+            organization_id__in=user_org_map.keys(),
+        ).values_list("organization_id", "role")
 
-        if not roles:
+        effective_roles = []
+        for org_id, org_role in org_roles:
+            user_role = user_org_map[org_id]
+            effective_roles.append(
+                max(org_role, user_role, key=Representative.ROLE_HIERARCHY.index)
+            )
+
+        if not effective_roles:
             return None
 
-        return min(roles, key=Representative.ROLE_HIERARCHY.index)
+        return min(effective_roles, key=Representative.ROLE_HIERARCHY.index)
 
     def get_managers_queryset(self, roles: list[str]) -> QuerySet["Dataset"]:
         dataset_ct = self.dataset_content_type

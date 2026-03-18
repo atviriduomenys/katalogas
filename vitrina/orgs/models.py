@@ -186,7 +186,7 @@ class Representative(models.Model):
     OPEN_DATA_ROLE_KEYS = {role[0] for role in OPEN_DATA_ROLES}
     RESOURCE_ROLE_KEYS = {role[0] for role in RESOURCE_ROLES}
 
-    ROLE_HIERARCHY = [role for role, _ in ROLES]
+    ROLE_HIERARCHY = [role for role in MANAGER_ROLES]
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

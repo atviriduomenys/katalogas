@@ -480,7 +480,7 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.GLOBAL_MANAGER
     if role := user.get_representative_role_for_resource(resource):
         return Role(role)
-    if role := resource.get_effective_user_role_via_org(user):
+    if role := resource.get_effective_user_role_via_organization(user):
         return Role(role)
     if user.is_gov_organization_resource_manager:
         return Role.GLOBAL_RESOURCE_MANAGER
@@ -611,13 +611,13 @@ def has_perm(
 
             if representative_organization_ids:
                 representative_organization_ct = ContentType.objects.get_for_model(Organization)
-                user_rep_orgs = Representative.objects.filter(
+                user_representative_organizations = Representative.objects.filter(
                     user=user,
                     content_type=representative_organization_ct,
                     object_id__in=representative_organization_ids,
                 )
 
-                if user_rep_orgs.exists():
+                if user_representative_organizations.exists():
                     if isinstance(obj, Representative):
                         return obj.can_be_updated_by(user)
                     return True

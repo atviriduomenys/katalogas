@@ -855,7 +855,7 @@ class Dataset(Resource):
     def get_members_url(self):
         return reverse("dataset-members", kwargs={"pk": self.pk})
 
-    def get_effective_user_role_via_org(self, user: "User") -> str | None:
+    def get_effective_user_role_via_organization(self, user: "User") -> str | None:
         organization_ct = ContentType.objects.get_for_model(Organization)
 
         user_org_map = dict(

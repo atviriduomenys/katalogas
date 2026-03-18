@@ -73,12 +73,12 @@ class TestDatasets:
         value = getattr(dataset, field_name)
         assert value == concept
 
-    def test_get_effective_user_role_via_org_returns_none_when_user_has_no_org_memberships(self):
+    def test_get_effective_user_role_via_organization_returns_none_when_user_has_no_org_memberships(self):
         dataset = DatasetFactory()
         user = UserFactory()
-        assert dataset.get_effective_user_role_via_org(user) is None
+        assert dataset.get_effective_user_role_via_organization(user) is None
 
-    def test_get_effective_user_role_via_org_returns_none_when_user_org_is_not_a_representative(self):
+    def test_get_effective_user_role_via_organization_returns_none_when_user_org_is_not_a_representative(self):
         dataset = DatasetFactory()
         user = UserFactory()
         unrelated_org = OrganizationFactory()
@@ -89,9 +89,9 @@ class TestDatasets:
             user=user,
             organization=None,
         )
-        assert dataset.get_effective_user_role_via_org(user) is None
+        assert dataset.get_effective_user_role_via_organization(user) is None
 
-    def test_get_effective_user_role_via_org_returns_none_when_user_belongs_to_multiple_orgs_but_none_are_representatives(
+    def test_get_effective_user_role_via_organization_returns_none_when_user_belongs_to_multiple_orgs_but_none_are_representatives(
         self,
     ):
         dataset = DatasetFactory()
@@ -107,9 +107,9 @@ class TestDatasets:
                 organization=None,
             )
 
-        assert dataset.get_effective_user_role_via_org(user) is None
+        assert dataset.get_effective_user_role_via_organization(user) is None
 
-    def test_get_effective_user_role_via_org_returns_role_when_user_org_represents_dataset(self):
+    def test_get_effective_user_role_via_organization_returns_role_when_user_org_represents_dataset(self):
         dataset = DatasetFactory()
         representative_org = OrganizationFactory()
 
@@ -131,9 +131,9 @@ class TestDatasets:
             organization=None,
         )
 
-        assert dataset.get_effective_user_role_via_org(user) == Representative.RESOURCE_MANAGER
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.RESOURCE_MANAGER
 
-    def test_get_effective_user_role_via_org_returns_role_when_user_org_represents_dataset_organization(self):
+    def test_get_effective_user_role_via_organization_returns_role_when_user_org_represents_dataset_organization(self):
         dataset = DatasetFactory()
         representative_org = OrganizationFactory()
 
@@ -155,9 +155,9 @@ class TestDatasets:
             organization=None,
         )
 
-        assert dataset.get_effective_user_role_via_org(user) == Representative.RESOURCE_MANAGER
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.RESOURCE_MANAGER
 
-    def test_get_effective_user_role_via_org_returns_role_when_user_org_represents_ancestor_dataset(self):
+    def test_get_effective_user_role_via_organization_returns_role_when_user_org_represents_ancestor_dataset(self):
         parent = DatasetFactory()
         child = DatasetFactory()
         child.move(parent, pos="sorted-child")
@@ -182,9 +182,9 @@ class TestDatasets:
             organization=None,
         )
 
-        assert child.get_effective_user_role_via_org(user) == Representative.RESOURCE_MANAGER
+        assert child.get_effective_user_role_via_organization(user) == Representative.RESOURCE_MANAGER
 
-    def test_get_effective_user_role_via_org_returns_role_when_user_org_represents_ancestor_organization(self):
+    def test_get_effective_user_role_via_organization_returns_role_when_user_org_represents_ancestor_organization(self):
         parent = DatasetFactory()
         child = DatasetFactory(organization=parent.organization)
         child.move(parent, pos="sorted-child")
@@ -209,9 +209,9 @@ class TestDatasets:
             organization=None,
         )
 
-        assert child.get_effective_user_role_via_org(user) == Representative.RESOURCE_MANAGER
+        assert child.get_effective_user_role_via_organization(user) == Representative.RESOURCE_MANAGER
 
-    def test_get_effective_user_role_via_org_organization_role_lower_than_user(self):
+    def test_get_effective_user_role_via_organization_organization_role_lower_than_user(self):
         dataset = DatasetFactory()
         representative_org = OrganizationFactory()
 
@@ -233,7 +233,7 @@ class TestDatasets:
             organization=None,
         )
 
-        assert dataset.get_effective_user_role_via_org(user) == Representative.OPEN_DATA_MANAGER
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.OPEN_DATA_MANAGER
 
     @pytest.mark.parametrize(
         "role",
@@ -242,7 +242,7 @@ class TestDatasets:
             Representative.OPEN_DATA_MANAGER,
         ],
     )
-    def test_get_effective_user_role_via_org_returns_correct_role_for_all_role_types(self, role):
+    def test_get_effective_user_role_via_organization_returns_correct_role_for_all_role_types(self, role):
         dataset = DatasetFactory()
         representative_org = OrganizationFactory()
 
@@ -264,9 +264,9 @@ class TestDatasets:
             organization=None,
         )
 
-        assert dataset.get_effective_user_role_via_org(user) == role
+        assert dataset.get_effective_user_role_via_organization(user) == role
 
-    def test_get_effective_user_role_via_org_open_data_manager_org_restricts_resource_manager_user(self):
+    def test_get_effective_user_role_via_organization_open_data_manager_org_restricts_resource_manager_user(self):
         dataset = DatasetFactory()
         representative_org = OrganizationFactory()
 
@@ -288,9 +288,9 @@ class TestDatasets:
             organization=None,
         )
 
-        assert dataset.get_effective_user_role_via_org(user) == Representative.OPEN_DATA_MANAGER
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.OPEN_DATA_MANAGER
 
-    def test_get_effective_user_role_via_org_resource_manager_org_preserves_open_data_manager_user(self):
+    def test_get_effective_user_role_via_organization_resource_manager_org_preserves_open_data_manager_user(self):
         dataset = DatasetFactory()
         representative_org = OrganizationFactory()
 
@@ -312,7 +312,7 @@ class TestDatasets:
             organization=None,
         )
 
-        assert dataset.get_effective_user_role_via_org(user) == Representative.OPEN_DATA_MANAGER
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.OPEN_DATA_MANAGER
 
 
 class TestDCATResourceSubclass:

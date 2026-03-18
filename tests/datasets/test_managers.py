@@ -334,7 +334,6 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             organization=None,
         )
 
-    # Same parametrize cases and test bodies as the original class
     @pytest.mark.parametrize(
         "user_attributes,dataset_attributes,is_public,access_rights,subclass,expected",
         [

@@ -22,6 +22,8 @@ from vitrina.datasets.models import (
     Relation,
     DatasetRelation,
     DCATResourceSubclass,
+    Attribution,
+    DatasetAttribution,
 )
 from vitrina.orgs.models import Organization, Representative
 from vitrina.users.models import User
@@ -302,14 +304,14 @@ def main():
 
                 # organization
                 if created:
-                    # publisher will always be "Viešoji įstaiga Statybos sektoriaus vystymo agentūra" organization
-                    publisher = Organization.objects.filter(
+                    # organization will always be "Viešoji įstaiga Statybos sektoriaus vystymo agentūra" organization
+                    organization = Organization.objects.filter(
                         company_code="305997589"
                     ).first()
-                    if publisher:
-                        dataset.publisher = publisher
+                    if organization:
+                        dataset.organization = organization
 
-                        coordinator = publisher.representatives.filter(
+                        coordinator = organization.representatives.filter(
                             role__in=Representative.COORDINATOR_ROLES,
                         ).first()
                         if coordinator:
@@ -327,14 +329,15 @@ def main():
                             f'"Viešoji įstaiga Statybos sektoriaus vystymo agentūra"'
                         )
 
-                    organization_name = _get_elem(
+                    creator_name = _get_elem(
                         ".//{%s}organisationName" % gmd, dataset_info
                     )
-                    organization_name = _get_elem(
-                        "{%s}CharacterString" % gco, organization_name
+                    creator_name = _get_elem(
+                        "{%s}CharacterString" % gco, creator_name
                     )
 
-                    if organization_name is not None:
+                    attribution, _ = Attribution.objects.get_or_create(name=Attribution.CREATOR)
+                    if creator_name is not None:
                         exclude = [
                             "VĮ",
                             ",",
@@ -347,25 +350,35 @@ def main():
                             "UAB",
                             '"',
                         ]
-                        stripped_organization_name = organization_name.text
+                        stripped_creator_name = creator_name.text
                         for e in exclude:
-                            stripped_organization_name = (
-                                stripped_organization_name.replace(e, "")
+                            stripped_creator_name = (
+                                stripped_creator_name.replace(e, "")
                             )
-                        stripped_organization_name = stripped_organization_name.strip()
+                        stripped_creator_name = stripped_creator_name.strip()
 
-                        organization = Organization.objects.filter(
-                            Q(title__icontains=stripped_organization_name)
-                            | Q(alternative_titles__icontains=organization_name.text)
+                        creator = Organization.objects.filter(
+                            Q(title__icontains=stripped_creator_name)
+                            | Q(alternative_titles__icontains=creator_name.text)
                         ).first()
 
-                        if organization:
-                            dataset.organization = organization
-                        else:
-                            dataset.creator_text = organization_name.text
-                            errors.append(
-                                f'Nerasta organizacija: "{organization_name.text}"'
+                        if creator:
+                            DatasetAttribution.objects.create(
+                                attribution=attribution,
+                                dataset=dataset,
+                                organization=creator
                             )
+                        else:
+                            errors.append(
+                                f'Nerasta organizacija: "{creator_name.text}"'
+                            )
+                    else:
+                        # organization is same as creator
+                        DatasetAttribution.objects.create(
+                            attribution=attribution,
+                            dataset=dataset,
+                            organization=organization
+                        )
 
                 # distribution conditions
                 conditions = ""

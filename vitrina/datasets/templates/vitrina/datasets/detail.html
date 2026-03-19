@@ -83,15 +83,8 @@
     <div class="column is-one-third">
         <div>
             {% with main_contact=dataset.get_main_contact %}
-                {% translate "Duomenis teikianti organizacija" as header_text %}
+                {% translate "Duomenų skelbėjas" as header_text %}
                 {% include "component/organization_card.html" with organization=dataset.organization header=header_text %}
-                {% if dataset.publisher %}
-                    {% if main_contact.content_object == dataset.publisher or dataset.publisher != dataset.organization %}
-                        <hr class="custom-line-margin">
-                        {% translate "Institucija, atsakinga už duomenų atvėrimą" as header_text %}
-                        {% include "component/organization_card.html" with organization=dataset.publisher header=header_text email=main_contact.get_email phone=main_contact.phone %}
-                    {% endif %}
-                {% endif %}
                 {% if main_contact.content_type.model == 'user' %}
                     <hr class="custom-line-margin">
                     <p class="has-text-dark">{% translate "Kontaktinė informacija" %}</p>

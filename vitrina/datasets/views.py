@@ -21,6 +21,7 @@ from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
+from django.db.models.functions import Length, Substr
 from django.forms import BaseForm
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.http.response import HttpResponsePermanentRedirect
@@ -104,7 +105,7 @@ from vitrina.datasets.models import (
     DatasetFile,
     Contact,
     DatasetExcludedGroups,
-    DCATResourceSubclass,
+    DCATResourceSubclass, Attribution,
 )
 from vitrina.classifiers.models import (
     Category,
@@ -147,7 +148,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
     facet_fields = [
         "status",
         "organization",
-        "publisher",
+        "creator",
         "jurisdiction",
         "category",
         "parent_category",
@@ -268,15 +269,15 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 Filter(
                     *filter_args,
                     "organization",
-                    _("Organizacija"),
+                    _("Duomenų skelbėjas"),
                     Organization,
                     multiple=True,
                     is_int=False,
                 ),
                 Filter(
                     *filter_args,
-                    "publisher",
-                    _("Duomenų atvėrimo paslaugų teikėjas"),
+                    "creator",
+                    _("Duomenų rengėjas"),
                     Organization,
                     multiple=True,
                     is_int=False,
@@ -853,21 +854,6 @@ class DatasetCreateView(
         tags = form.cleaned_data.get("tags")
         self.object.tags.set(tags)
         self.object.save()
-        if not form.cleaned_data.get("creator"):
-            role = Representative.OPEN_DATA_MANAGER
-            if self.organization:
-                user_rep = self.request.user.representative_set.filter(
-                    content_type=ContentType.objects.get_for_model(self.organization),
-                    object_id=self.organization.pk,
-                ).first()
-                role = user_rep.role if user_rep else Representative.OPEN_DATA_MANAGER
-            Representative.objects.create(
-                content_type=ContentType.objects.get_for_model(self.object),
-                object_id=self.object.pk,
-                user=self.request.user,
-                email=self.request.user.email,
-                role=role,
-            )
 
         for file in form.cleaned_data.get("files", []):
             DatasetFile.objects.get_or_create(
@@ -944,31 +930,36 @@ class DatasetCreateView(
                         content_type=ContentType.objects.get_for_model(self.object),
                     )
 
-        creator = form.cleaned_data.get("creator")
-        if creator:
-            if self.object.organization:
-                Representative.objects.create(
-                    content_type=ContentType.objects.get_for_model(self.object),
-                    object_id=self.object.pk,
-                    organization=self.object.organization,
-                    role=Representative.OPEN_DATA_MANAGER,
-                )
-
-                self.object.publisher = self.object.organization if self.object.organization != creator else None
-            self.object.organization = creator
-            self.object.save()
-
-        publisher = form.cleaned_data.get("publisher")
-        if publisher:
-            self.object.publisher = publisher
-            rep = Representative.objects.create(
+        if self.object.organization:
+            Representative.objects.create(
+                content_type=ContentType.objects.get_for_model(self.object),
                 object_id=self.object.pk,
-                content_type=ContentType.objects.get_for_model(Dataset),
-                organization=publisher,
+                organization=self.object.organization,
                 role=Representative.OPEN_DATA_MANAGER,
             )
-            rep.save()
-            self.object.save()
+
+            attribution = Attribution.objects.filter(name=Attribution.CREATOR).first()
+            if attribution:
+                if not self.object.name or self.object.name.startswith(self.object.organization.name):
+                    DatasetAttribution.objects.create(
+                        dataset=self.object,
+                        attribution=attribution,
+                        organization=self.object.organization
+                    )
+                else:
+                    creator = Organization.objects.filter(
+                        name__in=[
+                            org.name
+                            for org in Organization.objects.all()
+                            if org.name and self.object.name.startswith(org.name)
+                        ]
+                    ).first()
+                    if creator:
+                        DatasetAttribution.objects.create(
+                            dataset=self.object,
+                            attribution=attribution,
+                            organization=creator
+                        )
 
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
             self.object.update_applicable_legislation(applicable_legislation_urls)
@@ -1306,74 +1297,6 @@ class DatasetUpdateView(
                     ),
                 },
             )
-
-        if "creator" in form.changed_data and self.request.user.organization:
-            creator = form.cleaned_data.get("creator")
-            if creator:
-                if self.request.user.organization.publisher:
-                    Representative.objects.create(
-                        content_type=ContentType.objects.get_for_model(self.object),
-                        object_id=self.object.pk,
-                        organization=self.request.user.organization,
-                        role=Representative.OPEN_DATA_MANAGER,
-                    )
-
-                    self.object.publisher = self.request.user.organization
-                self.object.organization = creator
-
-                if creator == self.request.user.organization and self.request.user.organization.publisher:
-                    self.object.publisher = None
-                    Representative.objects.filter(
-                        object_id=self.object.pk,
-                        content_type=ContentType.objects.get_for_model(Dataset),
-                        role=Representative.OPEN_DATA_MANAGER,
-                        organization__isnull=False,
-                    ).delete()
-
-            self.object.save()
-
-        if "managed_by_publisher" in form.changed_data and self.request.user.organization:
-            managed_by_publisher = form.cleaned_data.get("managed_by_publisher")
-            if managed_by_publisher and self.request.user.organization.publisher:
-                self.object.publisher = self.request.user.organization
-                rep = Representative.objects.create(
-                    object_id=self.object.pk,
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    organization=self.request.user.organization,
-                    role=Representative.OPEN_DATA_MANAGER,
-                )
-                rep.save()
-            else:
-                self.object.publisher = None
-                Representative.objects.filter(
-                    object_id=self.object.pk,
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    role=Representative.OPEN_DATA_MANAGER,
-                    organization__isnull=False,
-                ).delete()
-            self.object.save()
-
-        if "publisher" in form.changed_data:
-            publisher = form.cleaned_data.get("publisher")
-            if publisher:
-                self.object.publisher = publisher
-                rep = Representative.objects.create(
-                    object_id=self.object.pk,
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    organization=publisher,
-                    role=Representative.OPEN_DATA_MANAGER,
-                )
-                rep.save()
-            else:
-                self.object.publisher = None
-                Representative.objects.filter(
-                    object_id=self.object.pk,
-                    content_type=ContentType.objects.get_for_model(Dataset),
-                    role=Representative.OPEN_DATA_MANAGER,
-                    organization__isnull=False,
-                ).delete()
-            self.object.save()
-
         self.object.save()
 
         selected_parent: Dataset | None = form.cleaned_data.get("parent")
@@ -1922,11 +1845,6 @@ class DeleteMemberView(
         if self.object.content_type != ContentType.objects.get_for_model(Dataset):
             return super().form_valid(form)
 
-        dataset = Dataset.objects.filter(id=self.object.object_id, publisher=self.object.organization).first()
-        if dataset:
-            dataset.publisher = None
-            dataset.save(update_fields=["publisher"])
-
         return super().form_valid(form)
 
 
@@ -2462,8 +2380,8 @@ class DatasetsLevelView(DatasetStatsMixin, DatasetListView):
 
 
 class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
-    title = _("Organizacija")
-    current_title = _("Duomenų rinkinių organizacijos")
+    title = _("Duomenų skelbėjas")
+    current_title = _("Duomenų skelbėjas")
     filter = "organization"
     filter_model = Organization
 
@@ -2474,10 +2392,10 @@ class DatasetsOrganizationsView(DatasetStatsMixin, DatasetListView):
             return _(f"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike")
 
 
-class DatasetsPublishersView(DatasetStatsMixin, DatasetListView):
-    title = _("Duomenų atvėrimo paslaugų teikėjas")
-    current_title = _("Duomenų atvėrimo paslaugų teikėjas")
-    filter = "publisher"
+class DatasetsCreatorsView(DatasetStatsMixin, DatasetListView):
+    title = _("Duomenų rengėjas")
+    current_title = _("Duomenų rengėjas")
+    filter = "creator"
     filter_model = Organization
 
     def get_graph_title(self, indicator):
@@ -3203,6 +3121,7 @@ class DatasetAttributionCreateView(PermissionRequiredMixin, CreateView):
         self.object: DatasetAttribution = form.save(commit=False)
         self.object.dataset = self.dataset
         self.object.save()
+        self.dataset.save()
         return redirect(self.dataset.get_absolute_url())
 
 
@@ -3221,7 +3140,7 @@ class DatasetAttributionDeleteView(PermissionRequiredMixin, DeleteView):
     def form_valid(self, form: BaseForm) -> HttpResponse:
         self.object = self.get_object()
         add_to_revision(self.object)
-
+        self.dataset.save()
         return super().form_valid(form)
 
     def get_success_url(self):

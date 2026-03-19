@@ -137,30 +137,16 @@ class BaseResourceForm(TranslatableModelForm):
         required=False,
     )
 
-    creator = forms.ModelChoiceField(
+    organization = forms.ModelChoiceField(
         queryset=Organization.public.all().order_by("title"),
-        label=_("Institucija teikianti duomenis"),
-        help_text=_("Subjektas, atsakingas už duomenų rinkinio parengimą. Atitinka dct:creator."),
-        widget=Select2Widget(),
-        empty_label=None,
-        required=False,
-    )
-
-    publisher = forms.ModelChoiceField(
-        queryset=Organization.public.filter(publisher=True).order_by("title"),
         label=_("Paslaugų teikėjas"),
         help_text=_(
             "Ši savybė nurodo subjektą (organizaciją), atsakingą už duomenų ištekliaus prieinamumą. Atitinka dct:publisher."
         ),
         widget=Select2Widget(),
         empty_label=None,
-        required=False,
-    )  # TODO: This attribute is meant for DatasetDistribution not Dataset.
-
-    managed_by_publisher = forms.BooleanField(
-        label=_("Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio atvėrimą?"),
-        required=False,
     )
+
     applicable_legislation = StringListField(
         label=_("Teisinis pagrindas"),
         help_text=_(
@@ -228,59 +214,10 @@ class BaseResourceForm(TranslatableModelForm):
             if default_frequency := Frequency.objects.filter(is_default=True).first():
                 self.initial["frequency"] = default_frequency
 
-        if request.user and request.user.organization:
-            """
-            Publishers:
-            - Can assign themselves as the publisher of the dataset via managed_by_publisher field
-                (If they are set as a publisher for the dataset.organization)
-            - Can change the creator of the dataset
-            Creators:
-            - Can assign the publisher of the dataset
-            Superusers:
-            - Can do the same as publishers and creators
-            """
-            creator_ids = Representative.objects.filter(
-                organization=request.user.organization,
-                content_type=ContentType.objects.get_for_model(Organization),
-            ).values_list("object_id", flat=True)
-            self.fields["creator"].queryset = (
-                Organization.objects.filter(
-                    Q(id__in=creator_ids)
-                    | Q(id=request.user.organization.id)
-                    | Q(id=organization.id if organization else self.instance.organization.id)
-                )
-                .distinct()
-                .order_by("title")
-            )
-
-            self.fields["creator"].initial = self.instance.organization or organization
-
-            if request.user.organization.publisher:
-                # Show creator field (Meant for publishers)
-                self.fields["managed_by_publisher"].initial = Representative.objects.filter(
-                    content_type=ContentType.objects.get_for_model(self.instance),
-                    object_id=self.instance.id,
-                    organization=request.user.organization,
-                ).exists()
-
-                if not request.user.is_superuser:
-                    self.fields["publisher"].widget = HiddenInput()
-            else:
-                # Show publisher field (Meant for creators)
-                representative = Representative.objects.filter(
-                    content_type=ContentType.objects.get_for_model(Organization),
-                    object_id=organization.id if organization else self.instance.organization.id,
-                    organization__isnull=False,
-                ).first()
-                if representative and (request.user.is_superuser or representative.organization.publisher):
-                    self.fields["publisher"].initial = representative.organization_id
-                if not request.user.is_superuser:
-                    self.fields["creator"].widget = HiddenInput()
-                    self.fields["managed_by_publisher"].widget = HiddenInput()
-        else:
-            self.fields["publisher"].widget = HiddenInput()
-            self.fields["creator"].widget = HiddenInput()
-            self.fields["managed_by_publisher"].widget = HiddenInput()
+        self.fields["organization"].initial = self.instance.organization or organization
+        if not request.user.is_superuser:
+            self.fields["organization"].disabled = True
+            self.fields["organization"].widget.attrs["style"] = "background-color: #f2f2f2;"
 
         self._populate_contact_choices()
 
@@ -354,6 +291,30 @@ class BaseResourceForm(TranslatableModelForm):
             whitelisted = organization.whitelisted_names or []
             main_prefix = organization.name or ""
             allowed_prefixes = [main_prefix] + list(whitelisted)
+
+            representatives = Representative.objects.filter(
+                (Q(organization=organization) | Q(user__organization=organization)) &
+                Q(role=Representative.OPEN_DATA_PUBLISHER)
+            )
+            dataset_ct = ContentType.objects.get_for_model(Dataset)
+            organization_ct = ContentType.objects.get_for_model(organization)
+            for rep in representatives:
+                if (
+                    rep.content_type == dataset_ct and
+                    rep.content_object.organization and
+                    rep.content_object.organization.name and
+                    rep.content_object.organization.name not in allowed_prefixes
+                ):
+                    allowed_prefixes.append(rep.content_object.organization.name)
+                    whitelisted.append(rep.content_object.organization.name)
+                elif (
+                    rep.content_type == organization_ct and
+                    rep.content_object.name and
+                    rep.content_object.name not in allowed_prefixes
+                ):
+                    allowed_prefixes.append(rep.content_object.name)
+                    whitelisted.append(rep.content_object.name)
+
             matched_prefix = None
             for prefix in allowed_prefixes:
                 if name.startswith(prefix):
@@ -453,9 +414,7 @@ class ServiceResourceForm(BaseResourceForm):
             "endpoint_description_type",
             "name",
             "contact",
-            "creator",
-            "publisher",
-            "managed_by_publisher",
+            "organization",
             "landing_page",
             "parent",
             "service_type",
@@ -487,9 +446,7 @@ class ServiceResourceForm(BaseResourceForm):
             Field("endpoint_description_type"),
             Field("access_rights"),
             Field("contact"),
-            Field("managed_by_publisher"),
-            Field("creator"),
-            Field("publisher"),
+            Field("organization"),
             Field("parent"),
             Field("applicable_legislation"),
             Field("is_hvd"),
@@ -509,9 +466,7 @@ class CatalogResourceForm(BaseResourceForm):
             "access_rights",
             "name",
             "contact",
-            "creator",
-            "publisher",
-            "managed_by_publisher",
+            "organization",
             "landing_page",
             "conditions",
             "rights_relation",
@@ -531,9 +486,7 @@ class CatalogResourceForm(BaseResourceForm):
             Field("frequency"),
             Field("access_rights"),
             Field("contact"),
-            Field("managed_by_publisher"),
-            Field("creator"),
-            Field("publisher"),
+            Field("organization"),
             Field("conditions"),
             Field("rights_relation"),
         )
@@ -561,9 +514,7 @@ class InformationSystemResourceForm(CatalogResourceForm):
             "access_rights",
             "name",
             "contact",
-            "creator",
-            "publisher",
-            "managed_by_publisher",
+            "organization",
             "landing_page",
             "information_system_type",
             "information_system_importance",
@@ -596,9 +547,7 @@ class InformationSystemResourceForm(CatalogResourceForm):
             Field("frequency"),
             Field("access_rights"),
             Field("contact"),
-            Field("managed_by_publisher"),
-            Field("creator"),
-            Field("publisher"),
+            Field("organization"),
             Field("information_system_type"),
             Field("information_system_importance"),
             Field("information_system_publisher"),
@@ -686,9 +635,7 @@ class DatasetResourceForm(BaseResourceForm):
             "documentation",
             "name",
             "contact",
-            "creator",
-            "publisher",
-            "managed_by_publisher",
+            "organization",
             "landing_page",
             "parent",
             "temporal_resolution",
@@ -718,9 +665,7 @@ class DatasetResourceForm(BaseResourceForm):
             Field("frequency"),
             Field("access_rights"),
             Field("contact"),
-            Field("managed_by_publisher"),
-            Field("creator"),
-            Field("publisher"),
+            Field("organization"),
             Field("parent"),
             Field("applicable_legislation"),
             Field("is_hvd"),
@@ -750,9 +695,7 @@ class ResourceForm(BaseResourceForm):
             "files",
             "name",
             "contact",
-            "creator",
-            "publisher",
-            "managed_by_publisher",
+            "organization",
             "landing_page",
             "parent",
             "temporal_resolution",
@@ -775,9 +718,7 @@ class ResourceForm(BaseResourceForm):
             Field("frequency"),
             Field("access_rights"),
             Field("contact"),
-            Field("managed_by_publisher"),
-            Field("creator"),
-            Field("publisher"),
+            Field("organization"),
             Field("parent"),
             Field("applicable_legislation"),
             Field("is_hvd"),
@@ -789,15 +730,17 @@ class DatasetAdminForm(forms.ModelForm):
         queryset=Organization.public.all(),
         label=_("Organizacija"),
     )
-    publisher = forms.ModelChoiceField(
-        queryset=Organization.public.filter(publisher=True),
-        label=_("Paslaugų teikėjas"),
-        required=False,
-    )
 
     class Meta:
         model = Dataset
-        exclude = ("slug", "current_structure", "depth", "numchild", "path")
+        exclude = (
+            "slug",
+            "current_structure",
+            "depth",
+            "numchild",
+            "path",
+            "publisher",
+        )
 
 
 class DatasetSearchForm(FacetedSearchForm):

@@ -197,7 +197,6 @@ class OrganizationBaseForm(ModelForm):
             "email",
             "phone",
             "address",
-            "publisher",
             "description",
         )
 
@@ -226,7 +225,6 @@ class OrganizationBaseForm(ModelForm):
             Field("email", placeholder=_("Elektroninis paštas")),
             Field("phone", placeholder=_("Telefono numeris")),
             Field("address", placeholder=_("Adresas")),
-            Field("publisher", placeholder=_("Duomenų atvėrimo paslaugų teikėjas")),
             Field("description", placeholder=_("Aprašymas")),
             Submit("submit", self.submit_label, css_class="button is-primary"),
         )

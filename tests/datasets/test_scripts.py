@@ -18,7 +18,7 @@ from vitrina.classifiers.factories import (
 from vitrina.classifiers.models import GeoportalCategory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, RelationFactory
-from vitrina.datasets.models import Dataset, Relation
+from vitrina.datasets.models import Dataset, Relation, Attribution
 from vitrina.messages.factories import SubscriptionFactory
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
@@ -778,7 +778,7 @@ def test_geoportal_import__distribution_conditions_update():
         (Representative.RESOURCE_COORDINATOR),
     ],
 )
-def test_geoportal_import__existing_publisher(app: DjangoTestApp, role: str):
+def test_geoportal_import__existing_organization(app: DjangoTestApp, role: str):
     organization = OrganizationFactory(
         title="Viešoji įstaiga Statybos sektoriaus vystymo agentūra", company_code="305997589"
     )
@@ -830,13 +830,13 @@ def test_geoportal_import__existing_publisher(app: DjangoTestApp, role: str):
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
-    assert dataset.publisher == organization
+    assert dataset.organization == organization
     assert dataset.representatives.count() == 1
     assert dataset.representatives.first().user == coordinator.user
 
 
 @pytest.mark.django_db
-def test_geoportal_import__not_existing_publisher(app: DjangoTestApp):
+def test_geoportal_import__not_existing_organization(app: DjangoTestApp):
     UserFactory(is_superuser=True)
 
     with patch("scripts.geoportal_import.requests.get") as get_data:
@@ -883,7 +883,7 @@ def test_geoportal_import__not_existing_publisher(app: DjangoTestApp):
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
-    assert dataset.publisher is None
+    assert dataset.organization is None
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
@@ -943,7 +943,9 @@ def test_geoportal_import__existing_creator(app: DjangoTestApp):
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
-    assert dataset.organization == organization
+    assert dataset.datasetattribution_set.filter(
+        attribution__name=Attribution.CREATOR
+    ).first().organization == organization
 
 
 @pytest.mark.django_db
@@ -999,7 +1001,9 @@ def test_geoportal_import__existing_creator_municipality(app: DjangoTestApp):
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
-    assert dataset.organization == organization
+    assert dataset.datasetattribution_set.filter(
+        attribution__name=Attribution.CREATOR
+    ).first().organization == organization
 
 
 @pytest.mark.django_db
@@ -1057,7 +1061,9 @@ def test_geoportal_import__existing_creator_alternative_title(app: DjangoTestApp
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
-    assert dataset.organization == organization
+    assert dataset.datasetattribution_set.filter(
+        attribution__name=Attribution.CREATOR
+    ).first().organization == organization
 
 
 @pytest.mark.django_db
@@ -1114,7 +1120,6 @@ def test_geoportal_import__not_existing_creator(app: DjangoTestApp):
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
     assert dataset.organization is None
-    assert dataset.creator_text == "Jonavos rajonas"
 
     assert Task.objects.count() == 1
     task = Task.objects.first()
@@ -2499,7 +2504,7 @@ def test_geoportal_import__different_error_message(app: DjangoTestApp):
     ],
 )
 def test_geoportal_import__subscription_create(app: DjangoTestApp, role: str):
-    organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ")
+    organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ", company_code="305997589")
     coordinator = RepresentativeFactory(
         role=role, content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
     )
@@ -2542,11 +2547,6 @@ def test_geoportal_import__subscription_create(app: DjangoTestApp, role: str):
                     <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
                     <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
                 </gmd:abstract>
-                <gmd:pointOfContact>
-                    <gmd:organisationName>
-                        <gco:CharacterString>Statybos sektoriaus vystymo agentūra, VšĮ</gco:CharacterString>
-                    </gmd:organisationName>
-                </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
         """
@@ -2571,7 +2571,7 @@ def test_geoportal_import__subscription_create(app: DjangoTestApp, role: str):
     ],
 )
 def test_geoportal_import__subscription_update(app: DjangoTestApp, role: str):
-    organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ")
+    organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ", company_code="305997589")
     coordinator = RepresentativeFactory(
         role=role, content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
     )
@@ -2615,11 +2615,6 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp, role: str):
                     <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
                     <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
                 </gmd:abstract>
-                <gmd:pointOfContact>
-                    <gmd:organisationName>
-                        <gco:CharacterString>Statybos sektoriaus vystymo agentūra, VšĮ</gco:CharacterString>
-                    </gmd:organisationName>
-                </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
         """
@@ -2644,7 +2639,7 @@ def test_geoportal_import__subscription_update(app: DjangoTestApp, role: str):
     ],
 )
 def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp, role: str):
-    organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ")
+    organization = OrganizationFactory(title="Statybos sektoriaus vystymo agentūra, VšĮ", company_code="305997589")
     coordinator = RepresentativeFactory(
         role=role, content_type=ContentType.objects.get_for_model(organization), object_id=organization.pk
     )
@@ -2692,11 +2687,6 @@ def test_geoportal_import__subscription_update_no_changes(app: DjangoTestApp, ro
                     <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
                     <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
                 </gmd:abstract>
-                <gmd:pointOfContact>
-                    <gmd:organisationName>
-                        <gco:CharacterString>Statybos sektoriaus vystymo agentūra, VšĮ</gco:CharacterString>
-                    </gmd:organisationName>
-                </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
         """
@@ -2925,7 +2915,7 @@ def test_geoportal_import__add_to_geoportal_catalog(app: DjangoTestApp):
 @pytest.mark.django_db
 def test_geoportal_import__deleted_dataset(app: DjangoTestApp):
     dataset = DatasetFactory(geoportal_id="1", access_rights=Dataset.PUBLIC)
-    OrganizationFactory(title="VšĮ Statybos sektoriaus vystymo agentūra")
+    OrganizationFactory(title="VšĮ Statybos sektoriaus vystymo agentūra", company_code="305997589")
 
     with patch("scripts.geoportal_import.requests.get") as get_data:
         get_all = """
@@ -2958,11 +2948,6 @@ def test_geoportal_import__deleted_dataset(app: DjangoTestApp):
                     <gco:CharacterString>Naujo duomenų rinkinio aprašymas</gco:CharacterString>
                     <gmd:LocalisedCharacterString locale="#en">New dataset description</gmd:LocalisedCharacterString>
                 </gmd:abstract>
-                <gmd:pointOfContact>
-                    <gmd:organisationName>
-                        <gco:CharacterString>Statybos sektoriaus vystymo agentūra, VšĮ</gco:CharacterString>
-                    </gmd:organisationName>
-                </gmd:pointOfContact>
             </gmd:identificationInfo>
         </gmd:MD_Metadata>
         """

@@ -156,6 +156,7 @@ class Representative(models.Model):
     SUPERVISOR = "supervisor"
     OPEN_DATA_COORDINATOR = "open_data_coordinator"
     OPEN_DATA_MANAGER = "open_data_manager"
+    OPEN_DATA_PUBLISHER = "open_data_publisher"
 
     COORDINATOR_ROLES = (
         RESOURCE_COORDINATOR,
@@ -171,11 +172,13 @@ class Representative(models.Model):
         (RESOURCE_MANAGER, _("Duomenų išteklių tvarkytojas")),
         (OPEN_DATA_COORDINATOR, _("Atvirų duomenų koordinatorius")),
         (OPEN_DATA_MANAGER, _("Atvirų duomenų tvarkytojas")),
+        (OPEN_DATA_PUBLISHER, _("Atvirų duomenų skelbėjas")),
     )
 
     OPEN_DATA_ROLES = (
         (OPEN_DATA_COORDINATOR, _("Atvirų duomenų koordinatorius")),
         (OPEN_DATA_MANAGER, _("Atvirų duomenų tvarkytojas")),
+        (OPEN_DATA_PUBLISHER, _("Atvirų duomenų skelbėjas")),
     )
 
     OPEN_DATA_ROLE_KEYS = {role[0] for role in OPEN_DATA_ROLES}

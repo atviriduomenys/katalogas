@@ -65,7 +65,7 @@ class DatasetIndex(SearchIndex, Indexable):
     resource_managers = MultiValueField(model_attr="resource_managers", faceted=True)
     open_data_managers = MultiValueField(model_attr="open_data_managers", faceted=True)
     access_rights = CharField(model_attr="access_rights", faceted=True, null=True)
-    publisher = MultiValueField(model_attr="publisher__pk", faceted=True, null=True)
+    creator = MultiValueField(model_attr="get_creators", faceted=True, null=True)
 
     def get_model(self):
         return Dataset

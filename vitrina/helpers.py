@@ -754,7 +754,7 @@ def _add_common_dataset_context(context: dict[str, str], dataset: Dataset, langu
     """Add common context elements that are shared across dataset-based objects."""
     try:
         parent_dataset = _get_parent_dataset(dataset)
-        context["root_label"] = _("Organizacija")
+        context["root_label"] = _("Duomenų skelbėjas")
         context["root_name"] = parent_dataset.organization.title
     except Exception:
         pass

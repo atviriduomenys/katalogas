@@ -48,7 +48,7 @@ from vitrina.datasets.forms import (
     DatasetResourceForm,
     CatalogResourceForm,
 )
-from vitrina.datasets.models import Dataset, DatasetStructure, Type, Relation
+from vitrina.datasets.models import Dataset, DatasetStructure, Type, Relation, Attribution
 from vitrina.messages.models import Subscription
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.orgs.factories import RepresentativeFactory
@@ -313,41 +313,8 @@ class TestDatasetDetailView:
         assert response.status_code == 200
         assert response.context["dataset"] == dataset
 
-    def test_dataset_detail_with_publisher(self, app: DjangoTestApp):
-        frequency = FrequencyFactory(is_default=True)
-        organization = OrganizationFactory()
-        publisher_org = OrganizationFactory(publisher=True)
-        user = UserFactory(is_staff=True)
-
-        ds = DatasetFactory(organization=organization, publisher=publisher_org, frequency=frequency)
-
-        app.set_user(user)
-        response = app.get(reverse("dataset-detail", kwargs={"pk": ds.pk})).follow()
-        assert response.status_code == 200
-        assert publisher_org.title in response.text
-        assert publisher_org.email in response.text
-        assert publisher_org.phone in response.text
-
-    def test_dataset_view_publisher_contacts(self, app: DjangoTestApp):
-        org = OrganizationFactory(website="https://org.lt")
-        publisher_org = OrganizationFactory(publisher=True, website="https://publisher.lt")
-        user = UserFactory(is_staff=True, organization=org)
-        ds = DatasetFactory(organization=org, publisher=publisher_org)
-        app.set_user(user)
-        response = app.get(reverse("dataset-detail", args=[ds.pk])).follow()
-        assert response.status_code == 200
-
-        assert org.title in response.text
-        assert org.website in response.text
-
-        assert publisher_org.title in response.text
-        assert publisher_org.website in response.text
-        assert publisher_org.email in response.text
-        assert publisher_org.phone in response.text
-
     def test_dataset_view_user_contacts(self, app: DjangoTestApp):
         org = OrganizationFactory(website="https://org.lt")
-        publisher_org = OrganizationFactory(publisher=True, website="https://publisher.lt")
         user = UserFactory(is_staff=True, organization=org)
         contact = ContactFactory(
             organization=org,
@@ -356,7 +323,7 @@ class TestDatasetDetailView:
             email=user.email,
             phone=user.phone,
         )
-        ds = DatasetFactory(organization=org, publisher=publisher_org, contact=contact)
+        ds = DatasetFactory(organization=org, contact=contact)
 
         app.set_user(user)
 
@@ -366,18 +333,14 @@ class TestDatasetDetailView:
         assert org.title in response.text
         assert org.website in response.text
 
-        assert publisher_org.title in response.text
-        assert publisher_org.website in response.text
-
         assert user.get_full_name() in response.text
         assert user.email in response.text
         assert user.phone in response.text
 
     def test_dataset_view_organization_contacts(self, app: DjangoTestApp):
         org = OrganizationFactory(website="https://org.lt")
-        publisher_org = OrganizationFactory(publisher=True, website="https://publisher.lt")
         user = UserFactory(is_staff=True, organization=org)
-        ds = DatasetFactory(organization=org, publisher=publisher_org)
+        ds = DatasetFactory(organization=org)
         ContactFactory(
             organization=org,
             object_id=org.pk,
@@ -395,9 +358,6 @@ class TestDatasetDetailView:
         assert org.website in response.text
         assert org.email in response.text
         assert org.phone in response.text
-
-        assert publisher_org.title in response.text
-        assert publisher_org.website in response.text
 
 
 @pytest.mark.haystack
@@ -1078,27 +1038,47 @@ class TestDatasetListView:
         selected = [i.value for i in filters["access_rights"].items() if i.selected]
         assert selected == [Dataset.RESTRICTED]
 
-    def test_dataset_filter_by_publisher(self, app: DjangoTestApp):
-        publisher1 = OrganizationFactory(publisher=True)
-        publisher2 = OrganizationFactory(publisher=True)
-        DatasetFactory(publisher=publisher1)
-        DatasetFactory(publisher=publisher1)
-        DatasetFactory(publisher=publisher2)
+    def test_dataset_filter_by_creator(self, app: DjangoTestApp):
+        creator1 = OrganizationFactory()
+        creator2 = OrganizationFactory()
+        dataset1 = DatasetFactory()
+        dataset2 = DatasetFactory()
+        dataset3 = DatasetFactory()
+
+        attribution = AttributionFactory(name=Attribution.CREATOR)
+        DatasetAttributionFactory(
+            dataset=dataset1,
+            attribution=attribution,
+            organization=creator1
+        )
+        DatasetAttributionFactory(
+            dataset=dataset2,
+            attribution=attribution,
+            organization=creator1
+        )
+        DatasetAttributionFactory(
+            dataset=dataset3,
+            attribution=attribution,
+            organization=creator2
+        )
+        dataset1.save()
+        dataset2.save()
+        dataset3.save()
 
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
-        response = app.get(reverse("dataset-list") + f"?selected_facets=publisher_exact:{publisher1.pk}")
+        response = app.get(reverse("dataset-list") + f"?selected_facets=creator_exact:{creator1.pk}")
         assert response.status_code == 200
         assert len(response.context["object_list"]) == 2
         for ds in response.context["object_list"]:
-            assert ds.publisher == [publisher1.pk]
+            assert ds.creator == [creator1.pk]
 
-        response = app.get(reverse("dataset-list") + f"?selected_facets=publisher_exact:{publisher2.pk}")
+        response = app.get(reverse("dataset-list") + f"?selected_facets=creator_exact:{creator2.pk}")
         assert response.status_code == 200
         assert len(response.context["object_list"]) == 1
         for ds in response.context["object_list"]:
-            assert ds.publisher == [publisher2.pk]
+            assert ds.creator == [creator2.pk]
 
 
 class TestDatasetUpdateView:
@@ -1929,148 +1909,6 @@ class TestDatasetCreateView:
         response = form.submit(expect_errors=True)
         assert "Žymėjimas turi atitikti šabloną" in response.text
 
-    @pytest.mark.parametrize(
-        "role",
-        [
-            Representative.OPEN_DATA_MANAGER,
-            Representative.RESOURCE_MANAGER,
-        ],
-    )
-    def test_create_dataset_change_creator(self, app: DjangoTestApp, role: str):
-        frequency = FrequencyFactory(is_default=True)
-
-        org = OrganizationFactory()
-        publisher_org = OrganizationFactory(publisher=True)
-
-        RepresentativeFactory(
-            user=None,
-            organization=publisher_org,
-            role=role,
-            object_id=org.pk,
-            content_type=ContentType.objects.get_for_model(org),
-        )
-
-        subclass = DCATResourceSubclassFactory()
-        user = UserFactory(is_staff=True, organization=publisher_org)
-        app.set_user(user)
-
-        form = app.get(reverse("dataset-add", kwargs={"pk": publisher_org.id, "subclass_uuid": subclass.pk})).forms[
-            "dataset-form"
-        ]
-
-        assert isinstance(form.fields["publisher"][0], webtest.forms.Hidden)
-        assert not isinstance(form.fields["creator"][0], webtest.forms.Hidden)
-
-        form["title"] = "Test Dataset"
-        form["description"] = "This is a test dataset."
-        form["frequency"] = str(frequency.pk)
-        form["creator"] = str(org.pk)
-        form["access_rights"] = Dataset.PUBLIC
-
-        response = form.submit()
-
-        assert response.status_code == 302
-        assert Dataset.objects.filter(translations__title="Test Dataset").exists()
-        ds = Dataset.objects.filter(translations__title="Test Dataset").first()
-        assert ds.organization == org
-        assert ds.publisher == publisher_org
-
-    @pytest.mark.parametrize(
-        "role",
-        [
-            Representative.OPEN_DATA_MANAGER,
-            Representative.RESOURCE_MANAGER,
-        ],
-    )
-    def test_create_dataset_change_publisher(self, app: DjangoTestApp, role: str):
-        frequency = FrequencyFactory(is_default=True)
-
-        org = OrganizationFactory()
-        publisher_org = OrganizationFactory(publisher=True)
-        subclass = DCATResourceSubclassFactory()
-        RepresentativeFactory(
-            user=None,
-            organization=publisher_org,
-            role=role,
-            object_id=org.pk,
-            content_type=ContentType.objects.get_for_model(org),
-        )
-
-        user = UserFactory(is_staff=True, organization=org)
-        app.set_user(user)
-
-        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
-            "dataset-form"
-        ]
-
-        assert not isinstance(form.fields["publisher"][0], webtest.forms.Hidden)
-        assert isinstance(form.fields["creator"][0], webtest.forms.Hidden)
-
-        form["title"] = "Test Dataset"
-        form["description"] = "This is a test dataset."
-        form["frequency"] = str(frequency.pk)
-        form["publisher"] = str(publisher_org.pk)
-        form["access_rights"] = Dataset.PUBLIC
-
-        response = form.submit()
-
-        assert response.status_code == 302
-        assert Dataset.objects.filter(translations__title="Test Dataset").exists()
-        ds = Dataset.objects.filter(translations__title="Test Dataset").first()
-        assert ds.organization == org
-        assert ds.publisher == publisher_org
-
-    @pytest.mark.parametrize(
-        "role",
-        [
-            Representative.OPEN_DATA_MANAGER,
-            Representative.RESOURCE_MANAGER,
-        ],
-    )
-    def test_create_dataset_creator_options(self, app: DjangoTestApp, role: str):
-        org = OrganizationFactory()
-        org2 = OrganizationFactory()
-        org3 = OrganizationFactory()
-        publisher_org = OrganizationFactory(publisher=True)
-        subclass = DCATResourceSubclassFactory()
-        for org_instance in [org, org2, org3]:
-            RepresentativeFactory(
-                user=None,
-                organization=publisher_org,
-                role=role,
-                object_id=org_instance.pk,
-                content_type=ContentType.objects.get_for_model(org),
-            )
-
-        user = UserFactory(is_staff=False, organization=publisher_org)
-        app.set_user(user)
-        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
-            "dataset-form"
-        ]
-        options = [option[2] for option in form.fields["creator"][0].options]
-        assert len(options) == 5  # includes default option
-        assert org.title in options
-        assert org2.title in options
-        assert org3.title in options
-        assert publisher_org.title in options
-
-    def test_create_dataset_publisher_options(self, app: DjangoTestApp):
-        org = OrganizationFactory()
-        publisher_org = OrganizationFactory(publisher=True)
-        publisher_org2 = OrganizationFactory(publisher=True)
-        publisher_org3 = OrganizationFactory(publisher=True)
-        subclass = DCATResourceSubclassFactory()
-        user = UserFactory(is_staff=True, organization=org)
-        app.set_user(user)
-        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
-            "dataset-form"
-        ]
-        options = [option[2] for option in form.fields["publisher"][0].options]
-        assert len(options) == 4  # includes default option
-        assert publisher_org.title in options
-        assert publisher_org2.title in options
-        assert publisher_org3.title in options
-
     def test_dataset_create_with_applicable_legislation(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
         subclass = DCATResourceSubclassFactory()
@@ -2241,48 +2079,6 @@ class TestDatasetCreateView:
         dataset = Dataset.objects.get(organization=organization)
         assert dataset.dataset_files.all().exists()
         assert form.enctype == "multipart/form-data"
-
-    @pytest.mark.django_db
-    def test_dataset_create_creates_representative_with_org_role(self, app: DjangoTestApp):
-        frequency = FrequencyFactory(is_default=True)
-
-        org = OrganizationFactory()
-        subclass = DCATResourceSubclassFactory()
-
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        RepresentativeFactory(
-            user=user,
-            organization=org,
-            role=Representative.OPEN_DATA_COORDINATOR,
-            content_type=ContentType.objects.get_for_model(org),
-            object_id=org.pk,
-        )
-
-        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
-            "dataset-form"
-        ]
-
-        form["title"] = "Dataset without creator"
-        form["description"] = "Test dataset"
-        form["frequency"] = str(frequency.pk)
-        form["access_rights"] = Dataset.PUBLIC
-
-        response = form.submit()
-
-        assert response.status_code == 302
-
-        dataset = Dataset.objects.get(translations__title="Dataset without creator")
-
-        rep = Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            user=user,
-        ).first()
-
-        assert rep is not None
-        assert rep.role == Representative.OPEN_DATA_COORDINATOR
 
 
 class TestDatasetDeleteView:
@@ -2793,26 +2589,6 @@ class TestDatasetMembers:
             assert not Representative.objects.filter(pk=target_rep.pk).exists()
         else:
             assert len(delete_links) == 0
-
-    def test_remove_dataset_publisher_of_related_dataset_if_representative_is_deleted(self, app: DjangoTestApp) -> None:
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(publisher=organization)
-        ct = ContentType.objects.get_for_model(dataset)
-        representative = RepresentativeFactory(
-            content_type=ct,
-            object_id=dataset.pk,
-            role=Representative.OPEN_DATA_MANAGER,
-            organization=organization,
-        )
-
-        app.post(reverse("dataset-representative-delete", args=[dataset.pk, representative.pk]))
-
-        assert not Representative.objects.filter(pk=representative.pk).exists()
-        dataset.refresh_from_db()
-        assert dataset.publisher is None
 
     def test_add_member_to_dataset_with_org_representative(self, app: DjangoTestApp):
         dataset = DatasetFactory(is_public=False)

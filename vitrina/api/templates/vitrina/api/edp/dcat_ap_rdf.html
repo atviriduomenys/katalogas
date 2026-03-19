@@ -69,6 +69,17 @@
                 {% endif %}
             </foaf:Organization>
         </dct:publisher>
+        {% for creator in dataset.creators %}
+            <dct:creator>
+                <foaf:Organization>
+                    <foaf:name>{{ creator.title }}</foaf:name>
+                    <foaf:mbox rdf:resource="mailto:{{ creator.email }}"/>
+                    {% if creator.website %}
+                    <foaf:homepage rdf:resource="{{ creator.website|cut:' ' }}"/>
+                    {% endif %}
+                </foaf:Organization>
+            </dct:creator>
+        {% endfor %}
         {% if dataset.frequency %}
         <dct:accrualPeriodicity>
             {% if dataset.frequency.uri %}
@@ -165,6 +176,17 @@
                 {% endif %}
             </foaf:Organization>
         </dct:publisher>
+        {% for creator in dataset.creators %}
+            <dct:creator>
+                <foaf:Organization>
+                    <foaf:name>{{ creator.title }}</foaf:name>
+                    <foaf:mbox rdf:resource="mailto:{{ creator.email }}"/>
+                    {% if creator.website %}
+                    <foaf:homepage rdf:resource="{{ creator.website|cut:' ' }}"/>
+                    {% endif %}
+                </foaf:Organization>
+            </dct:creator>
+        {% endfor %}
         {% if dataset.frequency %}
         <dct:accrualPeriodicity>
             {% if dataset.frequency.uri %}

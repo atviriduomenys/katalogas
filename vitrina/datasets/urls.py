@@ -54,7 +54,7 @@ from vitrina.datasets.views import (
     DatasetRedirectView,
     DatasetDeleteView,
     DatasetsAccessRightsView,
-    DatasetsPublishersView,
+    DatasetsCreatorsView,
     UpdateDatasetPublisherFilters,
     FilterGroupsView,
     DatasetRDFDownloadView,
@@ -159,9 +159,9 @@ urlpatterns = [
         name="dataset-stats-publication-quarter",
     ),
     path(
-        "datasets/stats/publisher/",
-        DatasetsPublishersView.as_view(),
-        name="dataset-stats-publisher",
+        "datasets/stats/creator/",
+        DatasetsCreatorsView.as_view(),
+        name="dataset-stats-creator",
     ),
     path(
         "orgs/<int:pk>/datasets/add/",

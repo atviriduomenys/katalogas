@@ -376,7 +376,13 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
         ],
     )
     def test_view_permissions_open_data_managers(
-        self, user_attributes, dataset_attributes, is_public, access_rights, subclass, expected
+        self,
+        user_attributes: str,
+        dataset_attributes: str,
+        is_public: bool,
+        access_rights: str,
+        subclass: str,
+        expected: bool,
     ):
         user = getattr(self, user_attributes)
         dataset = getattr(self, dataset_attributes)
@@ -430,7 +436,13 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
         ],
     )
     def test_view_permissions_resource_managers(
-        self, user_attributes, dataset_attributes, is_public, access_rights, subclass, expected
+        self,
+        user_attributes: str,
+        dataset_attributes: str,
+        is_public: bool,
+        access_rights: str,
+        subclass: str,
+        expected: bool,
     ):
         for rep_org in (
             self.random_rep_org,

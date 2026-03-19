@@ -856,6 +856,12 @@ class Dataset(Resource):
         return reverse("dataset-members", kwargs={"pk": self.pk})
 
     def get_effective_user_role_via_organization(self, user: "User") -> str | None:
+        """
+        Determines the user's effective role on this dataset through organizational membership.
+        Access is resolved indirectly: the user belongs to an organization which holds
+        a Representative record on this dataset or one of its ancestors.
+        The resulting role is capped by the user's own role within that organization.
+        """
         organization_ct = ContentType.objects.get_for_model(Organization)
 
         user_org_map = dict(
@@ -885,11 +891,15 @@ class Dataset(Resource):
         effective_roles = []
         for org_id, org_role in org_roles:
             user_role = user_org_map[org_id]
+            # Take the weaker of the org's role and the user's role in that org.
+            # e.g. org has "resource_manager", user is "open_data_manager" in that org → effective role is "open_data_manager"
             effective_roles.append(max(org_role, user_role, key=Representative.ROLE_HIERARCHY.index))
 
         if not effective_roles:
             return None
 
+        # If the user represents multiple orgs, return the most privileged role across all of them.
+        # e.g. ["open_data_manager", "resource_manager"] → "resource_manager"
         return min(effective_roles, key=Representative.ROLE_HIERARCHY.index)
 
     def get_managers_queryset(self, roles: list[str]) -> QuerySet["Dataset"]:

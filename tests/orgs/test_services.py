@@ -261,7 +261,9 @@ def test_dataset_permissions(role, action, dataset_fixture, expected, request):
         ("open_data_manager", Action.DELETE, "confidential_dataset", False),
     ],
 )
-def test_dataset_permissions_via_org_representative(role, action, dataset_fixture, expected, request):
+def test_dataset_permissions_via_org_representative(
+    role: str, action: Action, dataset_fixture: str, expected: bool, request: pytest.FixtureRequest
+):
     dataset = request.getfixturevalue(dataset_fixture)
 
     rep_roles = {
@@ -822,8 +824,7 @@ def test_organization_representative_edit_permission_via_org_representative(role
         organization=None,
     )
 
-    res = has_perm(user, Action.UPDATE, Representative, organization)
-    assert res is expected
+    assert has_perm(user, Action.UPDATE, Representative, organization) is expected
 
 
 @pytest.mark.django_db

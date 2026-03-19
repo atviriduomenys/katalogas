@@ -618,9 +618,7 @@ def has_perm(
                 )
 
                 if user_representative_organizations.exists():
-                    if isinstance(obj, Representative):
-                        return obj.can_be_updated_by(user)
-                    return True
+                    return obj.can_be_updated_by(user) if isinstance(obj, Representative) else True
         return False
 
 

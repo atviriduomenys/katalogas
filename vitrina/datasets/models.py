@@ -889,18 +889,21 @@ class Dataset(Resource):
         ).values_list("organization_id", "role")
 
         effective_roles = []
+        # Map coordinator roles to their manager equivalents before comparison
+        coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
+
         for org_id, org_role in org_roles:
-            user_role = user_org_map[org_id]
-            # Take the weaker of the org's role and the user's role in that org.
-            # e.g. org has "resource_manager", user is "open_data_manager" in that org → effective role is "open_data_manager"
-            effective_roles.append(max(org_role, user_role, key=Representative.ROLE_HIERARCHY.index))
+            user_role = coordinator_to_manager.get(user_org_map[org_id], user_org_map[org_id])
+            # Use the more restrictive role between the organization's role and the user's role within that org.
+            # e.g. org has RESOURCE_MANAGER, user has OPEN_DATA_MANAGER → effective role is OPEN_DATA_MANAGER
+            effective_roles.append(max(org_role, user_role, key=Representative.MANAGER_ROLES.index))
 
         if not effective_roles:
             return None
 
         # If the user represents multiple orgs, return the most privileged role across all of them.
         # e.g. ["open_data_manager", "resource_manager"] → "resource_manager"
-        return min(effective_roles, key=Representative.ROLE_HIERARCHY.index)
+        return min(effective_roles, key=Representative.MANAGER_ROLES.index)
 
     def get_managers_queryset(self, roles: list[str]) -> QuerySet["Dataset"]:
         dataset_ct = self.dataset_content_type

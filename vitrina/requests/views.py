@@ -776,29 +776,34 @@ class RequestOrganizationView(HistoryMixin, PlanMixin, ListView):
         if user.is_staff or user.is_superuser:
             return True
 
+        has_create_perm = any(
+            has_perm(user, Action.CREATE, RequestAssignment, request_assignment.organization)
+            for request_assignment in self.request_obj.requestassignment_set.all()
+        )
+
         has_open_data_role = Representative.objects.filter(
             user=user,
             role__in=Representative.OPEN_DATA_ROLE_KEYS,
         ).exists()
 
-        if has_open_data_role:
-            dataset_ids = RequestObject.objects.filter(
-                content_type=ContentType.objects.get_for_model(Dataset),
-                request_id=self.request_obj.pk,
-            ).values_list("object_id", flat=True)
+        if not has_open_data_role:
+            return has_create_perm
 
-            if (
-                dataset_ids
-                and Dataset.objects.filter(pk__in=dataset_ids)
-                .exclude(access_rights__in=[Dataset.PUBLIC, Dataset.RESTRICTED])
-                .exists()
-            ):
-                return False
+        dataset_ids = RequestObject.objects.filter(
+            content_type=ContentType.objects.get_for_model(Dataset),
+            request_id=self.request_obj.pk,
+        ).values_list("object_id", flat=True)
 
-        return any(
-            has_perm(user, Action.CREATE, RequestAssignment, request_assignment.organization)
-            for request_assignment in self.request_obj.requestassignment_set.all()
+        filtered_datasets = (
+            Dataset.objects.filter(pk__in=dataset_ids)
+            .exclude(access_rights__in=[Dataset.PUBLIC, Dataset.RESTRICTED])
+            .exists()
         )
+
+        if filtered_datasets:
+            return False
+
+        return has_create_perm
 
     def get_plan_object(self):
         return self.request_obj

@@ -284,7 +284,7 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
         ).values_list("object_id", flat=True)
     )
     if user.organization:
-        user_org_ids.append(user.organization.pk)
+        user_org_ids.append(user.organization_id)
 
     representatives_qs = Representative.objects.filter(
         user=user,

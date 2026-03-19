@@ -197,23 +197,23 @@ class User(AbstractUser):
         if organization is None:
             return False
 
-        org_content_type = self.organization_content_type
+        organization_content_type = self.organization_content_type
         open_data_roles = [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
 
         # Case 1: user is directly a representative of the organization
         open_organization_representative_queryset = Representative.objects.filter(
-            content_type=org_content_type,
+            content_type=organization_content_type,
             object_id=organization.pk,
             role__in=open_data_roles,
         )
-        if open_organization_representative_queryset.filter(user=self).exists():
+        if open_organization_representative_queryset.exclude(deleted=True).filter(user=self).exists():
             return True
 
         # Case 2: user represents an organization, and that organization represents the organization
         user_org_ids = list(
             Representative.objects.filter(
                 user=self,
-                content_type=org_content_type,
+                content_type=organization_content_type,
             ).values_list("object_id", flat=True)
         )
 

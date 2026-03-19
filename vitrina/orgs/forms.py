@@ -459,15 +459,10 @@ class RepresentativeCreateForm(ModelForm):
 
         content_type = ContentType.objects.get_for_model(self.object_model)
 
-        is_open_data_coordinator = Representative.objects.filter(
-            user=self.user,
-            content_type=content_type,
-            object_id=self.object.pk,
-            role=Representative.OPEN_DATA_COORDINATOR,
-        ).exists()
-
         self.fields["role"].choices = (
-            Representative.OPEN_DATA_ROLES if is_open_data_coordinator else Representative.ROLES
+            Representative.OPEN_DATA_ROLES
+            if Representative.is_open_data_coordinator(self.user, content_type, self.object.pk)
+            else Representative.ROLES
         )
 
         if self.object_model == Organization:
@@ -502,14 +497,7 @@ class RepresentativeCreateForm(ModelForm):
         if Representative.objects.filter(content_type=content_type, object_id=self.object.id, email=email).exists():
             self.add_error("email", _("Narys su šiuo el. pašto adresu jau egzistuoja."))
         if role:
-            is_open_data_coordinator = Representative.objects.filter(
-                user=self.user,
-                content_type=content_type,
-                object_id=self.object.pk,
-                role=Representative.OPEN_DATA_COORDINATOR,
-            ).exists()
-
-            if is_open_data_coordinator:
+            if Representative.is_open_data_coordinator(self.user, content_type, self.object.pk):
                 allowed_roles = dict(Representative.OPEN_DATA_ROLES)
                 if role not in allowed_roles:
                     self.add_error("role", _("Jūs neturite teisės priskirti šios rolės."))

@@ -204,7 +204,7 @@ class EnumForm(forms.ModelForm):
         else:
             self.initial["visibility"] = "None"
 
-    def _is_value_unique(self, value: tuple[str, str], exclude_enum_item_id: int | None = None) -> bool:
+    def _is_value_not_unique(self, value: tuple[str, str], exclude_enum_item_id: int | None = None) -> bool:
         enum_items = self.enum.enumitem_set.all().prefetch_related("metadata")
         if exclude_enum_item_id:
             enum_items = enum_items.exclude(id=exclude_enum_item_id)
@@ -287,7 +287,7 @@ class EnumForm(forms.ModelForm):
 
         # If enum does not exist yet, there is no point checking for uniqueness of its items
         exclude_id = self.instance.id if self.instance and self.instance.pk else None
-        if self.enum and self._is_value_unique((source, prepare), exclude_enum_item_id=exclude_id):
+        if self.enum and self._is_value_not_unique((source, prepare), exclude_enum_item_id=exclude_id):
             error_msg = _(
                 'Galima reikšmė "{prepare}" su reikšme šaltinyje "{source}" jau egzistuoja.'.format(
                     prepare=prepare, source=source

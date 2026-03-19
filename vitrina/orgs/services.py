@@ -478,9 +478,9 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.VISITOR
     if user.is_staff:
         return Role.GLOBAL_MANAGER
-    if role := user.get_representative_role_for_resource(resource):
-        return Role(role)
-    if role := resource.get_effective_user_role_via_organization(user):
+    if role := (
+        user.get_representative_role_for_resource(resource) or resource.get_effective_user_role_via_organization(user)
+    ):
         return Role(role)
     if user.is_gov_organization_resource_manager:
         return Role.GLOBAL_RESOURCE_MANAGER

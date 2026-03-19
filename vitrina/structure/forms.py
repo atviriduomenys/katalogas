@@ -18,7 +18,7 @@ from lark import ParseError
 from vitrina.classifiers.models import Status
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna, AccessType
-from vitrina.structure.helpers import is_time_unit, is_si_unit
+from vitrina.structure.helpers import is_time_unit, is_si_unit, is_quoted
 from vitrina.structure.models import (
     EnumItem,
     Metadata,
@@ -204,14 +204,14 @@ class EnumForm(forms.ModelForm):
         else:
             self.initial["visibility"] = "None"
 
-    def _is_value_unique(self, value: str, exclude_enum_item_id: int | None = None) -> bool:
+    def _is_value_not_unique(self, value: tuple[str, str], exclude_enum_item_id: int | None = None) -> bool:
         enum_items = self.enum.enumitem_set.all().prefetch_related("metadata")
         if exclude_enum_item_id:
             enum_items = enum_items.exclude(id=exclude_enum_item_id)
         for enum_item in enum_items:
             if not (metadata := enum_item.metadata.first()):
                 continue
-            if metadata.prepare == value:
+            if (metadata.source, metadata.prepare) == value:
                 return True
 
         return False
@@ -221,6 +221,9 @@ class EnumForm(forms.ModelForm):
             return value
 
         if metadata := self.prop.metadata.first():
+            if metadata.type == "string" and not is_quoted(value):
+                value = f'"{value}"'
+
             checker = metadata.get_type_checker()
             try:
                 checker.check_enum_item_value(value)
@@ -231,12 +234,6 @@ class EnumForm(forms.ModelForm):
             spyna.parse(value)
         except ParseError as e:
             raise ValidationError(e)
-
-        # If enum does not exist yet, there is no point checking for uniqueness of its items
-        compare_value = f'"{value}"' if metadata.type == "string" else value
-        exclude_id = self.instance.id if self.instance and self.instance.pk else None
-        if self.enum and self._is_value_unique(compare_value, exclude_enum_item_id=exclude_id):
-            raise ValidationError(_(f'Galima reikšmė "{value}" jau egzistuoja.'))
 
         return value
 
@@ -278,6 +275,27 @@ class EnumForm(forms.ModelForm):
                     )
 
         return visibility
+
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+
+        if self.errors:
+            return cleaned_data
+
+        source = cleaned_data.get("source")
+        prepare = cleaned_data.get("value")
+
+        # If enum does not exist yet, there is no point checking for uniqueness of its items
+        exclude_id = self.instance.id if self.instance and self.instance.pk else None
+        if self.enum and self._is_value_not_unique((source, prepare), exclude_enum_item_id=exclude_id):
+            error_msg = _(
+                'Galima reikšmė "{prepare}" su reikšme šaltinyje "{source}" jau egzistuoja.'.format(
+                    prepare=prepare, source=source
+                )
+            )
+            self.add_error("value", error_msg)
+
+        return cleaned_data
 
 
 MODEL_LEVEL_CHOICES = (

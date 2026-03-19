@@ -13,7 +13,10 @@ https://github.com/atviriduomenys/katalogas/issues/2324
     - Importing a manifest that contains non-string enum items without prepare values will now add an error indicating that a prepare column is required.
     - Importing a manifest with string enum items and no prepare values will now automatically use the source column as the prepare value.
     - Creating enum items via the UI will now return an error if a value already exists in the enum.
-
+    - Creating and importing enums will now check enum item value types.
+    - Enum manifest export will export enum level column correctly.
+    - Boolean type enum items can now be created/changed via UI.
+    - Enum item uniqueness is checked for source+prepare values instead of prepare only. This allows creating enums with same prepare but different source values
 
 v 1.17.0 (2026-03-16)
 ==================

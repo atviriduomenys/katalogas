@@ -84,6 +84,7 @@ from vitrina.structure.services import (
     get_allowed_visibilities,
 )
 from vitrina.datasets.structure import read as read_structure
+from vitrina.structure.utils import TYPE_CHECKER_MAP
 from vitrina.tasks.models import Task
 from spinta.manifests.open_api.helpers import create_openapi_manifest
 from spinta.manifests.components import ManifestPath
@@ -762,6 +763,7 @@ class PropertyStructureView(
         )
         context["can_manage_structure"] = self.can_manage_structure
         context["is_disabled"] = self.metadata_version is not None and not self.metadata_version.is_draft()
+        context["allowed_enum_types"] = TYPE_CHECKER_MAP.keys()
 
         allowed_enum_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Enum
@@ -1868,6 +1870,14 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         if self.metadata_version and not self.metadata_version.is_draft():
             messages.error(request, _("Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."))
             return redirect(self.property.get_absolute_url())
+
+        if (metadata := self.property.metadata.first()) and metadata.type not in TYPE_CHECKER_MAP:
+            error_msg = _('Reikšmių duomenų lauko tipui "{metadata_type}" kurti negalima').format(
+                metadata_type=metadata.type
+            )
+            messages.error(request, error_msg)
+            return redirect(self.property.get_absolute_url())
+
         self.enum = self.property.enums.first()
         return super().dispatch(request, *args, **kwargs)
 
@@ -1921,8 +1931,6 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         visibility = form.cleaned_data.get("visibility")
         status = form.cleaned_data.get("status") or Status.objects.filter(is_default=True).first()
         eli = form.cleaned_data.get("eli")
-        if (metadata := self.property.metadata.first()) and metadata.type == "string":
-            value = f'"{value}"'
 
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
@@ -1935,7 +1943,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
             visibility=visibility,
             status=status,
             eli=eli,
-            prepare_ast=spyna.parse(form.cleaned_data.get("value")),
+            prepare_ast=spyna.parse(value),
             source=form.cleaned_data.get("source"),
             access=form.cleaned_data.get("access") or None,
             title=form.cleaned_data.get("title"),
@@ -2002,6 +2010,14 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
         if self.metadata_version and not self.metadata_version.is_draft():
             messages.error(request, _("Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."))
             return redirect(self.property.get_absolute_url())
+
+        if (metadata := self.property.metadata.first()) and metadata.type not in TYPE_CHECKER_MAP:
+            error_msg = _('Reikšmių duomenų lauko tipui "{metadata_type}" keisti negalima').format(
+                metadata_type=metadata.type
+            )
+            messages.error(request, error_msg)
+            return redirect(self.property.get_absolute_url())
+
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -2046,14 +2062,11 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         self.object: EnumItem = form.save()
         value = form.cleaned_data.get("value")
-        if (metadata := self.property.metadata.first()) and metadata.type == "string":
-            value = f'"{value}"'
-
         old_metadata = self.get_object().metadata.first()
 
         if metadata := self.object.metadata.first():
             metadata.prepare = value
-            metadata.prepare_ast = spyna.parse(form.cleaned_data.get("value"))
+            metadata.prepare_ast = spyna.parse(value)
             metadata.source = form.cleaned_data.get("source")
             metadata.access = form.cleaned_data.get("access") or None
             metadata.title = form.cleaned_data.get("title")

@@ -4475,6 +4475,50 @@ def test_property_enum_item_create__higher_visibility_then_model_with_error(app:
     ]
 
 
+# Not all types tested. Only a few of them
+@pytest.mark.django_db
+@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "number", "object"])
+def test_property_enum_item_create__not_allowed_for_types_that_have_no_type_checker_class(
+    app: DjangoTestApp, not_allowed_type: str
+):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE,
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type=not_allowed_type,
+        metadata_version=version,
+    )
+    response = app.get(
+        reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name]),
+    )
+
+    assert response.status_code == 302
+    assert response.url == prop.get_absolute_url()
+
+
 @pytest.mark.django_db
 def test_manifest_export_openapi(app: DjangoTestApp):
     """Test OpenAPI manifest export returns valid spec with correct metadata, schemas, tags, and paths."""
@@ -4684,7 +4728,7 @@ def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, 
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -4741,9 +4785,9 @@ def test_published_metadata_gets_completed_status(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,Size,,SMALL,,,,,,,,,\n"
-        ",,,,,,,,,MEDIUM,,,,,,,,,\n"
-        ",,,,,,,,,BIG,,,,,,,,,\n"
+        ",,,,,,enum,Size,,'''SMALL''',,,,,,,,,\n"
+        ",,,,,,,,,'''MEDIUM''',,,,,,,,,\n"
+        ",,,,,,,,,'''BIG''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -4808,7 +4852,7 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,enum,small,,'SMALL',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -4892,7 +4936,7 @@ def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,big,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
@@ -4954,7 +4998,7 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,big,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
@@ -5022,8 +5066,8 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
-        ",,,,,,,big,,BIG,,,,,,,,,\n"
+        ",,,,,,enum,small,,'SMALL',,,,,,,,,\n"
+        ",,,,,,,big,,'''BIG''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -5067,6 +5111,66 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
         assert enum_metadata.status.codename == "develop"
+
+
+# Not all types tested. Only a few of them
+@pytest.mark.django_db
+@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "number", "object"])
+def test_property_enum_item_update__not_allowed_for_types_that_have_no_type_checker_class(
+    app: DjangoTestApp, not_allowed_type: str
+):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE,
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type=not_allowed_type,
+        metadata_version=version,
+    )
+    enum = EnumFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        metadata_version=version,
+    )
+    enum_item = EnumItemFactory(enum=enum, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(enum_item),
+        object_id=enum_item.pk,
+        dataset=dataset,
+        title="Test value",
+        description="For testing",
+        prepare="",
+        access=Metadata.OPEN,
+        source="TEST",
+        metadata_version=version,
+    )
+
+    response = app.get(reverse("enum-update", args=[dataset.pk, version.pk, model.name, prop.name, enum_item.pk]))
+
+    assert response.status_code == 302
+    assert response.url == prop.get_absolute_url()
 
 
 @pytest.mark.django_db
@@ -5439,15 +5543,15 @@ def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
         "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
         "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         "2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n"
-        "3,,,,,,enum,Size,,SMALL,,,,,,,,,,\n"
-        "4,,,,,,,,,MEDIUM,,,,,,,,,\n"
-        "5,,,,,,,,,BIG,,,,,,,,,\n"
+        "3,,,,,,enum,Size,,'''SMALL''',,,,,,,,,,\n"
+        "4,,,,,,,,,'''MEDIUM''',,,,,,,,,\n"
+        "5,,,,,,,,,'''BIG''',,,,,,,,,\n"
         "6,,,,City,,,,,,,,,,,,,,\n"
         "7,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
         "8,,,,,size,Size,,,,,5,,,open,dct:size,,,\n"
         "9,,,,,type,string,,,,,5,,,open,dct:type,,,\n"
-        "10,,,,,,enum,Type,,CREATED,,,,,,,,,\n"
-        "11,,,,,,,,,MODIFIED,,,,,,,,,\n"
+        "10,,,,,,enum,Type,,'''CREATED''',,,,,,,,,\n"
+        "11,,,,,,,,,'''MODIFIED''',,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure

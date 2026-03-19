@@ -4203,9 +4203,6 @@ msgstr "Dataset title"
 msgid "Duomenų rinkinio ar vardų erdvės aprašymas."
 msgstr "Dataset or namespace description."
 
-msgid "Reikšmė turi būti integer tipo."
-msgstr "Value must be integer."
-
 msgid "Aprašymas neatitinka Markdown formato."
 msgstr "Description doesn't match Markdown format."
 
@@ -4748,13 +4745,13 @@ msgid "Metaduomenų versija"
 msgstr "Metadata version"
 
 msgid "Pending"
-msgstr ""
+msgstr "Pending"
 
 msgid "Valid"
-msgstr ""
+msgstr "Valid"
 
 msgid "Invalid"
-msgstr ""
+msgstr "Invalid"
 
 msgid ""
 "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
@@ -4906,6 +4903,9 @@ msgstr "Estimated changes"
 
 msgid "Galiojantys keitimai"
 msgstr "Deployed changes"
+
+msgid "Savybės reikšmės tipas nėra palaikomas."
+msgstr "Type of property value is not implemented."
 
 msgid "Kiekis"
 msgstr "Amount"

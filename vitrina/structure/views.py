@@ -1877,6 +1877,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["prop"] = self.property
+        kwargs["enum"] = self.enum
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -1920,9 +1921,9 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         visibility = form.cleaned_data.get("visibility")
         status = form.cleaned_data.get("status") or Status.objects.filter(is_default=True).first()
         eli = form.cleaned_data.get("eli")
-        if metadata := self.property.metadata.first():
-            if metadata.type == "string":
-                value = f'"{value}"'
+        if (metadata := self.property.metadata.first()) and metadata.type == "string":
+            value = f'"{value}"'
+
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
             dataset=self.dataset,
@@ -2016,6 +2017,7 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["prop"] = self.property
+        kwargs["enum"] = self.get_object().enum
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -2044,9 +2046,8 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         self.object: EnumItem = form.save()
         value = form.cleaned_data.get("value")
-        if metadata := self.property.metadata.first():
-            if metadata.type == "string":
-                value = f'"{value}"'
+        if (metadata := self.property.metadata.first()) and metadata.type == "string":
+            value = f'"{value}"'
 
         old_metadata = self.get_object().metadata.first()
 

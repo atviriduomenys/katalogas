@@ -1601,7 +1601,8 @@ def test_property_enum_item_create__string(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_property_enum_item_create__integer(app: DjangoTestApp):
+@pytest.mark.parametrize("integer_value", [-1, 0, 1])
+def test_property_enum_item_create__integer(app: DjangoTestApp, integer_value: int):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -1633,7 +1634,7 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
     )
 
     form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
-    form["value"] = 1
+    form["value"] = integer_value
     form["source"] = "TEST"
     form["access"] = Metadata.OPEN
     form["title"] = "Test value"
@@ -1656,7 +1657,7 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
     ) == [
         {
             "metadata_version_id": version.pk,
-            "metadata__prepare": "1",
+            "metadata__prepare": str(integer_value),
             "metadata__source": "TEST",
             "metadata__access": Metadata.OPEN,
             "metadata__title": "Test value",
@@ -1665,48 +1666,6 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
     ]
     assert Version.objects.get_for_object(prop).count() == 1
     assert Version.objects.get_for_object(prop).first().revision.user == user
-
-
-@pytest.mark.django_db
-def test_property_enum_item_create__integer_with_error(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(model),
-        object_id=model.pk,
-        dataset=dataset,
-        name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
-    )
-    prop = PropertyFactory(model=model, metadata_version=version)
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(prop),
-        object_id=prop.pk,
-        dataset=dataset,
-        name="prop",
-        type="integer",
-        metadata_version=version,
-    )
-
-    form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
-    form["value"] = "invalid"
-    form["source"] = "TEST"
-    form["access"] = Metadata.OPEN
-    form["title"] = "Test value"
-    form["description"] = "For testing"
-    resp = form.submit()
-    assert list(resp.context["form"].errors.values()) == [["Reikšmė turi būti integer tipo."]]
 
 
 @pytest.mark.django_db

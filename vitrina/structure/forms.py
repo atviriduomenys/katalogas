@@ -28,7 +28,9 @@ from vitrina.structure.models import (
     Version,
     VersionStatus,
     VersionType,
+    Enum,
 )
+from vitrina.structure.utils import TypeCheckerError
 
 
 class ModelChoiceTypeField(forms.ModelChoiceField):
@@ -161,10 +163,11 @@ class EnumForm(forms.ModelForm):
             "description",
         )
 
-    def __init__(self, prop=None, *args, **kwargs):
+    def __init__(self, prop: Property, enum: Enum, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.prop = prop
+        self.enum = enum
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "enum-form"
@@ -201,19 +204,40 @@ class EnumForm(forms.ModelForm):
         else:
             self.initial["visibility"] = "None"
 
+    def _is_value_unique(self, value: str, exclude_enum_item_id: int | None = None) -> bool:
+        enum_items = self.enum.enumitem_set.all().prefetch_related("metadata")
+        if exclude_enum_item_id:
+            enum_items = enum_items.exclude(id=exclude_enum_item_id)
+        for enum_item in enum_items:
+            if not (metadata := enum_item.metadata.first()):
+                continue
+            if metadata.prepare == value:
+                return True
+
+        return False
+
     def clean_value(self):
-        value = self.cleaned_data.get("value")
-        if value:
-            if metadata := self.prop.metadata.first():
-                if metadata.type == "integer":
-                    try:
-                        int(value)
-                    except ValueError:
-                        raise ValidationError(_("Reikšmė turi būti integer tipo."))
+        if not (value := self.cleaned_data.get("value")):
+            return value
+
+        if metadata := self.prop.metadata.first():
+            checker = metadata.get_type_checker()
             try:
-                spyna.parse(value)
-            except ParseError as e:
+                checker.check_enum_item_value(value)
+            except TypeCheckerError as e:
                 raise ValidationError(e)
+
+        try:
+            spyna.parse(value)
+        except ParseError as e:
+            raise ValidationError(e)
+
+        # If enum does not exist yet, there is no point checking for uniqueness of its items
+        compare_value = f'"{value}"' if metadata.type == "string" else value
+        exclude_id = self.instance.id if self.instance and self.instance.pk else None
+        if self.enum and self._is_value_unique(compare_value, exclude_enum_item_id=exclude_id):
+            raise ValidationError(_(f'Galima reikšmė "{value}" jau egzistuoja.'))
+
         return value
 
     def clean_description(self):

@@ -196,3 +196,99 @@ def test_update_parent_visibility_from_enum(
 
     assert model.visibility == expected_model_visibility
     assert property.visibility == expected_property_visibility
+
+
+def test_import_property_enum():
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n"
+        ",example,,,,,,,,,,,,,\n"
+        ",,,,Dataset,,,id,,,,,,,\n"
+        ",,,,,id,integer,,,,,,,,\n"
+        ",,,,,str_enum,string,,STR_ENUM,,,,,,\n"
+        ',,,,,,enum,,one,"""One""",,,,,\n'
+        ',,,,,,,,two,"""Two""",,,,,\n'
+        ",,,,,int_enum,integer,,INT_ENUM,,,,,,\n"
+        ",,,,,,enum,,1,1,,,,,\n"
+        ",,,,,,,,2,2,,,,,\n"
+    )
+    reader = csv.DictReader(io.StringIO(manifest))
+    model = "example/Dataset"
+
+    state = read(reader)
+    assert state.errors == []
+
+    str_enum_property = state.manifest.models[model].properties["str_enum"]
+    assert str_enum_property.type == "string"
+    enum_item_1 = str_enum_property.enums[""][0]
+    assert enum_item_1.source == "one"
+    assert enum_item_1.prepare == '"One"'
+    enum_item_2 = str_enum_property.enums[""][1]
+    assert enum_item_2.source == "two"
+    assert enum_item_2.prepare == '"Two"'
+
+    int_enum_property = state.manifest.models[model].properties["int_enum"]
+    assert int_enum_property.type == "integer"
+    enum_item_1 = int_enum_property.enums[""][0]
+    assert enum_item_1.source == "1"
+    assert enum_item_1.prepare == "1"
+    enum_item_2 = int_enum_property.enums[""][1]
+    assert enum_item_2.source == "2"
+    assert enum_item_2.prepare == "2"
+
+
+def test_import_property_string_enum_without_prepare_uses_source_value():
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n"
+        ",example,,,,,,,,,,,,,\n"
+        ",,,,Dataset,,,id,,,,,,,\n"
+        ",,,,,id,integer,,,,,,,,\n"
+        ",,,,,str_enum,string,,STR_ENUM,,,,,,\n"
+        ",,,,,,enum,,one,,,,,,\n"
+        ",,,,,,,,two,,,,,,\n"
+    )
+    reader = csv.DictReader(io.StringIO(manifest))
+    model = "example/Dataset"
+
+    state = read(reader)
+    assert state.errors == []
+
+    str_enum_property = state.manifest.models[model].properties["str_enum"]
+    assert str_enum_property.type == "string"
+    enum_item_1 = str_enum_property.enums[""][0]
+    assert enum_item_1.source == "one"
+    assert enum_item_1.prepare == '"one"'
+    enum_item_2 = str_enum_property.enums[""][1]
+    assert enum_item_2.source == "two"
+    assert enum_item_2.prepare == '"two"'
+
+
+def test_import_property_not_string_enum_without_prepare_results_in_error():
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n"
+        ",example,,,,,,,,,,,,,\n"
+        ",,,,Dataset,,,id,,,,,,,\n"
+        ",,,,,id,integer,,,,,,,,\n"
+        ",,,,,int_enum,integer,,INT_ENUM,,,,,,\n"
+        ",,,,,,enum,,1,,,,,,\n"
+        ",,,,,,,,2,,,,,,\n"
+    )
+    reader = csv.DictReader(io.StringIO(manifest))
+    model = "example/Dataset"
+
+    state = read(reader)
+    assert state.errors == []
+
+    int_enum_property = state.manifest.models[model].properties["int_enum"]
+    assert int_enum_property.type == "integer"
+
+    enum_item_1 = int_enum_property.enums[""][0]
+    assert enum_item_1.source == "1"
+    assert enum_item_1.prepare == ""
+    assert enum_item_1.errors == ['Duomenų reikšmė (source: "1") privalo turėti nurodytą "prepare" stulpelį.']
+    enum_item_2 = int_enum_property.enums[""][1]
+    assert enum_item_2.source == "2"
+    assert enum_item_2.prepare == ""
+    assert enum_item_2.errors == [
+        'Duomenų reikšmė (source: "2") privalo turėti nurodytą "prepare" stulpelį.',
+        'Galima reikšmė (source: "2") "" jau egzistuoja.',
+    ]

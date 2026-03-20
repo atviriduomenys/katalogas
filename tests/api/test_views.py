@@ -2790,7 +2790,6 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
         published=datetime(2016, 8, 1),
         frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title="Energy"),
             CategoryFactory(
                 title="Environment",
                 uri=f"{po}/data-theme/ENVI",
@@ -2855,14 +2854,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
-        <dcat:theme>
-            <skos:Concept>
-                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
-            </skos:Concept>
-        </dcat:theme>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -3164,12 +3156,8 @@ def test_edp_dcat_ap_rdf_hvd_dataset(app: DjangoTestApp):
         <dcatap:applicableLegislation>
             <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
         </dcatap:applicableLegislation>
-        <dcatap:hvdCategory>
-            <skos:Concept rdf:about="http://data.europa.eu/bna/c_dd313021"/>
-        </dcatap:hvdCategory>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcatap:hvdCategory rdf:resource="http://data.europa.eu/bna/c_dd313021"/>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>

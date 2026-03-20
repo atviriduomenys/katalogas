@@ -4119,7 +4119,6 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         published=datetime(2016, 8, 1),
         frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title="Energy"),
             CategoryFactory(
                 title="Environment",
                 uri=f"{po}/data-theme/ENVI",
@@ -4186,14 +4185,7 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
-        <dcat:theme>
-            <skos:Concept>
-                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
-            </skos:Concept>
-        </dcat:theme>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -4279,7 +4271,6 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         published=datetime(2016, 8, 1),
         frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title="Energy"),
             CategoryFactory(
                 title="Environment",
                 uri=f"{po}/data-theme/ENVI",
@@ -4345,14 +4336,7 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
-        <dcat:theme>
-            <skos:Concept>
-                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
-            </skos:Concept>
-        </dcat:theme>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -4437,7 +4421,6 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         published=datetime(2016, 8, 1),
         frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title="Energy"),
             CategoryFactory(
                 title="Environment",
                 uri=f"{po}/data-theme/ENVI",
@@ -4529,14 +4512,7 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
-        <dcat:theme>
-            <skos:Concept>
-                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
-            </skos:Concept>
-        </dcat:theme>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -4671,7 +4647,6 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
         published=datetime(2016, 8, 1),
         frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title="Energy"),
             CategoryFactory(
                 title="Environment",
                 uri=f"{po}/data-theme/ENVI",
@@ -4723,14 +4698,7 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
-        <dcat:theme>
-            <skos:Concept>
-                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
-            </skos:Concept>
-        </dcat:theme>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>

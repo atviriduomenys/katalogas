@@ -27,31 +27,15 @@
             <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
         </dcatap:applicableLegislation>
         {% for category in dataset.hvd_categories %}
-        <dcatap:hvdCategory>
-            {% if category.uri %}
-            <skos:Concept rdf:about="{{ category.uri|cut:' ' }}"/>
-            {% else %}
-            <skos:Concept>
-                {% for t in category.translations %}
-                <skos:prefLabel xml:lang="{{ t.lang }}">{{ t.title }}</skos:prefLabel>
-                {% endfor %}
-            </skos:Concept>
-            {% endif %}
-        </dcatap:hvdCategory>
+        {% if category.uri %}
+        <dcatap:hvdCategory rdf:resource="{{ category.uri|cut:' ' }}"/>
+        {% endif %}
         {% endfor %}
         {% endif %}
         {% for category in dataset.categories %}
-        <dcat:theme>
-            {% if category.uri %}
-            <skos:Concept rdf:about="{{ category.uri|cut:' ' }}"/>
-            {% else %}
-            <skos:Concept>
-                {% for t in category.translations %}
-                <skos:prefLabel xml:lang="{{ t.lang }}">{{ t.title }}</skos:prefLabel>
-                {% endfor %}
-            </skos:Concept>
-            {% endif %}
-        </dcat:theme>
+        {% if category.uri %}
+        <dcat:theme rdf:resource="{{ category.uri|cut:' ' }}"/>
+        {% endif %}
         {% endfor %}
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dataset.published|date:"SHORT_DATE_FORMAT" }}</dct:issued>
         {% if dataset.modified %}
@@ -123,31 +107,15 @@
             <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
         </dcatap:applicableLegislation>
         {% for category in dataset.hvd_categories %}
-        <dcatap:hvdCategory>
-            {% if category.uri %}
-            <skos:Concept rdf:about="{{ category.uri|cut:' ' }}"/>
-            {% else %}
-            <skos:Concept>
-                {% for t in category.translations %}
-                <skos:prefLabel xml:lang="{{ t.lang }}">{{ t.title }}</skos:prefLabel>
-                {% endfor %}
-            </skos:Concept>
-            {% endif %}
-        </dcatap:hvdCategory>
+        {% if category.uri %}
+        <dcatap:hvdCategory rdf:resource="{{ category.uri|cut:' ' }}"/>
+        {% endif %}
         {% endfor %}
         {% endif %}
         {% for category in dataset.categories %}
-        <dcat:theme>
-            {% if category.uri %}
-            <skos:Concept rdf:about="{{ category.uri|cut:' ' }}"/>
-            {% else %}
-            <skos:Concept>
-                {% for t in category.translations %}
-                <skos:prefLabel xml:lang="{{ t.lang }}">{{ t.title }}</skos:prefLabel>
-                {% endfor %}
-            </skos:Concept>
-            {% endif %}
-        </dcat:theme>
+        {% if category.uri %}
+        <dcat:theme rdf:resource="{{ category.uri|cut:' ' }}"/>
+        {% endif %}
         {% endfor %}
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dataset.published|date:"SHORT_DATE_FORMAT" }}</dct:issued>
         {% if dataset.modified %}

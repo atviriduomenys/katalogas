@@ -77,7 +77,7 @@ class Agent(UUIDBaseModel):
         return slugify(title).replace("-", "_")
 
     @cached_property
-    def missing_environments(self) -> list[Environment] | None:
+    def missing_environments(self) -> list[Environment]:
         existing = self.environments.not_archived().values_list("environment", flat=True).distinct()
 
         result = []
@@ -85,7 +85,7 @@ class Agent(UUIDBaseModel):
             if env not in existing:
                 result.append(env)
 
-        return result or None
+        return result
 
     objects: NotArchivedAgentQueryset = NotArchivedAgentQueryset.as_manager()
 

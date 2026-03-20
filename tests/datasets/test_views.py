@@ -60,6 +60,7 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestObjectFactory, RequestFactory
 from vitrina.requests.models import RequestObject
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
+from vitrina.resources.models import Format
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, VersionFactory
 from vitrina.structure import VersionStatus
@@ -1644,7 +1645,15 @@ class TestDatasetUpdateView:
 
     def test_dataset_update_service_agent(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
-        dataservice = DatasetServiceFactory(organization=organization, endpoint_url=None, endpoint_description=None)
+        json_format = Format.objects.get(title="JSON")
+        openapi_format = Format.objects.get(title="OpenAPI")
+        dataservice = DatasetServiceFactory(
+            organization=organization,
+            endpoint_url=None,
+            endpoint_description=None,
+            endpoint_type=json_format,
+            endpoint_description_type=openapi_format,
+        )
         agent = AgentFactory(organization=organization)
         user = UserFactory(is_staff=True)
         app.set_user(user)
@@ -2321,6 +2330,8 @@ class TestDatasetCreateView:
         form["tags"] = "test"
         form["contact"] = contact.pk
         form["agent"] = agent.pk
+        form["endpoint_type"] = Format.objects.get(title="JSON").pk
+        form["endpoint_description_type"] = Format.objects.get(title="OpenAPI").pk
         form["conforms_to"] = Concept.objects.get(code="UAPI").pk
 
         response = form.submit()

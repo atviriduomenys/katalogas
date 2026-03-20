@@ -818,7 +818,7 @@ class Dataset(Resource):
     def level(self):
         return randrange(5)
 
-    def latest_version(self):
+    def latest_version(self) -> Version:
         return self.dataset_version.order_by("-version").first()
 
     @property
@@ -1580,6 +1580,33 @@ class Dataset(Resource):
             cursor.execute(query, params)
             columns = ["root_model_id", "root_version_id", "child_model_id", "path", "depth", "root_dataset_id"]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    def get_endpoint_urls(self) -> list[tuple[str | None, str]]:
+        """Return endpoint URLs as a list of (url_name, url).
+
+        If no agent is set, url_name is None.
+        """
+        urls = []
+        if self.agent:
+            for environment in self.agent.environments.not_archived():
+                urls.append(
+                    (
+                        environment.get_environment_display(),
+                        environment.api_gate_server_url or environment.agent_address,
+                    )
+                )
+        else:
+            urls.append((None, self.endpoint_url))
+
+        return urls
+
+    def get_endpoint_description(self) -> str | None:
+        if self.agent:
+            # TODO: Update to possibly different url once DataService OpenAPI export is implemented
+            metadata_version = self.latest_version()
+            return reverse("dataset-structure-export-openapi", args=[self.pk, metadata_version.pk])
+
+        return self.endpoint_description
 
 
 class DatasetReport(Dataset):

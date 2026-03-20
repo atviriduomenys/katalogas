@@ -139,7 +139,7 @@ class TestServiceResourceForm:
         assert archived_agent not in agents_queryset
         assert different_org_agent not in agents_queryset
 
-    def test_api_related_fields_must_be_empty_when_agent_selected(
+    def test_endpoint_url_and_description_must_be_empty_when_agent_selected(
         self, organization: Organization, user: User, rf: RequestFactory
     ):
         request = rf.get("/")
@@ -150,23 +150,17 @@ class TestServiceResourceForm:
         data = {
             "agent": agent,
             "endpoint_url": "http://www.example.com",
-            "endpoint_type": Format.objects.first(),
             "endpoint_description": "http://www.example.com",
-            "endpoint_description_type": Format.objects.first(),
         }
 
         form = ServiceResourceForm(data=data, request=request, organization=organization)
 
         error_msg = "Pasirinkus agentą, šis laukas negali būti užpildytas."
         assert "endpoint_url" in form.errors
-        assert "endpoint_type" in form.errors
         assert "endpoint_description" in form.errors
-        assert "endpoint_description_type" in form.errors
 
         assert error_msg in form.errors["endpoint_url"]
-        assert error_msg in form.errors["endpoint_type"]
         assert error_msg in form.errors["endpoint_description"]
-        assert error_msg in form.errors["endpoint_description_type"]
 
     def test_conforms_to_must_be_selected_when_agent_selected(
         self, organization: Organization, user: User, rf: RequestFactory
@@ -184,6 +178,37 @@ class TestServiceResourceForm:
 
         assert "conforms_to" in form.errors
         assert "Su agentu susietos paslaugos privalo atitikti UDTS standartą." in form.errors["conforms_to"]
+
+    @pytest.mark.parametrize("is_selected", [True, False])
+    def test_wrong_endpoint_type_and_description_type_when_agent_selected(
+        self, organization: Organization, user: User, rf: RequestFactory, is_selected: bool
+    ):
+        request = rf.get("/")
+        request.resolver_match = resolve("/")
+        request.user = user
+        agent = AgentFactory(organization=organization)
+
+        data = {
+            "agent": agent,
+        }
+        if is_selected:
+            wrong_format = Format.objects.get(title="API")
+            data.update(
+                {
+                    "endpoint_type": wrong_format,
+                    "endpoint_description_type": wrong_format,
+                }
+            )
+
+        form = ServiceResourceForm(data=data, request=request, organization=organization)
+
+        assert "endpoint_type" in form.errors
+        assert "endpoint_description_type" in form.errors
+        assert "Pasirinkus agentą, API formatas privalo būti 'JSON'" in form.errors["endpoint_type"]
+        assert (
+            "Pasirinkus agentą, API specifikacijos formatas privalo būti 'OpenAPI'"
+            in form.errors["endpoint_description_type"]
+        )
 
     def test_agent_must_be_selected_if_conforms_to_is_uapi(
         self, organization: Organization, user: User, rf: RequestFactory

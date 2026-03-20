@@ -544,16 +544,24 @@ class ServiceResourceForm(BaseResourceForm):
         conforms_to = cleaned_data.get("conforms_to")
 
         if agent:
-            endpoint_fields = (
-                "endpoint_url",
-                "endpoint_type",
-                "endpoint_description",
-                "endpoint_description_type",
-            )
             error_message = _("Pasirinkus agentą, šis laukas negali būti užpildytas.")
-            for field_name in endpoint_fields:
-                if cleaned_data.get(field_name):
-                    self.add_error(field_name, error_message)
+
+            if cleaned_data.get("endpoint_url"):
+                self.add_error("endpoint_url", error_message)
+
+            if cleaned_data.get("endpoint_description"):
+                self.add_error("endpoint_description", error_message)
+
+            endpoint_type = cleaned_data.get("endpoint_type")
+            if not endpoint_type or endpoint_type.title != "JSON":
+                self.add_error("endpoint_type", _("Pasirinkus agentą, API formatas privalo būti 'JSON'"))
+
+            endpoint_description_type = cleaned_data.get("endpoint_description_type")
+            if not endpoint_description_type or endpoint_description_type.title != "OpenAPI":
+                self.add_error(
+                    "endpoint_description_type",
+                    _("Pasirinkus agentą, API specifikacijos formatas privalo būti 'OpenAPI'"),
+                )
 
             if not conforms_to or conforms_to.code != "UAPI":
                 error_message = _("Su agentu susietos paslaugos privalo atitikti UDTS standartą.")

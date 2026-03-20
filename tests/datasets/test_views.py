@@ -4592,10 +4592,10 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
                 </dct:license>
                 <dcat:mediaType>
-                    <dct:MediaType rdf:about=""/>
+                    <dct:MediaType rdf:about="https://www.iana.org/assignments/media-types/application/json"/>
                 </dcat:mediaType>
                 <dct:format>
-                    <dct:MediaTypeOrExtent rdf:about=""/>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/JSON"/>
                 </dct:format>
             </dcat:Distribution>
         </dcat:distribution>

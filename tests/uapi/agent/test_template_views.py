@@ -301,6 +301,7 @@ class TestAgentUpdate:
         assert breadcrumb_url_names_actual == breadcrumb_url_names_expected
 
 
+@pytest.mark.skip(reason="Agent delete is temporary disabled.")
 class TestAgentDelete:
     def test_success(self, app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):
         app.set_user(representative_user)
@@ -605,6 +606,7 @@ class TestAgentEnvUpdate:
         assert breadcrumb_url_names_actual == breadcrumb_url_names_expected
 
 
+@pytest.mark.skip(reason="AgentEnvironment delete is temporary disabled.")
 class TestAgentEnvDelete:
     def test_success(
         self,

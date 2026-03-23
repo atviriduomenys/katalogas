@@ -11,7 +11,6 @@ class TestIsOpenDataRepresentativeFor:
         user = UserFactory()
         assert user.is_open_data_representative_for(None) is False
 
-    # Organization tests
     def test_returns_true_if_user_is_direct_representative_of_organization(self):
         organization = OrganizationFactory()
         user = UserFactory()
@@ -60,7 +59,7 @@ class TestIsOpenDataRepresentativeFor:
             content_type=ContentType.objects.get_for_model(organization),
             object_id=organization.pk,
             user=user,
-            role=Representative.RESOURCE_COORDINATOR,  # non open data role
+            role=Representative.RESOURCE_COORDINATOR,
         )
 
         assert user.is_open_data_representative_for(organization) is False
@@ -94,7 +93,6 @@ class TestIsOpenDataRepresentativeFor:
 
         assert user.is_open_data_representative_for(organization) is False
 
-    # Dataset tests
     def test_returns_true_if_user_is_direct_representative_of_dataset(self):
         dataset = DatasetFactory()
         user = UserFactory()
@@ -143,7 +141,7 @@ class TestIsOpenDataRepresentativeFor:
             content_type=ContentType.objects.get_for_model(dataset),
             object_id=dataset.pk,
             user=user,
-            role=Representative.RESOURCE_COORDINATOR,  # non open data role
+            role=Representative.RESOURCE_COORDINATOR,
         )
 
         assert user.is_open_data_representative_for(dataset) is False

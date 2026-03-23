@@ -201,32 +201,52 @@ class User(AbstractUser):
 
         content_type = ContentType.objects.get_for_model(obj)
         open_data_roles = [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
+        coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
 
-        # Case 1: user is directly a representative of the object
-        representative_queryset = Representative.objects.filter(
-            content_type=content_type,
-            object_id=obj.pk,
-            role__in=open_data_roles,
-        )
-        if representative_queryset.exclude(deleted=True).filter(user=self).exists():
+        # Case 1: user directly holds an open data role on the object
+        if (
+            Representative.objects.filter(
+                content_type=content_type,
+                object_id=obj.pk,
+                role__in=open_data_roles,
+                user=self,
+            )
+            .exclude(deleted=True)
+            .exists()
+        ):
             return True
 
-        # Case 2: user represents an organization, and that organization represents the object
-        user_org_ids = list(
+        # Case 2: access is resolved through the user's organizational membership.
+        # Effective role is the least privileged of the user's role and the organization's role on the object.
+        user_organization_role_map = dict(
             Representative.objects.filter(
                 user=self,
                 content_type=self.organization_content_type,
             )
             .exclude(deleted=True)
-            .values_list("object_id", flat=True)
+            .values_list("object_id", "role")
         )
 
-        if not user_org_ids:
+        if not user_organization_role_map:
             return False
 
-        return representative_queryset.filter(
-            organization_id__in=user_org_ids,
-        ).exists()
+        for organization_id, organization_role in (
+            Representative.objects.filter(
+                content_type=content_type,
+                object_id=obj.pk,
+                organization_id__in=user_organization_role_map.keys(),
+            )
+            .exclude(deleted=True)
+            .values_list("organization_id", "role")
+        ):
+            user_role = coordinator_to_manager.get(
+                user_organization_role_map[organization_id], user_organization_role_map[organization_id]
+            )
+            least_privileged_role = max(organization_role, user_role, key=Representative.MANAGER_ROLES.index)
+            if least_privileged_role in open_data_roles:
+                return True
+
+        return False
 
 
 class UserTablePreferences(models.Model):

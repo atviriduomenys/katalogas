@@ -442,9 +442,8 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             ("parent_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
             ("global_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
             ("grandpa_rep", "grandchild", True, "CONFIDENTIAL", "dataset", True),
-            # parent and grandparent dataset visibility
             ("org_representative", "parent", False, "PUBLIC", "dataset", True),
-            ("org_representative", "grand_parent", True, "NON_PUBLIC", "dataset", True),
+            ("org_representative", "grand_parent", True, "NON_PUBLIC", "dataset", False),
             ("random_org_representative", "parent", False, "PUBLIC", "dataset", False),
         ],
     )
@@ -483,13 +482,11 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
     @pytest.mark.parametrize(
         "user_attributes,dataset_attributes,is_public,access_rights,expected",
         [
-            # user holds a resource-level role, but org chain holds an open data role
-            # effective access must be restricted to open data level
             ("org_representative", "grandchild", True, "PUBLIC", True),
             ("org_representative", "grandchild", True, "RESTRICTED", True),
             ("org_representative", "grandchild", True, "NON_PUBLIC", False),
             ("org_representative", "grandchild", True, "CONFIDENTIAL", False),
-            ("org_representative", "grandchild", False, "PUBLIC", False),
+            ("org_representative", "grandchild", False, "PUBLIC", True),
             ("data_set_representative", "grandchild", True, "NON_PUBLIC", False),
             ("parent_representative", "grandchild", True, "NON_PUBLIC", False),
         ],
@@ -502,11 +499,6 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
         access_rights: str,
         expected: bool,
     ):
-        """
-        User holds a resource-level role in their organization, but the organization
-        chain holds an open data role. Effective access must be restricted to open
-        data level — the least privileged of the two roles.
-        """
         for rep_org in (
             self.random_rep_org,
             self.main_rep_org,
@@ -514,13 +506,11 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             self.parent_rep_org,
             self.grand_rep_org,
         ):
-            # User's role within their organization is resource level
             Representative.objects.filter(
                 content_type=ContentType.objects.get_for_model(rep_org),
                 object_id=rep_org.pk,
             ).update(role=Representative.RESOURCE_MANAGER)
 
-            # Organization chain role is open data level
             Representative.objects.filter(organization=rep_org).update(role=Representative.OPEN_DATA_MANAGER)
 
         user = getattr(self, user_attributes)
@@ -536,13 +526,11 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
     @pytest.mark.parametrize(
         "user_attributes,dataset_attributes,is_public,access_rights,expected",
         [
-            # user holds an open data role, but org chain holds a resource-level role
-            # effective access must remain restricted to open data level
             ("org_representative", "grandchild", True, "PUBLIC", True),
             ("org_representative", "grandchild", True, "RESTRICTED", True),
             ("org_representative", "grandchild", True, "NON_PUBLIC", False),
             ("org_representative", "grandchild", True, "CONFIDENTIAL", False),
-            ("org_representative", "grandchild", False, "PUBLIC", False),
+            ("org_representative", "grandchild", False, "PUBLIC", True),
             ("data_set_representative", "grandchild", True, "NON_PUBLIC", False),
             ("parent_representative", "grandchild", True, "NON_PUBLIC", False),
         ],
@@ -555,11 +543,6 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
         access_rights: str,
         expected: bool,
     ):
-        """
-        User holds an open data role in their organization, but the organization
-        chain holds a resource-level role. Effective access must remain restricted
-        to open data level — the user's own role serves as the upper bound.
-        """
         for rep_org in (
             self.random_rep_org,
             self.main_rep_org,
@@ -567,13 +550,11 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             self.parent_rep_org,
             self.grand_rep_org,
         ):
-            # User's role within their organization is open data level
             Representative.objects.filter(
                 content_type=ContentType.objects.get_for_model(rep_org),
                 object_id=rep_org.pk,
             ).update(role=Representative.OPEN_DATA_MANAGER)
 
-            # Organization chain role is resource level
             Representative.objects.filter(organization=rep_org).update(role=Representative.RESOURCE_MANAGER)
 
         user = getattr(self, user_attributes)

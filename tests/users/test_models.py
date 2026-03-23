@@ -192,7 +192,7 @@ class TestIsOpenDataRepresentativeFor:
 
         assert user.is_open_data_representative_for(dataset) is True
 
-    def test_returns_false_if_datasets_organization_holds_resource_role_on_dataset(self):
+    def test_returns_true_if_datasets_organization_holds_resource_role_on_dataset(self):
         organization = OrganizationFactory()
         dataset = DatasetFactory(organization=organization)
         user = UserFactory()
@@ -211,7 +211,7 @@ class TestIsOpenDataRepresentativeFor:
             role=Representative.OPEN_DATA_MANAGER,
         )
 
-        assert user.is_open_data_representative_for(dataset) is False
+        assert user.is_open_data_representative_for(dataset) is True
 
     def test_returns_false_if_datasets_organization_representative_record_is_deleted(self):
         organization = OrganizationFactory()

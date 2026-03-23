@@ -1883,6 +1883,82 @@ def test_model_create_with_lowercase_first_name_letter(app: DjangoTestApp):
     ]
 
 
+@pytest.mark.django_db
+def test_model_create_visibility_choices_restricted_for_open_data_representative(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("model-create-no-version", args=[dataset.pk])).forms["model-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_model_create_visibility_choices_not_restricted_for_resource_manager(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.RESOURCE_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("model-create-no-version", args=[dataset.pk])).forms["model-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" in visibility_values
+    assert "1" in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_model_create_visibility_choices_restricted_for_open_data_representative_via_org_chain(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user_organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(user_organization),
+        object_id=user_organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        organization=user_organization,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("model-create-no-version", args=[dataset.pk])).forms["model-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
 @pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
 @pytest.mark.django_db
 def test_model_create_with_in_not_draft_version(app: DjangoTestApp, status: str):
@@ -4392,6 +4468,112 @@ def test_property_create_with_in_released_version(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_property_create_visibility_choices_restricted_for_open_data_representative(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name])).forms["property-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_property_create_visibility_choices_not_restricted_for_resource_manager(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.RESOURCE_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name])).forms["property-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" in visibility_values
+    assert "1" in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_property_create_visibility_choices_restricted_for_open_data_representative_via_org_chain(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user_organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(user_organization),
+        object_id=user_organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        organization=user_organization,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name])).forms["property-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
 def test_property_create__higher_visibility_with_error(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -4461,6 +4643,142 @@ def test_property_enum_item_create__higher_visibility_with_error(app: DjangoTest
     assert list(resp.context["form"].errors.values()) == [
         ["Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų lauko matomumas 'private'."]
     ]
+
+
+@pytest.mark.django_db
+def test_enum_create_visibility_choices_restricted_for_open_data_representative(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+        metadata_version=version,
+    )
+    prop.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_enum_create_visibility_choices_not_restricted_for_resource_manager(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+        metadata_version=version,
+    )
+    prop.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.RESOURCE_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" in visibility_values
+    assert "1" in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_enum_create_visibility_choices_restricted_for_open_data_representative_via_org_chain(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user_organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+        metadata_version=version,
+    )
+    prop.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(user_organization),
+        object_id=user_organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        organization=user_organization,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
 
 
 @pytest.mark.django_db

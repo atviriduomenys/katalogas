@@ -163,9 +163,10 @@ class EnumForm(forms.ModelForm):
             "description",
         )
 
-    def __init__(self, prop: Property, enum: Enum, *args, **kwargs):
+    def __init__(self, request, prop: Property, enum: Enum, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
+        self.request = request
         self.prop = prop
         self.enum = enum
         self.helper = FormHelper()
@@ -203,6 +204,27 @@ class EnumForm(forms.ModelForm):
             self.initial["status"] = metadata.status
         else:
             self.initial["visibility"] = "None"
+
+        property_metadata = prop.metadata.first() if prop else None
+        organization = property_metadata.dataset.organization if property_metadata else None
+        dataset = property_metadata.dataset if property_metadata else None
+        is_open_data_representative = request.user and (
+            request.user.is_open_data_representative_for(organization)
+            or request.user.is_open_data_representative_for(dataset)
+        )
+
+        if is_open_data_representative:
+            self.fields["visibility"].choices = [
+                (None, _get_level_title(_("Nepasirinkta"))),
+                (2, _get_level_title(_("Naudojamas LT lygmeniu (package)"))),
+                (3, _get_level_title(_("Naudojamas EU lygmeniu (public)"))),
+            ]
+            current_visibility = self.initial.get("visibility")
+            if current_visibility == "None":
+                current_visibility = None
+            allowed_visibility_values = [choice[0] for choice in self.fields["visibility"].choices]
+            if current_visibility not in allowed_visibility_values:
+                self.initial["visibility"] = "None"
 
     def _is_value_not_unique(self, value: tuple[str, str], exclude_enum_item_id: int | None = None) -> bool:
         enum_items = self.enum.enumitem_set.all().prefetch_related("metadata")
@@ -623,8 +645,9 @@ class ModelCreateForm(forms.ModelForm):
             "is_parameterized",
         )
 
-    def __init__(self, dataset, metadata_version, *args, **kwargs):
+    def __init__(self, request, dataset, metadata_version, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.request = request
         self.dataset = dataset
         self.metadata_version = metadata_version
         self.helper = FormHelper()
@@ -660,6 +683,20 @@ class ModelCreateForm(forms.ModelForm):
         self.initial["base_level"] = "None"
         self.initial["visibility"] = "None"
         self.initial["status"] = self.instance.status
+
+        organization = dataset.organization
+
+        is_open_data_representative = request.user and (
+            request.user.is_open_data_representative_for(organization)
+            or request.user.is_open_data_representative_for(dataset)
+        )
+
+        if is_open_data_representative:
+            self.fields["visibility"].choices = [
+                (None, _get_level_title(_("Nepasirinkta"))),
+                (2, _get_level_title(_("Naudojamas LT lygmeniu (package)"))),
+                (3, _get_level_title(_("Naudojamas EU lygmeniu (public)"))),
+            ]
 
     def clean_level(self):
         level = self.cleaned_data.get("level")
@@ -796,10 +833,10 @@ class ModelUpdateForm(ModelCreateForm):
             "comment",
         )
 
-    def __init__(self, dataset, metadata_version, *args, **kwargs):
-        super().__init__(dataset, metadata_version, *args, **kwargs)
+    def __init__(self, request, dataset, metadata_version, *args, **kwargs):
+        super().__init__(request, dataset, metadata_version, *args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
-
+        self.request = request
         self.helper.layout = Layout(
             Field("model_id"),
             Field("name"),
@@ -1093,9 +1130,10 @@ class PropertyForm(forms.ModelForm):
         help_text=_("Savybės iš susieto modelio, kurios naudojamos kaip ryšio raktas."),
     )
 
-    def __init__(self, model, *args, **kwargs):
+    def __init__(self, request, model, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
+        self.request = request
         self.model = model
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
@@ -1147,6 +1185,22 @@ class PropertyForm(forms.ModelForm):
 
             if self.instance.object not in self.model.get_props_excluding_base():
                 self.fields["name"].widget.attrs["readonly"] = True
+
+        organization = model.dataset.organization
+        is_open_data_representative = request.user and (
+            request.user.is_open_data_representative_for(organization)
+            or request.user.is_open_data_representative_for(self.model.dataset)
+        )
+
+        if is_open_data_representative:
+            self.fields["visibility"].choices = [
+                (None, _get_level_title(_("Nepasirinkta"))),
+                (2, _get_level_title(_("Naudojamas LT lygmeniu (package)"))),
+                (3, _get_level_title(_("Naudojamas EU lygmeniu (public)"))),
+            ]
+            allowed_visibility_values = [choice[0] for choice in self.fields["visibility"].choices]
+            if self.initial.get("visibility") not in allowed_visibility_values:
+                self.initial["visibility"] = "None"
 
     def clean_name(self):
         name = self.cleaned_data.get("name")

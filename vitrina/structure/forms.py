@@ -6,6 +6,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, HTML
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
+from django.core.handlers.wsgi import WSGIRequest
 from django.db.models import Case, When, Q, Count
 from django.forms import CheckboxSelectMultiple
 from django.forms.models import ModelChoiceIterator
@@ -16,6 +17,7 @@ from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from lark import ParseError
 
 from vitrina.classifiers.models import Status
+from vitrina.datasets.structure import Dataset
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna, AccessType
 from vitrina.structure.helpers import is_time_unit, is_si_unit, is_quoted
@@ -163,7 +165,7 @@ class EnumForm(forms.ModelForm):
             "description",
         )
 
-    def __init__(self, request, prop: Property, enum: Enum, *args, **kwargs):
+    def __init__(self, request: WSGIRequest, prop: Property, enum: Enum, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.request = request
@@ -645,7 +647,7 @@ class ModelCreateForm(forms.ModelForm):
             "is_parameterized",
         )
 
-    def __init__(self, request, dataset, metadata_version, *args, **kwargs):
+    def __init__(self, request: WSGIRequest, dataset: Dataset, metadata_version: Version, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.request = request
         self.dataset = dataset
@@ -833,7 +835,7 @@ class ModelUpdateForm(ModelCreateForm):
             "comment",
         )
 
-    def __init__(self, request, dataset, metadata_version, *args, **kwargs):
+    def __init__(self, request: WSGIRequest, dataset: Dataset, metadata_version: Version, *args, **kwargs):
         super().__init__(request, dataset, metadata_version, *args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.request = request
@@ -1130,7 +1132,7 @@ class PropertyForm(forms.ModelForm):
         help_text=_("Savybės iš susieto modelio, kurios naudojamos kaip ryšio raktas."),
     )
 
-    def __init__(self, request, model, *args, **kwargs):
+    def __init__(self, request: WSGIRequest, model: Model, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
         self.request = request

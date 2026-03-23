@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from functools import cached_property
 from typing import TYPE_CHECKING
 
@@ -193,35 +195,34 @@ class User(AbstractUser):
             user=self, content_type=org_type, object_id=organization.pk, role=Representative.RESOURCE_COORDINATOR
         ).exists()
 
-    def is_open_data_representative_for(self, organization: Organization | None) -> bool:
-        if organization is None:
+    def is_open_data_representative_for(self, obj: Organization | "Dataset" | None) -> bool:
+        if obj is None:
             return False
 
-        organization_content_type = self.organization_content_type
+        content_type = ContentType.objects.get_for_model(obj)
         open_data_roles = [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
 
-        # Case 1: user is directly a representative of the organization
-        open_organization_representative_queryset = Representative.objects.filter(
-            content_type=organization_content_type,
-            object_id=organization.pk,
+        # Case 1: user is directly a representative of the object
+        representative_queryset = Representative.objects.filter(
+            content_type=content_type,
+            object_id=obj.pk,
             role__in=open_data_roles,
         )
-        if open_organization_representative_queryset.exclude(deleted=True).filter(user=self).exists():
+        if representative_queryset.exclude(deleted=True).filter(user=self).exists():
             return True
 
-        # Case 2: user represents an organization, and that organization represents the organization
+        # Case 2: user represents an organization, and that organization represents the object
         user_org_ids = list(
             Representative.objects.filter(
                 user=self,
-                content_type=organization_content_type,
+                content_type=self.organization_content_type,
             ).values_list("object_id", flat=True)
         )
 
         if not user_org_ids:
             return False
 
-        return open_organization_representative_queryset.filter(
-            role__in=open_data_roles,
+        return representative_queryset.filter(
             organization__in=user_org_ids,
         ).exists()
 

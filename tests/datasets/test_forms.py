@@ -6,7 +6,7 @@ from django.test import RequestFactory
 
 from vitrina.classifiers.factories import ConceptSchemaFactory, ConceptFactory
 from vitrina.classifiers.models import ConceptSchema
-from vitrina.datasets.factories import DCATResourceSubclassFactory
+from vitrina.datasets.factories import DCATResourceSubclassFactory, DatasetFactory
 from vitrina.datasets.forms import (
     InformationSystemResourceForm,
     ServiceResourceForm,
@@ -212,6 +212,42 @@ class TestResourceSubclassForm:
             reverse(
                 "dataset-add",
                 kwargs={"pk": organization.id, "subclass_uuid": subclass.pk},
+            )
+        ).context["form"]
+        assert isinstance(form, DatasetResourceForm)
+
+        choices = [value for value, label in form.fields["access_rights"].choices]
+
+        assert Dataset.NON_PUBLIC not in choices
+        assert Dataset.CONFIDENTIAL not in choices
+        assert Dataset.PUBLIC in choices
+        assert Dataset.RESTRICTED in choices
+
+    def test_resource_access_rights_non_public_confidential_excluded_if_user_open_data_representative_for_parent_dataset(
+        self, app: DjangoTestApp
+    ):
+        organization = OrganizationFactory()
+        user = UserFactory(is_staff=True)
+        subclass = DCATResourceSubclassFactory(name="dataset")
+
+        parent_dataset = DatasetFactory(organization=organization)
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(parent_dataset),
+            object_id=parent_dataset.pk,
+            user=user,
+            role=Representative.OPEN_DATA_MANAGER,
+        )
+        app.set_user(user)
+
+        form = app.get(
+            reverse(
+                "child-dataset-add",
+                kwargs={
+                    "pk": organization.id,
+                    "subclass_uuid": subclass.pk,
+                    "parent_id": parent_dataset.pk,
+                },
             )
         ).context["form"]
         assert isinstance(form, DatasetResourceForm)

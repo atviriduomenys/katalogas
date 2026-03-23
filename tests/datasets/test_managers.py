@@ -244,14 +244,14 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             email="vssa@vssa.com", password="vssa123", status=User.ACTIVE, is_staff=True
         )
 
-        # Create representative orgs
+        # Create representative organizations
         self.random_rep_org = OrganizationFactory()
         self.main_rep_org = OrganizationFactory()
         self.grandchild_rep_org = OrganizationFactory()
         self.parent_rep_org = OrganizationFactory()
         self.grand_rep_org = OrganizationFactory()
 
-        # Assign rep orgs to resources
+        # Assign representative organizations to resources
         RepresentativeFactory(
             content_type=ContentType.objects.get_for_model(self.random_organization),
             object_id=self.random_organization.pk,
@@ -285,7 +285,7 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
 
         org_ct = ContentType.objects.get_for_model(self.random_rep_org)
 
-        # Create users as members of their respective rep orgs
+        # Create users as members of their respective representative organizations
         self.random_org_representative = User.objects.create_user(
             email="test2@test.com", password="test123", status=User.ACTIVE
         )
@@ -366,6 +366,7 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             ("data_set_representative", "grandchild", True, "NON_PUBLIC", "dataset", False),
             ("parent_representative", "grandchild", True, "NON_PUBLIC", "dataset", False),
             ("global_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
+            ("grandpa_rep", "grandchild", True, "NON_PUBLIC", "dataset", False),
             # confidential
             ("regular_user", "grandchild", True, "CONFIDENTIAL", "dataset", False),
             ("random_org_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
@@ -373,6 +374,12 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             ("data_set_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
             ("parent_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
             ("global_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
+            ("grandpa_rep", "grandchild", True, "CONFIDENTIAL", "dataset", False),
+            # parent and grandparent dataset visibility
+            ("org_representative", "parent", False, "PUBLIC", "dataset", True),
+            ("org_representative", "grand_parent", True, "PUBLIC", "dataset", True),
+            ("random_org_representative", "parent", False, "PUBLIC", "dataset", False),
+            ("random_org_representative", "grand_parent", True, "PUBLIC", "dataset", True),
         ],
     )
     def test_view_permissions_open_data_managers(
@@ -426,6 +433,7 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             ("data_set_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
             ("parent_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
             ("global_representative", "grandchild", True, "NON_PUBLIC", "dataset", True),
+            ("grandpa_rep", "grandchild", True, "NON_PUBLIC", "dataset", True),
             # confidential
             ("regular_user", "grandchild", True, "CONFIDENTIAL", "dataset", False),
             ("random_org_representative", "grandchild", True, "CONFIDENTIAL", "dataset", False),
@@ -433,6 +441,11 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             ("data_set_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
             ("parent_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
             ("global_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
+            ("grandpa_rep", "grandchild", True, "CONFIDENTIAL", "dataset", True),
+            # parent and grandparent dataset visibility
+            ("org_representative", "parent", False, "PUBLIC", "dataset", True),
+            ("org_representative", "grand_parent", True, "NON_PUBLIC", "dataset", True),
+            ("random_org_representative", "parent", False, "PUBLIC", "dataset", False),
         ],
     )
     def test_view_permissions_resource_managers(
@@ -462,6 +475,112 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
         dataset.is_public = is_public
         dataset.access_rights = access_rights
         dataset.subclass_id = DCATResourceSubclass.objects.get(name=subclass).pk
+        dataset.save()
+
+        queryset = Dataset.restricted.for_user(user)
+        assert (dataset in queryset) is expected
+
+    @pytest.mark.parametrize(
+        "user_attributes,dataset_attributes,is_public,access_rights,expected",
+        [
+            # user holds a resource-level role, but org chain holds an open data role
+            # effective access must be restricted to open data level
+            ("org_representative", "grandchild", True, "PUBLIC", True),
+            ("org_representative", "grandchild", True, "RESTRICTED", True),
+            ("org_representative", "grandchild", True, "NON_PUBLIC", False),
+            ("org_representative", "grandchild", True, "CONFIDENTIAL", False),
+            ("org_representative", "grandchild", False, "PUBLIC", False),
+            ("data_set_representative", "grandchild", True, "NON_PUBLIC", False),
+            ("parent_representative", "grandchild", True, "NON_PUBLIC", False),
+        ],
+    )
+    def test_view_permissions_resource_user_open_data_org_chain(
+        self,
+        user_attributes: str,
+        dataset_attributes: str,
+        is_public: bool,
+        access_rights: str,
+        expected: bool,
+    ):
+        """
+        User holds a resource-level role in their organization, but the organization
+        chain holds an open data role. Effective access must be restricted to open
+        data level — the least privileged of the two roles.
+        """
+        for rep_org in (
+            self.random_rep_org,
+            self.main_rep_org,
+            self.grandchild_rep_org,
+            self.parent_rep_org,
+            self.grand_rep_org,
+        ):
+            # User's role within their organization is resource level
+            Representative.objects.filter(
+                content_type=ContentType.objects.get_for_model(rep_org),
+                object_id=rep_org.pk,
+            ).update(role=Representative.RESOURCE_MANAGER)
+
+            # Organization chain role is open data level
+            Representative.objects.filter(organization=rep_org).update(role=Representative.OPEN_DATA_MANAGER)
+
+        user = getattr(self, user_attributes)
+        dataset = getattr(self, dataset_attributes)
+        dataset.is_public = is_public
+        dataset.access_rights = access_rights
+        dataset.subclass_id = DCATResourceSubclass.objects.get(name="dataset").pk
+        dataset.save()
+
+        queryset = Dataset.restricted.for_user(user)
+        assert (dataset in queryset) is expected
+
+    @pytest.mark.parametrize(
+        "user_attributes,dataset_attributes,is_public,access_rights,expected",
+        [
+            # user holds an open data role, but org chain holds a resource-level role
+            # effective access must remain restricted to open data level
+            ("org_representative", "grandchild", True, "PUBLIC", True),
+            ("org_representative", "grandchild", True, "RESTRICTED", True),
+            ("org_representative", "grandchild", True, "NON_PUBLIC", False),
+            ("org_representative", "grandchild", True, "CONFIDENTIAL", False),
+            ("org_representative", "grandchild", False, "PUBLIC", False),
+            ("data_set_representative", "grandchild", True, "NON_PUBLIC", False),
+            ("parent_representative", "grandchild", True, "NON_PUBLIC", False),
+        ],
+    )
+    def test_view_permissions_open_data_user_resource_org_chain(
+        self,
+        user_attributes: str,
+        dataset_attributes: str,
+        is_public: bool,
+        access_rights: str,
+        expected: bool,
+    ):
+        """
+        User holds an open data role in their organization, but the organization
+        chain holds a resource-level role. Effective access must remain restricted
+        to open data level — the user's own role serves as the upper bound.
+        """
+        for rep_org in (
+            self.random_rep_org,
+            self.main_rep_org,
+            self.grandchild_rep_org,
+            self.parent_rep_org,
+            self.grand_rep_org,
+        ):
+            # User's role within their organization is open data level
+            Representative.objects.filter(
+                content_type=ContentType.objects.get_for_model(rep_org),
+                object_id=rep_org.pk,
+            ).update(role=Representative.OPEN_DATA_MANAGER)
+
+            # Organization chain role is resource level
+            Representative.objects.filter(organization=rep_org).update(role=Representative.RESOURCE_MANAGER)
+
+        user = getattr(self, user_attributes)
+        dataset = getattr(self, dataset_attributes)
+        dataset.is_public = is_public
+        dataset.access_rights = access_rights
+        dataset.subclass_id = DCATResourceSubclass.objects.get(name="dataset").pk
         dataset.save()
 
         queryset = Dataset.restricted.for_user(user)

@@ -216,14 +216,16 @@ class User(AbstractUser):
             Representative.objects.filter(
                 user=self,
                 content_type=self.organization_content_type,
-            ).values_list("object_id", flat=True)
+            )
+            .exclude(deleted=True)
+            .values_list("object_id", flat=True)
         )
 
         if not user_org_ids:
             return False
 
         return representative_queryset.filter(
-            organization__in=user_org_ids,
+            organization_id__in=user_org_ids,
         ).exists()
 
 

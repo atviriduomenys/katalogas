@@ -227,10 +227,14 @@ class BaseResourceForm(TranslatableModelForm):
         if self.language_code == "en":
             self.fields["description"].required = False
         organization = self.organization if self.organization else instance.organization
-        if request.user and (
+
+        is_open_data_representative = request.user and (
             request.user.is_open_data_representative_for(organization)
             or request.user.is_open_data_representative_for(parent)
-        ):
+            or request.user.is_open_data_representative_for(instance)
+        )
+
+        if is_open_data_representative:
             self.fields["access_rights"].choices = [
                 (Dataset.PUBLIC, _("Vieši")),
                 (Dataset.RESTRICTED, _("Apriboti")),
@@ -243,6 +247,13 @@ class BaseResourceForm(TranslatableModelForm):
 
             self.initial["applicable_legislation"] = list(instance.applicable_legislation.values_list("url", flat=True))
             self.initial["documentation"] = list(instance.documentation.values_list("documentation_link", flat=True))
+
+        if is_open_data_representative:
+            self.fields["access_rights"].choices = [
+                (Dataset.PUBLIC, _("Vieši")),
+                (Dataset.RESTRICTED, _("Apriboti")),
+            ]
+
         else:
             if default_frequency := Frequency.objects.filter(is_default=True).first():
                 self.initial["frequency"] = default_frequency

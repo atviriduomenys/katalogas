@@ -1308,6 +1308,78 @@ class DatasetUpdateView(
                     ),
                 },
             )
+
+        if "creator" in form.changed_data and self.request.user.organization:
+            creator = form.cleaned_data.get("creator")
+            if creator:
+                if self.request.user.organization.publisher:
+                    Representative.objects.get_or_create(
+                        content_type=ContentType.objects.get_for_model(self.object),
+                        object_id=self.object.pk,
+                        organization=self.request.user.organization,
+                        defaults={"role": Representative.OPEN_DATA_MANAGER},
+                    )
+
+                    self.object.publisher = self.request.user.organization
+                self.object.organization = creator
+
+                if creator == self.request.user.organization and self.request.user.organization.publisher:
+                    self.object.publisher = None
+                    Representative.objects.filter(
+                        object_id=self.object.pk,
+                        content_type=ContentType.objects.get_for_model(Dataset),
+                        role=Representative.OPEN_DATA_MANAGER,
+                        organization__isnull=False,
+                    ).delete()
+
+            self.object.save()
+
+        if "managed_by_publisher" in form.changed_data and self.request.user.organization:
+            managed_by_publisher = form.cleaned_data.get("managed_by_publisher")
+            if managed_by_publisher and self.request.user.organization.publisher:
+                self.object.publisher = self.request.user.organization
+                Representative.objects.get_or_create(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    organization=self.request.user.organization,
+                    defaults={"role": Representative.OPEN_DATA_MANAGER},
+                )
+            else:
+                self.object.publisher = None
+                Representative.objects.filter(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    role=Representative.OPEN_DATA_MANAGER,
+                    organization__isnull=False,
+                ).delete()
+            self.object.save()
+
+        if "publisher" in form.changed_data:
+            publisher = form.cleaned_data.get("publisher")
+            if publisher:
+                self.object.publisher = publisher
+                Representative.objects.filter(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    role=Representative.OPEN_DATA_MANAGER,
+                    organization__isnull=False,
+                ).exclude(organization=publisher).delete()
+                Representative.objects.get_or_create(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    organization=publisher,
+                    defaults={"role": Representative.OPEN_DATA_MANAGER},
+                )
+            else:
+                self.object.publisher = None
+                Representative.objects.filter(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    role=Representative.OPEN_DATA_MANAGER,
+                    organization__isnull=False,
+                ).delete()
+            self.object.save()
+
         self.object.save()
 
         selected_parent: Dataset | None = form.cleaned_data.get("parent")

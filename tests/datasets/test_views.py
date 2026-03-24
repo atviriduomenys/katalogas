@@ -2137,13 +2137,13 @@ class TestDatasetCreateView:
 
         ds = Dataset.objects.get(translations__title="Test No Duplicate Publisher Reps")
         ct = ContentType.objects.get_for_model(ds)
-        org_reps = Representative.objects.filter(
+        publisher_reps = Representative.objects.filter(
             content_type=ct,
             object_id=ds.pk,
             user__isnull=True,
-            organization__isnull=False,
+            organization=publisher_org,
         )
-        assert org_reps.count() == 1
+        assert publisher_reps.count() == 1
 
     @pytest.mark.parametrize(
         "role",

@@ -930,13 +930,28 @@ class DatasetCreateView(
                         content_type=ContentType.objects.get_for_model(self.object),
                     )
 
-        if self.object.organization:
-            Representative.objects.create(
-                content_type=ContentType.objects.get_for_model(self.object),
-                object_id=self.object.pk,
-                organization=self.object.organization,
-                role=Representative.OPEN_DATA_MANAGER,
-            )
+            if creator := form.cleaned_data.get("creator"):
+                if self.object.organization:
+                    Representative.objects.get_or_create(
+                        content_type=ContentType.objects.get_for_model(self.object),
+                        object_id=self.object.pk,
+                        organization=self.object.organization,
+                        defaults={"role": Representative.OPEN_DATA_MANAGER},
+                    )
+
+                    self.object.publisher = self.object.organization if self.object.organization != creator else None
+                self.object.organization = creator
+                self.object.save()
+
+            if publisher := form.cleaned_data.get("publisher"):
+                self.object.publisher = publisher
+                Representative.objects.get_or_create(
+                    object_id=self.object.pk,
+                    content_type=ContentType.objects.get_for_model(Dataset),
+                    organization=publisher,
+                    defaults={"role": Representative.OPEN_DATA_MANAGER},
+                )
+                self.object.save()
 
             attribution = Attribution.objects.filter(name=Attribution.CREATOR).first()
             if attribution:

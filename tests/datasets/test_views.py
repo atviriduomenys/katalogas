@@ -1970,6 +1970,132 @@ class TestDatasetCreateView:
         response = form.submit(expect_errors=True)
         assert "Žymėjimas turi atitikti šabloną" in response.text
 
+    def test_create_dataset_with_creator_no_duplicate_representatives(self, app: DjangoTestApp):
+        frequency = FrequencyFactory(is_default=True)
+
+        org = OrganizationFactory()
+        publisher_org = OrganizationFactory(publisher=True)
+
+        RepresentativeFactory(
+            user=None,
+            organization=publisher_org,
+            role=Representative.OPEN_DATA_MANAGER,
+            object_id=org.pk,
+            content_type=ContentType.objects.get_for_model(org),
+        )
+
+        subclass = DCATResourceSubclassFactory()
+        user = UserFactory(is_staff=True, organization=publisher_org)
+        app.set_user(user)
+
+        form = app.get(reverse("dataset-add", kwargs={"pk": publisher_org.id, "subclass_uuid": subclass.pk})).forms[
+            "dataset-form"
+        ]
+        form["title"] = "Test No Duplicate Reps"
+        form["description"] = "Test dataset"
+        form["frequency"] = str(frequency.pk)
+        form["creator"] = str(org.pk)
+        form["access_rights"] = Dataset.PUBLIC
+        form.submit()
+
+        ds = Dataset.objects.get(translations__title="Test No Duplicate Reps")
+        ct = ContentType.objects.get_for_model(ds)
+        org_reps = Representative.objects.filter(
+            content_type=ct,
+            object_id=ds.pk,
+            user__isnull=True,
+            organization__isnull=False,
+        )
+        assert org_reps.count() == 1
+
+    def test_create_dataset_with_publisher_no_duplicate_representatives(self, app: DjangoTestApp):
+        frequency = FrequencyFactory(is_default=True)
+
+        org = OrganizationFactory()
+        publisher_org = OrganizationFactory(publisher=True)
+        subclass = DCATResourceSubclassFactory()
+        RepresentativeFactory(
+            user=None,
+            organization=publisher_org,
+            role=Representative.OPEN_DATA_MANAGER,
+            object_id=org.pk,
+            content_type=ContentType.objects.get_for_model(org),
+        )
+
+        user = UserFactory(is_staff=True, organization=org)
+        app.set_user(user)
+
+        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
+            "dataset-form"
+        ]
+        form["title"] = "Test No Duplicate Publisher Reps"
+        form["description"] = "Test dataset"
+        form["frequency"] = str(frequency.pk)
+        form["publisher"] = str(publisher_org.pk)
+        form["access_rights"] = Dataset.PUBLIC
+        form.submit()
+
+        ds = Dataset.objects.get(translations__title="Test No Duplicate Publisher Reps")
+        ct = ContentType.objects.get_for_model(ds)
+        org_reps = Representative.objects.filter(
+            content_type=ct,
+            object_id=ds.pk,
+            user__isnull=True,
+            organization__isnull=False,
+        )
+        assert org_reps.count() == 1
+
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.OPEN_DATA_MANAGER,
+            Representative.RESOURCE_MANAGER,
+        ],
+    )
+    def test_create_dataset_creator_options(self, app: DjangoTestApp, role: str):
+        org = OrganizationFactory()
+        org2 = OrganizationFactory()
+        org3 = OrganizationFactory()
+        publisher_org = OrganizationFactory(publisher=True)
+        subclass = DCATResourceSubclassFactory()
+        for org_instance in [org, org2, org3]:
+            RepresentativeFactory(
+                user=None,
+                organization=publisher_org,
+                role=role,
+                object_id=org_instance.pk,
+                content_type=ContentType.objects.get_for_model(org),
+            )
+
+        user = UserFactory(is_staff=False, organization=publisher_org)
+        app.set_user(user)
+        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
+            "dataset-form"
+        ]
+        options = [option[2] for option in form.fields["creator"][0].options]
+        assert len(options) == 5  # includes default option
+        assert org.title in options
+        assert org2.title in options
+        assert org3.title in options
+        assert publisher_org.title in options
+
+    def test_create_dataset_publisher_options(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        publisher_org = OrganizationFactory(publisher=True)
+        publisher_org2 = OrganizationFactory(publisher=True)
+        publisher_org3 = OrganizationFactory(publisher=True)
+        subclass = DCATResourceSubclassFactory()
+        user = UserFactory(is_staff=True, organization=org)
+        app.set_user(user)
+        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
+            "dataset-form"
+        ]
+        options = [option[2] for option in form.fields["publisher"][0].options]
+        assert len(options) == 4  # includes default option
+        assert publisher_org.title in options
+        assert publisher_org2.title in options
+        assert publisher_org3.title in options
+
     def test_dataset_create_with_applicable_legislation(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
         subclass = DCATResourceSubclassFactory()

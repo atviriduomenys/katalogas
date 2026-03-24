@@ -162,16 +162,20 @@ class TestServiceResourceForm:
         assert error_msg in form.errors["endpoint_url"]
         assert error_msg in form.errors["endpoint_description"]
 
-    def test_conforms_to_must_be_selected_when_agent_selected(
+    def test_conforms_to_must_be_uapi_when_agent_selected(
         self, organization: Organization, user: User, rf: RequestFactory
     ):
         request = rf.get("/")
         request.resolver_match = resolve("/")
         request.user = user
         agent = AgentFactory(organization=organization)
+        concepts_schema = ConceptSchema.objects.get(uri="https://data.gov.lt/id/non-standard/DataServiceStandard")
+        concept = Concept.objects.create(code="test", valid_since="2000-01-01")
+        concept.concept_schemas.add(concepts_schema)
 
         data = {
             "agent": agent,
+            "conforms_to": concept,
         }
 
         form = ServiceResourceForm(data=data, request=request, organization=organization)
@@ -179,26 +183,20 @@ class TestServiceResourceForm:
         assert "conforms_to" in form.errors
         assert "Su agentu susietos paslaugos privalo atitikti UDTS standartą." in form.errors["conforms_to"]
 
-    @pytest.mark.parametrize("is_selected", [True, False])
     def test_wrong_endpoint_type_and_description_type_when_agent_selected(
-        self, organization: Organization, user: User, rf: RequestFactory, is_selected: bool
+        self, organization: Organization, user: User, rf: RequestFactory
     ):
         request = rf.get("/")
         request.resolver_match = resolve("/")
         request.user = user
         agent = AgentFactory(organization=organization)
+        wrong_format = Format.objects.get(title="API")
 
         data = {
             "agent": agent,
+            "endpoint_type": wrong_format,
+            "endpoint_description_type": wrong_format,
         }
-        if is_selected:
-            wrong_format = Format.objects.get(title="API")
-            data.update(
-                {
-                    "endpoint_type": wrong_format,
-                    "endpoint_description_type": wrong_format,
-                }
-            )
 
         form = ServiceResourceForm(data=data, request=request, organization=organization)
 
@@ -228,6 +226,25 @@ class TestServiceResourceForm:
             "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
             in form.errors["agent"]
         )
+
+    def test_related_fields_auto_filled_if_agent_selected(
+        self, organization: Organization, user: User, rf: RequestFactory
+    ):
+        request = rf.get("/")
+        request.resolver_match = resolve("/")
+        request.user = user
+        agent = AgentFactory(organization=organization)
+
+        data = {
+            "agent": agent,
+        }
+
+        form = ServiceResourceForm(data=data, request=request, organization=organization)
+
+        assert not form.is_valid()
+        form.cleaned_data["endpoint_type"] == Format.objects.get(title="JSON")
+        form.cleaned_data["endpoint_description_type"] == Format.objects.get(title="OpenAPI")
+        form.cleaned_data["conforms_to"] == Concept.objects.get(code="UAPI")
 
 
 class TestCatalogResourceForm:

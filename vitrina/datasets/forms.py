@@ -1,5 +1,6 @@
 from datetime import date
 import re
+from typing import Any
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
@@ -58,6 +59,7 @@ from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 from vitrina.projects.services import get_projects_linkable_to_dataset
 from vitrina.uapi.models import Agent
+from vitrina.resources.models import Format
 
 
 DATA_SERVICE_STANDARD_URI = "https://data.gov.lt/id/non-standard/DataServiceStandard"
@@ -536,34 +538,57 @@ class ServiceResourceForm(BaseResourceForm):
             Field("is_hvd"),
         )
 
-    def clean(self):
+    def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
 
         agent = cleaned_data.get("agent")
 
         conforms_to = cleaned_data.get("conforms_to")
+        endpoint_url = cleaned_data.get("endpoint_url")
+        endpoint_description = cleaned_data.get("endpoint_description")
 
         if agent:
             error_message = _("Pasirinkus agentą, šis laukas negali būti užpildytas.")
 
-            if cleaned_data.get("endpoint_url"):
+            if endpoint_url:
                 self.add_error("endpoint_url", error_message)
 
-            if cleaned_data.get("endpoint_description"):
+            if endpoint_description:
                 self.add_error("endpoint_description", error_message)
 
             endpoint_type = cleaned_data.get("endpoint_type")
-            if not endpoint_type or endpoint_type.title != "JSON":
+            if not endpoint_type:
+                json_format = Format.objects.filter(title="JSON").first()
+                if not json_format:
+                    raise ValidationError(
+                        _("Nepavyko rasti `JSON` formato pasirinkimų sąraše. Susisiekite su administracija.")
+                    )
+                cleaned_data["endpoint_type"] = json_format
+            elif endpoint_type.title != "JSON":
                 self.add_error("endpoint_type", _("Pasirinkus agentą, API formatas privalo būti 'JSON'"))
 
             endpoint_description_type = cleaned_data.get("endpoint_description_type")
-            if not endpoint_description_type or endpoint_description_type.title != "OpenAPI":
+            if not endpoint_description_type:
+                openapi_format = Format.objects.filter(title="OpenAPI").first()
+                if not openapi_format:
+                    raise ValidationError(
+                        _("Nepavyko rasti `OpenAPI` formato pasirinkimų sąraše. Susisiekite su administracija.")
+                    )
+                cleaned_data["endpoint_description_type"] = openapi_format
+            elif endpoint_description_type.title != "OpenAPI":
                 self.add_error(
                     "endpoint_description_type",
                     _("Pasirinkus agentą, API specifikacijos formatas privalo būti 'OpenAPI'"),
                 )
 
-            if not conforms_to or conforms_to.code != "UAPI":
+            if not conforms_to:
+                uapi_concept = Concept.objects.filter(code="UAPI").first()
+                if not uapi_concept:
+                    raise ValidationError(
+                        _("Nepavyko rasti `UDTS` standarto pasirinkimų sąraše. Susisiekite su administracija.")
+                    )
+                cleaned_data["conforms_to"] = uapi_concept
+            elif conforms_to.code != "UAPI":
                 error_message = _("Su agentu susietos paslaugos privalo atitikti UDTS standartą.")
                 self.add_error("conforms_to", error_message)
 

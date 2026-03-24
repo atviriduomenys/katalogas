@@ -80,14 +80,9 @@ class Agent(UUIDBaseModel):
     def missing_environments(self) -> list[Environment]:
         existing = self.environments.not_archived().values_list("environment", flat=True).distinct()
 
-        result = []
-        for env in Environment:
-            if env not in existing:
-                result.append(env)
+        return [env for env in Environment if env not in existing]
 
-        return result
-
-    objects: NotArchivedAgentQueryset = NotArchivedAgentQueryset.as_manager()
+    objects = NotArchivedAgentQueryset.as_manager()
 
 
 class NotArchivedAgentEnvQueryset(models.QuerySet["AgentEnvironment"]):
@@ -172,7 +167,7 @@ class AgentEnvironment(UUIDBaseModel):
     def __str__(self) -> str:
         return f"{self.agent.title} - {self.get_environment_display()}"
 
-    objects: NotArchivedAgentEnvQueryset = NotArchivedAgentEnvQueryset.as_manager()
+    objects = NotArchivedAgentEnvQueryset.as_manager()
 
 
 class VisibleRequestHistoryQueryset(models.QuerySet["RequestHistory"]):
@@ -199,7 +194,7 @@ class RequestHistory(UUIDBaseModel):
         verbose_name = _("Užklausų istorija")
         verbose_name_plural = _("Užklausų istorijos")
 
-    objects: VisibleRequestHistoryQueryset = VisibleRequestHistoryQueryset.as_manager()
+    objects = VisibleRequestHistoryQueryset.as_manager()
 
 
 class RequestHistoryChanges(UUIDBaseModel):

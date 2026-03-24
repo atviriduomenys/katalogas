@@ -274,7 +274,7 @@ class DatasetServiceFactory(DjangoModelFactory):
     contact = factory.SubFactory(ContactFactory, organization=factory.SelfAttribute("..organization"))
 
     @classmethod
-    def _create(cls, model_class: type[Dataset], *args, **kwargs):
+    def _create(cls, model_class: type[Dataset], *args, **kwargs) -> Dataset:
         title = kwargs.pop("title")
         description = kwargs.pop("description", None)
         dataset = model_class(*args, **kwargs)
@@ -286,7 +286,7 @@ class DatasetServiceFactory(DjangoModelFactory):
         return dataset
 
     @factory.post_generation
-    def tags(self, create, extracted, **kwargs):
+    def tags(self, create, extracted, **kwargs) -> None:
         if not create:
             return
 
@@ -295,7 +295,7 @@ class DatasetServiceFactory(DjangoModelFactory):
             self.tags.add(tag_name)
 
     @factory.post_generation
-    def category(self, create, extracted, **kwargs):
+    def category(self, create, extracted, **kwargs) -> None:
         if not create:
             return
         if extracted:

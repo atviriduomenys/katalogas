@@ -1586,19 +1586,16 @@ class Dataset(Resource):
 
         If no agent is set, url_name is None.
         """
-        urls = []
         if self.agent:
-            for environment in self.agent.environments.not_archived():
-                urls.append(
-                    (
-                        environment.get_environment_display(),
-                        environment.api_gate_server_url or environment.agent_address,
-                    )
+            return [
+                (
+                    environment.get_environment_display(),
+                    environment.api_gate_server_url or environment.agent_address,
                 )
-        else:
-            urls.append((None, self.endpoint_url))
+                for environment in self.agent.environments.not_archived()
+            ]
 
-        return urls
+        return [(None, self.endpoint_url)]
 
     def get_endpoint_description(self) -> str | None:
         if self.agent:

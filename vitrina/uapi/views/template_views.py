@@ -198,6 +198,7 @@ class AgentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
 
     def dispatch(self, request, *args, **kwargs):
         # Temporary disable agent deletion
+        messages.warning(self.request, _("Agentų trynimas laikinai išjungtas."))
         return redirect(self.get_success_url())
 
     def get_queryset(self):
@@ -397,6 +398,7 @@ class AgentEnvDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     def dispatch(self, request, *args, **kwargs):
         # Temporary disable agent environment deletion
         self.object = self.get_object()
+        messages.warning(self.request, _("Agento aplinkų trynimas laikinai išjungtas."))
         return redirect(self.get_success_url())
 
     def get_queryset(self):

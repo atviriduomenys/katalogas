@@ -326,7 +326,10 @@
             </th>
             <td>
                 {% for name, url in dataset.get_endpoint_urls %}
-                    {% if name %} {{ name }} - {% endif %}<a href="{{ url }}">{{ url|truncatechars:50 }}</a><br>
+                    {% if name %}
+                        {{ name }} - 
+                    {% endif %}
+                    <a href="{{ url }}">{{ url|truncatechars:50 }}</a><br>
                 {% endfor %}
             </td>
         </tr>

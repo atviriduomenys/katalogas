@@ -1,7 +1,5 @@
-from __future__ import annotations
-
 from functools import cached_property
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Union
 
 from django.contrib.auth.models import AbstractUser
 from django.contrib.contenttypes.models import ContentType
@@ -195,7 +193,7 @@ class User(AbstractUser):
             user=self, content_type=org_type, object_id=organization.pk, role=Representative.RESOURCE_COORDINATOR
         ).exists()
 
-    def is_open_data_representative_for(self, obj: Organization | "Dataset" | None) -> bool:
+    def is_open_data_representative_for(self, obj: Union[Organization, "Dataset", None]) -> bool:
         if obj is None:
             return False
 

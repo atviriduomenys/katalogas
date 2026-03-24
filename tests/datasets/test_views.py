@@ -1680,6 +1680,106 @@ class TestDatasetUpdateView:
         dataservice.refresh_from_db()
         assert dataservice.agent == agent
 
+    def test_edit_dataset_publisher_twice_no_duplicate_representatives(self, app: DjangoTestApp):
+        frequency = FrequencyFactory(is_default=True)
+        org = OrganizationFactory()
+        publisher_org = OrganizationFactory(publisher=True)
+        publisher_org2 = OrganizationFactory(publisher=True)
+        dataset = DatasetFactory(organization=org, frequency=frequency)
+        ct = ContentType.objects.get_for_model(dataset)
+
+        user = UserFactory(is_staff=True, is_superuser=True, organization=org)
+        app.set_user(user)
+
+        # First edit - set publisher
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.pk})).forms["dataset-form"]
+        form["publisher"] = str(publisher_org.pk)
+        form.submit()
+
+        # Second edit - change publisher
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.pk})).forms["dataset-form"]
+        form["publisher"] = str(publisher_org2.pk)
+        form.submit()
+
+        org_reps = Representative.objects.filter(
+            content_type=ct,
+            object_id=dataset.pk,
+            user__isnull=True,
+            organization__isnull=False,
+        )
+        assert org_reps.count() == 1
+        assert org_reps.first().organization == publisher_org2
+
+    def test_edit_dataset_managed_by_publisher_twice_no_duplicate_representatives(self, app: DjangoTestApp):
+        frequency = FrequencyFactory(is_default=True)
+        org = OrganizationFactory()
+        publisher_org = OrganizationFactory(publisher=True)
+        dataset = DatasetFactory(organization=org, frequency=frequency)
+        ct = ContentType.objects.get_for_model(dataset)
+
+        user = UserFactory(is_staff=True, organization=publisher_org)
+        app.set_user(user)
+
+        # First edit - toggle managed_by_publisher on
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.pk})).forms["dataset-form"]
+        form["managed_by_publisher"] = True
+        form.submit()
+
+        # Second edit - toggle off then on again
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.pk})).forms["dataset-form"]
+        form["managed_by_publisher"] = False
+        form.submit()
+
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.pk})).forms["dataset-form"]
+        form["managed_by_publisher"] = True
+        form.submit()
+
+        org_reps = Representative.objects.filter(
+            content_type=ct,
+            object_id=dataset.pk,
+            user__isnull=True,
+            organization__isnull=False,
+        )
+        assert org_reps.count() <= 1
+
+    def test_edit_dataset_creator_twice_no_duplicate_representatives(self, app: DjangoTestApp):
+        frequency = FrequencyFactory(is_default=True)
+        org = OrganizationFactory()
+        org2 = OrganizationFactory()
+        publisher_org = OrganizationFactory(publisher=True)
+        dataset = DatasetFactory(organization=org, frequency=frequency)
+        ct = ContentType.objects.get_for_model(dataset)
+
+        for o in [org, org2]:
+            RepresentativeFactory(
+                user=None,
+                organization=publisher_org,
+                role=Representative.OPEN_DATA_MANAGER,
+                object_id=o.pk,
+                content_type=ContentType.objects.get_for_model(o),
+            )
+
+        user = UserFactory(is_staff=True, organization=publisher_org)
+        app.set_user(user)
+
+        # First edit - change creator
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.pk})).forms["dataset-form"]
+        form["creator"] = str(org2.pk)
+        form.submit()
+
+        # Second edit - change creator again
+        form = app.get(reverse("dataset-change", kwargs={"pk": dataset.pk})).forms["dataset-form"]
+        form["creator"] = str(org.pk)
+        form.submit()
+
+        org_reps = Representative.objects.filter(
+            content_type=ct,
+            object_id=dataset.pk,
+            user__isnull=True,
+            organization__isnull=False,
+        )
+        assert org_reps.count() <= 1
+
 
 class TestDatasetCreateView:
     def test_add_form_no_login(self, app: DjangoTestApp):

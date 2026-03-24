@@ -4,6 +4,7 @@ import markdown
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, HTML
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.handlers.wsgi import WSGIRequest
@@ -33,6 +34,7 @@ from vitrina.structure.models import (
     Enum,
 )
 from vitrina.structure.utils import TypeCheckerError
+from vitrina.users.models import User
 
 
 class ModelChoiceTypeField(forms.ModelChoiceField):
@@ -165,10 +167,10 @@ class EnumForm(forms.ModelForm):
             "description",
         )
 
-    def __init__(self, request: WSGIRequest, prop: Property, enum: Enum, *args, **kwargs):
+    def __init__(self, user: User | AnonymousUser, prop: Property, enum: Enum, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
-        self.request = request
+        self.user = user
         self.prop = prop
         self.enum = enum
         self.helper = FormHelper()
@@ -210,9 +212,9 @@ class EnumForm(forms.ModelForm):
         property_metadata = prop.metadata.first() if prop else None
         organization = property_metadata.dataset.organization if property_metadata else None
         dataset = property_metadata.dataset if property_metadata else None
-        is_open_data_representative = request.user and (
-            request.user.is_open_data_representative_for(organization)
-            or request.user.is_open_data_representative_for(dataset)
+        is_open_data_representative = self.user and (
+            self.user.is_open_data_representative_for(organization)
+            or self.user.is_open_data_representative_for(dataset)
         )
 
         if is_open_data_representative:
@@ -647,9 +649,9 @@ class ModelCreateForm(forms.ModelForm):
             "is_parameterized",
         )
 
-    def __init__(self, request: WSGIRequest, dataset: Dataset, metadata_version: Version, *args, **kwargs):
+    def __init__(self, user: User | AnonymousUser, dataset: Dataset, metadata_version: Version, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.request = request
+        self.user = user
         self.dataset = dataset
         self.metadata_version = metadata_version
         self.helper = FormHelper()
@@ -688,9 +690,9 @@ class ModelCreateForm(forms.ModelForm):
 
         organization = dataset.organization
 
-        is_open_data_representative = request.user and (
-            request.user.is_open_data_representative_for(organization)
-            or request.user.is_open_data_representative_for(dataset)
+        is_open_data_representative = self.user and (
+            self.user.is_open_data_representative_for(organization)
+            or self.user.is_open_data_representative_for(dataset)
         )
 
         if is_open_data_representative:
@@ -835,10 +837,10 @@ class ModelUpdateForm(ModelCreateForm):
             "comment",
         )
 
-    def __init__(self, request: WSGIRequest, dataset: Dataset, metadata_version: Version, *args, **kwargs):
-        super().__init__(request, dataset, metadata_version, *args, **kwargs)
+    def __init__(self, user: User | AnonymousUser, dataset: Dataset, metadata_version: Version, *args, **kwargs):
+        super().__init__(user, dataset, metadata_version, *args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
-        self.request = request
+        self.user = user
         self.helper.layout = Layout(
             Field("model_id"),
             Field("name"),
@@ -1132,10 +1134,10 @@ class PropertyForm(forms.ModelForm):
         help_text=_("Savybės iš susieto modelio, kurios naudojamos kaip ryšio raktas."),
     )
 
-    def __init__(self, request: WSGIRequest, model: Model, *args, **kwargs):
+    def __init__(self, user: User | AnonymousUser, model: Model, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
-        self.request = request
+        self.user = user
         self.model = model
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
@@ -1189,9 +1191,9 @@ class PropertyForm(forms.ModelForm):
                 self.fields["name"].widget.attrs["readonly"] = True
 
         organization = model.dataset.organization
-        is_open_data_representative = request.user and (
-            request.user.is_open_data_representative_for(organization)
-            or request.user.is_open_data_representative_for(self.model.dataset)
+        is_open_data_representative = self.user and (
+            self.user.is_open_data_representative_for(organization)
+            or self.user.is_open_data_representative_for(self.model.dataset)
         )
 
         if is_open_data_representative:

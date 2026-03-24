@@ -496,11 +496,12 @@ class RepresentativeCreateForm(ModelForm):
         content_type = ContentType.objects.get_for_model(self.object_model)
         if Representative.objects.filter(content_type=content_type, object_id=self.object.id, email=email).exists():
             self.add_error("email", _("Narys su šiuo el. pašto adresu jau egzistuoja."))
-        if role:
-            if Representative.is_open_data_coordinator(self.user, content_type, self.object.pk):
-                allowed_roles = dict(Representative.OPEN_DATA_ROLES)
-                if role not in allowed_roles:
-                    self.add_error("role", _("Jūs neturite teisės priskirti šios rolės."))
+        if (
+            role
+            and role not in dict(Representative.OPEN_DATA_ROLES)
+            and Representative.is_open_data_coordinator(self.user, content_type, self.object.pk)
+        ):
+            self.add_error("role", _("Jūs neturite teisės priskirti šios rolės."))
         return super().clean()
 
 

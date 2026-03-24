@@ -456,6 +456,12 @@ class BaseRefWidget(OrderMixin, ModelSelect2MultipleWidget):
     dependent_fields = {"base": "model"}
 
 
+class RefPropsWidget(OrderMixin, ModelSelect2MultipleWidget):
+    model = Property
+    search_fields = ["metadata__name__icontains"]
+    dependent_fields = {"ref": "model"}
+
+
 def _check_prepare_ast(ast, model_props, bind=False):
     if isinstance(ast, dict):
         if ast.get("name") == "bind":
@@ -1065,6 +1071,7 @@ class PropertyForm(forms.ModelForm):
             "type",
             "type_args",
             "ref",
+            "ref_props",
             "ref_others",
             "source",
             "prepare",
@@ -1077,6 +1084,14 @@ class PropertyForm(forms.ModelForm):
             "title",
             "description",
         )
+
+    ref_props = OrderedModelMultipleChoiceField(
+        label=_("Ryšio raktai"),
+        required=False,
+        widget=RefPropsWidget(attrs={"data-width": "100%", "data-minimum-input-length": 0, "style": "width: 100%"}),
+        queryset=Property.objects.all(),
+        help_text=_("Savybės iš susieto modelio, kurios naudojamos kaip ryšio raktas."),
+    )
 
     def __init__(self, model, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -1091,6 +1106,7 @@ class PropertyForm(forms.ModelForm):
             Field("type"),
             Field("type_args"),
             Field("ref"),
+            Field("ref_props"),
             Field("ref_others"),
             Field("source"),
             Field("prepare"),
@@ -1121,6 +1137,9 @@ class PropertyForm(forms.ModelForm):
             self.initial["status"] = instance.status
             if instance.object.ref_model:
                 self.initial["ref"] = instance.object.ref_model
+                self.initial["ref_props"] = instance.object.property_list.order_by("order").values_list(
+                    "property", flat=True
+                )
                 self.initial["ref_others"] = None
             else:
                 self.initial["ref_others"] = instance.ref

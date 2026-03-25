@@ -169,31 +169,21 @@ def create_structure_objects(structure: DatasetStructure, metadata_version: Vers
                     metadata_version = _load_datasets(state, structure.dataset, metadata_version)
                     structure.dataset.update_level()
 
-        if errors:
-            Comment.objects.bulk_create(
-                [
-                    Comment(
-                        body=error,
-                        user=sys_user,
-                        content_type=ct,
-                        object_id=structure.pk,
-                        type=Comment.STRUCTURE_ERROR,
-                    )
-                    for error in errors
-                ]
+        for error in errors:
+            Comment.objects.create(
+                body=error,
+                user=sys_user,
+                content_type=ct,
+                object_id=structure.pk,
+                type=Comment.STRUCTURE_ERROR,
             )
-            Task.objects.bulk_create(
-                [
-                    Task(
-                        title=f"Rasta klaida duomenyse: {ct}, id: {structure.pk}",
-                        description=f"Duomenyse {ct}, id: {structure.pk} aptikta klaida.",
-                        content_type=ct,
-                        object_id=structure.pk,
-                        status=Task.CREATED,
-                        user=sys_user,
-                    )
-                    for _ in errors
-                ]
+            Task.objects.create(
+                title=f"Rasta klaida duomenyse: {ct}, id: {structure.pk}",
+                description=f"Duomenyse {ct}, id: {structure.pk} aptikta klaida.",
+                content_type=ct,
+                object_id=structure.pk,
+                status=Task.CREATED,
+                user=sys_user,
             )
 
     return metadata_version
@@ -812,32 +802,23 @@ def _create_errors(errors: List[str], obj: models.Model):
     if not errors:
         return
 
-    Comment.objects.bulk_create(
-        [
-            Comment(
-                user=sys_user,
-                content_type=ct,
-                object_id=obj.pk,
-                type=Comment.STRUCTURE_ERROR,
-                body=error,
-            )
-            for error in errors
-        ]
-    )
+    for error in errors:
+        Comment.objects.create(
+            user=sys_user,
+            content_type=ct,
+            object_id=obj.pk,
+            type=Comment.STRUCTURE_ERROR,
+            body=error,
+        )
 
-    Task.objects.bulk_create(
-        [
-            Task(
-                title=f"Rasta klaida duomenyse: {ct}, id: {obj.pk}",
-                description=f"Duomenyse {ct}, id: {obj.pk} aptikta klaida.",
-                content_type=ct,
-                object_id=obj.pk,
-                status=Task.CREATED,
-                user=sys_user,
-            )
-            for _ in errors
-        ]
-    )
+        Task.objects.create(
+            title=f"Rasta klaida duomenyse: {ct}, id: {obj.pk}",
+            description=f"Duomenyse {ct}, id: {obj.pk} aptikta klaida.",
+            content_type=ct,
+            object_id=obj.pk,
+            status=Task.CREATED,
+            user=sys_user,
+        )
 
 
 def _parse_prepare(prepare: str, meta: struct.Metadata) -> dict:
@@ -1286,24 +1267,18 @@ def _link_models(
                         md.name: model_props.get(md.object_id) for md in prop_metadata if model_props.get(md.object_id)
                     }
 
-                link_rows = []
-                for order, prop_name in enumerate(model_meta.ref_props, 1):
-                    if ref_prop := props_by_name.get(prop_name):
-                        link_rows.append(
-                            PropertyList(
-                                content_type=model_ct,
-                                object_id=model.pk,
-                                order=order,
-                                property=ref_prop,
-                                metadata_version=metadata_version,
-                            )
-                        )
-
                 PropertyList.objects.filter(
                     content_type=model_ct, object_id=model.pk, metadata_version=metadata_version
                 ).delete()
-                if link_rows:
-                    PropertyList.objects.bulk_create(link_rows)
+                for order, prop_name in enumerate(model_meta.ref_props, 1):
+                    if ref_prop := props_by_name.get(prop_name):
+                        PropertyList.objects.create(
+                            content_type=model_ct,
+                            object_id=model.pk,
+                            order=order,
+                            property=ref_prop,
+                            metadata_version=metadata_version,
+                        )
 
             _link_properties(dataset, model, model_meta, metadata_version)
             model.update_level()
@@ -1456,25 +1431,18 @@ def _link_properties(
                                 }
                             )
 
-                        link_rows = []
-                        for order, ref_prop_name in enumerate(prop_meta.ref_props, 1):
-                            if ref_prop := ref_props_map.get(ref_prop_name):
-                                link_rows.append(
-                                    PropertyList(
-                                        content_type=ct,
-                                        object_id=prop.pk,
-                                        property=ref_prop,
-                                        order=order,
-                                        metadata_version=metadata_version,
-                                    )
-                                )
-
                         PropertyList.objects.filter(
                             content_type=ct, object_id=prop.pk, metadata_version=metadata_version
                         ).delete()
-                        if link_rows:
-                            PropertyList.objects.bulk_create(link_rows)
-
+                        for order, ref_prop_name in enumerate(prop_meta.ref_props, 1):
+                            if ref_prop := ref_props_map.get(ref_prop_name):
+                                PropertyList.objects.create(
+                                    content_type=ct,
+                                    object_id=prop.pk,
+                                    property=ref_prop,
+                                    order=order,
+                                    metadata_version=metadata_version,
+                                )
                     else:
                         # If there are no ref-props, still clear stale PropertyList rows.
                         PropertyList.objects.filter(

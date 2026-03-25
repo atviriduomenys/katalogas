@@ -95,15 +95,16 @@ class User(AbstractUser):
     def organization_content_type(self):
         return ContentType.objects.get_for_model(Organization)
 
-    def get_representative_role_for_resource(self, resource: "Dataset") -> str:
-        if self.pk in resource.get_managers_queryset([Representative.RESOURCE_COORDINATOR]):
-            return Representative.RESOURCE_COORDINATOR
-        if self.pk in resource.get_managers_queryset([Representative.OPEN_DATA_COORDINATOR]):
-            return Representative.OPEN_DATA_COORDINATOR
-        if self.pk in resource.get_managers_queryset([Representative.RESOURCE_MANAGER]):
-            return Representative.RESOURCE_MANAGER
-        if self.pk in resource.get_managers_queryset([Representative.OPEN_DATA_MANAGER]):
-            return Representative.OPEN_DATA_MANAGER
+    def get_representative_role_for_resource(self, resource: "Dataset") -> str | None:
+        priority_roles = [
+            Representative.RESOURCE_COORDINATOR,
+            Representative.OPEN_DATA_COORDINATOR,
+            Representative.RESOURCE_MANAGER,
+            Representative.OPEN_DATA_MANAGER,
+        ]
+        for role in priority_roles:
+            if resource.get_managers_queryset([role]).filter(user=self).exists():
+                return role
         return None
 
     @property

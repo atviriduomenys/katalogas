@@ -16,10 +16,10 @@ class TestDatasetViewPermissions:
         self.grand_organization = OrganizationFactory(kind=Organization.COM)
 
         # Create dataset hierarchy
-        self.grand_parent = DatasetFactory(is_public=True, organization=self.grand_organization)
+        self.grandparent = DatasetFactory(is_public=True, organization=self.grand_organization)
 
         self.parent = DatasetFactory(is_public=False, organization=self.main_organization)
-        self.parent.move(self.grand_parent, pos="sorted-child")
+        self.parent.move(self.grandparent, pos="sorted-child")
         self.parent.refresh_from_db()
 
         self.child = DatasetFactory(is_public=False, organization=self.main_organization)
@@ -224,10 +224,10 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
         self.grand_organization = OrganizationFactory(kind=Organization.COM)
 
         # Create dataset hierarchy
-        self.grand_parent = DatasetFactory(is_public=True, organization=self.grand_organization)
+        self.grandparent = DatasetFactory(is_public=True, organization=self.grand_organization)
 
         self.parent = DatasetFactory(is_public=False, organization=self.main_organization)
-        self.parent.move(self.grand_parent, pos="sorted-child")
+        self.parent.move(self.grandparent, pos="sorted-child")
         self.parent.refresh_from_db()
 
         self.child = DatasetFactory(is_public=False, organization=self.main_organization)
@@ -377,9 +377,9 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             ("grandpa_rep", "grandchild", True, "CONFIDENTIAL", "dataset", False),
             # parent and grandparent dataset visibility
             ("org_representative", "parent", False, "PUBLIC", "dataset", True),
-            ("org_representative", "grand_parent", True, "PUBLIC", "dataset", True),
+            ("org_representative", "grandparent", True, "PUBLIC", "dataset", True),
             ("random_org_representative", "parent", False, "PUBLIC", "dataset", False),
-            ("random_org_representative", "grand_parent", True, "PUBLIC", "dataset", True),
+            ("random_org_representative", "grandparent", True, "PUBLIC", "dataset", True),
         ],
     )
     def test_view_permissions_open_data_managers(
@@ -443,7 +443,7 @@ class TestDatasetViewPermissionsViaOrgRepresentative:
             ("global_representative", "grandchild", True, "CONFIDENTIAL", "dataset", True),
             ("grandpa_rep", "grandchild", True, "CONFIDENTIAL", "dataset", True),
             ("org_representative", "parent", False, "PUBLIC", "dataset", True),
-            ("org_representative", "grand_parent", True, "NON_PUBLIC", "dataset", False),
+            ("org_representative", "grandparent", True, "NON_PUBLIC", "dataset", False),
             ("random_org_representative", "parent", False, "PUBLIC", "dataset", False),
         ],
     )

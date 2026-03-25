@@ -248,12 +248,6 @@ class BaseResourceForm(TranslatableModelForm):
             self.initial["applicable_legislation"] = list(instance.applicable_legislation.values_list("url", flat=True))
             self.initial["documentation"] = list(instance.documentation.values_list("documentation_link", flat=True))
 
-        if is_open_data_representative:
-            self.fields["access_rights"].choices = [
-                (Dataset.PUBLIC, _("Vieši")),
-                (Dataset.RESTRICTED, _("Apriboti")),
-            ]
-
         else:
             if default_frequency := Frequency.objects.filter(is_default=True).first():
                 self.initial["frequency"] = default_frequency

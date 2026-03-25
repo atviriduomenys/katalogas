@@ -22,7 +22,7 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 from haystack.forms import FacetedSearchForm, SearchForm
 
-from vitrina.orgs.models import Organization
+from vitrina.orgs.models import Organization, Representative
 from vitrina.plans.models import Plan, PlanRequest
 from vitrina.requests.models import Request
 from vitrina.datasets.models import Dataset
@@ -168,6 +168,8 @@ class RequestDatasetsEditForm(ModelForm):
         fields = ["datasets"]
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
+        term = kwargs.pop("term", None)
         super().__init__(*args, **kwargs)
         button = _("Priskirti pažymėtus")
         self.helper = FormHelper()
@@ -178,6 +180,24 @@ class RequestDatasetsEditForm(ModelForm):
             Field("datasets", placeholder=_("Duomenų rinkinys")),
             Submit("submit", button, css_class="button is-primary"),
         )
+
+        if not user or not user.organization:
+            return
+
+        is_open_data_role = Representative.objects.filter(
+            user=user,
+            content_type=ContentType.objects.get_for_model(Organization),
+            object_id=user.organization.pk,
+            role__in=Representative.OPEN_DATA_ROLE_KEYS,
+        ).exists()
+
+        dataset_filter = Q(organization=user.organization)
+        if is_open_data_role:
+            dataset_filter &= Q(access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
+        if term:
+            dataset_filter &= Q(translations__title__istartswith=term)
+
+        self.fields["datasets"].queryset = Dataset.objects.filter(dataset_filter).order_by("translations__title")[:20]
 
 
 class RequestSearchForm(FacetedSearchForm):

@@ -1352,6 +1352,11 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
     context_object_name = "request_object"
     dataset_query_limit = 20
 
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["user"] = self.request.user
+        return kwargs
+
     def form_valid(self, form):
         super().form_valid(form)
         datasets = form.cleaned_data.get("datasets")
@@ -1379,27 +1384,6 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
 
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context_data = super().get_context_data(**kwargs)
-        user = self.request.user
-
-        if not user.organization:
-            context_data["form"].fields["datasets"].queryset = Dataset.objects.none()
-            context_data["current_title"] = _("Poreikio duomenų rinkinių redagavimas")
-            return context_data
-
-        is_open_data_role = Representative.objects.filter(
-            user=user,
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=user.organization.pk,
-            role__in=Representative.OPEN_DATA_ROLE_KEYS,
-        ).exists()
-
-        dataset_filter = Q(organization=user.organization)
-        if is_open_data_role:
-            dataset_filter &= Q(access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
-
-        context_data["form"].fields["datasets"].queryset = Dataset.objects.filter(dataset_filter)[
-            : self.dataset_query_limit
-        ]
         context_data["current_title"] = _("Poreikio duomenų rinkinių redagavimas")
         return context_data
 
@@ -1408,27 +1392,10 @@ class RequestDatasetsEditUpdateView(RequestDatasetsEditView):
     template_name = "vitrina/requests/request_dataset_add_items.html"
     queryset_limit = 20
 
-    def get_context_data(self, **kwargs):
-        context_data = super().get_context_data(**kwargs)
-        form = context_data.get("form")
-        user = self.request.user
-        term = self.request.GET.get("q")
-
-        is_open_data_role = Representative.objects.filter(
-            user=user,
-            content_type=ContentType.objects.get_for_model(Organization),
-            object_id=user.organization.pk,
-            role__in=Representative.OPEN_DATA_ROLE_KEYS,
-        ).exists()
-
-        queryset = Dataset.objects.filter(organization=user.organization)
-        if is_open_data_role:
-            queryset = queryset.filter(access_rights__in=[Dataset.PUBLIC, Dataset.RESTRICTED])
-        if term:
-            queryset = queryset.filter(translations__title__istartswith=term)
-
-        form.fields["datasets"].queryset = queryset.order_by("translations__title")[: self.queryset_limit]
-        return context_data
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["term"] = self.request.GET.get("q")
+        return kwargs
 
 
 class RequestOrgFiltersUpdate(FacetedSearchView):

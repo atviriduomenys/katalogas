@@ -2650,10 +2650,20 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Creat
             self.object.prepare_ast = ""
         if self.object.type == "ref":
             ref = form.cleaned_data.get("ref")
+            ref_props = form.cleaned_data.get("ref_props")
             if ref and ref.metadata.first():
                 self.object.ref = ref.metadata.first().name
                 prop.ref_model = ref
                 prop.save()
+                if ref_props:
+                    for i, ref_prop in enumerate(ref_props, start=1):
+                        PropertyList.objects.create(
+                            content_type=ContentType.objects.get_for_model(Property),
+                            object_id=prop.pk,
+                            property=ref_prop,
+                            order=i,
+                            metadata_version=self.metadata_version,
+                        )
         else:
             self.object.ref = form.cleaned_data.get("ref_others")
         if not self.object.status:
@@ -2770,13 +2780,25 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Updat
             self.object.prepare_ast = ""
         if self.object.type == "ref":
             ref = form.cleaned_data.get("ref")
+            ref_props = form.cleaned_data.get("ref_props")
             if ref and ref.metadata.first():
                 self.object.ref = ref.metadata.first().name
                 prop.ref_model = ref
+                prop.property_list.all().delete()
+                if ref_props:
+                    for i, ref_prop in enumerate(ref_props, start=1):
+                        PropertyList.objects.create(
+                            content_type=ContentType.objects.get_for_model(Property),
+                            object_id=prop.pk,
+                            property=ref_prop,
+                            order=i,
+                            metadata_version=self.metadata_version,
+                        )
         else:
             self.object.ref = form.cleaned_data.get("ref_others")
             if prop.ref_model:
                 prop.ref_model = None
+            prop.property_list.all().delete()
 
         if latest_version := self.object.metadataversion_set.order_by("-version__created").first():
             latest_version_fields_changed = (

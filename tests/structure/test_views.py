@@ -40,7 +40,7 @@ from vitrina.structure.factories import (
     BaseFactory,
     VersionFactory,
 )
-from vitrina.structure.models import Metadata, Enum, EnumItem, VersionType, Model, Property, Base
+from vitrina.structure.models import Metadata, Enum, EnumItem, VersionType, Model, Property, Base, PropertyList
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
@@ -4299,6 +4299,78 @@ def test_model_create_with_public_visibility_without_uri_with_error(app: DjangoT
 
 
 @pytest.mark.django_db
+def test_property_create__ref_with_composite_key(app: DjangoTestApp):
+    # Arrange
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    dataset = version.dataset
+
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+
+    # The model being referenced via `ref`
+    ref_model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_model),
+        object_id=ref_model.pk,
+        dataset=dataset,
+        name="test/dataset/RefModel",
+        metadata_version=version,
+    )
+
+    # Two properties on the `ref` model to use as composite key
+    ref_property_1 = PropertyFactory(model=ref_model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_property_1),
+        object_id=ref_property_1.pk,
+        dataset=dataset,
+        name="id",
+        metadata_version=version,
+    )
+    ref_property_2 = PropertyFactory(model=ref_model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_property_2),
+        object_id=ref_property_2.pk,
+        dataset=dataset,
+        name="name",
+        metadata_version=version,
+    )
+
+    # Act
+    form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name])).forms["property-form"]
+
+    form["name"] = "ref_field"
+    form["type"] = "ref"
+    # Select2 fields load options dynamically via AJAX, so webtest cannot see
+    # any options in the rendered HTML. force_value() bypasses option validation
+    # and sets the value directly, skipping the "Option not found" error.
+    form["ref"].force_value(ref_model.pk)
+    form["ref_props"].force_value([ref_property_1.pk, ref_property_2.pk])
+
+    response = form.submit().follow()
+
+    # Assert
+    assert response.status_code == HTTPStatus.OK
+    # Check PropertyList entries were created
+    property = Property.objects.get(model=model)
+    property_list = PropertyList.objects.filter(
+        content_type=ContentType.objects.get_for_model(Property),
+        object_id=property.pk,
+    ).order_by("order")
+
+    assert property_list.count() == 2
+    assert list(property_list.values_list("property", "order")) == [(ref_property_1.pk, 1), (ref_property_2.pk, 2)]
+
+
+@pytest.mark.django_db
 def test_property_create_with_in_released_version(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -6745,6 +6817,91 @@ def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoT
         response.context["form"].errors["__all__"][0]
         == "Laukas prop2 turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje."
     )
+
+
+@pytest.mark.django_db
+def test_property_update__ref_with_composite_key(app: DjangoTestApp):
+    # Arrange
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    dataset = version.dataset
+
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+
+    # The model being referenced via ref
+    ref_model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_model),
+        object_id=ref_model.pk,
+        dataset=dataset,
+        name="test/dataset/RefModel",
+        metadata_version=version,
+    )
+
+    # Two properties on the ref model to use as composite key
+    ref_property_1 = PropertyFactory(model=ref_model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_property_1),
+        object_id=ref_property_1.pk,
+        dataset=dataset,
+        name="id",
+        metadata_version=version,
+    )
+    ref_property_2 = PropertyFactory(model=ref_model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_property_2),
+        object_id=ref_property_2.pk,
+        dataset=dataset,
+        name="name",
+        metadata_version=version,
+    )
+
+    # Existing property that will be updated
+    existing_prop = PropertyFactory(model=model, metadata_version=version)
+    existing_metadata = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(existing_prop),
+        object_id=existing_prop.pk,
+        dataset=dataset,
+        name="ref_field",
+        type="string",
+        metadata_version=version,
+    )
+
+    # Act
+    form = app.get(
+        reverse("property-update", args=[dataset.pk, version.pk, model.name, existing_prop.metadata.first().name])
+    ).forms["property-form"]
+
+    form["type"] = "ref"
+    # Select2 fields load options dynamically via AJAX, so webtest cannot see
+    # any options in the rendered HTML. force_value() bypasses option validation
+    # and sets the value directly, skipping the "Option not found" error.
+    form["ref"].force_value(ref_model.pk)
+    form["ref_props"].force_value([ref_property_1.pk, ref_property_2.pk])
+
+    response = form.submit().follow()
+
+    # Assert
+    assert response.status_code == HTTPStatus.OK
+    existing_prop.refresh_from_db()
+    existing_metadata.refresh_from_db()
+    # Check old PropertyList entries were cleared and new ones created
+    property_list = PropertyList.objects.filter(
+        content_type=ContentType.objects.get_for_model(Property),
+        object_id=existing_prop.pk,
+    ).order_by("order")
+
+    assert property_list.count() == 2
+    assert list(property_list.values_list("property", "order")) == [(ref_property_1.pk, 1), (ref_property_2.pk, 2)]
 
 
 @pytest.mark.django_db

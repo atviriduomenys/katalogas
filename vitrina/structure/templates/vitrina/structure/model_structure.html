@@ -207,12 +207,16 @@
                             {% if prop.ref_model %}
                             <span class="pr-3">
                                 model:
-                                <a href="{{ prop.ref_model.get_absolute_url }}">{{ prop.ref_model.name }}</a>
+                                <a href="{{ prop.ref_model.get_absolute_url }}">
+                                    {{ prop.ref_model.name }}
+                                </a>
                                 {% if prop.property_list.all %}
                                     <span class="is-italic">
-                                        {% for p in prop.property_list.all %}
-                                            {{ p }}
-                                        {% endfor %}
+                                        [
+                                            {% for p in prop.property_list.all %}
+                                                {{ p }}{% if not forloop.last %}, {% endif %}
+                                            {% endfor %}
+                                        ]
                                     </span>
                                 {% endif %}
                             </span>
@@ -386,17 +390,19 @@
                                     {% endif %}
 
                                     {% if prop.ref_model %}
-                                    <span class="pr-3">
-                                        model:
-                                        <a href="{{ prop.ref_model.get_absolute_url }}">{{ prop.ref_model.name }}</a>
-                                        {% if prop.property_list.all %}
-                                            <span class="is-italic">
-                                                {% for p in prop.property_list.all %}
-                                                    {{ p }}
-                                                {% endfor %}
-                                            </span>
-                                        {% endif %}
-                                    </span>
+                                        <span class="pr-3">
+                                            model:
+                                                <a href="{{ prop.ref_model.get_absolute_url }}">{{ prop.ref_model.name }}</a>
+                                                {% if prop.property_list.all %}
+                                                    <span class="is-italic">
+                                                        [
+                                                            {% for p in prop.property_list.all %}
+                                                                {{ p }}{% if not forloop.last %},{% endif %}
+                                                            {% endfor %}
+                                                        ]
+                                                    </span>
+                                                {% endif %}
+                                        </span>
                                     {% endif %}
 
                                     {% if prop_metadata.uri %}

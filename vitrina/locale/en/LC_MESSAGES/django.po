@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-19 12:50+0200\n"
+"POT-Creation-Date: 2026-03-25 09:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,9 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -55,6 +52,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -4582,6 +4582,12 @@ msgstr "Type parameters"
 
 msgid "Nurodo duomenų lauko tipo parametrus."
 msgstr "Indicates the type parameters for the data field."
+
+msgid "Ryšio raktai"
+msgstr "Relation keys"
+
+msgid "Savybės iš susieto modelio, kurios naudojamos kaip ryšio raktas."
+msgstr "Properties from related model, which act as the relation key."
 
 msgid "Kodiniame pavadinime negali būti naudojamos didžiosios raidės."
 msgstr "Code name can not include upper case letters."

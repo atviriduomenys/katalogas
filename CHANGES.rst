@@ -18,6 +18,15 @@ https://github.com/atviriduomenys/katalogas/issues/2324
     - Boolean type enum items can now be created/changed via UI.
     - Enum item uniqueness is checked for source+prepare values instead of prepare only. This allows creating enums with same prepare but different source values
 
+Improvements:
+
+https://github.com/atviriduomenys/katalogas/issues/2329
+
+- Ensure that it is possible to set referenced properties for `ref` type properties on property create/edit form.
+    - Re-use already introduced widget for the field.
+    - Adjust the DOM to show/hide/clear field on different selections.
+    - Change the logic for the Create/Update view of property to create PropertyList objects.
+
 v 1.17.0 (2026-03-16)
 ==================
 

@@ -13,7 +13,7 @@ def add_standard_schema_and_uapi_concept(apps, schema_editor):
     schema, created = ConceptSchema.objects.get_or_create(uri=CONCEPT_SCHEMA_URI)
     schema.set_current_language("lt")
     schema.label = "DataService standartas"
-    schema.description = "Duomenų paslaugos standartas, atitinkantis dct:conformsTo."
+    schema.description = "Duomenų paslaugos standartas, atitinka dct:conformsTo."
     schema.set_current_language("en")
     schema.label = "DataService standard"
     schema.description = "Data service standard, corresponds to dct:conformsTo."

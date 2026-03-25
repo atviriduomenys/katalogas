@@ -60,10 +60,15 @@ from vitrina.users.models import User
 from vitrina.projects.services import get_projects_linkable_to_dataset
 from vitrina.uapi.models import Agent
 from vitrina.resources.models import Format
+from vitrina import settings
 
 
-DATA_SERVICE_STANDARD_URI = "https://data.gov.lt/id/non-standard/DataServiceStandard"
+DATA_SERVICE_STANDARD_URI = (
+    f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}/id/non-standard/DataServiceStandard"
+)
 UAPI_CONCEPT_CODE = "UAPI"
+JSON_FORMAT = "JSON"
+OPENAPI_FORMAT = "OpenAPI"
 
 
 class ResourceSubclassTypeField(ModelChoiceField):
@@ -558,27 +563,33 @@ class ServiceResourceForm(BaseResourceForm):
 
             endpoint_type = cleaned_data.get("endpoint_type")
             if not endpoint_type:
-                json_format = Format.objects.filter(title="JSON").first()
+                json_format = Format.objects.filter(title=JSON_FORMAT).first()
                 if not json_format:
                     raise ValidationError(
-                        _("Nepavyko rasti `JSON` formato pasirinkimų sąraše. Susisiekite su administracija.")
+                        _("Nepavyko rasti `{0}` formato pasirinkimų sąraše. Susisiekite su administracija.").format(
+                            JSON_FORMAT
+                        )
                     )
                 cleaned_data["endpoint_type"] = json_format
-            elif endpoint_type.title != "JSON":
-                self.add_error("endpoint_type", _("Pasirinkus agentą, API formatas privalo būti 'JSON'"))
+            elif endpoint_type.title != JSON_FORMAT:
+                self.add_error(
+                    "endpoint_type", _("Pasirinkus agentą, API formatas privalo būti '{0}'").format(JSON_FORMAT)
+                )
 
             endpoint_description_type = cleaned_data.get("endpoint_description_type")
             if not endpoint_description_type:
-                openapi_format = Format.objects.filter(title="OpenAPI").first()
+                openapi_format = Format.objects.filter(title=OPENAPI_FORMAT).first()
                 if not openapi_format:
                     raise ValidationError(
-                        _("Nepavyko rasti `OpenAPI` formato pasirinkimų sąraše. Susisiekite su administracija.")
+                        _("Nepavyko rasti `{0}` formato pasirinkimų sąraše. Susisiekite su administracija.").format(
+                            OPENAPI_FORMAT
+                        )
                     )
                 cleaned_data["endpoint_description_type"] = openapi_format
-            elif endpoint_description_type.title != "OpenAPI":
+            elif endpoint_description_type.title != OPENAPI_FORMAT:
                 self.add_error(
                     "endpoint_description_type",
-                    _("Pasirinkus agentą, API specifikacijos formatas privalo būti 'OpenAPI'"),
+                    _("Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'").format(OPENAPI_FORMAT),
                 )
 
             if not conforms_to:
@@ -588,7 +599,7 @@ class ServiceResourceForm(BaseResourceForm):
                         _("Nepavyko rasti `UDTS` standarto pasirinkimų sąraše. Susisiekite su administracija.")
                     )
                 cleaned_data["conforms_to"] = uapi_concept
-            elif conforms_to.code != "UAPI":
+            elif conforms_to.code != UAPI_CONCEPT_CODE:
                 error_message = _("Su agentu susietos paslaugos privalo atitikti UDTS standartą.")
                 self.add_error("conforms_to", error_message)
 

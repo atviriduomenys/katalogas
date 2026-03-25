@@ -1,3 +1,4 @@
+from typing import Any
 from django.contrib import admin
 from django.db.models import QuerySet
 from django.http import HttpRequest
@@ -241,7 +242,7 @@ class ConceptAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
     def get_queryset(self, request: HttpRequest) -> QuerySet:
         return super().get_queryset(request).prefetch_related("concept_schemas")
 
-    def has_delete_permission(self, request, obj=None) -> bool:
+    def has_delete_permission(self, request: HttpRequest, obj: Any | None = None) -> bool:
         if obj and obj.code == "UAPI":
             return False
         return super().has_delete_permission(request, obj)

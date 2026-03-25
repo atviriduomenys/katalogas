@@ -242,9 +242,10 @@ class TestServiceResourceForm:
         form = ServiceResourceForm(data=data, request=request, organization=organization)
 
         assert not form.is_valid()
-        form.cleaned_data["endpoint_type"] == Format.objects.get(title="JSON")
-        form.cleaned_data["endpoint_description_type"] == Format.objects.get(title="OpenAPI")
-        form.cleaned_data["conforms_to"] == Concept.objects.get(code="UAPI")
+        form_cleaned_data = form.cleaned_data
+        form_cleaned_data["endpoint_type"] == Format.objects.get(title="JSON")
+        form_cleaned_data["endpoint_description_type"] == Format.objects.get(title="OpenAPI")
+        form_cleaned_data["conforms_to"] == Concept.objects.get(code="UAPI")
 
 
 class TestCatalogResourceForm:

@@ -7,7 +7,6 @@ from crispy_forms.layout import Layout, Field, Submit, HTML
 from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
-from django.core.handlers.wsgi import WSGIRequest
 from django.db.models import Case, When, Q, Count
 from django.forms import CheckboxSelectMultiple
 from django.forms.models import ModelChoiceIterator

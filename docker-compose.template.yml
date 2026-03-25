@@ -96,6 +96,16 @@ services:
         aliases:
           - katalogas-${BRANCH}
 
+  katalogas-${BRANCH}-adminer:
+    image: adminer
+    environment:
+      ADMINER_PLUGINS: tables-filter
+      ADMINER_DEFAULT_SERVER: katalogas-${BRANCH}-database
+    networks:
+      - katalogas
+    depends_on:
+      - katalogas-${BRANCH}-database
+
 volumes:
   ${BRANCH}-postgres:
   ${BRANCH}-elasticsearch:

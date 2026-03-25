@@ -162,6 +162,7 @@ class RequestDatasetsEditForm(ModelForm):
         queryset=Dataset.objects.filter(),
         to_field_name="pk",
     )
+    dataset_query_limit = 20
 
     class Meta:
         model = Request
@@ -197,7 +198,14 @@ class RequestDatasetsEditForm(ModelForm):
         if term:
             dataset_filter &= Q(translations__title__istartswith=term)
 
-        self.fields["datasets"].queryset = Dataset.objects.filter(dataset_filter).order_by("translations__title")[:20]
+        queryset = Dataset.objects.filter(
+            pk__in=Dataset.objects.filter(dataset_filter).values_list("pk", flat=True).distinct()
+        )
+
+        if not self.data:
+            queryset = queryset[:20]
+
+        self.fields["datasets"].queryset = queryset
 
 
 class RequestSearchForm(FacetedSearchForm):

@@ -1350,7 +1350,6 @@ class RequestDatasetsEditView(LoginRequiredMixin, PermissionRequiredMixin, Updat
     form_class = RequestDatasetsEditForm
     template_name = "vitrina/requests/request_dataset_add.html"
     context_object_name = "request_object"
-    dataset_query_limit = 20
 
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()

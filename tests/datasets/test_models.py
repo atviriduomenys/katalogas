@@ -4,13 +4,17 @@ import pytest
 import pytz
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
+
 
 from vitrina.classifiers.factories import ConceptFactory
-from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory, DatasetServiceFactory
 from vitrina.datasets.models import DCATResourceSubclass, Dataset
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
 from vitrina.users.factories import UserFactory
+from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
+from vitrina.uapi.models import Environment
 
 pytestmark = pytest.mark.django_db
 
@@ -313,6 +317,53 @@ class TestDatasets:
         )
 
         assert dataset.get_effective_user_role_via_organization(user) == Representative.OPEN_DATA_MANAGER
+
+    def test_data_service_get_endpoint_urls_without_agent(self):
+        endpoint_url = "http://www.test.com"
+        data_service = DatasetServiceFactory(endpoint_url=endpoint_url)
+
+        endpoint_urls = data_service.get_endpoint_urls()
+        assert len(endpoint_urls) == 1
+        url_name, url = endpoint_urls[0]
+        assert not url_name
+        assert url == endpoint_url
+
+    def test_get_endpoint_urls_with_agent(self):
+        endpoint_url = "http://www.endpoint.com"
+        gate_url = "http://www.gate.com"
+        agent = AgentFactory()
+        env_testing = AgentEnvironmentFactory(agent=agent, agent_address=endpoint_url, environment=Environment.TESTING)
+        env_development = AgentEnvironmentFactory(
+            agent=agent, agent_address=endpoint_url, api_gate_server_url=gate_url, environment=Environment.DEVELOPMENT
+        )
+        data_service = DatasetServiceFactory(agent=agent)
+
+        endpoint_urls = data_service.get_endpoint_urls()
+        assert len(endpoint_urls) == 2
+        test_url_name, test_url = endpoint_urls[0]
+        dev_url_name, dev_url = endpoint_urls[1]
+        assert test_url_name == env_testing.get_environment_display()
+        assert test_url == env_testing.agent_address
+        assert dev_url_name == env_development.get_environment_display()
+        assert dev_url == env_development.api_gate_server_url
+
+    def test_get_endpoint_description_without_agent(self):
+        url = "http://www.test.com"
+        data_service = DatasetServiceFactory(endpoint_description=url)
+
+        description_url = data_service.get_endpoint_description()
+
+        assert description_url == url
+
+    def test_get_endpoint_description_with_agent(self):
+        agent = AgentFactory()
+        data_service = DatasetServiceFactory(agent=agent)
+
+        endpoint_description = data_service.get_endpoint_description()
+
+        assert endpoint_description == reverse(
+            "dataset-structure-export-openapi", args=[data_service.pk, data_service.latest_version().pk]
+        )
 
 
 class TestDCATResourceSubclass:

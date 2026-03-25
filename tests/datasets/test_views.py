@@ -72,7 +72,7 @@ from vitrina.identifiers.factories import IdentifierFactory
 from vitrina.identifiers.models import Identifier, Agency
 from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.utils import RevisionComment, RevisionSource
-from vitrina.uapi.factories import AgentFactory
+from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -402,6 +402,49 @@ class TestDatasetDetailView:
 
         assert publisher_org.title in response.text
         assert publisher_org.website in response.text
+
+    def test_data_service_view_with_agent(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        user = UserFactory(is_staff=True, organization=org)
+        agent = AgentFactory(organization=org)
+        agent_environment = AgentEnvironmentFactory(agent=agent)
+        uapi_concept = Concept.objects.get(code="UAPI")
+        data_service = DatasetServiceFactory(organization=org, agent=agent, conforms_to=uapi_concept)
+
+        app.set_user(user)
+
+        response = app.get(reverse("dataset-detail", args=[data_service.pk])).follow()
+        assert response.status_code == 200
+
+        assert agent_environment.agent_address in response.text
+        assert (
+            reverse("dataset-structure-export-openapi", args=[data_service.pk, data_service.latest_version().pk])
+            in response.text
+        )
+        assert "JSON" in response.text
+        assert "OpenAPI" in response.text
+        assert uapi_concept.label in response.text
+
+    def test_data_service_view_without_agent(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        user = UserFactory(is_staff=True, organization=org)
+        data_service = DatasetServiceFactory(
+            organization=org,
+            endpoint_url="http://test.com",
+            endpoint_type=Format.objects.first(),
+            endpoint_description="http://example.com",
+            endpoint_description_type=Format.objects.first(),
+        )
+
+        app.set_user(user)
+
+        response = app.get(reverse("dataset-detail", args=[data_service.pk])).follow()
+        assert response.status_code == 200
+
+        assert data_service.endpoint_url in response.text
+        assert data_service.endpoint_description in response.text
+        assert data_service.endpoint_type.title in response.text
+        assert data_service.endpoint_description_type.title in response.text
 
 
 @pytest.mark.haystack

@@ -365,6 +365,16 @@
             </th>
             <td>{{ dataset.endpoint_description_type|default:"" }}</td>
         </tr>
+        <tr>
+            <th>
+                {% translate "Atitinka" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Nurodo kokį standartą atitinka paslauga. (pvz., UDTS)' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
+            <td>{{ dataset.conforms_to|default:"" }}</td>
+        </tr>
     {% endif %}
     {% if dataset.subclass.is_dataset %}
         {% if dataset.temporal_start or dataset.temporal_end %}

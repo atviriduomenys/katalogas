@@ -20,6 +20,17 @@ https://github.com/atviriduomenys/katalogas/issues/2324
 
 Improvements:
 
+https://github.com/atviriduomenys/katalogas/issues/2447
+
+- DataService and Agent related improvements:
+    - Disable deletion for `Agent` and `AgentEnvironemnt`.
+    - Add validation so each `Agent` can have only one `AgentEnvironment` per `environment`.
+    - Update DataService `endpoint_url`, `endpoint_description`, `endpoint_type`, `endpoint_description_type` fields validation to work with `Agent` selection.
+    - Add dynamic `endpoint_url` and `endpoint_description` display for DataService details page.
+    - Introduce `Dataset.conforms_to` field.
+    - Fix help text for DataService form fields.
+
+
 https://github.com/atviriduomenys/katalogas/issues/2329
 
 - Ensure that it is possible to set referenced properties for `ref` type properties on property create/edit form.

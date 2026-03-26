@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-25 09:50+0200\n"
+"POT-Creation-Date: 2026-03-26 17:13+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -52,9 +55,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -680,14 +680,14 @@ msgid ""
 "<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
 "konkrečią nuorodą, pvz., „#17.2“.<br>Tais atvejais, kai yra keli dokumentai "
 "su priedais: „#priedas1/17.2“, „17.2/17.2.5“, kur „priedas1“ yra dokumento "
-"failo pavadinimas.<br>Atitinka eli:LegalResource."
+"failo pavadinimas.<br>Atitinka dcatap:applicableLegislation."
 msgstr ""
 "The legal act on the basis of which the dataset is managed and maintained."
 "<br>To specify a particular location in the legal document, append \"#\" "
 "followed by the exact reference, e.g., \"#17.2\".<br>In cases where there "
 "are multiple documents with annexes: \"#annex1/17.2\", \"17.2/17.2.5\", "
 "where \"annex1\" is the document file name.<br>Corresponds to "
-"eli:LegalResource."
+"dcatap:applicableLegislation."
 
 msgid "Tėvinis išteklius"
 msgstr "Parent resource"
@@ -756,6 +756,12 @@ msgstr ""
 "A description of the services available via the end-points. Including their "
 "operations, parameters etc. Corresponds to dcat:endpointDescription."
 
+msgid "Atitinka"
+msgstr "Conforms to"
+
+msgid "Nurodo kokį standartą atitinka paslauga. Atitinka dct:conformsTo."
+msgstr "Specifies which standard the service conforms to. Corresponds to dct:conformsTo."
+
 msgid "Ar duomenys vieši?"
 msgstr "Is the data public?"
 
@@ -767,6 +773,48 @@ msgstr "Detailed description of the dataset"
 
 msgid "Surašykite aktualius raktinius žodžius"
 msgstr "List relevant keywords"
+
+msgid "Pasirinkus agentą, šis laukas negali būti užpildytas."
+msgstr "If agent is selected, this field must be left emtpy."
+
+#, python-brace-format
+msgid ""
+"Nepavyko rasti `{0}` formato pasirinkimų sąraše. Susisiekite su "
+"administracija."
+msgstr ""
+"Could not find {0} in the list of format choices. Please contact the "
+"administration."
+
+#, python-brace-format
+msgid "Pasirinkus agentą, API formatas privalo būti '{0}'"
+msgstr "If an agent is selected, the API format must be '{0}'."
+
+#, python-brace-format
+msgid "Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'"
+msgstr "If an agent is selected, the API specification format must be '{0}'."
+
+msgid ""
+"Nepavyko rasti `UDTS` standarto pasirinkimų sąraše. Susisiekite su "
+"administracija."
+msgstr ""
+"Could not find the `UAPI` standard in the list of choices. Please contact the "
+"administration."
+
+msgid "Su agentu susietos paslaugos privalo atitikti UDTS standartą."
+msgstr "Services associated with an agent must comply with the UAPI standard."
+
+msgid "Pasirinkite agentą, arba nurodykite API adresą."
+msgstr "Select an agent or specify an API address."
+
+msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
+msgstr "Select an agent or specify an API specification."
+
+msgid ""
+"UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
+"Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+msgstr ""
+"Services that comply with the UAPI standard must be associated with an agent. "
+"Select an agent or choose a different value for the 'Conforms to' field."
 
 msgid "Metaduomenų katalogo pavadinimas"
 msgstr "Metadata catalog title"
@@ -1072,20 +1120,17 @@ msgid "Agentas"
 msgstr "Agent"
 
 msgid ""
-"Duomenų publikavimo paslaugą teikiantis agentas. Atitinka "
-"prov:SoftwareAgent, schema:SoftwareApplication."
+"Duomenų publikavimo paslaugą teikiantis agentas. Privaloma nurodyti arba "
+"Agentą arba API adresą. Atitinka dcat:endpointURL"
 msgstr ""
-"The agent providing the data publishing service. Corresponds to "
-"prov:SoftwareAgent, schema:SoftwareApplication."
+"Agent providing the data publishing service. Either the Agent or the API "
+"address must be specified. Corresponds to dcat:endpointURL."
 
 msgid "API formatas"
 msgstr "API format"
 
-msgid ""
-"Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."
-msgstr ""
-"The structure that can be returned by querying the endpoint URL. Corresponds "
-"to dct:MediaTypeOrExtent."
+msgid "Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:format."
+msgstr "Structure returned when calling the service URL. Corresponds to dct:format."
 
 msgid "API specifikacijos formatas"
 msgstr "API specification format"
@@ -1166,6 +1211,9 @@ msgid "Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."
 msgstr ""
 "Reference to the declaration of rights. Corresponds to dct:rights / "
 "dct:relation."
+
+msgid "Nurodo, kokį standartą atitinka išteklius. Atitinka dct:conformsTo"
+msgstr "Specifies which standard the resource conforms to. Corresponds to dct:conformsTo."
 
 msgid "Paslaugos tipas. Atitinka dct:type"
 msgstr "Service type. Corresponds to dct:type"
@@ -1415,6 +1463,9 @@ msgstr "Link to API documentation (e.g., OpenAPI, Swagger)"
 
 msgid "API dokumentacijos formatas (pvz., JSON, YAML)"
 msgstr "API documentation format (e.g., JSON, YAML)"
+
+msgid "Nurodo kokį standartą atitinka paslauga. (pvz., UDTS)"
+msgstr "Specifies which standard the service conforms to (e.g., UAPI)."
 
 msgid ""
 "Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys. Atitinka "
@@ -3648,6 +3699,20 @@ msgstr ""
 msgid "Duomenų paslauga"
 msgstr "Data service"
 
+msgid ""
+"Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys."
+"<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
+"konkrečią nuorodą, pvz., „#17.2“.<br>Tais atvejais, kai yra keli dokumentai "
+"su priedais: „#priedas1/17.2“, „17.2/17.2.5“, kur „priedas1“ yra dokumento "
+"failo pavadinimas.<br>Atitinka eli:LegalResource."
+msgstr ""
+"The legal act on the basis of which the dataset is managed and maintained."
+"<br>To specify a particular location in the legal document, append \"#\" "
+"followed by the exact reference, e.g., \"#17.2\".<br>In cases where there "
+"are multiple documents with annexes: \"#annex1/17.2\", \"17.2/17.2.5\", "
+"where \"annex1\" is the document file name.<br>Corresponds to "
+"eli:LegalResource."
+
 msgid "Šaltinio pavadinimas"
 msgstr "Source title"
 
@@ -5776,9 +5841,20 @@ msgstr "Edit agent"
 msgid "Agentas '{0}' atnaujintas sėkmingai!"
 msgstr "Agent \"{0}\" updated successfully"
 
+msgid "Agentų trynimas laikinai išjungtas."
+msgstr "Deletion of agents is temporarily disabled."
+
 #, python-brace-format
 msgid "Agentas '{0}' pašalintas sėkmingai!"
 msgstr "Agent \"{0}\" deleted successfully"
+
+#, python-brace-format
+msgid ""
+"Agentas '{0}' jau turi visas galimas aplinkas. Norėdami pridėti naują "
+"aplinką pašalinkite esamą(-as) aplinką(-as)"
+msgstr ""
+"Agent '{0}' already has all possible environments. To add a new environment, "
+"remove the existing environment(s)."
 
 #, python-brace-format
 msgid "Aplinka '{0}' sukurta sėkmingai!"
@@ -5814,6 +5890,9 @@ msgstr "Edit environment"
 #, python-brace-format
 msgid "'{0}' aplinka atnaujinta sėkmingai!"
 msgstr "\"{0}\" environment updated successfully"
+
+msgid "Agento aplinkų trynimas laikinai išjungtas."
+msgstr "Deletion of agent environments is temporarily disabled."
 
 #, python-brace-format
 msgid "Ar tikrai norite ištrinti aplinką: {0}?"

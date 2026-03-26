@@ -31,6 +31,11 @@
                                         <a href="{{ project.get_absolute_url }}" class="dataset-list-title">
                                               {{ project.get_title }}
                                         </a>
+                                        {% if project.status == "CREATED" %}
+                                            <span class="tag is-warning is-light">{% translate "Laukia patvirtinimo" %}</span>
+                                        {% elif project.status == "REJECTED" %}
+                                            <span class="tag is-danger is-light">{% translate "Atmestas" %}</span>
+                                        {% endif %}
                                     </strong>
                                 </div>
                                 <p class="dataset-list-description">

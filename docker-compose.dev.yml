@@ -55,6 +55,16 @@ services:
     ports:
       - "80:80"
 
+  adminer:
+    image: adminer
+    environment:
+      ADMINER_PLUGINS: 'tables-filter'
+      ADMINER_DEFAULT_SERVER: 'katalogas-database'
+    ports:
+      - "9000:8080"
+    depends_on:
+      - katalogas-database
+
   katalogas-celery:
     build:
       context: .

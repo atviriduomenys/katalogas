@@ -68,6 +68,16 @@ services:
     networks:
       - katalogas
 
+  katalogas-${BRANCH}-adminer:
+    image: adminer
+    environment:
+      ADMINER_PLUGINS: 'tables-filter'
+      ADMINER_DEFAULT_SERVER: 'katalogas-${BRANCH}-database'
+    depends_on:
+      - katalogas-${BRANCH}-database
+    networks:
+      - katalogas
+
   katalogas-${BRANCH}-celery:
     build:
       context: .

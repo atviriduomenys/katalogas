@@ -203,7 +203,7 @@ class RequestDatasetsEditForm(ModelForm):
         )
 
         if not self.data:
-            queryset = queryset[:20]
+            queryset = queryset[: self.dataset_query_limit]
 
         self.fields["datasets"].queryset = queryset
 

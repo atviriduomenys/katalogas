@@ -478,29 +478,10 @@ def determine_user_role(user: User, resource: Dataset) -> Role:
         return Role.VISITOR
     if user.is_staff:
         return Role.GLOBAL_MANAGER
-    if (
-        resource.get_managers_queryset(
-            [
-                Representative.RESOURCE_COORDINATOR,
-                Representative.RESOURCE_MANAGER,
-            ]
-        )
-        .filter(user=user)
-        .exists()
+    if role := (
+        user.get_representative_role_for_resource(resource) or resource.get_effective_user_role_via_organization(user)
     ):
-        return Role.RESOURCE_COORDINATOR if user.is_resource_coordinator else Role.RESOURCE_MANAGER
-
-    if (
-        resource.get_managers_queryset(
-            [
-                Representative.OPEN_DATA_COORDINATOR,
-                Representative.OPEN_DATA_MANAGER,
-            ]
-        )
-        .filter(user=user)
-        .exists()
-    ):
-        return Role.OPEN_DATA_COORDINATOR if user.is_open_data_coordinator else Role.OPEN_DATA_MANAGER
+        return Role(role)
     if user.is_gov_organization_resource_manager:
         return Role.GLOBAL_RESOURCE_MANAGER
     return Role.AUTHENTICATED
@@ -622,6 +603,22 @@ def has_perm(
                     return user_viisp_org == parent
                 return True
 
+            representative_organization_ids = list(
+                Representative.objects.filter(where, organization__isnull=False).values_list(
+                    "organization_id", flat=True
+                )
+            )
+
+            if representative_organization_ids:
+                representative_organization_ct = ContentType.objects.get_for_model(Organization)
+                user_representative_organizations = Representative.objects.filter(
+                    user=user,
+                    content_type=representative_organization_ct,
+                    object_id__in=representative_organization_ids,
+                )
+
+                if user_representative_organizations.exists():
+                    return obj.can_be_updated_by(user) if isinstance(obj, Representative) else True
         return False
 
 

@@ -1887,6 +1887,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["prop"] = self.property
+        kwargs["user"] = self.request.user
         kwargs["enum"] = self.enum
         return kwargs
 
@@ -2033,6 +2034,7 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["prop"] = self.property
+        kwargs["user"] = self.request.user
         kwargs["enum"] = self.get_object().enum
         return kwargs
 
@@ -2343,6 +2345,7 @@ class ModelCreateView(PermissionRequiredMixin, CreateView):
         kwargs = super().get_form_kwargs()
         kwargs["dataset"] = self.dataset
         kwargs["metadata_version"] = self.metadata_version
+        kwargs["user"] = self.request.user
         return kwargs
 
 
@@ -2579,6 +2582,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateVi
         kwargs = super().get_form_kwargs()
         kwargs["dataset"] = self.dataset
         kwargs["metadata_version"] = self.metadata_version
+        kwargs["user"] = self.request.user
         return kwargs
 
     @staticmethod
@@ -2703,6 +2707,7 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Creat
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["model"] = self.model_obj
+        kwargs["user"] = self.request.user
         return kwargs
 
 
@@ -2875,6 +2880,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Updat
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["model"] = self.model_obj
+        kwargs["user"] = self.request.user
         return kwargs
 
     @staticmethod

@@ -27,6 +27,13 @@ https://github.com/atviriduomenys/katalogas/issues/2329
     - Adjust the DOM to show/hide/clear field on different selections.
     - Change the logic for the Create/Update view of property to create PropertyList objects.
 
+https://github.com/atviriduomenys/katalogas/issues/2255
+
+- Add organization representative access via org chain.
+    - Added `get_effective_user_role_via_organization` on Dataset — resolves a user's effective role via the org representative chain, taking the most restrictive role between the org and user assignments.
+    - Extended `has_perm` and `filter_datasets_for_user` to include datasets accessible through the organization representative chain.
+    - Prevented `open_data_representative` users from creating or updating structure objects with visibility below Package.
+
 v 1.17.0 (2026-03-16)
 ==================
 

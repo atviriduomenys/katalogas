@@ -41,7 +41,7 @@ def test_is_open_data_representative_with_user(app: DjangoTestApp, role: Represe
     org = OrganizationFactory()
     user = UserFactory()
     ct = ContentType.objects.get_for_model(org)
-    RepresentativeFactory(user=user, organization=org, content_type=ct, object_id=org.pk, role=role)
+    RepresentativeFactory(user=user, content_type=ct, object_id=org.pk, role=role)
     view = DatasetAccessMixin()
     view.user = user
     view.organization = org

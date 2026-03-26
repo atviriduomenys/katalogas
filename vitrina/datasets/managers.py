@@ -43,9 +43,10 @@ class PermittedDatasetManager(TranslatableManager):
     def _filter_datasets_for_user(self, user: "User", datasets: QuerySet["Dataset"]) -> QuerySet["Dataset"]:
         from vitrina.datasets.models import Dataset, Organization, Representative
 
-        dataset_ct = ContentType.objects.get_for_model(Dataset)
-        org_ct = ContentType.objects.get_for_model(Organization)
+        dataset_content_type = ContentType.objects.get_for_model(Dataset)
+        organization_content_type = ContentType.objects.get_for_model(Organization)
 
+        # Default filter grants access only to publicly available datasets.
         accessible_filter: Q = Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
 
         if not user.is_authenticated:
@@ -54,38 +55,115 @@ class PermittedDatasetManager(TranslatableManager):
             return datasets
 
         resource_roles = (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR)
+        open_data_roles = (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR)
 
-        resource_representatives = Representative.objects.filter(user_id=user.id, role__in=resource_roles)
-
-        represented_dataset_ids = resource_representatives.filter(content_type=dataset_ct).values_list(
-            "object_id", flat=True
+        # Partition the user's organizational memberships by role level.
+        # The user's own role serves as an upper bound when resolving access through the organization chain.
+        resource_level_user_organization_ids = list(
+            Representative.objects.filter(
+                user=user,
+                content_type=organization_content_type,
+                role__in=resource_roles,
+            )
+            .exclude(deleted=True)
+            .values_list("object_id", flat=True)
         )
-        represented_org_ids = resource_representatives.filter(content_type=org_ct).values_list("object_id", flat=True)
+        open_data_level_user_organization_ids = list(
+            Representative.objects.filter(
+                user=user,
+                content_type=organization_content_type,
+                role__in=open_data_roles,
+            )
+            .exclude(deleted=True)
+            .values_list("object_id", flat=True)
+        )
 
-        represented_paths = set(
+        if user.organization:
+            resource_level_user_organization_ids.append(user.organization.pk)
+
+        # Datasets and organizations the user directly represents with a resource-level role.
+        direct_resource_representatives = Representative.objects.filter(user_id=user.id, role__in=resource_roles)
+        direct_resource_dataset_ids = direct_resource_representatives.filter(
+            content_type=dataset_content_type
+        ).values_list("object_id", flat=True)
+        direct_resource_organization_ids = direct_resource_representatives.filter(
+            content_type=organization_content_type
+        ).values_list("object_id", flat=True)
+
+        # Resolve access through organizations where the user holds a resource-level role.
+        # Full resource access is granted when the represented entity also holds a resource-level role.
+        organization_chain_resource_dataset_ids = Representative.objects.filter(
+            content_type=dataset_content_type,
+            role__in=resource_roles,
+            organization__in=resource_level_user_organization_ids,
+        ).values_list("object_id", flat=True)
+
+        organization_chain_resource_organization_ids = Representative.objects.filter(
+            content_type=organization_content_type,
+            role__in=resource_roles,
+            organization__in=resource_level_user_organization_ids,
+        ).values_list("object_id", flat=True)
+
+        resource_accessible_paths = set(
             Dataset.objects.filter(
-                Q(pk__in=represented_dataset_ids) | Q(organization_id__in=represented_org_ids)
+                Q(pk__in=direct_resource_dataset_ids)
+                | Q(organization_id__in=direct_resource_organization_ids)
+                | Q(pk__in=organization_chain_resource_dataset_ids)
+                | Q(organization_id__in=organization_chain_resource_organization_ids)
             ).values_list("path", flat=True)
         )
 
-        for path in represented_paths:
+        for path in resource_accessible_paths:
             accessible_filter |= Q(path__startswith=path)
 
-        open_data_roles = (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR)
-        open_data_representatives = Representative.objects.filter(user_id=user.id, role__in=open_data_roles)
+        # Datasets and organizations the user directly represents with an open data role.
+        direct_open_data_representatives = Representative.objects.filter(user_id=user.id, role__in=open_data_roles)
+        direct_open_data_dataset_ids = direct_open_data_representatives.filter(
+            content_type=dataset_content_type
+        ).values_list("object_id", flat=True)
+        direct_open_data_organization_ids = direct_open_data_representatives.filter(
+            content_type=organization_content_type
+        ).values_list("object_id", flat=True)
 
-        open_data_dataset_ids = open_data_representatives.filter(content_type=dataset_ct).values_list(
-            "object_id", flat=True
-        )
-        open_data_org_ids = open_data_representatives.filter(content_type=org_ct).values_list("object_id", flat=True)
+        # Resolve access through organizations where the user holds a resource-level role,
+        # but the represented entity holds an open data role.
+        # Effective access is restricted to open data level as it is the least privileged of the two roles.
+        resource_user_organization_chain_open_data_dataset_ids = Representative.objects.filter(
+            content_type=dataset_content_type,
+            role__in=open_data_roles,
+            organization__in=resource_level_user_organization_ids,
+        ).values_list("object_id", flat=True)
 
-        open_data_paths = set(
+        resource_user_organization_chain_open_data_organization_ids = Representative.objects.filter(
+            content_type=organization_content_type,
+            role__in=open_data_roles,
+            organization__in=resource_level_user_organization_ids,
+        ).values_list("object_id", flat=True)
+
+        # Resolve access through organizations where the user holds an open data role.
+        # Access is always restricted to open data level regardless of the represented entity's role.
+        open_data_user_organization_chain_dataset_ids = Representative.objects.filter(
+            content_type=dataset_content_type,
+            organization__in=open_data_level_user_organization_ids,
+        ).values_list("object_id", flat=True)
+
+        open_data_user_organization_chain_organization_ids = Representative.objects.filter(
+            content_type=organization_content_type,
+            organization__in=open_data_level_user_organization_ids,
+        ).values_list("object_id", flat=True)
+
+        open_data_accessible_paths = set(
             Dataset.objects.filter(
-                Q(pk__in=open_data_dataset_ids) | Q(organization_id__in=open_data_org_ids)
+                Q(pk__in=direct_open_data_dataset_ids)
+                | Q(organization_id__in=direct_open_data_organization_ids)
+                | Q(pk__in=open_data_user_organization_chain_dataset_ids)
+                | Q(organization_id__in=open_data_user_organization_chain_organization_ids)
+                | Q(pk__in=resource_user_organization_chain_open_data_dataset_ids)
+                | Q(organization_id__in=resource_user_organization_chain_open_data_organization_ids)
             ).values_list("path", flat=True)
         )
 
-        for path in open_data_paths:
+        for path in open_data_accessible_paths:
             accessible_filter |= Q(path__startswith=path, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
 
         if user.is_gov_organization_resource_manager:

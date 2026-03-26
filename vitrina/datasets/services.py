@@ -273,36 +273,76 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
 
     combined_filter = public_filter
 
-    org_ct = ContentType.objects.get_for_model(Organization)
+    organization_ct = ContentType.objects.get_for_model(Organization)
     dataset_ct = ContentType.objects.get_for_model(Dataset)
 
-    representatives_qs = Representative.objects.filter(
-        user=user,
-        role__in=(
-            Representative.RESOURCE_MANAGER,
-            Representative.RESOURCE_COORDINATOR,
-            Representative.OPEN_DATA_MANAGER,
-            Representative.OPEN_DATA_COORDINATOR,
-        ),
-        content_type__in=[org_ct, dataset_ct],
-    ).values_list("content_type_id", "role", "object_id")
+    resource_roles = (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR)
+    open_data_roles = (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR)
 
     resource_org_ids = set()
     resource_dataset_ids = set()
     open_data_org_ids = set()
     open_data_dataset_ids = set()
 
-    for ct_id, role, obj_id in representatives_qs:
-        if ct_id == org_ct.id:
-            if role in (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR):
-                resource_org_ids.add(obj_id)
-            elif role in (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR):
-                open_data_org_ids.add(obj_id)
-        elif ct_id == dataset_ct.id:
-            if role in (Representative.RESOURCE_MANAGER, Representative.RESOURCE_COORDINATOR):
-                resource_dataset_ids.add(obj_id)
-            elif role in (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_COORDINATOR):
-                open_data_dataset_ids.add(obj_id)
+    representatives_queryset = (
+        Representative.objects.filter(
+            user=user,
+            role__in=resource_roles + open_data_roles,
+            content_type__in=[organization_ct, dataset_ct],
+        )
+        .exclude(deleted=True)
+        .values_list("content_type_id", "role", "object_id")
+    )
+
+    for content_id, role, object_id in representatives_queryset:
+        if content_id == organization_ct.id:
+            if role in resource_roles:
+                resource_org_ids.add(object_id)
+            elif role in open_data_roles:
+                open_data_org_ids.add(object_id)
+        elif content_id == dataset_ct.id:
+            if role in resource_roles:
+                resource_dataset_ids.add(object_id)
+            elif role in open_data_roles:
+                open_data_dataset_ids.add(object_id)
+
+    # Get user's org memberships with their roles, to restrict effective role
+    user_organization_map = dict(
+        Representative.objects.filter(
+            user=user,
+            content_type=organization_ct,
+        )
+        .exclude(deleted=True)
+        .values_list("object_id", "role")
+    )
+    if user.organization:
+        user_organization_map.setdefault(user.organization_id, Representative.RESOURCE_MANAGER)
+
+    if user_organization_map:
+        coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
+
+        organization_chain_queryset = Representative.objects.filter(
+            organization_id__in=user_organization_map.keys(),
+            content_type__in=[organization_ct, dataset_ct],
+        ).values_list("content_type_id", "role", "object_id", "organization_id")
+
+        for content_type_id, organization_role, object_id, organization_id in organization_chain_queryset:
+            # Resolve the effective role by taking the least privileged of the organization's role and the user's role.
+            user_role = coordinator_to_manager.get(
+                user_organization_map[organization_id], user_organization_map[organization_id]
+            )
+            effective_role = max(organization_role, user_role, key=Representative.MANAGER_ROLES.index)
+
+            if content_type_id == organization_ct.id:
+                if effective_role in resource_roles:
+                    resource_org_ids.add(object_id)
+                elif effective_role in open_data_roles:
+                    open_data_org_ids.add(object_id)
+            elif content_type_id == dataset_ct.id:
+                if effective_role in resource_roles:
+                    resource_dataset_ids.add(object_id)
+                elif effective_role in open_data_roles:
+                    open_data_dataset_ids.add(object_id)
 
     if resource_org_ids:
         combined_filter |= SQ(organization__in=resource_org_ids)

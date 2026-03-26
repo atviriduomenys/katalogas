@@ -84,9 +84,20 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
         self.organization = organization
         super().__init__(*args, **kwargs)
 
+        instance = self.instance if self.instance and self.instance.pk else None
         user = request.user
 
-        if user and self.organization and user.is_open_data_representative_for(self.organization):
+        if parent_id := request.resolver_match.kwargs.get("parent_id"):
+            parent = Dataset.objects.filter(pk=parent_id).first()
+        elif instance:
+            parent = instance.get_parent()
+        else:
+            parent = None
+
+        if user and (
+            (self.organization and user.is_open_data_representative_for(self.organization))
+            or user.is_open_data_representative_for(parent)
+        ):
             self.fields["subclass"].queryset = DCATResourceSubclass.objects.exclude(
                 name=DCATResourceSubclass.INFORMATION_SYSTEM
             )
@@ -200,11 +211,15 @@ class BaseResourceForm(TranslatableModelForm):
         self.helper.form_tag = False
         self.organization = organization
 
+        parent = None
+
         if parent_id := request.resolver_match.kwargs.get("parent_id"):
             self.fields["parent"].initial = parent_id
             self.fields["parent"].widget = forms.HiddenInput()
+            parent = Dataset.objects.filter(pk=parent_id).first()
         elif instance:
-            self.fields["parent"].initial = instance.get_parent()
+            parent = instance.get_parent()
+            self.fields["parent"].initial = parent
             self.fields["parent"].queryset = Dataset.objects.exclude(pk=instance.pk)
 
         self.fields["access_rights"].required = True
@@ -212,7 +227,14 @@ class BaseResourceForm(TranslatableModelForm):
         if self.language_code == "en":
             self.fields["description"].required = False
         organization = self.organization if self.organization else instance.organization
-        if request.user and request.user.is_open_data_representative_for(organization):
+
+        is_open_data_representative = request.user and (
+            request.user.is_open_data_representative_for(organization)
+            or request.user.is_open_data_representative_for(parent)
+            or request.user.is_open_data_representative_for(instance)
+        )
+
+        if is_open_data_representative:
             self.fields["access_rights"].choices = [
                 (Dataset.PUBLIC, _("Vieši")),
                 (Dataset.RESTRICTED, _("Apriboti")),
@@ -225,6 +247,7 @@ class BaseResourceForm(TranslatableModelForm):
 
             self.initial["applicable_legislation"] = list(instance.applicable_legislation.values_list("url", flat=True))
             self.initial["documentation"] = list(instance.documentation.values_list("documentation_link", flat=True))
+
         else:
             if default_frequency := Frequency.objects.filter(is_default=True).first():
                 self.initial["frequency"] = default_frequency

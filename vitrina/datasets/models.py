@@ -855,8 +855,58 @@ class Dataset(Resource):
     def get_members_url(self):
         return reverse("dataset-members", kwargs={"pk": self.pk})
 
+    def get_effective_user_role_via_organization(self, user: "User") -> str | None:
+        """
+        Determines the user's effective role on this dataset through organizational membership.
+        Access is resolved indirectly: the user belongs to an organization which holds
+        a Representative record on this dataset or one of its ancestors.
+        The resulting role is capped by the user's own role within that organization.
+        """
+        organization_ct = ContentType.objects.get_for_model(Organization)
+
+        user_org_map = dict(
+            Representative.objects.filter(
+                user=user,
+                content_type=organization_ct,
+            ).values_list("object_id", "role")
+        )
+
+        if not user_org_map:
+            return None
+
+        dataset_ct = self.dataset_content_type
+
+        dataset_ids = {self.id}
+        organization_ids = {self.organization_id}
+        for parent in self.get_ancestors().only("pk", "organization_id"):
+            dataset_ids.add(parent.pk)
+            organization_ids.add(parent.organization_id)
+
+        org_roles = Representative.objects.filter(
+            Q(content_type=dataset_ct, object_id__in=dataset_ids)
+            | Q(content_type=organization_ct, object_id__in=organization_ids),
+            organization_id__in=user_org_map.keys(),
+        ).values_list("organization_id", "role")
+
+        effective_roles = []
+        # Map coordinator roles to their manager equivalents before comparison
+        coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
+
+        for org_id, org_role in org_roles:
+            user_role = coordinator_to_manager.get(user_org_map[org_id], user_org_map[org_id])
+            # Use the more restrictive role between the organization's role and the user's role within that org.
+            # e.g. org has RESOURCE_MANAGER, user has OPEN_DATA_MANAGER → effective role is OPEN_DATA_MANAGER
+            effective_roles.append(max(org_role, user_role, key=Representative.MANAGER_ROLES.index))
+
+        if not effective_roles:
+            return None
+
+        # If the user represents multiple orgs, return the most privileged role across all of them.
+        # e.g. ["open_data_manager", "resource_manager"] → "resource_manager"
+        return min(effective_roles, key=Representative.MANAGER_ROLES.index)
+
     def get_managers_queryset(self, roles: list[str]) -> QuerySet["Dataset"]:
-        dataset_ct = ContentType.objects.get_for_model(Dataset)
+        dataset_ct = self.dataset_content_type
         organization_ct = ContentType.objects.get_for_model(Organization)
 
         dataset_ids = {self.id}

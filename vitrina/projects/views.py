@@ -106,21 +106,8 @@ class ProjectListView(ListView):
     template_name = "vitrina/projects/list.html"
     paginate_by = 20
 
-    def dispatch(self, request, *args, **kwargs):
-        self.has_update_perm = has_perm(
-            request.user,
-            Action.UPDATE,
-            Project,
-        )
-        return super().dispatch(request, *args, **kwargs)
-
     def get_queryset(self):
-        return get_projects(self.request.user)
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context["can_see_status"] = self.has_update_perm
-        return context
+        return get_projects(self.request.user, approved_only=False)
 
 
 class ProjectDetailView(ProjectViewBaseMixin, PermissionRequiredMixin, DetailView):

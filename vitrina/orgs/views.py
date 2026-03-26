@@ -747,7 +747,7 @@ class OrganizationProjectsView(
             return has_perm(self.request.user, Action.VIEW, self.organization)
 
     def get_queryset(self):
-        return get_projects(self.request.user).filter(organization=self.organization)
+        return get_projects(self.request.user, approved_only=False).filter(organization=self.organization)
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)

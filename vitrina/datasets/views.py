@@ -1950,7 +1950,7 @@ class DatasetProjectsView(DatasetStructureMixin, PermissionRequiredMixin, Histor
         return has_perm(self.request.user, Action.VIEW, self.object)
 
     def get_queryset(self):
-        return get_projects(self.request.user).filter(datasets=self.object)
+        return get_projects(self.request.user, approved_only=False).filter(datasets=self.object)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)

@@ -24,7 +24,7 @@ from vitrina.classifiers.factories import (
     DocumentationFactory,
 )
 from vitrina.classifiers.factories import LicenceFactory, ApplicableLegislationFactory
-from vitrina.classifiers.models import Category, AreaOfManagement, ConceptSchema
+from vitrina.classifiers.models import Category, AreaOfManagement, ConceptSchema, Concept
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import (
@@ -38,6 +38,7 @@ from vitrina.datasets.factories import (
     ContactFactory,
     DCATResourceSubclassFactory,
     DatasetGroupCategoryUriFactory,
+    DatasetServiceFactory,
 )
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.forms import (
@@ -59,6 +60,7 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestObjectFactory, RequestFactory
 from vitrina.requests.models import RequestObject
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
+from vitrina.resources.models import Format
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, VersionFactory
 from vitrina.structure import VersionStatus
@@ -70,7 +72,7 @@ from vitrina.identifiers.factories import IdentifierFactory
 from vitrina.identifiers.models import Identifier, Agency
 from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.utils import RevisionComment, RevisionSource
-from vitrina.uapi.factories import AgentFactory
+from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -400,6 +402,49 @@ class TestDatasetDetailView:
 
         assert publisher_org.title in response.text
         assert publisher_org.website in response.text
+
+    def test_data_service_view_with_agent(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        user = UserFactory(is_staff=True, organization=org)
+        agent = AgentFactory(organization=org)
+        agent_environment = AgentEnvironmentFactory(agent=agent)
+        uapi_concept = Concept.objects.get(code="UAPI")
+        data_service = DatasetServiceFactory(organization=org, agent=agent, conforms_to=uapi_concept)
+
+        app.set_user(user)
+
+        response = app.get(reverse("dataset-detail", args=[data_service.pk])).follow()
+        assert response.status_code == 200
+
+        assert agent_environment.agent_address in response.text
+        assert (
+            reverse("dataset-structure-export-openapi", args=[data_service.pk, data_service.latest_version().pk])
+            in response.text
+        )
+        assert "JSON" in response.text
+        assert "OpenAPI" in response.text
+        assert uapi_concept.label in response.text
+
+    def test_data_service_view_without_agent(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        user = UserFactory(is_staff=True, organization=org)
+        data_service = DatasetServiceFactory(
+            organization=org,
+            endpoint_url="http://test.com",
+            endpoint_type=Format.objects.first(),
+            endpoint_description="http://example.com",
+            endpoint_description_type=Format.objects.first(),
+        )
+
+        app.set_user(user)
+
+        response = app.get(reverse("dataset-detail", args=[data_service.pk])).follow()
+        assert response.status_code == 200
+
+        assert data_service.endpoint_url in response.text
+        assert data_service.endpoint_description in response.text
+        assert data_service.endpoint_type.title in response.text
+        assert data_service.endpoint_description_type.title in response.text
 
 
 @pytest.mark.haystack
@@ -1643,22 +1688,30 @@ class TestDatasetUpdateView:
 
     def test_dataset_update_service_agent(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
-        subclass = DCATResourceSubclassFactory(name="service")
-        dataset = DatasetFactory(subclass=subclass, organization=organization, endpoint_url="http://www.example.com")
+        json_format = Format.objects.get(title="JSON")
+        openapi_format = Format.objects.get(title="OpenAPI")
+        dataservice = DatasetServiceFactory(
+            organization=organization,
+            endpoint_url=None,
+            endpoint_description=None,
+            endpoint_type=json_format,
+            endpoint_description_type=openapi_format,
+        )
         agent = AgentFactory(organization=organization)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
-        url = reverse("dataset-change", kwargs={"pk": dataset.id})
+        url = reverse("dataset-change", kwargs={"pk": dataservice.id})
 
         form = app.get(url).forms["dataset-form"]
         form["agent"] = agent.pk
+        form["conforms_to"] = Concept.objects.get(code="UAPI").pk
 
-        assert not dataset.agent
+        assert not dataservice.agent
         response = form.submit()
         assert response.status_code == 302
-        dataset.refresh_from_db()
-        assert dataset.agent == agent
+        dataservice.refresh_from_db()
+        assert dataservice.agent == agent
 
 
 class TestDatasetCreateView:
@@ -2305,18 +2358,11 @@ class TestDatasetCreateView:
         assert rep is not None
         assert rep.role == Representative.OPEN_DATA_COORDINATOR
 
-    @pytest.mark.parametrize(
-        "with_agent",
-        [True, False],
-    )
-    def test_create_service_with_and_without_agent(self, app: DjangoTestApp, with_agent: bool) -> None:
-        frequency = FrequencyFactory()
+    def test_create_service_with_agent(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name="service")
-        if with_agent:
-            agent = AgentFactory(organization=organization)
-        else:
-            agent = None
+        agent = AgentFactory(organization=organization)
+        contact = ContactFactory(organization=organization)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -2324,11 +2370,12 @@ class TestDatasetCreateView:
 
         form = app.get(url).forms["dataset-form"]
         form["title"] = "Some title"
-        form["description"] = "Some description"
-        form["frequency"] = frequency.pk
-        form["access_rights"] = Dataset.PUBLIC
-        form["endpoint_url"] = "http://www.example.com"
-        form["agent"] = agent.pk if agent else ""
+        form["tags"] = "test"
+        form["contact"] = contact.pk
+        form["agent"] = agent.pk
+        form["endpoint_type"] = Format.objects.get(title="JSON").pk
+        form["endpoint_description_type"] = Format.objects.get(title="OpenAPI").pk
+        form["conforms_to"] = Concept.objects.get(code="UAPI").pk
 
         response = form.submit()
 
@@ -2337,6 +2384,34 @@ class TestDatasetCreateView:
         dataset = Dataset.objects.filter(translations__title="Some title").first()
 
         assert dataset.agent == agent
+        assert dataset.conforms_to == Concept.objects.get(code="UAPI")
+
+    def test_create_service_without_agent(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="service")
+        contact = ContactFactory(organization=organization)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})
+
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Some title"
+        form["tags"] = "test"
+        form["contact"] = contact.pk
+        form["endpoint_url"] = "https://data.gov.lt"
+        form["endpoint_description"] = "http://api.data.gov.lt"
+
+        response = form.submit()
+
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.filter(translations__title="Some title").first()
+
+        assert dataset.agent is None
+        assert dataset.conforms_to is None
+        assert dataset.endpoint_url == "https://data.gov.lt"
+        assert dataset.endpoint_description == "http://api.data.gov.lt"
 
 
 class TestDatasetDeleteView:
@@ -4560,10 +4635,10 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
                 </dct:license>
                 <dcat:mediaType>
-                    <dct:MediaType rdf:about=""/>
+                    <dct:MediaType rdf:about="https://www.iana.org/assignments/media-types/application/json"/>
                 </dcat:mediaType>
                 <dct:format>
-                    <dct:MediaTypeOrExtent rdf:about=""/>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/JSON"/>
                 </dct:format>
             </dcat:Distribution>
         </dcat:distribution>

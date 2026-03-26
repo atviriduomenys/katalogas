@@ -40,13 +40,13 @@ class TestAgent:
         agent.refresh_from_db()
         assert agent.codename == "foo"
 
-    def test_not_archived_manager(self):
+    def test_not_archived_queryset(self):
         agent_not_archived = AgentFactory(is_archived=False)
         AgentFactory(is_archived=True)
 
         assert Agent.objects.count() == 2
-        assert Agent.not_archived.count() == 1
-        assert Agent.not_archived.first() == agent_not_archived
+        assert Agent.objects.not_archived().count() == 1
+        assert Agent.objects.not_archived().first() == agent_not_archived
 
     def test_services_unassigned_when_archived(self):
         agent = AgentFactory()
@@ -63,7 +63,7 @@ class TestAgent:
 
 
 class TestAgentEnvironment:
-    def test_not_archived_manager(self):
+    def test_not_archived_queryset(self):
         agent = AgentFactory(is_archived=True)
 
         agent_env_not_archived = AgentEnvironmentFactory(is_archived=False)
@@ -71,12 +71,12 @@ class TestAgentEnvironment:
         AgentEnvironmentFactory(is_archived=False, agent=agent)
 
         assert AgentEnvironment.objects.count() == 3
-        assert AgentEnvironment.not_archived.count() == 1
-        assert AgentEnvironment.not_archived.first() == agent_env_not_archived
+        assert AgentEnvironment.objects.not_archived().count() == 1
+        assert AgentEnvironment.objects.not_archived().first() == agent_env_not_archived
 
 
 class TestRequestHistory:
-    def test_visible_manager(self):
+    def test_visible_queryset(self):
         agent_archived = AgentFactory(is_archived=True)
         agent_env_archived = AgentEnvironmentFactory(is_archived=True)
         agent_env_archived_agent = AgentEnvironmentFactory(is_archived=False, agent=agent_archived)
@@ -86,5 +86,5 @@ class TestRequestHistory:
         RequestHistoryFactory(agent_environment=agent_env_archived_agent)
 
         assert RequestHistory.objects.count() == 3
-        assert RequestHistory.visible.count() == 1
-        assert RequestHistory.visible.first() == request_history
+        assert RequestHistory.objects.visible().count() == 1
+        assert RequestHistory.objects.visible().first() == request_history

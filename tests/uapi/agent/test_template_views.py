@@ -1,5 +1,6 @@
 from http import HTTPStatus
 from unittest.mock import patch
+import factory
 
 import pytest
 from _pytest.fixtures import FixtureRequest
@@ -194,9 +195,9 @@ class TestAgentCreate:
         response = app.post(url, data)
 
         assert response.status_code == HTTPStatus.FOUND
-        assert Agent.not_archived.count() == 1
+        assert Agent.objects.not_archived().count() == 1
 
-        agent = Agent.not_archived.get(title=data["title"], organization=organization)
+        agent = Agent.objects.not_archived().get(title=data["title"], organization=organization)
 
         assert agent.object_type == AgentType.SPINTA
 
@@ -300,6 +301,7 @@ class TestAgentUpdate:
         assert breadcrumb_url_names_actual == breadcrumb_url_names_expected
 
 
+@pytest.mark.skip(reason="Agent delete is temporary disabled.")
 class TestAgentDelete:
     def test_success(self, app: DjangoTestApp, representative_user: User, organization: Organization, agent: Agent):
         app.set_user(representative_user)
@@ -506,6 +508,20 @@ class TestAgentEnvCreate:
         breadcrumb_url_names_actual = [resolve(path).url_name for path in breadcrumbs if path]
         assert breadcrumb_url_names_actual == breadcrumb_url_names_expected
 
+    def test_cannot_create_new_environment_when_all_environments_already_exist(
+        self, app: DjangoTestApp, organization: Organization
+    ):
+        agent = AgentFactory(organization=organization)
+
+        AgentEnvironmentFactory.create_batch(len(Environment), agent=agent, environment=factory.Iterator(Environment))
+
+        url = reverse("agent-env-create", args=[organization.pk, agent.pk])
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        response = app.get(url)
+
+        assert response.status_code == 302
+
 
 class TestAgentEnvUpdate:
     def test_success(
@@ -590,6 +606,7 @@ class TestAgentEnvUpdate:
         assert breadcrumb_url_names_actual == breadcrumb_url_names_expected
 
 
+@pytest.mark.skip(reason="AgentEnvironment delete is temporary disabled.")
 class TestAgentEnvDelete:
     def test_success(
         self,

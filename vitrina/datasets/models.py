@@ -420,7 +420,7 @@ class Dataset(Resource):
         blank=True,
         related_name="services",
         help_text=_(
-            "Duomenų publikavimo paslaugą teikiantis agentas. Atitinka prov:SoftwareAgent, schema:SoftwareApplication."
+            "Duomenų publikavimo paslaugą teikiantis agentas. Privaloma nurodyti arba Agentą arba API adresą. Atitinka dcat:endpointURL"
         ),
     )
     endpoint_url = models.URLField(
@@ -436,7 +436,7 @@ class Dataset(Resource):
         null=True,
         blank=True,
         related_name="format_endpoint_types",
-        help_text=_("Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."),
+        help_text=_("Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:format."),
     )
     endpoint_description = models.URLField(
         verbose_name=_("API specifikacija"),
@@ -549,6 +549,14 @@ class Dataset(Resource):
         verbose_name=_("Kontaktinis asmuo ar organizacija"),
         null=True,
         related_name="contact_datasets",
+    )
+    conforms_to = models.ForeignKey(
+        Concept,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Atitinka"),
+        null=True,
+        blank=True,
+        help_text=_("Nurodo, kokį standartą atitinka išteklius. Atitinka dct:conformsTo"),
     )
 
     # TODO: To be removed:
@@ -810,7 +818,7 @@ class Dataset(Resource):
     def level(self):
         return randrange(5)
 
-    def latest_version(self):
+    def latest_version(self) -> Version:
         return self.dataset_version.order_by("-version").first()
 
     @property
@@ -1572,6 +1580,30 @@ class Dataset(Resource):
             cursor.execute(query, params)
             columns = ["root_model_id", "root_version_id", "child_model_id", "path", "depth", "root_dataset_id"]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    def get_endpoint_urls(self) -> list[tuple[str | None, str]]:
+        """Return endpoint URLs as a list of (url_name, url).
+
+        If no agent is set, url_name is None.
+        """
+        if self.agent:
+            return [
+                (
+                    environment.get_environment_display(),
+                    environment.api_gate_server_url or environment.agent_address,
+                )
+                for environment in self.agent.environments.not_archived()
+            ]
+
+        return [(None, self.endpoint_url)]
+
+    def get_endpoint_description(self) -> str | None:
+        if self.agent:
+            # TODO: Update to possibly different url once DataService OpenAPI export is implemented
+            metadata_version = self.latest_version()
+            return reverse("dataset-structure-export-openapi", args=[self.pk, metadata_version.pk])
+
+        return self.endpoint_description
 
 
 class DatasetReport(Dataset):

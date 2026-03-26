@@ -8,7 +8,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMix
 from django.core.paginator import Paginator
 from django.forms import ModelForm, BaseForm
 from django.http import HttpResponseRedirect, HttpResponse
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import (
@@ -86,7 +86,7 @@ class AgentListView(LoginRequiredMixin, PermissionRequiredMixin, OrganizationBas
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
 
     def get_queryset(self):
-        return self.model.not_archived.filter(organization=self.organization).order_by("-created_at")
+        return self.model.objects.not_archived().filter(organization=self.organization).order_by("-created_at")
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -102,7 +102,7 @@ class AgentDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
     model = Agent
 
     def get_queryset(self):
-        return self.model.not_archived.filter(organization=self.organization).prefetch_related("environments")
+        return self.model.objects.not_archived().filter(organization=self.organization).prefetch_related("environments")
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)
@@ -168,7 +168,7 @@ class AgentUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
     template_name = "base_form.html"
 
     def get_queryset(self):
-        return self.model.not_archived.filter(organization=self.organization)
+        return self.model.objects.not_archived().filter(organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, Agent, self.organization)
@@ -196,8 +196,13 @@ class AgentDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentMixi
     model = Agent
     template_name = "confirm_delete.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        # Temporary disable agent deletion
+        messages.warning(self.request, _("Agentų trynimas laikinai išjungtas."))
+        return redirect(self.get_success_url())
+
     def get_queryset(self):
-        return self.model.not_archived.filter(organization=self.organization)
+        return self.model.objects.not_archived().filter(organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.DELETE, Agent, self.organization)
@@ -228,7 +233,11 @@ class AgentEnvDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     context_object_name = "agent_environment"
 
     def get_queryset(self):
-        return self.model.not_archived.filter(agent__organization=self.organization).prefetch_related("requesthistory")
+        return (
+            self.model.objects.not_archived()
+            .filter(agent__organization=self.organization)
+            .prefetch_related("requesthistory")
+        )
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, AgentEnvironment, self.organization)
@@ -270,6 +279,26 @@ class AgentEnvCreateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentM
     form_class = AgentEnvironmentForm
     template_name = "base_form.html"
     title = _("Pridėti aplinką")
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.has_permission():
+            return self.handle_no_permission()
+
+        if not self.agent.missing_environments:
+            messages.error(
+                self.request,
+                _(
+                    "Agentas '{0}' jau turi visas galimas aplinkas. Norėdami pridėti naują aplinką pašalinkite esamą(-as) aplinką(-as)"
+                ).format(self.agent.title),
+            )
+            return HttpResponseRedirect(reverse("agent-detail", args=[self.organization.pk, self.agent.pk]))
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["agent"] = self.agent
+        return kwargs
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE, AgentEnvironment, self.organization)
@@ -332,10 +361,15 @@ class AgentEnvUpdateView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     title = _("Redaguoti aplinką")
 
     def get_queryset(self):
-        return self.model.not_archived.filter(agent__organization=self.organization)
+        return self.model.objects.not_archived().filter(agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.UPDATE, AgentEnvironment, self.organization)
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs["agent"] = self.agent
+        return kwargs
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
@@ -361,8 +395,14 @@ class AgentEnvDeleteView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentE
     model = AgentEnvironment
     template_name = "confirm_delete.html"
 
+    def dispatch(self, request, *args, **kwargs):
+        # Temporary disable agent environment deletion
+        self.object = self.get_object()
+        messages.warning(self.request, _("Agento aplinkų trynimas laikinai išjungtas."))
+        return redirect(self.get_success_url())
+
     def get_queryset(self):
-        return self.model.not_archived.filter(agent__organization=self.organization)
+        return self.model.objects.not_archived().filter(agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.DELETE, AgentEnvironment, self.organization)
@@ -393,7 +433,7 @@ class RequestDetailView(LoginRequiredMixin, PermissionRequiredMixin, BaseAgentEn
     model = RequestHistory
 
     def get_queryset(self):
-        return self.model.visible.filter(agent_environment__agent__organization=self.organization)
+        return self.model.objects.visible().filter(agent_environment__agent__organization=self.organization)
 
     def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.VIEW, Agent, self.organization)

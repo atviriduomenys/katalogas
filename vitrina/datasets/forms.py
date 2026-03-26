@@ -1,5 +1,6 @@
 from datetime import date
 import re
+from typing import Any
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
@@ -58,6 +59,16 @@ from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 from vitrina.projects.services import get_projects_linkable_to_dataset
 from vitrina.uapi.models import Agent
+from vitrina.resources.models import Format
+from vitrina import settings
+
+
+DATA_SERVICE_STANDARD_URI = (
+    f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}/id/non-standard/DataServiceStandard"
+)
+UAPI_CONCEPT_CODE = "UAPI"
+JSON_FORMAT = "JSON"
+OPENAPI_FORMAT = "OpenAPI"
 
 
 class ResourceSubclassTypeField(ModelChoiceField):
@@ -181,7 +192,7 @@ class BaseResourceForm(TranslatableModelForm):
             "pvz., „#17.2“.<br>"
             "Tais atvejais, kai yra keli dokumentai su priedais: „#priedas1/17.2“, „17.2/17.2.5“, "
             "kur „priedas1“ yra dokumento failo pavadinimas.<br>"
-            "Atitinka eli:LegalResource."
+            "Atitinka dcatap:applicableLegislation."
         ),
         required=False,
         unique=True,
@@ -311,7 +322,7 @@ class BaseResourceForm(TranslatableModelForm):
     def _populate_contact_choices(self) -> None:
         """Populate contact choices grouped by organization."""
 
-        organization_id = self.instance.organization_id
+        organization_id = self.instance.organization_id or self.organization.id
         self.fields["contact"].choices = [("", "---------")]
 
         content_type_user = ContentType.objects.get_for_model(User)
@@ -449,7 +460,7 @@ class BaseResourceForm(TranslatableModelForm):
 class ServiceResourceForm(BaseResourceForm):
     endpoint_url = forms.CharField(
         label=_("API adresas"),
-        required=True,
+        required=False,
         help_text=_("Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:endpointURL."),
     )
     endpoint_description = forms.CharField(
@@ -460,6 +471,12 @@ class ServiceResourceForm(BaseResourceForm):
             "Įskaitant jų operacijas, parametrus ir t. t. Atitinka dcat:endpointDescription."
         ),
     )
+    conforms_to = forms.ModelChoiceField(
+        Concept.objects.filter(concept_schemas__uri=DATA_SERVICE_STANDARD_URI),
+        label=_("Atitinka"),
+        required=False,
+        help_text=_("Nurodo kokį standartą atitinka paslauga. Atitinka dct:conformsTo."),
+    )
 
     class Meta:
         model = Dataset
@@ -469,7 +486,6 @@ class ServiceResourceForm(BaseResourceForm):
             "is_public",
             "tags",
             "catalog",
-            "frequency",
             "agent",
             "access_rights",
             "endpoint_url",
@@ -485,6 +501,7 @@ class ServiceResourceForm(BaseResourceForm):
             "parent",
             "service_type",
             "is_hvd",
+            "conforms_to",
         )
 
     def __init__(self, request=None, organization=None, *args, **kwargs):
@@ -496,8 +513,11 @@ class ServiceResourceForm(BaseResourceForm):
         self.fields["service_type"].label_from_instance = lambda obj: obj.safe_translation_getter(
             "label", any_language=True
         )
+        self.fields["description"].required = False
+        self.fields["tags"].required = True
+        self.fields["contact"].required = True
         organization = self.organization if self.organization else self.instance.organization
-        self.fields["agent"].queryset = Agent.not_archived.filter(organization=organization)
+        self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=organization)
         self.helper.layout = Layout(
             Field("is_public", placeholder=_("Ar duomenys vieši?")),
             Field("title", placeholder=_("Duomenų rinkinio pavadinimas")),
@@ -507,8 +527,8 @@ class ServiceResourceForm(BaseResourceForm):
             Field("tags", placeholder=_("Surašykite aktualius raktinius žodžius")),
             Field("landing_page"),
             Field("catalog"),
-            Field("frequency"),
             Field("agent"),
+            Field("conforms_to"),
             Field("endpoint_url"),
             Field("endpoint_type"),
             Field("endpoint_description"),
@@ -522,6 +542,84 @@ class ServiceResourceForm(BaseResourceForm):
             Field("applicable_legislation"),
             Field("is_hvd"),
         )
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+
+        agent = cleaned_data.get("agent")
+
+        conforms_to = cleaned_data.get("conforms_to")
+        endpoint_url = cleaned_data.get("endpoint_url")
+        endpoint_description = cleaned_data.get("endpoint_description")
+
+        if agent:
+            error_message = _("Pasirinkus agentą, šis laukas negali būti užpildytas.")
+
+            if endpoint_url:
+                self.add_error("endpoint_url", error_message)
+
+            if endpoint_description:
+                self.add_error("endpoint_description", error_message)
+
+            endpoint_type = cleaned_data.get("endpoint_type")
+            if not endpoint_type:
+                json_format = Format.objects.filter(title=JSON_FORMAT).first()
+                if not json_format:
+                    raise ValidationError(
+                        _("Nepavyko rasti `{0}` formato pasirinkimų sąraše. Susisiekite su administracija.").format(
+                            JSON_FORMAT
+                        )
+                    )
+                cleaned_data["endpoint_type"] = json_format
+            elif endpoint_type.title != JSON_FORMAT:
+                self.add_error(
+                    "endpoint_type", _("Pasirinkus agentą, API formatas privalo būti '{0}'").format(JSON_FORMAT)
+                )
+
+            endpoint_description_type = cleaned_data.get("endpoint_description_type")
+            if not endpoint_description_type:
+                openapi_format = Format.objects.filter(title=OPENAPI_FORMAT).first()
+                if not openapi_format:
+                    raise ValidationError(
+                        _("Nepavyko rasti `{0}` formato pasirinkimų sąraše. Susisiekite su administracija.").format(
+                            OPENAPI_FORMAT
+                        )
+                    )
+                cleaned_data["endpoint_description_type"] = openapi_format
+            elif endpoint_description_type.title != OPENAPI_FORMAT:
+                self.add_error(
+                    "endpoint_description_type",
+                    _("Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'").format(OPENAPI_FORMAT),
+                )
+
+            if not conforms_to:
+                uapi_concept = Concept.objects.filter(code="UAPI").first()
+                if not uapi_concept:
+                    raise ValidationError(
+                        _("Nepavyko rasti `UDTS` standarto pasirinkimų sąraše. Susisiekite su administracija.")
+                    )
+                cleaned_data["conforms_to"] = uapi_concept
+            elif conforms_to.code != UAPI_CONCEPT_CODE:
+                error_message = _("Su agentu susietos paslaugos privalo atitikti UDTS standartą.")
+                self.add_error("conforms_to", error_message)
+
+            return cleaned_data
+
+        if not cleaned_data.get("endpoint_url"):
+            error_message = _("Pasirinkite agentą, arba nurodykite API adresą.")
+            for field_name in ("agent", "endpoint_url"):
+                self.add_error(field_name, error_message)
+
+        if not cleaned_data.get("endpoint_description"):
+            self.add_error("endpoint_description", _("Pasirinkite agentą, arba nurodykite API specifikaciją."))
+
+        if conforms_to and conforms_to.code == UAPI_CONCEPT_CODE:
+            error_message = _(
+                "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+            )
+            self.add_error("agent", error_message)
+
+        return cleaned_data
 
 
 class CatalogResourceForm(BaseResourceForm):

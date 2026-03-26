@@ -325,9 +325,12 @@
                 </span>
             </th>
             <td>
-                {% if dataset.endpoint_url %}
-                    <a href="{{ dataset.endpoint_url }}">{{ dataset.endpoint_url|truncatechars:50 }}</a>
-                {% endif %}
+                {% for name, url in dataset.get_endpoint_urls %}
+                    {% if name %}
+                        {{ name }} - 
+                    {% endif %}
+                    <a href="{{ url }}">{{ url|truncatechars:50 }}</a><br>
+                {% endfor %}
             </td>
         </tr>
         <tr>
@@ -349,9 +352,7 @@
                 </span>
             </th>
             <td>
-                {% if dataset.endpoint_description %}
-                    <a href="{{ dataset.endpoint_description }}">{{ dataset.endpoint_description|truncatechars:50 }}</a>
-                {% endif %}
+                <a href="{{ dataset.get_endpoint_description }}">{{ dataset.get_endpoint_description|truncatechars:50 }}</a>
             </td>
         </tr>
         <tr>
@@ -363,6 +364,16 @@
                 </span>
             </th>
             <td>{{ dataset.endpoint_description_type|default:"" }}</td>
+        </tr>
+        <tr>
+            <th>
+                {% translate "Atitinka" %}
+                <span class="icon info-icon has-tooltip-multiline is-middle"
+                      data-tooltip="{% translate 'Nurodo kokį standartą atitinka paslauga. (pvz., UDTS)' %}">
+                    <i class="fas fa-info-circle"></i>
+                </span>
+            </th>
+            <td>{{ dataset.conforms_to|default:"" }}</td>
         </tr>
     {% endif %}
     {% if dataset.subclass.is_dataset %}

@@ -4,6 +4,7 @@ from django.forms import ModelForm
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.uapi.models import Agent, AgentEnvironment
+from vitrina.uapi import Environment
 
 
 class AgentForm(ModelForm):
@@ -35,7 +36,8 @@ class AgentForm(ModelForm):
 
         if (title := cleaned_data.get("title")) and self.organization:
             existing_agent = (
-                Agent.not_archived.filter(
+                Agent.objects.not_archived()
+                .filter(
                     organization=self.organization,
                     codename=Agent.get_codename(title),
                 )
@@ -64,13 +66,17 @@ class AgentEnvironmentForm(ModelForm):
             "is_enabled",
         ]
 
-    def __init__(self, *args, **kwargs) -> None:
+    def __init__(self, agent: Agent, *args, **kwargs) -> None:
         self.organization = kwargs.pop("organization", None)
         super().__init__(*args, **kwargs)
 
         self.helper = FormHelper()
         self.helper.form_id = "agent-env-form"
         self.helper.attrs["novalidate"] = ""
+        available_environments = agent.missing_environments
+        if not self.instance._state.adding and self.instance.environment not in available_environments:
+            available_environments.append(Environment(self.instance.environment))
+        self.fields["environment"].choices = [(env.value, env.label) for env in available_environments]
         self.helper.layout = Layout(
             Field("environment"),
             Field("agent_address"),

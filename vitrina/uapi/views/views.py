@@ -412,7 +412,7 @@ class AgentViewSet(UAPIExceptionHandlerMixin, AgentAuthViewSetMixin, ModelViewSe
 
     def get_queryset(self) -> QuerySet:
         jwt_subject = self.request.auth["sub"]
-        queryset = AgentEnvironment.not_archived.filter(
+        queryset = AgentEnvironment.objects.not_archived().filter(
             agent__organization=self.request.organization,
             oauth_client_id=jwt_subject,
         )

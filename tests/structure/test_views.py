@@ -1,6 +1,7 @@
 import datetime
 import json
 import uuid
+from http import HTTPStatus
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
@@ -18,6 +19,7 @@ from reversion.models import Version
 
 from vitrina.classifiers.models import Status
 from vitrina.cms.factories import FilerFileFactory
+from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetStructureFactory, DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import RepresentativeFactory, OrganizationFactory
@@ -38,11 +40,28 @@ from vitrina.structure.factories import (
     BaseFactory,
     VersionFactory,
 )
-from vitrina.structure.models import Metadata, Enum, EnumItem, VersionType, Model, Property, Base
+from vitrina.structure.models import Metadata, Enum, EnumItem, VersionType, Model, Property, Base, PropertyList
 from vitrina.structure.services import create_structure_objects
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
 from vitrina.utils import RevisionComment, RevisionSource
+
+
+class BaseTestCreateManifest:
+    def _create_manifest(self, manifest: str, title: str = "", description: str = ""):
+        dataset = DatasetFactory(
+            title=title,
+            description=description,
+            metadata=False,
+        )
+        structure = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
+        )
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        create_structure_objects(structure)
+        dataset.refresh_from_db()
+        return dataset
 
 
 @pytest.mark.django_db
@@ -963,8 +982,8 @@ def test_private_comment(app: DjangoTestApp):
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         ",,,,Country,,,,,,,,,,,,,,\n"
-        ",,,,,,comment,type,,,,,,public,,,Public comment,,\n"
-        ",,,,,,comment,type,,,,,,private,,,Private comment,,\n"
+        ",,,,,,comment,type,,,,,,public,,,,Public comment,\n"
+        ",,,,,,comment,type,,,,,,private,,,,Private comment,\n"
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -972,8 +991,14 @@ def test_private_comment(app: DjangoTestApp):
     structure.dataset.save()
     version = create_structure_objects(structure)
 
-    resp = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
-    assert sorted([comment.body for comment, _, _ in resp.context["comments"]]) == ["Public comment"]
+    response = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
+
+    assert response.status_code == HTTPStatus.OK
+    comments = [comment for comment, _, _ in response.context["comments"]]
+    assert len(comments) == 1  # Private comment is hidden;
+    comment = comments[0]
+    assert comment.is_public
+    assert comment.body == "Public comment"
 
 
 @pytest.mark.django_db
@@ -983,8 +1008,8 @@ def test_private_comment_with_access(app: DjangoTestApp):
         ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
         ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         ",,,,Country,,,,,,,,,,,\n"
-        ",,,,,,comment,type,,,,public,,,,,Public comment,,\n"
-        ",,,,,,comment,type,,,,private,,,,,Private comment,,\n"
+        ",,,,,,comment,type,,,,public,,,,,,Public comment,\n"
+        ",,,,,,comment,type,,,,private,,,,,,Private comment,\n"
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -999,11 +1024,13 @@ def test_private_comment_with_access(app: DjangoTestApp):
     )
     app.set_user(representative.user)
 
-    resp = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
-    assert sorted([comment.body for comment, _, _ in resp.context["comments"]]) == [
-        "Private comment",
-        "Public comment",
-    ]
+    response = app.get(reverse("model-structure", args=[structure.dataset.pk, version.pk, "Country"]))
+
+    assert response.status_code == HTTPStatus.OK
+    comments = [comment for comment, _, _ in response.context["comments"]]
+    assert len(comments) == 2
+    assert all(comment.is_public for comment in comments)
+    assert sorted([comment.body for comment in comments]) == ["Private comment", "Public comment"]
 
 
 @pytest.mark.django_db
@@ -1554,10 +1581,16 @@ def test_property_enum_item_create__string(app: DjangoTestApp):
         EnumItem.objects.filter(
             enum__content_type=ContentType.objects.get_for_model(prop), enum__object_id=prop.pk
         ).values(
-            "metadata__prepare", "metadata__source", "metadata__access", "metadata__title", "metadata__description"
+            "metadata_version_id",
+            "metadata__prepare",
+            "metadata__source",
+            "metadata__access",
+            "metadata__title",
+            "metadata__description",
         )
     ) == [
         {
+            "metadata_version_id": version.pk,
             "metadata__prepare": '"test"',
             "metadata__source": "TEST",
             "metadata__access": Metadata.OPEN,
@@ -1568,7 +1601,8 @@ def test_property_enum_item_create__string(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
-def test_property_enum_item_create__integer(app: DjangoTestApp):
+@pytest.mark.parametrize("integer_value", [-1, 0, 1])
+def test_property_enum_item_create__integer(app: DjangoTestApp, integer_value: int):
     user = UserFactory(is_staff=True)
     app.set_user(user)
 
@@ -1600,7 +1634,7 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
     )
 
     form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
-    form["value"] = 1
+    form["value"] = integer_value
     form["source"] = "TEST"
     form["access"] = Metadata.OPEN
     form["title"] = "Test value"
@@ -1613,11 +1647,17 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
         EnumItem.objects.filter(
             enum__content_type=ContentType.objects.get_for_model(prop), enum__object_id=prop.pk
         ).values(
-            "metadata__prepare", "metadata__source", "metadata__access", "metadata__title", "metadata__description"
+            "metadata_version_id",
+            "metadata__prepare",
+            "metadata__source",
+            "metadata__access",
+            "metadata__title",
+            "metadata__description",
         )
     ) == [
         {
-            "metadata__prepare": "1",
+            "metadata_version_id": version.pk,
+            "metadata__prepare": str(integer_value),
             "metadata__source": "TEST",
             "metadata__access": Metadata.OPEN,
             "metadata__title": "Test value",
@@ -1626,48 +1666,6 @@ def test_property_enum_item_create__integer(app: DjangoTestApp):
     ]
     assert Version.objects.get_for_object(prop).count() == 1
     assert Version.objects.get_for_object(prop).first().revision.user == user
-
-
-@pytest.mark.django_db
-def test_property_enum_item_create__integer_with_error(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    app.set_user(user)
-
-    version = VersionFactory()
-    model = ModelFactory(dataset=version.dataset, metadata_version=version)
-    dataset = version.dataset
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(model),
-        object_id=model.pk,
-        dataset=dataset,
-        name="test/dataset/TestModel",
-        metadata_version=version,
-    )
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(dataset),
-        object_id=dataset.pk,
-        dataset=dataset,
-        name="test/dataset",
-        metadata_version=version,
-    )
-    prop = PropertyFactory(model=model, metadata_version=version)
-    MetadataFactory(
-        content_type=ContentType.objects.get_for_model(prop),
-        object_id=prop.pk,
-        dataset=dataset,
-        name="prop",
-        type="integer",
-        metadata_version=version,
-    )
-
-    form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
-    form["value"] = "invalid"
-    form["source"] = "TEST"
-    form["access"] = Metadata.OPEN
-    form["title"] = "Test value"
-    form["description"] = "For testing"
-    resp = form.submit()
-    assert list(resp.context["form"].errors.values()) == [["Reikšmė turi būti integer tipo."]]
 
 
 @pytest.mark.django_db
@@ -1883,6 +1881,82 @@ def test_model_create_with_lowercase_first_name_letter(app: DjangoTestApp):
     assert list(resp.context["form"].errors.values()) == [
         ["Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."]
     ]
+
+
+@pytest.mark.django_db
+def test_model_create_visibility_choices_restricted_for_open_data_representative(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("model-create-no-version", args=[dataset.pk])).forms["model-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_model_create_visibility_choices_not_restricted_for_resource_manager(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.RESOURCE_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("model-create-no-version", args=[dataset.pk])).forms["model-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" in visibility_values
+    assert "1" in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_model_create_visibility_choices_restricted_for_open_data_representative_via_org_chain(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user_organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(user_organization),
+        object_id=user_organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        organization=user_organization,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("model-create-no-version", args=[dataset.pk])).forms["model-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
 
 
 @pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
@@ -4301,6 +4375,78 @@ def test_model_create_with_public_visibility_without_uri_with_error(app: DjangoT
 
 
 @pytest.mark.django_db
+def test_property_create__ref_with_composite_key(app: DjangoTestApp):
+    # Arrange
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    dataset = version.dataset
+
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+
+    # The model being referenced via `ref`
+    ref_model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_model),
+        object_id=ref_model.pk,
+        dataset=dataset,
+        name="test/dataset/RefModel",
+        metadata_version=version,
+    )
+
+    # Two properties on the `ref` model to use as composite key
+    ref_property_1 = PropertyFactory(model=ref_model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_property_1),
+        object_id=ref_property_1.pk,
+        dataset=dataset,
+        name="id",
+        metadata_version=version,
+    )
+    ref_property_2 = PropertyFactory(model=ref_model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_property_2),
+        object_id=ref_property_2.pk,
+        dataset=dataset,
+        name="name",
+        metadata_version=version,
+    )
+
+    # Act
+    form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name])).forms["property-form"]
+
+    form["name"] = "ref_field"
+    form["type"] = "ref"
+    # Select2 fields load options dynamically via AJAX, so webtest cannot see
+    # any options in the rendered HTML. force_value() bypasses option validation
+    # and sets the value directly, skipping the "Option not found" error.
+    form["ref"].force_value(ref_model.pk)
+    form["ref_props"].force_value([ref_property_1.pk, ref_property_2.pk])
+
+    response = form.submit().follow()
+
+    # Assert
+    assert response.status_code == HTTPStatus.OK
+    # Check PropertyList entries were created
+    property = Property.objects.get(model=model)
+    property_list = PropertyList.objects.filter(
+        content_type=ContentType.objects.get_for_model(Property),
+        object_id=property.pk,
+    ).order_by("order")
+
+    assert property_list.count() == 2
+    assert list(property_list.values_list("property", "order")) == [(ref_property_1.pk, 1), (ref_property_2.pk, 2)]
+
+
+@pytest.mark.django_db
 def test_property_create_with_in_released_version(app: DjangoTestApp):
     user = UserFactory(is_staff=True)
     app.set_user(user)
@@ -4319,6 +4465,112 @@ def test_property_create_with_in_released_version(app: DjangoTestApp):
     form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name]), expect_errors=True)
     assert form.status_code == 302
     assert form.location == model.get_absolute_url()
+
+
+@pytest.mark.django_db
+def test_property_create_visibility_choices_restricted_for_open_data_representative(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name])).forms["property-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_property_create_visibility_choices_not_restricted_for_resource_manager(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.RESOURCE_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name])).forms["property-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" in visibility_values
+    assert "1" in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_property_create_visibility_choices_restricted_for_open_data_representative_via_org_chain(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user_organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(user_organization),
+        object_id=user_organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        organization=user_organization,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("property-create", args=[dataset.pk, version.pk, model.name])).forms["property-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
 
 
 @pytest.mark.django_db
@@ -4391,6 +4643,142 @@ def test_property_enum_item_create__higher_visibility_with_error(app: DjangoTest
     assert list(resp.context["form"].errors.values()) == [
         ["Metaduomenų matomumas 'protected' negali būti didesnis nei duomenų lauko matomumas 'private'."]
     ]
+
+
+@pytest.mark.django_db
+def test_enum_create_visibility_choices_restricted_for_open_data_representative(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+        metadata_version=version,
+    )
+    prop.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_enum_create_visibility_choices_not_restricted_for_resource_manager(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+        metadata_version=version,
+    )
+    prop.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        user=user,
+        role=Representative.RESOURCE_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" in visibility_values
+    assert "1" in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
+
+
+@pytest.mark.django_db
+def test_enum_create_visibility_choices_restricted_for_open_data_representative_via_org_chain(app: DjangoTestApp):
+    organization = OrganizationFactory()
+    user_organization = OrganizationFactory()
+    user = UserFactory()
+    dataset = DatasetFactory(organization=organization)
+    version = VersionFactory(dataset=dataset)
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    model.refresh_from_db()
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="integer",
+        metadata_version=version,
+    )
+    prop.refresh_from_db()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(user_organization),
+        object_id=user_organization.pk,
+        user=user,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(organization),
+        object_id=organization.pk,
+        organization=user_organization,
+        role=Representative.OPEN_DATA_MANAGER,
+    )
+    app.set_user(user)
+
+    form = app.get(reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name])).forms["enum-form"]
+    visibility_values = [option[0] for option in form["visibility"].options]
+
+    assert "0" not in visibility_values
+    assert "1" not in visibility_values
+    assert "2" in visibility_values
+    assert "3" in visibility_values
 
 
 @pytest.mark.django_db
@@ -4477,6 +4865,50 @@ def test_property_enum_item_create__higher_visibility_then_model_with_error(app:
     ]
 
 
+# Not all types tested. Only a few of them
+@pytest.mark.django_db
+@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "number", "object"])
+def test_property_enum_item_create__not_allowed_for_types_that_have_no_type_checker_class(
+    app: DjangoTestApp, not_allowed_type: str
+):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE,
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type=not_allowed_type,
+        metadata_version=version,
+    )
+    response = app.get(
+        reverse("enum-create", args=[dataset.pk, version.pk, model.name, prop.name]),
+    )
+
+    assert response.status_code == 302
+    assert response.url == prop.get_absolute_url()
+
+
 @pytest.mark.django_db
 def test_manifest_export_openapi(app: DjangoTestApp):
     """Test OpenAPI manifest export returns valid spec with correct metadata, schemas, tags, and paths."""
@@ -4492,6 +4924,8 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+    version.external_version = "1.0.0"
+    version.save()
 
     ct = ContentType.objects.get_for_model(structure.dataset)
     representative = RepresentativeFactory(
@@ -4513,9 +4947,11 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     assert info["summary"] == structure.dataset.title, "Info summary should match dataset title"
     assert info["description"] == structure.dataset.description, "Info description should match dataset description"
     assert info["version"] == "1.0.0", "API version should be 1.0.0"
-
     schemas = set(openapi_spec["components"]["schemas"].keys())
-    expected_schemas = {"Country", "CountryCollection", "CountryChange", "CountryChanges"}
+    expected_schemas = {
+        "Country",
+        "CountryCollection",
+    }
     assert expected_schemas <= schemas, f"Missing required schemas: {expected_schemas - schemas}"
 
     tag_names = {tag["name"] for tag in openapi_spec["tags"]}
@@ -4526,13 +4962,63 @@ def test_manifest_export_openapi(app: DjangoTestApp):
     model_paths = {
         "/datasets/gov/ivpk/adp/Country",
         "/datasets/gov/ivpk/adp/Country/{id}",
-        "/datasets/gov/ivpk/adp/Country/:changes/{cid}",
     }
     expected_paths = utility_paths | model_paths
     actual_paths = set(openapi_spec["paths"].keys())
     assert actual_paths == expected_paths, (
         f"Paths mismatch. Missing: {expected_paths - actual_paths}, Extra: {actual_paths - expected_paths}"
     )
+
+
+@pytest.mark.django_db
+def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
+    """Test OpenAPI manifest export returns valid spec with correct metadata, schemas, tags, and paths."""
+
+    city_manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/test/city,,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,id,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,private,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+    )
+    city_structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=city_manifest))
+    )
+    city_structure.dataset.current_structure = city_structure
+    city_structure.dataset.save()
+    create_structure_objects(city_structure, city_structure.dataset.metadata.first().metadata_version)
+
+    main_manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",,,,,,prefix,dct,,,,,,,http://purl.org/dc/terms/,,,,\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        ",,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
+        ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
+        ",,,,,city,ref,/datasets/gov/test/city/City,,,,5,,,private,dct:title,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=main_manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
+
+    ct = ContentType.objects.get_for_model(structure.dataset)
+    representative = RepresentativeFactory(
+        content_type=ct,
+        object_id=structure.dataset.pk,
+    )
+    app.set_user(representative.user)
+    resp = app.get(reverse("dataset-structure-export-openapi", args=[structure.dataset.pk, version.pk]))
+
+    assert resp.status_code == 200
+    assert resp.content_type == "application/json"
+
+    openapi_spec = resp.json
+    schemas = set(openapi_spec["components"]["schemas"].keys())
+    assert "datasets_gov_test_city_City" in schemas, "City schema should be included in the spec"
+    paths = openapi_spec["paths"]
+    assert "datasets/gov/test/city/City" not in paths, "City should not be included in the paths"
 
 
 @pytest.mark.django_db
@@ -4632,7 +5118,7 @@ def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, 
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -4689,9 +5175,9 @@ def test_published_metadata_gets_completed_status(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,Size,,SMALL,,,,,,,,,\n"
-        ",,,,,,,,,MEDIUM,,,,,,,,,\n"
-        ",,,,,,,,,BIG,,,,,,,,,\n"
+        ",,,,,,enum,Size,,'''SMALL''',,,,,,,,,\n"
+        ",,,,,,,,,'''MEDIUM''',,,,,,,,,\n"
+        ",,,,,,,,,'''BIG''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -4756,7 +5242,7 @@ def test_changed_metadata_keeps_status_after_publishing(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,enum,small,,'SMALL',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -4840,7 +5326,7 @@ def test_draft_metadata_defaults_to_develop_after_hard_change(app: DjangoTestApp
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,big,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
@@ -4902,7 +5388,7 @@ def test_changing_multiple_fields_in_draft_structure_respects_status(app: Django
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
+        ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,big,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
@@ -4970,8 +5456,8 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,discont,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
         ",,,,,administration,string,,,,5,,,open,dct:title,,,,\n"
-        ",,,,,,enum,small,,SMALL,,,,,,,,,\n"
-        ",,,,,,,big,,BIG,,,,,,,,,\n"
+        ",,,,,,enum,small,,'SMALL',,,,,,,,,\n"
+        ",,,,,,,big,,'''BIG''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
@@ -5015,6 +5501,66 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
     for enum_item in prop.enums.first().enumitem_set.all():
         enum_metadata = enum_item.metadata.first()
         assert enum_metadata.status.codename == "develop"
+
+
+# Not all types tested. Only a few of them
+@pytest.mark.django_db
+@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "number", "object"])
+def test_property_enum_item_update__not_allowed_for_types_that_have_no_type_checker_class(
+    app: DjangoTestApp, not_allowed_type: str
+):
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        visibility=Metadata.PRIVATE,
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type=not_allowed_type,
+        metadata_version=version,
+    )
+    enum = EnumFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        metadata_version=version,
+    )
+    enum_item = EnumItemFactory(enum=enum, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(enum_item),
+        object_id=enum_item.pk,
+        dataset=dataset,
+        title="Test value",
+        description="For testing",
+        prepare="",
+        access=Metadata.OPEN,
+        source="TEST",
+        metadata_version=version,
+    )
+
+    response = app.get(reverse("enum-update", args=[dataset.pk, version.pk, model.name, prop.name, enum_item.pk]))
+
+    assert response.status_code == 302
+    assert response.url == prop.get_absolute_url()
 
 
 @pytest.mark.django_db
@@ -5387,15 +5933,15 @@ def test_publish_form_shows_all_metadata_rows_enum(app: DjangoTestApp):
         "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
         "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         "2,,,,,,prefix,dct,,,,,,,,http://purl.org/dc/terms/,,,\n"
-        "3,,,,,,enum,Size,,SMALL,,,,,,,,,,\n"
-        "4,,,,,,,,,MEDIUM,,,,,,,,,\n"
-        "5,,,,,,,,,BIG,,,,,,,,,\n"
+        "3,,,,,,enum,Size,,'''SMALL''',,,,,,,,,,\n"
+        "4,,,,,,,,,'''MEDIUM''',,,,,,,,,\n"
+        "5,,,,,,,,,'''BIG''',,,,,,,,,\n"
         "6,,,,City,,,,,,,,,,,,,,\n"
         "7,,,,,id,integer,,,,,5,,,open,dct:identifier,,Identifikatorius,\n"
         "8,,,,,size,Size,,,,,5,,,open,dct:size,,,\n"
         "9,,,,,type,string,,,,,5,,,open,dct:type,,,\n"
-        "10,,,,,,enum,Type,,CREATED,,,,,,,,,\n"
-        "11,,,,,,,,,MODIFIED,,,,,,,,,\n"
+        "10,,,,,,enum,Type,,'''CREATED''',,,,,,,,,\n"
+        "11,,,,,,,,,'''MODIFIED''',,,,,,,,,\n"
     )
     structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
     structure.dataset.current_structure = structure
@@ -6592,6 +7138,91 @@ def test_publishing_property_with_draft_model_ref_different_dataset(app: DjangoT
 
 
 @pytest.mark.django_db
+def test_property_update__ref_with_composite_key(app: DjangoTestApp):
+    # Arrange
+    user = UserFactory(is_staff=True)
+    app.set_user(user)
+
+    version = VersionFactory()
+    dataset = version.dataset
+
+    model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+
+    # The model being referenced via ref
+    ref_model = ModelFactory(dataset=dataset, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_model),
+        object_id=ref_model.pk,
+        dataset=dataset,
+        name="test/dataset/RefModel",
+        metadata_version=version,
+    )
+
+    # Two properties on the ref model to use as composite key
+    ref_property_1 = PropertyFactory(model=ref_model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_property_1),
+        object_id=ref_property_1.pk,
+        dataset=dataset,
+        name="id",
+        metadata_version=version,
+    )
+    ref_property_2 = PropertyFactory(model=ref_model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(ref_property_2),
+        object_id=ref_property_2.pk,
+        dataset=dataset,
+        name="name",
+        metadata_version=version,
+    )
+
+    # Existing property that will be updated
+    existing_prop = PropertyFactory(model=model, metadata_version=version)
+    existing_metadata = MetadataFactory(
+        content_type=ContentType.objects.get_for_model(existing_prop),
+        object_id=existing_prop.pk,
+        dataset=dataset,
+        name="ref_field",
+        type="string",
+        metadata_version=version,
+    )
+
+    # Act
+    form = app.get(
+        reverse("property-update", args=[dataset.pk, version.pk, model.name, existing_prop.metadata.first().name])
+    ).forms["property-form"]
+
+    form["type"] = "ref"
+    # Select2 fields load options dynamically via AJAX, so webtest cannot see
+    # any options in the rendered HTML. force_value() bypasses option validation
+    # and sets the value directly, skipping the "Option not found" error.
+    form["ref"].force_value(ref_model.pk)
+    form["ref_props"].force_value([ref_property_1.pk, ref_property_2.pk])
+
+    response = form.submit().follow()
+
+    # Assert
+    assert response.status_code == HTTPStatus.OK
+    existing_prop.refresh_from_db()
+    existing_metadata.refresh_from_db()
+    # Check old PropertyList entries were cleared and new ones created
+    property_list = PropertyList.objects.filter(
+        content_type=ContentType.objects.get_for_model(Property),
+        object_id=existing_prop.pk,
+    ).order_by("order")
+
+    assert property_list.count() == 2
+    assert list(property_list.values_list("property", "order")) == [(ref_property_1.pk, 1), (ref_property_2.pk, 2)]
+
+
+@pytest.mark.django_db
 class TestModelDelete:
     def test_success(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
@@ -6718,22 +7349,335 @@ class TestModelDelete:
         assert resp.status_code == 405
 
 
-class TestStructureExportDependentModels:
-    def _create_manifest(self, manifest: str, title: str, description: str):
-        dataset = DatasetFactory(
-            title=title,
-            description=description,
-            metadata=False,
-        )
-        structure = DatasetStructureFactory(
-            file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
-        )
-        structure.dataset.current_structure = structure
-        structure.dataset.save()
-        create_structure_objects(structure)
-        dataset.refresh_from_db()
-        return dataset
+class TestStructure(BaseTestCreateManifest):
+    def test_import_and_export_does_not_strip_ref_property_source_prefixes(self, app: DjangoTestApp):
+        """The problem is that type `ref` property.ref removed prefixes `/`, they should not be removed.
 
+        Incorrect: `/datasets/gov/ref/dataset/Continent` -> `datasets/gov/ref/dataset/Continent`
+        Correct:   `/datasets/gov/ref/dataset/Continent` -> `/datasets/gov/ref/dataset/Continent`
+        """
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
+            '3,,,,Country,,,"id,title",,,,,,,,,,,\n'
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "5,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,",
+            "3,,,,Country,,,id,,,,,,,develop,,,,,,",
+            "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,",
+            "5,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__resource_and_param_rows_exported_with_all_columns(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,,,,,,,,,,,,,,,\n"
+            "2,,resource_wsdl,,,,wsdl,,http://127.0.0.1:8001/api/v1/test/testing/?wsdl,,,,,,,,,,,,\n"
+            "3,,resource_soap,,,,soap,,TestTesting.TestPort.TestPort.test,,wsdl(rc_wsdl),,,,,,,,,,\n"
+            "4,,,,,,param,action_type,input/ActionType,,input(),,,,,,,,,,\n"
+            "5,,,,Soap,,,,/,,,,,,,,open,,,,\n"
+            "6,,,,,response_data,string,,ResponseData,,base64(),,,,,,,,,,\n"
+            "7,,,,,action_type,string required,,,,param(action_type),,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,,,,\n"
+            "8,,resource_xml,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,\n"
+            "9,,,,,,param,nested_xml,Soap,,read().response_data,,,,,,,\n"
+            "10,,,,Approver,,,,,,,,,0,,,,,,Approver,\n"
+            "11,,,,,company_name,string,,ApproverCompanyName/text(),,,,,4,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Title", "Description")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Title,Description",
+            "2,,resource_wsdl,,,,wsdl,,http://127.0.0.1:8001/api/v1/test/testing/?wsdl,,,,,,,,,,,resource_wsdl,",
+            "3,,resource_soap,,,,soap,,TestTesting.TestPort.TestPort.test,,wsdl(rc_wsdl),,,,,,,,,resource_soap,",
+            "4,,,,,,param,action_type,input/ActionType,,input(),,,,develop,,,,,,",
+            "5,,,,Soap,,,,/,,,,,,develop,,open,,,,",
+            "6,,,,,response_data,string,,ResponseData,,base64(),,,,develop,,,,,,",
+            "7,,,,,action_type,string required,,,,param(action_type),,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            ",,/,,,,,,,,,,,,,,,,,,",
+            "8,,resource_xml,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,resource_xml,",
+            "9,,,,,,param,nested_xml,Soap,,read().response_data,,,,develop,,,,,,",
+            "10,,,,Approver,,,,,,,,,0,develop,,,,,Approver,",
+            "11,,,,,company_name,string,,ApproverCompanyName/text(),,,,,4,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__repeat_import_correctly_updates_manifest_rows(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest_no_prepare = (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,,,,,,,,,,,,,,,\n"
+            "2,,service,,,,dask/xml,,,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest_no_prepare, "Title", "Description")
+        version = dataset.latest_version()
+
+        manifest_with_prepare = (
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,,,,,,,,,,,,,,,\n"
+            "2,,service,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,\n"
+        )
+
+        # Second import to test updates
+        structure = DatasetStructureFactory(
+            file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest_with_prepare)), dataset=dataset
+        )
+        dataset.current_structure = structure
+        dataset.save()
+        create_structure_objects(structure, metadata_version=version)
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, version.pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Title,Description",
+            "2,,service,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,service,",
+        ]
+
+    def test_export__duplicated_source_exports_resources_correctly(self, app: DjangoTestApp):
+        """Ensure that resources that have an identical source column value are exported correctly."""
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,dataset,,,,,,,,,,,\n"
+            "2,,nested_read,,,,dask/xml,,,eval(param(nested_xml)),,,,,,,,\n"
+            "3,,,,,,param,nested_xml,GetData,read().response_data,,,,,,,,\n"
+            "4,,,,,,param,action_type,input/ActionType,input(),,,,,,,,\n"
+            "5,,,,Country,,,,countries/countryData,,,,,open,,,,\n"
+            "6,,,,,id,string,,id,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,\n"
+            "7,,nested_read_multiple,,,,dask/xml,,,eval(param(nested_xml)),,,,,,,,\n"
+            "8,,,,,,param,nested_xml,GetDataMultiple,read().response_data,,,,,,,,\n"
+            "9,,,,CountryMultiple,,,,countries/countryData,,,,,public,,,,\n"
+            "10,,,,,id,string,,id,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,nested_read,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,nested_read,",
+            "3,,,,,,param,nested_xml,GetData,,read().response_data,,,,develop,,,,,,",
+            "4,,,,,,param,action_type,input/ActionType,,input(),,,,develop,,,,,,",
+            "5,,,,Country,,,,countries/countryData,,,,,,develop,,open,,,,",
+            "6,,,,,id,string,,id,,,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            ",,/,,,,,,,,,,,,,,,,,,",
+            "7,,nested_read_multiple,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,nested_read_multiple,",
+            "8,,,,,,param,nested_xml,GetDataMultiple,,read().response_data,,,,develop,,,,,,",
+            "9,,,,CountryMultiple,,,,countries/countryData,,,,,,develop,,public,,,,",
+            "10,,,,,id,string,,id,,,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__model_and_reference_as_base_in_file(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example,,,,,,,,,,,,,,,,\n"
+            "2,,,,Animal,,,,,,0,completed,public,,,,,\n"
+            "3,,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
+            "4,,,Animal,,,,,,,1,completed,public,,,,,\n"
+            "5,,,,Dog,,,,,,0,completed,public,,,,,\n"
+            "6,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,,,Animal,,,,,,,,,0,completed,public,,,,,",
+            "3,,,,,id,string,,source_animal_id,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            "4,,,Animal,,,,,,,,,,,,,,,,,",
+            "5,,,,Dog,,,,,,,,,0,completed,public,,,,,",
+            "6,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__model_and_reference_as_base_in_two_different_files(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        model_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example,,,,,,,,,,,,,,,,\n"
+            "2,,,,Animal,,,,,,0,completed,public,,,,,\n"
+            "3,,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
+        )
+        model_dataset = self._create_manifest(model_manifest, "Model Dataset", "Dataset that defines base model.")
+        model_version = model_dataset.latest_version()
+        model_version.status = VersionStatus.STABLE
+        model_version.save()
+
+        base_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example2,,,,,,,,,,,,,,,,\n"
+            "2,,,example/Animal,,,,,,,1,completed,public,,,,,\n"
+            "3,,,,Dog,,,,,,0,completed,public,,,,,\n"
+            "4,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(base_manifest, "Base Dataset", "Dataset that references model with base")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
+            "2,,,example/Animal,,,,,,,,,,,,,,,,,",
+            "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
+            "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__model_and_reference_different_files_model_is_not_released(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        model_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example,,,,,,,,,,,,,,,,\n"
+            "2,,,,Animal,,,,,,0,completed,public,,,,,\n"
+            "3,,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
+        )
+        self._create_manifest(model_manifest, "Model Dataset", "Dataset that defines base model.")
+
+        base_manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example2,,,,,,,,,,,,,,,,\n"
+            "2,,,example/Animal,,,,,,,1,completed,public,,,,,\n"
+            "3,,,,Dog,,,,,,0,completed,public,,,,,\n"
+            "4,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(base_manifest, "Base Dataset", "Dataset that references model with base")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
+            "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
+            "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+        error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
+        assert error_comment.type == Comment.STRUCTURE_ERROR
+        assert error_comment.body == (
+            "Nepavyko susieti bazinio modelio „example/Animal“. "
+            "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+        )
+
+    def test_export__base_reference_without_defined_model(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example,,,,,,,,,,,,,,,,\n"
+            "2,,,Animal,,,,,,,1,completed,public,,,,,\n"
+            "3,,,,Dog,,,,,,0,completed,public,,,,,\n"
+            "4,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
+            ",,,/,,,,,,,,,,,,,,\n"
+        )
+
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [  # Base could not be linked, so it is missing.
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
+            "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+        error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
+        assert error_comment.type == Comment.STRUCTURE_ERROR
+        assert error_comment.body == (
+            "Nepavyko susieti bazinio modelio „example/Animal“. "
+            "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+        )
+
+    def test_export__comments_exported_correctly(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,,,,,,,,,,,,\n"
+            "2,,,,Animal,,,,source_animal_model,,,,,,,,,\n"
+            '3,,,,,,comment,model,,"update(model: ""Animal/:part"")",2,completed,protected,open,https://github.com/example/issues/1,,,\n'
+            "4,,,,,id,string,,source_animal_id,,4,,,,,,,\n"
+            "5,,,Animal,,,,,,,,,,,,,,\n"
+            '6,,,,,,comment,model,,"update(model: ""Animal"")",2,completed,protected,open,https://github.com/example/issues/2,,,\n'
+            "7,,,,Dog,,,,,,,,,,,,,\n"
+            "8,,,,,action,string,,source_dog_action,,4,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,,,Animal,,,,source_animal_model,,,,,,develop,,,,,,",
+            '3,,,,,,comment,model,,,"update(model: ""Animal/:part"")",,,2,develop,,open,https://github.com/example/issues/1,,,',
+            "4,,,,,id,string,,source_animal_id,,,,,4,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+            "5,,,Animal,,,,,,,,,,,,,,,,,",
+            '6,,,,,,comment,model,,,"update(model: ""Animal"")",,,2,develop,,open,https://github.com/example/issues/2,,,',
+            "7,,,,Dog,,,,,,,,,,develop,,,,,,",
+            "8,,,,,action,string,,source_dog_action,,,,,4,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+
+class TestStructureExportDependentModels(BaseTestCreateManifest):
     @pytest.mark.django_db
     def test_structure_export_dependent_models(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
@@ -6780,7 +7724,7 @@ class TestStructureExportDependentModels:
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 
@@ -6822,7 +7766,7 @@ class TestStructureExportDependentModels:
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 
@@ -6869,13 +7813,13 @@ class TestStructureExportDependentModels:
             "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,,Referenced Dataset,Dependent dataset depth 1\r\n"
             '8,,,,Continent,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "9,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
-            "10,,,,,title,ref,datasets/gov/other/dataset/Other,,,,,,5,develop,,open,dct:title,,,\r\n"
+            "10,,,,,title,ref,/datasets/gov/other/dataset/Other,,,,,,5,develop,,open,dct:title,,,\r\n"
             "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Main Dataset,Root dataset\r\n"
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\r\n"
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 
@@ -6903,7 +7847,7 @@ class TestStructureExportDependentModels:
             '3,,,,Country,,,"id, title",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,title,string,,,,,,,5,develop,,open,dct:title,,,\r\n"
-            "6,,,,,continent,ref,datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
+            "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,,,,5,develop,,open,dct:continent,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 
@@ -6955,8 +7899,8 @@ class TestStructureExportDependentModels:
             '3,,,,MainModel,,,"id, prop1",,,,,,,develop,,,,,,\r\n'
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,\r\n"
             "5,,,,,prop1,string,,,,,,,5,develop,,open,dct:prop1,,,\r\n"
-            "6,,,,,prop2,ref,datasets/gov/ref/d1/D1Model1,,,,,,5,develop,,open,dct:prop2,,,\r\n"
-            "7,,,,,prop3,ref,datasets/gov/ref/d1/D1Model2,,,,,,5,develop,,open,dct:prop3,,,\r\n"
+            "6,,,,,prop2,ref,/datasets/gov/ref/d1/D1Model1,,,,,,5,develop,,open,dct:prop2,,,\r\n"
+            "7,,,,,prop3,ref,/datasets/gov/ref/d1/D1Model2,,,,,,5,develop,,open,dct:prop3,,,\r\n"
             ",,,,,,,,,,,,,,,,,,,,\r\n"
         )
 

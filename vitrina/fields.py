@@ -248,8 +248,15 @@ class StringListWidget(Widget):
     template_name: str = "component/multi_input.html"
     validation_errors: list[str | None]
 
-    def value_from_datadict(self, data: QueryDict, files: MultiValueDict, name: str) -> list[str]:
-        values = data.getlist(name)
+    def value_from_datadict(self, data: QueryDict | dict, files: MultiValueDict, name: str) -> list[str]:
+        if hasattr(data, "getlist"):
+            values = data.getlist(name)
+        else:
+            raw_value = data.get(name, [])
+            if isinstance(raw_value, str):
+                values = [raw_value]
+            else:
+                values = list(raw_value)
         return [value.strip() for value in values if value.strip()]
 
     def get_context(self, name: str, value: Sequence[str] | None, attrs: Mapping[str, Any] | None) -> dict[str, Any]:

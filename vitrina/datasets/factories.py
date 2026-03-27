@@ -24,7 +24,6 @@ from vitrina.datasets.models import (
     DatasetGroupCategoryUri,
 )
 from vitrina.structure.factories import MetadataFactory
-from vitrina.uapi.models import Agent
 
 MANIFEST = """\
 id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count
@@ -254,20 +253,63 @@ class ContactFactory(DjangoModelFactory):
     organization = factory.SubFactory(OrganizationFactory)
 
 
-class AgentFactory(DjangoModelFactory):
+class DatasetServiceFactory(DjangoModelFactory):
     class Meta:
-        model = Agent
-        django_get_or_create = ("title",)
+        model = Dataset
 
-    synchronized_at = factory.LazyFunction(timezone.now)
-    is_last_sync_successful = factory.Faker("boolean")
-    title = factory.Faker("company")
-    codename = factory.Faker("slug")
-    object_type = "SPINTA"
-    is_open_data_published = factory.Faker("boolean")
-    open_data_publish_url = "https://get.data.gov.lt/"
-    is_enabled = True
-    is_archived = False
-    service = factory.SubFactory(DatasetFactory, service=True)
     organization = factory.SubFactory(OrganizationFactory)
-    oauth_client_id = factory.Faker("uuid4")
+    uuid = factory.Faker("uuid4")
+    is_public = True
+    version = 1
+    service = True
+    title = factory.Dict(
+        {
+            "en": factory.Faker("text", max_nb_chars=20, locale="en_US"),
+            "lt": factory.Faker("text", max_nb_chars=20, locale="lt_LT"),
+        }
+    )
+    endpoint_url = factory.Faker("url")
+    endpoint_description = factory.Faker("url")
+    subclass = factory.SubFactory(DCATResourceSubclassFactory, name="service")
+    contact = factory.SubFactory(ContactFactory, organization=factory.SelfAttribute("..organization"))
+
+    @classmethod
+    def _create(cls, model_class: type[Dataset], *args, **kwargs) -> Dataset:
+        title = kwargs.pop("title")
+        description = kwargs.pop("description", None)
+        dataset = model_class(*args, **kwargs)
+        for lang in ("en", "lt"):
+            dataset.set_current_language(lang)
+            dataset.title = _get_language_value(lang, title)
+            dataset.description = _get_language_value(lang, description) if description else ""
+        dataset = model_class.add_root(instance=dataset)
+        return dataset
+
+    @factory.post_generation
+    def tags(self, create, extracted, **kwargs) -> None:
+        if not create:
+            return
+
+        tag_names = extracted or ["test tag"]
+        for tag_name in tag_names:
+            self.tags.add(tag_name)
+
+    @factory.post_generation
+    def category(self, create, extracted, **kwargs) -> None:
+        if not create:
+            return
+        if extracted:
+            for category in extracted:
+                self.category.add(category)
+
+    @factory.post_generation
+    def metadata(self, create: bool, extracted: str, **kwargs) -> None:
+        if not create:
+            return
+        if extracted is False:
+            return
+        name = extracted if extracted is not None else ((self.organization.name or "test/dataset/") + "abcd")
+
+        MetadataFactory.create(
+            dataset=self, content_type=ContentType.objects.get_for_model(self), object_id=self.pk, name=name
+        )

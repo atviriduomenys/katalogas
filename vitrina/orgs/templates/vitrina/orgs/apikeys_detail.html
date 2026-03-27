@@ -3,13 +3,6 @@
 {% load util_tags %}
 
 {% block current_title %}{% translate "Raktai" %}{% endblock%}
-{% block parent_links %}
-    <ul class="p-t-sm">
-        <li><a href="{% url 'home' %}"><span>{% translate 'Pradžia' %}</span></a></li>
-        <li><a href="{% url 'organization-list' %}"><span>{% translate 'Organizacijos' %}</span></a></li>
-        <li><a href="{% url 'organization-detail' organization.pk %}"><span>{{ organization.title }}</span></a></li>
-    </ul>
-{% endblock %}
 
 {% block head %}
     <style>

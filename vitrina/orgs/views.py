@@ -124,9 +124,10 @@ logger = logging.getLogger()
 
 class OrganizationBaseViewMixin:
     plan_url_name = "organization-plans"
+    organization_url_kwarg = "pk"
 
     def setup(self, request, *args, **kwargs):
-        self.organization = get_object_or_404(Organization, pk=kwargs.get("pk"))
+        self.organization = get_object_or_404(Organization, pk=kwargs.get(self.organization_url_kwarg))
         return super().setup(request, *args, **kwargs)
 
     def get_context_data(self, **kwargs):
@@ -139,6 +140,12 @@ class OrganizationBaseViewMixin:
         context_data["can_view_agents"] = has_perm(self.request.user, Action.VIEW, Agent, self.organization)
         context_data["can_view_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, Organization, self.organization)
         context_data["organization"] = self.organization
+        context_data["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            reverse("organization-list"): _("Organizacijos"),
+            reverse("organization-detail", args=[self.organization.pk]): self.organization,
+        }
+        context_data["tabs"] = "vitrina/orgs/tabs.html"
         return context_data
 
     def get_plan_object(self) -> Organization:
@@ -502,6 +509,7 @@ class OrganizationDetailView(PermissionRequiredMixin, PlanMixin, OrganizationBas
             organization=self.organization,
             language_code=self.request.LANGUAGE_CODE,
         )
+        context_data["parent_links"].update({None: _("Informacija")})
         return context_data
 
 
@@ -541,6 +549,7 @@ class OrganizationMembersView(
             self.organization,
         )
         context_data["can_delete_publishers"] = self.request.user.is_superuser
+        context_data["parent_links"].update({None: _("Tvarkytojai")})
         return context_data
 
 
@@ -576,7 +585,7 @@ class OrganizationContactsView(
             Contact,
             self.organization,
         )
-
+        context_data["parent_links"].update({None: _("Kontaktai")})
         return context_data
 
 
@@ -606,14 +615,14 @@ class ContactCreateView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["tabs"] = "vitrina/orgs/tabs.html"
         context["contact_url"] = reverse("organization-contacts", args=[self.organization.pk])
         context["current_title"] = _("Kontakto pridėjimas")
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-        }
+        context["parent_links"].update(
+            {
+                self.get_success_url(): _("Kontaktai"),
+                None: _("Pridėti"),
+            }
+        )
         return context
 
     def form_valid(self, form):
@@ -658,14 +667,14 @@ class ContactUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Organizatio
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["tabs"] = "vitrina/orgs/tabs.html"
         context["representative_url"] = reverse("organization-members", args=[self.organization.pk])
         context["current_title"] = _("Kontaktų redagavimas")
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-        }
+        context["parent_links"].update(
+            {
+                self.get_success_url(): _("Kontaktai"),
+                None: _("Redaguoti"),
+            }
+        )
         return context
 
     def form_valid(self, form):
@@ -747,6 +756,7 @@ class OrganizationProjectsView(
             Action.UPDATE,
             self.organization,
         )
+        context_data["parent_links"].update({None: _("Panaudojimo atvejai")})
 
         return context_data
 
@@ -786,12 +796,7 @@ class OrganizationBasedAgreementListView(OrganizationBaseViewMixin, PlanMixin, B
 
     def get_context_data(self, **kwargs: Any) -> dict:
         context = super().get_context_data(**kwargs)
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-            None: _("Sutartys"),
-        }
+        context["parent_links"].update({None: _("Sutartys")})
         return context
 
 
@@ -821,14 +826,10 @@ class OrganizationBasedAgreementDetailView(OrganizationBaseViewMixin, BaseAgreem
                 "can_initiate_agreements": False,  # Assignee action, assigner is not able to execute it.
                 "can_sign_agreements": can_sign_agreements(self.request.user, self.agreement),
                 "can_upload_agreement_file": can_upload_agreement_file(self.request.user, self.agreement),
-                "parent_links": {
-                    reverse("home"): _("Pradžia"),
-                    reverse("organization-list"): _("Organizacijos"),
-                    reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-                    reverse("organization-agreement-list", args=[self.organization.pk]): _("Organizacijos sutartys"),
-                    None: _("Sutartis"),
-                },
             }
+        )
+        context["parent_links"].update(
+            {reverse("organization-agreement-list", args=[self.organization.pk]): _("Sutartys"), None: _("Sutartis")}
         )
 
         return context
@@ -850,27 +851,23 @@ class OrganizationBasedAgreementNegotiateMixin(OrganizationBaseViewMixin, Agreem
         context.update(
             {
                 "current_title": self.title,
-                "parent_links": self.get_parent_links(self.title),
                 "agreement": self.agreement,
                 "project": self.agreement.project,
                 "datasets": self.agreement.project.datasets.filter(organization=self.agreement.assigner).all(),
             }
         )
+        context["parent_links"].update(
+            {
+                reverse("organization-agreement-list", args=[self.organization.pk]): _("Sutartys"),
+                reverse(
+                    "organization-agreement-detail", args=[self.organization.pk, self.agreement.pk]
+                ): self.agreement.detail_page_title,
+                None: self.title,
+            }
+        )
+        context.pop("tabs")
 
         return context
-
-    def get_parent_links(self, current_action_name: str) -> dict[str | None, str]:
-        organization_pk = self.organization.pk
-        return {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Panaudojimo atvejai"),
-            reverse("organization-detail", args=[organization_pk]): self.organization,
-            reverse("organization-agreement-list", args=[organization_pk]): _("Sutartys"),
-            reverse(
-                "organization-agreement-detail", args=[organization_pk, self.agreement.pk]
-            ): self.agreement.detail_page_title,
-            None: current_action_name,
-        }
 
 
 class OrganizationBasedAgreementApproveView(AgreementApproveMixin, OrganizationBasedAgreementNegotiateMixin):
@@ -1084,14 +1081,11 @@ class RepresentativeCreateView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["tabs"] = "vitrina/orgs/tabs.html"
         context["representative_url"] = reverse("organization-members", args=[self.organization.pk])
         context["current_title"] = _("Tvarkytojo pridėjimas")
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-        }
+        context["parent_links"].update(
+            {reverse("organization-members", args=[self.organization.pk]): _("Tvarkytojai"), None: _("Pridėti")}
+        )
         return context
 
     def form_valid(self, form):
@@ -1203,14 +1197,11 @@ class RepresentativeUpdateView(
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["tabs"] = "vitrina/orgs/tabs.html"
         context["representative_url"] = reverse("organization-members", args=[self.organization.pk])
         context["current_title"] = _("Tvarkytojo redagavimas")
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-        }
+        context["parent_links"].update(
+            {reverse("organization-members", args=[self.organization.pk]): _("Tvarkytojai"), None: _("Redaguoti")}
+        )
         return context
 
     def form_valid(self, form):
@@ -1501,6 +1492,7 @@ class OrganizationPlanView(PermissionRequiredMixin, PlanMixin, OrganizationBaseV
             self.organization,
         )
         context["selected_tab"] = status
+        context["parent_links"].update({None: _("Planas")})
         return context
 
     def get_plan_object(self):
@@ -1520,12 +1512,9 @@ class OrganizationPlanCreateView(PermissionRequiredMixin, OrganizationBaseViewMi
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Naujas terminas")
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-            reverse("organization-plans", args=[self.organization.pk]): _("Planas"),
-        }
+        context["parent_links"].update(
+            {reverse("organization-plans", args=[self.organization.pk]): _("Planas"), None: _("Pridėti")}
+        )
         return context
 
     def get_form_kwargs(self):
@@ -1617,12 +1606,11 @@ class OrganizationApiKeysView(
         if delete_error:
             context_data["delete_error"] = _("API rakto pašalinimas nesėkmingas.")
 
-        context_data["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-            reverse("organization-apikeys", args=[self.organization.pk]): _("Raktai"),
-        }
+        context_data["parent_links"].update(
+            {
+                None: _("Raktai"),
+            }
+        )
         context_data["can_manage_keys"] = has_perm(self.request.user, Action.MANAGE_KEYS, self.organization)
         if msg:
             context_data["success_message"] = msg
@@ -1657,12 +1645,9 @@ class OrganizationApiKeysDetailView(
 
     def get_context_data(self, **kwargs):
         context_data = super().get_context_data(**kwargs)
-        context_data["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-            reverse("organization-apikeys", args=[self.organization.pk]): _("Raktai"),
-        }
+        context_data["parent_links"].update(
+            {reverse("organization-apikeys", args=[self.organization.pk]): _("Raktai"), None: _("Raktas")}
+        )
         api_key = ApiKey.objects.filter(pk=self.api_key.pk).get()
         context_data["key"] = api_key
 
@@ -1779,12 +1764,9 @@ class OrganizationApiKeysCreateView(PermissionRequiredMixin, OrganizationBaseVie
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Naujas raktas")
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-            reverse("organization-apikeys", args=[self.organization.pk]): _("Raktai"),
-        }
+        context["parent_links"].update(
+            {reverse("organization-apikeys", args=[self.organization.pk]): _("Raktai"), None: _("Pridėti")}
+        )
         return context
 
     def form_valid(self, form):
@@ -2815,12 +2797,9 @@ class OrganizationPlansHistoryView(PlanMixin, OrganizationBaseViewMixin, History
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-            reverse("organization-plans", args=[self.organization.pk]): _("Planas"),
-        }
+        context["parent_links"].update(
+            {reverse("organization-plans", args=[self.organization.pk]): _("Planas"), None: _("Istorija")}
+        )
         return context
 
 
@@ -2835,11 +2814,7 @@ class OrganizationMergeView(PermissionRequiredMixin, OrganizationBaseViewMixin, 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["current_title"] = _("Organizacijų sujungimas")
-        context["parent_links"] = {
-            reverse("home"): _("Pradžia"),
-            reverse("organization-list"): _("Organizacijos"),
-            reverse("organization-detail", args=[self.organization.pk]): self.organization.title,
-        }
+        context["parent_links"].update({None: _("Organizacijų sujungimas")})
         context["form"] = OrganizationMergeForm()
         return context
 

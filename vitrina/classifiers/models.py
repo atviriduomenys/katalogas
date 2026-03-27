@@ -245,7 +245,7 @@ class Concept(TranslatableModel, UUIDBaseModel):
         verbose_name_plural = _("Sąvokos")
 
     def __str__(self) -> str:
-        return self.code
+        return self.label
 
     @property
     def translated_label(self) -> str:

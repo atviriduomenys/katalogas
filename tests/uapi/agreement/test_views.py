@@ -21,7 +21,6 @@ from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.exceptions import InvalidAdocError
 from vitrina.smart_contracts.factories import AgreementFactory, AgreementFileFactory
-from vitrina.uapi.models import Agent
 from vitrina.uapi.pagination import UAPIPagination
 
 pytestmark = pytest.mark.django_db
@@ -257,11 +256,14 @@ class TestAgreementViewSetAuthorization:
 
 class TestAgreementViewSetList:
     def test_return_agreements_only_from_agent_organization(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
+        self,
+        app: DjangoTestApp,
+        valid_token: str,
+        agreement_url: str,
+        dataset: Dataset,
     ):
         different_organization = OrganizationFactory()
-        agent = Agent.objects.get(organization=organization)
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         AgreementFactory(project=use_case, assigner=different_organization, status=AgreementStatuses.SIGNED)
         response = app.get(
             agreement_url,
@@ -272,9 +274,7 @@ class TestAgreementViewSetList:
         assert response.status_code == status.HTTP_200_OK
         assert response.json == {"_data": []}
 
-    def test_return_empty_if_agreement_does_not_exist(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
-    ):
+    def test_return_empty_if_agreement_does_not_exist(self, app: DjangoTestApp, valid_token: str, agreement_url: str):
         response = app.get(
             agreement_url,
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
@@ -302,9 +302,9 @@ class TestAgreementViewSetList:
         valid_token: str,
         agreement_url: str,
         incorrect_status: AgreementStatuses,
+        dataset: Dataset,
     ):
-        agent = Agent.objects.get(organization=organization)
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         AgreementFactory(project=use_case, assigner=organization, status=incorrect_status)
         response = app.get(
             agreement_url,
@@ -315,9 +315,10 @@ class TestAgreementViewSetList:
         assert response.status_code == status.HTTP_200_OK
         assert response.json == {"_data": []}
 
-    def test_return_agreements_related_to_agent_service(
-        self, app: DjangoTestApp, organization: Organization, dataset: Dataset, valid_token: str, agreement_url: str
+    def test_do_not_return_agreements_unrelated_to_agent_service(
+        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
     ):
+        dataset = DatasetFactory(organization=organization)
         use_case = ProjectFactory(datasets=[dataset])
         AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
         response = app.get(
@@ -337,9 +338,9 @@ class TestAgreementViewSetList:
         valid_token: str,
         agreement_url: str,
         correct_status: AgreementStatuses,
+        dataset: Dataset,
     ):
-        agent = Agent.objects.get(organization=organization)
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         agreement = AgreementFactory(project=use_case, assigner=organization, status=correct_status)
         agreement_file = AgreementFileFactory(agreement=agreement)
         use_case_client = UseCaseClientFactory(use_case=use_case)
@@ -384,11 +385,15 @@ class TestAgreementViewSetList:
         }
 
     def test_success_when_dataset_is_agent_service_child(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        valid_token: str,
+        agreement_url: str,
+        dataset: Dataset,
     ):
-        agent = Agent.objects.get(organization=organization)
         child_dataset = DatasetFactory(organization=organization)
-        child_dataset.move(agent.service, pos="sorted-child")
+        child_dataset.move(dataset, pos="sorted-child")
         use_case = ProjectFactory(datasets=[child_dataset])
         agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
         agreement_file = AgreementFileFactory(agreement=agreement)
@@ -421,11 +426,15 @@ class TestAgreementViewSetList:
         }
 
     def test_400_when_given_dataset_uuid_is_not_related_to_agent_service(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        valid_token: str,
+        agreement_url: str,
+        dataset: Dataset,
     ):
         non_existig_dataset_uuid = str(uuid4())
-        agent = Agent.objects.get(organization=organization)
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
         response = app.get(
             f"{agreement_url}?datasets._id={non_existig_dataset_uuid}",
@@ -437,13 +446,17 @@ class TestAgreementViewSetList:
         assert response.json["message"] == f"datasets._id values: {non_existig_dataset_uuid} are invalid."
 
     def test_filter_dataset_by_dataset_uuid(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        valid_token: str,
+        agreement_url: str,
+        dataset: Dataset,
     ):
-        agent = Agent.objects.get(organization=organization)
         child_dataset = DatasetFactory(organization=organization)
-        child_dataset.move(agent.service, pos="sorted-child")
+        child_dataset.move(dataset, pos="sorted-child")
 
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         use_case2 = ProjectFactory(datasets=[child_dataset])
         agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
         agreement2 = AgreementFactory(project=use_case2, assigner=organization, status=AgreementStatuses.SIGNED)
@@ -451,7 +464,7 @@ class TestAgreementViewSetList:
         AgreementFileFactory(agreement=agreement2)
 
         response = app.get(
-            f"{agreement_url}?datasets._id={agent.service.uuid}",
+            f"{agreement_url}?datasets._id={dataset.uuid}",
             extra_environ={"HTTP_AUTHORIZATION": f"Bearer {valid_token}"},
         )
 
@@ -479,17 +492,21 @@ class TestAgreementViewSetList:
         }
 
     def test_filter_dataset_by_multiple_dataset_uuids(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        valid_token: str,
+        agreement_url: str,
+        dataset: Dataset,
     ):
-        agent = Agent.objects.get(organization=organization)
         child_dataset = DatasetFactory(organization=organization)
         child_dataset2 = DatasetFactory(organization=organization)
-        child_dataset.move(agent.service, pos="sorted-child")
+        child_dataset.move(dataset, pos="sorted-child")
         child_dataset.refresh_from_db()
         child_dataset2.move(child_dataset, pos="sorted-child")
         child_dataset2.refresh_from_db()
 
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         use_case2 = ProjectFactory(datasets=[child_dataset])
         use_case3 = ProjectFactory(datasets=[child_dataset])
         agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
@@ -545,10 +562,14 @@ class TestAgreementViewSetList:
         }
 
     def test_returns_latest_agreement_adoc_file(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        valid_token: str,
+        agreement_url: str,
+        dataset: Dataset,
     ):
-        agent = Agent.objects.get(organization=organization)
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
         AgreementFileFactory(agreement=agreement)
         agreement_file2 = AgreementFileFactory(agreement=agreement)
@@ -563,10 +584,14 @@ class TestAgreementViewSetList:
         )
 
     def test_400_if_agreement_file_scopes_cannot_be_extracted(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        valid_token: str,
+        agreement_url: str,
+        dataset: Dataset,
     ):
-        agent = Agent.objects.get(organization=organization)
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
         agreement_file = AgreementFileFactory(agreement=agreement)
 
@@ -585,10 +610,14 @@ class TestAgreementViewSetList:
         )
 
     def test_400_if_agreement_adoc_does_not_exist(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        valid_token: str,
+        agreement_url: str,
+        dataset: Dataset,
     ):
-        agent = Agent.objects.get(organization=organization)
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         agreement = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
         response = app.get(
             agreement_url,
@@ -600,10 +629,14 @@ class TestAgreementViewSetList:
         assert response.json["message"] == (f"Agreement adoc file does not exist for agreement (_id={agreement.uuid})")
 
     def test_returns_paginated_response(
-        self, app: DjangoTestApp, organization: Organization, valid_token: str, agreement_url: str
+        self,
+        app: DjangoTestApp,
+        organization: Organization,
+        valid_token: str,
+        agreement_url: str,
+        dataset: Dataset,
     ):
-        agent = Agent.objects.get(organization=organization)
-        use_case = ProjectFactory(datasets=[agent.service])
+        use_case = ProjectFactory(datasets=[dataset])
         agreement1 = AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)
         agreement_file1 = AgreementFileFactory(agreement=agreement1)
         AgreementFactory(project=use_case, assigner=organization, status=AgreementStatuses.SIGNED)

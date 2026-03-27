@@ -67,4 +67,5 @@ body:
         - [ ] **Testai** parašyti / atnaujinti
         - [ ] **Dokumentacija atnaujinta** (jei reikia)
         - [ ] Padeployinta ir ištestuota **Laikinojoj testinėj** aplinkoj
+        - [ ] Pokyčiai atsispindi Partnerių API, UDTS API ir RDF eksporte.
         - [ ] CHANGES.rst

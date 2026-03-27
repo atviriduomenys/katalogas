@@ -3,12 +3,18 @@ from datetime import datetime
 import pytest
 import pytz
 from django.conf import settings
+from django.contrib.contenttypes.models import ContentType
+from django.urls import reverse
 
 
 from vitrina.classifiers.factories import ConceptFactory
-from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
+from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory, DatasetServiceFactory
 from vitrina.datasets.models import DCATResourceSubclass, Dataset
-from vitrina.orgs.factories import OrganizationFactory
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.models import Representative
+from vitrina.users.factories import UserFactory
+from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
+from vitrina.uapi.models import Environment
 
 pytestmark = pytest.mark.django_db
 
@@ -70,6 +76,294 @@ class TestDatasets:
 
         value = getattr(dataset, field_name)
         assert value == concept
+
+    def test_get_effective_user_role_via_organization_returns_none_when_user_has_no_org_memberships(self):
+        dataset = DatasetFactory()
+        user = UserFactory()
+        assert dataset.get_effective_user_role_via_organization(user) is None
+
+    def test_get_effective_user_role_via_organization_returns_none_when_user_org_is_not_a_representative(self):
+        dataset = DatasetFactory()
+        user = UserFactory()
+        unrelated_org = OrganizationFactory()
+        org_ct = ContentType.objects.get_for_model(unrelated_org)
+        RepresentativeFactory(
+            content_type=org_ct,
+            object_id=unrelated_org.pk,
+            user=user,
+            organization=None,
+        )
+        assert dataset.get_effective_user_role_via_organization(user) is None
+
+    def test_get_effective_user_role_via_organization_returns_none_when_user_belongs_to_multiple_orgs_but_none_are_representatives(
+        self,
+    ):
+        dataset = DatasetFactory()
+        user = UserFactory()
+
+        for _ in range(3):
+            org = OrganizationFactory()
+            org_ct = ContentType.objects.get_for_model(org)
+            RepresentativeFactory(
+                content_type=org_ct,
+                object_id=org.pk,
+                user=user,
+                organization=None,
+            )
+
+        assert dataset.get_effective_user_role_via_organization(user) is None
+
+    def test_get_effective_user_role_via_organization_returns_role_when_user_org_represents_dataset(self):
+        dataset = DatasetFactory()
+        representative_org = OrganizationFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            role=Representative.RESOURCE_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=org_ct,
+            object_id=representative_org.pk,
+            role=Representative.RESOURCE_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.RESOURCE_MANAGER
+
+    def test_get_effective_user_role_via_organization_returns_role_when_user_org_represents_dataset_organization(self):
+        dataset = DatasetFactory()
+        representative_org = OrganizationFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset.organization),
+            object_id=dataset.organization.pk,
+            role=Representative.RESOURCE_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=org_ct,
+            object_id=representative_org.pk,
+            role=Representative.RESOURCE_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.RESOURCE_MANAGER
+
+    def test_get_effective_user_role_via_organization_returns_role_when_user_org_represents_ancestor_dataset(self):
+        parent = DatasetFactory()
+        child = DatasetFactory()
+        child.move(parent, pos="sorted-child")
+        child.refresh_from_db()
+
+        representative_org = OrganizationFactory()
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(parent),
+            object_id=parent.pk,
+            role=Representative.RESOURCE_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=org_ct,
+            object_id=representative_org.pk,
+            role=Representative.RESOURCE_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert child.get_effective_user_role_via_organization(user) == Representative.RESOURCE_MANAGER
+
+    def test_get_effective_user_role_via_organization_returns_role_when_user_org_represents_ancestor_organization(self):
+        parent = DatasetFactory()
+        child = DatasetFactory(organization=parent.organization)
+        child.move(parent, pos="sorted-child")
+        child.refresh_from_db()
+
+        representative_org = OrganizationFactory()
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(parent.organization),
+            object_id=parent.organization.pk,
+            role=Representative.RESOURCE_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=org_ct,
+            object_id=representative_org.pk,
+            role=Representative.RESOURCE_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert child.get_effective_user_role_via_organization(user) == Representative.RESOURCE_MANAGER
+
+    def test_get_effective_user_role_via_organization_organization_role_lower_than_user(self):
+        dataset = DatasetFactory()
+        representative_org = OrganizationFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            role=Representative.OPEN_DATA_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=org_ct,
+            object_id=representative_org.pk,
+            role=Representative.RESOURCE_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.OPEN_DATA_MANAGER
+
+    @pytest.mark.parametrize(
+        "role",
+        [
+            Representative.RESOURCE_MANAGER,
+            Representative.OPEN_DATA_MANAGER,
+        ],
+    )
+    def test_get_effective_user_role_via_organization_returns_correct_role_for_all_role_types(self, role):
+        dataset = DatasetFactory()
+        representative_org = OrganizationFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            role=role,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=org_ct,
+            object_id=representative_org.pk,
+            role=role,
+            user=user,
+            organization=None,
+        )
+
+        assert dataset.get_effective_user_role_via_organization(user) == role
+
+    def test_get_effective_user_role_via_organization_open_data_manager_org_restricts_resource_manager_user(self):
+        dataset = DatasetFactory()
+        representative_org = OrganizationFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            role=Representative.OPEN_DATA_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=org_ct,
+            object_id=representative_org.pk,
+            role=Representative.RESOURCE_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.OPEN_DATA_MANAGER
+
+    def test_get_effective_user_role_via_organization_resource_manager_org_preserves_open_data_manager_user(self):
+        dataset = DatasetFactory()
+        representative_org = OrganizationFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            role=Representative.RESOURCE_MANAGER,
+            organization=representative_org,
+            user=None,
+        )
+
+        user = UserFactory()
+        org_ct = ContentType.objects.get_for_model(representative_org)
+        RepresentativeFactory(
+            content_type=org_ct,
+            object_id=representative_org.pk,
+            role=Representative.OPEN_DATA_MANAGER,
+            user=user,
+            organization=None,
+        )
+
+        assert dataset.get_effective_user_role_via_organization(user) == Representative.OPEN_DATA_MANAGER
+
+    def test_data_service_get_endpoint_urls_without_agent(self):
+        endpoint_url = "http://www.test.com"
+        data_service = DatasetServiceFactory(endpoint_url=endpoint_url)
+
+        endpoint_urls = data_service.get_endpoint_urls()
+        assert len(endpoint_urls) == 1
+        url_name, url = endpoint_urls[0]
+        assert not url_name
+        assert url == endpoint_url
+
+    def test_get_endpoint_urls_with_agent(self):
+        endpoint_url = "http://www.endpoint.com"
+        gate_url = "http://www.gate.com"
+        agent = AgentFactory()
+        env_testing = AgentEnvironmentFactory(agent=agent, agent_address=endpoint_url, environment=Environment.TESTING)
+        env_development = AgentEnvironmentFactory(
+            agent=agent, agent_address=endpoint_url, api_gate_server_url=gate_url, environment=Environment.DEVELOPMENT
+        )
+        data_service = DatasetServiceFactory(agent=agent)
+
+        endpoint_urls = data_service.get_endpoint_urls()
+        assert len(endpoint_urls) == 2
+        test_url_name, test_url = endpoint_urls[0]
+        dev_url_name, dev_url = endpoint_urls[1]
+        assert test_url_name == env_testing.get_environment_display()
+        assert test_url == env_testing.agent_address
+        assert dev_url_name == env_development.get_environment_display()
+        assert dev_url == env_development.api_gate_server_url
+
+    def test_get_endpoint_description_without_agent(self):
+        url = "http://www.test.com"
+        data_service = DatasetServiceFactory(endpoint_description=url)
+
+        description_url = data_service.get_endpoint_description()
+
+        assert description_url == url
+
+    def test_get_endpoint_description_with_agent(self):
+        agent = AgentFactory()
+        data_service = DatasetServiceFactory(agent=agent)
+
+        endpoint_description = data_service.get_endpoint_description()
+
+        assert endpoint_description == reverse(
+            "dataset-structure-export-openapi", args=[data_service.pk, data_service.latest_version().pk]
+        )
 
 
 class TestDCATResourceSubclass:

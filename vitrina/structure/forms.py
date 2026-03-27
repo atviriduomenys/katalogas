@@ -4,6 +4,7 @@ import markdown
 from django import forms
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Field, Submit, HTML
+from django.contrib.auth.models import AnonymousUser
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When, Q, Count
@@ -16,9 +17,10 @@ from django_select2.forms import ModelSelect2MultipleWidget, ModelSelect2Widget
 from lark import ParseError
 
 from vitrina.classifiers.models import Status
+from vitrina.datasets.structure import Dataset
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import spyna, AccessType
-from vitrina.structure.helpers import is_time_unit, is_si_unit
+from vitrina.structure.helpers import is_time_unit, is_si_unit, is_quoted
 from vitrina.structure.models import (
     EnumItem,
     Metadata,
@@ -28,7 +30,10 @@ from vitrina.structure.models import (
     Version,
     VersionStatus,
     VersionType,
+    Enum,
 )
+from vitrina.structure.utils import TypeCheckerError
+from vitrina.users.models import User
 
 
 class ModelChoiceTypeField(forms.ModelChoiceField):
@@ -161,10 +166,12 @@ class EnumForm(forms.ModelForm):
             "description",
         )
 
-    def __init__(self, prop=None, *args, **kwargs):
+    def __init__(self, user: User | AnonymousUser, prop: Property, enum: Enum, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
+        self.user = user
         self.prop = prop
+        self.enum = enum
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "enum-form"
@@ -201,19 +208,58 @@ class EnumForm(forms.ModelForm):
         else:
             self.initial["visibility"] = "None"
 
+        property_metadata = prop.metadata.first() if prop else None
+        organization = property_metadata.dataset.organization if property_metadata else None
+        dataset = property_metadata.dataset if property_metadata else None
+        is_open_data_representative = self.user and (
+            self.user.is_open_data_representative_for(organization)
+            or self.user.is_open_data_representative_for(dataset)
+        )
+
+        if is_open_data_representative:
+            self.fields["visibility"].choices = [
+                (None, _get_level_title(_("Nepasirinkta"))),
+                (2, _get_level_title(_("Naudojamas LT lygmeniu (package)"))),
+                (3, _get_level_title(_("Naudojamas EU lygmeniu (public)"))),
+            ]
+            current_visibility = self.initial.get("visibility")
+            if current_visibility == "None":
+                current_visibility = None
+            allowed_visibility_values = [choice[0] for choice in self.fields["visibility"].choices]
+            if current_visibility not in allowed_visibility_values:
+                self.initial["visibility"] = "None"
+
+    def _is_value_not_unique(self, value: tuple[str, str], exclude_enum_item_id: int | None = None) -> bool:
+        enum_items = self.enum.enumitem_set.all().prefetch_related("metadata")
+        if exclude_enum_item_id:
+            enum_items = enum_items.exclude(id=exclude_enum_item_id)
+        for enum_item in enum_items:
+            if not (metadata := enum_item.metadata.first()):
+                continue
+            if (metadata.source, metadata.prepare) == value:
+                return True
+
+        return False
+
     def clean_value(self):
-        value = self.cleaned_data.get("value")
-        if value:
-            if metadata := self.prop.metadata.first():
-                if metadata.type == "integer":
-                    try:
-                        int(value)
-                    except ValueError:
-                        raise ValidationError(_("Reikšmė turi būti integer tipo."))
+        if not (value := self.cleaned_data.get("value")):
+            return value
+
+        if metadata := self.prop.metadata.first():
+            if metadata.type == "string" and not is_quoted(value):
+                value = f'"{value}"'
+
+            checker = metadata.get_type_checker()
             try:
-                spyna.parse(value)
-            except ParseError as e:
+                checker.check_enum_item_value(value)
+            except TypeCheckerError as e:
                 raise ValidationError(e)
+
+        try:
+            spyna.parse(value)
+        except ParseError as e:
+            raise ValidationError(e)
+
         return value
 
     def clean_description(self):
@@ -254,6 +300,27 @@ class EnumForm(forms.ModelForm):
                     )
 
         return visibility
+
+    def clean(self) -> dict:
+        cleaned_data = super().clean()
+
+        if self.errors:
+            return cleaned_data
+
+        source = cleaned_data.get("source")
+        prepare = cleaned_data.get("value")
+
+        # If enum does not exist yet, there is no point checking for uniqueness of its items
+        exclude_id = self.instance.id if self.instance and self.instance.pk else None
+        if self.enum and self._is_value_not_unique((source, prepare), exclude_enum_item_id=exclude_id):
+            error_msg = _(
+                'Galima reikšmė "{prepare}" su reikšme šaltinyje "{source}" jau egzistuoja.'.format(
+                    prepare=prepare, source=source
+                )
+            )
+            self.add_error("value", error_msg)
+
+        return cleaned_data
 
 
 MODEL_LEVEL_CHOICES = (
@@ -412,6 +479,12 @@ class BaseRefWidget(OrderMixin, ModelSelect2MultipleWidget):
     model = Property
     search_fields = ["metadata__name__icontains"]
     dependent_fields = {"base": "model"}
+
+
+class RefPropsWidget(OrderMixin, ModelSelect2MultipleWidget):
+    model = Property
+    search_fields = ["metadata__name__icontains"]
+    dependent_fields = {"ref": "model"}
 
 
 def _check_prepare_ast(ast, model_props, bind=False):
@@ -575,8 +648,9 @@ class ModelCreateForm(forms.ModelForm):
             "is_parameterized",
         )
 
-    def __init__(self, dataset, metadata_version, *args, **kwargs):
+    def __init__(self, user: User | AnonymousUser, dataset: Dataset, metadata_version: Version, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.user = user
         self.dataset = dataset
         self.metadata_version = metadata_version
         self.helper = FormHelper()
@@ -612,6 +686,20 @@ class ModelCreateForm(forms.ModelForm):
         self.initial["base_level"] = "None"
         self.initial["visibility"] = "None"
         self.initial["status"] = self.instance.status
+
+        organization = dataset.organization
+
+        is_open_data_representative = self.user and (
+            self.user.is_open_data_representative_for(organization)
+            or self.user.is_open_data_representative_for(dataset)
+        )
+
+        if is_open_data_representative:
+            self.fields["visibility"].choices = [
+                (None, _get_level_title(_("Nepasirinkta"))),
+                (2, _get_level_title(_("Naudojamas LT lygmeniu (package)"))),
+                (3, _get_level_title(_("Naudojamas EU lygmeniu (public)"))),
+            ]
 
     def clean_level(self):
         level = self.cleaned_data.get("level")
@@ -748,10 +836,10 @@ class ModelUpdateForm(ModelCreateForm):
             "comment",
         )
 
-    def __init__(self, dataset, metadata_version, *args, **kwargs):
-        super().__init__(dataset, metadata_version, *args, **kwargs)
+    def __init__(self, user: User | AnonymousUser, dataset: Dataset, metadata_version: Version, *args, **kwargs):
+        super().__init__(user, dataset, metadata_version, *args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
-
+        self.user = user
         self.helper.layout = Layout(
             Field("model_id"),
             Field("name"),
@@ -1023,6 +1111,7 @@ class PropertyForm(forms.ModelForm):
             "type",
             "type_args",
             "ref",
+            "ref_props",
             "ref_others",
             "source",
             "prepare",
@@ -1036,9 +1125,18 @@ class PropertyForm(forms.ModelForm):
             "description",
         )
 
-    def __init__(self, model, *args, **kwargs):
+    ref_props = OrderedModelMultipleChoiceField(
+        label=_("Ryšio raktai"),
+        required=False,
+        widget=RefPropsWidget(attrs={"data-width": "100%", "data-minimum-input-length": 0, "style": "width: 100%"}),
+        queryset=Property.objects.all(),
+        help_text=_("Savybės iš susieto modelio, kurios naudojamos kaip ryšio raktas."),
+    )
+
+    def __init__(self, user: User | AnonymousUser, model: Model, *args, **kwargs):
         super().__init__(*args, **kwargs)
         instance = self.instance if self.instance and self.instance.pk else None
+        self.user = user
         self.model = model
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
@@ -1049,6 +1147,7 @@ class PropertyForm(forms.ModelForm):
             Field("type"),
             Field("type_args"),
             Field("ref"),
+            Field("ref_props"),
             Field("ref_others"),
             Field("source"),
             Field("prepare"),
@@ -1079,6 +1178,9 @@ class PropertyForm(forms.ModelForm):
             self.initial["status"] = instance.status
             if instance.object.ref_model:
                 self.initial["ref"] = instance.object.ref_model
+                self.initial["ref_props"] = instance.object.property_list.order_by("order").values_list(
+                    "property", flat=True
+                )
                 self.initial["ref_others"] = None
             else:
                 self.initial["ref_others"] = instance.ref
@@ -1086,6 +1188,22 @@ class PropertyForm(forms.ModelForm):
 
             if self.instance.object not in self.model.get_props_excluding_base():
                 self.fields["name"].widget.attrs["readonly"] = True
+
+        organization = model.dataset.organization
+        is_open_data_representative = self.user and (
+            self.user.is_open_data_representative_for(organization)
+            or self.user.is_open_data_representative_for(self.model.dataset)
+        )
+
+        if is_open_data_representative:
+            self.fields["visibility"].choices = [
+                (None, _get_level_title(_("Nepasirinkta"))),
+                (2, _get_level_title(_("Naudojamas LT lygmeniu (package)"))),
+                (3, _get_level_title(_("Naudojamas EU lygmeniu (public)"))),
+            ]
+            allowed_visibility_values = [choice[0] for choice in self.fields["visibility"].choices]
+            if self.initial.get("visibility") not in allowed_visibility_values:
+                self.initial["visibility"] = "None"
 
     def clean_name(self):
         name = self.cleaned_data.get("name")

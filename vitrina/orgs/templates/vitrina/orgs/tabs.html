@@ -30,7 +30,7 @@
                 {% translate "Panaudojimo atvejai" %}
             </a>
         </li>
-        <li class="{%if request.resolver_match.url_name in 'organization-agreement-list,organization-agreement-detail' %} is-active {% endif %}">
+        <li class="{% if 'organization-agreement' in request.resolver_match.url_name %} is-active {% endif %}">
             <a href="{% url 'organization-agreement-list' organization.id %}">
                 {% translate "Sutartys" %}
             </a>
@@ -43,14 +43,14 @@
             </li>
         {% endif %}
         {% if can_view_agents %}
-            <li class="{% if request.resolver_match.url_name == 'agent-list' or request.resolver_match.url_name == 'agent-create' or request.resolver_match.url_name == 'agent-update' %} is-active {% endif %}">
+            <li class="{% if request.resolver_match.url_name in 'request-history, agent-list, agent-detail, agent-create, agent-update, agent-delete, agent-env-create, agent-env-update, agent-env-detail' %} is-active {% endif %}">
                 <a href="{% url 'agent-list' organization.id %}">
                     {% translate "Agentai" %}
                 </a>
             </li>
         {% endif %}
         {% if can_view_keys %}
-            <li class="{% if request.resolver_match.url_name == 'organization-apikeys' %} is-active {% endif %}">
+            <li class="{% if 'organization-apikeys' in request.resolver_match.url_name %} is-active {% endif %}">
                 <a href="{% url 'organization-apikeys' organization.id %}">
                     <span class="has-tooltip-right" data-tooltip="{% translate 'Raktas duomenų įkėlimui į saugyklą' %}">
                         {% translate "Raktai" %}

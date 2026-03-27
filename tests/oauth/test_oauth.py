@@ -19,7 +19,7 @@ from vitrina.api.oauth import (
     OAuthClientAuthenticator,
 )
 from vitrina.orgs.factories import OrganizationFactory
-from vitrina.uapi.factories import AgentFactory
+from vitrina.uapi.factories import AgentEnvironmentFactory
 
 
 class TestView:
@@ -262,7 +262,7 @@ def test_token_has_valid_organization_claim_has_permission_success(
     decoded_jwt: JWTClaims,
 ):
     organization = OrganizationFactory(kind="org", name="vssa")
-    AgentFactory(organization=organization, oauth_client_id=decoded_jwt["sub"])
+    AgentEnvironmentFactory(agent__organization=organization, oauth_client_id=decoded_jwt["sub"])
 
     request = request_factory.get("/")
     request.auth = decoded_jwt

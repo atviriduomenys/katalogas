@@ -1,4 +1,7 @@
 from django.contrib.contenttypes.models import ContentType
+from django.db.models import Prefetch, Exists, OuterRef
+from vitrina.resources.models import DatasetDistribution
+from vitrina.structure.models import Model, Property
 from haystack.fields import (
     CharField,
     IntegerField,
@@ -39,7 +42,7 @@ class DatasetIndex(SearchIndex, Indexable):
     project_title = MultiValueField(model_attr="get_project_title_list", boost=0.9)
     category = MultiValueField(model_attr="category__pk", faceted=True, boost=0.8)
     organization = MultiValueField(model_attr="organization__pk", faceted=True, null=True, boost=0.8)
-    resource_description = MultiValueField(model_attr="get_resource_titles", boost=0.7)
+    resource_description = MultiValueField(model_attr="get_resource_description", boost=0.7)
     model_description = MultiValueField(model_attr="get_model_title_description", boost=0.7)
     property_description = MultiValueField(model_attr="get_property_title_description", boost=0.7)
     request_description = MultiValueField(model_attr="get_request_title_description", boost=0.7)
@@ -71,6 +74,7 @@ class DatasetIndex(SearchIndex, Indexable):
         return Dataset
 
     def index_queryset(self, using=None):
+        DatasetTranslation = Dataset._parler_meta.root_model
         return (
             self.get_model()
             .objects.all()
@@ -78,9 +82,44 @@ class DatasetIndex(SearchIndex, Indexable):
                 deleted__isnull=True,
                 deleted_on__isnull=True,
                 organization_id__isnull=False,
-                translations__title__isnull=False,
             )
-            .distinct()
+            .filter(Exists(DatasetTranslation.objects.filter(master_id=OuterRef("pk"), title__isnull=False)))
+            .select_related(
+                "organization",
+                "organization__jurisdiction",
+                "frequency",
+                "subclass",
+            )
+            .prefetch_related(
+                "tags",
+                "translations",
+                "subclass__translations",
+                "category",
+                "category__datasetgroupcategoryuri_set",
+                "excluded_groups",
+                "type",
+                "part_of",
+                "related_datasets",
+                "metadata",
+                "representatives",
+                "organization__representatives",
+                "project_set",
+                Prefetch(
+                    "datasetdistribution_set",
+                    queryset=DatasetDistribution.objects.select_related("format").prefetch_related("translations"),
+                ),
+                Prefetch(
+                    "model_set",
+                    queryset=Model.objects.prefetch_related(
+                        "metadata",
+                        Prefetch(
+                            "model_properties",
+                            queryset=Property.objects.prefetch_related("metadata"),
+                        ),
+                    ),
+                ),
+                Prefetch("dataset_request", queryset=Request.objects.prefetch_related("translations")),
+            )
         )
 
     def prepare_category(self, obj):

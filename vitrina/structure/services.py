@@ -14,7 +14,7 @@ import vitrina.datasets.structure as struct
 
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
-from django.utils.translation import gettext_lazy as _, get_language
+from django.utils.translation import gettext, gettext_lazy as _, get_language
 
 from vitrina import settings
 from vitrina.classifiers.models import Status
@@ -124,11 +124,7 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
     )
     loaded_metadata = []
     _clean_errors(dataset.current_structure)
-    datasets = list(state.manifest.datasets.values())
-    for order, meta in enumerate(datasets, 1):
-        is_last = order == len(datasets)
-        if not _should_process_manifest_dataset(meta, dataset, is_last):
-            continue
+    for order, meta in _get_manifest_datasets_to_process(state, dataset):
         if (
             metadata := Metadata.objects.filter(content_type=ct, name=meta.name, metadata_version=metadata_version)
             .exclude(dataset=dataset)
@@ -172,9 +168,9 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
     return metadata_version
 
 
-def _should_process_manifest_dataset(meta: struct.Dataset, dataset: Dataset, is_last: bool) -> bool:
+def _get_manifest_datasets_to_process(state: struct.State, dataset: Dataset) -> list[tuple[int, struct.Dataset]]:
     """
-    Decide whether to process a manifest dataset entry, accounting for dependency exports.
+    Get manifest datasets to process, accounting for dependency exports.
 
     - Export with dependencies: dependent datasets appear first, main dataset is last.
     - First import: dataset.name may be empty/generic, so can't match by name.
@@ -188,7 +184,13 @@ def _should_process_manifest_dataset(meta: struct.Dataset, dataset: Dataset, is_
     - Don't match dataset.name (different datasets).
     - Are not last (main dataset is always last in export).
     """
-    return meta.name == dataset.name or is_last
+    datasets = list(state.manifest.datasets.values())
+    result: list[tuple[int, struct.Dataset]] = []
+    for order, meta in enumerate(datasets, 1):
+        is_last = order == len(datasets)
+        if meta.name == dataset.name or is_last:
+            result.append((order, meta))
+    return result
 
 
 def _load_prefixes(
@@ -257,6 +259,7 @@ def _load_enums(
                 if en := existing_enum_items.filter(
                     metadata__content_type=enum_ct,
                     metadata__name=meta.name,
+                    metadata__source=meta.source,
                     metadata__prepare=meta.prepare,
                     metadata__dataset=dataset,
                 ).first():
@@ -414,7 +417,7 @@ def _load_comments(dataset: Dataset, comments: List[struct.Comment], obj: models
             content_type=ct,
             object_id=obj.pk,
             type=Comment.STRUCTURE,
-            body=meta.title,
+            body=meta.description if meta.description else "",
         )
         comment, metadata = _create_or_update_metadata(dataset, meta, comment, order)
         loaded_comments.append(comment)
@@ -468,22 +471,9 @@ def _create_or_update_metadata(
     obj_meta: struct.Metadata,
     obj: models.Model,
     order: int = None,
-    use_existing_meta: bool = False,
     metadata_version: Version = None,
 ) -> Tuple[models.Model, struct.Metadata]:
     ct = ContentType.objects.get_for_model(obj)
-
-    if (
-        use_existing_meta
-        and obj.pk
-        and Metadata.objects.filter(
-            object_id=obj.pk, content_type=ct, dataset=dataset, metadata_version=metadata_version
-        ).exists()
-    ):
-        metadata = Metadata.objects.filter(
-            object_id=obj.pk, content_type=ct, dataset=dataset, metadata_version=metadata_version
-        ).first()
-        return metadata.object, metadata
 
     if (
         obj_meta.id
@@ -613,14 +603,22 @@ def _link_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata
 
 def _link_resource_distributions(dataset_meta: struct.Dataset, dataset: Dataset, metadata_version: Version):
     """Link each resource as a separate distribution."""
+    distribution_content_type = ContentType.objects.get_for_model(DatasetDistribution)
     for i, resource_meta in enumerate(dataset_meta.resources.values()):
         title = resource_meta.title or dataset_meta.title or resource_meta.name
 
-        distribution = DatasetDistribution.objects.filter(
-            dataset=dataset,
-            download_url=resource_meta.source,
-            metadata_version=metadata_version,
-        ).first()
+        distribution = (
+            DatasetDistribution.objects.filter(
+                dataset=dataset,
+                download_url=resource_meta.source,
+                metadata_version=metadata_version,
+            )
+            .filter(
+                Q(metadata__name=resource_meta.name, metadata__content_type=distribution_content_type)
+                | Q(metadata__isnull=True)
+            )
+            .first()
+        )
 
         if not distribution:
             distribution = _create_distribution_with_status_update(
@@ -643,11 +641,8 @@ def _link_resource_distributions(dataset_meta: struct.Dataset, dataset: Dataset,
             resource_meta,
             distribution,
             i,
-            use_existing_meta=True,
             metadata_version=metadata_version,
         )
-        metadata.name = resource_meta.name
-        metadata.save()
 
         _load_params(dataset, resource_meta.params, distribution, metadata_version)
         _clean_errors(distribution)
@@ -753,30 +748,46 @@ def _link_models(dataset: Dataset, dataset_meta: struct.Dataset, metadata_versio
             model.update_level()
 
 
+def resolve_base_model(base_metadata: struct.Base, metadata_version: Version) -> Model | None:
+    """Retrieves a base model based on metadata, prioritizing specific version or stable status.
+
+    This function attempts to find a Model object associated with a given base_metadata.
+    It handles two scenarios for model import:
+        1.  Model and Base in the same file: In this case, the function expects to find the model
+            with the same `metadata_version` as provided.
+        2.  Model imported after being referenced as Base: If the model is defined in a separate file and then
+            referenced as a base, their `metadata_version`s might differ. In this scenario,
+            the function falls back to searching for the newest `STABLE` version of the model.
+    """
+    model_content_type = ContentType.objects.get_for_model(Model)
+    base_filter = Q(metadata__content_type=model_content_type, metadata__name=base_metadata.name)
+
+    queryset = Model.objects.filter(base_filter).order_by("-created")
+    return (
+        queryset.filter(metadata_version=metadata_version).first()
+        or queryset.filter(metadata_version__status=VersionStatus.STABLE).first()
+    )
+
+
 def _link_base(
     dataset: Dataset,
     meta: struct.Base,
     model: Model,
     metadata_version: Version,
 ):
-    base_ct = ContentType.objects.get_for_model(Base)
-    model_ct = ContentType.objects.get_for_model(Model)
-
     if meta:
         if meta.errors:
             _create_errors(meta.errors, model)
         else:
-            if base_model := Model.objects.filter(
-                metadata__content_type=model_ct, metadata__name=meta.name, metadata_version=metadata_version
-            ).first():
-                if base := Base.objects.filter(
-                    metadata__content_type=base_ct,
+            if base_model := resolve_base_model(meta, metadata_version):
+                if base_object := Base.objects.filter(
+                    metadata__content_type=ContentType.objects.get_for_model(Base),
                     metadata__name=meta.name,
                     model=base_model,
                     metadata_version=metadata_version,
                 ).first():
                     if not meta.id:
-                        meta.id = base.metadata.first().uuid
+                        meta.id = base_object.metadata.first().uuid
 
                 base = Base(model=base_model, metadata_version=metadata_version)
                 base, metadata = _create_or_update_metadata(dataset, meta, base, metadata_version=metadata_version)
@@ -785,6 +796,14 @@ def _link_base(
                 model.base = base
                 model.save()
                 _create_errors(meta.errors, base)
+            else:
+                meta.errors.append(
+                    _(
+                        f"Nepavyko susieti bazinio modelio „{meta.name}“. "
+                        f"Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+                    )
+                )
+                _create_errors(meta.errors, model)
 
     elif model.base:
         base = model.base
@@ -815,9 +834,10 @@ def _link_properties(
                 PropertyList.objects.filter(
                     content_type=ct, object_id=prop.pk, metadata_version=metadata_version
                 ).delete()
-
+                # Stripping `property.ref` is needed during linking to find the related model, if it exists.
+                property_meta_ref = prop_meta.ref.lstrip("/")
                 if ref_model := Model.objects.filter(
-                    metadata__name=prop_meta.ref,
+                    metadata__name=property_meta_ref,
                     metadata__content_type=model_ct,
                 ).first():
                     prop.ref_model = ref_model
@@ -899,15 +919,17 @@ def get_data_from_spinta(model: Union[Model, str], uuid: str = None, query: str 
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:
-        return {"errors": [f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"]}
-    except requests.RequestException as e:
-        return {"errors": [str(e)]}
+        return {"errors": [gettext("Nepavyko gauti duomenų iš Saugyklos per nustatytą laiką")]}
+    except requests.RequestException:
+        logger.exception("Failed to fetch data from Spinta: %s", url)
+        return {"errors": [gettext("Nepavyko gauti duomenų iš Saugyklos")]}
 
     try:
         data = json.loads(res.content)
         return data
-    except JSONDecodeError as e:
-        return {"errors": [str(e)]}
+    except JSONDecodeError:
+        logger.exception("Invalid JSON response from Spinta: %s", url)
+        return {"errors": [gettext("Gautas neteisingas duomenų formatas iš Saugyklos")]}
 
 
 async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None, query: str = "", timeout: int = 30):
@@ -918,15 +940,17 @@ async def get_data_from_spinta_async(model: Union[Model, str], uuid: str = None,
     try:
         res = requests.get(url, timeout=timeout)
     except requests.ReadTimeout:
-        return {"errors": [f"Nepavyko gauti duomenų iš Saugyklos, per nustatytą laiką (timeout={timeout})"]}
-    except requests.RequestException as e:
-        return {"errors": [str(e)]}
+        return {"errors": [gettext("Nepavyko gauti duomenų iš Saugyklos per nustatytą laiką")]}
+    except requests.RequestException:
+        logger.exception("Failed to fetch data from Spinta: %s", url)
+        return {"errors": [gettext("Nepavyko gauti duomenų iš Saugyklos")]}
 
     try:
         data = json.loads(res.content)
         return data
-    except JSONDecodeError as e:
-        return {"errors": [str(e)]}
+    except JSONDecodeError:
+        logger.exception("Invalid JSON response from Spinta: %s", url)
+        return {"errors": [gettext("Gautas neteisingas duomenų formatas iš Saugyklos")]}
 
 
 def _parse_access(value: str):
@@ -1343,25 +1367,27 @@ def _dataset_to_tabular(dataset: Dataset, separator: bool = False, version: Vers
     yield from _prefixes_to_tabular(dataset, separator=separator, version=version)
     yield from _enums_to_tabular(dataset, separator=separator, version=version)
     yield from _params_to_tabular(dataset, separator=separator, version=version)
-    yield from _dataset_resources_to_tabular(dataset, separator=separator, version=version)
+    yield from _dataset_resources_to_tabular(dataset, version=version)
     yield from _models_to_tabular(dataset, separator=separator, version=version)
 
 
-def _dataset_resources_to_tabular(
-    dataset: Dataset, separator: bool = False, version: Version | None = None
-) -> Generator:
+def _dataset_resources_to_tabular(dataset: Dataset, version: Version | None = None) -> Generator:
     distribution_filter = {"dataset": dataset, "model__isnull": True}
+    model_filter = {"dataset": dataset, "distribution__isnull": False}
     metadata_queryset = Metadata.objects.all()
     if version is not None:
         distribution_filter["metadata_version"] = version
+        model_filter["metadata__metadata_version"] = version
         metadata_queryset = metadata_queryset.filter(metadata_version=version)
     distributions = (
         DatasetDistribution.objects.filter(**distribution_filter)
         .prefetch_related(Prefetch("metadata", queryset=metadata_queryset.order_by("order")))
         .order_by("metadata__order")
     )
+    distributions_with_models = set(Model.objects.filter(**model_filter).values_list("distribution_id", flat=True))
     for distribution in distributions:
-        yield from _resource_to_tabular(distribution, version=version)
+        if distribution.pk not in distributions_with_models:
+            yield from _resource_to_tabular(distribution, version=version)
 
 
 def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Version | None = None) -> Generator:
@@ -1392,6 +1418,7 @@ def _enums_to_tabular(obj: models.Model, separator: bool = False, version: Versi
                         "ref": enum.name if first else "",
                         "source": meta.source,
                         "prepare": meta.prepare,
+                        "level": meta.level_given,
                         "access": _get_access(meta.access),
                         "title": meta.title,
                         "description": meta.description,
@@ -1495,12 +1522,12 @@ def _models_to_tabular(dataset: Dataset, separator: bool = False, version: Versi
     resource = None
     base = None
     for model in dataset_models:
-        if model.distribution and not resource:
-            yield from _resource_to_tabular(model.distribution, version=version)
+        if model.distribution != resource:
+            if resource:
+                yield from _end_marker("resource")
+            if model.distribution:
+                yield from _resource_to_tabular(model.distribution, version=version)
             resource = model.distribution
-        elif not model.distribution and resource:
-            yield from _end_marker("resource")
-            resource = None
 
         if model.base and not base:
             yield from _base_to_tabular(model.base, version=version)
@@ -1655,7 +1682,12 @@ def _comments_to_tabular(obj: models.Model) -> Generator:
                     "type": "comment" if first else "",
                     "ref": meta.ref,
                     "source": meta.source,
+                    "prepare": meta.prepare,
+                    "level": meta.level_given,
+                    "status": _get_title(meta.status),
+                    "visibility": _get_visibility(meta.visibility),
                     "access": _get_access(meta.access),
+                    "uri": meta.uri,
                     "title": meta.title,
                     "description": meta.description,
                 },
@@ -1676,6 +1708,7 @@ def _base_to_tabular(base: Base, version: Version | None = None) -> Generator:
                 "ref": meta.ref,
             },
         )
+        yield from _comments_to_tabular(base)
 
 
 def _properties_to_tabular(model: Model, version: Version | None = None) -> Generator:
@@ -1718,11 +1751,13 @@ def _properties_to_tabular(model: Model, version: Version | None = None) -> Gene
 
 
 def _to_relative_model_name(name: str, dataset: Dataset) -> str:
-    if dataset.name and name.startswith(dataset.name):
-        prefix = dataset.name
-        return name[len(prefix) + 1 :]
-    else:
-        return name
+    if dataset.name:
+        if name == dataset.name:
+            return name
+        prefix = dataset.name + "/"
+        if name.startswith(prefix):
+            return name[len(prefix) :]
+    return name
 
 
 def _get_access(acess: int) -> str:

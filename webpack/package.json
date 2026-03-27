@@ -8,6 +8,9 @@
   },
   "author": "",
   "license": "ISC",
+  "overrides": {
+    "serialize-javascript": "^7.0.3"
+  },
   "devDependencies": {
     "@babel/core": "^7.19.3",
     "@babel/preset-env": "^7.19.3",
@@ -18,7 +21,7 @@
     "expose-loader": "^4.0.0",
     "jquery": "^3.6.1",
     "mini-css-extract-plugin": "^2.6.1",
-    "node-sass": "^9.0.0",
+    "sass": "^1.89.0",
     "sass-loader": "^13.0.2",
     "style-loader": "^3.3.1",
     "webpack": "^5.74.0",

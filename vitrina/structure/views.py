@@ -1,9 +1,11 @@
+import csv
 import datetime
 import uuid
 import json
+from io import StringIO
 from typing import List, Union
 from urllib import parse
-from urllib.parse import unquote
+from urllib.parse import unquote, urlencode
 from flags.decorators import flag_required
 from django.utils.decorators import method_decorator
 
@@ -20,6 +22,7 @@ from django.forms import BaseForm
 from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse
 from django.utils.functional import cached_property
 from django.views import View
@@ -73,12 +76,15 @@ from vitrina.structure.services import (
     get_data_from_spinta,
     export_dataset_structure,
     _export_dataset_structure_to_stringio,
+    _get_manifest_datasets_to_process,
     get_model_name,
     get_srid,
     transform_coordinates,
     get_data_from_spinta_async,
     get_allowed_visibilities,
 )
+from vitrina.datasets.structure import read as read_structure
+from vitrina.structure.utils import TYPE_CHECKER_MAP
 from vitrina.tasks.models import Task
 from spinta.manifests.open_api.helpers import create_openapi_manifest
 from spinta.manifests.components import ManifestPath
@@ -757,6 +763,7 @@ class PropertyStructureView(
         )
         context["can_manage_structure"] = self.can_manage_structure
         context["is_disabled"] = self.metadata_version is not None and not self.metadata_version.is_draft()
+        context["allowed_enum_types"] = TYPE_CHECKER_MAP.keys()
 
         allowed_enum_visibilities = get_allowed_visibilities(
             self.request.user, self.object, Action.VIEW, model_class=Enum
@@ -1098,14 +1105,10 @@ class ModelDataView(
     def get(self, request, *args, **kwargs):
         for frm in FORMATS.keys():
             if f"format({frm})" in request.GET:
-                query = []
-                for key, val in self.request.GET.items():
-                    if val == "":
-                        query.append(key)
-                    else:
-                        query.append(f"{key}={val}")
-                query = "&".join(query)
-                return redirect(f"https://get.data.gov.lt/{self.model}?{query}")
+                query = urlencode(request.GET, doseq=True)
+                url = f"https://get.data.gov.lt/{self.model}?{query}"
+                if url_has_allowed_host_and_scheme(url, allowed_hosts={"get.data.gov.lt"}, require_https=True):
+                    return HttpResponseRedirect(url)
         return super().get(request, *args, **kwargs)
 
     def get_breadcrumbs(self) -> List[Crumb]:
@@ -1803,12 +1806,32 @@ class DatasetStructureExportOpenAPIView(DatasetStructureMixin, PermissionRequire
     def get(self, request, *args, **kwargs):
         version = self.metadata_version or self.dataset.latest_version()
         manifest_stream = _export_dataset_structure_to_stringio(self.dataset, version=version)
+        main_dataset_name = self._get_main_dataset_name(manifest_stream, self.dataset)
+
+        manifest_stream.seek(0)
         manifest_path = ManifestPath(file=manifest_stream)
-        openapi_spec = create_openapi_manifest(manifest_path)
+
+        openapi_spec = create_openapi_manifest(
+            manifest_path,
+            main_dataset_name=main_dataset_name,
+            api_version=version.external_version or "draft",
+        )
 
         response = JsonResponse(openapi_spec, json_dumps_params={"indent": 2, "ensure_ascii": False})
         response["Content-Disposition"] = "attachment; filename=manifest.json"
         return response
+
+    def _get_main_dataset_name(self, manifest_stream: StringIO, dataset: Dataset) -> str | None:
+        """
+        Identify the main dataset name from the exported manifest.
+        """
+        manifest_stream.seek(0)
+        state = read_structure(csv.DictReader(manifest_stream))
+        datasets = _get_manifest_datasets_to_process(state, dataset)
+        if not datasets:
+            return None
+        _, meta = datasets[0]
+        return meta.name
 
 
 class EnumCreateView(PermissionRequiredMixin, CreateView):
@@ -1847,6 +1870,14 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         if self.metadata_version and not self.metadata_version.is_draft():
             messages.error(request, _("Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."))
             return redirect(self.property.get_absolute_url())
+
+        if (metadata := self.property.metadata.first()) and metadata.type not in TYPE_CHECKER_MAP:
+            error_msg = _('Reikšmių duomenų lauko tipui "{metadata_type}" kurti negalima').format(
+                metadata_type=metadata.type
+            )
+            messages.error(request, error_msg)
+            return redirect(self.property.get_absolute_url())
+
         self.enum = self.property.enums.first()
         return super().dispatch(request, *args, **kwargs)
 
@@ -1856,6 +1887,8 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["prop"] = self.property
+        kwargs["user"] = self.request.user
+        kwargs["enum"] = self.enum
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -1884,7 +1917,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
 
     def form_valid(self, form):
         self.object: EnumItem = form.save(commit=False)
-        self.object.version_id = self.metadata_version.pk
+        self.object.metadata_version_id = self.metadata_version.pk
         if self.enum:
             self.object.enum = self.enum
         else:
@@ -1899,9 +1932,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
         visibility = form.cleaned_data.get("visibility")
         status = form.cleaned_data.get("status") or Status.objects.filter(is_default=True).first()
         eli = form.cleaned_data.get("eli")
-        if metadata := self.property.metadata.first():
-            if metadata.type == "string":
-                value = f'"{value}"'
+
         Metadata.objects.create(
             uuid=str(uuid.uuid4()),
             dataset=self.dataset,
@@ -1913,7 +1944,7 @@ class EnumCreateView(PermissionRequiredMixin, CreateView):
             visibility=visibility,
             status=status,
             eli=eli,
-            prepare_ast=spyna.parse(form.cleaned_data.get("value")),
+            prepare_ast=spyna.parse(value),
             source=form.cleaned_data.get("source"),
             access=form.cleaned_data.get("access") or None,
             title=form.cleaned_data.get("title"),
@@ -1980,6 +2011,14 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
         if self.metadata_version and not self.metadata_version.is_draft():
             messages.error(request, _("Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."))
             return redirect(self.property.get_absolute_url())
+
+        if (metadata := self.property.metadata.first()) and metadata.type not in TYPE_CHECKER_MAP:
+            error_msg = _('Reikšmių duomenų lauko tipui "{metadata_type}" keisti negalima').format(
+                metadata_type=metadata.type
+            )
+            messages.error(request, error_msg)
+            return redirect(self.property.get_absolute_url())
+
         return super().dispatch(request, *args, **kwargs)
 
     def has_permission(self):
@@ -1995,6 +2034,8 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["prop"] = self.property
+        kwargs["user"] = self.request.user
+        kwargs["enum"] = self.get_object().enum
         return kwargs
 
     def get_context_data(self, **kwargs):
@@ -2023,15 +2064,11 @@ class EnumUpdateView(PermissionRequiredMixin, UpdateView):
     def form_valid(self, form):
         self.object: EnumItem = form.save()
         value = form.cleaned_data.get("value")
-        if metadata := self.property.metadata.first():
-            if metadata.type == "string":
-                value = f'"{value}"'
-
         old_metadata = self.get_object().metadata.first()
 
         if metadata := self.object.metadata.first():
             metadata.prepare = value
-            metadata.prepare_ast = spyna.parse(form.cleaned_data.get("value"))
+            metadata.prepare_ast = spyna.parse(value)
             metadata.source = form.cleaned_data.get("source")
             metadata.access = form.cleaned_data.get("access") or None
             metadata.title = form.cleaned_data.get("title")
@@ -2308,6 +2345,7 @@ class ModelCreateView(PermissionRequiredMixin, CreateView):
         kwargs = super().get_form_kwargs()
         kwargs["dataset"] = self.dataset
         kwargs["metadata_version"] = self.metadata_version
+        kwargs["user"] = self.request.user
         return kwargs
 
 
@@ -2544,6 +2582,7 @@ class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateVi
         kwargs = super().get_form_kwargs()
         kwargs["dataset"] = self.dataset
         kwargs["metadata_version"] = self.metadata_version
+        kwargs["user"] = self.request.user
         return kwargs
 
     @staticmethod
@@ -2615,10 +2654,20 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Creat
             self.object.prepare_ast = ""
         if self.object.type == "ref":
             ref = form.cleaned_data.get("ref")
+            ref_props = form.cleaned_data.get("ref_props")
             if ref and ref.metadata.first():
                 self.object.ref = ref.metadata.first().name
                 prop.ref_model = ref
                 prop.save()
+                if ref_props:
+                    for i, ref_prop in enumerate(ref_props, start=1):
+                        PropertyList.objects.create(
+                            content_type=ContentType.objects.get_for_model(Property),
+                            object_id=prop.pk,
+                            property=ref_prop,
+                            order=i,
+                            metadata_version=self.metadata_version,
+                        )
         else:
             self.object.ref = form.cleaned_data.get("ref_others")
         if not self.object.status:
@@ -2658,6 +2707,7 @@ class PropertyCreateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Creat
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["model"] = self.model_obj
+        kwargs["user"] = self.request.user
         return kwargs
 
 
@@ -2735,13 +2785,25 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Updat
             self.object.prepare_ast = ""
         if self.object.type == "ref":
             ref = form.cleaned_data.get("ref")
+            ref_props = form.cleaned_data.get("ref_props")
             if ref and ref.metadata.first():
                 self.object.ref = ref.metadata.first().name
                 prop.ref_model = ref
+                prop.property_list.all().delete()
+                if ref_props:
+                    for i, ref_prop in enumerate(ref_props, start=1):
+                        PropertyList.objects.create(
+                            content_type=ContentType.objects.get_for_model(Property),
+                            object_id=prop.pk,
+                            property=ref_prop,
+                            order=i,
+                            metadata_version=self.metadata_version,
+                        )
         else:
             self.object.ref = form.cleaned_data.get("ref_others")
             if prop.ref_model:
                 prop.ref_model = None
+            prop.property_list.all().delete()
 
         if latest_version := self.object.metadataversion_set.order_by("-version__created").first():
             latest_version_fields_changed = (
@@ -2818,6 +2880,7 @@ class PropertyUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, Updat
     def get_form_kwargs(self):
         kwargs = super().get_form_kwargs()
         kwargs["model"] = self.model_obj
+        kwargs["user"] = self.request.user
         return kwargs
 
     @staticmethod

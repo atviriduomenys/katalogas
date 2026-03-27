@@ -3,19 +3,22 @@ from django.contrib.contenttypes.models import ContentType
 from django.core import mail
 from django.urls import reverse, resolve
 from django_webtest import DjangoTestApp
+from vitrina.structure import VersionStatus
 from reversion.models import Version
+from vitrina.structure.models import Metadata
 
 from vitrina.classifiers.factories import FrequencyFactory
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.models import Dataset
+from vitrina.messages.models import Subscription
 from vitrina.orgs.models import Organization, Representative
 from vitrina.projects.factories import ProjectFactory
 from vitrina.projects.models import Project
 from vitrina.requests.factories import RequestFactory, RequestAssignmentFactory
 from vitrina.requests.models import Request
-from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory, VersionFactory
+from vitrina.structure.factories import PropertyFactory, ModelFactory, MetadataFactory, VersionFactory, BaseFactory
 from vitrina.users.factories import UserFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.utils import RevisionComment, RevisionSource
@@ -677,6 +680,73 @@ def test_subscription_about_comment(app: DjangoTestApp):
 
 
 @pytest.mark.django_db
+def test_reply_notification_only_sent_to_parent_comment_author(app: DjangoTestApp):
+    org = OrganizationFactory()
+    dataset = DatasetFactory(organization=org)
+    ct = ContentType.objects.get_for_model(dataset)
+
+    # Create an org subscriber with comment notifications enabled
+    org_subscriber = UserFactory(email="org_subscriber@example.com")
+    org_ct = ContentType.objects.get_for_model(org)
+    Subscription.objects.create(
+        user=org_subscriber,
+        content_type=org_ct,
+        object_id=org.pk,
+        sub_type=Subscription.ORGANIZATION,
+        email_subscribed=True,
+        dataset_comments_sub=True,
+    )
+
+    # User A posts the original comment
+    user_a = UserFactory(email="user_a@example.com")
+    app.set_user(user_a)
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
+    form["is_public"] = True
+    form["body"] = "Original comment"
+    form.submit()
+
+    original_comment = Comment.objects.get(content_type=ct, object_id=dataset.pk)
+    mail.outbox.clear()
+
+    # User B replies to User A's comment
+    user_b = UserFactory(email="user_b@example.com")
+    app.set_user(user_b)
+    form = app.get(dataset.get_absolute_url()).follow().forms[f"reply-form-{original_comment.pk}"]
+    form["is_public"] = True
+    form["body"] = "Reply to original"
+    form.submit()
+
+    # Only User A (parent comment author) should receive the email
+    assert len(mail.outbox) == 1
+    assert mail.outbox[0].to == ["user_a@example.com"]
+    assert "Reply to original" in mail.outbox[0].body
+
+
+@pytest.mark.django_db
+def test_reply_no_notification_when_replying_to_own_comment(app: DjangoTestApp):
+    dataset = DatasetFactory()
+    ct = ContentType.objects.get_for_model(dataset)
+
+    user = UserFactory(email="user@example.com")
+    app.set_user(user)
+    form = app.get(dataset.get_absolute_url()).follow().forms["comment-form"]
+    form["is_public"] = True
+    form["body"] = "My comment"
+    form.submit()
+
+    original_comment = Comment.objects.get(content_type=ct, object_id=dataset.pk)
+    mail.outbox.clear()
+
+    # Same user replies to their own comment
+    form = app.get(dataset.get_absolute_url()).follow().forms[f"reply-form-{original_comment.pk}"]
+    form["is_public"] = True
+    form["body"] = "Reply to myself"
+    form.submit()
+
+    assert len(mail.outbox) == 0
+
+
+@pytest.mark.django_db
 def test_delete_comment_without_login(client):
     comment = CommentFactory()
     url = reverse("delete-comment", kwargs={"pk": comment.pk})
@@ -1035,3 +1105,73 @@ def test_comment_on_unapproved_project(app: DjangoTestApp):
     )
 
     assert resp.status_code == 403
+
+
+@pytest.mark.django_db
+def test_model_comments_exported_together_with_base_model_comments(app: DjangoTestApp):
+    user = UserFactory(is_superuser=True)
+    app.set_user(user)
+
+    dataset = DatasetFactory(is_public=True, access_rights=Dataset.PUBLIC)
+    metadata_version = VersionFactory(dataset=dataset, status=VersionStatus.STABLE)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=metadata_version,
+    )
+
+    base_model = ModelFactory(dataset=dataset, metadata_version=metadata_version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(base_model),
+        object_id=base_model.pk,
+        dataset=dataset,
+        name="test/dataset/BaseModel",
+        metadata_version=metadata_version,
+    )
+    base_object = BaseFactory(model=base_model, metadata_version=metadata_version)
+
+    inheriting_model = ModelFactory(dataset=dataset, base=base_object, metadata_version=metadata_version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(inheriting_model),
+        object_id=inheriting_model.pk,
+        dataset=dataset,
+        name="test/dataset/InheritingModel",
+        metadata_version=metadata_version,
+    )
+
+    inheriting_property = PropertyFactory(
+        model=inheriting_model,
+        metadata_version=metadata_version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(inheriting_property),
+        object_id=inheriting_property.pk,
+        dataset=dataset,
+        name="InheritingProperty",
+        metadata_version=metadata_version,
+        access=Metadata.PUBLIC,
+    )
+
+    comment_base = CommentFactory(
+        content_type=ContentType.objects.get_for_model(base_object),
+        object_id=base_object.pk,
+        user=user,
+        body="Comment for base",
+        is_public=True,
+    )
+    comment_model = CommentFactory(
+        content_type=ContentType.objects.get_for_model(inheriting_model),
+        object_id=inheriting_model.pk,
+        user=user,
+        body="Comment for model",
+        is_public=True,
+    )
+
+    resp = app.get(inheriting_model.get_absolute_url())
+
+    comments = [comment_data[0] for comment_data in resp.context["comments"]]
+    assert len(comments) == 2
+    assert comment_base in comments
+    assert comment_model in comments

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-20 14:12+0200\n"
+"POT-Creation-Date: 2026-03-03 09:42+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -1191,6 +1191,12 @@ msgstr ""
 msgid "Geoportalo API formato reikšmės"
 msgstr ""
 
+msgid "Organizacijai gali būti suteikta tik tvarkytojo rolė"
+msgstr ""
+
+msgid "Naudotojui išsiųstas laiškas dėl registracijos"
+msgstr ""
+
 #, python-brace-format
 msgid "Modelis \"{model.name}\" jau egzistuoja."
 msgstr ""
@@ -1765,16 +1771,13 @@ msgstr ""
 msgid "Duomenų ištekliaus redagavimas"
 msgstr ""
 
+msgid "Negalima importuoti struktūros, kai versijos būsena nėra juodraštis."
+msgstr ""
+
 msgid "Struktūros importas"
 msgstr ""
 
 msgid "Tvarkytojo pridėjimas"
-msgstr ""
-
-msgid "Organizacijai gali būti suteikta tik tvarkytojo rolė"
-msgstr ""
-
-msgid "Naudotojui išsiųstas laiškas dėl registracijos"
 msgstr ""
 
 msgid "Tvarkytojo redagavimas"
@@ -2898,9 +2901,6 @@ msgstr ""
 msgid "Ar tikrai norite ištrinti kontaktą \"{contact}\"?"
 msgstr ""
 
-msgid "Organizacijos sutartys"
-msgstr ""
-
 msgid "Sutartis"
 msgstr ""
 
@@ -2920,6 +2920,9 @@ msgid ""
 msgstr ""
 
 msgid "API rakto pašalinimas nesėkmingas."
+msgstr ""
+
+msgid "Raktas"
 msgstr ""
 
 msgid ""
@@ -2952,6 +2955,9 @@ msgid "Šalinti taikymo sritį"
 msgstr ""
 
 msgid "Organizacijų sujungimas"
+msgstr ""
+
+msgid "Organiacijų sujungimas"
 msgstr ""
 
 msgid "Ryšiai su duomenų ištekliais"
@@ -3560,6 +3566,9 @@ msgstr ""
 msgid "Prieigos lygmuo"
 msgstr ""
 
+msgid "nepasirinkta"
+msgstr ""
+
 msgid ""
 "Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo "
 "nuorodas."
@@ -3688,6 +3697,9 @@ msgstr ""
 msgid "Ar duomenų šaltinis yra didelės vertės"
 msgstr ""
 
+msgid "Prieiga"
+msgstr ""
+
 msgid "Atsisiųsti duomenų šaltinį"
 msgstr ""
 
@@ -3712,7 +3724,13 @@ msgstr ""
 msgid "Naujas duomenų rinkinio šaltinis"
 msgstr ""
 
+msgid "Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."
+msgstr ""
+
 msgid "Duomenų rinkinio šaltinio redagavimas"
+msgstr ""
+
+msgid "Negalima trinti šaltinio, kai versijos būsena nėra juodraštis."
 msgstr ""
 
 msgid "Modelio pridėjimas"
@@ -4021,6 +4039,18 @@ msgstr ""
 msgid "Pataisa"
 msgstr ""
 
+msgid "private"
+msgstr ""
+
+msgid "protected"
+msgstr ""
+
+msgid "public"
+msgstr ""
+
+msgid "open"
+msgstr ""
+
 msgid "Nepasirinkta"
 msgstr ""
 
@@ -4179,6 +4209,12 @@ msgid ""
 "Modelio brandos lygis, nusakantis modelio brandos lygį, pavyzdžiui ar "
 "nurodytas pirminis raktas, ar modelio pavadinimas atitinka kodiniams "
 "pavadinimams keliamus reikalavimus."
+msgstr ""
+
+msgid "Duomenų distribucija"
+msgstr ""
+
+msgid "Savybė nurodanti modelio duomenų distribuciją."
 msgstr ""
 
 msgid ""
@@ -4466,25 +4502,13 @@ msgstr ""
 msgid "Objekto id"
 msgstr ""
 
+msgid "Versija"
+msgstr ""
+
 msgid "Prefiksas"
 msgstr ""
 
 msgid "Prefiksai"
-msgstr ""
-
-msgid "nepasirinkta"
-msgstr ""
-
-msgid "private"
-msgstr ""
-
-msgid "protected"
-msgstr ""
-
-msgid "public"
-msgstr ""
-
-msgid "open"
 msgstr ""
 
 msgid "Id"
@@ -4502,16 +4526,10 @@ msgstr ""
 msgid "Apskaičiuotas brandos lygis"
 msgstr ""
 
-msgid "Prieiga"
-msgstr ""
-
 msgid "Eilučių kiekis"
 msgstr ""
 
 msgid "Žodyno atitikmuo"
-msgstr ""
-
-msgid "Versija"
 msgstr ""
 
 msgid "Rikiavimo tvarka"
@@ -4536,6 +4554,11 @@ msgid "Paveldimas modelis"
 msgstr ""
 
 msgid "Bazė"
+msgstr ""
+
+msgid ""
+"Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą "
+"distribuciją."
 msgstr ""
 
 msgid "Susijęs modelis"
@@ -4624,6 +4647,15 @@ msgstr ""
 
 #, python-brace-format
 msgid "Prefiksas \"{prefix}\" duomenų ištekliuje neegzistuoja."
+msgstr ""
+
+msgid "Nepavyko gauti duomenų iš Saugyklos per nustatytą laiką"
+msgstr ""
+
+msgid "Nepavyko gauti duomenų iš Saugyklos"
+msgstr ""
+
+msgid "Gautas neteisingas duomenų formatas iš Saugyklos"
 msgstr ""
 
 msgid "Užklausa"
@@ -4770,19 +4802,42 @@ msgstr ""
 msgid "API: visi įrašai"
 msgstr ""
 
+msgid "Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."
+msgstr ""
+
 msgid "Galimos reikšmės pridėjimas"
+msgstr ""
+
+msgid "Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."
 msgstr ""
 
 msgid "Galimos reikšmės redagavimas"
 msgstr ""
 
+msgid "Negalima trinti reikšmės, kai versijos būsena nėra juodraštis."
+msgstr ""
+
 msgid "Galimos reikšmės šalinimas"
+msgstr ""
+
+msgid "Negalima kurti naujo modelio, kai versijos būsena nėra juodraštis."
+msgstr ""
+
+msgid "Negalima redaguoti modelio, kai versijos būsena nėra juodraštis."
 msgstr ""
 
 msgid "Modelio redagavimas"
 msgstr ""
 
+msgid ""
+"Negalima kurti naujo duomenų lauko, kai versijos būsena nėra juodraštis."
+msgstr ""
+
 msgid "Duomenų lauko pridėjimas"
+msgstr ""
+
+msgid ""
+"Negalima redaguoti naujo duomenų lauko, kai versijos būsena nėra juodraštis."
 msgstr ""
 
 msgid "Duomenų lauko redagavimas"
@@ -4804,13 +4859,40 @@ msgstr ""
 msgid "Parametro redagavimas"
 msgstr ""
 
+msgid "Negalima publikuoti versijos, kai versijos būsena nėra juodraštis."
+msgstr ""
+
+msgid "Publikuota versija negali būti publikuota dar kartą."
+msgstr ""
+
+msgid "Privalote publikuoti duomenų rinkinį."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Laukas {0} turi nuorodą į nepublikuojamą lauką tame pačiame duomenų "
+"ištekliuje."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Laukas {0} turi nuorodą į nepublikuotą lauką {1} tame pačiame duomenų "
+"ištekliuje."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Laukas {0} privalo būti publikuojamas, nes laukas {1} turi nuorodą į jį."
+msgstr ""
+
+#, python-brace-format
+msgid "Laukas {0} turi nuorodą į nepublikuotą lauką kitame duomenų ištekliuje."
+msgstr ""
+
 msgid "Vyr. koordinatorius"
 msgstr ""
 
 msgid "Organizacijos tvarkytojas"
-msgstr ""
-
-msgid "Raktas"
 msgstr ""
 
 msgid "Project"
@@ -5107,6 +5189,12 @@ msgstr ""
 msgid ""
 "Atsiprašome, įvyko nenumatyta serverio klaida. Mūsų komanda jau informuota "
 "apie problemą."
+msgstr ""
+
+msgid "Pasirinkite versiją"
+msgstr ""
+
+msgid "Versija: Juodraštis"
 msgstr ""
 
 msgid "Grįžti į sutartis"
@@ -5478,6 +5566,9 @@ msgid "Užklausos API adresas"
 msgstr ""
 
 msgid "Statusas (HTTP)"
+msgstr ""
+
+msgid "Papildomos informacijos nėra"
 msgstr ""
 
 msgid "Klaidų nėra"

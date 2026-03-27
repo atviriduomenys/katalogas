@@ -181,7 +181,13 @@ class Representative(models.Model):
         (OPEN_DATA_PUBLISHER, _("Atvirų duomenų skelbėjas")),
     )
 
+    RESOURCE_ROLES = (
+        (RESOURCE_COORDINATOR, _("Duomenų išteklių koordinatorius")),
+        (RESOURCE_MANAGER, _("Duomenų išteklių tvarkytojas")),
+    )
+
     OPEN_DATA_ROLE_KEYS = {role[0] for role in OPEN_DATA_ROLES}
+    RESOURCE_ROLE_KEYS = {role[0] for role in RESOURCE_ROLES}
 
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -241,6 +247,15 @@ class Representative(models.Model):
             )
 
         return False
+
+    @classmethod
+    def is_open_data_coordinator(cls, user: "User", content_type: ContentType, object_id: int) -> bool:
+        return cls.objects.filter(
+            user=user,
+            content_type=content_type,
+            object_id=object_id,
+            role=cls.OPEN_DATA_COORDINATOR,
+        ).exists()
 
 
 class PublishedReport(models.Model):

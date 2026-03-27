@@ -15,6 +15,7 @@ from django.utils.safestring import mark_safe
 from django.utils.timezone import make_aware
 from django.utils.translation import gettext_lazy as _
 from filer.fields.file import FilerFileField
+from tagulous.models import TagModel
 from parler.models import TranslatedFields, TranslatableModel
 from tagulous.models import TagField
 from treebeard.mp_tree import MP_Node
@@ -41,6 +42,7 @@ from vitrina.structure import VersionStatus
 from vitrina.structure.models import Model, Base, Property, Metadata, StatusCode, ParamItem, EnumItem, Version
 from vitrina.users.models import User
 from vitrina.datasets.tasks import update_applicable_legislation_description
+from vitrina.uapi.models import Agent
 
 logger = logging.getLogger(__name__)
 
@@ -339,7 +341,7 @@ class Dataset(Resource):
     access_rights = models.CharField(
         _("Prieigos teisės"),
         blank=True,
-        default=CONFIDENTIAL,
+        default=PUBLIC,
         choices=ACCESS_RIGHTS,
         max_length=255,
         help_text=_(
@@ -410,6 +412,17 @@ class Dataset(Resource):
         verbose_name=_("Duomenų ištekliaus poklasis"),
         default=get_default_subclass,
     )
+    agent = models.ForeignKey(
+        Agent,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Agentas"),
+        null=True,
+        blank=True,
+        related_name="services",
+        help_text=_(
+            "Duomenų publikavimo paslaugą teikiantis agentas. Privaloma nurodyti arba Agentą arba API adresą. Atitinka dcat:endpointURL"
+        ),
+    )
     endpoint_url = models.URLField(
         verbose_name=_("API adresas"),
         null=True,
@@ -423,7 +436,7 @@ class Dataset(Resource):
         null=True,
         blank=True,
         related_name="format_endpoint_types",
-        help_text=_("Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."),
+        help_text=_("Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:format."),
     )
     endpoint_description = models.URLField(
         verbose_name=_("API specifikacija"),
@@ -536,6 +549,14 @@ class Dataset(Resource):
         verbose_name=_("Kontaktinis asmuo ar organizacija"),
         null=True,
         related_name="contact_datasets",
+    )
+    conforms_to = models.ForeignKey(
+        Concept,
+        on_delete=models.SET_NULL,
+        verbose_name=_("Atitinka"),
+        null=True,
+        blank=True,
+        help_text=_("Nurodo, kokį standartą atitinka išteklius. Atitinka dct:conformsTo"),
     )
 
     # TODO: To be removed:
@@ -669,49 +690,65 @@ class Dataset(Resource):
     def get_absolute_url(self):
         return reverse("dataset-detail", kwargs={"pk": self.pk})
 
-    def get_tag_object_list(self):
-        return list(self.tags.all().values("name", "pk"))
+    def _get_tags_from_cache_or_db(self) -> list[TagModel]:
+        if not hasattr(self, "_cached_tags"):
+            prefetched = getattr(self, "_prefetched_objects_cache", {})
+            if "tags" in prefetched:
+                self._cached_tags = list(prefetched["tags"])
+            else:
+                self._cached_tags = list(self.tags.all())
+        return self._cached_tags
 
-    def get_tag_list(self):
-        return list(self.tags.all().values_list("pk", flat=True))
+    def get_tag_object_list(self) -> list[dict]:
+        tags = self._get_tags_from_cache_or_db()
+        return [{"name": tag.name, "pk": tag.pk} for tag in tags]
 
-    def get_tag_title(self, tag_id):
+    def get_tag_list(self) -> list[int]:
+        tags = self._get_tags_from_cache_or_db()
+        return [tag.pk for tag in tags]
+
+    def get_tag_title(self, tag_id) -> str:
         if tag := self.tags.tag_model.objects.filter(pk=tag_id).first():
             return tag.name
         return ""
 
-    def get_resource_titles(self):
-        return list(self.datasetdistribution_set.all().values_list("translations__title", flat=True))
+    def get_resource_titles(self) -> list[str]:
+        return [dist.title for dist in self.datasetdistribution_set.all() if dist.title]
 
-    def get_model_title_list(self):
-        return list(model.title for model in self.model_set.all())
+    def get_model_title_list(self) -> list[str]:
+        return [model.title for model in self.model_set.all()]
 
-    def get_model_name_list(self):
-        return list(model.full_name for model in self.model_set.all() if model.name)
+    def get_model_name_list(self) -> list[str]:
+        return [model.full_name for model in self.model_set.all() if model.name]
 
-    def get_property_title_list(self):
-        return list(item.title for item in Property.objects.filter(model__in=self.model_set.all()))
+    def get_property_title_list(self) -> list[str]:
+        return [prop.title for model in self.model_set.all() for prop in model.model_properties.all() if prop.title]
 
-    def get_request_title_list(self):
-        return [request.title for request in self.dataset_request.prefetch_related("translations")]
+    def get_request_title_list(self) -> list[str]:
+        return [request.title for request in self.dataset_request.all() if request.title]
 
-    def get_project_title_list(self):
-        return list(self.project_set.all().values_list("title", flat=True))
+    def get_project_title_list(self) -> list[str]:
+        return [project.title for project in self.project_set.all()]
 
-    def get_resource_description(self):
-        return list(self.datasetdistribution_set.all().values_list("translations__description", flat=True))
+    def get_resource_description(self) -> list[str]:
+        return [dist.description for dist in self.datasetdistribution_set.all() if dist.description]
 
-    def get_model_title_description(self):
-        return list(model.description for model in self.model_set.all())
+    def get_model_title_description(self) -> list[str]:
+        return [model.description for model in self.model_set.all()]
 
-    def get_property_title_description(self):
-        return list(item.description for item in Property.objects.filter(model__in=self.model_set.all()))
+    def get_property_title_description(self) -> list[str]:
+        return [
+            prop.description
+            for model in self.model_set.all()
+            for prop in model.model_properties.all()
+            if prop.description
+        ]
 
-    def get_request_title_description(self):
-        return [request.description for request in self.dataset_request.prefetch_related("translations")]
+    def get_request_title_description(self) -> list[str]:
+        return [request.description for request in self.dataset_request.all() if request.description]
 
-    def get_project_title_description(self):
-        return list(self.project_set.all().values_list("description", flat=True))
+    def get_project_title_description(self) -> list[str]:
+        return [project.description for project in self.project_set.all()]
 
     def get_all_groups(self):
         ids = (
@@ -721,16 +758,18 @@ class Dataset(Resource):
         )
         return DatasetGroup.objects.filter(pk__in=ids).exclude(pk__in=self.get_excluded_groups())
 
-    def get_group_list(self):
-        return list(
-            self.category.filter(datasetgroupcategoryuri__group__isnull=False)
-            .values_list("datasetgroupcategoryuri__group__pk", flat=True)
-            .distinct()
-            .exclude(pk__in=self.get_excluded_groups())
-        )
+    def get_group_list(self) -> list[int]:
+        excluded_pks = self.get_excluded_groups()
+        group_pks = {
+            uri.group_id
+            for category in self.category.all()
+            for uri in category.datasetgroupcategoryuri_set.all()
+            if uri.group_id is not None and uri.group_id not in excluded_pks
+        }
+        return list(group_pks)
 
-    def get_excluded_groups(self):
-        return DatasetExcludedGroups.objects.filter(dataset=self).values_list("group__pk", flat=True)
+    def get_excluded_groups(self) -> list[int]:
+        return [excluded_group.group_id for excluded_group in self.excluded_groups.all()]
 
     def get_parent_organization_title(self):
         if self.organization:
@@ -779,7 +818,7 @@ class Dataset(Resource):
     def level(self):
         return randrange(5)
 
-    def latest_version(self):
+    def latest_version(self) -> Version:
         return self.dataset_version.order_by("-version").first()
 
     @property
@@ -789,7 +828,7 @@ class Dataset(Resource):
     def filter_formats(self):
         formats = [obj.get_format().pk for obj in self.datasetdistribution_set.all() if obj.get_format()]
 
-        if self.model_set.exists() and any(
+        if list(self.model_set.all()) and any(
             dist.format.extension == "UAPI" for dist in self.datasetdistribution_set.all() if dist.format
         ):
             from vitrina.resources.models import Format
@@ -824,8 +863,58 @@ class Dataset(Resource):
     def get_members_url(self):
         return reverse("dataset-members", kwargs={"pk": self.pk})
 
+    def get_effective_user_role_via_organization(self, user: "User") -> str | None:
+        """
+        Determines the user's effective role on this dataset through organizational membership.
+        Access is resolved indirectly: the user belongs to an organization which holds
+        a Representative record on this dataset or one of its ancestors.
+        The resulting role is capped by the user's own role within that organization.
+        """
+        organization_ct = ContentType.objects.get_for_model(Organization)
+
+        user_org_map = dict(
+            Representative.objects.filter(
+                user=user,
+                content_type=organization_ct,
+            ).values_list("object_id", "role")
+        )
+
+        if not user_org_map:
+            return None
+
+        dataset_ct = self.dataset_content_type
+
+        dataset_ids = {self.id}
+        organization_ids = {self.organization_id}
+        for parent in self.get_ancestors().only("pk", "organization_id"):
+            dataset_ids.add(parent.pk)
+            organization_ids.add(parent.organization_id)
+
+        org_roles = Representative.objects.filter(
+            Q(content_type=dataset_ct, object_id__in=dataset_ids)
+            | Q(content_type=organization_ct, object_id__in=organization_ids),
+            organization_id__in=user_org_map.keys(),
+        ).values_list("organization_id", "role")
+
+        effective_roles = []
+        # Map coordinator roles to their manager equivalents before comparison
+        coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
+
+        for org_id, org_role in org_roles:
+            user_role = coordinator_to_manager.get(user_org_map[org_id], user_org_map[org_id])
+            # Use the more restrictive role between the organization's role and the user's role within that org.
+            # e.g. org has RESOURCE_MANAGER, user has OPEN_DATA_MANAGER → effective role is OPEN_DATA_MANAGER
+            effective_roles.append(max(org_role, user_role, key=Representative.MANAGER_ROLES.index))
+
+        if not effective_roles:
+            return None
+
+        # If the user represents multiple orgs, return the most privileged role across all of them.
+        # e.g. ["open_data_manager", "resource_manager"] → "resource_manager"
+        return min(effective_roles, key=Representative.MANAGER_ROLES.index)
+
     def get_managers_queryset(self, roles: list[str]) -> QuerySet["Dataset"]:
-        dataset_ct = ContentType.objects.get_for_model(Dataset)
+        dataset_ct = self.dataset_content_type
         organization_ct = ContentType.objects.get_for_model(Organization)
 
         dataset_ids = {self.id}
@@ -851,27 +940,57 @@ class Dataset(Resource):
             .distinct()
         )
 
+    def _ensure_managers_cached(self) -> None:
+        if hasattr(self, "_cached_resource_managers"):
+            return
+
+        resource_roles = {Representative.RESOURCE_COORDINATOR, Representative.RESOURCE_MANAGER}
+        open_data_roles = {Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER}
+
+        if self.depth == 1:
+            ancestors = []
+        else:
+            ancestors = list(self.get_ancestors().only("pk", "organization_id"))
+
+        if not ancestors:
+            all_reps = list(self.representatives.all())
+            if self.organization:
+                all_reps.extend(self.organization.representatives.all())
+        else:
+            all_roles = resource_roles | open_data_roles
+            dataset_ct = ContentType.objects.get_for_model(Dataset)
+            organization_ct = ContentType.objects.get_for_model(Organization)
+
+            dataset_ids = {self.id}
+            organization_ids = {self.organization_id}
+            for parent in ancestors:
+                dataset_ids.add(parent.pk)
+                organization_ids.add(parent.organization_id)
+
+            all_reps = list(
+                Representative.objects.filter(
+                    Q(content_type=dataset_ct, object_id__in=dataset_ids, role__in=all_roles)
+                    | Q(content_type=organization_ct, object_id__in=organization_ids, role__in=all_roles),
+                    user__isnull=False,
+                )
+            )
+
+        self._cached_resource_managers = {
+            rep.user_id for rep in all_reps if rep.role in resource_roles and rep.user_id is not None
+        }
+        self._cached_open_data_managers = {
+            rep.user_id for rep in all_reps if rep.role in open_data_roles and rep.user_id is not None
+        }
+
     @property
     def resource_managers(self) -> set[int]:
-        return set(
-            self.get_managers_queryset(
-                [
-                    Representative.RESOURCE_COORDINATOR,
-                    Representative.RESOURCE_MANAGER,
-                ]
-            )
-        )
+        self._ensure_managers_cached()
+        return self._cached_resource_managers
 
     @property
     def open_data_managers(self) -> set[int]:
-        return set(
-            self.get_managers_queryset(
-                [
-                    Representative.OPEN_DATA_COORDINATOR,
-                    Representative.OPEN_DATA_MANAGER,
-                ]
-            )
-        )
+        self._ensure_managers_cached()
+        return self._cached_open_data_managers
 
     @property
     def language_array(self):
@@ -940,11 +1059,26 @@ class Dataset(Resource):
                 return category.icon
         return None
 
+    def _get_first_metadata(self) -> Metadata | None:
+        prefetched = getattr(self, "_prefetched_objects_cache", {})
+        if "metadata" in prefetched:
+            if not hasattr(self, "_cached_first_metadata"):
+                metadata_list = list(self.metadata.all())
+                self._cached_first_metadata = metadata_list[0] if metadata_list else None
+            return self._cached_first_metadata
+        else:
+            return self.metadata.first()
+
     @property
     def name(self):
-        if metadata := self.metadata.first():
+        if metadata := self._get_first_metadata():
             return metadata.name
         return ""
+
+    def get_level(self) -> int | None:
+        if metadata := self._get_first_metadata():
+            return metadata.average_level
+        return None
 
     @property
     def identifier(self) -> str | None:
@@ -952,8 +1086,8 @@ class Dataset(Resource):
             identifier.notation if (identifier := self.identifiers.filter(scheme_agency__code="risr").first()) else None
         )
 
-    def public_types(self):
-        return list(self.type.filter(show_filter=True).values_list("pk", flat=True))
+    def public_types(self) -> list[int]:
+        return [t.pk for t in self.type.all() if t.show_filter]
 
     def type_order(self):
         order = 0
@@ -1457,6 +1591,30 @@ class Dataset(Resource):
             cursor.execute(query, params)
             columns = ["root_model_id", "root_version_id", "child_model_id", "path", "depth", "root_dataset_id"]
             return [dict(zip(columns, row)) for row in cursor.fetchall()]
+
+    def get_endpoint_urls(self) -> list[tuple[str | None, str]]:
+        """Return endpoint URLs as a list of (url_name, url).
+
+        If no agent is set, url_name is None.
+        """
+        if self.agent:
+            return [
+                (
+                    environment.get_environment_display(),
+                    environment.api_gate_server_url or environment.agent_address,
+                )
+                for environment in self.agent.environments.not_archived()
+            ]
+
+        return [(None, self.endpoint_url)]
+
+    def get_endpoint_description(self) -> str | None:
+        if self.agent:
+            # TODO: Update to possibly different url once DataService OpenAPI export is implemented
+            metadata_version = self.latest_version()
+            return reverse("dataset-structure-export-openapi", args=[self.pk, metadata_version.pk])
+
+        return self.endpoint_description
 
 
 class DatasetReport(Dataset):

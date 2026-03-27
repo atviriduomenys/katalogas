@@ -7,6 +7,8 @@ from dataclasses import dataclass, field
 from typing import Any, Iterable, NamedTuple, TypedDict, Tuple, List
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.structure.utils import get_type_checker_for_type, NotImplementedTypeChecker, TypeCheckerError
+
 DIMS = [
     "dataset",
     "resource",
@@ -596,7 +598,7 @@ def _read_base(
     if name == "/":
         base = state.base = None
     else:
-        name = get_relative_model_name(state.dataset, name)
+        name = get_relative_model_name_for_base(state.dataset, name)
         base = state.base = Base(
             id=row["id"],
             name=name,
@@ -710,21 +712,15 @@ def _read_property(
 
     if prop.ref and prop.type in ("ref", "backref", "generic"):
         ref_model, ref_props = _parse_property_ref(prop.ref)
-        prop.ref = get_relative_model_name(state.dataset, ref_model)
+        prop.ref = get_relative_model_name_for_ref(state.dataset, ref_model)
         prop.ref_props = ref_props
 
     prop.model = state.model
 
     if prop.model.properties.get(name):
         prop.errors.append(_(f'Savybė "{name}" jau egzistuoja.'))
-    model_visibility = _parse_visibility(prop.model.visibility)
-    prop_visibility = _parse_visibility(prop.visibility)
-    if model_visibility is not None and prop_visibility is not None and model_visibility < prop_visibility:
-        prop.errors.append(
-            _(
-                'Duomenų lauko "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už modelio metaduomenų matomumo lygį "{2}". '
-            ).format(name, prop.visibility, prop.model.visibility)
-        )
+
+    _update_model_visibility_from_property(prop)
     prop.model.properties[name] = prop
 
     return prop
@@ -815,30 +811,28 @@ def _read_enum(
 
     enum.meta = last
 
-    model_visibility = None
-    property_visibility = None
+    enum_type = getattr(enum.meta, "type")
 
-    if state.model:
-        model_visibility = _parse_visibility(state.model.visibility)
-    if enum.meta:
-        property_visibility = _parse_visibility(enum.meta.visibility)
-    enum_visibility = _parse_visibility(enum.visibility)
+    # If string enum prepare is empty, use source as prepare value
+    if enum.prepare == "" and enum_type == "string":
+        enum.prepare = f'"{enum.source}"'
 
-    if property_visibility is not None and enum_visibility is not None and property_visibility < enum_visibility:
-        enum.errors.append(
-            _(
-                'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų lauko metaduomenų matomumo lygį "{2}". '
-            ).format(enum.title, enum.visibility, enum.meta.visibility)
-        )
-    elif model_visibility is not None and enum_visibility is not None and model_visibility < enum_visibility:
-        enum.errors.append(
-            _(
-                'Duomenų reikšmės "{0}" metaduomenų matomumo lygis "{1}" negali būti aukštesnis už duomenų modelio metaduomenų matomumo lygį "{2}". '
-            ).format(enum.title, enum.visibility, state.model.visibility)
-        )
+    if enum.prepare == "":
+        enum.errors.append(_(f'Duomenų reikšmė (source: "{enum.source}") privalo turėti nurodytą "prepare" stulpelį.'))
+
+    _update_parent_visibility_from_enum(state, enum)
+
+    # Validate if enum item value matches enum type
+    if (type_checker := get_type_checker_for_type(enum_type)) and type(type_checker) is not NotImplementedTypeChecker:
+        try:
+            type_checker.check_enum_item_value(enum.prepare)
+        except TypeCheckerError as e:
+            enum.errors.append(str(e))
+
+    # Validate enum item value uniqueness
     if enum.meta.enums.get(name):
-        if enum.prepare in [e.prepare for e in enum.meta.enums[name]]:
-            enum.errors.append(_(f'Galima reikšmė "{enum.prepare}" jau egzistuoja.'))
+        if (enum.source, enum.prepare) in [(e.source, e.prepare) for e in enum.meta.enums[name]]:
+            enum.errors.append(_(f'Galima reikšmė (source: "{enum.source}") "{enum.prepare}" jau egzistuoja.'))
 
         enum.meta.enums[name].append(enum)
     else:
@@ -920,18 +914,29 @@ def _parse_visibility(value: str) -> int:
     return visibility_mapper.get(value)
 
 
+def get_relative_model_name_for_base(dataset: Dataset, name: str) -> str:
+    if name.startswith("/"):
+        return name[1:]
+    elif "/" in name or dataset is None:
+        return name
+    else:
+        return f"{dataset.name}/{name}"
+
+
 def get_relative_model_name(dataset: Dataset, name: str) -> str:
     if name.startswith("/"):
         return name[1:]
     elif dataset is None:
         return name
     else:
-        return "/".join(
-            [
-                dataset.name,
-                name,
-            ]
-        )
+        return f"{dataset.name}/{name}"
+
+
+def get_relative_model_name_for_ref(dataset: Dataset, name: str) -> str:
+    if name.startswith("/") or dataset is None:
+        return name
+    else:
+        return f"{dataset.name}/{name}"
 
 
 def _get_level(row: Row) -> str:
@@ -1027,3 +1032,22 @@ def _validate_resource_name(name: str, meta: Model):
         _validate_name(name, meta)
         if any([ch.isupper() for ch in name]):
             meta.errors.append(_(f'Kodiniame pavadinime negali būti naudojamos didžiosios raidės: "{name}".'))
+
+
+def _update_model_visibility_from_property(prop: Property) -> None:
+    model_visibility = _parse_visibility(prop.model.visibility)
+    prop_visibility = _parse_visibility(prop.visibility)
+    if model_visibility is not None and prop_visibility is not None and model_visibility < prop_visibility:
+        prop.model.visibility = prop.visibility
+
+
+def _update_parent_visibility_from_enum(state: State, enum: Enum) -> None:
+    model_visibility = _parse_visibility(state.model.visibility) if state.model else None
+    property_visibility = (
+        _parse_visibility(enum.meta.visibility) if enum.meta and isinstance(enum.meta, Property) else None
+    )
+    enum_visibility = _parse_visibility(enum.visibility)
+    if property_visibility is not None and enum_visibility is not None and property_visibility < enum_visibility:
+        enum.meta.visibility = enum.visibility
+    if model_visibility is not None and enum_visibility is not None and model_visibility < enum_visibility:
+        state.model.visibility = enum.visibility

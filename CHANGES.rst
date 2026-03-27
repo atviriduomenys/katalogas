@@ -1,8 +1,173 @@
 Changes
 #######
 
-v 1.15.0 (unreleased)
+v 1.18.0 (current)
 ==================
+
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2324
+
+- Several issues related to enum item handling:
+    - When creating an enum item via the UI, the metadata version is now correctly set.
+    - Importing a manifest that contains non-string enum items without prepare values will now add an error indicating that a prepare column is required.
+    - Importing a manifest with string enum items and no prepare values will now automatically use the source column as the prepare value.
+    - Creating enum items via the UI will now return an error if a value already exists in the enum.
+    - Creating and importing enums will now check enum item value types.
+    - Enum manifest export will export enum level column correctly.
+    - Boolean type enum items can now be created/changed via UI.
+    - Enum item uniqueness is checked for source+prepare values instead of prepare only. This allows creating enums with same prepare but different source values
+
+Improvements:
+
+https://github.com/atviriduomenys/katalogas/issues/2447
+
+- DataService and Agent related improvements:
+    - Disable deletion for `Agent` and `AgentEnvironemnt`.
+    - Add validation so each `Agent` can have only one `AgentEnvironment` per `environment`.
+    - Update DataService `endpoint_url`, `endpoint_description`, `endpoint_type`, `endpoint_description_type` fields validation to work with `Agent` selection.
+    - Add dynamic `endpoint_url` and `endpoint_description` display for DataService details page.
+    - Introduce `Dataset.conforms_to` field.
+    - Fix help text for DataService form fields.
+
+
+https://github.com/atviriduomenys/katalogas/issues/2329
+
+- Ensure that it is possible to set referenced properties for `ref` type properties on property create/edit form.
+    - Re-use already introduced widget for the field.
+    - Adjust the DOM to show/hide/clear field on different selections.
+    - Change the logic for the Create/Update view of property to create PropertyList objects.
+
+https://github.com/atviriduomenys/katalogas/issues/2255
+
+- Add organization representative access via org chain.
+    - Added `get_effective_user_role_via_organization` on Dataset — resolves a user's effective role via the org representative chain, taking the most restrictive role between the org and user assignments.
+    - Extended `has_perm` and `filter_datasets_for_user` to include datasets accessible through the organization representative chain.
+    - Prevented `open_data_representative` users from creating or updating structure objects with visibility below Package.
+
+v 1.17.0 (2026-03-16)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/2335
+
+- Access level display adjustments; If value exists, display the initial provided value, otherwise, default to average.
+
+
+v 1.16.0 (2026-03-16)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/2321
+
+- Refactor `Agent` by introducing `AgentEnvironment` model.
+- Move relation from `Agent.service` to `Dataset.agent`.
+
+
+https://github.com/atviriduomenys/katalogas/issues/2435
+
+- Change recipient for reply comment.
+
+https://github.com/atviriduomenys/katalogas/issues/2438
+
+Security: Fix open Dependabot vulnerability alerts across pip and npm dependencies:
+
+- Bump Django from 4.2.26 to 4.2.28 (CVE-2026-1207 SQL injection, and 5 other CVEs).
+- Bump django-allauth from 0.51.0 to 65.14.3 (CVE-2025-65430 inactive user token bypass, CVE-2025-65431 mutable identifier auth).
+- Bump cryptography from 44.0.0 to 46.0.5 (SECT curves subgroup attack).
+- Bump weasyprint from 62.0 to 68.1 (SSRF protection bypass).
+- Bump pillow to 12.1.1 (out-of-bounds write on PSD images).
+- Bump authlib from 1.6.0 to 1.6.8 (account takeover via login CSRF).
+- Bump sqlparse to 0.5.5 (DoS via tuple list formatting).
+- Bump aiohttp to 3.13.3 (cookie parser vulnerability, and 6 other CVEs).
+- Bump pyasn1 to 0.6.2 (DoS via malformed RELATIVE-OID).
+- Bump urllib3 to 2.6.3 (decompression bomb bypass on redirects).
+- Bump python-multipart to 0.0.22 (arbitrary file write via path traversal).
+- Bump setuptools from 75.7.0 to 78.1.1 (path traversal).
+- Bump django-filer from 3.2.3 to 3.4.4 (unrestricted dangerous file upload).
+- Bump brotli to 1.2.0 (DoS via malicious decompression).
+- Bump djangorestframework to 3.16.1 (XSS).
+- Bump django-select2 to 8.4.8 (secret cache key leakage).
+- Bump Django from 4.2.28 to 4.2.29 (uncontrolled resource consumption, race condition).
+- Bump immutable from 5.1.4 to 5.1.5 (prototype pollution).
+- Replace node-sass with Dart Sass to fix transitive npm vulnerabilities (minimatch, tar).
+- Bump webpack to 5.105.3 (SSRF via HTTP redirects).
+- Remove lodash (prototype pollution).
+- Add `allauth.account.middleware.AccountMiddleware` required by new django-allauth.
+- Add `oauthlib` as explicit dependency (previously transitive via old django-allauth).
+- Add dependency review CI workflow for PR vulnerability scanning.
+- Override `serialize-javascript` version to ^7.0.3
+- Fix GitHub CodeQL code scanning alerts:
+
+  - Add explicit `permissions: contents: read` to `run_tests.yml` workflow.
+  - Fix stack trace exposure in Spinta API responses (`structure/services.py`).
+  - Fix stack trace exposure in API serializer validation (`api/serializers.py`).
+  - Fix URL redirection from user input in `ModelDataView`.
+  - Fix DOM XSS in `model_data.html` by using `URL` API for safe navigation.
+  - Add SRI integrity hashes to CDN-loaded CodeMirror resources.
+  - Remove dead commented-out code with insecure CDN references.
+
+https://github.com/atviriduomenys/katalogas/issues/2363
+
+- Introduce DatasetAccessMixin to centralize dataset access control logic
+previously scattered across viewsets.
+- `is_open_data_representative` – checks whether the current user or
+organization role has open data access
+- `_filter_queryset_by_access` – filters datasets based on access rights
+appropriate to the user or role
+- `_check_dataset_access` – raises `PermissionDenied` for inaccessible datasets
+- Changed Dataset access_right default value to PUBLIC from CONFIDENTIAL
+
+https://github.com/atviriduomenys/katalogas/issues/2349
+
+- Fix issues with Base row not being linked correctly, if model is imported with one manifest and referenced with base with another.
+
+https://github.com/atviriduomenys/katalogas/issues/2434
+
+- Added metadata field for dataset when creating through post request
+
+https://github.com/atviriduomenys/katalogas/issues/2334
+
+- Propagate visibility upward from property to model
+- Added _update_model_visibility_from_property which ensures a model's visibility is automatically elevated when one of its properties has higher visibility.
+- Added _update_parent_visibility_from_enum which propagates visibility upward through the full chain — from enum to its parent property, and from property to the model — applying the same rule at each level.
+
+https://github.com/atviriduomenys/katalogas/issues/2336
+
+- Set all manifest fields on the imported Comment objects
+
+https://github.com/atviriduomenys/katalogas/issues/2467
+
+- Comments for `Base` manifest rows are now imported & displayed correctly in Catalog & after export.
+
+v 1.15.0 (2026-02-27)
+==================
+
+Bug fixes:
+
+https://github.com/atviriduomenys/katalogas/issues/2353
+
+- Do not strip `/` prefix from `property.ref` during import/export.
+
+
+https://github.com/atviriduomenys/katalogas/issues/2339
+
+- Adjust export logic for the `resource` column of manifest:
+    - More explicit filtering on distributions;
+    - Removing short-circuit which caused some resources to not be exported;
+    - Adjusting the logic for `_to_relative_model_name`;
+    - Additional improvements on `_dataset_resources_to_tabular` to avoid early exports for some rows (which caused missing some data)
+
+https://github.com/atviriduomenys/katalogas/issues/2429
+
+- Comment button fix for reply/edit/delete buttons to work.
+
+https://github.com/atviriduomenys/katalogas/issues/2257
+
+- Index query optimization to fix N+1 problem.
+
+v 1.14.1 (2026-02-23)
+==================
+
+Bug fixes:
 
 https://github.com/atviriduomenys/katalogas/issues/2397
 

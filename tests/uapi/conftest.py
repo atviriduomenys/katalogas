@@ -12,8 +12,8 @@ from django.urls import reverse
 
 from vitrina.datasets.factories import DatasetFactory, DCATResourceSubclassFactory
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.orgs.factories import OrganizationFactory
-from vitrina.orgs.models import Organization
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.models import Organization, Representative
 from vitrina.projects.factories import ProjectFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
@@ -21,8 +21,8 @@ from vitrina.settings import OAUTH_AGENT_DEFAULT_SCOPES
 from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.smart_contracts.models import Agreement
 from vitrina.structure.factories import MetadataFactory
-from vitrina.uapi.factories import AgentFactory
-from vitrina.uapi.models import Agent
+from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
+from vitrina.uapi.models import Agent, AgentEnvironment
 from vitrina.users.factories import UserFactory
 from vitrina.users.models import User
 
@@ -36,16 +36,18 @@ def _generate_test_token(
     scopes: Iterable[str] = ("datasets:write",),
     organization: Organization | None = None,
     expires_in: int = 900,
-    agent: Agent | None = None,
+    agent_environment: AgentEnvironment | None = None,
     create_agent: bool = True,
     agent_is_enabled: bool = True,
 ):
-    if organization and not agent and create_agent:
-        agent = AgentFactory(organization=organization, oauth_client_id=str(uuid.uuid4()), is_enabled=agent_is_enabled)
+    if organization and not agent_environment and create_agent:
+        agent_environment = AgentEnvironmentFactory(
+            agent__organization=organization, oauth_client_id=str(uuid.uuid4()), is_enabled=agent_is_enabled
+        )
     now = datetime.utcnow()
     claims = {
         "iss": "test-issuer",
-        "sub": agent.oauth_client_id if agent else None,
+        "sub": agent_environment.oauth_client_id if agent_environment else None,
         "scope": " ".join(scopes),
         "iat": now,
         "exp": now + timedelta(seconds=expires_in),
@@ -80,15 +82,19 @@ def test_jwk() -> RSAKey:
 
 @pytest.fixture()
 def agent(organization: Organization) -> Agent:
-    return AgentFactory(oauth_client_id="test-agent-oauth-client-id", organization=organization)
+    return AgentFactory(organization=organization)
 
 
 @pytest.fixture()
-def valid_token(
-    test_jwk: RSAKey,
-    organization: Organization,
-) -> str:
-    return _generate_test_token(test_jwk, organization=organization, scopes=OAUTH_AGENT_DEFAULT_SCOPES)
+def agent_environment(agent: Agent) -> AgentEnvironment:
+    return AgentEnvironmentFactory(agent=agent, oauth_client_id=str(uuid.uuid4()))
+
+
+@pytest.fixture()
+def valid_token(test_jwk: RSAKey, organization: Organization, agent_environment: AgentEnvironment) -> str:
+    return _generate_test_token(
+        test_jwk, agent_environment=agent_environment, organization=organization, scopes=OAUTH_AGENT_DEFAULT_SCOPES
+    )
 
 
 @pytest.fixture()
@@ -110,12 +116,13 @@ def organization() -> Organization:
 
 
 @pytest.fixture
-def dataset(organization: Organization) -> Dataset:
+def dataset(organization: Organization, agent: Agent) -> Dataset:
     dataset = DatasetFactory(
         organization=organization,
         title="Title of the Dataset",
         description="Description of the Dataset.",
         metadata="test/dataset",
+        agent=agent,
     )
     return dataset
 
@@ -201,3 +208,18 @@ def dsa() -> str:
 ,,,,,email_address,string,,email,,,,,,,,,,
 ,,,,,active,boolean,,isActive,,,,,,,,,,
 """
+
+
+@pytest.fixture
+def coordinator(organization: Organization) -> User:
+    return RepresentativeFactory(content_object=organization, role=Representative.RESOURCE_COORDINATOR).user
+
+
+@pytest.fixture
+def manager(organization: Organization) -> User:
+    return RepresentativeFactory(content_object=organization, role=Representative.RESOURCE_MANAGER).user
+
+
+@pytest.fixture
+def admin() -> User:
+    return UserFactory(is_staff=True)

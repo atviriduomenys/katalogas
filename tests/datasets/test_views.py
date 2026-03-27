@@ -24,7 +24,7 @@ from vitrina.classifiers.factories import (
     DocumentationFactory,
 )
 from vitrina.classifiers.factories import LicenceFactory, ApplicableLegislationFactory
-from vitrina.classifiers.models import Category, AreaOfManagement, ConceptSchema
+from vitrina.classifiers.models import Category, AreaOfManagement, ConceptSchema, Concept
 from vitrina.comments.factories import CommentFactory
 from vitrina.comments.models import Comment
 from vitrina.datasets.factories import (
@@ -38,6 +38,7 @@ from vitrina.datasets.factories import (
     ContactFactory,
     DCATResourceSubclassFactory,
     DatasetGroupCategoryUriFactory,
+    DatasetServiceFactory,
 )
 from vitrina.datasets.factories import MANIFEST
 from vitrina.datasets.forms import (
@@ -59,9 +60,11 @@ from vitrina.projects.factories import ProjectFactory
 from vitrina.requests.factories import RequestObjectFactory, RequestFactory
 from vitrina.requests.models import RequestObject
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
+from vitrina.resources.models import Format
 from vitrina.settings import SPINTA_SERVER_URL
 from vitrina.structure.factories import ModelFactory, MetadataFactory, VersionFactory
 from vitrina.structure import VersionStatus
+from vitrina.structure.models import Metadata
 from vitrina.testing.templates import strip_empty_lines
 from vitrina.users.factories import UserFactory, ManagerFactory
 from vitrina.users.models import User
@@ -69,6 +72,7 @@ from vitrina.identifiers.factories import IdentifierFactory
 from vitrina.identifiers.models import Identifier, Agency
 from vitrina.smart_contracts.factories import AgreementFactory
 from vitrina.utils import RevisionComment, RevisionSource
+from vitrina.uapi.factories import AgentFactory, AgentEnvironmentFactory
 
 pytestmark = pytest.mark.django_db
 timezone = pytz.timezone(settings.TIME_ZONE)
@@ -358,6 +362,52 @@ class TestDatasetDetailView:
         assert org.website in response.text
         assert org.email in response.text
         assert org.phone in response.text
+
+        assert publisher_org.title in response.text
+        assert publisher_org.website in response.text
+
+    def test_data_service_view_with_agent(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        user = UserFactory(is_staff=True, organization=org)
+        agent = AgentFactory(organization=org)
+        agent_environment = AgentEnvironmentFactory(agent=agent)
+        uapi_concept = Concept.objects.get(code="UAPI")
+        data_service = DatasetServiceFactory(organization=org, agent=agent, conforms_to=uapi_concept)
+
+        app.set_user(user)
+
+        response = app.get(reverse("dataset-detail", args=[data_service.pk])).follow()
+        assert response.status_code == 200
+
+        assert agent_environment.agent_address in response.text
+        assert (
+            reverse("dataset-structure-export-openapi", args=[data_service.pk, data_service.latest_version().pk])
+            in response.text
+        )
+        assert "JSON" in response.text
+        assert "OpenAPI" in response.text
+        assert uapi_concept.label in response.text
+
+    def test_data_service_view_without_agent(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        user = UserFactory(is_staff=True, organization=org)
+        data_service = DatasetServiceFactory(
+            organization=org,
+            endpoint_url="http://test.com",
+            endpoint_type=Format.objects.first(),
+            endpoint_description="http://example.com",
+            endpoint_description_type=Format.objects.first(),
+        )
+
+        app.set_user(user)
+
+        response = app.get(reverse("dataset-detail", args=[data_service.pk])).follow()
+        assert response.status_code == 200
+
+        assert data_service.endpoint_url in response.text
+        assert data_service.endpoint_description in response.text
+        assert data_service.endpoint_type.title in response.text
+        assert data_service.endpoint_description_type.title in response.text
 
 
 @pytest.mark.haystack
@@ -1619,6 +1669,33 @@ class TestDatasetUpdateView:
         assert dataset.dataset_files.all().exists()
         assert form.enctype == "multipart/form-data"
 
+    def test_dataset_update_service_agent(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        json_format = Format.objects.get(title="JSON")
+        openapi_format = Format.objects.get(title="OpenAPI")
+        dataservice = DatasetServiceFactory(
+            organization=organization,
+            endpoint_url=None,
+            endpoint_description=None,
+            endpoint_type=json_format,
+            endpoint_description_type=openapi_format,
+        )
+        agent = AgentFactory(organization=organization)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-change", kwargs={"pk": dataservice.id})
+
+        form = app.get(url).forms["dataset-form"]
+        form["agent"] = agent.pk
+        form["conforms_to"] = Concept.objects.get(code="UAPI").pk
+
+        assert not dataservice.agent
+        response = form.submit()
+        assert response.status_code == 302
+        dataservice.refresh_from_db()
+        assert dataservice.agent == agent
+
 
 class TestDatasetCreateView:
     def test_add_form_no_login(self, app: DjangoTestApp):
@@ -2079,6 +2156,103 @@ class TestDatasetCreateView:
         dataset = Dataset.objects.get(organization=organization)
         assert dataset.dataset_files.all().exists()
         assert form.enctype == "multipart/form-data"
+
+    @pytest.mark.django_db
+    def test_dataset_create_creates_representative_with_org_role(self, app: DjangoTestApp):
+        frequency = FrequencyFactory(is_default=True)
+
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory()
+
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        RepresentativeFactory(
+            user=user,
+            organization=org,
+            role=Representative.OPEN_DATA_COORDINATOR,
+            content_type=ContentType.objects.get_for_model(org),
+            object_id=org.pk,
+        )
+
+        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
+            "dataset-form"
+        ]
+
+        form["title"] = "Dataset without creator"
+        form["description"] = "Test dataset"
+        form["frequency"] = str(frequency.pk)
+        form["access_rights"] = Dataset.PUBLIC
+
+        response = form.submit()
+
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.get(translations__title="Dataset without creator")
+
+        rep = Representative.objects.filter(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            user=user,
+        ).first()
+
+        assert rep is not None
+        assert rep.role == Representative.OPEN_DATA_COORDINATOR
+
+    def test_create_service_with_agent(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="service")
+        agent = AgentFactory(organization=organization)
+        contact = ContactFactory(organization=organization)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})
+
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Some title"
+        form["tags"] = "test"
+        form["contact"] = contact.pk
+        form["agent"] = agent.pk
+        form["endpoint_type"] = Format.objects.get(title="JSON").pk
+        form["endpoint_description_type"] = Format.objects.get(title="OpenAPI").pk
+        form["conforms_to"] = Concept.objects.get(code="UAPI").pk
+
+        response = form.submit()
+
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.filter(translations__title="Some title").first()
+
+        assert dataset.agent == agent
+        assert dataset.conforms_to == Concept.objects.get(code="UAPI")
+
+    def test_create_service_without_agent(self, app: DjangoTestApp) -> None:
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name="service")
+        contact = ContactFactory(organization=organization)
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        url = reverse("dataset-add", kwargs={"pk": organization.id, "subclass_uuid": subclass.pk})
+
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Some title"
+        form["tags"] = "test"
+        form["contact"] = contact.pk
+        form["endpoint_url"] = "https://data.gov.lt"
+        form["endpoint_description"] = "http://api.data.gov.lt"
+
+        response = form.submit()
+
+        assert response.status_code == 302
+
+        dataset = Dataset.objects.filter(translations__title="Some title").first()
+
+        assert dataset.agent is None
+        assert dataset.conforms_to is None
+        assert dataset.endpoint_url == "https://data.gov.lt"
+        assert dataset.endpoint_description == "http://api.data.gov.lt"
 
 
 class TestDatasetDeleteView:
@@ -3235,82 +3409,108 @@ def test_dataset_history_view_with_permission(app: DjangoTestApp):
     assert resp.context["history"][0]["user"] == user
 
 
-def test_dataset_structure_import_without_permission(app: DjangoTestApp):
-    user = UserFactory()
-    dataset = DatasetFactory()
-    metadata_version = VersionFactory(dataset=dataset)
-    app.set_user(user)
-    url = reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk])
-    resp = app.get(url, expect_errors=True)
+class TestDatasetStructureImport:
+    def test_dataset_structure_import_without_permission(self, app: DjangoTestApp):
+        user = UserFactory()
+        dataset = DatasetFactory()
+        metadata_version = VersionFactory(dataset=dataset)
+        app.set_user(user)
+        url = reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk])
+        resp = app.get(url, expect_errors=True)
 
-    assert resp.status_code == 403
+        assert resp.status_code == 403
 
+    @pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
+    def test_dataset_import_in_not_draft_version(self, app: DjangoTestApp, status: str):
+        version = VersionFactory(status=status)
+        user = UserFactory(is_staff=True)
+        dataset = version.dataset
 
-@pytest.mark.parametrize("status", [s for s in VersionStatus.values if s != VersionStatus.DRAFT])
-def test_dataset_import_in_not_draft_version(app: DjangoTestApp, status: str):
-    version = VersionFactory(status=status)
-    user = UserFactory(is_staff=True)
-    dataset = version.dataset
+        app.set_user(user)
+        url = reverse("dataset-structure-import", args=[dataset.pk, version.pk])
+        response = app.get(url)
+        assert response.status_code == 302
+        assert response.location == dataset.get_absolute_url()
 
-    app.set_user(user)
-    url = reverse("dataset-structure-import", args=[dataset.pk, version.pk])
-    response = app.get(url)
-    assert response.status_code == 302
-    assert response.location == dataset.get_absolute_url()
+    def test_dataset_structure_import_not_standardized(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+        metadata_version = VersionFactory(dataset=dataset)
 
+        app.set_user(user)
+        resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
+        form = resp.forms["dataset-structure-form"]
+        form["file"] = Upload("manifest.csv", b"Column\nValue")
+        form.submit()
 
-def test_dataset_structure_import_not_standardized(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    dataset = DatasetFactory()
-    metadata_version = VersionFactory(dataset=dataset)
+        dataset.refresh_from_db()
+        structure = DatasetStructure.objects.get(dataset=dataset)
+        assert dataset.current_structure == structure
+        assert File.objects.count() == 1
+        assert structure.file.original_filename == "manifest.csv"
 
-    app.set_user(user)
-    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
-    form = resp.forms["dataset-structure-form"]
-    form["file"] = Upload("manifest.csv", b"Column\nValue")
-    form.submit()
+    def test_dataset_structure_import_standardized(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+        metadata_version = VersionFactory(dataset=dataset)
 
-    dataset.refresh_from_db()
-    structure = DatasetStructure.objects.get(dataset=dataset)
-    assert dataset.current_structure == structure
-    assert File.objects.count() == 1
-    assert structure.file.original_filename == "manifest.csv"
+        app.set_user(user)
+        resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
+        form = resp.forms["dataset-structure-form"]
+        form["file"] = Upload("file.csv", MANIFEST.encode())
+        form.submit()
 
+        dataset.refresh_from_db()
+        structure = DatasetStructure.objects.get(dataset=dataset)
+        assert dataset.current_structure == structure
+        assert File.objects.count() == 1
+        assert structure.file.original_filename == "file.csv"
 
-def test_dataset_structure_import_standardized(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    dataset = DatasetFactory()
-    metadata_version = VersionFactory(dataset=dataset)
+    def test_dataset_structure_import_with_version(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+        version = VersionFactory(dataset=dataset, status=VersionStatus.DRAFT)
 
-    app.set_user(user)
-    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, metadata_version.pk]))
-    form = resp.forms["dataset-structure-form"]
-    form["file"] = Upload("file.csv", MANIFEST.encode())
-    form.submit()
+        app.set_user(user)
+        resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, version.pk]))
+        form = resp.forms["dataset-structure-form"]
+        form["file"] = Upload("file.csv", MANIFEST.encode())
+        form.submit()
 
-    dataset.refresh_from_db()
-    structure = DatasetStructure.objects.get(dataset=dataset)
-    assert dataset.current_structure == structure
-    assert File.objects.count() == 1
-    assert structure.file.original_filename == "file.csv"
+        dataset.refresh_from_db()
+        structure = DatasetStructure.objects.get(dataset=dataset)
+        assert dataset.current_structure == structure
+        assert File.objects.count() == 1
+        assert structure.file.original_filename == "file.csv"
 
+    def test_dataset_structure_import_ref_property_ref_column_does_not_lose_prefixes(self, app: DjangoTestApp):
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
+            '3,,,,Country,,,"id,title",,,,,,,,,,,\n'
+            "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
+            "5,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
+        )
 
-def test_dataset_structure_import_with_version(app: DjangoTestApp):
-    user = UserFactory(is_staff=True)
-    dataset = DatasetFactory()
-    version = VersionFactory(dataset=dataset, status=VersionStatus.DRAFT)
+        user = UserFactory(is_staff=True)
+        dataset = DatasetFactory()
+        version = VersionFactory(dataset=dataset)
 
-    app.set_user(user)
-    resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, version.pk]))
-    form = resp.forms["dataset-structure-form"]
-    form["file"] = Upload("file.csv", MANIFEST.encode())
-    form.submit()
+        app.set_user(user)
 
-    dataset.refresh_from_db()
-    structure = DatasetStructure.objects.get(dataset=dataset)
-    assert dataset.current_structure == structure
-    assert File.objects.count() == 1
-    assert structure.file.original_filename == "file.csv"
+        resp = app.get(reverse("dataset-structure-import", args=[dataset.pk, version.pk]))
+        form = resp.forms["dataset-structure-form"]
+        form["file"] = Upload("manifest.csv", manifest.encode())
+
+        form.submit()
+
+        dataset.refresh_from_db()
+        structure = DatasetStructure.objects.get(dataset=dataset)
+
+        assert dataset.current_structure == structure
+        assert structure.file.original_filename == "manifest.csv"
+        assert Metadata.objects.get(dataset=dataset, uuid=5).ref == "/datasets/gov/ref/dataset/Continent"
 
 
 def test_dataset_structure_history_url(app: DjangoTestApp):
@@ -3815,7 +4015,6 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
         published=datetime(2016, 8, 1),
         frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title="Energy"),
             CategoryFactory(
                 title="Environment",
                 uri=f"{po}/data-theme/ENVI",
@@ -3876,20 +4075,14 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
-        <dcat:theme>
-            <skos:Concept>
-                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
-            </skos:Concept>
-        </dcat:theme>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -3918,7 +4111,9 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -3941,7 +4136,9 @@ def test_dataset_rdf_download__dataset_with_landing_page(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="{dataset.landing_page}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -3975,7 +4172,6 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
         published=datetime(2016, 8, 1),
         frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title="Energy"),
             CategoryFactory(
                 title="Environment",
                 uri=f"{po}/data-theme/ENVI",
@@ -4035,20 +4231,14 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
-        <dcat:theme>
-            <skos:Concept>
-                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
-            </skos:Concept>
-        </dcat:theme>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -4076,7 +4266,9 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="{dist1.access_url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4099,7 +4291,9 @@ def test_dataset_rdf_download__dataset_without_landing_page(app: DjangoTestApp):
                 <dcat:accessURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4133,7 +4327,6 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
         published=datetime(2016, 8, 1),
         frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title="Energy"),
             CategoryFactory(
                 title="Environment",
                 uri=f"{po}/data-theme/ENVI",
@@ -4219,20 +4412,14 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:Dataset rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
-        <dcat:theme>
-            <skos:Concept>
-                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
-            </skos:Concept>
-        </dcat:theme>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>
@@ -4261,16 +4448,18 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/json"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
                 </dct:license>
                 <dcat:mediaType>
-                    <dct:MediaType rdf:about=""/>
+                    <dct:MediaType rdf:about="https://www.iana.org/assignments/media-types/application/json"/>
                 </dcat:mediaType>
                 <dct:format>
-                    <dct:MediaTypeOrExtent rdf:about=""/>
+                    <dct:MediaTypeOrExtent rdf:about="http://publications.europa.eu/resource/authority/file-type/JSON"/>
                 </dct:format>
             </dcat:Distribution>
         </dcat:distribution>
@@ -4285,7 +4474,9 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/jsonl"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4309,7 +4500,9 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/:all/:format/rdf"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4333,7 +4526,9 @@ def test_dataset_rdf_download__dataset_with_spinta_data(app: DjangoTestApp):
                 <dcat:downloadURL rdf:resource="{SPINTA_SERVER_URL}/test/dataset/TestModel/:format/csv"/>
                 <dcat:accessService rdf:resource="http://localhost/datasets/{data_service.pk}/"/>
                 <dct:rights>
-                    <dct:RightsStatement>platinimo sąlygos</dct:RightsStatement>
+                    <dct:RightsStatement>
+                        <rdfs:label>platinimo sąlygos</rdfs:label>
+                    </dct:RightsStatement>
                 </dct:rights>
                 <dct:license>
                     <dct:LicenseDocument rdf:about="http://publications.europa.eu/resource/authority/licence/CC_BY_4_0"/>
@@ -4367,7 +4562,6 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
         published=datetime(2016, 8, 1),
         frequency=FrequencyFactory(uri=f"{po}/frequency/IRREG"),
         category=[
-            CategoryFactory(title="Energy"),
             CategoryFactory(
                 title="Environment",
                 uri=f"{po}/data-theme/ENVI",
@@ -4413,20 +4607,14 @@ def test_dataset_rdf_download__datas_service(app: DjangoTestApp):
     xmlns:dcat="http://www.w3.org/ns/dcat#"
     xmlns:foaf="http://xmlns.com/foaf/0.1/"
     xmlns:dcatap="http://data.europa.eu/r5r/"
+    xmlns:rdfs="http://www.w3.org/2000/01/rdf-schema#"
     xmlns:eli="https://data.europa.eu/eli/">
     <dcat:DataService rdf:about="http://localhost/datasets/{dataset.id}/">
         <dct:title xml:lang="en">Test1</dct:title>
         <dct:description xml:lang="en">Dataset description.</dct:description>
         <dct:title xml:lang="lt">Testas1</dct:title>
         <dct:description xml:lang="lt">Duomenų rinkinio aprašymas.</dct:description>
-        <dcat:theme>
-            <skos:Concept>
-                <skos:prefLabel xml:lang="lt">Energy</skos:prefLabel>
-            </skos:Concept>
-        </dcat:theme>
-        <dcat:theme>
-            <skos:Concept rdf:about="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
-        </dcat:theme>
+        <dcat:theme rdf:resource="http://publications.europa.eu/resource/authority/data-theme/ENVI"/>
         <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">2016-08-01</dct:issued>
         <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dataset.modified.strftime("%Y-%m-%d")}</dct:modified>
         <dct:accessRights rdf:resource="http://publications.europa.eu/resource/authority/access-right/PUBLIC"/>

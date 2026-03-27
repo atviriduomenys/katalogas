@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-12 12:44+0200\n"
+"POT-Creation-Date: 2026-03-26 17:13+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,9 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -52,9 +55,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -517,6 +517,20 @@ msgstr "Evaluated"
 msgid "Viešas komentaras"
 msgstr "Public comment"
 
+#, python-brace-format
+msgid ""
+"Struktūros importavimo metu sukurtas sisteminis komentaras.<br>\n"
+"                <b>Objektas:</b> {content_type} | {content_object}<br>\n"
+"                <b>Parengimas:</b> <pre><code>{prepare}</code></pre><br>\n"
+"                <b>Nuoroda:</b> <a href=\"{uri}\">{uri}</a>\n"
+"            "
+msgstr ""
+"Comment imported with a manifest.<br>\n"
+"                <b>Object:</b> {content_type} | {content_object}<br>\n"
+"                <b>Prepare:</b> <pre><code>{prepare}</code></pre><br>\n"
+"                <b>URI:</b> <a href=\"{uri}\">{uri}</a>\n"
+"            "
+
 msgid "Negalima atmesti — patvirtinti/atidaryti priskyrimai egzistuoja."
 msgstr "Cannot reject - approved/opened assignments exist"
 
@@ -666,14 +680,14 @@ msgid ""
 "<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
 "konkrečią nuorodą, pvz., „#17.2“.<br>Tais atvejais, kai yra keli dokumentai "
 "su priedais: „#priedas1/17.2“, „17.2/17.2.5“, kur „priedas1“ yra dokumento "
-"failo pavadinimas.<br>Atitinka eli:LegalResource."
+"failo pavadinimas.<br>Atitinka dcatap:applicableLegislation."
 msgstr ""
 "The legal act on the basis of which the dataset is managed and maintained."
 "<br>To specify a particular location in the legal document, append \"#\" "
 "followed by the exact reference, e.g., \"#17.2\".<br>In cases where there "
 "are multiple documents with annexes: \"#annex1/17.2\", \"17.2/17.2.5\", "
 "where \"annex1\" is the document file name.<br>Corresponds to "
-"eli:LegalResource."
+"dcatap:applicableLegislation."
 
 msgid "Tėvinis išteklius"
 msgstr "Parent resource"
@@ -742,6 +756,12 @@ msgstr ""
 "A description of the services available via the end-points. Including their "
 "operations, parameters etc. Corresponds to dcat:endpointDescription."
 
+msgid "Atitinka"
+msgstr "Conforms to"
+
+msgid "Nurodo kokį standartą atitinka paslauga. Atitinka dct:conformsTo."
+msgstr "Specifies which standard the service conforms to. Corresponds to dct:conformsTo."
+
 msgid "Ar duomenys vieši?"
 msgstr "Is the data public?"
 
@@ -753,6 +773,48 @@ msgstr "Detailed description of the dataset"
 
 msgid "Surašykite aktualius raktinius žodžius"
 msgstr "List relevant keywords"
+
+msgid "Pasirinkus agentą, šis laukas negali būti užpildytas."
+msgstr "If agent is selected, this field must be left emtpy."
+
+#, python-brace-format
+msgid ""
+"Nepavyko rasti `{0}` formato pasirinkimų sąraše. Susisiekite su "
+"administracija."
+msgstr ""
+"Could not find {0} in the list of format choices. Please contact the "
+"administration."
+
+#, python-brace-format
+msgid "Pasirinkus agentą, API formatas privalo būti '{0}'"
+msgstr "If an agent is selected, the API format must be '{0}'."
+
+#, python-brace-format
+msgid "Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'"
+msgstr "If an agent is selected, the API specification format must be '{0}'."
+
+msgid ""
+"Nepavyko rasti `UDTS` standarto pasirinkimų sąraše. Susisiekite su "
+"administracija."
+msgstr ""
+"Could not find the `UAPI` standard in the list of choices. Please contact the "
+"administration."
+
+msgid "Su agentu susietos paslaugos privalo atitikti UDTS standartą."
+msgstr "Services associated with an agent must comply with the UAPI standard."
+
+msgid "Pasirinkite agentą, arba nurodykite API adresą."
+msgstr "Select an agent or specify an API address."
+
+msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
+msgstr "Select an agent or specify an API specification."
+
+msgid ""
+"UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
+"Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+msgstr ""
+"Services that comply with the UAPI standard must be associated with an agent. "
+"Select an agent or choose a different value for the 'Conforms to' field."
 
 msgid "Metaduomenų katalogo pavadinimas"
 msgstr "Metadata catalog title"
@@ -1054,14 +1116,21 @@ msgstr "Dataset relations"
 msgid "Duomenų ištekliaus poklasis"
 msgstr "Resource subclass"
 
+msgid "Agentas"
+msgstr "Agent"
+
+msgid ""
+"Duomenų publikavimo paslaugą teikiantis agentas. Privaloma nurodyti arba "
+"Agentą arba API adresą. Atitinka dcat:endpointURL"
+msgstr ""
+"Agent providing the data publishing service. Either the Agent or the API "
+"address must be specified. Corresponds to dcat:endpointURL."
+
 msgid "API formatas"
 msgstr "API format"
 
-msgid ""
-"Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."
-msgstr ""
-"The structure that can be returned by querying the endpoint URL. Corresponds "
-"to dct:MediaTypeOrExtent."
+msgid "Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:format."
+msgstr "Structure returned when calling the service URL. Corresponds to dct:format."
 
 msgid "API specifikacijos formatas"
 msgstr "API specification format"
@@ -1143,6 +1212,9 @@ msgstr ""
 "Reference to the declaration of rights. Corresponds to dct:rights / "
 "dct:relation."
 
+msgid "Nurodo, kokį standartą atitinka išteklius. Atitinka dct:conformsTo"
+msgstr "Specifies which standard the resource conforms to. Corresponds to dct:conformsTo."
+
 msgid "Paslaugos tipas. Atitinka dct:type"
 msgstr "Service type. Corresponds to dct:type"
 
@@ -1169,9 +1241,6 @@ msgstr "Relation identification"
 
 msgid "Priskyrimo rūšis"
 msgstr "Attribution type"
-
-msgid "Agentas"
-msgstr "Agent"
 
 msgid "Apibūdinimas"
 msgstr "Description"
@@ -1250,30 +1319,6 @@ msgstr "The organization can only be assigned the role of a data editor"
 
 msgid "Naudotojui išsiųstas laiškas dėl registracijos"
 msgstr "The user has been sent an email for registration"
-
-#, python-brace-format
-msgid ""
-"Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-"Data field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
-"the model metadata visibility level \"{2}\". "
-
-#, python-brace-format
-msgid ""
-"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už duomenų lauko metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-"Enum field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
-"the property metadata visibility level \"{2}\" . "
-
-#, python-brace-format
-msgid ""
-"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už duomenų modelio metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-"Enum field \"{0}\" metadata visibility level \"{1}\" must not be higher than "
-"the model metadata visibility level \"{2}\" . "
 
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
@@ -1418,6 +1463,9 @@ msgstr "Link to API documentation (e.g., OpenAPI, Swagger)"
 
 msgid "API dokumentacijos formatas (pvz., JSON, YAML)"
 msgstr "API documentation format (e.g., JSON, YAML)"
+
+msgid "Nurodo kokį standartą atitinka paslauga. (pvz., UDTS)"
+msgstr "Specifies which standard the service conforms to (e.g., UAPI)."
 
 msgid ""
 "Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys. Atitinka "
@@ -2666,10 +2714,8 @@ msgstr "Does the organization exist?"
 msgid "*Pastaba: Bus sukurta nauja organizacija."
 msgstr "*Note: A new organization will be created."
 
-#, fuzzy
-#| msgid "Koordinatoriai"
 msgid "Koordinatorius"
-msgstr "Coordinators"
+msgstr "Coordinator"
 
 msgid "Pasirinkite duomenų rinkino kūrėją"
 msgstr "Assign the creator of the dataset"
@@ -2920,9 +2966,6 @@ msgstr "This contact can not be deleted, because it is used in agreements."
 msgid "Ar tikrai norite ištrinti kontaktą \"{contact}\"?"
 msgstr "Are you sure you want to delete the contact \"{contact}\"?"
 
-msgid "Organizacijos sutartys"
-msgstr "Organization agreements"
-
 msgid "Sutartis"
 msgstr "Agreement"
 
@@ -2945,6 +2988,9 @@ msgstr ""
 
 msgid "API rakto pašalinimas nesėkmingas."
 msgstr "Couldn't remove the API key."
+
+msgid "Raktas"
+msgstr "Key"
 
 msgid ""
 "API raktas rodomas tik vieną kartą, todėl būtina nusikopijuoti. Sukurtas "
@@ -3653,6 +3699,20 @@ msgstr ""
 msgid "Duomenų paslauga"
 msgstr "Data service"
 
+msgid ""
+"Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys."
+"<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
+"konkrečią nuorodą, pvz., „#17.2“.<br>Tais atvejais, kai yra keli dokumentai "
+"su priedais: „#priedas1/17.2“, „17.2/17.2.5“, kur „priedas1“ yra dokumento "
+"failo pavadinimas.<br>Atitinka eli:LegalResource."
+msgstr ""
+"The legal act on the basis of which the dataset is managed and maintained."
+"<br>To specify a particular location in the legal document, append \"#\" "
+"followed by the exact reference, e.g., \"#17.2\".<br>In cases where there "
+"are multiple documents with annexes: \"#annex1/17.2\", \"17.2/17.2.5\", "
+"where \"annex1\" is the document file name.<br>Corresponds to "
+"eli:LegalResource."
+
 msgid "Šaltinio pavadinimas"
 msgstr "Source title"
 
@@ -3832,11 +3892,10 @@ msgstr "Agreement is created. Agreement document is not created yet."
 msgid "Pateiktas pasiūlymas iš duomenų gavėjo pusės."
 msgstr "Agreement document is signed by data receiver."
 
-#, fuzzy
-#| msgid "Sutarties dokumentas pasirašytas duomenų gavėjo ir duomenų teikėjo."
 msgid ""
 "Duomenų gavėjo pasiūlymas duomenims gauti yra patvirtintas duomenų teikėjo."
-msgstr "Agreement document is signed by data receiver and data provider."
+msgstr ""
+"Data receiver's request for data has been approved by the data provider."
 
 msgid "Sutarties dokumentas sukurtas, bet nepasirašytas."
 msgstr "Agreement document is created, but not signed yet."
@@ -4204,9 +4263,6 @@ msgstr "Dataset title"
 msgid "Duomenų rinkinio ar vardų erdvės aprašymas."
 msgstr "Dataset or namespace description."
 
-msgid "Reikšmė turi būti integer tipo."
-msgstr "Value must be integer."
-
 msgid "Aprašymas neatitinka Markdown formato."
 msgstr "Description doesn't match Markdown format."
 
@@ -4225,6 +4281,12 @@ msgid ""
 msgstr ""
 "The visibility of the metadata '{0}' should not be greater than the "
 "visibility of the data field '{1}'."
+
+#, python-brace-format
+msgid ""
+"Galima reikšmė \"{prepare}\" su reikšme šaltinyje \"{source}\" jau "
+"egzistuoja."
+msgstr "Enum item \"{prepare}\" with source \"{source}\" already exists."
 
 msgid "Nėra per ką sieti"
 msgstr "Nothing to link to"
@@ -4586,6 +4648,12 @@ msgstr "Type parameters"
 msgid "Nurodo duomenų lauko tipo parametrus."
 msgstr "Indicates the type parameters for the data field."
 
+msgid "Ryšio raktai"
+msgstr "Relation keys"
+
+msgid "Savybės iš susieto modelio, kurios naudojamos kaip ryšio raktas."
+msgstr "Properties from related model, which act as the relation key."
+
 msgid "Kodiniame pavadinime negali būti naudojamos didžiosios raidės."
 msgstr "Code name can not include upper case letters."
 
@@ -4751,13 +4819,26 @@ msgid "Metaduomenų versija"
 msgstr "Metadata version"
 
 msgid "Pending"
-msgstr ""
+msgstr "Pending"
 
 msgid "Valid"
-msgstr ""
+msgstr "Valid"
 
 msgid "Invalid"
-msgstr ""
+msgstr "Invalid"
+
+msgid ""
+"Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
+msgstr "Ensure, that it exists and has a confirmed (stable) version."
+
+msgid "Nepavyko gauti duomenų iš Saugyklos per nustatytą laiką"
+msgstr "Failed to retrieve data from Storage within the allotted time"
+
+msgid "Nepavyko gauti duomenų iš Saugyklos"
+msgstr "Failed to retrieve data from Storage"
+
+msgid "Gautas neteisingas duomenų formatas iš Saugyklos"
+msgstr "Received invalid data format from Storage"
 
 msgid "Užklausa"
 msgstr "Request"
@@ -4897,6 +4978,21 @@ msgstr "Estimated changes"
 msgid "Galiojantys keitimai"
 msgstr "Deployed changes"
 
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti string tipo."
+msgstr "Enum item \"{value}\" must be string type."
+
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti integer tipo."
+msgstr "Enum item \"{value}\" must be integer type."
+
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti boolean tipo. Viena iš: {possible_values}"
+msgstr "Enum item \"{value}\" must be boolean type. One of: {possible_values}"
+
+msgid "Savybės reikšmės tipas nėra palaikomas."
+msgstr "Type of property value is not implemented."
+
 msgid "Kiekis"
 msgstr "Amount"
 
@@ -4906,11 +5002,19 @@ msgstr "API: all records"
 msgid "Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."
 msgstr "Can not create a new enum, when the version status is not draft."
 
+#, python-brace-format
+msgid "Reikšmių duomenų lauko tipui \"{metadata_type}\" kurti negalima"
+msgstr "Cannot create enum items for property with type \"{metadata_type}\""
+
 msgid "Galimos reikšmės pridėjimas"
 msgstr "Add enum item"
 
 msgid "Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."
 msgstr "Can not edit the enum, when the version status is not draft."
+
+#, python-brace-format
+msgid "Reikšmių duomenų lauko tipui \"{metadata_type}\" keisti negalima"
+msgstr "Cannot change enum items for property with type \"{metadata_type}\""
 
 msgid "Galimos reikšmės redagavimas"
 msgstr "Edit enum item"
@@ -4987,9 +5091,6 @@ msgstr "Senior coordinator"
 
 msgid "Organizacijos tvarkytojas"
 msgstr "Data editor"
-
-msgid "Raktas"
-msgstr "Key"
 
 msgid "Project"
 msgstr "Project"
@@ -5395,12 +5496,11 @@ msgstr "Testing"
 msgid "Gamybinė"
 msgstr "Production"
 
-msgid ""
-"Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "
-"publikuojami Saugykloje\"."
-msgstr ""
-"This field is required if the property \"Open data is published in Open Data "
-"Repository\" is ticked."
+msgid "Agento aplinka"
+msgstr "Agent environment."
+
+msgid "Agento aplinkos"
+msgstr "Agent environments"
 
 msgid ""
 "Agentas su tokiu pavadinimu jau registruotas organizacijoje, pasirinkite "
@@ -5410,18 +5510,11 @@ msgstr ""
 "different name"
 
 msgid ""
-"Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."
-msgstr "Date when the last synchronization was attempted"
-
-msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
-msgstr "Was last synchronization successful?"
-
-msgid ""
-"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
-"klaidų."
+"Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "
+"publikuojami Saugykloje\"."
 msgstr ""
-"Indicates whether the last synchronization was successful, i.e. if no errors "
-"were raised during it"
+"This field is required if the property \"Open data is published in Open Data "
+"Repository\" is ticked."
 
 msgid "Nurodomas Agento pavadinimas."
 msgstr "The agent's title"
@@ -5436,28 +5529,6 @@ msgid ""
 "Nurodoma Agento rūšis t.y. ar bus naudojama \"Spinta\" ar kitas sprendimas."
 msgstr "Agent type, if \"Spinta\" or a different solution is used."
 
-msgid "Atviri duomenys publikuojami Saugykloje"
-msgstr "Open data is published in Open Data Repository"
-
-msgid ""
-"Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų "
-"duomenų Saugyklą."
-msgstr ""
-"Specifies if the Agent additionally publishes `access=open` data to Open "
-"Data Repository"
-
-msgid "Atvirų duomenų publikavimo nuoroda"
-msgstr "Open data publish URL"
-
-msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
-msgstr "URL, where open data is published to"
-
-msgid "Agentas įjungtas"
-msgstr "Agent is enabled"
-
-msgid "Nurodoma, ar Agentas yra įjungtas ar išjungtas."
-msgstr "Indicates whether the agent is enabled or disabled"
-
 msgid "Agentas archyvuotas"
 msgstr "Agent is archived"
 
@@ -5468,12 +5539,38 @@ msgstr ""
 "Indicates, whether the Agent is archived. Archived agents are not available "
 "to regular platform users"
 
-msgid "Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService."
-msgstr ""
-"The data service associated with the agent. Corresponds to DCAT:DataService."
-
 msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
-msgstr "The organization to which the agent is assigned"
+msgstr "The organization to which the agent is assigned."
+
+msgid ""
+"Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."
+msgstr "Date when the last synchronization was attempted."
+
+msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
+msgstr "Was last synchronization successful?"
+
+msgid ""
+"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
+"klaidų."
+msgstr ""
+"Indicates whether the last synchronization was successful, i.e. if no errors "
+"were raised during it."
+
+msgid "Atviri duomenys publikuojami Saugykloje"
+msgstr "Open data is published in Open Data Repository"
+
+msgid ""
+"Nurodo, ar agento aplinka papildomai publikuoja `access=open` duomenis į "
+"atvirų duomenų Saugyklą."
+msgstr ""
+"Specifies if the Agent additionally publishes `access=open` data to Open "
+"Data Repository"
+
+msgid "Atvirų duomenų publikavimo nuoroda"
+msgstr "Open data publish URL"
+
+msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
+msgstr "URL, where open data is published to"
 
 msgid "Autorizacijos kliento identifikatorius"
 msgstr "Authorization client identifier"
@@ -5486,8 +5583,8 @@ msgstr "If client identifier exists - agent can do requests to catalog"
 msgid "Aplinka"
 msgstr "Environment"
 
-msgid "Aplinka, kurioje diegiamas agentas."
-msgstr "The environment in which the agent is deployed."
+msgid "Aplinka, kurioje diegiamas fizinis agentas."
+msgstr "The environment in which the physical agent is deployed."
 
 msgid "Autorizacijos serverio adresas"
 msgstr "Authorization server address"
@@ -5513,8 +5610,21 @@ msgstr ""
 "address that the API gateway sees. If the API gateway is not specified, then "
 "an external agent address is specified"
 
-msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
-msgstr "The related data resource must be of type \"service\"."
+msgid "Agento aplinka įjungta"
+msgstr "Agent environemnt is enabled"
+
+msgid "Nurodoma, ar Agento aplinka yra įjungta ar išjungta."
+msgstr "Indicates whether the Agent environment is enabled or disabled."
+
+msgid "Agento aplinka archyvuota"
+msgstr "Agent environment is archived"
+
+msgid ""
+"Nurodo ar Agento aplinka yra archyvuota. Archyvuotos aplinkos nėra "
+"pasiekiamos įprastiems platformos vartotojams."
+msgstr ""
+"Indicates, whether the Agent environment is archived. Archived environments "
+"are not available to regular platform users."
 
 msgid "API galinis taškas"
 msgstr "API endpoint"
@@ -5552,14 +5662,32 @@ msgstr "Request history changes"
 msgid "Grįžti į agentus"
 msgstr "Go back"
 
-msgid "Įjungtas"
+msgid "Pridėti aplinką"
+msgstr "Add an environment"
+
+msgid "Nurodo ar aplinka yra įjungta/išjungta."
+msgstr "Indicates whether environment is enabled or disabled."
+
+msgid "Aplinka, kurioje diegiamas agentas."
+msgstr "The environment in which the physical agent is deployed."
+
+msgid "Data ir laikas, kada buvo atlikta paskutinė užklausa iš Agento."
+msgstr "Date and time, when the last request from the agent was made."
+
+msgid ""
+"Ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo klaidų?"
+msgstr ""
+"Indicates whether the last synchronization was successful, i.e. if no errors "
+"were raised during it."
+
+msgid "Galimi veiksmai su agento aplinka: žurnalas, redaguoti, pašalinti."
+msgstr "Available actions with the agent environment: journal, edit, remove."
+
+msgid "Įjungta"
 msgstr "Enabled"
 
-msgid "Išjungtas"
+msgid "Išjungta"
 msgstr "Disabled"
-
-msgid "Paskutinės sinchronizacijos rezultatas"
-msgstr "Date of last synchronization"
 
 msgid "Pavyko"
 msgstr "Success"
@@ -5570,11 +5698,26 @@ msgstr "Failure"
 msgid "Nevykdyta"
 msgstr "Not executed"
 
+msgid "Žurnalas"
+msgstr "Journal"
+
+msgid "Nėra registruotų agento aplinkų."
+msgstr "No registered agent environments."
+
+msgid "Grįžti į agentą"
+msgstr "Back to agent"
+
+msgid "Įjungtas"
+msgstr "Enabled"
+
+msgid "Išjungtas"
+msgstr "Disabled"
+
+msgid "Paskutinės sinchronizacijos rezultatas"
+msgstr "Result of last synchronization"
+
 msgid "Publikuojami atviri duomenys"
 msgstr "Open data is published"
-
-msgid "Atvirų duomenų servisas"
-msgstr "Open data service"
 
 msgid "Agento prisijungimo prie Katalogo konfigūracija"
 msgstr "Agent connection to the Catalog configuration"
@@ -5645,13 +5788,6 @@ msgstr "No requests were made"
 msgid "Pridėti agentą"
 msgstr "Add an Agent"
 
-msgid ""
-"Nurodo ar paskutinė sinchronizacija buvo sėkminga/nesėkminga. Taip pat, ar "
-"Agentas yra įjungtas/išjungtas."
-msgstr ""
-"Indicates whether the last synchronization was successful, i.e. if no errors "
-"were raised during it"
-
 msgid "Kodinis Pavadinimas"
 msgstr "Code name"
 
@@ -5667,25 +5803,13 @@ msgstr "Created"
 msgid "Data ir laikas, kada agentas buvo pridėtas į Katalogą."
 msgstr "Date and time, when the agent was added to the Catalogue"
 
-msgid "Data ir laikas, kada buvo atlikta paskutinė užklausa iš Agento."
-msgstr "Date and time, when the last request from the agent was made."
-
-msgid "Duomenų Paslauga"
-msgstr "Data service"
-
-msgid "Agentui priskirta duomenų paslauga."
-msgstr "The data service associated with the agent"
-
 msgid "Galimi veiksmai su agentu: žurnalas, redaguoti, pašalinti."
 msgstr "Available actions with the agent: journal, edit, remove."
-
-msgid "Žurnalas"
-msgstr "Journal"
 
 msgid "Nėra registruotų agentų."
 msgstr "No registered agents."
 
-msgid "Grįžti į agentą"
+msgid "Grįžti į agento aplinką"
 msgstr "Back to agent"
 
 msgid "Užklausos informacija"
@@ -5706,16 +5830,35 @@ msgstr "No errors"
 msgid "Pridėti Agentą"
 msgstr "Add an Agent"
 
-msgid ""
-"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei "
-"nenurodyta, duomenų paslauga bus sukurta automatiškai."
-msgstr ""
-"The data service associated with the Agent is specified. Corresponds to "
-"DCAT:DataService. If not specified, the data service will be created "
-"automatically."
+#, python-brace-format
+msgid "Agentas '{0}' sukurtas sėkmingai!"
+msgstr "Agent \"{0}\" created successfully."
 
-msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."
-msgstr "Data service automatically created with the agent."
+msgid "Redaguoti Agentą"
+msgstr "Edit agent"
+
+#, python-brace-format
+msgid "Agentas '{0}' atnaujintas sėkmingai!"
+msgstr "Agent \"{0}\" updated successfully"
+
+msgid "Agentų trynimas laikinai išjungtas."
+msgstr "Deletion of agents is temporarily disabled."
+
+#, python-brace-format
+msgid "Agentas '{0}' pašalintas sėkmingai!"
+msgstr "Agent \"{0}\" deleted successfully"
+
+#, python-brace-format
+msgid ""
+"Agentas '{0}' jau turi visas galimas aplinkas. Norėdami pridėti naują "
+"aplinką pašalinkite esamą(-as) aplinką(-as)"
+msgstr ""
+"Agent '{0}' already has all possible environments. To add a new environment, "
+"remove the existing environment(s)."
+
+#, python-brace-format
+msgid "Aplinka '{0}' sukurta sėkmingai!"
+msgstr "Environment \"{0}\" created successfully."
 
 msgid ""
 "Išsisaugokite slaptą raktą rodomą puslapio pabaigoje, jis bus rodomas tik šį "
@@ -5729,22 +5872,35 @@ msgstr ""
 
 #, python-format
 msgid ""
-"Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento kūrimas "
-"nepavyko."
+"Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento aplinkos "
+"kūrimas nepavyko."
 msgstr ""
 "Failed to reach the authorization server (%(url)s), so creating the Agent "
-"failed."
+"environment failed."
 
 #, python-format
-msgid "Įvyko klaida, nepavyko sukurti agento. Klaida: %(exception)s"
+msgid "Įvyko klaida, nepavyko sukurti Agento aplinkos. Klaida: %(exception)s"
 msgstr ""
-"An error occurred; the agent could not be created. Error: %(exception)s"
+"An error occurred; the agent environment could not be created. Error: "
+"%(exception)s"
 
-msgid "Redaguoti Agentą"
-msgstr "Edit agent"
+msgid "Redaguoti aplinką"
+msgstr "Edit environment"
 
-msgid "Pašalinti Agentą"
-msgstr "Delete agent"
+#, python-brace-format
+msgid "'{0}' aplinka atnaujinta sėkmingai!"
+msgstr "\"{0}\" environment updated successfully"
+
+msgid "Agento aplinkų trynimas laikinai išjungtas."
+msgstr "Deletion of agent environments is temporarily disabled."
+
+#, python-brace-format
+msgid "Ar tikrai norite ištrinti aplinką: {0}?"
+msgstr "Are you sure you want to delete environment: {0}?"
+
+#, python-brace-format
+msgid "'{0}' aplinka pašalinta sėkmingai!"
+msgstr "'{0}' environment deleted successfully!"
 
 msgid "Asmeninė informacija"
 msgstr "Personal information"

@@ -12,6 +12,7 @@ from vitrina.resources.models import FormatName
 from vitrina.classifiers.models import Category
 from vitrina.classifiers.models import Frequency
 from vitrina.classifiers.models import Licence
+from vitrina.orgs.models import Organization
 
 
 DCAT_AP_RDF_TEMPLATE_NAME = "vitrina/api/edp/dcat_ap_rdf.html"
@@ -61,6 +62,7 @@ def get_datasets_for_rdf(qs):
             "published": dataset.published,
             "modified": dataset.modified,
             "organization": dataset.organization,
+            "creators": Organization.objects.filter(pk__in=dataset.get_creators()),
             "frequency": _get_frequency(dataset.frequency),
             "distributions": distributions,
             "contact": _get_contact_email(dataset),

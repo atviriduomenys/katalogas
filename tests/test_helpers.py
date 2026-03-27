@@ -82,7 +82,7 @@ def test_dataset_only():
     result = build_page_title_context(dataset=dataset, language_code="en")
 
     assert result["title"] == "Test Dataset"
-    assert result["root_label"] == str(_("Organizacija"))
+    assert result["root_label"] == str(_("Duomenų skelbėjas"))
     assert result["root_name"] == "Parent Organization"
     assert "info_system_label" not in result
     assert "info_system_name" not in result

@@ -121,7 +121,7 @@ def dataset(organization: Organization, agent: Agent) -> Dataset:
         organization=organization,
         title="Title of the Dataset",
         description="Description of the Dataset.",
-        metadata="test/dataset",
+        metadata=organization.name + "test/dataset",
         agent=agent,
     )
     return dataset
@@ -156,7 +156,7 @@ def distribution(organization: Organization, dataset: Dataset) -> DatasetDistrib
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(DatasetDistribution),
         object_id=distribution.pk,
-        name="test/dataset/TestModel/TestDistribution",
+        name=organization.name + "test/dataset/TestModel/TestDistribution",
     )
     return distribution
 
@@ -197,9 +197,10 @@ def agreement_url() -> str:
 
 
 @pytest.fixture
-def dsa() -> str:
-    return """id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description
-,test/dataset,,,,,,,,,,,,,,,,,
+def dsa(organization: Organization) -> str:
+    name = organization.name
+    return f"""id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description
+,{name}test/dataset,,,,,,,,,,,,,,,,,
 ,,users,,,,dask/json,,/path,,,,,,,,,,
 ,,,,,,,,,,,,,,,,,,
 ,,,,User,,,id,users,,,4,completed,package,open,,,Pavadinimas,

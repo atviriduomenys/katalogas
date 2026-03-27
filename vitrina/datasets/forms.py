@@ -31,6 +31,7 @@ from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
+from vitrina.datasets.helpers import validate_name_prefix
 from vitrina.datasets.services import get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 

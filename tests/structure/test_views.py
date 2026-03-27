@@ -4920,7 +4920,10 @@ def test_manifest_export_openapi(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
@@ -4983,7 +4986,8 @@ def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
     city_structure = DatasetStructureFactory(
-        file=FilerFileFactory(file=FileField(filename="file.csv", data=city_manifest))
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=city_manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"])),
     )
     city_structure.dataset.current_structure = city_structure
     city_structure.dataset.save()
@@ -5035,7 +5039,10 @@ def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5074,7 +5081,10 @@ def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
         ",,,,,,,,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5121,7 +5131,10 @@ def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, 
         ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5180,7 +5193,10 @@ def test_published_metadata_gets_completed_status(app: DjangoTestApp):
         ",,,,,,,,,'''BIG''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)

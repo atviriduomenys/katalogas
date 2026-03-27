@@ -21,6 +21,7 @@ from django.utils.translation import gettext, gettext_lazy as _, get_language
 from vitrina import settings
 from vitrina.classifiers.models import Status
 from vitrina.comments.models import Comment
+from vitrina.datasets.helpers import validate_name_prefix
 from vitrina.datasets.models import DatasetStructure, Dataset
 from vitrina.datasets.structure import detect_read_errors, read
 from vitrina.helpers import none_to_string, get_encoding

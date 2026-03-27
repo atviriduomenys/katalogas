@@ -36,6 +36,16 @@ class OrganizationFactory(DjangoModelFactory):
             kwargs["created"] = timezone.now()
         return model_class.add_root(**kwargs)
 
+    @factory.post_generation
+    def whitelisted_names(self, create, extracted, **kwargs):
+        if not create:
+            return
+        if extracted:
+            for name in extracted:
+                WhitelistedCodeNameFactory(organization=self, code_name=name)
+        else:
+            WhitelistedCodeNameFactory(organization=self, code_name="datasets/gov/ivpk/")
+
 
 class RepresentativeFactory(DjangoModelFactory):
     class Meta:
@@ -73,6 +83,7 @@ class ViispRepresentativeFactory(RepresentativeFactory):
 
 class WhitelistedCodeNameFactory(DjangoModelFactory):
     class Meta:
+        django_get_or_create = ("code_name",)
         model = WhitelistedCodeName
 
     organization = factory.SubFactory(OrganizationFactory)

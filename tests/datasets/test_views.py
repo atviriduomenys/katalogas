@@ -1092,7 +1092,7 @@ class TestDatasetListView:
         dataset3 = DatasetFactory()
 
         attribution = AttributionFactory(name=Attribution.CREATOR)
-        attribution = AttributionFactory(dataset=dataset1, attribution=attribution, organization=creator1)
+        DatasetAttributionFactory(dataset=dataset1, attribution=attribution, organization=creator1)
         DatasetAttributionFactory(dataset=dataset2, attribution=attribution, organization=creator1)
         DatasetAttributionFactory(dataset=dataset3, attribution=attribution, organization=creator2)
         dataset1.save()

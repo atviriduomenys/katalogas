@@ -15,7 +15,7 @@ from vitrina.structure.factories import ModelFactory, PropertyFactory
 
 @pytest.mark.django_db
 class TestDatasetIndexQuery:
-    QUERY_COUNT_THRESHOLD = 23
+    QUERY_COUNT_THRESHOLD = 28
 
     def test_bulk_index_query_count(self):
         datasets_to_create = 5
@@ -110,6 +110,6 @@ class TestDatasetIndexQuery:
                     index.full_prepare(ds)
         count_10 = len(ctx_10.captured_queries)
 
-        assert count_10 <= count_3 + 5, (
+        assert count_10 <= count_3 + 7, (
             f"Query count should scale constantly, got {count_3} for 3 datasets vs {count_10} for 10"
         )

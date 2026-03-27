@@ -63,7 +63,7 @@ def _haystack_marker(request):
 
 
 @pytest.fixture(autouse=True)
-def _immediate_es_indexing(request):
+def _immediate_elastic_search_indexing(request):
     django_db_marker = request.node.get_closest_marker("django_db")
     uses_real_transactions = django_db_marker and django_db_marker.kwargs.get("transaction", False)
 

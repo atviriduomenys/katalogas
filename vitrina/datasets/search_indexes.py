@@ -146,7 +146,7 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
         models.signals.post_save.disconnect(self.handle_save)
         models.signals.post_delete.disconnect(self.handle_delete)
 
-    def handle_save(self, sender, instance, **kwargs):
+    def handle_save(self, sender: type[models.Model], instance: models.Model, **kwargs) -> None:
         using_backends = self.connection_router.for_write(instance=instance)
 
         for using in using_backends:
@@ -157,7 +157,7 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
 
             self._on_commit(lambda s=sender, inst=instance, u=using: self._index_instance(s, inst, u))
 
-    def handle_delete(self, sender, instance, **kwargs):
+    def handle_delete(self, sender: type[models.Model], instance: models.Model, **kwargs) -> None:
         using_backends = self.connection_router.for_write(instance=instance)
 
         for using in using_backends:
@@ -168,18 +168,20 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
 
             self._on_commit(lambda i=index, inst=instance, u=using: i.remove_object(inst, using=u))
 
-    def _index_instance(self, sender, instance, using):
+    def _index_instance(self, sender: type[models.Model], instance: models.Model, using: str) -> None:
         try:
             index = self.connections[using].get_unified_index().get_index(sender)
         except NotHandled:
             return
 
         if not sender.objects.filter(pk=instance.pk).exists():
+            logger.debug("Skipping indexing for %s pk=%s: object no longer exists", sender.__name__, instance.pk)
             return
 
         try:
             if not index.index_queryset().filter(pk=instance.pk).exists():
                 index.remove_object(instance, using=using)
+                logger.debug("Removed %s pk=%s from index: not in index_queryset", sender.__name__, instance.pk)
                 return
 
             index.update_object(instance, using=using)
@@ -188,7 +190,7 @@ class CustomSignalProcessor(signals.BaseSignalProcessor):
         except Exception:
             logger.warning("Failed to index %s pk=%s", sender.__name__, instance.pk, exc_info=True)
 
-    def _reindex_related_requests(self, dataset, using):
+    def _reindex_related_requests(self, dataset: Dataset, using: str) -> None:
         req_index = self.connections[using].get_unified_index().get_index(Request)
         reqs = RequestObject.objects.filter(
             content_type=ContentType.objects.get_for_model(dataset),

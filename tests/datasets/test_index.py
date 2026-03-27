@@ -122,19 +122,19 @@ class TestSignalProcessorTransactionSafety:
     def test_no_orphan_on_transaction_rollback(self):
         backend = connections["default"].get_backend()
 
-        try:
+        pk = None
+        with pytest.raises(Exception, match="Force rollback"):
             with transaction.atomic():
                 dataset = DatasetFactory()
                 pk = dataset.pk
                 raise Exception("Force rollback")
-        except Exception:
-            pass
 
+        assert pk is not None
         assert not Dataset.objects.filter(pk=pk).exists(), "DB record should not exist after rollback"
 
+        doc_id = f"vitrina_datasets.dataset.{pk}"
         try:
             backend.conn.indices.refresh(index=backend.index_name)
-            doc_id = f"vitrina_datasets.dataset.{pk}"
             result = backend.conn.exists(index=backend.index_name, id=doc_id)
         except NotFoundError:
             result = False

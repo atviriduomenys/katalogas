@@ -43,12 +43,10 @@
                             <p>
                                 <a href="{{ i.get_absolute_url }}" class="usecase-url">
                                     {{ i.get_title }}
-                                    {% if can_see_status %}
-                                        {% if i.status == "CREATED" %}
-                                            <span style="color: green;">{% translate "naujas" %}</span>
-                                        {% elif i.status == "REJECTED" %}
-                                            <span style="color: red;">{% translate "atmestas" %}</span>
-                                        {% endif %}
+                                    {% if i.status == "CREATED" %}
+                                        <span class="tag is-warning is-light">{% translate "Laukia patvirtinimo" %}</span>
+                                    {% elif i.status == "REJECTED" %}
+                                        <span class="tag is-danger is-light">{% translate "Atmestas" %}</span>
                                     {% endif %}
                                 </a>
                             </p>

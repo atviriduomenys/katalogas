@@ -62,7 +62,7 @@ def get_projects_linkable_to_dataset(user: User | AnonymousUser):
     if not getattr(user, "is_authenticated", False):
         return Project.objects.none()
 
-    queryset = get_projects(user).filter(agreements__isnull=True)
+    queryset = get_projects(user, approved_only=False).filter(agreements__isnull=True)
 
     if user.is_staff or user.is_superuser:
         return queryset

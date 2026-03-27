@@ -54,7 +54,7 @@ def home(request):
             "counts": {
                 "dataset": Dataset.restricted.for_user(request.user).count(),
                 "organization": Organization.public.count(),
-                "project": get_projects(request.user).count(),
+                "project": get_projects(request.user, approved_only=False).count(),
                 "coordinators": coordinator_count,
                 "managers": manager_count,
                 "users": user_count,

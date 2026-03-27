@@ -5505,7 +5505,7 @@ def test_draft_metadata_form_does_not_change_status_is_kept(app: DjangoTestApp):
 
 # Not all types tested. Only a few of them
 @pytest.mark.django_db
-@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "number", "object"])
+@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "object"])
 def test_property_enum_item_update__not_allowed_for_types_that_have_no_type_checker_class(
     app: DjangoTestApp, not_allowed_type: str
 ):
@@ -7688,18 +7688,45 @@ class TestStructure(BaseTestCreateManifest):
             "4,,,,,,enum,,True,true,,,,,,,,,,,\n"
             "5,,,,,,,,False,false,,,,,,,,,,,\n"
         )
-        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset")
 
         response = app.get(reverse("dataset-structure-export-no-version", args=[dataset.pk]))
 
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
             "2,,,,Approver,,,,,,,,,1,develop,,,,,,",
             "3,,,,,is_active,boolean,,IsActive/text(),,,,,,develop,,,,,,",
             "4,,,,,,enum,,True,,true,,,,develop,,,,,,",
             "5,,,,,,,,False,,false,,,,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__number_enums(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,example,,,,,,,,,,,,,,,,\n"
+            "2,,,,Dataset,,,,,,1,,,,,,,\n"
+            "3,,,,,type,number required,,TypeID/text(),,,,,4,,,,,,,\n"
+            "4,,,,,,enum,,1.1,1.2,,,,,,,,,,,\n"
+            "5,,,,,,,,1.3,1.4,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset")
+
+        response = app.get(reverse("dataset-structure-export-no-version", args=[dataset.pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,example,,,,,,,,,,,,,,,,,,Dataset,Dataset",
+            "2,,,,Dataset,,,,,,,,,1,develop,,,,,,",
+            "3,,,,,type,number required,,TypeID/text(),,,,,,develop,,,,,,",
+            "4,,,,,,enum,,1.1,,1.2,,,,develop,,,,,,",
+            "5,,,,,,,,1.3,,1.4,,,,develop,,,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
         ]
 

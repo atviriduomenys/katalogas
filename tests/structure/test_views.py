@@ -4867,7 +4867,7 @@ def test_property_enum_item_create__higher_visibility_then_model_with_error(app:
 
 # Not all types tested. Only a few of them
 @pytest.mark.django_db
-@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "number", "object"])
+@pytest.mark.parametrize("not_allowed_type", ["date", "geometry", "object"])
 def test_property_enum_item_create__not_allowed_for_types_that_have_no_type_checker_class(
     app: DjangoTestApp, not_allowed_type: str
 ):
@@ -7673,6 +7673,33 @@ class TestStructure(BaseTestCreateManifest):
             '6,,,,,,comment,model,,,"update(model: ""Animal"")",,,2,develop,,open,https://github.com/example/issues/2,,,',
             "7,,,,Dog,,,,,,,,,,develop,,,,,,",
             "8,,,,,action,string,,source_dog_action,,,,,4,develop,,,,,,",
+            ",,,,,,,,,,,,,,,,,,,,",
+        ]
+
+    def test_export__boolean_enums(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+            "1,dataset,,,,,,,,,,,,,,,,\n"
+            "2,,,,Approver,,,,,,1,,,,,,,\n"
+            "3,,,,,is_active,boolean,,IsActive/text(),,,,,4,,,,,,,\n"
+            "4,,,,,,enum,,True,true,,,,,,,,,,,\n"
+            "5,,,,,,,,False,false,,,,,,,,,,,\n"
+        )
+        dataset = self._create_manifest(manifest, "Dataset", "Dataset with ref property")
+
+        response = app.get(reverse("dataset-structure-export-no-version", args=[dataset.pk]))
+
+        assert response.status_code == HTTPStatus.OK
+        assert response.text.splitlines() == [
+            "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
+            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "2,,,,Approver,,,,,,,,,1,develop,,,,,,",
+            "3,,,,,is_active,boolean,,IsActive/text(),,,,,,develop,,,,,,",
+            "4,,,,,,enum,,True,,true,,,,develop,,,,,,",
+            "5,,,,,,,,False,,false,,,,develop,,,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
         ]
 

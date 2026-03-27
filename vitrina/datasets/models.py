@@ -1027,16 +1027,12 @@ class Dataset(Resource):
                 metadata.average_level = sum(levels) / len(levels)
                 metadata.save()
 
-    def get_level(self):
-        if metadata := self.metadata.first():
-            return metadata.average_level
-        return None
-
     def get_creators(self):
-        return list(self.datasetattribution_set.filter(
-            organization__isnull=False,
-            attribution__name=Attribution.CREATOR
-        ).values_list("organization__pk", flat=True))
+        return list(
+            self.datasetattribution_set.filter(
+                organization__isnull=False, attribution__name=Attribution.CREATOR
+            ).values_list("organization__pk", flat=True)
+        )
 
     def published_created_sort(self):
         return self.published or self.created

@@ -943,9 +943,10 @@ def test_geoportal_import__existing_creator(app: DjangoTestApp):
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
-    assert dataset.datasetattribution_set.filter(
-        attribution__name=Attribution.CREATOR
-    ).first().organization == organization
+    assert (
+        dataset.datasetattribution_set.filter(attribution__name=Attribution.CREATOR).first().organization
+        == organization
+    )
 
 
 @pytest.mark.django_db
@@ -1001,9 +1002,10 @@ def test_geoportal_import__existing_creator_municipality(app: DjangoTestApp):
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
-    assert dataset.datasetattribution_set.filter(
-        attribution__name=Attribution.CREATOR
-    ).first().organization == organization
+    assert (
+        dataset.datasetattribution_set.filter(attribution__name=Attribution.CREATOR).first().organization
+        == organization
+    )
 
 
 @pytest.mark.django_db
@@ -1061,9 +1063,10 @@ def test_geoportal_import__existing_creator_alternative_title(app: DjangoTestApp
 
     assert dataset_objects.count() == 1
     dataset = dataset_objects.first()
-    assert dataset.datasetattribution_set.filter(
-        attribution__name=Attribution.CREATOR
-    ).first().organization == organization
+    assert (
+        dataset.datasetattribution_set.filter(attribution__name=Attribution.CREATOR).first().organization
+        == organization
+    )
 
 
 @pytest.mark.django_db

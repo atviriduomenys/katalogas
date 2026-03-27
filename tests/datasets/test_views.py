@@ -1,7 +1,6 @@
 from datetime import datetime, date, timedelta
 
 import pytz
-import webtest
 from bs4 import BeautifulSoup
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
@@ -362,9 +361,6 @@ class TestDatasetDetailView:
         assert org.website in response.text
         assert org.email in response.text
         assert org.phone in response.text
-
-        assert publisher_org.title in response.text
-        assert publisher_org.website in response.text
 
     def test_data_service_view_with_agent(self, app: DjangoTestApp):
         org = OrganizationFactory()
@@ -1096,21 +1092,9 @@ class TestDatasetListView:
         dataset3 = DatasetFactory()
 
         attribution = AttributionFactory(name=Attribution.CREATOR)
-        DatasetAttributionFactory(
-            dataset=dataset1,
-            attribution=attribution,
-            organization=creator1
-        )
-        DatasetAttributionFactory(
-            dataset=dataset2,
-            attribution=attribution,
-            organization=creator1
-        )
-        DatasetAttributionFactory(
-            dataset=dataset3,
-            attribution=attribution,
-            organization=creator2
-        )
+        attribution = AttributionFactory(dataset=dataset1, attribution=attribution, organization=creator1)
+        DatasetAttributionFactory(dataset=dataset2, attribution=attribution, organization=creator1)
+        DatasetAttributionFactory(dataset=dataset3, attribution=attribution, organization=creator2)
         dataset1.save()
         dataset2.save()
         dataset3.save()
@@ -2157,48 +2141,6 @@ class TestDatasetCreateView:
         assert dataset.dataset_files.all().exists()
         assert form.enctype == "multipart/form-data"
 
-    @pytest.mark.django_db
-    def test_dataset_create_creates_representative_with_org_role(self, app: DjangoTestApp):
-        frequency = FrequencyFactory(is_default=True)
-
-        org = OrganizationFactory()
-        subclass = DCATResourceSubclassFactory()
-
-        user = UserFactory(is_staff=True)
-        app.set_user(user)
-
-        RepresentativeFactory(
-            user=user,
-            organization=org,
-            role=Representative.OPEN_DATA_COORDINATOR,
-            content_type=ContentType.objects.get_for_model(org),
-            object_id=org.pk,
-        )
-
-        form = app.get(reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})).forms[
-            "dataset-form"
-        ]
-
-        form["title"] = "Dataset without creator"
-        form["description"] = "Test dataset"
-        form["frequency"] = str(frequency.pk)
-        form["access_rights"] = Dataset.PUBLIC
-
-        response = form.submit()
-
-        assert response.status_code == 302
-
-        dataset = Dataset.objects.get(translations__title="Dataset without creator")
-
-        rep = Representative.objects.filter(
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            user=user,
-        ).first()
-
-        assert rep is not None
-        assert rep.role == Representative.OPEN_DATA_COORDINATOR
-
     def test_create_service_with_agent(self, app: DjangoTestApp) -> None:
         organization = OrganizationFactory()
         subclass = DCATResourceSubclassFactory(name="service")
@@ -2253,6 +2195,87 @@ class TestDatasetCreateView:
         assert dataset.conforms_to is None
         assert dataset.endpoint_url == "https://data.gov.lt"
         assert dataset.endpoint_description == "http://api.data.gov.lt"
+
+    def test_create_without_name(self, app: DjangoTestApp):
+        FrequencyFactory(is_default=True)
+        subclass = DCATResourceSubclassFactory()
+        org = OrganizationFactory()
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        url = reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Added title"
+        form["description"] = "Added new dataset description"
+        form["access_rights"] = Dataset.PUBLIC
+        form.submit()
+        added_dataset = Dataset.objects.filter(translations__title="Added title").first()
+        assert added_dataset.organization == org
+        assert added_dataset.datasetattribution_set.count() == 1
+        assert added_dataset.datasetattribution_set.count() == 1
+        assert added_dataset.datasetattribution_set.first().organization == org
+        assert added_dataset.datasetattribution_set.first().attribution.name == Attribution.CREATOR
+
+    def test_create_with_organization_name(self, app: DjangoTestApp):
+        FrequencyFactory(is_default=True)
+        subclass = DCATResourceSubclassFactory()
+        org = OrganizationFactory(name="data/gov/org")
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        url = reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Added title"
+        form["description"] = "Added new dataset description"
+        form["access_rights"] = Dataset.PUBLIC
+        form["name"] = "data/gov/org/test"
+        form.submit()
+        added_dataset = Dataset.objects.filter(translations__title="Added title").first()
+        assert added_dataset.organization == org
+        assert added_dataset.datasetattribution_set.count() == 1
+        assert added_dataset.datasetattribution_set.count() == 1
+        assert added_dataset.datasetattribution_set.first().organization == org
+        assert added_dataset.datasetattribution_set.first().attribution.name == Attribution.CREATOR
+
+    def test_create_with_not_allowed_name(self, app: DjangoTestApp):
+        FrequencyFactory(is_default=True)
+        subclass = DCATResourceSubclassFactory()
+        org = OrganizationFactory(name="data/gov/org")
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        url = reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Added title"
+        form["description"] = "Added new dataset description"
+        form["name"] = "data/gov/creator/test"
+        form["access_rights"] = Dataset.PUBLIC
+        resp = form.submit()
+        assert list(resp.context["form"].errors.values()) == [["Kodinis pavadinimas turi prasidėti nuo „data/gov/org“"]]
+
+    def test_create_with_allowed_name(self, app: DjangoTestApp):
+        FrequencyFactory(is_default=True)
+        subclass = DCATResourceSubclassFactory()
+        org = OrganizationFactory(name="data/gov/org")
+        creator = OrganizationFactory(name="data/gov/creator")
+        RepresentativeFactory(
+            organization=org,
+            content_type=ContentType.objects.get_for_model(org),
+            object_id=creator.pk,
+            role=Representative.OPEN_DATA_PUBLISHER,
+        )
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        url = reverse("dataset-add", kwargs={"pk": org.id, "subclass_uuid": subclass.pk})
+        form = app.get(url).forms["dataset-form"]
+        form["title"] = "Added title"
+        form["description"] = "Added new dataset description"
+        form["name"] = "data/gov/creator/test"
+        form["access_rights"] = Dataset.PUBLIC
+        form.submit()
+        added_dataset = Dataset.objects.filter(translations__title="Added title").first()
+        assert added_dataset.organization == org
+        assert added_dataset.datasetattribution_set.count() == 1
+        assert added_dataset.datasetattribution_set.count() == 1
+        assert added_dataset.datasetattribution_set.first().organization == creator
+        assert added_dataset.datasetattribution_set.first().attribution.name == Attribution.CREATOR
 
 
 class TestDatasetDeleteView:

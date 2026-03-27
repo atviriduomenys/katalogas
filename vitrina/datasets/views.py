@@ -21,7 +21,6 @@ from django.core.paginator import Paginator
 from django.core.serializers.json import DjangoJSONEncoder
 from django.db import models
 from django.db.models import QuerySet, Count, Max, Q, Avg, Sum, Func, F, Value, TextField
-from django.db.models.functions import Length, Substr
 from django.forms import BaseForm
 from django.http import JsonResponse, HttpResponseRedirect, HttpResponse
 from django.http.response import HttpResponsePermanentRedirect
@@ -105,7 +104,8 @@ from vitrina.datasets.models import (
     DatasetFile,
     Contact,
     DatasetExcludedGroups,
-    DCATResourceSubclass, Attribution,
+    DCATResourceSubclass,
+    Attribution,
 )
 from vitrina.classifiers.models import (
     Category,
@@ -942,9 +942,7 @@ class DatasetCreateView(
             if attribution:
                 if not self.object.name or self.object.name.startswith(self.object.organization.name):
                     DatasetAttribution.objects.create(
-                        dataset=self.object,
-                        attribution=attribution,
-                        organization=self.object.organization
+                        dataset=self.object, attribution=attribution, organization=self.object.organization
                     )
                 else:
                     creator = Organization.objects.filter(
@@ -956,9 +954,7 @@ class DatasetCreateView(
                     ).first()
                     if creator:
                         DatasetAttribution.objects.create(
-                            dataset=self.object,
-                            attribution=attribution,
-                            organization=creator
+                            dataset=self.object, attribution=attribution, organization=creator
                         )
 
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):

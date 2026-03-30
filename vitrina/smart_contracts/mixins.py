@@ -16,7 +16,7 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic import FormView
 
 from vitrina.datasets.models import Dataset
-from vitrina.helpers import get_file_extension
+from vitrina.helpers import get_file_extension, email
 from vitrina.projects.models import Project
 from vitrina.smart_contracts import AgreementStatuses
 from vitrina.smart_contracts.forms import (
@@ -190,6 +190,18 @@ class AgreementSubmitMixin(AgreementActionMixin):
 
     def perform_action(self, form: ModelForm) -> None:
         self.agreement.assignee_representative = form.cleaned_data["assignee_representative"]
+        if self.agreement.assigner.email:
+            link = self.request.build_absolute_uri(self.get_success_url())
+            email(
+                [self.agreement.assigner.email],
+                "agreement-submitted",
+                "vitrina/smart_contracts/emails/agreement_submitted.md",
+                {
+                    "project": self.agreement.project.title,
+                    "assignee": self.agreement.assignee.title,
+                    "link": link,
+                },
+            )
 
 
 class AgreementApproveMixin(AgreementActionMixin):

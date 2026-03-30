@@ -59,15 +59,16 @@
         });
 
         $('.comment-button').click( function () {
-            const status_field = $(this).closest('.media-content').find('[id^="id_is_public"]')[0];
-            const body_field = $(this).closest('.media-content').find('[id^="id_body"]')[0];
+            const form = $(this).closest('.media-content');
+            const status_field = form.find('[id^="id_is_public"]')[0] || form.find('#id_status')[0];
+            const body_field = form.find('[id^="id_body"]')[0];
 
-            if (!body_field.value && (!status_field || !status_field.value)) {
+            if (!body_field.value && (!status_field || !status_field.value || status_field.value == "REJECTED")) {
                 body_field.setCustomValidity("{% translate 'Šis laukas privalomas' %}");
                 body_field.reportValidity();
             }
             else {
-                $(this).closest('.media-content').trigger('submit');
+                form.trigger('submit');
             }
         });
 

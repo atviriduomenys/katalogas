@@ -562,6 +562,10 @@ class TestAgreementSubmit:
 
         assert len(mail.outbox) == 1
         assert mail.outbox[0].to == ["assigner@example.com"]
+        expected_link = "http://testserver" + reverse(
+            "project-agreement-detail", args=[project.pk, agreement.pk]
+        )
+        assert expected_link in mail.outbox[0].body
 
     def test_no_email_sent_when_assigner_has_no_email(self, app: DjangoTestApp, dataset: Dataset):
         assignee_organization = OrganizationFactory(email="assignee@example.com")

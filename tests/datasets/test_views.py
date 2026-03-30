@@ -2248,7 +2248,11 @@ class TestDatasetCreateView:
         form["name"] = "data/gov/creator/test"
         form["access_rights"] = Dataset.PUBLIC
         resp = form.submit()
-        assert list(resp.context["form"].errors.values()) == [["Kodinis pavadinimas turi prasidėti nuo „data/gov/org“"]]
+        assert list(resp.context["form"].errors.values()) == [
+            [
+                "Kodinis pavadinimas turi prasidėti nuo „data/gov/org“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: datasets/gov/ivpk/"
+            ]
+        ]
 
     def test_create_with_allowed_name(self, app: DjangoTestApp):
         FrequencyFactory(is_default=True)
@@ -3517,7 +3521,7 @@ class TestDatasetStructureImport:
         )
 
         user = UserFactory(is_staff=True)
-        dataset = DatasetFactory()
+        dataset = DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/main/"]))
         version = VersionFactory(dataset=dataset)
 
         app.set_user(user)

@@ -5,6 +5,12 @@ v 1.18.0 (current)
 ==================
 
 
+v 1.17.1 (2026-03-30)
+==================
+
+https://github.com/atviriduomenys/katalogas/issues/1828
+- Publisher and creator changes.
+
 v 1.17.0 (2026-03-27)
 ==================
 

@@ -57,7 +57,6 @@ class BaseTestCreateManifest:
             metadata=False,
             organization=OrganizationFactory(whitelisted_names=whitelisted_names if whitelisted_names else []),
         )
-        print(dataset.organization.whitelisted_names)
         structure = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
         )

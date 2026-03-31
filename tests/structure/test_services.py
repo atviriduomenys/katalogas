@@ -11,6 +11,7 @@ from vitrina.comments.models import Comment
 from vitrina.datasets.factories import DatasetFactory, DatasetStructureFactory
 from vitrina.datasets.models import Dataset
 from vitrina.orgs.factories import ViispRepresentativeFactory, OrganizationFactory, WhitelistedCodeNameFactory
+from vitrina.orgs.models import WhitelistedCodeName
 from vitrina.resources.factories import DatasetDistributionFactory, FileFormat
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure import VersionStatus
@@ -1352,6 +1353,57 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
         ).values_list("body", flat=True)
     ) == ['Duomenų išteklius "datasets/gov/ivpk/adp" jau egzistuoja.']
     assert Metadata.objects.filter(dataset=structure.dataset, metadata_version=version).count() == 0
+
+
+@pytest.mark.django_db
+def test_structure_with_invalid_prefix_no_whitelist(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/test/adp,,,,,,,,,,,,,,,,,\n"
+        ",,resource1,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,,,Identifikatorius,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(name="datasets/gov/other")),
+    )
+    WhitelistedCodeName.objects.filter(organization=structure.dataset.organization).delete()
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert list(
+        Comment.objects.filter(
+            type=Comment.STRUCTURE_ERROR,
+            content_type=ContentType.objects.get_for_model(structure),
+        ).values_list("body", flat=True)
+    ) == ['Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“']
+
+
+@pytest.mark.django_db
+def test_structure_with_invalid_prefix_with_whitelist(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/test/adp,,,,,,,,,,,,,,,,,\n"
+        ",,resource1,,,,,,,,,,,,,,,,\n"
+        ",,,,City,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,,,Identifikatorius,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(
+            organization=OrganizationFactory(name="datasets/gov/other", whitelisted_names=["datasets/gov/allowed/"])
+        ),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+    assert list(
+        Comment.objects.filter(
+            type=Comment.STRUCTURE_ERROR,
+            content_type=ContentType.objects.get_for_model(structure),
+        ).values_list("body", flat=True)
+    ) == ['Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „datasets/gov/allowed/“']
 
 
 @pytest.mark.django_db

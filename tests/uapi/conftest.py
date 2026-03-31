@@ -121,7 +121,7 @@ def dataset(organization: Organization, agent: Agent) -> Dataset:
         organization=organization,
         title="Title of the Dataset",
         description="Description of the Dataset.",
-        metadata=organization.name + "test/dataset",
+        metadata=f"{organization.name}test/dataset",
         agent=agent,
     )
     return dataset
@@ -156,7 +156,7 @@ def distribution(organization: Organization, dataset: Dataset) -> DatasetDistrib
     MetadataFactory(
         content_type=ContentType.objects.get_for_model(DatasetDistribution),
         object_id=distribution.pk,
-        name=organization.name + "test/dataset/TestModel/TestDistribution",
+        name=f"{organization.name}test/dataset/TestModel/TestDistribution",
     )
     return distribution
 

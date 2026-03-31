@@ -215,7 +215,6 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
         ).only("pk", "object_id")
     )
     to_process, main_prefix, whitelisted = _get_manifest_datasets_to_import(state, dataset)
-    to_process = list(to_process)
     if not to_process:
         if whitelisted:
             message = _(

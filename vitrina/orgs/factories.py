@@ -37,7 +37,7 @@ class OrganizationFactory(DjangoModelFactory):
         return model_class.add_root(**kwargs)
 
     @factory.post_generation
-    def whitelisted_names(self, create, extracted, **kwargs):
+    def whitelisted_names(self, create: bool, extracted: list[str] | None, **kwargs) -> None:
         if not create:
             return
         if extracted:

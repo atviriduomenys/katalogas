@@ -324,7 +324,7 @@ class BaseResourceForm(TranslatableModelForm):
             if any(ch.isupper() for ch in name):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
             organization = self.organization or dataset_instance.organization
-            _, main_prefix, whitelisted = validate_name_prefix(name, organization, dataset_instance)
+            _matched, main_prefix, whitelisted = validate_name_prefix(name, organization, dataset_instance)
             allowed_prefixes = [main_prefix] + list(whitelisted)
 
             representatives = Representative.objects.filter(

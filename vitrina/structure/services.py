@@ -214,7 +214,19 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
             type=Comment.STRUCTURE,
         ).only("pk", "object_id")
     )
-    to_process = list(_get_manifest_datasets_to_process(state, dataset))
+    to_process, main_prefix, whitelisted = _get_manifest_datasets_to_import(state, dataset)
+    to_process = list(to_process)
+    if not to_process:
+        if whitelisted:
+            message = _(
+                "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“"
+            ) % {"expected": main_prefix, "whitelisted": ", ".join(whitelisted)}
+        else:
+            message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": main_prefix}
+        _create_errors([message], dataset.current_structure)
+        metadata_version.delete()
+        return metadata_version
+
     manifest_names = list({manifest.name for _, manifest in to_process if manifest.name})
 
     dataset_meta_uuid_by_name: dict[str, uuid.UUID] = {}
@@ -333,21 +345,26 @@ def _get_manifest_datasets_to_process(state: struct.State, dataset: Dataset) -> 
     return result
 
 
-def _get_manifest_datasets_to_import(state: struct.State, dataset: Dataset) -> list[tuple[int, struct.Dataset]]:
+def _get_manifest_datasets_to_import(
+    state: struct.State, dataset: Dataset
+) -> tuple[list[tuple[int, struct.Dataset]], str, list[str]]:
     """
     Get manifest datasets to import.
 
     - Re-import: matches by dataset.name.
     - First import: falls back to last dataset with a matching organization prefix.
+
+    Also returns main_prefix and whitelisted for error reporting.
     """
     datasets = list(state.manifest.datasets.values())
     result: list[tuple[int, struct.Dataset]] = []
+    main_prefix, whitelisted = "", []
     for order, meta in enumerate(datasets, 1):
         is_last = order == len(datasets)
-        matched_prefix, _, _ = validate_name_prefix(meta.name, dataset.organization, dataset)
+        matched_prefix, main_prefix, whitelisted = validate_name_prefix(meta.name, dataset.organization, dataset)
         if meta.name == dataset.name or (matched_prefix and is_last):
             result.append((order, meta))
-    return result
+    return result, main_prefix, whitelisted
 
 
 def _load_prefixes(

@@ -333,6 +333,22 @@ def _get_manifest_datasets_to_process(state: struct.State, dataset: Dataset) -> 
     return result
 
 
+def _get_manifest_dataset_to_import(state: struct.State, dataset: Dataset) -> tuple[int, struct.Dataset] | None:
+    """
+    Get the first manifest dataset to import.
+
+    - Name matches dataset.name: direct re-import case.
+    - Prefix matches: dataset belongs to the same organization namespace.
+    - Returns None if no valid dataset found.
+    """
+    datasets = list(state.manifest.datasets.values())
+    for order, meta in enumerate(datasets, 1):
+        matched_prefix, _, _ = validate_name_prefix(meta.name, dataset.organization, dataset)
+        if meta.name == dataset.name or matched_prefix:
+            return order, meta
+    return None
+
+
 def _load_prefixes(
     dataset: Dataset,
     prefixes: Dict[str, struct.Prefix],

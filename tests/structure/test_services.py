@@ -1321,7 +1321,10 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
         ",,,,City,,,,,,,,,,,\n"
         ",,,,,id,integer,,,,5,,,open,,,Identifikatorius,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -1335,7 +1338,10 @@ def test_structure_with_existing_dataset(app: DjangoTestApp):
         ",,,,City,,,,,,,,,,,,,,\n"
         ",,,,,id,integer,,,,5,,,open,,,Identifikatorius,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=structure.dataset.organization),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     create_structure_objects(structure, version)

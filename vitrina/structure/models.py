@@ -115,6 +115,14 @@ class Metadata(models.Model):
     class Meta:
         db_table = "metadata"
         verbose_name = _("Metaduomenys")
+        indexes = [
+            models.Index(fields=["content_type", "object_id"], name="metadata_ct_obj_idx"),
+            models.Index(
+                fields=["content_type", "dataset", "metadata_version", "uuid"], name="metadata_ct_ds_mv_uuid_idx"
+            ),
+            models.Index(fields=["content_type", "object_id", "metadata_version"], name="metadata_ct_obj_mv_idx"),
+            models.Index(fields=["content_type", "metadata_version", "name"], name="metadata_ct_mv_name_idx"),
+        ]
 
     def __str__(self):
         return self.name
@@ -195,6 +203,9 @@ class Model(models.Model):
 
     class Meta:
         db_table = "model"
+        indexes = [
+            models.Index(fields=["dataset", "metadata_version"], name="model_dataset_mv_idx"),
+        ]
         verbose_name = _("Modelis")
 
     def _get_first_metadata(self) -> Metadata | None:
@@ -386,6 +397,9 @@ class Property(models.Model):
 
     class Meta:
         db_table = "property"
+        indexes = [
+            models.Index(fields=["model", "given", "metadata_version"], name="property_model_given_mv_idx"),
+        ]
         verbose_name = _("Savybė")
 
     def _get_first_metadata(self) -> Metadata | None:

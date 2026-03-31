@@ -4,6 +4,15 @@ Changes
 v 1.18.0 (current)
 ==================
 
+Improvements:
+
+https://github.com/atviriduomenys/katalogas/issues/2484
+
+- Optimize DSA manifest import database performance.
+    - Added database indices on `Metadata` and `Comment` models to speed up lookups during import.
+    - Introduced in-memory caches for frequently accessed objects (users, dataset statuses, metadata) to reduce repeated database queries within a single import run.
+    - Refactored structure import service to batch-fetch related objects and avoid N+1 query patterns.
+
 
 v 1.17.1 (2026-03-30)
 ==================

@@ -48,11 +48,14 @@ from vitrina.utils import RevisionComment, RevisionSource
 
 
 class BaseTestCreateManifest:
-    def _create_manifest(self, manifest: str, title: str = "", description: str = ""):
+    def _create_manifest(
+        self, manifest: str, title: str = "", description: str = "", whitelisted_names: list[str] | None = None
+    ):
         dataset = DatasetFactory(
             title=title,
             description=description,
             metadata=False,
+            organization=OrganizationFactory(whitelisted_names=whitelisted_names if whitelisted_names else []),
         )
         structure = DatasetStructureFactory(
             file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)), dataset=dataset
@@ -4920,7 +4923,10 @@ def test_manifest_export_openapi(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
@@ -4983,7 +4989,8 @@ def test_manifest_export_openapi_with_dependent_models(app: DjangoTestApp):
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
     city_structure = DatasetStructureFactory(
-        file=FilerFileFactory(file=FileField(filename="file.csv", data=city_manifest))
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=city_manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/test/"])),
     )
     city_structure.dataset.current_structure = city_structure
     city_structure.dataset.save()
@@ -5035,7 +5042,10 @@ def test_manifest_export_openapi_soap_params(app: DjangoTestApp):
         ",,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,\n"
         ",,,,,title,string,,,,5,,,private,dct:title,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5074,7 +5084,10 @@ def test_imported_metadata_gets_develop_status(app: DjangoTestApp):
         ",,,,,,,,,BIG,,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5121,7 +5134,10 @@ def test_updating_metadata_in_not_draft_version_not_allowed(app: DjangoTestApp, 
         ",,,,,,enum,small,,'''SMALL''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5180,7 +5196,10 @@ def test_published_metadata_gets_completed_status(app: DjangoTestApp):
         ",,,,,,,,,'''BIG''',,,,,,,,,\n"
         ",,,,,,,,,,,,,,,,,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5957,7 +5976,7 @@ def test_publish_form_shows_all_metadata_rows_single_defined_resource(app: Djang
     app.set_user(user)
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        "1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         "2,,,,City,,,,,,5,,,,,,,,,\n"
         "3,,,,,id,integer,,,,5,,,,,,,,,\n"
         "4,,,,,title,string,,,,5,,,,,,,,,\n"
@@ -5968,7 +5987,10 @@ def test_publish_form_shows_all_metadata_rows_single_defined_resource(app: Djang
         "9,,,,,title,string,,,,2,,,,,,,,,\n"
     )
 
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -5982,7 +6004,7 @@ def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTest
     app.set_user(user)
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        "1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         "2,,resource1,,,,,,http://www.example.com,,,,,,,,,Title,Description\n"
         "3,,,,City,,,,,,5,,,,,,,,,\n"
         "4,,,,,id,integer,,,,5,,,,,,,,,\n"
@@ -5994,7 +6016,10 @@ def test_publish_form_shows_all_metadata_rows_multiple_resources(app: DjangoTest
         "10,,,,,title,string,,,,2,,,,,,,,,\n"
     )
 
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -6013,7 +6038,7 @@ def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
     app.set_user(user)
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        "1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         "2,,,,City,,,,,,,,,,,,,,\n"
         "3,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
         "4,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
@@ -6026,7 +6051,10 @@ def test_publish_form_shows_all_metadata_rows_denorm_props(app: DjangoTestApp):
         "11,,,,,title,string,,,,2,,,,,,,,,\n"
     )
 
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure)
@@ -6570,13 +6598,16 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
     app.set_user(user)
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        "1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         "3,,,,City,,,,,,5,,,,,,,City,,\n"
         "4,,,,,id,ref,Country,,,5,,,,,,,Id,,\n"
         "8,,,,Country,,,,,,4,,,,,,,Country,,\n"
     )
 
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
@@ -6593,7 +6624,7 @@ def test_publishing_property_with_ref_to_another_model(app: DjangoTestApp):
 
     publish_metadata = list(
         Metadata.objects.filter(
-            dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "datasets/govsssss/ivpk/adp/City", "id"]
+            dataset=structure.dataset, name__in=["datasets/gov/ivpk/adp", "datasets/gov/ivpk/adp/City", "id"]
         ).values_list("pk", flat=True)
     )
     form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
@@ -6620,14 +6651,17 @@ def test_publishing_property_with_ref_to_another_property(app: DjangoTestApp):
     app.set_user(user)
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        "1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         "3,,,,City,,,,,,5,,,,,,,City,,\n"
         "4,,,,,country,integer,Country,,,5,,,,,,,country_prop,,\n"
         "5,,,,,country.id,integer,,,,5,,,,,,,country_id,,\n"
         "8,,,,Country,,,,,,4,,,,,,,Country,,\n"
     )
 
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
@@ -6641,9 +6675,9 @@ def test_publishing_property_with_ref_to_another_property(app: DjangoTestApp):
         Metadata.objects.filter(
             dataset=structure.dataset,
             name__in=[
-                "datasets/govsssss/ivpk/adp",
-                "datasets/govsssss/ivpk/adp/City",
-                "datasets/govsssss/ivpk/adp/Country",
+                "datasets/gov/ivpk/adp",
+                "datasets/gov/ivpk/adp/City",
+                "datasets/gov/ivpk/adp/Country",
                 "country.id",
             ],
         ).values_list("pk", flat=True)
@@ -6667,11 +6701,14 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
     app.set_user(user)
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-        "1,datasets/govsssss/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
         "3,,,,City,,,,,,5,,,,,,,City,,\n"
         "8,,,,Country,,,,,,4,,,,,,,Country,,\n"
     )
-    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(organization=OrganizationFactory(whitelisted_names=["datasets/gov/ivpk/"])),
+    )
     structure.dataset.current_structure = structure
     structure.dataset.save()
     version = create_structure_objects(structure, structure.dataset.metadata.first().metadata_version)
@@ -6682,7 +6719,7 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
 
     publish_metadata = list(
         Metadata.objects.filter(
-            dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "datasets/govsssss/ivpk/adp/City"]
+            dataset=structure.dataset, name__in=["datasets/gov/ivpk/adp", "datasets/gov/ivpk/adp/City"]
         ).values_list("pk", flat=True)
     )
     form = app.get(reverse("version-create", args=[structure.dataset.pk, version.pk])).forms["version-form"]
@@ -6707,7 +6744,7 @@ def test_publishing_model_with_base_from_published_version_same_dataset(app: Dja
 
     publish_metadata = list(
         Metadata.objects.filter(
-            dataset=structure.dataset, name__in=["datasets/govsssss/ivpk/adp", "datasets/govsssss/ivpk/adp/Country"]
+            dataset=structure.dataset, name__in=["datasets/gov/ivpk/adp", "datasets/gov/ivpk/adp/Country"]
         ).values_list("pk", flat=True)
     )
 
@@ -7361,7 +7398,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,\n"
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,\n"
             '3,,,,Country,,,"id,title",,,,,,,,,,,\n'
             "4,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
@@ -7374,7 +7411,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "2,,dataset,,,,,,https://get.data.gov.lt/datasets/gov/main/dataset/:ns,,,,,,,,,,,dataset,",
             "3,,,,Country,,,id,,,,,,,develop,,,,,,",
             "4,,,,,id,integer,,,,,,,5,develop,,open,dct:identifier,,Identifikatorius,",
@@ -7388,7 +7425,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\n"
-            "1,dataset,,,,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,,\n"
             "2,,resource_wsdl,,,,wsdl,,http://127.0.0.1:8001/api/v1/test/testing/?wsdl,,,,,,,,,,,,\n"
             "3,,resource_soap,,,,soap,,TestTesting.TestPort.TestPort.test,,wsdl(rc_wsdl),,,,,,,,,,\n"
             "4,,,,,,param,action_type,input/ActionType,,input(),,,,,,,,,,\n"
@@ -7408,7 +7445,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,dataset,,,,,,,,,,,,,,,,,,Title,Description",
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,Title,Description",
             "2,,resource_wsdl,,,,wsdl,,http://127.0.0.1:8001/api/v1/test/testing/?wsdl,,,,,,,,,,,resource_wsdl,",
             "3,,resource_soap,,,,soap,,TestTesting.TestPort.TestPort.test,,wsdl(rc_wsdl),,,,,,,,,resource_soap,",
             "4,,,,,,param,action_type,input/ActionType,,input(),,,,develop,,,,,,",
@@ -7430,7 +7467,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest_no_prepare = (
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\n"
-            "1,dataset,,,,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,,\n"
             "2,,service,,,,dask/xml,,,,,,,,,,,,,\n"
         )
         dataset = self._create_manifest(manifest_no_prepare, "Title", "Description")
@@ -7438,7 +7475,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest_with_prepare = (
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\n"
-            "1,dataset,,,,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,,\n"
             "2,,service,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,\n"
         )
 
@@ -7455,7 +7492,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,dataset,,,,,,,,,,,,,,,,,,Title,Description",
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,Title,Description",
             "2,,service,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,service,",
         ]
 
@@ -7466,7 +7503,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,dataset,,,,,dataset,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/test,,,,,dataset,,,,,,,,,,,\n"
             "2,,nested_read,,,,dask/xml,,,eval(param(nested_xml)),,,,,,,,\n"
             "3,,,,,,param,nested_xml,GetData,read().response_data,,,,,,,,\n"
             "4,,,,,,param,action_type,input/ActionType,input(),,,,,,,,\n"
@@ -7486,7 +7523,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "2,,nested_read,,,,dask/xml,,,,eval(param(nested_xml)),,,,,,,,,nested_read,",
             "3,,,,,,param,nested_xml,GetData,,read().response_data,,,,develop,,,,,,",
             "4,,,,,,param,action_type,input/ActionType,,input(),,,,develop,,,,,,",
@@ -7507,7 +7544,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,example,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,\n"
             "2,,,,Animal,,,,,,0,completed,public,,,,,\n"
             "3,,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
             "4,,,Animal,,,,,,,1,completed,public,,,,,\n"
@@ -7523,7 +7560,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "2,,,,Animal,,,,,,,,,0,completed,public,,,,,",
             "3,,,,,id,string,,source_animal_id,,,,,4,completed,package,protected,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
@@ -7539,7 +7576,7 @@ class TestStructure(BaseTestCreateManifest):
 
         model_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,example,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,\n"
             "2,,,,Animal,,,,,,0,completed,public,,,,,\n"
             "3,,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
         )
@@ -7550,21 +7587,26 @@ class TestStructure(BaseTestCreateManifest):
 
         base_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,example2,,,,,,,,,,,,,,,,\n"
-            "2,,,example/Animal,,,,,,,1,completed,public,,,,,\n"
+            "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,\n"
+            "2,,,datasets/gov/ivpk/example/Animal,,,,,,,1,completed,public,,,,,\n"
             "3,,,,Dog,,,,,,0,completed,public,,,,,\n"
             "4,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
             ",,,/,,,,,,,,,,,,,,\n"
         )
-        dataset = self._create_manifest(base_manifest, "Base Dataset", "Dataset that references model with base")
+        dataset = self._create_manifest(
+            base_manifest,
+            "Base Dataset",
+            "Dataset that references model with base",
+            whitelisted_names=["datasets/gov/test/"],
+        )
 
         response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
 
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
-            "2,,,example/Animal,,,,,,,,,,,,,,,,,",
+            "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
+            "2,,,datasets/gov/ivpk/example/Animal,,,,,,,,,,,,,,,,,",
             "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
             "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
@@ -7576,7 +7618,7 @@ class TestStructure(BaseTestCreateManifest):
 
         model_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,example,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,\n"
             "2,,,,Animal,,,,,,0,completed,public,,,,,\n"
             "3,,,,,id,string,,source_animal_id,,4,completed,package,protected,,,,\n"
         )
@@ -7584,20 +7626,25 @@ class TestStructure(BaseTestCreateManifest):
 
         base_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,example2,,,,,,,,,,,,,,,,\n"
-            "2,,,example/Animal,,,,,,,1,completed,public,,,,,\n"
+            "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,\n"
+            "2,,,datasets/gov/ivpk/example/Animal,,,,,,,1,completed,public,,,,,\n"
             "3,,,,Dog,,,,,,0,completed,public,,,,,\n"
             "4,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
             ",,,/,,,,,,,,,,,,,,\n"
         )
-        dataset = self._create_manifest(base_manifest, "Base Dataset", "Dataset that references model with base")
+        dataset = self._create_manifest(
+            base_manifest,
+            "Base Dataset",
+            "Dataset that references model with base",
+            whitelisted_names=["datasets/gov/test/"],
+        )
 
         response = app.get(reverse("dataset-structure-export", args=[dataset.pk, dataset.latest_version().pk]))
 
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
+            "1,datasets/gov/test/example2,,,,,,,,,,,,,,,,,,Base Dataset,Dataset that references model with base",
             "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
             "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
@@ -7606,7 +7653,7 @@ class TestStructure(BaseTestCreateManifest):
         error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
         assert error_comment.type == Comment.STRUCTURE_ERROR
         assert error_comment.body == (
-            "Nepavyko susieti bazinio modelio „example/Animal“. "
+            "Nepavyko susieti bazinio modelio „datasets/gov/ivpk/example/Animal“. "
             "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
         )
 
@@ -7616,7 +7663,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,example,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,\n"
             "2,,,Animal,,,,,,,1,completed,public,,,,,\n"
             "3,,,,Dog,,,,,,0,completed,public,,,,,\n"
             "4,,,,,action,string,,source_dog_action,,4,completed,package,protected,,,,\n"
@@ -7630,7 +7677,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [  # Base could not be linked, so it is missing.
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "3,,,,Dog,,,,,,,,,0,completed,public,,,,,",
             "4,,,,,action,string,,source_dog_action,,,,,4,completed,package,protected,,,,",
             ",,,,,,,,,,,,,,,,,,,,",
@@ -7639,7 +7686,7 @@ class TestStructure(BaseTestCreateManifest):
         error_comment = Comment.objects.get(content_type=ContentType.objects.get_for_model(Model))
         assert error_comment.type == Comment.STRUCTURE_ERROR
         assert error_comment.body == (
-            "Nepavyko susieti bazinio modelio „example/Animal“. "
+            "Nepavyko susieti bazinio modelio „datasets/gov/ivpk/example/Animal“. "
             "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
         )
 
@@ -7649,7 +7696,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,dataset,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,\n"
             "2,,,,Animal,,,,source_animal_model,,,,,,,,,\n"
             '3,,,,,,comment,model,,"update(model: ""Animal/:part"")",2,completed,protected,open,https://github.com/example/issues/1,,,\n'
             "4,,,,,id,string,,source_animal_id,,4,,,,,,,\n"
@@ -7664,7 +7711,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
+            "1,datasets/gov/ivpk/test,,,,,,,,,,,,,,,,,,Dataset,Dataset with ref property",
             "2,,,,Animal,,,,source_animal_model,,,,,,develop,,,,,,",
             '3,,,,,,comment,model,,,"update(model: ""Animal/:part"")",,,2,develop,,open,https://github.com/example/issues/1,,,',
             "4,,,,,id,string,,source_animal_id,,,,,4,develop,,,,,,",
@@ -7682,7 +7729,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,dataset,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,\n"
             "2,,,,Approver,,,,,,1,,,,,,,\n"
             "3,,,,,is_active,boolean,,IsActive/text(),,,,,4,,,,,,,\n"
             "4,,,,,,enum,,True,true,,,,,,,,,,,\n"
@@ -7695,7 +7742,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
             "2,,,,Approver,,,,,,,,,1,develop,,,,,,",
             "3,,,,,is_active,boolean,,IsActive/text(),,,,,,develop,,,,,,",
             "4,,,,,,enum,,True,,true,,,,develop,,,,,,",
@@ -7709,7 +7756,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,example,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,\n"
             "2,,,,Dataset,,,,,,1,,,,,,,\n"
             "3,,,,,type,number required,,TypeID/text(),,,,,4,,,,,,,\n"
             "4,,,,,,enum,,1.1,1.2,,,,,,,,,,,\n"
@@ -7722,7 +7769,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,example,,,,,,,,,,,,,,,,,,Dataset,Dataset",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Dataset,Dataset",
             "2,,,,Dataset,,,,,,,,,1,develop,,,,,,",
             "3,,,,,type,number required,,TypeID/text(),,,,,,develop,,,,,,",
             "4,,,,,,enum,,1.1,,1.2,,,,develop,,,,,,",
@@ -7736,7 +7783,6 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
     def test_structure_export_dependent_models(self, app: DjangoTestApp):
         user = UserFactory(is_staff=True)
         app.set_user(user)
-
         ref_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
             "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,\n"
@@ -7744,7 +7790,12 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "9,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
             "10,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
         )
-        ref_dataset = self._create_manifest(ref_manifest, "Referenced Dataset", "Dataset that will be referenced")
+        ref_dataset = self._create_manifest(
+            ref_manifest,
+            "Referenced Dataset",
+            "Dataset that will be referenced",
+            whitelisted_names=["datasets/gov/ref/"],
+        )
 
         main_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
@@ -7755,7 +7806,12 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "5,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
             "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
         )
-        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Dataset with reference to other dataset")
+        main_dataset = self._create_manifest(
+            main_manifest,
+            "Main Dataset",
+            "Dataset with reference to other dataset",
+            whitelisted_names=["datasets/gov/main/"],
+        )
 
         country_model = Model.objects.get(dataset=main_dataset, metadata__name="datasets/gov/main/dataset/Country")
         continent_model = Model.objects.get(dataset=ref_dataset, metadata__name="datasets/gov/ref/dataset/Continent")
@@ -7795,7 +7851,12 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "10,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
             "11,,,,,other,string,,,,5,,,open,dct:other,,,,\n"
         )
-        self._create_manifest(ref_manifest, "Referenced Dataset", "Dataset that will be referenced")
+        self._create_manifest(
+            ref_manifest,
+            "Referenced Dataset",
+            "Dataset that will be referenced",
+            whitelisted_names=["datasets/gov/ref/"],
+        )
 
         main_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
@@ -7806,7 +7867,12 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "5,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
             "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
         )
-        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Dataset with reference to other dataset")
+        main_dataset = self._create_manifest(
+            main_manifest,
+            "Main Dataset",
+            "Dataset with reference to other dataset",
+            whitelisted_names=["datasets/gov/main/"],
+        )
 
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
         assert resp.text == (
@@ -7836,7 +7902,9 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "14,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
             "15,,,,,other,string,,,,5,,,open,dct:other,,,,\n"
         )
-        self._create_manifest(other_manifest, "Other Dataset", "Dependent dataset depth 2")
+        self._create_manifest(
+            other_manifest, "Other Dataset", "Dependent dataset depth 2", whitelisted_names=["datasets/gov/other/"]
+        )
         ref_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
             "7,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,\n"
@@ -7845,7 +7913,9 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "10,,,,,title,ref,/datasets/gov/other/dataset/Other,,,5,,,open,dct:title,,,,\n"
             "11,,,,,other,string,,,,5,,,open,dct:other,,,,\n"
         )
-        self._create_manifest(ref_manifest, "Referenced Dataset", "Dependent dataset depth 1")
+        self._create_manifest(
+            ref_manifest, "Referenced Dataset", "Dependent dataset depth 1", whitelisted_names=["datasets/gov/ref/"]
+        )
 
         main_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
@@ -7856,7 +7926,9 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "5,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
             "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
         )
-        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Root dataset")
+        main_dataset = self._create_manifest(
+            main_manifest, "Main Dataset", "Root dataset", whitelisted_names=["datasets/gov/main/"]
+        )
 
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
         assert resp.text == (
@@ -7891,7 +7963,12 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "5,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
             "6,,,,,continent,ref,/datasets/gov/ref/dataset/Continent,,,5,,,open,dct:continent,,,,\n"
         )
-        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Dataset with reference to other dataset")
+        main_dataset = self._create_manifest(
+            main_manifest,
+            "Main Dataset",
+            "Dataset with reference to other dataset",
+            whitelisted_names=["datasets/gov/main/"],
+        )
 
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
         assert resp.text == (
@@ -7924,7 +8001,12 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "16,,,,,id,integer,,,,5,,,open,dct:identifier,,Identifikatorius,,,\n"
             "17,,,,,prop2,string,,,,5,,,open,dct:prop2,,,,\n"
         )
-        self._create_manifest(ref_depth_1_manifest, "Referenced Dataset", "Dataset with reference to other dataset")
+        self._create_manifest(
+            ref_depth_1_manifest,
+            "Referenced Dataset",
+            "Dataset with reference to other dataset",
+            whitelisted_names=["datasets/gov/ref/"],
+        )
         main_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
             "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
@@ -7935,7 +8017,12 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
             "6,,,,,prop2,ref,/datasets/gov/ref/d1/D1Model1,,,5,,,open,dct:prop2,,,,\n"
             "7,,,,,prop3,ref,/datasets/gov/ref/d1/D1Model2,,,5,,,open,dct:prop3,,,,\n"
         )
-        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Dataset with reference to other dataset")
+        main_dataset = self._create_manifest(
+            main_manifest,
+            "Main Dataset",
+            "Dataset with reference to other dataset",
+            whitelisted_names=["datasets/gov/main/"],
+        )
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
         assert resp.text == (
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description\r\n"
@@ -7965,35 +8052,39 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
 
         orphan_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-            "20,datasets/gov/orphan,,,,,,,,,,,,,,,,,\n"
+            "20,datasets/gov/orphan/dataset,,,,,,,,,,,,,,,,,\n"
             "21,,,,Orphan,,,id,,,,,,,,,,,\n"
             "22,,,,,id,integer,,,,5,,,open,,,,,\n"
         )
-        self._create_manifest(orphan_manifest, "Orphan Dataset", "Should not be included")
+        self._create_manifest(
+            orphan_manifest, "Orphan Dataset", "Should not be included", whitelisted_names=["datasets/gov/orphan/"]
+        )
 
         ref_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-            "10,datasets/gov/ref,,,,,,,,,,,,,,,,,\n"
+            "10,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,\n"
             "11,,,,RefModel,,,id,,,,,,,,,,,\n"
             "12,,,,,id,integer,,,,5,,,open,,,,,\n"
-            "13,,,,,non_pk_ref,ref,/datasets/gov/orphan/Orphan,,,5,,,open,,,,,\n"
+            "13,,,,,non_pk_ref,ref,/datasets/gov/orphan/dataset/Orphan,,,5,,,open,,,,,\n"
         )
-        self._create_manifest(ref_manifest, "Ref Dataset", "Has non-PK ref")
+        self._create_manifest(ref_manifest, "Ref Dataset", "Has non-PK ref", whitelisted_names=["datasets/gov/ref/"])
 
         main_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-            "1,datasets/gov/main,,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
             "2,,,,Main,,,id,,,,,,,,,,,\n"
             "3,,,,,id,integer,,,,5,,,open,,,,,\n"
-            "4,,,,,ref_prop,ref,/datasets/gov/ref/RefModel,,,5,,,open,,,,,\n"
+            "4,,,,,ref_prop,ref,/datasets/gov/ref/dataset/RefModel,,,5,,,open,,,,,\n"
         )
-        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Root")
+        main_dataset = self._create_manifest(
+            main_manifest, "Main Dataset", "Root", whitelisted_names=["datasets/gov/main/"]
+        )
 
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
 
-        assert "datasets/gov/ref" in resp.text
+        assert "datasets/gov/ref/dataset" in resp.text
         assert "RefModel" in resp.text
-        assert "datasets/gov/orphan" not in resp.text
+        assert "datasets/gov/orphan/dataset" not in resp.text
         assert "Orphan" not in resp.text
 
     @pytest.mark.django_db
@@ -8003,37 +8094,46 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
 
         orphan_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-            "20,datasets/gov/orphan,,,,,,,,,,,,,,,,,\n"
+            "20,datasets/gov/orphan/dataset,,,,,,,,,,,,,,,,,\n"
             "21,,,,OrphanModel,,,id,,,,,,,,,,,\n"
             "22,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
         )
-        self._create_manifest(orphan_manifest, "Orphan Dataset", "Should NOT be included - no path through no-PK model")
+        self._create_manifest(
+            orphan_manifest,
+            "Orphan Dataset",
+            "Should NOT be included - no path through no-PK model",
+            whitelisted_names=["datasets/gov/orphan/"],
+        )
 
         ref_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-            "10,datasets/gov/ref,,,,,,,,,,,,,,,,,\n"
+            "10,datasets/gov/ref/dataset,,,,,,,,,,,,,,,,,\n"
             "11,,,,NoPkModel,,,,,,,,,,,,,,\n"  # No PK defined (empty ref column)
             "12,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
             "13,,,,,title,string,,,,5,,,open,dct:title,,,,\n"
-            "14,,,,,orphan_ref,ref,/datasets/gov/orphan/OrphanModel,,,5,,,open,dct:orphan,,,,\n"
+            "14,,,,,orphan_ref,ref,/datasets/gov/orphan/dataset/OrphanModel,,,5,,,open,dct:orphan,,,,\n"
         )
-        self._create_manifest(ref_manifest, "Ref Dataset", "Has no PK, refs to orphan")
+        self._create_manifest(
+            ref_manifest, "Ref Dataset", "Has no PK, refs to orphan", whitelisted_names=["datasets/gov/ref/"]
+        )
 
         main_manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
-            "1,datasets/gov/main,,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/main/dataset,,,,,,,,,,,,,,,,,\n"
             "2,,,,MainModel,,,id,,,,,,,,,,,\n"
             "3,,,,,id,integer,,,,5,,,open,dct:identifier,,,,\n"
-            "4,,,,,no_pk_ref,ref,/datasets/gov/ref/NoPkModel,,,5,,,open,dct:ref,,,,\n"
+            "4,,,,,no_pk_ref,ref,/datasets/gov/ref/dataset/NoPkModel,,,5,,,open,dct:ref,,,,\n"
         )
-        main_dataset = self._create_manifest(main_manifest, "Main Dataset", "Root")
+        main_dataset = self._create_manifest(
+            main_manifest, "Main Dataset", "Root", whitelisted_names=["datasets/gov/main/"]
+        )
 
         resp = app.get(reverse("dataset-structure-export", args=[main_dataset.pk, main_dataset.latest_version().pk]))
 
-        assert "datasets/gov/ref" in resp.text
+        assert "datasets/gov/ref/dataset" in resp.text
         assert "NoPkModel" in resp.text
 
-        assert "datasets/gov/orphan" not in resp.text
+        assert "datasets/gov/orphan/dataset" not in resp.text
         assert "OrphanModel" not in resp.text
 
         lines = resp.text.split("\r\n")

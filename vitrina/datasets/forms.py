@@ -31,6 +31,7 @@ from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
+from vitrina.datasets.helpers import validate_name_prefix
 from vitrina.datasets.services import get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 
@@ -323,8 +324,7 @@ class BaseResourceForm(TranslatableModelForm):
             if any(ch.isupper() for ch in name):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
             organization = self.organization or dataset_instance.organization
-            whitelisted = organization.whitelisted_names or []
-            main_prefix = organization.name or ""
+            _matched, main_prefix, whitelisted = validate_name_prefix(name, organization, dataset_instance)
             allowed_prefixes = [main_prefix] + list(whitelisted)
 
             representatives = Representative.objects.filter(
@@ -350,18 +350,14 @@ class BaseResourceForm(TranslatableModelForm):
                     allowed_prefixes.append(rep.content_object.name)
                     whitelisted.append(rep.content_object.name)
 
-            matched_prefix = None
-            for prefix in allowed_prefixes:
-                if name.startswith(prefix):
-                    matched_prefix = prefix
-                    break
+            matched_prefix = next((prefix for prefix in allowed_prefixes if name.startswith(prefix)), None)
             if not matched_prefix:
                 if whitelisted:
                     message = _(
-                        "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
+                        "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“."
                     ) % {"expected": main_prefix, "whitelisted": ", ".join(whitelisted)}
                 else:
-                    message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": main_prefix}
+                    message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“.") % {"expected": main_prefix}
 
                 raise ValidationError(message)
             suffix = name[len(matched_prefix) :]

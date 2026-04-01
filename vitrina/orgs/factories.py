@@ -7,6 +7,9 @@ from vitrina.orgs.models import Organization, Representative, WhitelistedCodeNam
 from vitrina.users.factories import UserFactory
 
 
+DEFAULT_WHITELISTED_NAMES = ["datasets/gov/ivpk/"]
+
+
 class OrganizationFactory(DjangoModelFactory):
     class Meta:
         model = Organization
@@ -35,6 +38,19 @@ class OrganizationFactory(DjangoModelFactory):
         if not kwargs.get("created"):
             kwargs["created"] = timezone.now()
         return model_class.add_root(**kwargs)
+
+    @factory.post_generation
+    def whitelisted_names(self, create: bool, extracted: list[str] | None, **kwargs) -> None:
+        if not create:
+            return
+
+        names = extracted or DEFAULT_WHITELISTED_NAMES
+
+        for name in names:
+            WhitelistedCodeNameFactory(
+                organization=self,
+                code_name=name,
+            )
 
 
 class RepresentativeFactory(DjangoModelFactory):
@@ -73,6 +89,7 @@ class ViispRepresentativeFactory(RepresentativeFactory):
 
 class WhitelistedCodeNameFactory(DjangoModelFactory):
     class Meta:
+        django_get_or_create = ("code_name",)
         model = WhitelistedCodeName
 
     organization = factory.SubFactory(OrganizationFactory)

@@ -2250,7 +2250,7 @@ class TestDatasetCreateView:
         resp = form.submit()
         assert list(resp.context["form"].errors.values()) == [
             [
-                "Kodinis pavadinimas turi prasidėti nuo „data/gov/org“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: datasets/gov/ivpk/"
+                "Kodinis pavadinimas turi prasidėti nuo „data/gov/org“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „datasets/gov/ivpk/“."
             ]
         ]
 

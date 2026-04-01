@@ -711,14 +711,14 @@ msgstr "Code name can only include lowercase letters."
 #, python-format
 msgid ""
 "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
-"leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
+"leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“."
 msgstr ""
 "The code name must begin with „%(expected)s“ or one of the following "
-"whitelisted code name prefixes: %(whitelisted)s"
+"whitelisted code name prefixes: „%(whitelisted)s“."
 
 #, python-format
-msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“"
-msgstr "The code name must begin with „%(expected)s“"
+msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“."
+msgstr "The code name must begin with „%(expected)s“."
 
 #, python-format
 msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."

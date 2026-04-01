@@ -218,10 +218,10 @@ def _load_datasets(state: struct.State, dataset: Dataset, metadata_version: Vers
     if not to_process:
         if whitelisted:
             message = _(
-                "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“"
+                "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“."
             ) % {"expected": main_prefix, "whitelisted": ", ".join(whitelisted)}
         else:
-            message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“") % {"expected": main_prefix}
+            message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“.") % {"expected": main_prefix}
         _create_errors([message], dataset.current_structure)
         metadata_version.delete()
         return metadata_version

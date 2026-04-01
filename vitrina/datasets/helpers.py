@@ -78,8 +78,8 @@ def validate_name_prefix(
     dataset_instance: Dataset | None = None,
 ) -> tuple[str | None, str, list[str]]:
     resolved_organization = organization or (dataset_instance.organization if dataset_instance else None)
-    whitelisted = resolved_organization.whitelisted_names or []
-    main_prefix = resolved_organization.name or ""
+    whitelisted = getattr(resolved_organization, "whitelisted_names", [])
+    main_prefix = getattr(resolved_organization, "name", "")
     allowed_prefixes = [main_prefix] + list(whitelisted)
-    matched_prefix = next((prefix for prefix in allowed_prefixes if name.startswith(prefix)), None)
+    matched_prefix = next((prefix for prefix in allowed_prefixes if prefix and name.startswith(prefix)), None)
     return matched_prefix, main_prefix, whitelisted

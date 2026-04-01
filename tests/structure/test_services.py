@@ -1404,7 +1404,7 @@ def test_structure_with_invalid_prefix_with_whitelist(app: DjangoTestApp):
             content_type=ContentType.objects.get_for_model(structure),
         ).values_list("body", flat=True)
     ) == [
-        "Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „datasets/gov/allowed/“"
+        "Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „datasets/gov/allowed/“."
     ]
 
 

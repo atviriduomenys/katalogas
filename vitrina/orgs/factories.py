@@ -36,15 +36,22 @@ class OrganizationFactory(DjangoModelFactory):
             kwargs["created"] = timezone.now()
         return model_class.add_root(**kwargs)
 
-    @factory.post_generation
-    def whitelisted_names(self, create: bool, extracted: list[str] | None, **kwargs) -> None:
-        if not create:
-            return
-        if extracted:
-            for name in extracted:
-                WhitelistedCodeNameFactory(organization=self, code_name=name)
-        else:
-            WhitelistedCodeNameFactory(organization=self, code_name="datasets/gov/ivpk/")
+
+DEFAULT_WHITELISTED_NAMES = ["datasets/gov/ivpk/"]
+
+
+@factory.post_generation
+def whitelisted_names(self, create: bool, extracted: list[str] | None, **kwargs) -> None:
+    if not create:
+        return
+
+    names = extracted or DEFAULT_WHITELISTED_NAMES
+
+    for name in names:
+        WhitelistedCodeNameFactory(
+            organization=self,
+            code_name=name,
+        )
 
 
 class RepresentativeFactory(DjangoModelFactory):

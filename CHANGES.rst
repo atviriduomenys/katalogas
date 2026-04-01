@@ -26,6 +26,10 @@ https://github.com/atviriduomenys/katalogas/issues/2337
 
 - Implement `number` type enums.
 
+https://github.com/atviriduomenys/katalogas/issues/2461
+
+-  Implement dataset name check in manifest read
+
 
 v 1.17.1 (2026-03-30)
 ==================

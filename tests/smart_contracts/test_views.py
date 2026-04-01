@@ -5,6 +5,7 @@ from uuid import uuid4
 
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core import mail
 from django.core.files.base import ContentFile
 from django.urls import reverse
 from django.test import override_settings
@@ -522,6 +523,85 @@ class TestAgreementSubmit:
         agreement.refresh_from_db()
         assert not agreement.assignee_representative
         assert agreement.status == initial_agreement_status
+
+    def test_sends_email_to_assigner(self, app: DjangoTestApp, dataset: Dataset):
+        assignee_organization = OrganizationFactory(email="assignee@example.com")
+        assigner_organization = OrganizationFactory(email="assigner@example.com")
+        user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        app.set_user(user)
+        RepresentativeFactory(user=user, content_object=assignee_organization, can_make_agreements=True)
+        contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=user.email,
+            phone=user.phone,
+        )
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=None,
+            assigner=assigner_organization,
+            created_by=user,
+            status=AgreementStatuses.CREATED,
+        )
+
+        app.post(
+            reverse("project-agreement-submit", args=[project.pk, agreement.pk]),
+            {"assignee_representative": contact.pk},
+        )
+
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].to == ["assigner@example.com"]
+        expected_link = "http://testserver" + reverse("project-agreement-detail", args=[project.pk, agreement.pk])
+        assert expected_link in mail.outbox[0].body
+
+    def test_no_email_sent_when_assigner_has_no_email(self, app: DjangoTestApp, dataset: Dataset):
+        assignee_organization = OrganizationFactory(email="assignee@example.com")
+        assigner_organization = OrganizationFactory(email=None)
+        user = UserFactory(
+            organization=assignee_organization,
+            is_viisp_login=True,
+            viisp_company_code=assignee_organization.company_code,
+        )
+        app.set_user(user)
+        RepresentativeFactory(user=user, content_object=assignee_organization, can_make_agreements=True)
+        contact = ContactFactory(
+            organization=assignee_organization,
+            object_id=user.pk,
+            content_type=ContentType.objects.get_for_model(User),
+            email=user.email,
+            phone=user.phone,
+        )
+        project = ProjectFactory(
+            organization=assignee_organization,
+            datasets=[dataset],
+            other_assignee_legislations="Test",
+        )
+        agreement = AgreementFactory(
+            project=project,
+            assignee=assignee_organization,
+            assignee_representative=None,
+            assigner=assigner_organization,
+            created_by=user,
+            status=AgreementStatuses.CREATED,
+        )
+
+        app.post(
+            reverse("project-agreement-submit", args=[project.pk, agreement.pk]),
+            {"assignee_representative": contact.pk},
+        )
+
+        assert len(mail.outbox) == 0
 
 
 class TestAgreementApprove:

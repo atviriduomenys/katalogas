@@ -22,6 +22,11 @@ https://github.com/atviriduomenys/katalogas/issues/2519
 - Smart contract notifications:
     - Send an email to the data owner organization when a smart contract agreement is submitted.
 
+https://github.com/atviriduomenys/katalogas/issues/2337
+
+- Implement `number` type enums.
+
+
 v 1.17.1 (2026-03-30)
 ==================
 

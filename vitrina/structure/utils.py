@@ -35,6 +35,15 @@ class IntegerTypeChecker(TypeChecker[int]):
             raise TypeCheckerError(error_msg)
 
 
+class NumberTypeChecker(TypeChecker[float]):
+    def check_enum_item_value(self, value: str) -> None:
+        try:
+            float(value)
+        except (TypeError, ValueError):
+            error_msg = _('Reikšmė "{value}" turi būti number tipo.').format(value=value)
+            raise TypeCheckerError(error_msg)
+
+
 class BooleanTypeChecker(TypeChecker[bool]):
     def check_enum_item_value(self, value: str) -> None:
         if value not in VALID_BOOLEAN_PREPARE_VALUES:
@@ -53,6 +62,7 @@ class NotImplementedTypeChecker(TypeChecker[Any]):
 TYPE_CHECKER_MAP = {
     "string": StringTypeChecker(),
     "integer": IntegerTypeChecker(),
+    "number": NumberTypeChecker(),
     "boolean": BooleanTypeChecker(),
 }
 

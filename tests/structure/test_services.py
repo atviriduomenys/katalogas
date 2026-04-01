@@ -2965,3 +2965,27 @@ def test_structure_boolean_enums_invalid_source(app: DjangoTestApp):
 
     assert Enum.objects.count() == 1
     assert Enum.objects.first().enumitem_set.count() == 0  # No enum-items created due to errors.
+
+
+def test_structure_number_enums(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+        ",example,,,,,,,,,,,,,,,,\n"
+        ",,,,Dataset,,,,,,1,,,,,,,\n"
+        ",,,,,type,number required,,TypeID/text(),,,,,4,,,,,,,\n"
+        ",,,,,,enum,,1.1,1.2,,,,,,,,,,,\n"
+        ",,,,,,,,1.3,1.4,,,,,,,,,,,\n"
+    )
+
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+
+    create_structure_objects(structure)
+
+    assert Comment.objects.filter(content_type=ContentType.objects.get_for_model(Property)).count() == 0
+    assert Enum.objects.count() == 1
+    enum = Enum.objects.first()
+    enum_items = enum.enumitem_set.all()
+    assert enum_items.count() == 2
+    assert list(enum_items.values_list("metadata__prepare", flat=True)) == ["1.2", "1.4"]

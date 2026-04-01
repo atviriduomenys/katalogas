@@ -272,6 +272,31 @@ def test_import_property_enum_type_boolean():
     assert enum_item_2.prepare == "false"
 
 
+def test_import_property_enum_type_number():
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+        ",example,,,,,,,,,,,,,,,,\n"
+        ",,,,Dataset,,,,,,1,,,,,,,\n"
+        ",,,,,type,number required,,TypeID/text(),,,,,4,,,,,,,\n"
+        ",,,,,,enum,,1.1,1.2,,,,,,,,,,,\n"
+        ",,,,,,,,1.3,1.4,,,,,,,,,,,\n"
+    )
+
+    reader = csv.DictReader(io.StringIO(manifest))
+    model = "example/Dataset"
+
+    state = read(reader)
+
+    assert state.errors == []
+    property = state.manifest.models[model].properties["type"]
+    assert property.type == "number"
+    enum_item_1, enum_item_2 = property.enums[""]
+    assert enum_item_1.source == "1.1"
+    assert enum_item_1.prepare == "1.2"
+    assert enum_item_2.source == "1.3"
+    assert enum_item_2.prepare == "1.4"
+
+
 def test_import_property_string_enum_without_prepare_uses_source_value():
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,access,uri,title,description\n"

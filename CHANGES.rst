@@ -13,6 +13,10 @@ https://github.com/atviriduomenys/katalogas/issues/2484
     - Introduced in-memory caches for frequently accessed objects (users, dataset statuses, metadata) to reduce repeated database queries within a single import run.
     - Refactored structure import service to batch-fetch related objects and avoid N+1 query patterns.
 
+https://github.com/atviriduomenys/katalogas/issues/2338
+
+- Test-prove `boolean` type enums work as expected.
+
 
 v 1.17.1 (2026-03-30)
 ==================

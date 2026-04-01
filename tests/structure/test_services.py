@@ -2915,3 +2915,53 @@ class TestStructureComments:
         comment_base = Comment.objects.get(content_type=ContentType.objects.get_for_model(Base))
         assert comment_base.prepare == 'update(model: "Animal")'
         assert comment_base.uri == "https://github.com/example/issues/2"
+
+
+def test_structure_boolean_enums(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+        "1,dataset,,,,,,,,,,,,,,,,\n"
+        "2,,,,Approver,,,,,,1,,,,,,,\n"
+        "3,,,,,is_active,boolean,,IsActive/text(),,,,,4,,,,,,,\n"
+        "4,,,,,,enum,,True,true,,,,,,,,,,,\n"
+        "5,,,,,,,,False,false,,,,,,,,,,,\n"
+    )
+
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+
+    create_structure_objects(structure)
+
+    assert Comment.objects.filter(content_type=ContentType.objects.get_for_model(Property)).count() == 0
+
+    assert Enum.objects.count() == 1
+    enum = Enum.objects.first()
+    enum_items = enum.enumitem_set.all()
+    assert enum_items.count() == 2
+    assert list(enum_items.values_list("metadata__prepare", flat=True)) == ["true", "false"]
+
+
+def test_structure_boolean_enums_invalid_source(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
+        "1,dataset,,,,,,,,,,,,,,,,\n"
+        "2,,,,Approver,,,,,,1,,,,,,,\n"
+        "3,,,,,is_active,boolean,,IsActive/text(),,,,,4,,,,,,,\n"
+        "4,,,,,,enum,,True,True,,,,,,,,,,,\n"
+        "5,,,,,,,,False,False,,,,,,,,,,,\n"
+    )
+
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+
+    create_structure_objects(structure)
+
+    comments = Comment.objects.filter(content_type=ContentType.objects.get_for_model(Property))
+    assert comments.count() == 2
+    assert comments.first().body == 'Reikšmė "False" turi būti boolean tipo. Viena iš: true, false'
+    assert comments.last().body == 'Reikšmė "True" turi būti boolean tipo. Viena iš: true, false'
+
+    assert Enum.objects.count() == 1
+    assert Enum.objects.first().enumitem_set.count() == 0  # No enum-items created due to errors.

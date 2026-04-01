@@ -1377,7 +1377,7 @@ def test_structure_with_invalid_prefix_no_whitelist(app: DjangoTestApp):
             type=Comment.STRUCTURE_ERROR,
             content_type=ContentType.objects.get_for_model(structure),
         ).values_list("body", flat=True)
-    ) == ["Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“"]
+    ) == ["Kodinis pavadinimas turi prasidėti nuo „datasets/gov/other“."]
 
 
 @pytest.mark.django_db
@@ -3043,7 +3043,7 @@ class TestStructureComments:
 def test_structure_boolean_enums(app: DjangoTestApp):
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-        "1,dataset,,,,,,,,,,,,,,,,\n"
+        "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,\n"
         "2,,,,Approver,,,,,,1,,,,,,,\n"
         "3,,,,,is_active,boolean,,IsActive/text(),,,,,4,,,,,,,\n"
         "4,,,,,,enum,,True,true,,,,,,,,,,,\n"
@@ -3068,7 +3068,7 @@ def test_structure_boolean_enums(app: DjangoTestApp):
 def test_structure_boolean_enums_invalid_source(app: DjangoTestApp):
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-        "1,dataset,,,,,,,,,,,,,,,,\n"
+        "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,\n"
         "2,,,,Approver,,,,,,1,,,,,,,\n"
         "3,,,,,is_active,boolean,,IsActive/text(),,,,,4,,,,,,,\n"
         "4,,,,,,enum,,True,True,,,,,,,,,,,\n"
@@ -3093,7 +3093,7 @@ def test_structure_boolean_enums_invalid_source(app: DjangoTestApp):
 def test_structure_number_enums(app: DjangoTestApp):
     manifest = (
         "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-        ",example,,,,,,,,,,,,,,,,\n"
+        ",datasets/gov/ivpk/example,,,,,,,,,,,,,,,,\n"
         ",,,,Dataset,,,,,,1,,,,,,,\n"
         ",,,,,type,number required,,TypeID/text(),,,,,4,,,,,,,\n"
         ",,,,,,enum,,1.1,1.2,,,,,,,,,,,\n"

@@ -7729,7 +7729,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,dataset,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,\n"
             "2,,,,Approver,,,,,,1,,,,,,,\n"
             "3,,,,,is_active,boolean,,IsActive/text(),,,,,4,,,,,,,\n"
             "4,,,,,,enum,,True,true,,,,,,,,,,,\n"
@@ -7742,7 +7742,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
+            "1,datasets/gov/ivpk/dataset,,,,,,,,,,,,,,,,,,Dataset,Dataset",
             "2,,,,Approver,,,,,,,,,1,develop,,,,,,",
             "3,,,,,is_active,boolean,,IsActive/text(),,,,,,develop,,,,,,",
             "4,,,,,,enum,,True,,true,,,,develop,,,,,,",
@@ -7756,7 +7756,7 @@ class TestStructure(BaseTestCreateManifest):
 
         manifest = (
             "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description\n"
-            "1,example,,,,,,,,,,,,,,,,\n"
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,\n"
             "2,,,,Dataset,,,,,,1,,,,,,,\n"
             "3,,,,,type,number required,,TypeID/text(),,,,,4,,,,,,,\n"
             "4,,,,,,enum,,1.1,1.2,,,,,,,,,,,\n"
@@ -7769,7 +7769,7 @@ class TestStructure(BaseTestCreateManifest):
         assert response.status_code == HTTPStatus.OK
         assert response.text.splitlines() == [
             "id,dataset,resource,base,model,property,type,ref,source,source.type,prepare,origin,count,level,status,visibility,access,uri,eli,title,description",
-            "1,example,,,,,,,,,,,,,,,,,,Dataset,Dataset",
+            "1,datasets/gov/ivpk/example,,,,,,,,,,,,,,,,,,Dataset,Dataset",
             "2,,,,Dataset,,,,,,,,,1,develop,,,,,,",
             "3,,,,,type,number required,,TypeID/text(),,,,,,develop,,,,,,",
             "4,,,,,,enum,,1.1,,1.2,,,,develop,,,,,,",

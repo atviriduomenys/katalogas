@@ -4,6 +4,7 @@
 {% load hitcount_tags %}
 {% load subscription_tags %}
 {% load comment_tags %}
+{% load markdown_tags %}
 {% block pageTitle %}| {{ dataset.title }}{% endblock %}
 {% block pageDescription %}{{ dataset.description | escape }}{% endblock %}
 {% if dataset.organization %}
@@ -71,7 +72,7 @@
             <div class="content">
                 <p class="no-margin-bottom">
                     {% objectlanguage dataset LANGUAGE_CODE %}
-                    {{ dataset.description | linebreaks | urlizetrunc:42 }}
+                    {{ dataset.description | markdown | safe | urlizetrunc:42 }}
                 {% endobjectlanguage %}
             </p>
             {# tags #}

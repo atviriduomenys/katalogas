@@ -30,6 +30,10 @@ https://github.com/atviriduomenys/katalogas/issues/2461
 
 -  Implement dataset name check in manifest read
 
+https://github.com/atviriduomenys/katalogas/issues/2522
+
+- Added formatting for HTML tags to be rendered correctly and we would not have laying HTML tags in description text fields.
+
 
 v 1.17.1 (2026-03-30)
 ==================

@@ -12,12 +12,12 @@ register = template.Library()
 @stringfilter
 def markdown(value):
     """
-    Convert markdown to HTML and sanitize for XSS protection.
+    Convert Markdown to HTML and sanitize for XSS protection.
 
-    This filter processes markdown and ensures the output is safe
+    This filter processes Markdown and ensures the output is safe
     by removing any malicious scripts or HTML.
     """
-    # Convert markdown to HTML
+    # Convert Markdown to HTML
     html = md.markdown(value, extensions=["markdown.extensions.fenced_code"])
 
     # Sanitize the HTML to prevent XSS

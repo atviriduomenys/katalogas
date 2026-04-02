@@ -3,6 +3,7 @@
 {% load i18n parler_tags %}
 {% load hitcount_tags %}
 {% load util_tags %}
+{% load markdown_tags %}
 
 {% block pageTitle %} | {% translate "Duomenų ištekliai" %}{% endblock %}
 {% block pageOgTitle %} | {% translate "Duomenų ištekliai" %}{% endblock %}
@@ -254,7 +255,7 @@
                                     <p class="dataset-list-description my-1">
                                         {% if i.object %}
                                             {% objectlanguage i.object LANGUAGE_CODE %}
-                                                {{ i.object.description|escape }}
+                                                {{ i.object.description|markdown|safe }}
                                             {% endobjectlanguage %}
                                         {% else %}
                                             {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}

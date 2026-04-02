@@ -34,6 +34,10 @@ https://github.com/atviriduomenys/katalogas/issues/2522
 
 - Added formatting for HTML tags to be rendered correctly and we would not have laying HTML tags in description text fields.
 
+https://github.com/atviriduomenys/katalogas/issues/2524
+
+- HTML formatting and breadcrumb adjustments.
+
 
 v 1.17.1 (2026-03-30)
 ==================

@@ -109,6 +109,14 @@ class ProjectListView(ListView):
     def get_queryset(self):
         return get_projects(self.request.user, approved_only=False)
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["parent_links"] = {
+            reverse("home"): _("Pradžia"),
+            None: _("Panaudojimo atvejai"),
+        }
+        return context
+
 
 class ProjectDetailView(ProjectViewBaseMixin, PermissionRequiredMixin, DetailView):
     model = Project

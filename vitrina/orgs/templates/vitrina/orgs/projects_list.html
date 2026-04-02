@@ -1,8 +1,12 @@
 {% extends "base.html" %}
 {% load i18n %}
 
+{% block parent_links %}
+    {% include "component/breadcrumbs.html" %}
+{% endblock %}
+
 {% block current_title %}
-{% translate "Organizacijos narių sąrašas" %}
+    {% translate "Organizacijos narių sąrašas" %}
 {% endblock %}
 
 {% block content %}

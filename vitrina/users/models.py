@@ -194,13 +194,20 @@ class User(AbstractUser):
             user=self, content_type=org_type, object_id=organization.pk, role=Representative.RESOURCE_COORDINATOR
         ).exists()
 
-    def is_open_data_representative_for(self, obj: Union[Organization, "Dataset", None]) -> bool:
+    def is_open_data_representative_for(
+        self,
+        obj: Union[Organization, "Dataset", None],
+        roles: list | None = None,
+    ) -> bool:
         if obj is None:
             return False
 
         content_type = ContentType.objects.get_for_model(obj)
-        open_data_roles = [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
+        open_data_roles = (
+            roles if roles is not None else [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
+        )
         coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
+        manager_equivalent_roles = [coordinator_to_manager.get(role, role) for role in open_data_roles]
 
         # Case 1: user directly holds an open data role on the object
         if (
@@ -226,26 +233,33 @@ class User(AbstractUser):
             .values_list("object_id", "role")
         )
 
-        if not user_organization_role_map:
-            return False
+        if user_organization_role_map:
+            for organization_id, organization_role in (
+                Representative.objects.filter(
+                    content_type=content_type,
+                    object_id=obj.pk,
+                    organization_id__in=user_organization_role_map.keys(),
+                )
+                .exclude(deleted=True)
+                .values_list("organization_id", "role")
+            ):
+                user_role = coordinator_to_manager.get(
+                    user_organization_role_map[organization_id], user_organization_role_map[organization_id]
+                )
+                least_privileged_role = max(organization_role, user_role, key=Representative.MANAGER_ROLES.index)
+                if least_privileged_role in manager_equivalent_roles:
+                    return True
 
-        for organization_id, organization_role in (
-            Representative.objects.filter(
-                content_type=content_type,
-                object_id=obj.pk,
-                organization_id__in=user_organization_role_map.keys(),
-            )
-            .exclude(deleted=True)
-            .values_list("organization_id", "role")
-        ):
-            user_role = coordinator_to_manager.get(
-                user_organization_role_map[organization_id], user_organization_role_map[organization_id]
-            )
-            least_privileged_role = max(organization_role, user_role, key=Representative.MANAGER_ROLES.index)
-            if least_privileged_role in open_data_roles:
-                return True
+        # Case 3: check ancestors if the object supports it
+        if hasattr(obj, "get_ancestors"):
+            for ancestor in obj.get_ancestors():
+                if self.is_open_data_representative_for(ancestor, roles=roles):
+                    return True
 
         return False
+
+    def is_open_data_coordinator_for(self, obj: Union[Organization, "Dataset", None]) -> bool:
+        return self.is_open_data_representative_for(obj, roles=[Representative.OPEN_DATA_COORDINATOR])
 
 
 class UserTablePreferences(models.Model):

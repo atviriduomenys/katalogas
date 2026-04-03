@@ -107,8 +107,7 @@ class ResourceSubclassForm(TranslatableModelForm, TranslatableModelFormMixin):
             parent = None
 
         if user and (
-            (self.organization and user.is_open_data_representative_for(self.organization))
-            or user.is_open_data_representative_for(parent)
+            user.is_open_data_representative_for(self.organization) or user.is_open_data_representative_for(parent)
         ):
             self.fields["subclass"].queryset = DCATResourceSubclass.objects.exclude(
                 name=DCATResourceSubclass.INFORMATION_SYSTEM

@@ -248,15 +248,6 @@ class Representative(models.Model):
 
         return False
 
-    @classmethod
-    def is_open_data_coordinator(cls, user: "User", content_type: ContentType, object_id: int) -> bool:
-        return cls.objects.filter(
-            user=user,
-            content_type=content_type,
-            object_id=object_id,
-            role=cls.OPEN_DATA_COORDINATOR,
-        ).exists()
-
 
 class PublishedReport(models.Model):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)

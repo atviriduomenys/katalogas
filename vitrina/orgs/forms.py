@@ -455,11 +455,9 @@ class RepresentativeCreateForm(ModelForm):
         self.object = kwargs.pop("object")
         super().__init__(*args, **kwargs)
 
-        content_type = ContentType.objects.get_for_model(self.object_model)
-
         self.fields["role"].choices = (
             Representative.OPEN_DATA_ROLES
-            if Representative.is_open_data_coordinator(self.user, content_type, self.object.pk)
+            if self.user.is_open_data_coordinator_for(self.object)
             else Representative.ROLES
         )
 
@@ -497,7 +495,7 @@ class RepresentativeCreateForm(ModelForm):
         if (
             role
             and role not in dict(Representative.OPEN_DATA_ROLES)
-            and Representative.is_open_data_coordinator(self.user, content_type, self.object.pk)
+            and self.user.is_open_data_coordinator_for(self.object)
         ):
             self.add_error("role", _("Jūs neturite teisės priskirti šios rolės."))
         return super().clean()

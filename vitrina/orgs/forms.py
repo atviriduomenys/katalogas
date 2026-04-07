@@ -357,6 +357,14 @@ class RepresentativeUpdateForm(ModelForm):
         self.object = kwargs.pop("object", None)
         super().__init__(*args, **kwargs)
 
+        organization = self.object if self.object_model == Organization else getattr(self.object, "organization", None)
+        self.fields["role"].choices = (
+            Representative.OPEN_DATA_ROLES
+            if self.user.is_open_data_coordinator_for(self.object)
+            or (organization and self.user.is_open_data_coordinator_for(organization))
+            else Representative.ROLES
+        )
+
         if self.object_model == Organization:
             if self.user.viisp_organization == self.object and self.user.is_resource_coordinator_for(self.object):
                 self.fields["can_make_agreements"].disabled = False
@@ -416,6 +424,15 @@ class RepresentativeUpdateForm(ModelForm):
 
         if self.instance.organization and role in Representative.COORDINATOR_ROLES:
             raise ValidationError(_("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
+
+        organization = self.object if self.object_model == Organization else getattr(self.object, "organization", None)
+
+        is_allowed = self.user.is_open_data_coordinator_for(self.object) or (
+            organization and self.user.is_open_data_coordinator_for(organization)
+        )
+
+        if role and role not in dict(Representative.OPEN_DATA_ROLES) and is_allowed:
+            self.add_error("role", _("Jūs neturite teisės priskirti šios rolės."))
 
         return self.cleaned_data
 

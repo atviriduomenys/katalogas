@@ -210,16 +210,13 @@ class User(AbstractUser):
         manager_equivalent_roles = [coordinator_to_manager.get(role, role) for role in open_data_roles]
 
         # Case 1: user directly holds an open data role on the object
-        if (
-            Representative.objects.filter(
-                content_type=content_type,
-                object_id=obj.pk,
-                role__in=open_data_roles,
-                user=self,
-            )
-            .exclude(deleted=True)
-            .exists()
-        ):
+        direct_representative = Representative.objects.filter(
+            content_type=content_type,
+            object_id=obj.pk,
+            role__in=open_data_roles,
+            user=self,
+        ).exclude(deleted=True)
+        if direct_representative.exists():
             return True
 
         # Case 2: access is resolved through the user's organizational membership.
@@ -234,7 +231,7 @@ class User(AbstractUser):
         )
 
         if user_organization_role_map:
-            for organization_id, organization_role in (
+            organization_representatives = (
                 Representative.objects.filter(
                     content_type=content_type,
                     object_id=obj.pk,
@@ -242,7 +239,9 @@ class User(AbstractUser):
                 )
                 .exclude(deleted=True)
                 .values_list("organization_id", "role")
-            ):
+            )
+
+            for organization_id, organization_role in organization_representatives:
                 user_role = coordinator_to_manager.get(
                     user_organization_role_map[organization_id], user_organization_role_map[organization_id]
                 )
@@ -259,6 +258,13 @@ class User(AbstractUser):
         return False
 
     def is_open_data_coordinator_for(self, obj: Union[Organization, "Dataset", None]) -> bool:
+        """
+        Check if this user is an Open Data Coordinator for the given object.
+
+        'Coordinator' is a specific role within the representative system.
+        Delegates to `is_open_data_representative_for` with the
+        `OPEN_DATA_COORDINATOR` role.
+        """
         return self.is_open_data_representative_for(obj, roles=[Representative.OPEN_DATA_COORDINATOR])
 
 

@@ -1,6 +1,7 @@
 import numbers
 from datetime import date
 from typing import Iterable, Any
+from urllib.parse import quote, urlsplit, urlunsplit
 
 from django import template
 from django.contrib.contenttypes.models import ContentType
@@ -95,6 +96,22 @@ def convert_coordinates(
 def get_geometry_srid(type_args):
     srid = get_srid(type_args)
     return srid
+
+
+@register.filter
+def encode_uri(value):
+    if not value:
+        return value
+    parts = urlsplit(str(value))
+    return urlunsplit(
+        (
+            parts.scheme,
+            parts.netloc,
+            quote(parts.path, safe="/:@!$&'()*+,;=-._~"),
+            quote(parts.query, safe="/:@!$&'()*+,;=-._~?"),
+            quote(parts.fragment, safe="/:@!$&'()*+,;=-._~?"),
+        )
+    )
 
 
 @assignment_tag

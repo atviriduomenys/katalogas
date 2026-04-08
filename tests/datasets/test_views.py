@@ -3817,10 +3817,7 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
     expected_data = [
         [
             "",
-            "-",
             resource.title,
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "Saugykla API",
             resource.created.strftime("%Y-%m-%d"),
@@ -3831,10 +3828,7 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "JSON",
             resource.created.strftime("%Y-%m-%d"),
@@ -3845,10 +3839,7 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "JSONL",
             resource.created.strftime("%Y-%m-%d"),
@@ -3859,10 +3850,7 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "RDF",
             resource.created.strftime("%Y-%m-%d"),
@@ -3873,10 +3861,7 @@ def test_dataset_dynamic_resources(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "CSV",
             resource.created.strftime("%Y-%m-%d"),
@@ -3926,10 +3911,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
     expected_data = [
         [
             "",
-            "-",
             resource.title,
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "Saugykla API",
             resource.created.strftime("%Y-%m-%d"),
@@ -3940,10 +3922,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "JSON",
             resource.created.strftime("%Y-%m-%d"),
@@ -3954,10 +3933,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "JSONL",
             resource.created.strftime("%Y-%m-%d"),
@@ -3968,10 +3944,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "RDF",
             resource.created.strftime("%Y-%m-%d"),
@@ -3982,10 +3955,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "CSV",
             resource.created.strftime("%Y-%m-%d"),
@@ -3996,10 +3966,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel2",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "CSV",
             resource.created.strftime("%Y-%m-%d"),
@@ -4010,10 +3977,7 @@ def test_dataset_dynamic_resources_multiple_models(app: DjangoTestApp):
         ],
         [
             "",
-            "-",
             "TestModel3",
-            "2022-01-01",
-            "2022-12-31",
             "-",
             "CSV",
             resource.created.strftime("%Y-%m-%d"),

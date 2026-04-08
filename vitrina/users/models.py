@@ -197,63 +197,85 @@ class User(AbstractUser):
     def is_open_data_representative_for(
         self,
         obj: Union[Organization, "Dataset", None],
-        roles: list | None = None,
+        roles: list[str] | None = None,
     ) -> bool:
         if obj is None:
             return False
 
-        content_type = ContentType.objects.get_for_model(obj)
         open_data_roles = (
             roles if roles is not None else [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
         )
-        coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
-        manager_equivalent_roles = [coordinator_to_manager.get(role, role) for role in open_data_roles]
 
-        # Case 1: user directly holds an open data role on the object
-        direct_representative = Representative.objects.filter(
-            content_type=content_type,
-            object_id=obj.pk,
-            role__in=open_data_roles,
-            user=self,
-        ).exclude(deleted=True)
-        if direct_representative.exists():
+        if self._has_direct_representative_role(obj, open_data_roles):
             return True
 
-        # Case 2: access is resolved through the user's organizational membership.
-        # Effective role is the least privileged of the user's role and the organization's role on the object.
-        user_organization_role_map = dict(
-            Representative.objects.filter(
-                user=self,
-                content_type=self.organization_content_type,
-            )
-            .exclude(deleted=True)
-            .values_list("object_id", "role")
-        )
+        if self._has_role_via_org_membership(obj, open_data_roles):
+            return True
 
-        if user_organization_role_map:
-            organization_representatives = (
-                Representative.objects.filter(
-                    content_type=content_type,
-                    object_id=obj.pk,
-                    organization_id__in=user_organization_role_map.keys(),
-                )
-                .exclude(deleted=True)
-                .values_list("organization_id", "role")
-            )
-
-            for organization_id, organization_role in organization_representatives:
-                user_role = coordinator_to_manager.get(
-                    user_organization_role_map[organization_id], user_organization_role_map[organization_id]
-                )
-                least_privileged_role = max(organization_role, user_role, key=Representative.MANAGER_ROLES.index)
-                if least_privileged_role in manager_equivalent_roles:
-                    return True
-
-        # Case 3: check ancestors if the object supports it
+        # Case: check ancestors if the object supports it
         if hasattr(obj, "get_ancestors"):
             for ancestor in obj.get_ancestors():
                 if self.is_open_data_representative_for(ancestor, roles=roles):
                     return True
+
+        return False
+
+    def _has_direct_representative_role(
+        self,
+        obj: Union[Organization, "Dataset", None],
+        roles: list[str] | None = None,
+    ) -> bool:
+        """User personally holds one of the given roles on this object."""
+        content_type = ContentType.objects.get_for_model(obj)
+        return (
+            Representative.objects.filter(
+                content_type=content_type,
+                object_id=obj.pk,
+                role__in=roles,
+                user=self,
+            )
+            .exclude(deleted=True)
+            .exists()
+        )
+
+    def _has_role_via_org_membership(
+        self,
+        obj: Union[Organization, "Dataset", None],
+        roles: list[str] | None = None,
+    ) -> bool:
+        """
+        User belongs to an organization that holds a role on this object.
+        Effective permission = least privileged of (user's org role, org's role on object).
+        """
+        content_type = ContentType.objects.get_for_model(obj)
+        coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
+        manager_equivalent_roles = [coordinator_to_manager.get(role, role) for role in roles]
+
+        user_organization_roles = dict(
+            Representative.objects.filter(user=self, content_type=self.organization_content_type)
+            .exclude(deleted=True)
+            .values_list("object_id", "role")
+        )
+        if not user_organization_roles:
+            return False
+
+        organization_representatives_on_obj = (
+            Representative.objects.filter(
+                content_type=content_type,
+                object_id=obj.pk,
+                organization_id__in=user_organization_roles.keys(),
+            )
+            .exclude(deleted=True)
+            .values_list("organization_id", "role")
+        )
+
+        for organization_id, organization_role in organization_representatives_on_obj:
+            user_role = coordinator_to_manager.get(
+                user_organization_roles[organization_id], user_organization_roles[organization_id]
+            )
+            effective_role = max(organization_role, user_role, key=Representative.MANAGER_ROLES.index)
+            if effective_role in manager_equivalent_roles:
+                return True
 
         return False
 

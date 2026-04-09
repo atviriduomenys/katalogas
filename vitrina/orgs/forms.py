@@ -364,7 +364,7 @@ class RepresentativeUpdateForm(ModelForm):
             self.object, roles=[Representative.OPEN_DATA_COORDINATOR]
         )
 
-        # If they are JUST an OD coordinator, restrict them.
+        # If they are JUST an Open data coordinator, restrict them.
         self.fields["role"].choices = (
             Representative.OPEN_DATA_ROLES
             if self.is_open_data_coordinator and not self.is_resource_coordinator

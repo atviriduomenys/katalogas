@@ -232,10 +232,15 @@ class User(AbstractUser):
         """
         Returns True if the user is an Open Data representative for the object.
         This means the user has either Open Data Coordinator or Manager role.
+        We need to check if the user if not a Resource representative first, to not lower the role.
         """
-        open_data_roles = (
-            roles if roles is not None else [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
-        )
+        if not obj or self.is_staff or self.is_superuser:
+            return False
+
+        if self.is_representative_for(obj, roles=list(Representative.RESOURCE_ROLE_KEYS)):
+            return False
+
+        open_data_roles = roles or [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
         return self.is_representative_for(obj, roles=open_data_roles)
 
     def is_coordinator_for(self, obj: Union[Organization, "Dataset", None], roles: list[str]) -> bool:

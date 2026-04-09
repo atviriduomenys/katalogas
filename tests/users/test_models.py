@@ -311,6 +311,26 @@ class TestIsOpenDataRepresentativeFor:
 
         assert user.is_open_data_representative_for(child_dataset) is True
 
+    def test_returns_false_if_user_is_open_data_representative_on_child_but_resource_representative_on_parent(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            user=user,
+            role=Representative.OPEN_DATA_MANAGER,
+        )
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            user=user,
+            role=Representative.RESOURCE_COORDINATOR,
+        )
+
+        assert user.is_open_data_representative_for(dataset) is False
+
 
 class TestIsCoordinatorFor:
     def test_is_staff_user_returns_true(self):
@@ -367,8 +387,7 @@ class TestIsCoordinatorFor:
             role=Representative.RESOURCE_COORDINATOR,
         )
 
-        assert user.is_open_data_representative_for(dataset, roles=[Representative.RESOURCE_COORDINATOR]) is True
-        assert user.is_open_data_representative_for(dataset, roles=[Representative.OPEN_DATA_COORDINATOR]) is False
+        assert user.is_open_data_representative_for(dataset) is False
 
     def test_returns_true_for_resource_coordinator_if_child_represented_as_resource(self):
         parent_dataset = DatasetFactory()

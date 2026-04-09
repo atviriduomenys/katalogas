@@ -194,31 +194,46 @@ class User(AbstractUser):
             user=self, content_type=org_type, object_id=organization.pk, role=Representative.RESOURCE_COORDINATOR
         ).exists()
 
+    def is_representative_for(
+        self,
+        obj: Union[Organization, "Dataset", None],
+        roles: list[str] | None = None,
+    ) -> bool:
+        """
+            Returns True if the user is a representative for the given object.
+            The user can have this role either directly or through an organization
+            they belong to. The check also includes parent objects in the ACL hierarchy.
+        """
+        if obj is None:
+            return False
+
+        for parent in obj.get_acl_parents():
+            if self._has_direct_representative_role(parent, roles):
+                return True
+            if self._has_role_via_org_membership(parent, roles):
+                return True
+
+        return False
+
     def is_open_data_representative_for(
         self,
         obj: Union[Organization, "Dataset", None],
         roles: list[str] | None = None,
     ) -> bool:
-        if obj is None:
-            return False
-
+        """
+            Returns True if the user is an Open Data representative for the object.
+            This means the user has either Open Data Coordinator or Manager role.
+        """
         open_data_roles = (
             roles if roles is not None else [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
         )
+        return self.is_representative_for(obj, roles=open_data_roles)
 
-        if self._has_direct_representative_role(obj, open_data_roles):
-            return True
-
-        if self._has_role_via_org_membership(obj, open_data_roles):
-            return True
-
-        # Case: check ancestors if the object supports it
-        if hasattr(obj, "get_ancestors"):
-            for ancestor in obj.get_ancestors():
-                if self.is_open_data_representative_for(ancestor, roles=roles):
-                    return True
-
-        return False
+    def is_open_data_coordinator_for(self, obj: Union[Organization, "Dataset", None]) -> bool:
+        """
+            Returns True if the user is an Open Data Coordinator for the object.
+        """
+        return self.is_open_data_representative_for(obj, roles=[Representative.OPEN_DATA_COORDINATOR])
 
     def _has_direct_representative_role(
         self,
@@ -278,16 +293,6 @@ class User(AbstractUser):
                 return True
 
         return False
-
-    def is_open_data_coordinator_for(self, obj: Union[Organization, "Dataset", None]) -> bool:
-        """
-        Check if this user is an Open Data Coordinator for the given object.
-
-        'Coordinator' is a specific role within the representative system.
-        Delegates to `is_open_data_representative_for` with the
-        `OPEN_DATA_COORDINATOR` role.
-        """
-        return self.is_open_data_representative_for(obj, roles=[Representative.OPEN_DATA_COORDINATOR])
 
 
 class UserTablePreferences(models.Model):

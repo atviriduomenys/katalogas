@@ -553,10 +553,7 @@ def has_perm(
 
         if isinstance(obj, Type):
             model = obj
-            if parent:
-                nodes = get_parents(parent)
-            else:
-                nodes = []
+            nodes = get_parents(parent) if parent else []
         else:
             model = type(obj)
             nodes = get_parents(obj)

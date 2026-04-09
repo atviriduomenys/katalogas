@@ -231,20 +231,25 @@ class Representative(models.Model):
         if user.is_superuser or user.is_staff:
             return True
 
-        user_rep = user.representative_set.filter(organization=self.organization).first()
-        if not user_rep:
-            return False
+        object = self.content_object
 
-        if user_rep.role == Representative.OPEN_DATA_COORDINATOR:
-            return self.role in Representative.OPEN_DATA_ROLE_KEYS
-
-        if user_rep.role == Representative.RESOURCE_COORDINATOR:
+        if user.is_representative_for(
+            object,
+            roles=[
+                Representative.RESOURCE_COORDINATOR,
+            ],
+        ):
             return self.role in (
                 Representative.RESOURCE_COORDINATOR,
                 Representative.RESOURCE_MANAGER,
                 Representative.OPEN_DATA_COORDINATOR,
                 Representative.OPEN_DATA_MANAGER,
             )
+
+        if user.is_open_data_coordinator_for(
+            object,
+        ):
+            return self.role in Representative.OPEN_DATA_ROLE_KEYS
 
         return False
 

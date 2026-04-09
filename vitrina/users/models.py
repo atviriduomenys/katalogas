@@ -206,6 +206,10 @@ class User(AbstractUser):
         """
         if obj is None:
             return False
+
+        if self.is_staff or self.is_superuser:
+            return True
+
         parents = obj.get_acl_parents()
 
         # Check every node for a direct role.
@@ -234,11 +238,25 @@ class User(AbstractUser):
         )
         return self.is_representative_for(obj, roles=open_data_roles)
 
-    def is_open_data_coordinator_for(self, obj: Union[Organization, "Dataset", None]) -> bool:
+    def is_coordinator_for(self, obj: Union[Organization, "Dataset", None], roles: list[str]) -> bool:
         """
         Returns True if the user is an Open Data Coordinator for the object.
+        Only Direct Representative roles are checked because Organizational
+        representatives cannot hold Coordinator status.
         """
-        return self.is_open_data_representative_for(obj, roles=[Representative.OPEN_DATA_COORDINATOR])
+        if obj is None:
+            return False
+
+        if self.is_staff or self.is_superuser:
+            return True
+
+        parents = obj.get_acl_parents()
+
+        for parent in parents:
+            if self._has_direct_representative_role(parent, roles=roles):
+                return True
+
+        return False
 
     def _has_direct_representative_role(
         self,

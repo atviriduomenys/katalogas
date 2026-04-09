@@ -233,7 +233,7 @@ class Representative(models.Model):
 
         object = self.content_object
 
-        if user.is_representative_for(
+        if user.is_coordinator_for(
             object,
             roles=[
                 Representative.RESOURCE_COORDINATOR,
@@ -246,8 +246,11 @@ class Representative(models.Model):
                 Representative.OPEN_DATA_MANAGER,
             )
 
-        if user.is_open_data_coordinator_for(
+        if user.is_coordinator_for(
             object,
+            roles=[
+                Representative.OPEN_DATA_COORDINATOR,
+            ],
         ):
             return self.role in Representative.OPEN_DATA_ROLE_KEYS
 

@@ -213,16 +213,11 @@ class User(AbstractUser):
         parents = obj.get_acl_parents()
 
         # Check every node for a direct role.
-        for parent in parents:
-            if self._has_direct_representative_role(parent, roles):
-                return True
+        if any(self._has_direct_representative_role(parent, roles) for parent in parents):
+            return True
 
         # Check every node for organizational membership.
-        for parent in parents:
-            if self._has_role_via_org_membership(parent, roles):
-                return True
-
-        return False
+        return any(self._has_role_via_org_membership(parent, roles) for parent in parents)
 
     def is_open_data_representative_for(
         self,
@@ -257,11 +252,7 @@ class User(AbstractUser):
 
         parents = obj.get_acl_parents()
 
-        for parent in parents:
-            if self._has_direct_representative_role(parent, roles=roles):
-                return True
-
-        return False
+        return any(self._has_direct_representative_role(parent, roles=roles) for parent in parents)
 
     def _has_direct_representative_role(
         self,
@@ -271,6 +262,8 @@ class User(AbstractUser):
         """
         Returns True if the user directly represents an object.
         """
+        if obj is None:
+            return False
         content_type = ContentType.objects.get_for_model(obj)
         return (
             Representative.objects.filter(
@@ -292,6 +285,9 @@ class User(AbstractUser):
         User belongs to an organization that holds a role on this object.
         Effective permission = least privileged of (user's org role, org's role on object).
         """
+        if obj is None:
+            return False
+
         content_type = ContentType.objects.get_for_model(obj)
         coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
         manager_equivalent_roles = [coordinator_to_manager.get(role, role) for role in roles]

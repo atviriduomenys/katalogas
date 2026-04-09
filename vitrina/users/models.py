@@ -200,9 +200,9 @@ class User(AbstractUser):
         roles: list[str] | None = None,
     ) -> bool:
         """
-            Returns True if the user is a representative for the given object.
-            The user can have this role either directly or through an organization
-            they belong to. The check also includes parent objects in the ACL hierarchy.
+        Returns True if the user is a representative for the given object.
+        The user can have this role either directly or through an organization
+        they belong to. The check also includes parent objects in the ACL hierarchy.
         """
         if obj is None:
             return False
@@ -221,8 +221,8 @@ class User(AbstractUser):
         roles: list[str] | None = None,
     ) -> bool:
         """
-            Returns True if the user is an Open Data representative for the object.
-            This means the user has either Open Data Coordinator or Manager role.
+        Returns True if the user is an Open Data representative for the object.
+        This means the user has either Open Data Coordinator or Manager role.
         """
         open_data_roles = (
             roles if roles is not None else [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
@@ -231,7 +231,7 @@ class User(AbstractUser):
 
     def is_open_data_coordinator_for(self, obj: Union[Organization, "Dataset", None]) -> bool:
         """
-            Returns True if the user is an Open Data Coordinator for the object.
+        Returns True if the user is an Open Data Coordinator for the object.
         """
         return self.is_open_data_representative_for(obj, roles=[Representative.OPEN_DATA_COORDINATOR])
 
@@ -241,7 +241,7 @@ class User(AbstractUser):
         roles: list[str] | None = None,
     ) -> bool:
         """
-           Returns True if the user directly represents an object.
+        Returns True if the user directly represents an object.
         """
         content_type = ContentType.objects.get_for_model(obj)
         return (
@@ -261,8 +261,8 @@ class User(AbstractUser):
         roles: list[str] | None = None,
     ) -> bool:
         """
-            User belongs to an organization that holds a role on this object.
-            Effective permission = least privileged of (user's org role, org's role on object).
+        User belongs to an organization that holds a role on this object.
+        Effective permission = least privileged of (user's org role, org's role on object).
         """
         content_type = ContentType.objects.get_for_model(obj)
         coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))

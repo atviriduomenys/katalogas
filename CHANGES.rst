@@ -179,6 +179,12 @@ https://github.com/atviriduomenys/katalogas/issues/2467
 
 - Comments for `Base` manifest rows are now imported & displayed correctly in Catalog & after export.
 
+https://github.com/atviriduomenys/katalogas/issues/2298
+
+- Fix orphaned Elasticsearch documents caused by transaction rollbacks in signal processor.
+- Add template guard to prevent 500 errors from orphaned Elasticsearch documents.
+
+
 v 1.15.0 (2026-02-27)
 ==================
 

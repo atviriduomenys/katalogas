@@ -4,10 +4,12 @@
 {% load hitcount_tags %}
 {% load util_tags %}
 {% load markdown_tags %}
-
-{% block pageTitle %} | {% translate "Duomenų ištekliai" %}{% endblock %}
-{% block pageOgTitle %} | {% translate "Duomenų ištekliai" %}{% endblock %}
-
+{% block pageTitle %}
+    | {% translate "Duomenų ištekliai" %}
+{% endblock %}
+{% block pageOgTitle %}
+    | {% translate "Duomenų ištekliai" %}
+{% endblock %}
 {% block head %}
     <style>
         .autocomplete {
@@ -47,184 +49,182 @@
             color: #ffffff;
         }
         .divider-right {
-          border-right: 1px solid #dcdcdc;
-          height: 100%;
+            border-right: 1px solid #dcdcdc;
+            height: 100%;
         }
         .dataset-list-description {
-        word-break: break-all;
-        overflow-wrap: break-word;
+            word-break: break-all;
+            overflow-wrap: break-word;
+        }
+        .dataset-list-group-tag {
+            background-color: Gainsboro;
+            color: black;
         }
     </style>
 {% endblock %}
-
 {% block parent_links %}
     {% include "component/breadcrumbs.html" %}
 {% endblock %}
-
 {% block current_title %}
-{% if request.resolver_match.url_name == 'organization-datasets' %}
-    {{ organization }}
-{% else %}
-    {{ page_title }}
-{% endif %}
+    {% if request.resolver_match.url_name == 'organization-datasets' %}
+        {{ organization }}
+    {% else %}
+        {{ page_title }}
+    {% endif %}
 {% endblock %}
-
 {% block content %}
     {% if request.resolver_match.url_name == 'organization-datasets' %}
         {% include 'vitrina/orgs/tabs.html' %}
     {% elif request.resolver_match.url_name == 'dataset-child-resources' %}
         {% include 'vitrina/datasets/tabs.html' %}
     {% endif %}
-
     <div class="card mb-5">
-      <div class="card-content">
-        <form id="dataset-filter" class="field has-addons is-fullwidth"
-        action="{{ search_url }}"
-        method="get">
-            <div class="control is-expanded">
-                <label class="visually-hidden" for="search-input">{% translate 'Duomenų rinkinio paieška' %}</label>
-                <input class="input" id="search-input" type="text" name="q"
-                       placeholder="{% translate 'Ieškoti duomenų rinkinių' %}"
-                       value="{{ q | escape }}" title="{% translate 'Paieška' %}"/>
-                {% for k, values in search_query.items %}
-                    {% for v in values %}
-                        {% if k != 'q' and k != 'page' %}
-                            <input type="hidden" name="{{ k }}" value="{{ v | escape }}"/>
-                        {% endif %}
+        <div class="card-content">
+            <form id="dataset-filter"
+                  class="field has-addons is-fullwidth"
+                  action="{{ search_url }}"
+                  method="get">
+                <div class="control is-expanded">
+                    <label class="visually-hidden" for="search-input">{% translate 'Duomenų rinkinio paieška' %}</label>
+                    <input class="input"
+                           id="search-input"
+                           type="text"
+                           name="q"
+                           placeholder="{% translate 'Ieškoti duomenų rinkinių' %}"
+                           value="{{ q | escape }}"
+                           title="{% translate 'Paieška' %}" />
+                    {% for k, values in search_query.items %}
+                        {% for v in values %}
+                            {% if k != 'q' and k != 'page' %}<input type="hidden" name="{{ k }}" value="{{ v | escape }}" />{% endif %}
+                        {% endfor %}
                     {% endfor %}
-                {% endfor %}
-            </div>
-            <p class="control">
-                <button class="button is-primary" type="submit" title="{% translate 'Ieškoti' %}" aria-label="{% translate 'Ieškoti' %}">
-                    <span class="icon is-large">
-                        <i class="fa fa-search"></i>
-                    </span>
-                </button>
-            </p>
-        </form>
-
-        <div class="buttons is-right">
-
-          {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
-          <a href="{%url 'resource-subclass-add' pk=view.kwargs.pk %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
-              {% translate "Pridėti duomenų išteklių" %}
-          </a>
-          {% elif request.resolver_match.url_name == 'dataset-child-resources' and can_create_dataset %}
-          <a href="{%url 'child-resource-subclass-add' pk=organization_id parent_id=parent_dataset_id %}" id="add_dataset" class="button is-primary is-normal m-t-md is-size-6-mobile">
-              {% translate "Pridėti vaikinį duomenų išteklių" %}
-          </a>
-          {% endif %}
-
-          <div class="dropdown is-hoverable is-block is-right">
-            <div class="dropdown-trigger">
-              <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
-                  {% if sort %}
-                      {% for sort_option in sort_options %}
-                        {% if sort == sort_option.key %}
-                            <span class="icon is-small">
-                              <i class="{{ sort_option.icon }}"></i>
-                            </span>
-                            <span>{{ sort_option.title }}</span>
-                        {% endif %}
-                      {% endfor %}
-                  {% else %}
-                    <span class="icon is-slikuotamall">
-                      <i class="{{ sort_options.0.icon }}"></i>
-                    </span>
-                    <span>{{ sort_options.0.title }}</span>
-                  {% endif %}
-                <span class="icon is-small">
-                  <i class="fas fa-angle-down" aria-hidden="true"></i>
-                </span>
-              </button>
-            </div>
-            <div class="dropdown-menu" id="dropdown-menu4" role="menu">
-              <div class="dropdown-content">
-                  {% for sort_option in sort_options %}
-                    <a class="dropdown-item" href="{{ sort_option.url }}" role="menuitem">
-                      <span class="icon is-small">
-                        <i class="{{ sort_option.icon }}"></i>
-                      </span>
-                      <span>{{ sort_option.title }}</span>
+                </div>
+                <p class="control">
+                    <button class="button is-primary"
+                            type="submit"
+                            title="{% translate 'Ieškoti' %}"
+                            aria-label="{% translate 'Ieškoti' %}">
+                        <span class="icon is-large">
+                            <i class="fa fa-search"></i>
+                        </span>
+                    </button>
+                </p>
+            </form>
+            <div class="buttons is-right">
+                {% if request.resolver_match.url_name == 'organization-datasets' and can_create_dataset %}
+                    <a href="{% url 'resource-subclass-add' pk=view.kwargs.pk %}"
+                       id="add_dataset"
+                       class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        {% translate "Pridėti duomenų išteklių" %}
                     </a>
-                  {% endfor %}
-              </div>
+                {% elif request.resolver_match.url_name == 'dataset-child-resources' and can_create_dataset %}
+                    <a href="{% url 'child-resource-subclass-add' pk=organization_id parent_id=parent_dataset_id %}"
+                       id="add_dataset"
+                       class="button is-primary is-normal m-t-md is-size-6-mobile">
+                        {% translate "Pridėti vaikinį duomenų išteklių" %}
+                    </a>
+                {% endif %}
+                <div class="dropdown is-hoverable is-block is-right">
+                    <div class="dropdown-trigger">
+                        <button class="button" aria-haspopup="true" aria-controls="dropdown-menu4">
+                            {% if sort %}
+                                {% for sort_option in sort_options %}
+                                    {% if sort == sort_option.key %}
+                                        <span class="icon is-small">
+                                            <i class="{{ sort_option.icon }}"></i>
+                                        </span>
+                                        <span>{{ sort_option.title }}</span>
+                                    {% endif %}
+                                {% endfor %}
+                            {% else %}
+                                <span class="icon is-slikuotamall">
+                                    <i class="{{ sort_options.0.icon }}"></i>
+                                </span>
+                                <span>{{ sort_options.0.title }}</span>
+                            {% endif %}
+                            <span class="icon is-small">
+                                <i class="fas fa-angle-down" aria-hidden="true"></i>
+                            </span>
+                        </button>
+                    </div>
+                    <div class="dropdown-menu" id="dropdown-menu4" role="menu">
+                        <div class="dropdown-content">
+                            {% for sort_option in sort_options %}
+                                <a class="dropdown-item" href="{{ sort_option.url }}" role="menuitem">
+                                    <span class="icon is-small">
+                                        <i class="{{ sort_option.icon }}"></i>
+                                    </span>
+                                    <span>{{ sort_option.title }}</span>
+                                </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
             </div>
-          </div>
-
         </div>
-      </div>
     </div>
-
     <div class="columns">
         <div class="column is-6 is-5-desktop is-4-widescreen is-hidden-mobile">
             <div class="card">
-                <div class="card-content">
-                  {% include "vitrina/datasets/filters.html" %}
-                </div>
+                <div class="card-content">{% include "vitrina/datasets/filters.html" %}</div>
             </div>
         </div>
-
         <div class="column">
-
             <div class="buttons">
-              <div class="control">
-                <div class="tags">
-                  <span class="tag is-white is-medium has-text-dark">{% translate "Rasta duomenų išteklių" %}:</span>
-                  <span class="tag is-medium">{{ paginator.count }}</span>
+                <div class="control">
+                    <div class="tags">
+                        <span class="tag is-white is-medium has-text-dark">{% translate "Rasta duomenų išteklių" %}:</span>
+                        <span class="tag is-medium">{{ paginator.count }}</span>
+                    </div>
                 </div>
-              </div>
             </div>
-
             {% for i in page_obj %}
-            {% get_current_language as LANGUAGE_CODE %}
-                <article class="media adp-media is-block">
-                    <div class="columns">
-                        {% define i.object.get_icon as icon %}
-                        {% if icon %}
-                            <div class="column is-2 is-align-self-center">
-                                <div class="category-icon has-text-centered">
-                                    <i class="fa-solid fa-{{ icon }} fa-2x"></i>
+                {% get_current_language as LANGUAGE_CODE %}
+                {% if i.object %}
+                    <article class="media adp-media is-block">
+                        <div class="columns">
+                            {% define i.object.get_icon as icon %}
+                            {% if icon %}
+                                <div class="column is-2 is-align-self-center">
+                                    <div class="category-icon has-text-centered">
+                                        <i class="fa-solid fa-{{ icon }} fa-2x"></i>
+                                    </div>
                                 </div>
-                            </div>
-
-                            <div class="column is-8">
-                        {% else %}
-                            <div class="column is-10">
-                        {% endif %}
-                            <div class="media-content divider-right pr-1">
-                                <div class="content">
-                                    <div>
-                                        <strong>
-                                            <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
-                                                {% objectlanguage i.object LANGUAGE_CODE %}
+                            {% endif %}
+                            <div class="column {% if icon %}is-8{% else %}is-10{% endif %}">
+                                <div class="media-content divider-right pr-1">
+                                    <div class="content">
+                                        <div>
+                                            <strong>
+                                                <a href="{{ i.object.get_absolute_url }}"class="dataset-list-title">
+                                                    {% objectlanguage i.object LANGUAGE_CODE %}
                                                     {{ i.object.title }}
                                                 {% endobjectlanguage %}
                                             </a>
                                         </strong>
                                     </div>
                                     <div class="tags mt-2 mb-1">
-                                      <span class="tag is-white has-text-dark">
-                                          {% if i.object.published %}
-                                              {% translate "Publikuota" %}:
-                                              {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
-                                          {% else %}
-                                              {% translate "Sukurta" %}:
-                                              {{ i.object.created|date:"SHORT_DATE_FORMAT" }}
-                                          {% endif %}
-                                      </span>
-                                      {% if i.object.modified and i.object.modified > i.object.published %}
-                                      <span class="tag is-white has-text-dark">
-                                          {% translate "Atnaujinta" %}:
-                                          {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
-                                      </span>
-                                      {% endif %}
-
-                                      {% if i.object.organization.title %}
-                                      <a href="{{ i.object.organization.get_absolute_url }}" class="tag is-white has-text-dark dataset-list-organization">
-                                        {{ i.object.organization.title }}
-                                      </a>
-                                      {% endif %}
+                                        <span class="tag is-white has-text-dark">
+                                            {% if i.object.published %}
+                                                {% translate "Publikuota" %}:
+                                                {{ i.object.published|date:"SHORT_DATE_FORMAT" }}
+                                            {% else %}
+                                                {% translate "Sukurta" %}:
+                                                {{ i.object.created|date:"SHORT_DATE_FORMAT" }}
+                                            {% endif %}
+                                        </span>
+                                        {% if i.object.modified and i.object.modified > i.object.published %}
+                                            <span class="tag is-white has-text-dark">
+                                                {% translate "Atnaujinta" %}:
+                                                {{ i.object.modified|date:"SHORT_DATE_FORMAT" }}
+                                            </span>
+                                        {% endif %}
+                                        {% if i.object.organization.title %}
+                                            <a href="{{ i.object.organization.get_absolute_url }}"
+                                               class="tag is-white has-text-dark dataset-list-organization">
+                                                {{ i.object.organization.title }}
+                                            </a>
+                                        {% endif %}
                                     </div>
                                     <div class="is-flex is-justify-content-space-between is-align-items-center mb-2">
                                         <span class="tag is-white has-text-dark">
@@ -235,78 +235,70 @@
                                                 {% translate "Ne" %}
                                             {% endif %}
                                         </span>
-
-                                    <span class="tag is-white has-text-dark">
-                                        {% translate "Brandos lygis" %}:
-                                        {% with level=i.object.get_level|add:"0" %}
-                                            <span style="margin-left: 0.5em;" class="{% if level and level > 0 %}has-text-warning{% endif %}">
-                                                {% for i in "12345" %}
-                                                    {% if level > 0 and forloop.counter <= level %}
-                                                        <i class="fas fa-star"></i>
-                                                    {% else %}
-                                                        <i class="far fa-star has-text-grey-light"></i>
-                                                    {% endif %}
-                                                {% endfor %}
-                                            </span>
-                                        {% endwith %}
-                                    </span>
+                                        <span class="tag is-white has-text-dark">
+                                            {% translate "Brandos lygis" %}:
+                                            {% with level=i.object.get_level|add:"0" %}
+                                                <span style="margin-left: 0.5em"
+                                                      class="{% if level and level > 0 %}has-text-warning{% endif %}">
+                                                    {% for i in "12345" %}
+                                                        {% if level > 0 and forloop.counter <= level %}
+                                                            <i class="fas fa-star"></i>
+                                                        {% else %}
+                                                            <i class="far fa-star has-text-grey-light"></i>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                </span>
+                                            {% endwith %}
+                                        </span>
                                     </div>
-
                                     <p class="dataset-list-description my-1">
                                         {% if i.object %}
                                             {% objectlanguage i.object LANGUAGE_CODE %}
-                                                {{ i.object.description|markdown|safe }}
-                                            {% endobjectlanguage %}
-                                        {% else %}
-                                            {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
-                                            -
-                                        {% endif %}
-                                    </p>
-
-                                    <div class="tags mt-3 mb-1">
-                                      {% for group in i.object.get_all_groups %}
-                                      <p class="tag is-info is-light" style="background-color:Gainsboro; color: black;">
-                                        {{ group }}
-                                      </p>
-                                      {% endfor %}
-
-                                      {% for t in i.object.distinct_formats %}
-                                      <a href="?selected_facets=formats_exact:{{ t.pk }}"  class="tag is-info is-light">
-                                          {{ t }}
-                                      </a>
-                                      {% endfor %}
-                                    </div>
-
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="column is-2 is-align-self-center">
-                            <div class="has-text-centered">
-                                {% get_hit_count for i.object as total_hits %}
-                                <div>
-                                    <i class="fa fa-eye"></i>
-                                    <span>{{ total_hits }}</span>
-                                </div>
-                                <div>
-                                    <i class="fa fa-thumbs-up"></i>
-                                    <span>{{ i.object.get_likes }}</span>
-                                </div>
-                                <div>
-                                    <i class="fas fa-cloud-download-alt"></i>
-                                    <span>{{ i.object.get_download_count }}</span>
+                                            {{ i.object.description|markdown|safe }}
+                                        {% endobjectlanguage %}
+                                    {% else %}
+                                        {# TODO: https://github.com/atviriduomenys/katalogas/issues/240 #}
+                                        -
+                                    {% endif %}
+                                </p>
+                                <div class="tags mt-3 mb-1">
+                                    {% for group in i.object.get_all_groups %}
+                                        <p class="tag is-info is-light dataset-list-group-tag">{{ group }}</p>
+                                    {% endfor %}
+                                    {% for t in i.object.distinct_formats %}
+                                        <a href="?selected_facets=formats_exact:{{ t.pk }}"
+                                           class="tag is-info is-light">{{ t }}</a>
+                                    {% endfor %}
                                 </div>
                             </div>
                         </div>
                     </div>
-                </article>
-            {% endfor %}
-            <br/>
-            {% include "vitrina/common/pagination.html" %}
-        </div>
-    </div>
+                    <div class="column is-2 is-align-self-center">
+                        <div class="has-text-centered">
+                            {% get_hit_count for i.object as total_hits %}
+                            <div>
+                                <i class="fa fa-eye"></i>
+                                <span>{{ total_hits }}</span>
+                            </div>
+                            <div>
+                                <i class="fa fa-thumbs-up"></i>
+                                <span>{{ i.object.get_likes }}</span>
+                            </div>
+                            <div>
+                                <i class="fas fa-cloud-download-alt"></i>
+                                <span>{{ i.object.get_download_count }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </article>
+        {% endif %}
+    {% endfor %}
+    <br />
+    {% include "vitrina/common/pagination.html" %}
+</div>
+</div>
 {% endblock %}
-
 {% block extraContent %}
     {% include '../component/requestBlock.twig' %}
 {% endblock %}

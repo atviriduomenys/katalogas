@@ -270,7 +270,11 @@
             let select = $("select#select_format_id");
             let format = select.val();
             let url = new URL(location.pathname, location.origin);
-            url.search = location.search ? `${location.search}&format(${format})` : `?format(${format})`;
+            url.searchParams.set("format", format);
+            location.search.replace(/^\?/, "").split("&").filter(Boolean).forEach(p => {
+                const [k, v] = p.split("=");
+                if (k !== "format") url.searchParams.set(k, v || "");
+            });
             location.href = url.href;
         };
     </script>

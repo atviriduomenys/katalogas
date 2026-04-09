@@ -5,7 +5,7 @@ import json
 from io import StringIO
 from typing import List, Union
 from urllib import parse
-from urllib.parse import unquote, urlencode
+from urllib.parse import unquote, urlencode, urlparse
 from flags.decorators import flag_required
 from django.utils.decorators import method_decorator
 
@@ -1102,14 +1102,24 @@ class ModelDataView(
 
         return super().dispatch(request, *args, **kwargs)
 
+    def _build_spinta_download_url(self, request, fmt):
+        url = f"{SPINTA_SERVER_URL}/{self.model}/:format/{fmt}"
+        params = {k: v for k, v in request.GET.items() if k != "format"}
+        if params:
+            url = f"{url}?{urlencode(params, doseq=True)}"
+        return url
+
     def get(self, request, *args, **kwargs):
-        for frm in FORMATS.keys():
-            if f"format({frm})" in request.GET:
-                query = urlencode(request.GET, doseq=True)
-                url = f"https://get.data.gov.lt/{self.model}?{query}"
-                if url_has_allowed_host_and_scheme(url, allowed_hosts={"get.data.gov.lt"}, require_https=True):
-                    return HttpResponseRedirect(url)
-        return super().get(request, *args, **kwargs)
+        fmt = request.GET.get("format")
+        if fmt not in FORMATS:
+            return super().get(request, *args, **kwargs)
+
+        url = self._build_spinta_download_url(request, fmt)
+        allowed_hosts = {urlparse(SPINTA_SERVER_URL).hostname}
+        if not url_has_allowed_host_and_scheme(url, allowed_hosts=allowed_hosts, require_https=True):
+            return super().get(request, *args, **kwargs)
+
+        return HttpResponseRedirect(url)
 
     def get_breadcrumbs(self) -> List[Crumb]:
         structure_title = (

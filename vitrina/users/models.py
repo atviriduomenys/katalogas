@@ -240,7 +240,9 @@ class User(AbstractUser):
         obj: Union[Organization, "Dataset", None],
         roles: list[str] | None = None,
     ) -> bool:
-        """User personally holds one of the given roles on this object."""
+        """
+           Returns True if the user directly represents an object.
+        """
         content_type = ContentType.objects.get_for_model(obj)
         return (
             Representative.objects.filter(
@@ -259,8 +261,8 @@ class User(AbstractUser):
         roles: list[str] | None = None,
     ) -> bool:
         """
-        User belongs to an organization that holds a role on this object.
-        Effective permission = least privileged of (user's org role, org's role on object).
+            User belongs to an organization that holds a role on this object.
+            Effective permission = least privileged of (user's org role, org's role on object).
         """
         content_type = ContentType.objects.get_for_model(obj)
         coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))

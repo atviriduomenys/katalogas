@@ -856,6 +856,7 @@ class Dataset(Resource):
 
     def get_acl_parents(self):
         parents = [self]
+        parents.extend(self.get_ancestors())
         if self.organization:
             parents.extend(self.organization.get_acl_parents())
         return parents

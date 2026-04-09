@@ -304,7 +304,7 @@ class TestResourceSubclassForm:
         self, app: DjangoTestApp
     ):
         organization = OrganizationFactory()
-        user = UserFactory(is_staff=True)
+        user = UserFactory()
         app.set_user(user)
         subclass = DCATResourceSubclassFactory(name="dataset")
 
@@ -336,7 +336,7 @@ class TestResourceSubclassForm:
         self, app: DjangoTestApp
     ):
         organization = OrganizationFactory()
-        user = UserFactory(is_staff=True)
+        user = UserFactory()
         subclass = DCATResourceSubclassFactory(name="dataset")
 
         parent_dataset = DatasetFactory(organization=organization)

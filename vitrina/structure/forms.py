@@ -211,10 +211,7 @@ class EnumForm(forms.ModelForm):
         property_metadata = prop.metadata.first() if prop else None
         organization = property_metadata.dataset.organization if property_metadata else None
         dataset = property_metadata.dataset if property_metadata else None
-        is_open_data_representative = self.user and (
-            self.user.is_open_data_representative_for(organization)
-            or self.user.is_open_data_representative_for(dataset)
-        )
+        is_open_data_representative = self.user and (self.user.is_open_data_representative_for(dataset or organization))
 
         if is_open_data_representative:
             self.fields["visibility"].choices = [
@@ -687,12 +684,7 @@ class ModelCreateForm(forms.ModelForm):
         self.initial["visibility"] = "None"
         self.initial["status"] = self.instance.status
 
-        organization = dataset.organization
-
-        is_open_data_representative = self.user and (
-            self.user.is_open_data_representative_for(organization)
-            or self.user.is_open_data_representative_for(dataset)
-        )
+        is_open_data_representative = self.user and (self.user.is_open_data_representative_for(dataset))
 
         if is_open_data_representative:
             self.fields["visibility"].choices = [
@@ -1189,11 +1181,7 @@ class PropertyForm(forms.ModelForm):
             if self.instance.object not in self.model.get_props_excluding_base():
                 self.fields["name"].widget.attrs["readonly"] = True
 
-        organization = model.dataset.organization
-        is_open_data_representative = self.user and (
-            self.user.is_open_data_representative_for(organization)
-            or self.user.is_open_data_representative_for(self.model.dataset)
-        )
+        is_open_data_representative = self.user and (self.user.is_open_data_representative_for(self.model.dataset))
 
         if is_open_data_representative:
             self.fields["visibility"].choices = [

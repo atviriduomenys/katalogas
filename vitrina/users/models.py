@@ -194,55 +194,128 @@ class User(AbstractUser):
             user=self, content_type=org_type, object_id=organization.pk, role=Representative.RESOURCE_COORDINATOR
         ).exists()
 
-    def is_open_data_representative_for(self, obj: Union[Organization, "Dataset", None]) -> bool:
+    def is_representative_for(
+        self,
+        obj: Union[Organization, "Dataset", None],
+        roles: list[str] | None = None,
+    ) -> bool:
+        """
+        Returns True if the user is a representative for the given object.
+        The user can have this role either directly or through an organization
+        they belong to. The check also includes parent objects in the ACL hierarchy.
+        """
         if obj is None:
             return False
 
-        content_type = ContentType.objects.get_for_model(obj)
-        open_data_roles = [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
-        coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
+        if self.is_staff or self.is_superuser:
+            return True
 
-        # Case 1: user directly holds an open data role on the object
-        if (
+        parents = obj.get_acl_parents()
+
+        # Check every node for a direct role.
+        if any(self._has_direct_representative_role(parent, roles) for parent in parents):
+            return True
+
+        # Check every node for organizational membership.
+        return any(self._has_role_via_org_membership(parent, roles) for parent in parents)
+
+    def is_open_data_representative_for(
+        self,
+        obj: Union[Organization, "Dataset", None],
+        roles: list[str] | None = None,
+    ) -> bool:
+        """
+        Returns True if the user is an Open Data representative for the object.
+        This means the user has either Open Data Coordinator or Manager role.
+        We need to check if the user if not a Resource representative first, to not lower the role.
+        """
+        if not obj or self.is_staff or self.is_superuser:
+            return False
+
+        if self.is_representative_for(obj, roles=list(Representative.RESOURCE_ROLE_KEYS)):
+            return False
+
+        open_data_roles = roles or [Representative.OPEN_DATA_COORDINATOR, Representative.OPEN_DATA_MANAGER]
+        return self.is_representative_for(obj, roles=open_data_roles)
+
+    def is_coordinator_for(self, obj: Union[Organization, "Dataset", None], roles: list[str]) -> bool:
+        """
+        Returns True if the user is an Open Data Coordinator for the object.
+        Only Direct Representative roles are checked because Organizational
+        representatives cannot hold Coordinator status.
+        """
+        if obj is None:
+            return False
+
+        if self.is_staff or self.is_superuser:
+            return True
+
+        parents = obj.get_acl_parents()
+
+        return any(self._has_direct_representative_role(parent, roles=roles) for parent in parents)
+
+    def _has_direct_representative_role(
+        self,
+        obj: Union[Organization, "Dataset", None],
+        roles: list[str] | None = None,
+    ) -> bool:
+        """
+        Returns True if the user directly represents an object.
+        """
+        if obj is None:
+            return False
+        content_type = ContentType.objects.get_for_model(obj)
+        return (
             Representative.objects.filter(
                 content_type=content_type,
                 object_id=obj.pk,
-                role__in=open_data_roles,
+                role__in=roles,
                 user=self,
             )
             .exclude(deleted=True)
             .exists()
-        ):
-            return True
+        )
 
-        # Case 2: access is resolved through the user's organizational membership.
-        # Effective role is the least privileged of the user's role and the organization's role on the object.
-        user_organization_role_map = dict(
-            Representative.objects.filter(
-                user=self,
-                content_type=self.organization_content_type,
-            )
+    def _has_role_via_org_membership(
+        self,
+        obj: Union[Organization, "Dataset", None],
+        roles: list[str] | None = None,
+    ) -> bool:
+        """
+        User belongs to an organization that holds a role on this object.
+        Effective permission = least privileged of (user's org role, org's role on object).
+        """
+        if obj is None:
+            return False
+
+        content_type = ContentType.objects.get_for_model(obj)
+        coordinator_to_manager = dict(zip(Representative.COORDINATOR_ROLES, Representative.MANAGER_ROLES))
+        manager_equivalent_roles = [coordinator_to_manager.get(role, role) for role in roles]
+
+        user_organization_roles = dict(
+            Representative.objects.filter(user=self, content_type=self.organization_content_type)
             .exclude(deleted=True)
             .values_list("object_id", "role")
         )
-
-        if not user_organization_role_map:
+        if not user_organization_roles:
             return False
 
-        for organization_id, organization_role in (
+        organization_representatives_on_obj = (
             Representative.objects.filter(
                 content_type=content_type,
                 object_id=obj.pk,
-                organization_id__in=user_organization_role_map.keys(),
+                organization_id__in=user_organization_roles.keys(),
             )
             .exclude(deleted=True)
             .values_list("organization_id", "role")
-        ):
+        )
+
+        for organization_id, organization_role in organization_representatives_on_obj:
             user_role = coordinator_to_manager.get(
-                user_organization_role_map[organization_id], user_organization_role_map[organization_id]
+                user_organization_roles[organization_id], user_organization_roles[organization_id]
             )
-            least_privileged_role = max(organization_role, user_role, key=Representative.MANAGER_ROLES.index)
-            if least_privileged_role in open_data_roles:
+            effective_role = max(organization_role, user_role, key=Representative.MANAGER_ROLES.index)
+            if effective_role in manager_equivalent_roles:
                 return True
 
         return False

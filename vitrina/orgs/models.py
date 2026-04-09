@@ -231,14 +231,14 @@ class Representative(models.Model):
         if user.is_superuser or user.is_staff:
             return True
 
-        user_rep = user.representative_set.filter(organization=self.organization).first()
-        if not user_rep:
-            return False
+        object = self.content_object
 
-        if user_rep.role == Representative.OPEN_DATA_COORDINATOR:
-            return self.role in Representative.OPEN_DATA_ROLE_KEYS
-
-        if user_rep.role == Representative.RESOURCE_COORDINATOR:
+        if user.is_coordinator_for(
+            object,
+            roles=[
+                Representative.RESOURCE_COORDINATOR,
+            ],
+        ):
             return self.role in (
                 Representative.RESOURCE_COORDINATOR,
                 Representative.RESOURCE_MANAGER,
@@ -246,16 +246,15 @@ class Representative(models.Model):
                 Representative.OPEN_DATA_MANAGER,
             )
 
-        return False
+        if user.is_coordinator_for(
+            object,
+            roles=[
+                Representative.OPEN_DATA_COORDINATOR,
+            ],
+        ):
+            return self.role in Representative.OPEN_DATA_ROLE_KEYS
 
-    @classmethod
-    def is_open_data_coordinator(cls, user: "User", content_type: ContentType, object_id: int) -> bool:
-        return cls.objects.filter(
-            user=user,
-            content_type=content_type,
-            object_id=object_id,
-            role=cls.OPEN_DATA_COORDINATOR,
-        ).exists()
+        return False
 
 
 class PublishedReport(models.Model):

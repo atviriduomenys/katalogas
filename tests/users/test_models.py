@@ -213,28 +213,6 @@ class TestIsOpenDataRepresentativeFor:
 
         assert user.is_open_data_representative_for(dataset) is True
 
-    def test_returns_false_if_datasets_organization_representative_record_is_deleted(self):
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        user = UserFactory()
-
-        RepresentativeFactory(
-            content_type=ContentType.objects.get_for_model(dataset),
-            object_id=dataset.pk,
-            organization=organization,
-            role=Representative.OPEN_DATA_MANAGER,
-            deleted=True,
-        )
-
-        RepresentativeFactory(
-            content_type=ContentType.objects.get_for_model(organization),
-            object_id=organization.pk,
-            user=user,
-            role=Representative.OPEN_DATA_MANAGER,
-        )
-
-        assert user.is_open_data_representative_for(dataset) is False
-
     def test_returns_false_if_user_is_not_representative_of_datasets_organization(self):
         organization = OrganizationFactory()
         other_organization = OrganizationFactory()
@@ -256,3 +234,198 @@ class TestIsOpenDataRepresentativeFor:
         )
 
         assert user.is_open_data_representative_for(dataset) is False
+
+    def test_returns_true_if_user_represents_parent_dataset(self):
+        parent_dataset = DatasetFactory()
+        child_dataset = DatasetFactory()
+        child_dataset.move(parent_dataset, pos="sorted-child")
+        child_dataset.refresh_from_db()
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(parent_dataset),
+            object_id=parent_dataset.pk,
+            user=user,
+            role=Representative.OPEN_DATA_MANAGER,
+        )
+
+        assert user.is_open_data_representative_for(child_dataset) is True
+
+    def test_returns_true_if_user_represents_grandparent_dataset(self):
+        grandparent_dataset = DatasetFactory()
+        parent_dataset = DatasetFactory()
+        child_dataset = DatasetFactory()
+        parent_dataset.move(grandparent_dataset, pos="sorted-child")
+        parent_dataset.refresh_from_db()
+        child_dataset.move(parent_dataset, pos="sorted-child")
+        child_dataset.refresh_from_db()
+        grandparent_dataset.refresh_from_db()
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(grandparent_dataset),
+            object_id=grandparent_dataset.pk,
+            user=user,
+            role=Representative.OPEN_DATA_MANAGER,
+        )
+
+        assert user.is_open_data_representative_for(child_dataset) is True
+
+    def test_returns_false_if_user_represents_child_but_not_parent(self):
+        parent_dataset = DatasetFactory()
+        child_dataset = DatasetFactory()
+        child_dataset.move(parent_dataset, pos="sorted-child")
+        child_dataset.refresh_from_db()
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(child_dataset),
+            object_id=child_dataset.pk,
+            user=user,
+            role=Representative.OPEN_DATA_MANAGER,
+        )
+
+        assert user.is_open_data_representative_for(parent_dataset) is False
+
+    def test_returns_true_if_users_organization_represents_parent_dataset(self):
+        user_organization = OrganizationFactory()
+        parent_dataset = DatasetFactory()
+        child_dataset = DatasetFactory()
+        child_dataset.move(parent_dataset, pos="sorted-child")
+        child_dataset.refresh_from_db()
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(user_organization),
+            object_id=user_organization.pk,
+            user=user,
+            role=Representative.OPEN_DATA_MANAGER,
+        )
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(parent_dataset),
+            object_id=parent_dataset.pk,
+            organization=user_organization,
+            role=Representative.OPEN_DATA_MANAGER,
+        )
+
+        assert user.is_open_data_representative_for(child_dataset) is True
+
+    def test_returns_false_if_user_is_open_data_representative_on_child_but_resource_representative_on_parent(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            user=user,
+            role=Representative.OPEN_DATA_MANAGER,
+        )
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            user=user,
+            role=Representative.RESOURCE_COORDINATOR,
+        )
+
+        assert user.is_open_data_representative_for(dataset) is False
+
+
+class TestIsCoordinatorFor:
+    def test_is_staff_user_returns_true(self):
+        user = UserFactory(is_staff=True)
+        organization = OrganizationFactory()
+        assert user.is_coordinator_for(organization, roles=[Representative.RESOURCE_COORDINATOR]) is True
+
+    def test_returns_false_if_obj_is_none(self):
+        user = UserFactory()
+        assert user.is_coordinator_for(None, roles=[Representative.OPEN_DATA_COORDINATOR]) is False
+
+    def test_returns_true_if_user_is_direct_coordinator_of_organization(self):
+        organization = OrganizationFactory()
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            user=user,
+            role=Representative.RESOURCE_COORDINATOR,
+        )
+
+        assert user.is_coordinator_for(organization, roles=[Representative.RESOURCE_COORDINATOR]) is True
+        assert user.is_coordinator_for(organization, roles=[Representative.OPEN_DATA_COORDINATOR]) is False
+
+    def test_returns_false_if_user_representative_is_deleted_for_organization(self):
+        organization = OrganizationFactory()
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(organization),
+            object_id=organization.pk,
+            user=user,
+            role=Representative.OPEN_DATA_MANAGER,
+            deleted=True,
+        )
+
+        assert user.is_coordinator_for(organization, roles=[Representative.OPEN_DATA_COORDINATOR]) is False
+
+    def test_returns_false_if_user_has_no_representatives_for_organization(self):
+        organization = OrganizationFactory()
+        user = UserFactory()
+
+        assert user.is_open_data_representative_for(organization, roles=[Representative.OPEN_DATA_COORDINATOR]) is False
+
+    def test_returns_true_if_user_is_direct_representative_of_dataset(self):
+        dataset = DatasetFactory()
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            user=user,
+            role=Representative.RESOURCE_COORDINATOR,
+        )
+
+        assert user.is_open_data_representative_for(dataset) is False
+
+    def test_returns_true_for_resource_coordinator_if_child_represented_as_resource(self):
+        parent_dataset = DatasetFactory()
+        child_dataset = DatasetFactory()
+        child_dataset.move(parent_dataset, pos="sorted-child")
+        child_dataset.refresh_from_db()
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(parent_dataset),
+            object_id=parent_dataset.pk,
+            user=user,
+            role=Representative.OPEN_DATA_COORDINATOR,  # Only Open Data Coordinator here
+        )
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(child_dataset),
+            object_id=child_dataset.pk,
+            user=user,
+            role=Representative.RESOURCE_COORDINATOR,  # Resource Coordinator for this dataset
+        )
+
+        assert user.is_coordinator_for(parent_dataset, roles=[Representative.RESOURCE_COORDINATOR]) is False
+        assert user.is_coordinator_for(child_dataset, roles=[Representative.RESOURCE_COORDINATOR]) is True
+
+    def test_returns_false_if_user_represents_child_but_not_parent(self):
+        parent_dataset = DatasetFactory()
+        child_dataset = DatasetFactory()
+        child_dataset.move(parent_dataset, pos="sorted-child")
+        child_dataset.refresh_from_db()
+        user = UserFactory()
+
+        RepresentativeFactory(
+            content_type=ContentType.objects.get_for_model(child_dataset),
+            object_id=child_dataset.pk,
+            user=user,
+            role=Representative.OPEN_DATA_COORDINATOR,
+        )
+
+        assert user.is_coordinator_for(parent_dataset, roles=[Representative.RESOURCE_COORDINATOR]) is False
+        assert user.is_coordinator_for(parent_dataset, roles=[Representative.OPEN_DATA_COORDINATOR]) is False

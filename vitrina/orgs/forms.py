@@ -357,6 +357,20 @@ class RepresentativeUpdateForm(ModelForm):
         self.object = kwargs.pop("object", None)
         super().__init__(*args, **kwargs)
 
+        self.is_resource_coordinator = self.user.is_coordinator_for(
+            self.object, roles=[Representative.RESOURCE_COORDINATOR]
+        )
+        self.is_open_data_coordinator = self.user.is_coordinator_for(
+            self.object, roles=[Representative.OPEN_DATA_COORDINATOR]
+        )
+
+        # If they are JUST an Open data coordinator, restrict them.
+        self.fields["role"].choices = (
+            Representative.OPEN_DATA_ROLES
+            if self.is_open_data_coordinator and not self.is_resource_coordinator
+            else Representative.ROLES
+        )
+
         if self.object_model == Organization:
             if self.user.viisp_organization == self.object and self.user.is_resource_coordinator_for(self.object):
                 self.fields["can_make_agreements"].disabled = False
@@ -417,6 +431,13 @@ class RepresentativeUpdateForm(ModelForm):
         if self.instance.organization and role in Representative.COORDINATOR_ROLES:
             raise ValidationError(_("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
 
+        if (
+            self.is_open_data_coordinator
+            and not self.is_resource_coordinator
+            and role not in dict(Representative.OPEN_DATA_ROLES)
+        ):
+            self.add_error("role", _("Jūs neturite teisės priskirti šios rolės."))
+
         return self.cleaned_data
 
 
@@ -455,11 +476,16 @@ class RepresentativeCreateForm(ModelForm):
         self.object = kwargs.pop("object")
         super().__init__(*args, **kwargs)
 
-        content_type = ContentType.objects.get_for_model(self.object_model)
+        self.is_resource_coordinator = self.user.is_coordinator_for(
+            self.object, roles=[Representative.RESOURCE_COORDINATOR]
+        )
+        self.is_open_data_coordinator = self.user.is_coordinator_for(
+            self.object, roles=[Representative.OPEN_DATA_COORDINATOR]
+        )
 
         self.fields["role"].choices = (
             Representative.OPEN_DATA_ROLES
-            if Representative.is_open_data_coordinator(self.user, content_type, self.object.pk)
+            if self.is_open_data_coordinator and not self.is_resource_coordinator
             else Representative.ROLES
         )
 
@@ -494,10 +520,11 @@ class RepresentativeCreateForm(ModelForm):
         content_type = ContentType.objects.get_for_model(self.object_model)
         if Representative.objects.filter(content_type=content_type, object_id=self.object.id, email=email).exists():
             self.add_error("email", _("Narys su šiuo el. pašto adresu jau egzistuoja."))
+
         if (
-            role
+            self.is_open_data_coordinator
+            and not self.is_resource_coordinator
             and role not in dict(Representative.OPEN_DATA_ROLES)
-            and Representative.is_open_data_coordinator(self.user, content_type, self.object.pk)
         ):
             self.add_error("role", _("Jūs neturite teisės priskirti šios rolės."))
         return super().clean()

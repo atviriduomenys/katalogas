@@ -206,10 +206,15 @@ class User(AbstractUser):
         """
         if obj is None:
             return False
+        parents = obj.get_acl_parents()
 
-        for parent in obj.get_acl_parents():
+        # Check every node for a direct role.
+        for parent in parents:
             if self._has_direct_representative_role(parent, roles):
                 return True
+
+        # Check every node for organizational membership.
+        for parent in parents:
             if self._has_role_via_org_membership(parent, roles):
                 return True
 

@@ -8139,3 +8139,109 @@ class TestStructureExportDependentModels(BaseTestCreateManifest):
         lines = resp.text.split("\r\n")
         no_pk_model_line = [line for line in lines if "NoPkModel" in line][0]
         assert no_pk_model_line == "11,,,,NoPkModel,,,,,,,,,,develop,,,,,,"
+
+
+@pytest.mark.django_db
+@patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
+def test_model_data_download_redirects_to_spinta(app: DjangoTestApp):
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="string",
+        metadata_version=version,
+    )
+
+    url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
+    resp = app.get(f"{url}?format=csv")
+    assert resp.status_code == 302
+    assert resp.location == "https://get.data.gov.lt/test/dataset/TestModel/:format/csv"
+
+
+@pytest.mark.django_db
+@patch("vitrina.structure.views.SPINTA_SERVER_URL", "https://get.data.gov.lt")
+def test_model_data_download_with_extra_params(app: DjangoTestApp):
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="string",
+        metadata_version=version,
+    )
+
+    url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
+    resp = app.get(f"{url}?format=json&select(prop)")
+    assert resp.status_code == 302
+    assert resp.location == "https://get.data.gov.lt/test/dataset/TestModel/:format/json?select%28prop%29="
+
+
+@pytest.mark.django_db
+def test_model_data_download_invalid_format_no_redirect(app: DjangoTestApp):
+    version = VersionFactory()
+    model = ModelFactory(dataset=version.dataset, metadata_version=version)
+    dataset = version.dataset
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(model),
+        object_id=model.pk,
+        dataset=dataset,
+        name="test/dataset/TestModel",
+        metadata_version=version,
+    )
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        dataset=dataset,
+        name="test/dataset",
+        metadata_version=version,
+    )
+    prop = PropertyFactory(model=model, metadata_version=version)
+    MetadataFactory(
+        content_type=ContentType.objects.get_for_model(prop),
+        object_id=prop.pk,
+        dataset=dataset,
+        name="prop",
+        type="string",
+        metadata_version=version,
+    )
+
+    url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
+    resp = app.get(f"{url}?format=exe")
+    assert resp.status_code == 200

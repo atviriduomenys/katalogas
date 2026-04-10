@@ -19,7 +19,7 @@ from django.core.cache import cache
 from django.db import transaction
 from django.db.models import Func, F, Value, TextField, Max
 from django.forms import BaseForm
-from django.http import Http404, StreamingHttpResponse, JsonResponse, HttpResponse, HttpResponseRedirect
+from django.http import Http404, HttpRequest, StreamingHttpResponse, JsonResponse, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404, redirect
 from django.template.loader import render_to_string
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -1102,7 +1102,7 @@ class ModelDataView(
 
         return super().dispatch(request, *args, **kwargs)
 
-    def _build_spinta_download_url(self, request, fmt):
+    def _build_spinta_download_url(self, request: HttpRequest, fmt: str) -> str:
         url = f"{SPINTA_SERVER_URL}/{self.model}/:format/{fmt}"
         params = {k: v for k, v in request.GET.items() if k != "format"}
         if params:

@@ -328,6 +328,7 @@ class DatasetDistributionSerializer(serializers.ModelSerializer):
     url = serializers.SerializerMethodField(required=False, label="")
     version = serializers.IntegerField(required=False, label="", source="distribution_version")
     geo_location = serializers.CharField(required=False, allow_blank=True, label="")
+    data_last_updated = serializers.DateTimeField(required=False, label="", read_only=True)
 
     class Meta:
         model = DatasetDistribution
@@ -346,6 +347,7 @@ class DatasetDistributionSerializer(serializers.ModelSerializer):
             "url",
             "version",
             "upload_to_storage",
+            "data_last_updated",
         )
 
     def get_url(self, obj):
@@ -600,7 +602,6 @@ class PatchDatasetDistributionSerializer(DatasetDistributionSerializer):
             instance.type = "URL"
             instance.download_url = url
             instance.file = None
-        instance.created = timezone.now()
         instance.save()
         return instance
 

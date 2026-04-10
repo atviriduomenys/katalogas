@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
         migrations.AddField(
             model_name="datasetdistribution",
             name="data_last_updated",
-            field=models.DateTimeField(blank=True, db_index=True, null=True),
+            field=models.DateTimeField(blank=True, null=True),
         ),
     ]

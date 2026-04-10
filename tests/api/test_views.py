@@ -2893,7 +2893,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dct:title xml:lang="lt">CSV failas</dct:title>
                 <dct:description xml:lang="lt">Atviras duomenų šaltinis.</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.created.strftime("%Y-%m-%d")}</dct:issued>
-                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist1.modified.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist1.file.url}"/>
                 <dct:rights>
@@ -2918,7 +2918,7 @@ def test_edp_dcat_ap_rdf(app: DjangoTestApp):
                 <dct:title xml:lang="lt">Duomenų teikimo paslauga</dct:title>
                 <dct:description xml:lang="lt">Universali duomenų teikimo paslauga.</dct:description>
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.created.strftime("%Y-%m-%d")}</dct:issued>
-                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{dist2.modified.strftime("%Y-%m-%d")}</dct:modified>
                 <dcat:accessURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dcat:downloadURL rdf:resource="http://localhost{dist2.file.url}"/>
                 <dct:rights>

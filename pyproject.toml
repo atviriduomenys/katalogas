@@ -81,6 +81,7 @@ spinta = {version = "^0.2.dev18", allow-prereleases = true}
 djangocms-file = "^3.0.1"
 djangocms-picture = "^4.1.1"
 djangocms-link = "^5.1.1"
+django-celery-beat = "^2.9.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.1.2"

@@ -4005,7 +4005,7 @@ msgid "Nurodoma organizacija, kuriai priskirtas šablonas."
 msgstr "Specifies the organization to which the template is assigned."
 
 msgid "Duomenis teikianti organizacija"
-msgstr "Data-providing organisation"
+msgstr "Data-providing organization"
 
 msgid "Duomenų teikėjo atstovas"
 msgstr "Data provider representative"

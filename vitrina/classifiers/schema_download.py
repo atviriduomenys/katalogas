@@ -14,7 +14,7 @@ EUVOC_START_DATE = URIRef("http://publications.europa.eu/ontology/euvoc#startDat
 
 DOWNLOAD_LANGUAGES = ("lt", "en")
 
-ErrorType = str | None
+SKOS_RDF_REQUEST_TIMEOUT = 2
 
 
 class RDFConceptDownloader:
@@ -31,16 +31,17 @@ class RDFConceptDownloader:
 
     @staticmethod
     def _is_downloadable(uri: str) -> bool:
+        validator = URLValidator()
         try:
-            validator = URLValidator()
             validator(uri)
-            return True
         except ValidationError:
             return False
 
+        return True
+
     def _download_rdf(self, uri: str) -> bytes | None:
         try:
-            response = requests.get(uri, headers={"Accept": "application/rdf+xml"}, timeout=3)
+            response = requests.get(uri, headers={"Accept": "application/rdf+xml"}, timeout=SKOS_RDF_REQUEST_TIMEOUT)
             response.raise_for_status()
         except requests.RequestException as err:
             self.__errors[uri] = _("Nepavyko gauti uri: {}. Klaida: {}.").format(uri, str(err))
@@ -54,9 +55,8 @@ class RDFConceptDownloader:
             return None
 
         if (rdf_data := self._download_rdf(uri)) is None:
-            # self.__errors[uri] = _("Nepavyko gauti uri: {}. Uri atsakymas tuščias.").format(uri)
             return None
-        elif rdf_data == "":
+        elif not rdf_data:
             self.__errors[uri] = _("Nepavyko gauti uri: {}. Uri atsakymas tuščias.").format(uri)
             return None
 
@@ -97,18 +97,16 @@ class RDFConceptDownloader:
         labels = {}
         descriptions = {}
 
-        if (concept_graph := self._create_graph(concept_uri, concept_rdf_data)) is None:
+        if not (concept_graph := self._create_graph(concept_uri, concept_rdf_data)):
             return
 
-        code = next(concept_graph.objects(concept_uri, DC.identifier), None)
-        if not code:
+        if not (code := next(concept_graph.objects(concept_uri, DC.identifier), None)):
             self.__errors[str(concept_uri)] = _('Sąvokoje {} nerastas "{}" elementas.').format(
                 str(concept_uri), DC.identifier
             )
             return
 
-        valid_since = next(concept_graph.objects(concept_uri, EUVOC_START_DATE), None)
-        if not valid_since:
+        if not (valid_since := next(concept_graph.objects(concept_uri, EUVOC_START_DATE), None)):
             self.__errors[str(concept_uri)] = _('Sąvokoje {} nerastas "{}" elementas.').format(
                 str(concept_uri), EUVOC_START_DATE
             )

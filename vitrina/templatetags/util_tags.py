@@ -99,7 +99,7 @@ def get_geometry_srid(type_args):
 
 
 @register.filter
-def encode_uri(value):
+def encode_uri(value: str) -> str:
     if not value:
         return value
     parts = urlsplit(str(value))

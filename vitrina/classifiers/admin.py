@@ -1,5 +1,7 @@
 from typing import Any
-from django.contrib import admin
+
+from django.contrib import admin, messages
+from django.core.handlers.wsgi import WSGIRequest
 from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.utils.safestring import mark_safe
@@ -9,6 +11,7 @@ from parler.admin import TranslatableAdmin
 from treebeard.admin import TreeAdmin
 from treebeard.forms import movenodeform_factory
 
+from vitrina.classifiers.schema_download import RDFConceptDownloader
 from vitrina.classifiers.forms import AreaOfManagementAdminForm
 from vitrina.classifiers.models import (
     Category,
@@ -231,7 +234,31 @@ class StatusAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
 
 @admin.register(ConceptSchema)
 class ConceptSchemaAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
+    actions = ["download_concepts"]
     list_display = ("label", "uri", "description")
+
+    @admin.action(description=_("Atnaujinti pasirinktų sąvokų schemų sąvokas"))
+    def download_concepts(self, request: WSGIRequest, queryset: QuerySet[ConceptSchema]):
+        concept_downloader = RDFConceptDownloader()
+        processed_concept_uris, errors = concept_downloader.from_schemas(queryset)
+
+        if processed_concept_uris:
+            messages.success(
+                request,
+                mark_safe(
+                    _(
+                        "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}".format(
+                            len(processed_concept_uris), "<br>".join(processed_concept_uris)
+                        )
+                    )
+                ),
+            )
+
+        if errors:
+            messages.error(
+                request,
+                mark_safe(_("Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}".format("<br>".join(errors)))),
+            )
 
 
 @admin.register(Concept)

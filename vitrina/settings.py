@@ -15,6 +15,7 @@ import json
 import os
 import environ
 from pathlib import Path
+from celery.schedules import crontab
 
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
@@ -533,6 +534,12 @@ CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULE = {
+    "update-spinta-distribution-dates": {
+        "task": "vitrina.resources.tasks.update_spinta_distribution_dates",
+        "schedule": crontab(minute=0, hour=env("SPINTA_UPDATE_SCHEDULE_HOURS", default="*/6")),
+    },
+}
 
 SELECT2_CACHE_BACKEND = "select2"
 

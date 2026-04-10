@@ -1051,6 +1051,7 @@ def test_get_all_dataset_distributions_with_dataset_id(app: DjangoTestApp):
             "url": f"http://{domain}{distribution.dataset.get_absolute_url()}",
             "version": distribution.distribution_version,
             "upload_to_storage": distribution.upload_to_storage,
+            "data_last_updated": None,
         }
     ]
 
@@ -1102,6 +1103,7 @@ def test_get_all_dataset_distributions_with_internal_id(app: DjangoTestApp):
             "url": f"http://{domain}{dataset.get_absolute_url()}",
             "version": distribution.distribution_version,
             "upload_to_storage": distribution.upload_to_storage,
+            "data_last_updated": None,
         }
     ]
 
@@ -1156,6 +1158,7 @@ def test_get_all_distributions(app: DjangoTestApp):
             "url": f"http://{domain}{dataset.get_absolute_url()}",
             "version": distribution.distribution_version,
             "upload_to_storage": distribution.upload_to_storage,
+            "data_last_updated": None,
         }
     ]
 
@@ -1258,6 +1261,7 @@ def test_create_dataset_distribution_with_file(app: DjangoTestApp):
         "url": f"http://{domain}{dataset.get_absolute_url()}",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 
@@ -1298,6 +1302,7 @@ def test_create_dataset_distribution_with_url(app: DjangoTestApp):
         "url": "http://test.com/",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 
@@ -1339,6 +1344,7 @@ def test_create_dataset_distribution_with_overwrite(app: DjangoTestApp):
         "url": f"http://{domain}{distribution.dataset.get_absolute_url()}",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 
@@ -1410,6 +1416,7 @@ def test_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         "url": "http://test.com/",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 
@@ -1597,6 +1604,7 @@ def test_put_create_dataset_distribution_with_file(app: DjangoTestApp):
         "url": f"http://{domain}{dataset.get_absolute_url()}",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 
@@ -1637,6 +1645,7 @@ def test_put_create_dataset_distribution_with_url(app: DjangoTestApp):
         "url": "http://test.com/",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 
@@ -1677,6 +1686,7 @@ def test_put_create_dataset_distribution_with_internal_id(app: DjangoTestApp):
         "url": "http://test.com/",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 
@@ -2018,6 +2028,7 @@ def test_update_dataset_distribution_with_file(app: DjangoTestApp):
         "url": f"http://{domain}{distribution.dataset.get_absolute_url()}",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 
@@ -2047,6 +2058,7 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         ),
         params,
     )
+    distribution.refresh_from_db()
     distribution.set_current_language("lt")
     assert res.json == {
         "description": "Updated description",
@@ -2061,6 +2073,7 @@ def test_update_dataset_distribution_with_url(app: DjangoTestApp):
         "url": "http://example.com/",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 
@@ -2107,6 +2120,7 @@ def test_update_dataset_distribution_with_internal_id(app: DjangoTestApp):
         "url": f"http://{domain}{dataset.get_absolute_url()}",
         "version": distribution.distribution_version,
         "upload_to_storage": distribution.upload_to_storage,
+        "data_last_updated": None,
     }
 
 

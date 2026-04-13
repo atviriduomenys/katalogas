@@ -66,6 +66,10 @@ https://github.com/atviriduomenys/katalogas/issues/2537
 
 - Fix Spinta download URL in Data tab to use `/:format/<fmt>` endpoint instead of query parameter format.
 
+https://github.com/atviriduomenys/katalogas/issues/2499
+
+- Fix duplicate organization representatives appearing in dataset members list when creating or editing a dataset with creator, publisher, or managed_by_publisher fields.
+
 
 v 1.17.1 (2026-03-30)
 ==================

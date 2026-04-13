@@ -7,10 +7,7 @@
     <thead>
     <tr>
         <td></td>
-        <th>{% translate "Teritorija" %}</th>
         <th>{% translate "Pavadinimas" %}</th>
-        <th>{% translate "Periodo pradžia" %}</th>
-        <th>{% translate "Periodo pabaiga" %}</th>
         <th>{% translate "Dydis" %}</th>
         <th class="has-text-centered">{% translate "Formatas" %}</th>
         <th>{% translate "Publikuota" %}</th>
@@ -30,7 +27,6 @@
                     <i class="fas fa-lg fa-file-code"></i>
                 {% endif %}
             </span></td>
-            <td>{{ r.geo_location|default:"-" }}</td>
             <td class="has-fixed-width-130">
                 <a href="{{ r.get_absolute_url }}" class="has-text-info-dark">
                 {% if r.title %}
@@ -40,8 +36,6 @@
                 {% endif %}
                 </a>
             </td>
-            <td><b>{{ r.period_start|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
-            <td><b>{{ r.period_end|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
             <td>
                 {% if r.size %}
                     {{ r.size }}
@@ -147,7 +141,6 @@
             <td><span class="icon icon-is-small">
                     <i class="fas fa-lg fa-file-export"></i>
             </span></td>
-            <td>{{ r.geo_location|default:"-" }}</td>
             <td class="has-fixed-width-130">
                 <a href="{{ r.resource_url }}" class="has-text-info-dark">
                 {% if r.title %}
@@ -157,8 +150,6 @@
                 {% endif %}
                 </a>
             </td>
-            <td><b>{{ r.period_start|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
-            <td><b>{{ r.period_end|default:"-"|date:"SHORT_DATE_FORMAT" }}</b></td>
             <td>
                 {% if r.size %}
                     {{ r.size }}

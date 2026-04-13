@@ -1,3 +1,4 @@
+{% load util_tags %}
 <?xml version="1.0"?>
 <rdf:RDF
     xml:base="{{ current_domain_full }}"
@@ -18,7 +19,7 @@
     xmlns:eli="https://data.europa.eu/eli/">
     {% for dataset in datasets %}
     {% if dataset.service %}
-    <dcat:DataService rdf:about="{{ current_domain_full }}{{ dataset.uri|cut:' ' }}">
+    <dcat:DataService rdf:about="{{ current_domain_full }}{{ dataset.uri|encode_uri }}">
         {% for t in dataset.translations %}
         <dct:title xml:lang="{{ t.lang }}">{{ t.title }}</dct:title>
         <dct:description xml:lang="{{ t.lang }}">{{ t.description }}</dct:description>
@@ -29,13 +30,13 @@
         </dcatap:applicableLegislation>
         {% for category in dataset.hvd_categories %}
         {% if category.uri %}
-        <dcatap:hvdCategory rdf:resource="{{ category.uri|cut:' ' }}"/>
+        <dcatap:hvdCategory rdf:resource="{{ category.uri|encode_uri }}"/>
         {% endif %}
         {% endfor %}
         {% endif %}
         {% for category in dataset.categories %}
         {% if category.uri %}
-        <dcat:theme rdf:resource="{{ category.uri|cut:' ' }}"/>
+        <dcat:theme rdf:resource="{{ category.uri|encode_uri }}"/>
         {% endif %}
         {% endfor %}
         {% if dataset.published %}
@@ -52,7 +53,7 @@
                 <foaf:name>{{ dataset.organization.title }}</foaf:name>
                 <foaf:mbox rdf:resource="mailto:{{ dataset.organization.email }}"/>
                 {% if dataset.organization.website %}
-                <foaf:homepage rdf:resource="{{ dataset.organization.website|cut:' ' }}"/>
+                <foaf:homepage rdf:resource="{{ dataset.organization.website|encode_uri }}"/>
                 {% endif %}
             </foaf:Organization>
         </dct:publisher>
@@ -62,7 +63,7 @@
                     <foaf:name>{{ creator.title }}</foaf:name>
                     <foaf:mbox rdf:resource="mailto:{{ creator.email }}"/>
                     {% if creator.website %}
-                    <foaf:homepage rdf:resource="{{ creator.website|cut:' ' }}"/>
+                    <foaf:homepage rdf:resource="{{ creator.website|encode_uri }}"/>
                     {% endif %}
                 </foaf:Organization>
             </dct:creator>
@@ -70,7 +71,7 @@
         {% if dataset.frequency %}
         <dct:accrualPeriodicity>
             {% if dataset.frequency.uri %}
-            <dct:Frequency rdf:about="{{ dataset.frequency.uri|cut:' ' }}"/>
+            <dct:Frequency rdf:about="{{ dataset.frequency.uri|encode_uri }}"/>
             {% else %}
             <dct:Frequency>
                 {% for t in dataset.frequency.translations %}
@@ -89,18 +90,18 @@
             <dcat:keyword>{{ keyword }}</dcat:keyword>
         {% endfor %}
         {% if dataset.landing_page %}
-        <dcat:landingPage rdf:resource="{{ dataset.landing_page }}"/>
+        <dcat:landingPage rdf:resource="{{ dataset.landing_page|encode_uri }}"/>
         {% endif %}
         {% if dataset.endpoint_url %}
-        <dcat:endpointURL rdf:resource="{{ dataset.endpoint_url }}"/>
+        <dcat:endpointURL rdf:resource="{{ dataset.endpoint_url|encode_uri }}"/>
         {% endif %}
         {% if dataset.endpoint_type %}
         <dct:format>
-            <dct:MediaTypeOrExtent rdf:about="{{ dataset.endpoint_type.uri|cut:' ' }}"/>
+            <dct:MediaTypeOrExtent rdf:about="{{ dataset.endpoint_type.uri|encode_uri }}"/>
         </dct:format>
         {% endif %}
         {% if dataset.endpoint_description %}
-        <dcat:endpointDescription rdf:resource="{{ dataset.endpoint_description }}"/>
+        <dcat:endpointDescription rdf:resource="{{ dataset.endpoint_description|encode_uri }}"/>
         {% endif %}
         {% if dataset.related_datasets %}
         {% for rel_dataset in dataset.related_datasets %}
@@ -111,7 +112,7 @@
         {% endif %}
     </dcat:DataService>
     {% else %}
-    <dcat:Dataset rdf:about="{{ current_domain_full }}{{ dataset.uri|cut:' ' }}">
+    <dcat:Dataset rdf:about="{{ current_domain_full }}{{ dataset.uri|encode_uri }}">
         {% for t in dataset.translations %}
         <dct:title xml:lang="{{ t.lang }}">{{ t.title }}</dct:title>
         <dct:description xml:lang="{{ t.lang }}">{{ t.description }}</dct:description>
@@ -122,13 +123,13 @@
         </dcatap:applicableLegislation>
         {% for category in dataset.hvd_categories %}
         {% if category.uri %}
-        <dcatap:hvdCategory rdf:resource="{{ category.uri|cut:' ' }}"/>
+        <dcatap:hvdCategory rdf:resource="{{ category.uri|encode_uri }}"/>
         {% endif %}
         {% endfor %}
         {% endif %}
         {% for category in dataset.categories %}
         {% if category.uri %}
-        <dcat:theme rdf:resource="{{ category.uri|cut:' ' }}"/>
+        <dcat:theme rdf:resource="{{ category.uri|encode_uri }}"/>
         {% endif %}
         {% endfor %}
         {% if dataset.published %}
@@ -145,7 +146,7 @@
                 <foaf:name>{{ dataset.organization.title }}</foaf:name>
                 <foaf:mbox rdf:resource="mailto:{{ dataset.organization.email }}"/>
                 {% if dataset.organization.website %}
-                <foaf:homepage rdf:resource="{{ dataset.organization.website|cut:' ' }}"/>
+                <foaf:homepage rdf:resource="{{ dataset.organization.website|encode_uri }}"/>
                 {% endif %}
             </foaf:Organization>
         </dct:publisher>
@@ -155,7 +156,7 @@
                     <foaf:name>{{ creator.title }}</foaf:name>
                     <foaf:mbox rdf:resource="mailto:{{ creator.email }}"/>
                     {% if creator.website %}
-                    <foaf:homepage rdf:resource="{{ creator.website|cut:' ' }}"/>
+                    <foaf:homepage rdf:resource="{{ creator.website|encode_uri }}"/>
                     {% endif %}
                 </foaf:Organization>
             </dct:creator>
@@ -163,7 +164,7 @@
         {% if dataset.frequency %}
         <dct:accrualPeriodicity>
             {% if dataset.frequency.uri %}
-            <dct:Frequency rdf:about="{{ dataset.frequency.uri|cut:' ' }}"/>
+            <dct:Frequency rdf:about="{{ dataset.frequency.uri|encode_uri }}"/>
             {% else %}
             <dct:Frequency>
                 {% for t in dataset.frequency.translations %}
@@ -184,15 +185,15 @@
         {% spaceless %}
           {% if dataset.landing_page %}
             {% if dataset.subclass.name == "information_system" %}
-              <foaf:homepage rdf:resource="{{ dataset.landing_page }}"/>
+              <foaf:homepage rdf:resource="{{ dataset.landing_page|encode_uri }}"/>
             {% else %}
-              <dcat:landingPage rdf:resource="{{ dataset.landing_page }}"/>
+              <dcat:landingPage rdf:resource="{{ dataset.landing_page|encode_uri }}"/>
            {% endif %}
           {% endif %}
        {% endspaceless %}
         {% for dist in dataset.distributions %}
         <dcat:distribution>
-            <dcat:Distribution rdf:about="{{ current_domain_full }}{{ dist.uri|cut:' ' }}">
+            <dcat:Distribution rdf:about="{{ current_domain_full }}{{ dist.uri|encode_uri }}">
                 {% if dist.is_hvd %}
                 <dcatap:applicableLegislation>
                     <eli:LegalResource rdf:about="http://data.europa.eu/eli/reg_impl/2023/138/oj"/>
@@ -212,19 +213,19 @@
                 <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dist.modified|date:"SHORT_DATE_FORMAT" }}</dct:modified>
                 {% endif %}
                 {% if dist.access_url|first in '/' %}
-                <dcat:accessURL rdf:resource="{{ current_domain_full }}{{ dist.access_url|cut:' ' }}"/>
+                <dcat:accessURL rdf:resource="{{ current_domain_full }}{{ dist.access_url|encode_uri }}"/>
                 {% else %}
-                <dcat:accessURL rdf:resource="{{ dist.access_url|cut:' ' }}"/>
+                <dcat:accessURL rdf:resource="{{ dist.access_url|encode_uri }}"/>
                 {% endif %}
                 {% if dist.download_url %}
                 {% if dist.download_url|first in '/' %}
-                <dcat:downloadURL rdf:resource="{{ current_domain_full }}{{ dist.download_url|cut:' ' }}"/>
+                <dcat:downloadURL rdf:resource="{{ current_domain_full }}{{ dist.download_url|encode_uri }}"/>
                 {% else %}
-                <dcat:downloadURL rdf:resource="{{ dist.download_url|cut:' ' }}"/>
+                <dcat:downloadURL rdf:resource="{{ dist.download_url|encode_uri }}"/>
                 {% endif %}
                 {% endif %}
                 {% if dist.access_service %}
-                <dcat:accessService rdf:resource="{{ current_domain_full }}{{ dist.access_service|cut:' ' }}"/>
+                <dcat:accessService rdf:resource="{{ current_domain_full }}{{ dist.access_service|encode_uri }}"/>
                 {% endif %}
                 {% if dist.conditions %}
                 <dct:rights>
@@ -235,27 +236,27 @@
                 {% endif %}
                 {% if dist.licence %}
                 <dct:license>
-                    <dct:LicenseDocument rdf:about="{{ dist.licence.uri|cut:' ' }}"/>
+                    <dct:LicenseDocument rdf:about="{{ dist.licence.uri|encode_uri }}"/>
                 </dct:license>
                 {% endif %}
                 {% if dist.media_type %}
                 <dcat:mediaType>
-                    <dct:MediaType rdf:about="{{ dist.media_type.uri|cut:' ' }}"/>
+                    <dct:MediaType rdf:about="{{ dist.media_type.uri|encode_uri }}"/>
                 </dcat:mediaType>
                 {% endif %}
                 {% if dist.format %}
                 <dct:format>
-                    <dct:MediaTypeOrExtent rdf:about="{{ dist.format.uri|cut:' ' }}"/>
+                    <dct:MediaTypeOrExtent rdf:about="{{ dist.format.uri|encode_uri }}"/>
                 </dct:format>
                 {% endif %}
                 {% if dist.compression_format %}
                 <dcat:compressFormat>
-                    <dct:MediaType rdf:about="{{ dist.compression_format.uri|cut:' ' }}"/>
+                    <dct:MediaType rdf:about="{{ dist.compression_format.uri|encode_uri }}"/>
                 </dcat:compressFormat>
                 {% endif %}
                 {% if dist.packaging_format %}
                 <dcat:packageFormat>
-                    <dct:MediaType rdf:about="{{ dist.packaging_format.uri|cut:' ' }}"/>
+                    <dct:MediaType rdf:about="{{ dist.packaging_format.uri|encode_uri }}"/>
                 </dcat:packageFormat>
                 {% endif %}
             </dcat:Distribution>

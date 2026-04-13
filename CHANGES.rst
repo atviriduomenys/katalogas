@@ -55,6 +55,13 @@ Bug fixes:
 <No Ticket>
 - Add djangocms-file, djangocms-picture, and djangocms-link plugins.
 
+https://github.com/atviriduomenys/katalogas/issues/2538
+
+- Fix RDF export validation errors:
+    - Wrap ``dct:RightsStatement`` text content in ``rdfs:label`` element.
+    - Guard ``dct:issued`` date fields against empty values.
+    - Encode unwise URI characters (``{``, ``}``, ``\``, etc.) in RDF resource attributes.
+
 
 v 1.17.1 (2026-03-30)
 ==================

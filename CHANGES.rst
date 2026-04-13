@@ -62,6 +62,10 @@ https://github.com/atviriduomenys/katalogas/issues/2538
     - Guard ``dct:issued`` date fields against empty values.
     - Encode unwise URI characters (``{``, ``}``, ``\``, etc.) in RDF resource attributes.
 
+https://github.com/atviriduomenys/katalogas/issues/2537
+
+- Fix Spinta download URL in Data tab to use `/:format/<fmt>` endpoint instead of query parameter format.
+
 
 v 1.17.1 (2026-03-30)
 ==================

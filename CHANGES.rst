@@ -39,6 +39,13 @@ https://github.com/atviriduomenys/katalogas/issues/2524
 - HTML formatting and breadcrumb adjustments.
 
 
+Bug fixes:
+
+<No Ticket>
+
+- Fixing invalid template tags.
+
+
 v 1.17.1 (2026-03-30)
 ==================
 

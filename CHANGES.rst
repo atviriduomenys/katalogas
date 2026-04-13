@@ -38,6 +38,10 @@ https://github.com/atviriduomenys/katalogas/issues/2524
 
 - HTML formatting and breadcrumb adjustments.
 
+https://github.com/atviriduomenys/katalogas/issues/2530
+
+- Remove Teritorija, Periodo pradžia, Periodo pabaiga columns from distribution table
+
 
 Bug fixes:
 

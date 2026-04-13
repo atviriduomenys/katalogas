@@ -48,6 +48,9 @@ Bug fixes:
 <No Ticket>
 - Fixed duplicate comment creation on request detail page.
 
+<No Ticket>
+- Add djangocms-file, djangocms-picture, and djangocms-link plugins.
+
 
 v 1.17.1 (2026-03-30)
 ==================

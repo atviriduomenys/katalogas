@@ -1115,7 +1115,7 @@ class RepresentativeCreateView(
                 reverse("organization-detail", kwargs={"pk": self.object.object_id}),
             )
             manage_subscriptions_for_representative(subscribe, user, self.organization, link)
-        elif organization and self.request.user.is_superuser:
+        elif organization:
             if self.object.role in Representative.COORDINATOR_ROLES:
                 form.add_error("role", _("Organizacijai gali būti suteikta tik tvarkytojo rolė"))
                 return self.form_invalid(form)

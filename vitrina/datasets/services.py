@@ -639,9 +639,6 @@ class DatasetRepresentativeService:
         self._manage_user_subscription(form, user)
 
     def _handle_organization_representative(self, representative: Representative, organization: Organization) -> None:
-        if not self.request.user.is_superuser:
-            return
-
         if not organization.publisher:
             return
 

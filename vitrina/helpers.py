@@ -15,6 +15,7 @@ from operator import itemgetter
 
 import markdown
 from django.contrib.sites.models import Site
+from django.core.files import File
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.handlers.wsgi import HttpRequest
 from django.core.mail import send_mail
@@ -700,7 +701,10 @@ def get_encoding(file_path):
             return "utf-8"
 
 
-def validate_file(file):
+def validate_file(file: File) -> None:
+    # Adding any additional types that are not in Python's built-in MIME type registry.
+    mimetypes.add_type("text/asciidoc", ".adoc")  # ADOC
+
     mime_type = mimetypes.guess_type(file.name)[0] or "application/octet-stream"
     validate_upload(
         file_name=file.name,

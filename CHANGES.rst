@@ -42,6 +42,10 @@ https://github.com/atviriduomenys/katalogas/issues/2530
 
 - Remove Teritorija, Periodo pradžia, Periodo pabaiga columns from distribution table
 
+https://github.com/atviriduomenys/katalogas/issues/2546
+
+- Allow uploading ADOC files for `PartnerRegisterForm`.
+
 
 Bug fixes:
 

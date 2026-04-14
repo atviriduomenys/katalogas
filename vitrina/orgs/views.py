@@ -548,7 +548,6 @@ class OrganizationMembersView(
             Representative,
             self.organization,
         )
-        context_data["can_delete_publishers"] = self.request.user.is_superuser
         context_data["parent_links"].update({None: _("Tvarkytojai")})
         return context_data
 

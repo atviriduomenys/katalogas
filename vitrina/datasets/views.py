@@ -1415,7 +1415,6 @@ class DatasetMembersView(
             Representative,
             self.object,
         )
-        context["can_delete_publishers"] = self.request.user.is_superuser
         return context
 
 

@@ -103,7 +103,7 @@ def encode_uri(value: str) -> str:
     if not value:
         return value
     # Handle malformed fields containing multiple comma-separated URLs
-    value = str(value).split(',')[0].strip()
+    value = str(value).split(",")[0].strip()
     parts = urlsplit(value)
     return urlunsplit(
         (

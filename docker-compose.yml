@@ -57,6 +57,16 @@ services:
     volumes:
       - ./var/elasticsearch:/usr/share/elasticsearch/data
 
+  fuseki:
+    image: stain/jena-fuseki:latest
+    environment:
+      - ADMIN_PASSWORD=admin123
+      - JVM_ARGS=-Xmx512m
+    ports:
+      - "3030:3030"
+    volumes:
+      - fuseki:/fuseki
+
   redis:
     image: redis:latest
     restart: always
@@ -84,3 +94,6 @@ services:
       - redis
       - postgres
     restart: always
+
+volumes:
+  fuseki:

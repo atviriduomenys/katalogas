@@ -7,6 +7,7 @@ import pytz
 from django.contrib import admin
 from django.contrib.postgres.aggregates import ArrayAgg
 from django.db.models import QuerySet, Q
+from django.db.models.functions import Coalesce
 from django.http import StreamingHttpResponse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -107,9 +108,15 @@ class DatasetLateFilter(admin.SimpleListFilter):
         late_ids = []
         not_late_ids = []
         for obj in queryset:
-            if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by("-modified").first():
+            distribution = (
+                obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "modified"))
+                .filter(effective_updated__isnull=False)
+                .order_by("-effective_updated")
+                .first()
+            )
+            if distribution:
                 if obj.frequency and obj.frequency.hours:
-                    need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
+                    need_to_modify = distribution.effective_updated + timedelta(hours=obj.frequency.hours)
                     now = timezone.now()
                     if need_to_modify < now:
                         late_ids.append(obj.id)
@@ -325,18 +332,30 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
     spinta_modified_display.short_description = mark_safe(_("Duomenys atnaujinti</br>saugykloje"))
 
     def distribution_modified_display(self, obj):
-        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by("-modified").first():
+        distribution = (
+            obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "modified"))
+            .filter(effective_updated__isnull=False)
+            .order_by("-effective_updated")
+            .first()
+        )
+        if distribution:
             tz = pytz.timezone(settings.TIME_ZONE)
-            return distribution.modified.astimezone(tz).strftime("%Y-%m-%d %H:%M")
+            return distribution.effective_updated.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         return "-"
 
     distribution_modified_display.short_description = mark_safe(_("Metaduomenys atnaujinti</br>kataloge"))
 
     def _is_late_for(self, obj):
         text = ""
-        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by("-modified").first():
+        distribution = (
+            obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "modified"))
+            .filter(effective_updated__isnull=False)
+            .order_by("-effective_updated")
+            .first()
+        )
+        if distribution:
             if obj.frequency and obj.frequency.hours:
-                need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
+                need_to_modify = distribution.effective_updated + timedelta(hours=obj.frequency.hours)
                 now = timezone.now()
                 if need_to_modify < now:
                     late_for = now - need_to_modify
@@ -354,9 +373,15 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
         return text
 
     def _is_late_for_days(self, obj):
-        if distribution := obj.datasetdistribution_set.filter(modified__isnull=False).order_by("-modified").first():
+        distribution = (
+            obj.datasetdistribution_set.annotate(effective_updated=Coalesce("data_last_updated", "modified"))
+            .filter(effective_updated__isnull=False)
+            .order_by("-effective_updated")
+            .first()
+        )
+        if distribution:
             if obj.frequency and obj.frequency.hours:
-                need_to_modify = distribution.modified + timedelta(hours=obj.frequency.hours)
+                need_to_modify = distribution.effective_updated + timedelta(hours=obj.frequency.hours)
                 now = timezone.now()
                 if need_to_modify < now:
                     late_for = now - need_to_modify

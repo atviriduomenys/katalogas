@@ -46,6 +46,10 @@ https://github.com/atviriduomenys/katalogas/issues/2546
 
 - Allow uploading ADOC files for `PartnerRegisterForm`.
 
+https://github.com/atviriduomenys/katalogas/issues/2260
+
+- Add `data_last_updated` field to `DatasetDistribution` model.
+- Periodic Celery task for SPINTA distribution date updates.
 
 Bug fixes:
 
@@ -73,7 +77,7 @@ https://github.com/atviriduomenys/katalogas/issues/2537
 https://github.com/atviriduomenys/katalogas/issues/2541
 
 - Added `ConceptSchema` admin action that downloads SKOS `Concept` objects from `ConceptSchema.uri`,
-  if uri is valid URI to EU Vocabulary Authority Tables. 
+  if uri is valid URI to EU Vocabulary Authority Tables.
 
 v 1.17.1 (2026-03-30)
 ==================

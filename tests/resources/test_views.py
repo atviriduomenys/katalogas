@@ -902,3 +902,43 @@ def test_distribution_form_status_options(app: DjangoTestApp):
         "Pasenęs",
         "Atsisakytas",
     ]
+
+
+@pytest.mark.django_db
+def test_data_last_updated_not_set_on_create(app: DjangoTestApp):
+    from vitrina.users.factories import UserFactory
+
+    dataset = DatasetFactory()
+    file_format = FileFormat(extension="URL")
+    user = UserFactory(is_staff=True, organization=dataset.organization)
+    app.set_user(user)
+    form = app.get(reverse("resource-add", kwargs={"pk": dataset.pk})).forms["resource-form"]
+    form["title"] = "Test resource"
+    form["format"] = file_format.id
+    form["download_url"] = "http://www.example.com"
+    resp = form.submit()
+    assert resp.status_code == 302
+    distribution = DatasetDistribution.objects.first()
+    assert distribution.data_last_updated is None
+
+
+@pytest.mark.django_db
+def test_datatable_renders_with_data_last_updated(app: DjangoTestApp):
+    from django.utils import timezone
+
+    resource = DatasetDistributionFactory()
+    resource.data_last_updated = timezone.now()
+    resource.save(update_fields=["data_last_updated"])
+
+    resp = app.get(reverse("dataset-detail", kwargs={"pk": resource.dataset_id})).follow()
+    assert resp.status_code == 200
+
+
+@pytest.mark.django_db
+def test_datatable_renders_when_data_last_updated_is_null(app: DjangoTestApp):
+    resource = DatasetDistributionFactory()
+    resource.data_last_updated = None
+    resource.save(update_fields=["data_last_updated"])
+
+    resp = app.get(reverse("dataset-detail", kwargs={"pk": resource.dataset_id})).follow()
+    assert resp.status_code == 200

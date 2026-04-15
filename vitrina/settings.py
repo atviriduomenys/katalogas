@@ -15,7 +15,6 @@ import json
 import os
 import environ
 from pathlib import Path
-
 from django.contrib import messages
 from django.utils.translation import gettext_lazy as _
 
@@ -151,6 +150,7 @@ INSTALLED_APPS = [
     "django_select2",
     "django_recaptcha",
     "flags",
+    "django_celery_beat",
     "vitrina",
     "vitrina.cms",
     "vitrina.api",
@@ -533,6 +533,7 @@ CELERY_ACCEPT_CONTENT = ["application/json"]
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_TIMEZONE = TIME_ZONE
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 SELECT2_CACHE_BACKEND = "select2"
 

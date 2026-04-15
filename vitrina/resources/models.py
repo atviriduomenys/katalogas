@@ -130,6 +130,7 @@ class DatasetDistribution(TranslatableModel):
     UPLOAD_TO = "data"
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
+    data_last_updated = models.DateTimeField(blank=True, null=True)
     version = models.IntegerField(default=1)
     deleted = models.BooleanField(blank=True, null=True)
     deleted_on = models.DateTimeField(blank=True, null=True)

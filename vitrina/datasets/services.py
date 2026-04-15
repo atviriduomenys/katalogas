@@ -476,6 +476,7 @@ class DynamicResourceService:
                 "media_type": {"uri": format_media_type},
                 "created": self.uapi_distribution.created,
                 "modified": self.uapi_distribution.modified,
+                "data_last_updated": self.uapi_distribution.data_last_updated,
                 "is_hvd": self.uapi_distribution.is_hvd,
             }
         return {
@@ -485,6 +486,7 @@ class DynamicResourceService:
             "models": list(models),
             "created": self.uapi_distribution.created,
             "modified": self.uapi_distribution.modified,
+            "data_last_updated": self.uapi_distribution.data_last_updated,
             "period_start": self.uapi_distribution.period_start,
             "period_end": self.uapi_distribution.period_end,
             "geo_location": self.uapi_distribution.geo_location,
@@ -549,6 +551,7 @@ class DynamicResourceService:
                 "get_download_url": download_url,
                 "created": self.uapi_distribution.created if self.uapi_distribution else None,
                 "modified": self.uapi_distribution.modified if self.uapi_distribution else None,
+                "data_last_updated": self.uapi_distribution.data_last_updated if self.uapi_distribution else None,
                 "period_start": self.uapi_distribution.period_start if self.uapi_distribution else None,
                 "period_end": self.uapi_distribution.period_end if self.uapi_distribution else None,
                 "geo_location": self.uapi_distribution.geo_location if self.uapi_distribution else None,
@@ -563,6 +566,7 @@ class DynamicResourceService:
             "get_download_url": download_url,
             "created": self.uapi_distribution.created if self.uapi_distribution else None,
             "modified": self.uapi_distribution.modified if self.uapi_distribution else None,
+            "data_last_updated": self.uapi_distribution.data_last_updated if self.uapi_distribution else None,
             "period_start": self.uapi_distribution.period_start if self.uapi_distribution else None,
             "period_end": self.uapi_distribution.period_end if self.uapi_distribution else None,
             "geo_location": self.uapi_distribution.geo_location if self.uapi_distribution else None,

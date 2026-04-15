@@ -128,6 +128,7 @@ def _get_distribution(dataset: Dataset, dist: Distribution):
         "media_type": _get_media_type(dist.format),
         "created": dist.created,
         "modified": dist.modified,
+        "data_last_updated": dist.data_last_updated,
         "is_hvd": dist.is_hvd,
     }
 

@@ -3,7 +3,14 @@ from django.utils.safestring import mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.resources.forms import FormatAdminForm
-from vitrina.resources.models import Format, GeoportalFormat, GeoportalFormatValue, CompressionFormat, PackagingFormat
+from vitrina.resources.models import (
+    DatasetDistribution,
+    Format,
+    GeoportalFormat,
+    GeoportalFormatValue,
+    CompressionFormat,
+    PackagingFormat,
+)
 from vitrina.admin import RevisionCommentVersionAdmin
 
 
@@ -37,6 +44,15 @@ class PackagingFormatAdmin(RevisionCommentVersionAdmin):
     fields = ("title", "extension", "uri")
 
 
+class DatasetDistributionAdmin(RevisionCommentVersionAdmin):
+    list_display = ("__str__", "dataset", "format", "data_last_updated")
+    list_filter = ("format",)
+    search_fields = ("translations__title", "dataset__translations__title")
+    readonly_fields = ("created", "modified")
+    fieldsets = ((None, {"fields": ("dataset", "format", "data_last_updated", "created", "modified")}),)
+
+
+admin.site.register(DatasetDistribution, DatasetDistributionAdmin)
 admin.site.register(Format, FormatAdmin)
 admin.site.register(GeoportalFormat, GeoportalFormatAdmin)
 admin.site.register(CompressionFormat, CompressionFormatAdmin)

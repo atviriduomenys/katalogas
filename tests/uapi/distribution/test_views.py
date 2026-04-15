@@ -75,6 +75,7 @@ class TestCreate:
             "url": f"http://{domain}{reverse('dataset-detail', args=[dataset.id])}",
             "version": None,
             "upload_to_storage": distribution.upload_to_storage,
+            "data_last_updated": None,
         }
 
     def test_specific_scope(
@@ -131,6 +132,7 @@ class TestCreate:
             "url": f"http://{domain}{reverse('dataset-detail', args=[dataset.id])}",
             "version": None,
             "upload_to_storage": distribution.upload_to_storage,
+            "data_last_updated": None,
         }
 
     def test_agent_is_disabled(
@@ -327,6 +329,7 @@ class TestList:
                     "url": f"http://{domain}{reverse('dataset-detail', args=[dataset.id])}",
                     "version": None,
                     "upload_to_storage": distribution.upload_to_storage,
+                    "data_last_updated": None,
                 }
             ]
         }
@@ -371,6 +374,7 @@ class TestList:
                     "url": f"http://{domain}{reverse('dataset-detail', args=[dataset.id])}",
                     "version": None,
                     "upload_to_storage": distribution.upload_to_storage,
+                    "data_last_updated": None,
                 }
             ]
         }
@@ -508,6 +512,7 @@ class TestList:
                     "url": f"http://{domain}{reverse('dataset-detail', args=[dataset.id])}",
                     "version": None,
                     "upload_to_storage": distribution.upload_to_storage,
+                    "data_last_updated": None,
                 }
             ]
         }

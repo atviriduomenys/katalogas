@@ -209,8 +209,10 @@
                 {% if dist.created %}
                 <dct:issued rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dist.created|date:"SHORT_DATE_FORMAT" }}</dct:issued>
                 {% endif %}
-                {% if dist.modified %}
-                <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dist.modified|date:"SHORT_DATE_FORMAT" }}</dct:modified>
+                {% if dist.data_last_updated %}
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dist.data_last_updated|date:"SHORT_DATE_FORMAT" }}</dct:modified>
+                {% elif dist.modified %}
+                    <dct:modified rdf:datatype="http://www.w3.org/2001/XMLSchema#date">{{ dist.modified|date:"SHORT_DATE_FORMAT" }}</dct:modified>
                 {% endif %}
                 {% if dist.access_url|first in '/' %}
                 <dcat:accessURL rdf:resource="{{ current_domain_full }}{{ dist.access_url|encode_uri }}"/>

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-27 13:45+0200\n"
+"POT-Creation-Date: 2026-04-10 09:50+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -52,9 +58,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -107,6 +110,15 @@ msgstr "Add management area"
 
 msgid "Kategorijos"
 msgstr "Categories"
+
+msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
+msgstr "Update selected concept scheme concepts"
+
+msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
+msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
+
+msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
+msgstr "Failed to download some concepts. Full list: <br>{}"
 
 msgid "Klasifikatoriai"
 msgstr "Classificators"
@@ -214,6 +226,24 @@ msgstr "Applicable legislation"
 
 msgid "Teisiniai pagrindai"
 msgstr "Applicable legislation"
+
+msgid "Nepavyko gauti uri: {}. Klaida: {}."
+msgstr "Failed to get uri: {}. Error: {}."
+
+msgid "{} nėra validus URI."
+msgstr "{} is not valid URI."
+
+msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
+msgstr "Failed to get uri: {}. Uri response is empty."
+
+msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
+msgstr "Failed to get uri: {}. Response is not in RDF format."
+
+msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
+msgstr "Concept scheme {} does not have any \"{}\" elements."
+
+msgid "Sąvokoje {} nerastas \"{}\" elementas."
+msgstr "Concept {} does not have \"{}\" element."
 
 msgid "Pranešimas (lietuvių kalba)"
 msgstr "Message (in Lithuanian)"
@@ -650,14 +680,6 @@ msgstr ""
 "Contact information that can be used for sending comments about the "
 "resource. Corresponds to dcat:contactPoint"
 
-msgid "Institucija teikianti duomenis"
-msgstr "The institution providing the data"
-
-msgid ""
-"Subjektas, atsakingas už duomenų rinkinio parengimą. Atitinka dct:creator."
-msgstr ""
-"An entity responsible for producing the resource. Corresponds to dct:creator"
-
 msgid "Paslaugų teikėjas"
 msgstr "Service provider"
 
@@ -667,13 +689,6 @@ msgid ""
 msgstr ""
 "This property indicates the entity (organization) responsible for providing "
 "access to the resource. Corresponds to dct:publisher"
-
-msgid ""
-"Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio "
-"atvėrimą?"
-msgstr ""
-"Is the institution you are representing responsible for opening the data to "
-"the public?"
 
 msgid ""
 "Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys."
@@ -1592,12 +1607,6 @@ msgstr "Delete"
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
 
-msgid "Duomenis teikianti organizacija"
-msgstr "Data-providing organisation"
-
-msgid "Institucija, atsakinga už duomenų atvėrimą"
-msgstr "The institution responsible for opening the data to the public"
-
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
 
@@ -1727,6 +1736,9 @@ msgstr "Use case list"
 msgid "Pridėti panaudojimo atvejį"
 msgstr "Add use case"
 
+msgid "Laukia patvirtinimo"
+msgstr "Waiting for confirmation"
+
 msgid ""
 "Šio duomenų rinkinio duomenys nėra naudojami nei viename panaudojimo "
 "atvejyje."
@@ -1832,6 +1844,9 @@ msgstr "History"
 
 msgid "Duomenų ištekliaus būsena"
 msgstr "Resource status"
+
+msgid "Duomenų rengėjas"
+msgstr "Data creator"
 
 msgid "Žymė"
 msgstr "Tag"
@@ -2452,11 +2467,11 @@ msgstr ""
 "Can't remove coordinator role from the user, since he is the only user of "
 "the coordinator role left."
 
-msgid "Narys su šiuo el. pašto adresu jau egzistuoja."
-msgstr "User with this e-mail already exists"
-
 msgid "Jūs neturite teisės priskirti šios rolės."
 msgstr "You don't have permission to assign this representative role."
+
+msgid "Narys su šiuo el. pašto adresu jau egzistuoja."
+msgstr "User with this e-mail already exists"
 
 msgid "Prašymas"
 msgstr "Request"
@@ -2648,6 +2663,9 @@ msgstr "Open data coordinator"
 
 msgid "Atvirų duomenų tvarkytojas"
 msgstr "Open data manager"
+
+msgid "Atvirų duomenų skelbėjas"
+msgstr "Open data publisher"
 
 msgid "Ataskaita"
 msgstr "Report"
@@ -3252,12 +3270,6 @@ msgstr ""
 
 msgid "Pateikti naują panaudojimo atvejį"
 msgstr "Submit a new use case"
-
-msgid "naujas"
-msgstr "new"
-
-msgid "atmestas"
-msgstr "rejected"
 
 msgid "Nėra panaudojimo atvejo"
 msgstr "No use case"
@@ -3991,6 +4003,9 @@ msgstr "File must be in Markdown format (.md)."
 
 msgid "Nurodoma organizacija, kuriai priskirtas šablonas."
 msgstr "Specifies the organization to which the template is assigned."
+
+msgid "Duomenis teikianti organizacija"
+msgstr "Data-providing organization"
 
 msgid "Duomenų teikėjo atstovas"
 msgstr "Data provider representative"
@@ -4992,6 +5007,7 @@ msgstr "Enum item \"{value}\" must be string type."
 msgid "Reikšmė \"{value}\" turi būti integer tipo."
 msgstr "Enum item \"{value}\" must be integer type."
 
+#, python-brace-format
 msgid "Reikšmė \"{value}\" turi būti number tipo."
 msgstr "Enum item \"{value}\" must be number type."
 

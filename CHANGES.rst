@@ -70,6 +70,10 @@ https://github.com/atviriduomenys/katalogas/issues/2537
 
 - Fix Spinta download URL in Data tab to use `/:format/<fmt>` endpoint instead of query parameter format.
 
+https://github.com/atviriduomenys/katalogas/issues/2541
+
+- Added `ConceptSchema` admin action that downloads SKOS `Concept` objects from `ConceptSchema.uri`,
+  if uri is valid URI to EU Vocabulary Authority Tables. 
 
 v 1.17.1 (2026-03-30)
 ==================

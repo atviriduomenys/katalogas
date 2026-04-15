@@ -1,11 +1,16 @@
+from pathlib import Path
+
 import pytest
 from django.contrib.contenttypes.models import ContentType
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
+from tests.smart_contracts.conftest import AGREEMENT_ONE_SIGNER
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.forms import (
     OrganizationUpdateForm,
     OrganizationCreateForm,
+    PartnerRegisterForm,
     RepresentativeUpdateForm,
     RepresentativeCreateForm,
 )
@@ -270,3 +275,27 @@ class TestRepresentativeUpdateForm:
         )
 
         assert form.fields["can_make_agreements"].disabled is expected
+
+
+class TestPartnerRegisterForm:
+    @pytest.mark.parametrize(
+        "filename",
+        [
+            AGREEMENT_ONE_SIGNER,
+            "test_form.pdf",
+        ],
+    )
+    def test_request_form_accepted_file_types(self, agreements_dir: Path, filename: str):
+        organization = OrganizationFactory()
+        with open(agreements_dir / filename, "rb") as file:
+            uploaded_file = SimpleUploadedFile(filename, file.read())
+
+        form = PartnerRegisterForm(
+            data={
+                "organization": organization.pk,
+                "coordinator_phone_number": "061234567",
+            },
+            files={"request_form": uploaded_file},
+        )
+
+        assert form.is_valid(), form.errors

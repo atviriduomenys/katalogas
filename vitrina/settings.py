@@ -174,6 +174,7 @@ INSTALLED_APPS = [
     "vitrina.likes",
     "vitrina.smart_contracts",
     "vitrina.identifiers",
+    "vitrina.dcat",
 ]
 
 SERIALIZATION_MODULES = {

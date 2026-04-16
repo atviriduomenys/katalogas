@@ -56,6 +56,7 @@ urlpatterns = [
     path("", include("vitrina.statistics.urls")),
     path("", include("vitrina.uapi.urls")),
     path("", include("vitrina.smart_contracts.urls")),
+    path("", include("vitrina.dcat.urls")),
     path("admin/", admin.site.urls),
     path("coordinator-admin/", site.urls),
     path("taggit-autosuggest/", include("taggit_autosuggest.urls")),

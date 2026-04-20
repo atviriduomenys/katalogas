@@ -100,11 +100,10 @@ class Identifier(UUIDBaseModel):
         if not agency.identifier_validation_type or not agency.identifier_validation_options:
             return
         is_regexp = agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP
-        if is_regexp and (pattern := agency.identifier_validation_options):
-            if not re.fullmatch(pattern, self.notation):
-                raise ValidationError(
-                    {"notation": _("Žymėjimas turi atitikti šabloną: %(pattern)s") % {"pattern": pattern}}
-                )
+        if is_regexp and (pattern := agency.identifier_validation_options) and not re.fullmatch(pattern, self.notation):
+            raise ValidationError(
+                {"notation": _("Žymėjimas turi atitikti šabloną: %(pattern)s") % {"pattern": pattern}}
+            )
 
     def save(self, *args, **kwargs):
         self.full_clean()  # ensures clean() is called

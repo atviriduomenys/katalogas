@@ -82,8 +82,6 @@ def validate_dataset_name(name: str | None, dataset: Dataset | None, organizatio
                 _("Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį pavadinimą.")
             )
 
-    return name
-
 
 def validate_applicable_legislation(urls: list[str]) -> list[str | None]:
     validator = URLValidator()
@@ -110,10 +108,9 @@ def validate_identifier(identifier: str | None) -> None:
     agency = get_object_or_404(Agency, code=Agency.RISR_CODE)
     is_regexp = agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP
 
-    if is_regexp and (pattern := agency.identifier_validation_options):
-        if not re.fullmatch(pattern, identifier):
-            raise ValidationError(
-                _("Žymėjimas turi atitikti šabloną: %(pattern)s"),
-                params={"pattern": pattern},
-                code="invalid_format",
-            )
+    if is_regexp and (pattern := agency.identifier_validation_options) and not re.fullmatch(pattern, identifier):
+        raise ValidationError(
+            _("Žymėjimas turi atitikti šabloną: %(pattern)s"),
+            params={"pattern": pattern},
+            code="invalid_format",
+        )

@@ -8,6 +8,8 @@ from vitrina.models import UUIDBaseModel
 
 
 class Agency(UUIDBaseModel):
+    RISR_CODE = "risr"
+
     class IdentifierValidationType(models.TextChoices):
         REGEXP = "REGEXP", _("Reguliarioji išraiška")
 

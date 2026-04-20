@@ -6,7 +6,7 @@ from vitrina.datasets.factories import DatasetFactory
 
 
 class AgencyFactory(DjangoModelFactory):
-    code = "risr"
+    code = Agency.RISR_CODE
     name = "Registrų ir valstybės informacinių sistemų registras"
     uri = "http://registrai.lt"
     identifier_validation_type = "REGEXP"

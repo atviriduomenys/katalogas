@@ -1079,8 +1079,12 @@ class Dataset(Resource):
 
     @property
     def identifier(self) -> str | None:
+        from vitrina.identifiers.models import Agency
+
         return (
-            identifier.notation if (identifier := self.identifiers.filter(scheme_agency__code="risr").first()) else None
+            identifier.notation
+            if (identifier := self.identifiers.filter(scheme_agency__code=Agency.RISR_CODE).first())
+            else None
         )
 
     def public_types(self) -> list[int]:

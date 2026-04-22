@@ -4,6 +4,11 @@ Changes
 v 1.19.0 (current)
 ==================
 
+Improvements:
+
+- Adds `dcat` app. It will be used for new Dataset CRUD that only changes non-public datasets.
+- Adds variable `Agency.RISR_CODE = "risr"` and uses it throughout the code.
+- Moves some code from `Dataset` form and view to separate methods so that it can be reused. It's mostly copy-paste code
 
 
 v 1.18.0 (2026-04-15)

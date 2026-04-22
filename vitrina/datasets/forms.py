@@ -1,14 +1,12 @@
 from datetime import date
-import re
 from typing import Any
 
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
-from django.core.validators import RegexValidator, URLValidator
+from django.core.validators import RegexValidator
 from django.db.models import Value, CharField as _CharField, Case, When, Count, Q
 from django.db.models.functions import Concat
-from django.shortcuts import get_object_or_404
 from django.utils.safestring import mark_safe
 from django_select2.forms import ModelSelect2Widget, Select2Widget
 from parler.forms import TranslatableModelForm, TranslatedField
@@ -31,7 +29,7 @@ from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
-from vitrina.datasets.helpers import validate_name_prefix
+from vitrina.datasets.form_helpers import validate_dataset_name, validate_applicable_legislation, validate_identifier
 from vitrina.datasets.services import get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 
@@ -53,10 +51,8 @@ from vitrina.datasets.models import (
     Contact,
     DCATResourceSubclass,
 )
-from vitrina.identifiers.models import Agency
-from vitrina.orgs.models import Organization, Representative
+from vitrina.orgs.models import Organization
 from vitrina.plans.models import PlanDataset, Plan
-from vitrina.structure.models import Metadata
 from vitrina.users.models import User
 from vitrina.projects.services import get_projects_linkable_to_dataset
 from vitrina.uapi.models import Agent
@@ -310,71 +306,12 @@ class BaseResourceForm(TranslatableModelForm):
     def clean_name(self) -> str | None:
         name = self.cleaned_data.get("name")
         dataset_instance = self.instance
-        existing_metadata = dataset_instance.metadata.first() if dataset_instance and dataset_instance.pk else None
 
-        if name:
-            if not name.isascii():
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
-
-            if any(ch.isupper() for ch in name):
-                raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
-            organization = self.organization or dataset_instance.organization
-            _matched, main_prefix, whitelisted = validate_name_prefix(name, organization, dataset_instance)
-            allowed_prefixes = [main_prefix] + list(whitelisted)
-
-            representatives = Representative.objects.filter(
-                (Q(organization=organization) | Q(user__organization=organization))
-                & Q(role=Representative.OPEN_DATA_PUBLISHER)
-            )
-            dataset_ct = ContentType.objects.get_for_model(Dataset)
-            organization_ct = ContentType.objects.get_for_model(organization)
-            for rep in representatives:
-                if (
-                    rep.content_type == dataset_ct
-                    and rep.content_object.organization
-                    and rep.content_object.organization.name
-                    and rep.content_object.organization.name not in allowed_prefixes
-                ):
-                    allowed_prefixes.append(rep.content_object.organization.name)
-                    whitelisted.append(rep.content_object.organization.name)
-                elif (
-                    rep.content_type == organization_ct
-                    and rep.content_object.name
-                    and rep.content_object.name not in allowed_prefixes
-                ):
-                    allowed_prefixes.append(rep.content_object.name)
-                    whitelisted.append(rep.content_object.name)
-
-            matched_prefix = next((prefix for prefix in allowed_prefixes if name.startswith(prefix)), None)
-            if not matched_prefix:
-                if whitelisted:
-                    message = _(
-                        "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“."
-                    ) % {"expected": main_prefix, "whitelisted": ", ".join(whitelisted)}
-                else:
-                    message = _("Kodinis pavadinimas turi prasidėti nuo „%(expected)s“.") % {"expected": main_prefix}
-
-                raise ValidationError(message)
-            suffix = name[len(matched_prefix) :]
-
-            if not suffix:
-                raise ValidationError(_("Po „%(prefix)s“ turi būti bent vienas simbolis.") % {"prefix": matched_prefix})
-
-            metadata_qs = Metadata.objects.filter(
-                content_type=ContentType.objects.get_for_model(Dataset),
-                name=name,
-            )
-            if existing_metadata:
-                metadata_qs = metadata_qs.exclude(pk=existing_metadata.pk)
-
-            if metadata_qs.exists():
-                raise ValidationError(_("Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."))
-
-        else:
-            if existing_metadata and existing_metadata.name:
-                raise ValidationError(
-                    _("Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį pavadinimą.")
-                )
+        validate_dataset_name(
+            name=name,
+            dataset=self.instance,
+            organization=self.organization or dataset_instance.organization,
+        )
 
         return name
 
@@ -385,28 +322,14 @@ class BaseResourceForm(TranslatableModelForm):
 
     def clean_applicable_legislation(self) -> list[str]:
         urls = self.cleaned_data.get("applicable_legislation", []) or []
-        validator = URLValidator()
 
-        cleaned = []
-        item_errors = []
-
-        for url in urls:
-            if not url:
-                item_errors.append(None)
-                continue
-
-            try:
-                validator(url)
-                cleaned.append(url)
-                item_errors.append(None)
-            except ValidationError as e:
-                item_errors.append(f"{url}: {e.message}")
+        item_errors = validate_applicable_legislation(urls)
 
         if any(item_errors):
             self.fields["applicable_legislation"].widget.validation_errors = item_errors
             raise ValidationError(_("Yra klaidų sąraše."))
 
-        return cleaned
+        return [url for url in urls if url]  # Remove empty URL rows
 
 
 class ServiceResourceForm(BaseResourceForm):
@@ -706,18 +629,7 @@ class InformationSystemResourceForm(CatalogResourceForm):
 
     def clean_identifier(self) -> str:
         identifier = self.cleaned_data.get("identifier")
-        if not identifier:
-            return identifier
-
-        agency = get_object_or_404(Agency, code="risr")
-        is_regexp = agency.identifier_validation_type == Agency.IdentifierValidationType.REGEXP
-        if is_regexp and (pattern := agency.identifier_validation_options):
-            if not re.fullmatch(pattern, identifier):
-                raise ValidationError(
-                    _("Žymėjimas turi atitikti šabloną: %(pattern)s"),
-                    params={"pattern": pattern},
-                    code="invalid_format",
-                )
+        validate_identifier(identifier)
 
         return identifier
 

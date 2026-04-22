@@ -12,7 +12,6 @@ import pandas as pd
 import pytz
 from django.conf import settings
 from django.contrib import messages
-from django.contrib.admin.options import get_content_type_for_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib.contenttypes.models import ContentType
@@ -47,6 +46,11 @@ from parler.views import (
 from reversion import add_to_revision
 from reversion.models import Version
 
+from vitrina.datasets.view_helpers import (
+    create_tasks_and_notify_subscribers_about_dataset_creation,
+    create_dataset_representative_and_attribution,
+    create_tasks_and_notify_subscribers_about_dataset_update,
+)
 from vitrina.structure.models import Version as _Version
 from vitrina.api.helpers import render_rdf_response
 from vitrina.api.models import ApiKey
@@ -105,7 +109,6 @@ from vitrina.datasets.models import (
     Contact,
     DatasetExcludedGroups,
     DCATResourceSubclass,
-    Attribution,
 )
 from vitrina.classifiers.models import (
     Category,
@@ -114,7 +117,6 @@ from vitrina.classifiers.models import (
 )
 from vitrina.identifiers.models import Agency, Identifier
 from vitrina.helpers import (
-    email,
     get_selected_value,
     Filter,
     DateFilter,
@@ -122,7 +124,6 @@ from vitrina.helpers import (
     get_current_domain,
     build_page_title_context,
 )
-from vitrina.messages.models import Subscription
 from vitrina.orgs.helpers import is_org_dataset_list
 from vitrina.orgs.models import Organization, Representative
 from vitrina.orgs.services import has_perm, Action, hash_api_key
@@ -842,7 +843,7 @@ class DatasetCreateView(
         if subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (
             identifier := form.cleaned_data.get("identifier")
         ):
-            agency = get_object_or_404(Agency, code="risr")
+            agency = get_object_or_404(Agency, code=Agency.RISR_CODE)
             Identifier.objects.create(
                 resource=self.object,
                 notation=identifier,
@@ -880,44 +881,7 @@ class DatasetCreateView(
             version=1,
             metadata_version=draft_metadata_version,
         )
-        if self.object.organization:
-            org_id = self.object.organization.id
-            sub_ct = get_content_type_for_model(Organization)
-
-            subs = Subscription.objects.filter(
-                (Q(object_id=org_id) | Q(object_id=None)),
-                sub_type=Subscription.ORGANIZATION,
-                content_type=sub_ct,
-                dataset_update_sub=True,
-            )
-
-            sub_email_list = []
-            for sub in subs:
-                Task.objects.create(
-                    title=f"Duomenų rinkinys organizacijai: {self.object.organization}",
-                    description=f"Sukurtas naujas duomenų rinkinys organizacijai: {self.object.organization}.",
-                    content_type=ContentType.objects.get_for_model(self.object),
-                    object_id=self.object.pk,
-                    organization=self.object.organization,
-                    status=Task.CREATED,
-                    type=Task.DATASET,
-                    user=sub.user,
-                )
-                if sub.user.email and sub.email_subscribed:
-                    if sub.user.organization:
-                        orgs = [sub.user.organization] + list(sub.user.organization.get_descendants())
-                        sub_email_list = [org.email for org in orgs]
-                    sub_email_list.append(sub.user.email)
-                dataset_url = "%s%s" % (
-                    get_current_domain(self.request),
-                    reverse("dataset-detail", args=[self.object.id]),
-                )
-                email(
-                    sub_email_list,
-                    "dataset-created-sub",
-                    "vitrina/datasets/emails/sub/created.md",
-                    {"dataset": self.object.title, "link": dataset_url},
-                )
+        create_tasks_and_notify_subscribers_about_dataset_creation(self.request, self.object)
 
         next_url = self.request.GET.get("next")
         if next_url:
@@ -930,32 +894,7 @@ class DatasetCreateView(
                         content_type=ContentType.objects.get_for_model(self.object),
                     )
 
-        if self.object.organization:
-            Representative.objects.create(
-                content_type=ContentType.objects.get_for_model(self.object),
-                object_id=self.object.pk,
-                organization=self.object.organization,
-                role=Representative.OPEN_DATA_MANAGER,
-            )
-
-            attribution = Attribution.objects.filter(name=Attribution.CREATOR).first()
-            if attribution:
-                if not self.object.name or self.object.name.startswith(self.object.organization.name):
-                    DatasetAttribution.objects.create(
-                        dataset=self.object, attribution=attribution, organization=self.object.organization
-                    )
-                else:
-                    creator = Organization.objects.filter(
-                        name__in=[
-                            org.name
-                            for org in Organization.objects.all()
-                            if org.name and self.object.name.startswith(org.name)
-                        ]
-                    ).first()
-                    if creator:
-                        DatasetAttribution.objects.create(
-                            dataset=self.object, attribution=attribution, organization=creator
-                        )
+        create_dataset_representative_and_attribution(self.object)
 
         if applicable_legislation_urls := form.cleaned_data.get("applicable_legislation"):
             self.object.update_applicable_legislation(applicable_legislation_urls)
@@ -1165,7 +1104,7 @@ class DatasetUpdateView(
         if self.object.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM and (
             identifier := form.cleaned_data.get("identifier")
         ):
-            agency = get_object_or_404(Agency, code="risr")
+            agency = get_object_or_404(Agency, code=Agency.RISR_CODE)
             Identifier.objects.update_or_create(
                 resource=self.object,
                 scheme_agency=agency,
@@ -1223,76 +1162,7 @@ class DatasetUpdateView(
                     model_meta.name = get_model_name(self.object, model.name)
                     model_meta.save()
 
-        queries = []
-
-        org_subs = Subscription.objects.none()
-        if self.object.organization:
-            org_subs = Subscription.objects.filter(
-                Q(object_id=self.object.organization.pk) | Q(object_id=None),
-                sub_type=Subscription.ORGANIZATION,
-                content_type=get_content_type_for_model(Organization),
-                dataset_update_sub=True,
-            )
-
-        subs = Subscription.objects.filter(
-            sub_type=Subscription.DATASET,
-            content_type=get_content_type_for_model(Dataset),
-            object_id=self.object.id,
-            dataset_update_sub=True,
-        )
-
-        if org_subs:
-            subs = org_subs | subs
-
-        for sub in subs:
-            queries.append(
-                Subscription.objects.filter(
-                    Q(object_id=self.object.organization.pk) | Q(object_id=None),
-                    sub_type=Subscription.ORGANIZATION,
-                    content_type=get_content_type_for_model(Organization),
-                    dataset_update_sub=True,
-                )
-            )
-        queries.append(
-            Subscription.objects.filter(
-                sub_type=Subscription.DATASET,
-                content_type=get_content_type_for_model(Dataset),
-                object_id=self.object.id,
-                dataset_update_sub=True,
-            )
-        )
-        sub_list = [item for query in queries for item in query]
-        sorted_list = sorted(sub_list, key=lambda x: x.sub_type != Subscription.ORGANIZATION)
-
-        sub_email_list = []
-        for sub in sorted_list:
-            Task.objects.create(
-                title=f"Duomenų rinkinys: {self.object}",
-                description=f"Atnaujintas duomenų rinkinys: {self.object}",
-                content_type=get_content_type_for_model(Dataset),
-                object_id=self.object.pk,
-                organization=self.object.organization,
-                status=Task.CREATED,
-                type=Task.DATASET,
-                user=sub.user,
-            )
-            if sub.user.email and sub.email_subscribed:
-                if sub.user.email not in sub_email_list:
-                    sub_email_list.append(sub.user.email)
-        if sub_email_list:
-            email(
-                sub_email_list,
-                "dataset-updated",
-                "vitrina/datasets/emails/sub/updated.md",
-                {
-                    "title": self.object,
-                    "link": "%s%s"
-                    % (
-                        get_current_domain(self.request),
-                        self.object.get_absolute_url(),
-                    ),
-                },
-            )
+        create_tasks_and_notify_subscribers_about_dataset_update(self.request, self.object)
         self.object.save()
 
         selected_parent: Dataset | None = form.cleaned_data.get("parent")

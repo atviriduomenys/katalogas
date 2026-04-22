@@ -74,6 +74,8 @@ class Licence(models.Model):
 
 
 class Frequency(models.Model):
+    CODE_UNKNOWN = "UNKNOWN"
+
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
     version = models.IntegerField(default=1)

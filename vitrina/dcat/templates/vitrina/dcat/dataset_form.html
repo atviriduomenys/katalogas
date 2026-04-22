@@ -1,0 +1,47 @@
+{% extends "base_form.html" %}
+{% load i18n parler_tags %}
+{% load crispy_forms_tags %}
+
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block head %}
+    <style>
+        /* Match select width */
+        div.select, .select2.select2-container {
+            width: 100% !important;
+        }
+        /* Match select height and border color */
+        .select2.select2-container .select2-selection--single {
+            height: 2.5rem;
+            padding: 6px 12px;
+            border-color: #767676;
+        }
+        /* Match select dropdown border color */
+        .select2-container .select2-dropdown {
+            border-color: #767676;
+        }
+        /* Match select2 dropdown arrow */
+        .select2-selection__arrow {
+            display: none;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    {% include 'vitrina/datasets/resource_information.html' %}
+    <form method="post" id="dataset-form" enctype="multipart/form-data" novalidate>
+        {% csrf_token %}
+
+        <div class="column is-half">
+            {% crispy form %}
+        </div>
+        {% include 'vitrina/datasets/resource_form_buttons.html' %}
+    </form>
+{% endblock %}

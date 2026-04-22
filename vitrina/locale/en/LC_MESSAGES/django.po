@@ -692,6 +692,15 @@ msgid "Nepavyko rasti `{0}` pasirinkimų sąraše. Susisiekite su administracija
 msgstr ""
 "Could not find {0} in the list of choices. Please contact the administration."
 
+
+msgid ""
+"UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
+"Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+msgstr ""
+"Services that comply with the UAPI standard must be associated with an "
+"agent. Select an agent or choose a different value for the 'Conforms to' "
+"field."
+
 msgid "Pasirinkus agentą, šis laukas negali būti užpildytas."
 msgstr "If agent is selected, this field must be left emtpy."
 
@@ -1974,6 +1983,12 @@ msgstr "Organizations"
 
 msgid "vaikiniai duomenų ištekliai"
 msgstr "child resources"
+
+msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
+msgstr "Form creation tool cannot be used for this resource subclass"
+
+msgid "Nurodytas duomenų ištekliaus poklasis neturi formos."
+msgstr "Given resource subclass does not have defined form."
 
 msgid "Pasirinkti failą"
 msgstr "Select a file"

@@ -390,7 +390,6 @@ def test_representative_create_organization_as_representative(app: DjangoTestApp
     ]
     form["email"] = organization1.email
     form["role"] = "resource_manager"
-    form.submit()
     response = form.submit()
     assert response.status_code == 200
     assert Representative.objects.filter(email="test_org1@test.com").count() == 1
@@ -411,7 +410,6 @@ def test_representative_create_organization_as_coordinator_role(
     ]
     form["email"] = organization1.email
     form["role"] = representative_role
-    form.submit()
     response = form.submit()
     assert response.status_code == 200
     assert "Organizacijai gali būti suteikta tik tvarkytojo rolė" in response.context["form"].errors["role"][0]

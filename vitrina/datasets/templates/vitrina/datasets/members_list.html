@@ -77,9 +77,6 @@
                 {% if has_permission %}
                     <td>
                         <div class="buttons is-right">
-                            {% if m.organization and not can_delete_publishers %}
-                            <a></a>
-                            {% else %}
                                 {% can_update_representative m request.user as can_update %}
                                 {% if can_update %}
                                     <a id="update-member-{{ m.pk }}-btn" class="button is-primary is-small"
@@ -87,10 +84,6 @@
                                         {% translate "Redaguoti" %}
                                     </a>
                                 {% endif %}
-                            {% endif %}
-                            {% if m.organization and not can_delete_publishers %}
-                            <a></a>
-                            {% else %}
                                 {% can_update_representative m request.user as can_update %}
                                 {% if can_update %}
                                     <a id="delete-member-{{ m.pk }}-btn"  class="button is-link is-small"
@@ -98,7 +91,6 @@
                                         {% translate "Pašalinti" %}
                                     </a>
                                 {% endif %}
-                            {% endif %}
                         </div>
                     </td>
                 {% endif %}

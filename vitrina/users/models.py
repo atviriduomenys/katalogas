@@ -197,7 +197,7 @@ class User(AbstractUser):
     def is_representative_for(
         self,
         obj: Union[Organization, "Dataset", None],
-        roles: list[str] | None = None,
+        roles: list[str],
     ) -> bool:
         """
         Returns True if the user is a representative for the given object.

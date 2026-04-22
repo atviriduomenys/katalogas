@@ -239,12 +239,7 @@ class Representative(models.Model):
                 Representative.RESOURCE_COORDINATOR,
             ],
         ):
-            return self.role in (
-                Representative.RESOURCE_COORDINATOR,
-                Representative.RESOURCE_MANAGER,
-                Representative.OPEN_DATA_COORDINATOR,
-                Representative.OPEN_DATA_MANAGER,
-            )
+            return self.role in Representative.RESOURCE_ROLE_KEYS | Representative.OPEN_DATA_ROLE_KEYS
 
         if user.is_coordinator_for(
             object,

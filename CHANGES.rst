@@ -10,6 +10,12 @@ Improvements:
 - Adds variable `Agency.RISR_CODE = "risr"` and uses it throughout the code.
 - Moves some code from `Dataset` form and view to separate methods so that it can be reused. It's mostly copy-paste code
 
+Bug fixes:
+
+https://github.com/atviriduomenys/dvms/issues/549
+
+- Removed `can_update_publishers` permission check from HTML forms and the corresponding view.
+- Removed the early return that was blocking non-superusers from updating Organizations as Representatives.
 
 v 1.18.0 (2026-04-15)
 ==================

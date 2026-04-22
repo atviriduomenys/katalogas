@@ -68,9 +68,6 @@
                     {% endif %}
                     <td>{{ m.get_role_display|default:"-" }}</td>
                     {% if has_permission %}
-                        {% if m.organization and not can_delete_publishers %}
-                        <td></td>
-                        {% else %}
                             {% can_update_representative m request.user as can_update %}
                             {% if can_update %}
                                 <td>
@@ -79,12 +76,8 @@
                                     </a>
                                 </td>
                             {% endif %}
-                        {% endif %}
 
 
-                        {% if m.organization and not can_delete_publishers %}
-                        <td></td>
-                        {% else %}
                             {% can_update_representative m request.user as can_delete %}
                             {% if can_delete %}
                                 <td>
@@ -93,7 +86,6 @@
                                     </a>
                                 </td>
                             {% endif %}
-                        {% endif %}
                     {% endif %}
                 </tr>
             {% endfor %}

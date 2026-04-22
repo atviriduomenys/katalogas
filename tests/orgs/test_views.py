@@ -262,6 +262,7 @@ def representative_data():
         "open_data_representative_coordinator": open_data_representative_coordinator,
         "resource_representative_coordinator": resource_representative_coordinator,
         "representative_viisp_coordinator": representative_viisp_coordinator,
+        "content_type": content_type,
     }
 
 
@@ -380,6 +381,57 @@ def test_representative_create_without_user_for_two_organizations(app: DjangoTes
     assert mail.outbox[0].to == ["new@gmail.com"]
 
 
+def test_representative_create_organization_as_representative(app: DjangoTestApp, representative_data):
+    app.set_user(representative_data["resource_coordinator"])
+    organization1 = OrganizationFactory(email="test_org1@test.com")
+
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    form["email"] = organization1.email
+    form["role"] = "resource_manager"
+    response = form.submit()
+    assert response.status_code == 302
+    representative_qs = Representative.objects.filter(email="test_org1@test.com")
+    assert representative_qs.count() == 1
+    assert representative_qs.first().role == "resource_manager"
+    assert representative_qs.first().organization == organization1
+
+
+@pytest.mark.parametrize(
+    "representative_role",
+    ["resource_coordinator", "open_data_coordinator"],
+)
+def test_representative_create_organization_as_coordinator_role(
+    app: DjangoTestApp, representative_data, representative_role
+):
+    app.set_user(representative_data[representative_role])
+    organization1 = OrganizationFactory(email="test_org1@test.com")
+
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+    form["email"] = organization1.email
+    form["role"] = representative_role
+    response = form.submit()
+    assert response.status_code == 200
+    assert "Organizacijai gali būti suteikta tik tvarkytojo rolė" in response.context["form"].errors["role"][0]
+    assert Representative.objects.filter(email="test_org1@test.com").count() == 0
+
+
+@pytest.mark.parametrize("restricted_role", ["resource_manager", "resource_coordinator"])
+def test_open_data_coordinator_cannot_see_restricted_roles(app: DjangoTestApp, representative_data, restricted_role):
+    app.set_user(representative_data["open_data_coordinator"])
+
+    form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
+        "representative-form"
+    ]
+
+    available_roles = [value for value, _, _ in form["role"].options]
+
+    assert restricted_role not in available_roles
+
+
 def test_representative_create_invalid_phone(app: DjangoTestApp, representative_data):
     app.set_user(representative_data["open_data_coordinator"])
     form = app.get(reverse("representative-create", kwargs={"pk": representative_data["organization"].pk})).forms[
@@ -440,6 +492,34 @@ def test_representative_update_phone(app: DjangoTestApp, representative_data):
     assert resp.status_code == 302
     representative_data["open_data_representative_manager"].refresh_from_db()
     assert representative_data["open_data_representative_manager"].phone == "061234567"
+
+
+def test_representative_update_organization_as_representative(app: DjangoTestApp, representative_data):
+    organization_representative = OrganizationFactory(email="test_org1@test.com")
+    organization_representative = RepresentativeFactory(
+        role="resource_manager",
+        content_type=representative_data["content_type"],
+        object_id=representative_data["organization"].pk,
+        organization=organization_representative,
+    )
+    organization_representative.save()
+    app.set_user(representative_data["resource_coordinator"])
+    form = app.get(
+        reverse(
+            "representative-update",
+            kwargs={
+                "pk": representative_data["organization"].pk,
+                "representative_id": organization_representative.pk,
+            },
+        )
+    ).forms["representative-form"]
+    form["phone"] = "061234567"
+    form["role"] = "open_data_manager"
+    resp = form.submit()
+    assert resp.status_code == 302
+    organization_representative.refresh_from_db()
+    assert organization_representative.phone == "061234567"
+    assert organization_representative.role == "open_data_manager"
 
 
 def test_representative_subscription(app: DjangoTestApp, representative_data):

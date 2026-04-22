@@ -391,8 +391,11 @@ def test_representative_create_organization_as_representative(app: DjangoTestApp
     form["email"] = organization1.email
     form["role"] = "resource_manager"
     response = form.submit()
-    assert response.status_code == 200
-    assert Representative.objects.filter(email="test_org1@test.com").count() == 1
+    assert response.status_code == 302
+    representative_qs = Representative.objects.filter(email="test_org1@test.com")
+    assert representative_qs.count() == 1
+    assert representative_qs.first().role == "resource_manager"
+    assert representative_qs.first().organization == organization1
 
 
 @pytest.mark.parametrize(

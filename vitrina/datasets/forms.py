@@ -1,7 +1,6 @@
 from datetime import date
 from typing import Any
 
-from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from django.core.handlers.wsgi import WSGIRequest
 from django.core.validators import RegexValidator
@@ -29,7 +28,15 @@ from crispy_forms.layout import Field, Submit, Layout, HTML
 from haystack.forms import FacetedSearchForm
 from treebeard.forms import MoveNodeForm
 
-from vitrina.datasets.form_helpers import validate_dataset_name, validate_applicable_legislation, validate_identifier
+from vitrina.datasets.form_helpers import (
+    validate_dataset_name,
+    validate_applicable_legislation,
+    validate_identifier,
+    get_contact_form_choices,
+    DATA_SERVICE_STANDARD_URI,
+    set_default_agent_endpoint_fields,
+    validate_agent_endpoint_fields,
+)
 from vitrina.datasets.services import get_requests
 from vitrina.classifiers.models import Frequency, Category, Concept
 
@@ -56,16 +63,6 @@ from vitrina.plans.models import PlanDataset, Plan
 from vitrina.users.models import User
 from vitrina.projects.services import get_projects_linkable_to_dataset
 from vitrina.uapi.models import Agent
-from vitrina.resources.models import Format
-from vitrina import settings
-
-
-DATA_SERVICE_STANDARD_URI = (
-    f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}/id/non-standard/DataServiceStandard"
-)
-UAPI_CONCEPT_CODE = "UAPI"
-JSON_FORMAT = "JSON"
-OPENAPI_FORMAT = "OpenAPI"
 
 
 class ResourceSubclassTypeField(ModelChoiceField):
@@ -250,49 +247,8 @@ class BaseResourceForm(TranslatableModelForm):
 
     def _populate_contact_choices(self) -> None:
         """Populate contact choices grouped by organization."""
-
-        organization_id = self.instance.organization_id or self.organization.id
-        self.fields["contact"].choices = [("", "---------")]
-
-        content_type_user = ContentType.objects.get_for_model(User)
-        content_type_organization = ContentType.objects.get_for_model(Organization)
-
-        contacts = Contact.objects.filter(organization_id=organization_id, deleted__isnull=True).select_related(
-            "content_type"
-        )
-
-        org_contacts = []
-        user_contacts = []
-        other_contacts = []
-
-        for contact in contacts:
-            if contact.content_type_id == content_type_organization.id:
-                org_contacts.append(contact)
-            elif contact.content_type_id == content_type_user.id:
-                user_contacts.append(contact)
-            else:
-                other_contacts.append(contact)
-
-        org_ids = [c.object_id for c in org_contacts if c.object_id]
-        user_ids = [c.object_id for c in user_contacts if c.object_id]
-
-        organizations = {org.id: org for org in Organization.objects.filter(id__in=org_ids)}
-        users = {user.id: user for user in User.objects.filter(id__in=user_ids)}
-
-        for contact in org_contacts:
-            org = organizations.get(contact.object_id)
-            if org:
-                self.fields["contact"].choices.append((contact.id, org.title))
-
-        for contact in user_contacts:
-            user = users.get(contact.object_id)
-            if user:
-                display_name = user.get_full_name()
-                self.fields["contact"].choices.append((contact.id, display_name))
-
-        for contact in other_contacts:
-            display_name = contact.contact_name or f"Contact #{contact.id}"
-            self.fields["contact"].choices.append((contact.id, display_name))
+        organization = self.instance.organization or self.organization
+        self.fields["contact"].choices = [("", "---------")] + get_contact_form_choices(organization)
 
         if contact := self._get_contact(self.instance):
             self.fields["contact"].initial = contact.id
@@ -417,78 +373,18 @@ class ServiceResourceForm(BaseResourceForm):
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
 
-        agent = cleaned_data.get("agent")
+        cleaned_data = set_default_agent_endpoint_fields(cleaned_data)
 
-        conforms_to = cleaned_data.get("conforms_to")
-        endpoint_url = cleaned_data.get("endpoint_url")
-        endpoint_description = cleaned_data.get("endpoint_description")
-
-        if agent:
-            error_message = _("Pasirinkus agentą, šis laukas negali būti užpildytas.")
-
-            if endpoint_url:
-                self.add_error("endpoint_url", error_message)
-
-            if endpoint_description:
-                self.add_error("endpoint_description", error_message)
-
-            endpoint_type = cleaned_data.get("endpoint_type")
-            if not endpoint_type:
-                json_format = Format.objects.filter(title=JSON_FORMAT).first()
-                if not json_format:
-                    raise ValidationError(
-                        _("Nepavyko rasti `{0}` formato pasirinkimų sąraše. Susisiekite su administracija.").format(
-                            JSON_FORMAT
-                        )
-                    )
-                cleaned_data["endpoint_type"] = json_format
-            elif endpoint_type.title != JSON_FORMAT:
-                self.add_error(
-                    "endpoint_type", _("Pasirinkus agentą, API formatas privalo būti '{0}'").format(JSON_FORMAT)
-                )
-
-            endpoint_description_type = cleaned_data.get("endpoint_description_type")
-            if not endpoint_description_type:
-                openapi_format = Format.objects.filter(title=OPENAPI_FORMAT).first()
-                if not openapi_format:
-                    raise ValidationError(
-                        _("Nepavyko rasti `{0}` formato pasirinkimų sąraše. Susisiekite su administracija.").format(
-                            OPENAPI_FORMAT
-                        )
-                    )
-                cleaned_data["endpoint_description_type"] = openapi_format
-            elif endpoint_description_type.title != OPENAPI_FORMAT:
-                self.add_error(
-                    "endpoint_description_type",
-                    _("Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'").format(OPENAPI_FORMAT),
-                )
-
-            if not conforms_to:
-                uapi_concept = Concept.objects.filter(code="UAPI").first()
-                if not uapi_concept:
-                    raise ValidationError(
-                        _("Nepavyko rasti `UDTS` standarto pasirinkimų sąraše. Susisiekite su administracija.")
-                    )
-                cleaned_data["conforms_to"] = uapi_concept
-            elif conforms_to.code != UAPI_CONCEPT_CODE:
-                error_message = _("Su agentu susietos paslaugos privalo atitikti UDTS standartą.")
-                self.add_error("conforms_to", error_message)
-
-            return cleaned_data
-
-        if not cleaned_data.get("endpoint_url"):
-            error_message = _("Pasirinkite agentą, arba nurodykite API adresą.")
-            for field_name in ("agent", "endpoint_url"):
-                self.add_error(field_name, error_message)
-
-        if not cleaned_data.get("endpoint_description"):
-            self.add_error("endpoint_description", _("Pasirinkite agentą, arba nurodykite API specifikaciją."))
-
-        if conforms_to and conforms_to.code == UAPI_CONCEPT_CODE:
-            error_message = _(
-                "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
-            )
-            self.add_error("agent", error_message)
+        errors = validate_agent_endpoint_fields(
+            agent=cleaned_data.get("agent"),
+            conforms_to=cleaned_data.get("conforms_to"),
+            endpoint_url=cleaned_data.get("endpoint_url"),
+            endpoint_type=cleaned_data.get("endpoint_type"),
+            endpoint_description=cleaned_data.get("endpoint_description"),
+            endpoint_description_type=cleaned_data.get("endpoint_description_type"),
+        )
+        for field_name, error_message in errors:
+            self.add_error(field_name, error_message)
 
         return cleaned_data
 

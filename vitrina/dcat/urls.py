@@ -1,16 +1,1 @@
-from django.urls import path
-
-from vitrina.dcat.views import DcatDatasetCreateView
-
-urlpatterns = [
-    path(
-        "organization/<int:organization_id>/dcat/dataset/create/subclass/<uuid:subclass_uuid>/",
-        DcatDatasetCreateView.as_view(),
-        name="dcat-dataset-create",
-    ),
-    path(
-        "organization/<int:organization_id>/dcat/dataset/create/parent/<int:parent_id>/subclass/<uuid:subclass_uuid>/",
-        DcatDatasetCreateView.as_view(),
-        name="dcat-dataset-create-with-parent",
-    ),
-]
+urlpatterns = []

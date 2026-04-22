@@ -131,20 +131,22 @@ def validate_identifier(identifier: str | None) -> None:
 
 
 def set_default_agent_endpoint_fields(cleaned_data: dict[str, Any]) -> dict[str, Any]:
-    agent = cleaned_data.get("agent")
+    if not cleaned_data.get("agent"):
+        return cleaned_data
+
     error_template = _("Nepavyko rasti `{0}` pasirinkimų sąraše. Susisiekite su administracija.")
 
-    if agent and not cleaned_data.get("endpoint_type"):
+    if not cleaned_data.get("endpoint_type"):
         if not (json_format := Format.objects.filter(title=JSON_FORMAT).first()):
             raise ValidationError(error_template.format(JSON_FORMAT))
         cleaned_data["endpoint_type"] = json_format
 
-    if agent and not cleaned_data.get("endpoint_description_type"):
+    if not cleaned_data.get("endpoint_description_type"):
         if not (openapi_format := Format.objects.filter(title=OPENAPI_FORMAT).first()):
             raise ValidationError(error_template.format(JSON_FORMAT))
         cleaned_data["endpoint_description_type"] = openapi_format
 
-    if agent and not cleaned_data.get("conforms_to"):
+    if not cleaned_data.get("conforms_to"):
         if not (uapi_concept := Concept.objects.filter(code=UAPI_CONCEPT_CODE).first()):
             raise ValidationError(error_template.format(JSON_FORMAT))
         cleaned_data["conforms_to"] = uapi_concept
@@ -161,40 +163,43 @@ def validate_agent_endpoint_fields(
     endpoint_description_type: str | None,
 ) -> list[tuple[str, str]]:
     errors = []
+    if agent:
+        if endpoint_url:
+            errors.append(("endpoint_url", _("Pasirinkus agentą, šis laukas negali būti užpildytas.")))
 
-    if not agent and not endpoint_url:
-        errors.append(("agent", _("Pasirinkite agentą, arba nurodykite API adresą.")))
-        errors.append(("endpoint_url", _("Pasirinkite agentą, arba nurodykite API adresą.")))
+        if endpoint_description:
+            errors.append(("endpoint_description", _("Pasirinkus agentą, šis laukas negali būti užpildytas.")))
 
-    if not agent and not endpoint_description:
-        errors.append(("endpoint_description", _("Pasirinkite agentą, arba nurodykite API specifikaciją.")))
-
-    if not agent and conforms_to and conforms_to.code == UAPI_CONCEPT_CODE:
-        error_message = _(
-            "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
-            "Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
-        )
-        errors.append(("agent", error_message))
-
-    if agent and endpoint_url:
-        errors.append(("endpoint_url", _("Pasirinkus agentą, šis laukas negali būti užpildytas.")))
-
-    if agent and endpoint_description:
-        errors.append(("endpoint_description", _("Pasirinkus agentą, šis laukas negali būti užpildytas.")))
-
-    if agent and endpoint_type and endpoint_type.title != JSON_FORMAT:
-        errors.append(("endpoint_type", _("Pasirinkus agentą, API formatas privalo būti '{0}'").format(JSON_FORMAT)))
-
-    if agent and endpoint_description_type and endpoint_description_type.title != OPENAPI_FORMAT:
-        errors.append(
-            (
-                "endpoint_description_type",
-                _("Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'").format(OPENAPI_FORMAT),
+        if endpoint_type and endpoint_type.title != JSON_FORMAT:
+            errors.append(
+                ("endpoint_type", _("Pasirinkus agentą, API formatas privalo būti '{0}'").format(JSON_FORMAT))
             )
-        )
 
-    if agent and conforms_to and conforms_to.code != UAPI_CONCEPT_CODE:
-        errors.append(("conforms_to", _("Su agentu susietos paslaugos privalo atitikti UDTS standartą.")))
+        if endpoint_description_type and endpoint_description_type.title != OPENAPI_FORMAT:
+            errors.append(
+                (
+                    "endpoint_description_type",
+                    _("Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'").format(OPENAPI_FORMAT),
+                )
+            )
+
+        if conforms_to and conforms_to.code != UAPI_CONCEPT_CODE:
+            errors.append(("conforms_to", _("Su agentu susietos paslaugos privalo atitikti UDTS standartą.")))
+
+    else:
+        if not endpoint_url:
+            errors.append(("agent", _("Pasirinkite agentą, arba nurodykite API adresą.")))
+            errors.append(("endpoint_url", _("Pasirinkite agentą, arba nurodykite API adresą.")))
+
+        if not endpoint_description:
+            errors.append(("endpoint_description", _("Pasirinkite agentą, arba nurodykite API specifikaciją.")))
+
+        if conforms_to and conforms_to.code == UAPI_CONCEPT_CODE:
+            error_message = _(
+                "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
+                "Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+            )
+            errors.append(("agent", error_message))
 
     return errors
 
@@ -206,27 +211,29 @@ def get_contact_form_choices(organization: Organization) -> list[tuple[int, str]
 
     contacts = Contact.objects.filter(organization=organization, deleted__isnull=True).select_related("content_type")
 
-    org_contacts = []
+    organization_contacts = []
     user_contacts = []
     other_contacts = []
 
     for contact in contacts:
         if contact.content_type_id == content_type_organization.id:
-            org_contacts.append(contact)
+            organization_contacts.append(contact)
         elif contact.content_type_id == content_type_user.id:
             user_contacts.append(contact)
         else:
             other_contacts.append(contact)
 
-    org_ids = [c.object_id for c in org_contacts if c.object_id]
+    organization_ids = [c.object_id for c in organization_contacts if c.object_id]
     user_ids = [c.object_id for c in user_contacts if c.object_id]
 
-    organizations = {org.id: org for org in Organization.objects.filter(id__in=org_ids)}
+    organizations = {
+        organization.id: organization for organization in Organization.objects.filter(id__in=organization_ids)
+    }
     users = {user.id: user for user in User.objects.filter(id__in=user_ids)}
 
-    for contact in org_contacts:
-        if org := organizations.get(contact.object_id):
-            contact_choices.append((contact.id, org.title))
+    for contact in organization_contacts:
+        if organization := organizations.get(contact.object_id):
+            contact_choices.append((contact.id, organization.title))
 
     for contact in user_contacts:
         if user := users.get(contact.object_id):

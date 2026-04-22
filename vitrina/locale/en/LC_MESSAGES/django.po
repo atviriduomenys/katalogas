@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 11:16+0300\n"
+"POT-Creation-Date: 2026-04-22 11:53+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -684,7 +684,8 @@ msgstr "The notation must match the pattern: %(pattern)s"
 
 #, python-brace-format
 msgid "Nepavyko rasti `{0}` pasirinkimų sąraše. Susisiekite su administracija."
-msgstr "Could not find {0} in the list of choices. Please contact the administration."
+msgstr ""
+"Could not find {0} in the list of choices. Please contact the administration."
 
 msgid "Pasirinkite agentą, arba nurodykite API adresą."
 msgstr "Select an agent or specify an API address."
@@ -1965,6 +1966,12 @@ msgstr "Organizations"
 
 msgid "vaikiniai duomenų ištekliai"
 msgstr "child resources"
+
+msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
+msgstr "Form creation tool cannot be used for this resource subclass"
+
+msgid "Nurodytas duomenų ištekliaus poklasis neturi formos."
+msgstr "Given resource subclass does not have defined form."
 
 msgid "Pasirinkti failą"
 msgstr "Select a file"

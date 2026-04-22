@@ -5,6 +5,8 @@ from vitrina.classifiers.models import Licence
 
 
 class Catalog(models.Model):
+    IDENTIFIER_ISRIS = "isris"
+
     # TODO: https://github.com/atviriduomenys/katalogas/issues/59
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)

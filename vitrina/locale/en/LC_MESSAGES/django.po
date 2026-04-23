@@ -1981,6 +1981,12 @@ msgstr "Form creation tool cannot be used for this resource subclass"
 msgid "Nurodytas duomenų ištekliaus poklasis neturi formos."
 msgstr "Given resource subclass does not have a defined form."
 
+msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
+msgstr "Form creation tool cannot be used with open data resources"
+
+msgid "Duomenų išteklius atnaujintas sėkmingai"
+msgstr "Resource updated successfully"
+
 msgid "Pasirinkti failą"
 msgstr "Select a file"
 

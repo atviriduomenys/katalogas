@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-10 09:50+0300\n"
+"POT-Creation-Date: 2026-04-22 11:16+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -648,6 +648,72 @@ msgstr "Contact object"
 msgid "Datasets"
 msgstr "Datasets"
 
+msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
+msgstr "Code name can only include latin characters."
+
+msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
+msgstr "Code name can only include lowercase letters."
+
+#, python-format
+msgid ""
+"Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
+"leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“."
+msgstr ""
+"The code name must begin with „%(expected)s“ or one of the following "
+"whitelisted code name prefixes: „%(whitelisted)s“."
+
+#, python-format
+msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“."
+msgstr "The code name must begin with „%(expected)s“."
+
+#, python-format
+msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
+msgstr "There must be at least one character after „%(prefix)s“."
+
+msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
+msgstr "Dataset with this code name already exists."
+
+msgid ""
+"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
+"pavadinimą."
+msgstr "A code name is required if the dataset already has a code name."
+
+#, python-format
+msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
+msgstr "The notation must match the pattern: %(pattern)s"
+
+#, python-brace-format
+msgid "Nepavyko rasti `{0}` pasirinkimų sąraše. Susisiekite su administracija."
+msgstr "Could not find {0} in the list of choices. Please contact the administration."
+
+msgid "Pasirinkite agentą, arba nurodykite API adresą."
+msgstr "Select an agent or specify an API address."
+
+msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
+msgstr "Select an agent or specify an API specification."
+
+msgid ""
+"UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
+"Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+msgstr ""
+"Services that comply with the UAPI standard must be associated with an "
+"agent. Select an agent or choose a different value for the 'Conforms to' "
+"field."
+
+msgid "Pasirinkus agentą, šis laukas negali būti užpildytas."
+msgstr "If agent is selected, this field must be left emtpy."
+
+#, python-brace-format
+msgid "Pasirinkus agentą, API formatas privalo būti '{0}'"
+msgstr "If an agent is selected, the API format must be '{0}'."
+
+#, python-brace-format
+msgid "Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'"
+msgstr "If an agent is selected, the API specification format must be '{0}'."
+
+msgid "Su agentu susietos paslaugos privalo atitikti UDTS standartą."
+msgstr "Services associated with an agent must comply with the UAPI standard."
+
 msgid "Duomenų ištekliaus rūšis"
 msgstr "Resource subclass"
 
@@ -717,36 +783,6 @@ msgstr "Public"
 msgid "Apriboti"
 msgstr "Restricted"
 
-msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-msgstr "Code name can only include latin characters."
-
-msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
-msgstr "Code name can only include lowercase letters."
-
-#, python-format
-msgid ""
-"Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
-"leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“."
-msgstr ""
-"The code name must begin with „%(expected)s“ or one of the following "
-"whitelisted code name prefixes: „%(whitelisted)s“."
-
-#, python-format
-msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“."
-msgstr "The code name must begin with „%(expected)s“."
-
-#, python-format
-msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
-msgstr "There must be at least one character after „%(prefix)s“."
-
-msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
-msgstr "Dataset with this code name already exists."
-
-msgid ""
-"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
-"pavadinimą."
-msgstr "A code name is required if the dataset already has a code name."
-
 msgid "Yra klaidų sąraše."
 msgstr "There are errors in the list."
 
@@ -790,49 +826,6 @@ msgstr "Detailed description of the dataset"
 
 msgid "Surašykite aktualius raktinius žodžius"
 msgstr "List relevant keywords"
-
-msgid "Pasirinkus agentą, šis laukas negali būti užpildytas."
-msgstr "If agent is selected, this field must be left emtpy."
-
-#, python-brace-format
-msgid ""
-"Nepavyko rasti `{0}` formato pasirinkimų sąraše. Susisiekite su "
-"administracija."
-msgstr ""
-"Could not find {0} in the list of format choices. Please contact the "
-"administration."
-
-#, python-brace-format
-msgid "Pasirinkus agentą, API formatas privalo būti '{0}'"
-msgstr "If an agent is selected, the API format must be '{0}'."
-
-#, python-brace-format
-msgid "Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'"
-msgstr "If an agent is selected, the API specification format must be '{0}'."
-
-msgid ""
-"Nepavyko rasti `UDTS` standarto pasirinkimų sąraše. Susisiekite su "
-"administracija."
-msgstr ""
-"Could not find the `UAPI` standard in the list of choices. Please contact "
-"the administration."
-
-msgid "Su agentu susietos paslaugos privalo atitikti UDTS standartą."
-msgstr "Services associated with an agent must comply with the UAPI standard."
-
-msgid "Pasirinkite agentą, arba nurodykite API adresą."
-msgstr "Select an agent or specify an API address."
-
-msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
-msgstr "Select an agent or specify an API specification."
-
-msgid ""
-"UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
-"Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
-msgstr ""
-"Services that comply with the UAPI standard must be associated with an "
-"agent. Select an agent or choose a different value for the 'Conforms to' "
-"field."
 
 msgid "Metaduomenų katalogo pavadinimas"
 msgstr "Metadata catalog title"
@@ -882,10 +875,6 @@ msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
 msgstr ""
 "The entity responsible for the creation of the information system (IS). "
 "Corresponds to dct:creator"
-
-#, python-format
-msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
-msgstr "The notation must match the pattern: %(pattern)s"
 
 msgid "Laikotarpio pradžia"
 msgstr "Period start"
@@ -1555,15 +1544,6 @@ msgstr "Category assignment"
 
 msgid "Pasirinkite kategoriją."
 msgstr "Select a category."
-
-msgid "Teritorija"
-msgstr "Territory"
-
-msgid "Periodo pradžia"
-msgstr "Period start"
-
-msgid "Periodo pabaiga"
-msgstr "Period end"
 
 msgid "Dydis"
 msgstr "Size"
@@ -3513,9 +3493,6 @@ msgstr "Structure file"
 msgid "Papildoma informacija"
 msgstr "Additional information"
 
-msgid "Šis laukas privalomas"
-msgstr "This field is mandatory"
-
 msgid "Atgal į poreikių sąrašą"
 msgstr "Back to request list"
 
@@ -3835,6 +3812,12 @@ msgstr ""
 msgid "Ar duomenų šaltinis yra didelės vertės"
 msgstr "Is the data source of high value"
 
+msgid "Periodo pradžia"
+msgstr "Period start"
+
+msgid "Periodo pabaiga"
+msgstr "Period end"
+
 msgid "Prieiga"
 msgstr "Access"
 
@@ -3843,6 +3826,9 @@ msgstr "Download dataset distribution"
 
 msgid "Atidaryti duomenų šaltinį"
 msgstr "Open dataset distribution"
+
+msgid "Teritorija"
+msgstr "Territory"
 
 msgid "Publikuojamas saugykloje"
 msgstr "Published in storage"
@@ -5271,6 +5257,9 @@ msgstr "Submit comment"
 
 msgid "Komentuoti gali tik prisijungę naudotojai"
 msgstr "Only logged in users can leave a comment"
+
+msgid "Šis laukas privalomas"
+msgstr "This field is mandatory"
 
 msgid "VSSA Valstybės skaitmeninių sprendimų agentūra"
 msgstr "VSSA Valstybės skaitmeninių sprendimų agentūra"

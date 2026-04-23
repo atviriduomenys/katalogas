@@ -1,5 +1,7 @@
 import re
+from typing import Any
 
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import URLValidator
@@ -7,11 +9,23 @@ from django.db.models import Q
 from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 
+from vitrina.classifiers.models import Concept
 from vitrina.datasets.helpers import validate_name_prefix
-from vitrina.datasets.models import Dataset
+from vitrina.datasets.models import Dataset, Contact
 from vitrina.identifiers.models import Agency
 from vitrina.orgs.models import Organization, Representative
+from vitrina.resources.models import Format
 from vitrina.structure.models import Metadata
+from vitrina.uapi.models import Agent
+from vitrina.users.models import User
+
+
+DATA_SERVICE_STANDARD_URI = (
+    f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}/id/non-standard/DataServiceStandard"
+)
+UAPI_CONCEPT_CODE = "UAPI"
+JSON_FORMAT = "JSON"
+OPENAPI_FORMAT = "OpenAPI"
 
 
 def validate_dataset_name(name: str | None, dataset: Dataset | None, organization: Organization) -> None:
@@ -114,3 +128,119 @@ def validate_identifier(identifier: str | None) -> None:
             params={"pattern": pattern},
             code="invalid_format",
         )
+
+
+def set_default_agent_endpoint_fields(cleaned_data: dict[str, Any]) -> dict[str, Any]:
+    if not cleaned_data.get("agent"):
+        return cleaned_data
+
+    error_template = _("Nepavyko rasti `{0}` pasirinkimų sąraše. Susisiekite su administracija.")
+
+    if not cleaned_data.get("endpoint_type"):
+        if not (json_format := Format.objects.filter(title=JSON_FORMAT).first()):
+            raise ValidationError(error_template.format(JSON_FORMAT))
+        cleaned_data["endpoint_type"] = json_format
+
+    if not cleaned_data.get("endpoint_description_type"):
+        if not (openapi_format := Format.objects.filter(title=OPENAPI_FORMAT).first()):
+            raise ValidationError(error_template.format(JSON_FORMAT))
+        cleaned_data["endpoint_description_type"] = openapi_format
+
+    if not cleaned_data.get("conforms_to"):
+        if not (uapi_concept := Concept.objects.filter(code=UAPI_CONCEPT_CODE).first()):
+            raise ValidationError(error_template.format(JSON_FORMAT))
+        cleaned_data["conforms_to"] = uapi_concept
+
+    return cleaned_data
+
+
+def validate_agent_endpoint_fields(
+    agent: Agent | None,
+    conforms_to: Concept | None,
+    endpoint_url: str | None,
+    endpoint_type: str | None,
+    endpoint_description: str | None,
+    endpoint_description_type: str | None,
+) -> list[tuple[str, str]]:
+    errors = []
+    if agent:
+        if endpoint_url:
+            errors.append(("endpoint_url", _("Pasirinkus agentą, šis laukas negali būti užpildytas.")))
+
+        if endpoint_description:
+            errors.append(("endpoint_description", _("Pasirinkus agentą, šis laukas negali būti užpildytas.")))
+
+        if endpoint_type and endpoint_type.title != JSON_FORMAT:
+            errors.append(
+                ("endpoint_type", _("Pasirinkus agentą, API formatas privalo būti '{0}'").format(JSON_FORMAT))
+            )
+
+        if endpoint_description_type and endpoint_description_type.title != OPENAPI_FORMAT:
+            errors.append(
+                (
+                    "endpoint_description_type",
+                    _("Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'").format(OPENAPI_FORMAT),
+                )
+            )
+
+        if conforms_to and conforms_to.code != UAPI_CONCEPT_CODE:
+            errors.append(("conforms_to", _("Su agentu susietos paslaugos privalo atitikti UDTS standartą.")))
+
+    else:
+        if not endpoint_url:
+            errors.append(("agent", _("Pasirinkite agentą, arba nurodykite API adresą.")))
+            errors.append(("endpoint_url", _("Pasirinkite agentą, arba nurodykite API adresą.")))
+
+        if not endpoint_description:
+            errors.append(("endpoint_description", _("Pasirinkite agentą, arba nurodykite API specifikaciją.")))
+
+        if conforms_to and conforms_to.code == UAPI_CONCEPT_CODE:
+            error_message = _(
+                "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
+                "Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+            )
+            errors.append(("agent", error_message))
+
+    return errors
+
+
+def get_contact_form_choices(organization: Organization) -> list[tuple[int, str]]:
+    contact_choices = []
+    content_type_user = ContentType.objects.get_for_model(User)
+    content_type_organization = ContentType.objects.get_for_model(Organization)
+
+    contacts = Contact.objects.filter(organization=organization, deleted__isnull=True).select_related("content_type")
+
+    organization_contacts = []
+    user_contacts = []
+    other_contacts = []
+
+    for contact in contacts:
+        if contact.content_type_id == content_type_organization.id:
+            organization_contacts.append(contact)
+        elif contact.content_type_id == content_type_user.id:
+            user_contacts.append(contact)
+        else:
+            other_contacts.append(contact)
+
+    organization_ids = [c.object_id for c in organization_contacts if c.object_id]
+    user_ids = [c.object_id for c in user_contacts if c.object_id]
+
+    organizations = {
+        organization.id: organization for organization in Organization.objects.filter(id__in=organization_ids)
+    }
+    users = {user.id: user for user in User.objects.filter(id__in=user_ids)}
+
+    for contact in organization_contacts:
+        if organization := organizations.get(contact.object_id):
+            contact_choices.append((contact.id, organization.title))
+
+    for contact in user_contacts:
+        if user := users.get(contact.object_id):
+            contact_choices.append((contact.id, user.get_full_name()))
+
+    for contact in other_contacts:
+        display_name = contact.contact_name or f"Contact #{contact.id}"
+        contact_choices.append((contact.id, display_name))
+
+    return contact_choices

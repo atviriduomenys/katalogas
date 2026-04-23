@@ -98,7 +98,7 @@ class BaseResourceForm(TranslatableModelForm):
         ],
     )
     parent = forms.ModelChoiceField(
-        Dataset.objects.all().order_by("translations__title").prefetch_related("translations"),
+        Dataset.objects.all().prefetch_related("translations"),
         label=_("Tėvinis išteklius"),
         widget=Select2Widget(),
         required=False,
@@ -128,11 +128,10 @@ class BaseResourceForm(TranslatableModelForm):
         elif instance:
             parent = instance.get_parent()
             self.fields["parent"].initial = parent
-            self.fields["parent"].queryset = Dataset.objects.exclude(pk=instance.pk)
+            self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=instance.pk)
 
-        if instance:
-            if instance.name:
-                self.initial["name"] = instance.name
+        if instance and instance.name:
+            self.initial["name"] = instance.name
 
     def clean_name(self) -> str | None:
         name = self.cleaned_data.get("name")

@@ -82,8 +82,8 @@ class TestBaseResourceForm:
             parent_dataset_id=None,
             data={"name": f"{organization.name}ąčę"},
         )
-        form.is_valid()
 
+        assert not form.is_valid()
         assert "name" in form.errors
         assert "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės." in form.errors["name"]
 
@@ -100,8 +100,8 @@ class TestInformationSystemResourceForm:
                 "conditions": "Some conditions",
             },
         )
-        form.is_valid()
 
+        assert not form.is_valid()
         assert "rights_relation" in form.errors
         assert "conditions" in form.errors
         assert "Užpildykite tik vieną teisių deklaracijų lauką." in form.errors["rights_relation"]
@@ -125,8 +125,8 @@ class TestInformationSystemResourceForm:
                 "identifier": "not-four-digits",
             },
         )
-        form.is_valid()
 
+        assert not form.is_valid()
         assert "identifier" in form.errors
         assert "Žymėjimas turi atitikti šabloną: ^\\d{4}$" in form.errors["identifier"]
 
@@ -148,8 +148,8 @@ class TestInformationSystemResourceForm:
                 "identifier": "1234",
             },
         )
-        form.is_valid()
 
+        assert not form.is_valid()
         assert "identifier" not in form.errors
 
     def test_invalid_applicable_legislation_url_raises_error(self):
@@ -160,8 +160,8 @@ class TestInformationSystemResourceForm:
             parent_dataset_id=None,
             data={"applicable_legislation": ["not-a-url"]},
         )
-        form.is_valid()
 
+        assert not form.is_valid()
         assert "applicable_legislation" in form.errors
 
 
@@ -180,9 +180,9 @@ class TestServiceResourceForm:
                 "contact": contact.pk,
             },
         )
-        form.is_valid()
 
         error_msg = "Pasirinkite agentą, arba nurodykite API adresą."
+        assert not form.is_valid()
         assert "agent" in form.errors
         assert "endpoint_url" in form.errors
         assert error_msg in form.errors["agent"]
@@ -203,8 +203,8 @@ class TestServiceResourceForm:
                 "endpoint_url": "http://example.com",
             },
         )
-        form.is_valid()
 
+        assert not form.is_valid()
         assert "endpoint_description" in form.errors
         assert "Pasirinkite agentą, arba nurodykite API specifikaciją." in form.errors["endpoint_description"]
 
@@ -225,9 +225,9 @@ class TestServiceResourceForm:
                 "endpoint_url": "http://example.com",
             },
         )
-        form.is_valid()
 
         error_msg = "Pasirinkus agentą, šis laukas negali būti užpildytas."
+        assert not form.is_valid()
         assert "endpoint_url" in form.errors
         assert error_msg in form.errors["endpoint_url"]
 
@@ -248,9 +248,9 @@ class TestServiceResourceForm:
                 "endpoint_description": "http://example.com/spec",
             },
         )
-        form.is_valid()
 
         error_msg = "Pasirinkus agentą, šis laukas negali būti užpildytas."
+        assert not form.is_valid()
         assert "endpoint_description" in form.errors
         assert error_msg in form.errors["endpoint_description"]
 
@@ -272,8 +272,8 @@ class TestServiceResourceForm:
                 "endpoint_description": "http://example.com/spec",
             },
         )
-        form.is_valid()
 
+        assert not form.is_valid()
         assert "agent" in form.errors
         assert "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu." in form.errors["agent"][0]
 
@@ -290,8 +290,8 @@ class TestDatasetResourceForm:
                 "temporal_end": "2025-08-10",
             },
         )
-        form.is_valid()
 
+        assert not form.is_valid()
         assert "temporal_start" in form.errors
         assert "Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data." in form.errors["temporal_start"]
 
@@ -306,8 +306,8 @@ class TestDatasetResourceForm:
                 "temporal_end": "2025-12-31",
             },
         )
-        form.is_valid()
 
+        assert not form.is_valid()
         assert "temporal_start" not in form.errors
 
     def test_documentation_initial_populated_from_instance(self):

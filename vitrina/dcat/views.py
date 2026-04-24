@@ -29,6 +29,13 @@ from vitrina.structure import VersionStatus
 from vitrina.structure.models import Version as _Version, Metadata
 
 
+DCAT_SUBCLASS_FORM_MAP = {
+    DCATResourceSubclass.INFORMATION_SYSTEM: InformationSystemResourceForm,
+    DCATResourceSubclass.SERVICE: ServiceResourceForm,
+    DCATResourceSubclass.DATASET: DatasetResourceForm,
+}
+
+
 class DcatDatasetCreateView(
     LoginRequiredMixin,
     PermissionRequiredMixin,
@@ -42,7 +49,7 @@ class DcatDatasetCreateView(
 
     @cached_property
     def organization(self) -> Organization:
-        return get_object_or_404(Organization, id=self.kwargs.get("organization_id"))
+        return get_object_or_404(Organization, pk=self.kwargs.get("organization_id"))
 
     @cached_property
     def subclass(self) -> DCATResourceSubclass:
@@ -60,7 +67,7 @@ class DcatDatasetCreateView(
         )
         return isris_catalog
 
-    def has_permission(self):
+    def has_permission(self) -> bool:
         return has_perm(self.request.user, Action.CREATE_WIZARD, Dataset, self.organization)
 
     def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
@@ -77,16 +84,12 @@ class DcatDatasetCreateView(
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_class(self) -> BaseResourceForm:
-        if self.subclass.name == DCATResourceSubclass.INFORMATION_SYSTEM:
-            return InformationSystemResourceForm
-        if self.subclass.name == DCATResourceSubclass.SERVICE:
-            return ServiceResourceForm
-        if self.subclass.name == DCATResourceSubclass.DATASET:
-            return DatasetResourceForm
+        if (form_class := DCAT_SUBCLASS_FORM_MAP.get(self.subclass.name)) is None:
+            raise ImproperlyConfigured(_("Nurodytas duomenų ištekliaus poklasis neturi formos."))
 
-        raise ImproperlyConfigured(_("Nurodytas duomenų ištekliaus poklasis neturi formos."))
+        return form_class
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
         context.update(
             {
@@ -103,7 +106,7 @@ class DcatDatasetCreateView(
         )
         return context
 
-    def get_form_kwargs(self):
+    def get_form_kwargs(self) -> dict:
         kwargs = super().get_form_kwargs()
         kwargs["organization"] = self.organization
         kwargs["parent_dataset_id"] = self.kwargs.get("parent_id")
@@ -140,9 +143,6 @@ class DcatDatasetCreateView(
 
         if self.subclass.name == DCATResourceSubclass.SERVICE:
             self.object.service = True
-
-        if self.subclass.name == DCATResourceSubclass.DATASET:
-            pass
 
         self.object.save()
         tags = form.cleaned_data.get("tags")

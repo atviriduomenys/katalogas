@@ -659,24 +659,24 @@ msgid ""
 "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
 "leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“."
 msgstr ""
-"The code name must begin with „%(expected)s“ or one of the following "
-"whitelisted code name prefixes: „%(whitelisted)s“."
+"The codename must begin with „%(expected)s“ or one of the following "
+"whitelisted codename prefixes: „%(whitelisted)s“."
 
 #, python-format
 msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“."
-msgstr "The code name must begin with „%(expected)s“."
+msgstr "The codename must begin with „%(expected)s“."
 
 #, python-format
 msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
 msgstr "There must be at least one character after „%(prefix)s“."
 
 msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
-msgstr "Dataset with this code name already exists."
+msgstr "Dataset with this codename already exists."
 
 msgid ""
 "Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
 "pavadinimą."
-msgstr "A code name is required if the dataset already has a code name."
+msgstr "A codename is required if the dataset already has a codename."
 
 #, python-format
 msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
@@ -686,7 +686,6 @@ msgstr "The notation must match the pattern: %(pattern)s"
 msgid "Nepavyko rasti `{0}` pasirinkimų sąraše. Susisiekite su administracija."
 msgstr ""
 "Could not find {0} in the list of choices. Please contact the administration."
-
 
 msgid ""
 "UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
@@ -715,14 +714,6 @@ msgstr "Select an agent or specify an API address."
 
 msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
 msgstr "Select an agent or specify an API specification."
-
-msgid ""
-"UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
-"Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
-msgstr ""
-"Services that comply with the UAPI standard must be associated with an "
-"agent. Select an agent or choose a different value for the 'Conforms to' "
-"field."
 
 msgid "Duomenų ištekliaus rūšis"
 msgstr "Resource subclass"
@@ -829,7 +820,7 @@ msgid "Ar duomenys vieši?"
 msgstr "Is the data public?"
 
 msgid "Duomenų rinkinio kodinis pavadinimas"
-msgstr "Dataset code name"
+msgstr "Dataset codename"
 
 msgid "Detalus duomenų rinkinio aprašas"
 msgstr "Detailed description of the dataset"
@@ -841,7 +832,7 @@ msgid "Metaduomenų katalogo pavadinimas"
 msgstr "Metadata catalog title"
 
 msgid "Metaduomenų katalogo kodinis pavadinimas"
-msgstr "Metadata catalog code name"
+msgstr "Metadata catalog codename"
 
 msgid "Detalus metaduomenų katalogo aprašas"
 msgstr "Detailed description of the metadata catalog"
@@ -1343,7 +1334,7 @@ msgstr "The user has been sent an email for registration"
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
 "skaičiai, "
-msgstr "Model code name can contain uppercase/lowercase letters and numbers. "
+msgstr "Model codename can contain uppercase/lowercase letters and numbers. "
 
 msgid ""
 "Pavadinime gali būti mažosios raidės ir skaičiai, žodžiai gali būti atskirti "
@@ -1979,7 +1970,7 @@ msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
 msgstr "Form creation tool cannot be used for this resource subclass"
 
 msgid "Nurodytas duomenų ištekliaus poklasis neturi formos."
-msgstr "Given resource subclass does not have defined form."
+msgstr "Given resource subclass does not have a defined form."
 
 msgid "Pasirinkti failą"
 msgstr "Select a file"
@@ -2343,10 +2334,10 @@ msgid "organizacija"
 msgstr "organization"
 
 msgid "Leistinas kodinis pavadinimas"
-msgstr "Allowed code name"
+msgstr "Allowed codename"
 
 msgid "Leistini kodiniai pavadinimai"
-msgstr "Allowed code names"
+msgstr "Allowed codenames"
 
 msgid ""
 "Pasirinktoms organizacijoms sėkmingai pašalintas, duomenų atvėrimo paslaugos "
@@ -2422,7 +2413,7 @@ msgid "Logotipas"
 msgstr "Logo"
 
 msgid "Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė."
-msgstr "First symbol of code name must be lowercase letter."
+msgstr "First symbol of codename must be lowercase letter."
 
 msgid ""
 "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, žodžiai gali "
@@ -2612,7 +2603,7 @@ msgid "Organizacijai negali būti nurodytos pareigos."
 msgstr "A position cannot be specified for an organization"
 
 msgid "Toks Organizacijos kodinis pavadinimas jau egzistuoja."
-msgstr "This code name for the Organization already exists."
+msgstr "This codename for the Organization already exists."
 
 msgid "Neteisingas objekto tipas. Turi būti AreaOfManagement arba int"
 msgstr "Incorrect object type. It must be AreaOfManagement or int."
@@ -4479,7 +4470,7 @@ msgstr ""
 "changing parts or filters."
 
 msgid "Pirmas kodinio pavadinimo simbolis turi būti didžioji raidė."
-msgstr "First symbol of code name must be capital letter."
+msgstr "First symbol of codename must be capital letter."
 
 msgid ""
 "Pavadinime gali būti didžiosos/mažosios raidės ir skaičiai, jokie kiti "
@@ -4489,7 +4480,7 @@ msgstr ""
 "symbols are not allowed."
 
 msgid "Modelis su tokiu kodiniu pavadinimu jau egzistuoja."
-msgstr "Model with this code name already exists."
+msgstr "Model with this codename already exists."
 
 msgid ""
 "Stulpelis 'Klasė' turi būti užpildytas pasirenkant šį metaduomenų matomumo "
@@ -4619,7 +4610,7 @@ msgid ""
 "Duomenų lauko kodinis pavadinimas. Galimi simboliai: lotyniškos mažosios "
 "raidės, skaičiai ir apatinio pabraukimo (`_`) simbolis."
 msgstr ""
-"The code name of the data field. Allowed characters: Latin lower case "
+"The codename of the data field. Allowed characters: Latin lower case "
 "letters, digits, and the underscore (`_`) character."
 
 msgid ""
@@ -4659,7 +4650,7 @@ msgid ""
 msgstr ""
 "Data field name. This name is intended for human readability and will be "
 "displayed in data field lists and headers. If not provided, the property "
-"code name will be used."
+"codename will be used."
 
 msgid "Duomenų lauko aprašymas."
 msgstr "Data field description."

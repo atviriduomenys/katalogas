@@ -113,12 +113,12 @@ def set_default_agent_endpoint_fields(cleaned_data: dict[str, Any]) -> dict[str,
 
     if not cleaned_data.get("endpoint_description_type"):
         if not (openapi_format := Format.objects.filter(title=OPENAPI_FORMAT).first()):
-            raise ValidationError(error_template.format(JSON_FORMAT))
+            raise ValidationError(error_template.format(OPENAPI_FORMAT))
         cleaned_data["endpoint_description_type"] = openapi_format
 
     if not cleaned_data.get("conforms_to"):
         if not (uapi_concept := Concept.objects.filter(code=UAPI_CONCEPT_CODE).first()):
-            raise ValidationError(error_template.format(JSON_FORMAT))
+            raise ValidationError(error_template.format(UAPI_CONCEPT_CODE))
         cleaned_data["conforms_to"] = uapi_concept
 
     return cleaned_data

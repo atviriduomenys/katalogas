@@ -215,8 +215,8 @@ class DcatDatasetUpdateView(
     def subclass(self) -> DCATResourceSubclass:
         return self.get_object().subclass
 
-    def has_permission(self):
-        return has_perm(self.request.user, Action.UPDATE_WIZARD, Dataset, self.organization)
+    def has_permission(self) -> bool:
+        return has_perm(self.request.user, Action.UPDATE_WIZARD, self.get_object())
 
     def dispatch(self, request: WSGIRequest, *args, **kwargs) -> HttpResponseBase:
         obj = self.get_object()

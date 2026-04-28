@@ -314,6 +314,8 @@ class User(AbstractUser):
             user_role = coordinator_to_manager.get(
                 user_organization_roles[organization_id], user_organization_roles[organization_id]
             )
+            if organization_role not in Representative.MANAGER_ROLES or user_role not in Representative.MANAGER_ROLES:
+                continue
             effective_role = max(organization_role, user_role, key=Representative.MANAGER_ROLES.index)
             if effective_role in manager_equivalent_roles:
                 return True

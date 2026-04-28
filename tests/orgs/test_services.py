@@ -2399,3 +2399,35 @@ class TestViispOrganizationPermissions:
 
         res = has_perm(user, Action.CREATE, Dataset, organization)
         assert res is True
+
+
+@pytest.mark.django_db
+@pytest.mark.parametrize(
+    "org_role,user_role",
+    [
+        (Representative.OPEN_DATA_PUBLISHER, Representative.OPEN_DATA_MANAGER),
+        (Representative.OPEN_DATA_MANAGER, Representative.OPEN_DATA_PUBLISHER),
+    ],
+)
+def test_dataset_perm_via_org_chain_non_manager_role_does_not_crash(org_role: str, user_role: str):
+    dataset = DatasetFactory(is_public=False, access_rights=Dataset.NON_PUBLIC)
+    rep_org = OrganizationFactory()
+
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(dataset),
+        object_id=dataset.pk,
+        role=org_role,
+        organization=rep_org,
+        user=None,
+    )
+
+    user = UserFactory()
+    RepresentativeFactory(
+        content_type=ContentType.objects.get_for_model(rep_org),
+        object_id=rep_org.pk,
+        role=user_role,
+        user=user,
+        organization=None,
+    )
+
+    assert has_perm(user, Action.VIEW, dataset) is False

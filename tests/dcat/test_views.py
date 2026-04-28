@@ -413,6 +413,96 @@ class TestDcatDatasetUpdateView:
 
         assert response.status_code == 403
 
+    def test_user_with_different_organization_permissions_returns_403(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        new_organization = OrganizationFactory()
+        user = UserFactory(organization=new_organization)
+        RepresentativeFactory(
+            organization=new_organization,
+            content_type=ContentType.objects.get_for_model(new_organization),
+            object_id=new_organization.pk,
+            user=user,
+            role=Representative.RESOURCE_MANAGER,
+        )
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        response = app.get(url, expect_errors=True)
+
+        assert response.status_code == 403
+
+    def test_user_with_different_dataset_permissions_returns_403(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        new_dataset = DatasetFactory(organization=org)
+        user = UserFactory(organization=org)
+        RepresentativeFactory(
+            organization=org,
+            content_type=ContentType.objects.get_for_model(new_dataset),
+            object_id=new_dataset.pk,
+            user=user,
+            role=Representative.RESOURCE_MANAGER,
+        )
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        response = app.get(url, expect_errors=True)
+
+        assert response.status_code == 403
+
+    def test_user_with_correct_organization_permissions_returns_200(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        user = UserFactory(organization=org)
+        RepresentativeFactory(
+            organization=org,
+            content_type=ContentType.objects.get_for_model(org),
+            object_id=org.pk,
+            user=user,
+            role=Representative.RESOURCE_MANAGER,
+        )
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        response = app.get(url)
+
+        assert response.status_code == 200
+
+    def test_user_with_correct_dataset_permissions_returns_200(self, app: DjangoTestApp):
+        org = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=org, subclass=subclass, is_public=False)
+        user = UserFactory(organization=org)
+        RepresentativeFactory(
+            organization=org,
+            content_type=ContentType.objects.get_for_model(dataset),
+            object_id=dataset.pk,
+            user=user,
+            role=Representative.RESOURCE_MANAGER,
+        )
+        app.set_user(user)
+
+        url = reverse(
+            "dcat-dataset-update",
+            kwargs={"organization_id": org.pk, "dataset_id": dataset.pk},
+        )
+        response = app.get(url)
+
+        assert response.status_code == 200
+
     def test_nonexistent_organization_returns_404(self, app: DjangoTestApp):
         subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
         dataset = DatasetFactory(subclass=subclass, is_public=False)

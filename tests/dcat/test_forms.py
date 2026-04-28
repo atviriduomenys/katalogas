@@ -1,8 +1,15 @@
 import pytest
 from django.utils.translation import override as translation_override
-from vitrina.classifiers.factories import ConceptFactory
-from vitrina.classifiers.models import Concept, ConceptSchema
-from vitrina.classifiers.factories import DocumentationFactory
+from vitrina.classifiers.factories import (
+    ConceptFactory,
+    DocumentationFactory,
+)
+from vitrina.classifiers.models import (
+    Concept,
+    ConceptSchema,
+    LANGUAGE_CONCEPT_SCHEMA_URI,
+)
+from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
 from vitrina.datasets.factories import ContactFactory, DatasetFactory
 from vitrina.datasets.models import Dataset
 from vitrina.dcat.forms import (
@@ -164,6 +171,62 @@ class TestInformationSystemResourceForm:
         assert not form.is_valid()
         assert "applicable_legislation" in form.errors
 
+    def test_information_system_assesment_url_is_required(self):
+        organization = OrganizationFactory()
+        importance_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI)
+        importance = ConceptFactory(concept_schemas=[importance_schema])
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+            data={
+                "title": "Test IS",
+                "description": "Test description",
+                "name": "testis",
+                "information_system_importance": importance.pk,
+                "information_system_publisher": organization.pk,
+                "information_system_creator": organization.pk,
+            },
+        )
+
+        assert not form.is_valid()
+        assert "information_system_assesment_url" in form.errors
+
+    def test_languages_queryset_filtered_to_language_concepts(self):
+        organization = OrganizationFactory()
+        language_schema, _ = ConceptSchema.objects.get_or_create(uri=LANGUAGE_CONCEPT_SCHEMA_URI)
+        language_concept = ConceptFactory(concept_schemas=[language_schema])
+        other_concept = ConceptFactory()
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+        )
+
+        assert language_concept in form.fields["languages"].queryset
+        assert other_concept not in form.fields["languages"].queryset
+
+    def test_languages_not_required(self):
+        organization = OrganizationFactory()
+        importance_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI)
+        importance = ConceptFactory(concept_schemas=[importance_schema])
+
+        form = InformationSystemResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+            data={
+                "title": "Test IS",
+                "description": "Test description",
+                "name": "testis",
+                "information_system_importance": importance.pk,
+                "information_system_publisher": organization.pk,
+                "information_system_creator": organization.pk,
+                "information_system_assesment_url": "https://example.com/assessment",
+            },
+        )
+
+        assert "languages" not in form.errors
+
 
 class TestServiceResourceForm:
     def test_no_agent_no_endpoint_url_raises_error(self):
@@ -254,6 +317,27 @@ class TestServiceResourceForm:
         assert "endpoint_description" in form.errors
         assert error_msg in form.errors["endpoint_description"]
 
+    def test_follows_license_service_quality_not_required(self):
+        organization = OrganizationFactory()
+        contact = ContactFactory(organization=organization)
+
+        form = ServiceResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+            data={
+                "title": "Test Service",
+                "name": "testservice",
+                "tags": "tag1",
+                "contact": contact.pk,
+                "endpoint_url": "http://example.com",
+                "endpoint_description": "http://example.com/spec",
+            },
+        )
+
+        assert "follows" not in form.errors
+        assert "license" not in form.errors
+        assert "service_quality" not in form.errors
+
     def test_conforms_to_uapi_without_agent_raises_error(self):
         organization = OrganizationFactory()
         contact = ContactFactory(organization=organization)
@@ -337,3 +421,63 @@ class TestDatasetResourceForm:
         )
 
         assert "documentation" not in form.initial
+
+    def test_conforms_to_queryset_filtered_to_dataset_standard(self):
+        organization = OrganizationFactory()
+        dataset_standard_schema, _ = ConceptSchema.objects.get_or_create(uri=DATASET_STANDARD_URI)
+        matching_concept = ConceptFactory(concept_schemas=[dataset_standard_schema])
+        other_concept = ConceptFactory()
+
+        form = DatasetResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+        )
+
+        assert matching_concept in form.fields["conforms_to"].queryset
+        assert other_concept not in form.fields["conforms_to"].queryset
+
+    def test_languages_queryset_filtered_to_language_concepts(self):
+        organization = OrganizationFactory()
+        language_schema, _ = ConceptSchema.objects.get_or_create(uri=LANGUAGE_CONCEPT_SCHEMA_URI)
+        language_concept = ConceptFactory(concept_schemas=[language_schema])
+        other_concept = ConceptFactory()
+
+        form = DatasetResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+        )
+
+        assert language_concept in form.fields["languages"].queryset
+        assert other_concept not in form.fields["languages"].queryset
+
+    def test_dataset_type_queryset_filtered_to_dataset_type_concepts(self):
+        organization = OrganizationFactory()
+        dataset_type_schema, _ = ConceptSchema.objects.get_or_create(uri=Dataset.DATASET_TYPE_SCHEME_URI)
+        matching_concept = ConceptFactory(concept_schemas=[dataset_type_schema])
+        other_concept = ConceptFactory()
+
+        form = DatasetResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+        )
+
+        assert matching_concept in form.fields["dataset_type"].queryset
+        assert other_concept not in form.fields["dataset_type"].queryset
+
+    def test_conforms_to_languages_provenance_dataset_type_was_generated_by_not_required(self):
+        organization = OrganizationFactory()
+
+        form = DatasetResourceForm(
+            organization=organization,
+            parent_dataset_id=None,
+            data={
+                "temporal_start": "2025-01-01",
+                "temporal_end": "2025-12-31",
+            },
+        )
+
+        assert "conforms_to" not in form.errors
+        assert "languages" not in form.errors
+        assert "provenance" not in form.errors
+        assert "dataset_type" not in form.errors
+        assert "was_generated_by" not in form.errors

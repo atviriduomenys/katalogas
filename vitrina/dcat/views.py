@@ -183,6 +183,21 @@ class DcatDatasetCreateView(
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])
 
+        if "follows" in form.changed_data:
+            self.object.follows.set(form.cleaned_data.get("follows"))
+
+        if "service_quality" in form.changed_data:
+            self.object.update_service_quality(form.cleaned_data.get("service_quality"))
+
+        if "languages" in form.changed_data:
+            self.object.languages.set(form.cleaned_data.get("languages"))
+
+        if "provenance" in form.changed_data:
+            self.object.provenance.set(form.cleaned_data.get("provenance"))
+
+        if "was_generated_by" in form.changed_data:
+            self.object.was_generated_by.set(form.cleaned_data.get("was_generated_by"))
+
         messages.success(self.request, _("Duomenų išteklius sukurtas sėkmingai"))
 
         return HttpResponseRedirect(
@@ -256,7 +271,7 @@ class DcatDatasetUpdateView(
         return context
 
     def get_queryset(self) -> QuerySet[Dataset]:
-        return super().get_queryset().filter(organization=self.organization)
+        return super().get_queryset().filter(organization=self.organization).select_related("organization", "subclass")
 
     def get_object(self, queryset: QuerySet[Dataset] | None = None) -> Dataset:
         obj = super().get_object(queryset)
@@ -310,6 +325,21 @@ class DcatDatasetUpdateView(
 
         if "service_type" in form.changed_data:
             self.object.service_type.set(form.cleaned_data["service_type"])
+
+        if "follows" in form.changed_data:
+            self.object.follows.set(form.cleaned_data.get("follows"))
+
+        if "service_quality" in form.changed_data:
+            self.object.update_service_quality(form.cleaned_data.get("service_quality"))
+
+        if "languages" in form.changed_data:
+            self.object.languages.set(form.cleaned_data.get("languages"))
+
+        if "provenance" in form.changed_data:
+            self.object.provenance.set(form.cleaned_data.get("provenance"))
+
+        if "was_generated_by" in form.changed_data:
+            self.object.was_generated_by.set(form.cleaned_data.get("was_generated_by"))
 
         self.object.save()
 

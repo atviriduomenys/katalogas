@@ -13,7 +13,9 @@ Improvements:
 Bug fixes:
 
 https://github.com/atviriduomenys/dvms/issues/549
+https://github.com/atviriduomenys/katalogas/issues/2558
 
+- Added an access check, which makes sure that given roles are from MANAGER_ROLES, else skips the iteration.
 - Removed `can_update_publishers` permission check from HTML forms and the corresponding view.
 - Removed the early return that was blocking non-superusers from updating Organizations as Representatives.
 

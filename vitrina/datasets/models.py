@@ -903,6 +903,8 @@ class Dataset(Resource):
 
         for org_id, org_role in org_roles:
             user_role = coordinator_to_manager.get(user_org_map[org_id], user_org_map[org_id])
+            if org_role not in Representative.MANAGER_ROLES or user_role not in Representative.MANAGER_ROLES:
+                continue
             # Use the more restrictive role between the organization's role and the user's role within that org.
             # e.g. org has RESOURCE_MANAGER, user has OPEN_DATA_MANAGER → effective role is OPEN_DATA_MANAGER
             effective_roles.append(max(org_role, user_role, key=Representative.MANAGER_ROLES.index))

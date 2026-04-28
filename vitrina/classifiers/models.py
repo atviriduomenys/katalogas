@@ -6,6 +6,8 @@ from treebeard.mp_tree import MP_Node, MP_NodeManager
 
 from vitrina.models import UUIDBaseModel
 
+LANGUAGE_CONCEPT_SCHEMA_URI = "http://publications.europa.eu/resource/authority/language"
+
 
 class Category(MP_Node):
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
@@ -264,3 +266,89 @@ class ApplicableLegislation(UUIDBaseModel):
 
     def __str__(self) -> str:
         return self.description or self.url
+
+
+class Rule(TranslatableModel, UUIDBaseModel):
+    RULE_TYPE_CONCEPT_SCHEMA_URI = "dcataplt:RuleType"
+
+    identifier = models.CharField(
+        max_length=255,
+        verbose_name=_("Identifikatorius"),
+        help_text=_(
+            "Naudojamas taisyklės identifikatorius. "
+            "Jei nenaudojamas - nurodomas skaičius, pvz. 1. Atitinka dct:identifier."
+        ),
+    )
+    rule_type = models.ManyToManyField(
+        Concept,
+        related_name="rules_by_type",
+        verbose_name=_("Tipas"),
+        blank=True,
+        help_text=_("Nurodo taisyklės tipą. Atitinka dct:type."),
+        limit_choices_to={"concept_schemas__uri": RULE_TYPE_CONCEPT_SCHEMA_URI},
+    )
+    implements = models.ManyToManyField(
+        ApplicableLegislation,
+        related_name="rules",
+        verbose_name=_("Įgyvendina"),
+        blank=True,
+        help_text=_("Nurodo teisės aktą, kurį įgyvendina taisyklė. Atitinka cpsv:implements."),
+    )
+    language = models.ManyToManyField(
+        Concept,
+        related_name="rules_by_language",
+        verbose_name=_("Kalba"),
+        blank=True,
+        help_text=_("Nurodo taisyklės kalbą. Atitinka dct:language."),
+        limit_choices_to={"concept_schemas__uri": LANGUAGE_CONCEPT_SCHEMA_URI},
+    )
+
+    translations = TranslatedFields(
+        title=models.CharField(max_length=255, verbose_name=_("Pavadinimas")),
+        description=models.TextField(verbose_name=_("Aprašymas")),
+    )
+
+    class Meta:
+        verbose_name = _("Taisyklė")
+        verbose_name_plural = _("Taisyklės")
+
+    def __str__(self) -> str:
+        return self.translated_label
+
+    @property
+    def translated_label(self) -> str:
+        return self.safe_translation_getter("title", language_code=self.get_current_language()) or self.identifier
+
+
+class ServiceQualityPage(UUIDBaseModel):
+    url = models.CharField(max_length=1024, blank=True, unique=True)
+
+    class Meta:
+        verbose_name = _("Paslaugos kokybės puslapis")
+        verbose_name_plural = _("Paslaugos kokybės puslapiai")
+
+    def __str__(self) -> str:
+        return self.url
+
+
+class ProvenanceStatement(UUIDBaseModel):
+    description = models.CharField(max_length=255, verbose_name=_("Pavadinimas"), blank=True)
+    url = models.URLField(max_length=255, verbose_name=_("Nuoroda"))
+
+    class Meta:
+        verbose_name = _("Kilmė")
+        verbose_name_plural = _("Kilmės")
+
+    def __str__(self) -> str:
+        return self.description or self.url
+
+
+class Activity(UUIDBaseModel):
+    title = models.CharField(max_length=255, verbose_name=_("Pavadinimas"))
+
+    class Meta:
+        verbose_name = _("Veikla")
+        verbose_name_plural = _("Veiklos")
+
+    def __str__(self) -> str:
+        return self.title

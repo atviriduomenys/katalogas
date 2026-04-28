@@ -22,6 +22,10 @@ from vitrina.classifiers.models import (
     Concept,
     ConceptSchema,
     ApplicableLegislation,
+    Rule,
+    ServiceQualityPage,
+    ProvenanceStatement,
+    Activity,
 )
 from vitrina.classifiers.models import Licence
 from vitrina.classifiers.models import Frequency
@@ -278,6 +282,29 @@ class ConceptAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
 @admin.register(ApplicableLegislation)
 class ApplicableLegislationAdmin(RevisionCommentVersionAdmin):
     list_display = ("description", "url")
+
+
+@admin.register(Rule)
+class RuleAdmin(TranslatableAdmin, RevisionCommentVersionAdmin):
+    list_display = ("identifier", "title")
+    search_fields = ("identifier", "translations__title")
+
+
+@admin.register(ServiceQualityPage)
+class ServiceQualityPageAdmin(RevisionCommentVersionAdmin):
+    list_display = ("url",)
+    search_fields = ("url",)
+
+
+@admin.register(ProvenanceStatement)
+class ProvenanceStatementAdmin(RevisionCommentVersionAdmin):
+    list_display = ("url", "description")
+
+
+@admin.register(Activity)
+class ActivityAdmin(RevisionCommentVersionAdmin):
+    list_display = ("title",)
+    search_fields = ("title",)
 
 
 admin.site.register(AreaOfManagement, AreaOfManagementAdmin)

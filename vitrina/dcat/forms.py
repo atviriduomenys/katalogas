@@ -9,7 +9,7 @@ from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm, TranslatedField
 from django.utils.translation import gettext_lazy as _
 
-from vitrina.classifiers.models import Concept
+from vitrina.classifiers.models import Concept, LANGUAGE_CONCEPT_SCHEMA_URI
 from vitrina.datasets.form_helpers import (
     validate_dataset_name,
     validate_applicable_legislation,
@@ -18,6 +18,7 @@ from vitrina.datasets.form_helpers import (
     set_default_agent_endpoint_fields,
     validate_agent_endpoint_fields,
     DATA_SERVICE_STANDARD_URI,
+    DATASET_STANDARD_URI,
 )
 from vitrina.datasets.models import Dataset, Contact
 from vitrina.fields import StringListField
@@ -82,7 +83,11 @@ class ContactFormMixin(forms.Form):
     def _populate_contact_choices(self) -> None:
         """Populate contact choices grouped by organization."""
         self.fields["contact"].choices = [("", "---------")] + get_contact_form_choices(self.organization)
-        self.fields["contact"].initial = self.instance.contact.content_object.id if self.instance.contact else None
+        self.fields["contact"].initial = (
+            self.instance.contact.content_object.id
+            if self.instance.contact and self.instance.contact.content_object
+            else None
+        )
 
 
 class BaseResourceForm(TranslatableModelForm):
@@ -154,12 +159,14 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "name",
             "information_system_importance",
             "information_system_type",
+            "information_system_assesment_url",
             "description",
             "identifier",
             "information_system_publisher",
             "information_system_creator",
             "title",
             "landing_page",
+            "languages",
             "applicable_legislation",
             "conditions",
             "rights_relation",
@@ -170,6 +177,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "information_system_type": Select2Widget,
             "information_system_publisher": Select2Widget,
             "information_system_creator": Select2Widget,
+            "languages": Select2MultipleWidget,
         }
 
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
@@ -206,6 +214,13 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         ).prefetch_related("translations")
         self.fields["information_system_importance"].label_from_instance = lambda obj: str(obj.translated_label)
 
+        self.fields["information_system_assesment_url"].required = True
+
+        self.fields["languages"].queryset = Concept.objects.filter(
+            concept_schemas__uri=LANGUAGE_CONCEPT_SCHEMA_URI
+        ).prefetch_related("translations")
+        self.fields["languages"].label_from_instance = lambda obj: str(obj.translated_label)
+
     def clean(self) -> None:
         rights_relation = self.cleaned_data.get("rights_relation")
         conditions = self.cleaned_data.get("conditions")
@@ -241,6 +256,12 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         help_text=_("Nurodo kokį standartą atitinka paslauga. Atitinka dct:conformsTo."),
         widget=Select2Widget,
     )
+    service_quality = StringListField(
+        label=_("Paslaugos kokybė"),
+        help_text=_("Tinklalapis su išsamia informacija apie teikiamos paslaugos kokybę. Atitinka foaf:page."),
+        required=False,
+        unique=True,
+    )
 
     class Meta:
         model = Dataset
@@ -258,7 +279,10 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "access_rights",
             "conforms_to",
             "description",
+            "follows",
             "landing_page",
+            "license",
+            "service_quality",
             "service_type",
         )
 
@@ -267,6 +291,8 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "endpoint_type": Select2Widget,
             "endpoint_description_type": Select2Widget,
             "access_rights": Select2Widget,
+            "follows": Select2MultipleWidget,
+            "license": Select2Widget,
             "service_type": Select2MultipleWidget,
         }
 
@@ -285,6 +311,7 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         self.fields["tags"].required = True
         self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=self.organization)
         self.fields["contact"].required = True
+        self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
@@ -312,6 +339,13 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         required=False,
         unique=True,
     )
+    conforms_to = forms.ModelChoiceField(
+        Concept.objects.filter(concept_schemas__uri=DATASET_STANDARD_URI).prefetch_related("translations"),
+        label=_("Atitinka"),
+        required=False,
+        help_text=_("Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."),
+        widget=Select2Widget,
+    )
 
     class Meta:
         model = Dataset
@@ -324,19 +358,28 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "temporal_start",
             "temporal_end",
             "access_rights",
+            "conforms_to",
             "documentation",
             "frequency",
             "landing_page",
+            "languages",
+            "provenance",
             "contact",
             "spatial_resolution",
             "temporal_resolution",
+            "dataset_type",
+            "was_generated_by",
             "applicable_legislation",
         )
         widgets = {
-            "access_rights": Select2Widget,
-            "frequency": Select2Widget,
             "temporal_start": forms.TextInput(attrs={"type": "date"}),
             "temporal_end": forms.TextInput(attrs={"type": "date"}),
+            "access_rights": Select2Widget,
+            "frequency": Select2Widget,
+            "languages": Select2MultipleWidget,
+            "provenance": Select2MultipleWidget,
+            "dataset_type": Select2Widget,
+            "was_generated_by": Select2MultipleWidget,
         }
 
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
@@ -345,6 +388,21 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
         instance: Dataset | None = self.instance if self.instance and self.instance.pk else None
         if instance:
             self.initial["documentation"] = list(instance.documentation.values_list("documentation_link", flat=True))
+
+        self.fields["dataset_type"].queryset = (
+            Concept.objects.filter(concept_schemas__uri=Dataset.DATASET_TYPE_SCHEME_URI)
+            .prefetch_related("translations")
+            .distinct()
+        )
+        self.fields["dataset_type"].label_from_instance = lambda obj: obj.safe_translation_getter(
+            "label", any_language=True
+        )
+        self.fields["languages"].queryset = Concept.objects.filter(
+            concept_schemas__uri=LANGUAGE_CONCEPT_SCHEMA_URI
+        ).prefetch_related("translations")
+        self.fields["languages"].label_from_instance = lambda obj: obj.safe_translation_getter(
+            "label", any_language=True
+        )
 
         self.helper.layout = Layout(
             Field("parent"),
@@ -357,12 +415,17 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
                 Field("temporal_end"),
             ),
             Field("access_rights"),
+            Field("conforms_to"),
             Field("documentation"),
             Field("frequency"),
             Field("landing_page"),
+            Field("languages"),
+            Field("provenance"),
             Field("contact"),
             Field("spatial_resolution"),
             Field("temporal_resolution"),
+            Field("dataset_type"),
+            Field("was_generated_by"),
             Field("applicable_legislation"),
         )
 

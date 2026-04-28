@@ -4,12 +4,15 @@ import factory
 from factory.django import DjangoModelFactory
 
 from vitrina.classifiers.models import (
+    Activity,
     Category,
     Frequency,
     Licence,
     AreaOfManagement,
     GeoportalCategory,
     GeoportalFrequency,
+    ProvenanceStatement,
+    Rule,
     Status,
     Concept,
     ConceptSchema,
@@ -122,3 +125,25 @@ class DocumentationFactory(DjangoModelFactory):
         django_get_or_create = ("documentation_link",)
 
     documentation_link = factory.Faker("url")
+
+
+class RuleFactory(DjangoModelFactory):
+    class Meta:
+        model = Rule
+
+    identifier = factory.Sequence(lambda n: f"rule-{n}")
+
+
+class ProvenanceStatementFactory(DjangoModelFactory):
+    class Meta:
+        model = ProvenanceStatement
+
+    url = factory.Faker("url")
+    description = factory.Faker("sentence")
+
+
+class ActivityFactory(DjangoModelFactory):
+    class Meta:
+        model = Activity
+
+    title = factory.Faker("catch_phrase")

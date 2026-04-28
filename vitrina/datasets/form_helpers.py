@@ -23,6 +23,8 @@ from vitrina.users.models import User
 DATA_SERVICE_STANDARD_URI = (
     f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}/id/non-standard/DataServiceStandard"
 )
+DATASET_STANDARD_URI = "https://data.gov.lt/id/non-standard/DatasetStandard"
+
 UAPI_CONCEPT_CODE = "UAPI"
 JSON_FORMAT = "JSON"
 OPENAPI_FORMAT = "OpenAPI"

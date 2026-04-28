@@ -10,6 +10,10 @@ Improvements:
 - Adds variable `Agency.RISR_CODE = "risr"` and uses it throughout the code.
 - Moves some code from `Dataset` form and view to separate methods so that it can be reused. It's mostly copy-paste code
 
+https://github.com/atviriduomenys/spinta/issues/1874
+
+Add an additional error message indicating, that the external reference is not found, during manifest import.
+
 Bug fixes:
 
 https://github.com/atviriduomenys/dvms/issues/549

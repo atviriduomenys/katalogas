@@ -3112,3 +3112,49 @@ def test_structure_number_enums(app: DjangoTestApp):
     enum_items = enum.enumitem_set.all()
     assert enum_items.count() == 2
     assert list(enum_items.values_list("metadata__prepare", flat=True)) == ["1.2", "1.4"]
+
+
+@pytest.mark.django_db
+def test_unresolvable_ref_creates_structure_error_comment(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,continent,ref,nonexistent/Continent,,,5,,,open,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    model = Model.objects.get(metadata__uuid="1")
+    model_ct = ContentType.objects.get_for_model(Model)
+    error_comments = Comment.objects.filter(
+        type=Comment.STRUCTURE_ERROR,
+        content_type=model_ct,
+        object_id=model.pk,
+    )
+    assert error_comments.count() == 1
+    assert error_comments.first().body == (
+        "Nepavyko susieti savybės „continent“ per nurodytą ryšį „datasets/gov/ivpk/adp/nonexistent/Continent“. "
+        "Įsitikinkite, kad nurodytas modelis egzistuoja."
+    )
+
+
+@pytest.mark.django_db
+def test_resolvable_ref_does_not_create_structure_error_comment(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,level,status,visibility,access,uri,eli,title,description,count\n"
+        ",datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "1,,,,Country,,,,,,,,,,,,,,\n"
+        ",,,,,continent,ref,Continent,,,5,,,open,,,,,,\n"
+        "2,,,,Continent,,,,,,,,,,,,,,\n"
+        ",,,,,id,integer,,,,5,,,open,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    create_structure_objects(structure)
+
+    content_type_model = ContentType.objects.get_for_model(Model)
+    assert Comment.objects.filter(type=Comment.STRUCTURE_ERROR, content_type=content_type_model).count() == 0

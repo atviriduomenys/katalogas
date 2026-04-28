@@ -26,7 +26,13 @@ from vitrina.classifiers.models import (
     Frequency,
     Concept,
     ApplicableLegislation,
+    Rule,
     Status,
+    Licence,
+    LANGUAGE_CONCEPT_SCHEMA_URI,
+    ProvenanceStatement,
+    Activity,
+    ServiceQualityPage,
 )
 from vitrina.utils import translate_text
 from vitrina.datasets.managers import (
@@ -207,6 +213,7 @@ class Dataset(Resource):
     INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI = "dcataplt:Importance"
     INFORMATION_SYSTEM_TYPE_SCHEMA_URI = "dcataplt:Type"
     SERVICE_TYPE_SCHEME_URI = "http://publications.europa.eu/resource/authority/data-service-type"
+    DATASET_TYPE_SCHEME_URI = "http://publications.europa.eu/resource/authority/dataset-type"
 
     translations = TranslatedFields(
         title=models.TextField(
@@ -304,11 +311,21 @@ class Dataset(Resource):
         verbose_name=_("Duomenų išteklius viešinamas"),
     )
 
+    # Used only in Partner API. Fields are set, but never used. Should be migrated to use languages field.
     language = models.CharField(
         max_length=255,
         blank=True,
         null=True,
     )
+    languages = models.ManyToManyField(
+        Concept,
+        blank=True,
+        related_name="languages",
+        verbose_name=_("Kalba"),
+        help_text=_("Ši savybė nurodo duomenų ištekliaus kalbą. Atitinka dct:language."),
+        limit_choices_to={"concept_schemas__uri": LANGUAGE_CONCEPT_SCHEMA_URI},
+    )
+
     spatial_coverage = models.CharField(
         max_length=255,
         blank=True,
@@ -479,6 +496,16 @@ class Dataset(Resource):
             "Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Importance."
         ),
     )
+    information_system_assesment_url = models.URLField(
+        null=True,
+        blank=True,
+        max_length=512,
+        verbose_name=_("Informacinės sistemos svarbos vertinimas"),
+        help_text=_(
+            "URL nuoroda į informacinės sistemos svarbos vertinimo dokumentą. "
+            "Atitinka dcataplt:ISImportanceAssessmentURL."
+        ),
+    )
     temporal_start = models.DateField(
         blank=True,
         null=True,
@@ -530,10 +557,43 @@ class Dataset(Resource):
         related_name="datasets",
         blank=True,
     )
+    follows = models.ManyToManyField(
+        Rule,
+        blank=True,
+        related_name="datasets",
+        verbose_name=_("Taisyklė"),
+        help_text=_("Nurodo taisyklę, kuria vadovaujamasi. Atitinka cpsv:follows."),
+    )
+    license = models.ForeignKey(
+        Licence,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        verbose_name=_("Licencija"),
+        help_text=_("Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga. Atitinka dct:license."),
+    )
     documentation = models.ManyToManyField(
         verbose_name=_("Dokumentacija"),
         to="Documentation",
         blank=True,
+    )
+    service_quality = models.ManyToManyField(
+        ServiceQualityPage,
+        blank=True,
+        verbose_name=_("Paslaugos kokybė"),
+        help_text=_("Tinklalapis su išsamia informacija apie teikiamos paslaugos kokybę. Atitinka foaf:page."),
+    )
+    provenance = models.ManyToManyField(
+        ProvenanceStatement,
+        blank=True,
+        verbose_name=_("Kilmė"),
+        help_text=_("Deklaracija apie duomenų rinkinio kilmę. Atitinka dct:provenance."),
+    )
+    was_generated_by = models.ManyToManyField(
+        Activity,
+        blank=True,
+        verbose_name=_("Buvo sukurtas dėl"),
+        help_text=_("Veikla, dėl kurios buvo sukurtas duomenų rinkinys. Atitinka prov:wasGeneratedBy."),
     )
 
     rights_relation = models.URLField(
@@ -557,6 +617,23 @@ class Dataset(Resource):
         null=True,
         blank=True,
         help_text=_("Nurodo, kokį standartą atitinka išteklius. Atitinka dct:conformsTo"),
+    )
+    service_type = models.ManyToManyField(
+        Concept,
+        blank=True,
+        related_name="dataset_service_types",
+        verbose_name=_("Tipas"),
+        help_text=_("Paslaugos tipas. Atitinka dct:type"),
+    )
+    dataset_type = models.ForeignKey(
+        Concept,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        related_name="datasets",
+        verbose_name=_("Tipas"),
+        help_text=_("Duomenų rinkinio tipas. Atitinka dct:type."),
+        limit_choices_to={"concept_schemas__uri": DATASET_TYPE_SCHEME_URI},
     )
 
     # TODO: To be removed:
@@ -635,13 +712,6 @@ class Dataset(Resource):
     restricted = PermittedDatasetManager()
     edp_public = EdpPublicDatasetManager()
     edp_restricted = EdpRestrictedDatasetManager()
-    service_type = models.ManyToManyField(
-        Concept,
-        blank=True,
-        related_name="dataset_service_types",
-        verbose_name=_("Tipas"),
-        help_text=_("Paslaugos tipas. Atitinka dct:type"),
-    )
 
     class Meta:
         db_table = "dataset"
@@ -1548,6 +1618,15 @@ class Dataset(Resource):
             documentations.append(documentation)
 
         self.documentation.set(documentations)
+
+    def update_service_quality(self, urls: list[str]) -> None:
+        service_qualities: list[ServiceQualityPage] = []
+
+        for url in urls:
+            service_quality, created = ServiceQualityPage.objects.get_or_create(url=url)
+            service_qualities.append(service_quality)
+
+        self.service_quality.set(service_qualities)
 
     def get_dependent_models(self, version: Version | None = None) -> list[dict]:
         """

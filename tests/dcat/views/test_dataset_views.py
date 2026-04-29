@@ -20,7 +20,7 @@ from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_UR
 from vitrina.datasets.form_helpers import DATASET_STANDARD_URI
 from vitrina.datasets.factories import ContactFactory, DatasetFactory, DCATResourceSubclassFactory
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
-from vitrina.dcat.forms import (
+from vitrina.dcat.forms.dataset_forms import (
     DatasetResourceForm,
     InformationSystemResourceForm,
     ServiceResourceForm,

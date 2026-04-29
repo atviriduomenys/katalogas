@@ -1,7 +1,15 @@
 Changes
 #######
 
-v 1.19.0 (current)
+v 1.20.0 (current)
+==================
+
+https://github.com/atviriduomenys/spinta/issues/1874
+
+- Add an additional error message indicating, that the external reference is not found, during manifest import.
+
+
+v 1.19.0 (2026-04-29)
 ==================
 
 Improvements:
@@ -9,10 +17,6 @@ Improvements:
 - Adds `dcat` app. It will be used for new Dataset CRUD that only changes non-public datasets.
 - Adds variable `Agency.RISR_CODE = "risr"` and uses it throughout the code.
 - Moves some code from `Dataset` form and view to separate methods so that it can be reused. It's mostly copy-paste code
-
-https://github.com/atviriduomenys/spinta/issues/1874
-
-Add an additional error message indicating, that the external reference is not found, during manifest import.
 
 Bug fixes:
 

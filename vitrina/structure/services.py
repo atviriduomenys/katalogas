@@ -1482,6 +1482,12 @@ def _link_properties(
                         PropertyList.objects.filter(
                             content_type=ct, object_id=prop.pk, metadata_version=metadata_version
                         ).delete()
+                else:
+                    message = _(
+                        "Nepavyko susieti savybės „%(name)s“ per nurodytą ryšį „%(ref)s“. "
+                        "Įsitikinkite, kad nurodytas modelis egzistuoja."
+                    ) % {"name": prop_meta.name, "ref": prop_meta.ref}
+                    _create_errors([message], model)
 
 
 def _link_denorm_props(

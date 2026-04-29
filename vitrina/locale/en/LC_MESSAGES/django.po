@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-22 11:16+0300\n"
+"POT-Creation-Date: 2026-04-28 10:29+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,12 +17,6 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-
-msgid "Organizacija"
-msgstr "Organization"
-
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -58,6 +52,9 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
+
+msgid "Organizacija"
+msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -114,9 +111,11 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
+#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
+#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -227,21 +226,27 @@ msgstr "Applicable legislation"
 msgid "Teisiniai pagrindai"
 msgstr "Applicable legislation"
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
+#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
+#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
+#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
+#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -684,21 +689,8 @@ msgstr "The notation must match the pattern: %(pattern)s"
 
 #, python-brace-format
 msgid "Nepavyko rasti `{0}` pasirinkimų sąraše. Susisiekite su administracija."
-msgstr "Could not find {0} in the list of choices. Please contact the administration."
-
-msgid "Pasirinkite agentą, arba nurodykite API adresą."
-msgstr "Select an agent or specify an API address."
-
-msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
-msgstr "Select an agent or specify an API specification."
-
-msgid ""
-"UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
-"Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
 msgstr ""
-"Services that comply with the UAPI standard must be associated with an "
-"agent. Select an agent or choose a different value for the 'Conforms to' "
-"field."
+"Could not find {0} in the list of choices. Please contact the administration."
 
 msgid "Pasirinkus agentą, šis laukas negali būti užpildytas."
 msgstr "If agent is selected, this field must be left emtpy."
@@ -713,6 +705,20 @@ msgstr "If an agent is selected, the API specification format must be '{0}'."
 
 msgid "Su agentu susietos paslaugos privalo atitikti UDTS standartą."
 msgstr "Services associated with an agent must comply with the UAPI standard."
+
+msgid "Pasirinkite agentą, arba nurodykite API adresą."
+msgstr "Select an agent or specify an API address."
+
+msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
+msgstr "Select an agent or specify an API specification."
+
+msgid ""
+"UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
+"Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+msgstr ""
+"Services that comply with the UAPI standard must be associated with an "
+"agent. Select an agent or choose a different value for the 'Conforms to' "
+"field."
 
 msgid "Duomenų ištekliaus rūšis"
 msgstr "Resource subclass"
@@ -1586,6 +1592,9 @@ msgstr "Delete"
 
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
@@ -4837,6 +4846,14 @@ msgstr "Invalid"
 msgid ""
 "Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
 msgstr "Ensure, that it exists and has a confirmed (stable) version."
+
+#, python-format
+msgid ""
+"Nepavyko susieti savybės „%(name)s“ per nurodytą ryšį „%(ref)s“. "
+"Įsitikinkite, kad nurodytas modelis egzistuoja."
+msgstr ""
+"Failed to link property \"%(name)s\" through the specified relation "
+"\"%(ref)s\". Make sure the specified model exists."
 
 msgid "Nepavyko gauti duomenų iš Saugyklos per nustatytą laiką"
 msgstr "Failed to retrieve data from Storage within the allotted time"

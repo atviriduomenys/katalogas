@@ -23,7 +23,12 @@ from vitrina.datasets.view_helpers import (
     create_dataset_representative_and_attribution,
     create_tasks_and_notify_subscribers_about_dataset_update,
 )
-from vitrina.dcat.forms import InformationSystemResourceForm, BaseResourceForm, ServiceResourceForm, DatasetResourceForm
+from vitrina.dcat.forms.dataset_forms import (
+    InformationSystemResourceForm,
+    BaseResourceForm,
+    ServiceResourceForm,
+    DatasetResourceForm,
+)
 from vitrina.identifiers.models import Agency, Identifier
 from vitrina.orgs.models import Organization
 from vitrina.orgs.services import Action, has_perm

@@ -1,0 +1,60 @@
+{% extends "base_form.html" %}
+{% load crispy_forms_tags %}
+
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block head %}
+    <style>
+        {# Match select width #}
+        div.select, .select2.select2-container {
+            width: 100% !important;
+        }
+        {# Match select height and border color #}
+        .select2.select2-container .select2-selection--single {
+            height: 2.5rem;
+            padding: 6px 12px;
+            border-color: #767676;
+        }
+        {# Match select dropdown border color #}
+        .select2-container .select2-dropdown {
+            border-color: #767676;
+        }
+        {# Match select2 dropdown arrow #}
+        .select2-selection__arrow {
+            display: none;
+        }
+        {# Make selection choice delete button border span the full height choice #}
+        .select2-container .select2-selection--multiple .select2-selection__choice__remove {
+            height: 100%;
+        }
+        {# Fix search text leaking below the field border because of select2 version mismatch #}
+        {# Tag field uses select2 4.1.0 and other fields uses select2 4.0.13  #}
+        .select2-container .select2-selection--multiple .select2-selection__rendered {
+            overflow: visible !important;
+            white-space: normal !important;
+            display: inline !important;
+        }
+        .select2-container .select2-selection--multiple .select2-selection__choice {
+            float: none !important;
+            padding-left: 20px !important;  {# Fix choice remove button overlapping the tag text #}
+        }
+        .select2-container .select2-search--inline {
+            float: none !important;
+        }
+    </style>
+{% endblock %}
+
+{% block content %}
+    <div class="columns is-centered">
+        <div class="column is-half">
+            {% crispy form %}
+        </div>
+    </div>
+{% endblock %}

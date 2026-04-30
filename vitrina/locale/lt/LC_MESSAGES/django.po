@@ -3542,11 +3542,6 @@ msgstr ""
 msgid "Statusas"
 msgstr ""
 
-msgid ""
-"Pateiktis gali būti įgyvendinta - veikianti, kuriama, suplanuota kūrimui, "
-"pasenusi arba atsisakyta."
-msgstr ""
-
 msgid "Ar pateiktis yra didelės vertės"
 msgstr ""
 

@@ -152,7 +152,10 @@ class DatasetDistribution(TranslatableModel):
         max_length=255,
         blank=True,
         verbose_name=_("Prieigos nuoroda"),
-        help_text=_("Nuoroda į svetainę iš kurios galima atsisiųsti duomenis."),
+        help_text=_(
+            "Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo nuorodas. "
+            "Atitinka dcat:accessUrl."
+        ),
     )
 
     format = models.ForeignKey(
@@ -160,8 +163,9 @@ class DatasetDistribution(TranslatableModel):
         models.SET_NULL,
         blank=False,
         null=True,
-        verbose_name=_("Duomenų formatas"),
         related_name="format_distributions",
+        verbose_name=_("Duomenų formatas"),
+        help_text=_("Pateikties failų formatas. Atitinka dct:format."),
     )
     compression_format = models.ForeignKey(
         CompressionFormat,
@@ -169,20 +173,29 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Suspausto failo formatas"),
+        help_text=_(
+            "Ši savybė nurodo failo, kuriame yra duomenys, formatą suspaustoje formoje. Atitinka dcat:compressFormat."
+        ),
     )
     packaging_format = models.ForeignKey(
         PackagingFormat,
         models.SET_NULL,
         blank=True,
         null=True,
-        verbose_name=_("Suspausto failų paketo formatas"),
+        verbose_name=_("(Failų) Pakavimo formatas"),
+        help_text=_(
+            "Ši savybė nurodo failo, kuriame yra vienas ar daugiau duomenų, formatą. Atitinka dcat:packageFormat."
+        ),
     )
 
     download_url = models.TextField(
         blank=True,
         null=True,
         verbose_name=_("Atsisiuntimo nuoroda"),
-        help_text=_("Tiesioginė duomenų atsisiuntimo nuoroda."),
+        help_text=_(
+            "Tiesioginė duomenų atsisiuntimo nuoroda. Ši nuoroda turi rodyti tiesiogiai į CSV, JSON "
+            "ar kito formato duomenų failą. Atitinka dcat:downloadURL."
+        ),
     )
 
     file = FilerFileField(
@@ -211,7 +224,12 @@ class DatasetDistribution(TranslatableModel):
     issued = models.CharField(max_length=255, blank=True, null=True)
     comment = models.TextField(blank=True, null=True)
     data_service = models.ForeignKey(
-        "vitrina_datasets.Dataset", models.SET_NULL, null=True, related_name="data_service_distributions"
+        "vitrina_datasets.Dataset",
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name="data_service_distributions",
+        verbose_name=_("Duomenų paslauga"),
+        help_text=_("Duomenų paslauga, per kurią prieinama duomenų pateiktis. Atitinka dcat:accessService."),
     )
     is_parameterized = models.BooleanField(default=False, verbose_name=_("Parametrizuotas"))
     upload_to_storage = models.BooleanField(default=False, verbose_name=_("Įkėlimas į saugyklą"))
@@ -222,6 +240,7 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
         verbose_name=_("Licencija"),
+        help_text=_("Licencija, pagal kurią platinamas pateikimas. Atitinka dct:license."),
     )
     applicable_legislation = models.ManyToManyField(
         ApplicableLegislation,
@@ -251,9 +270,7 @@ class DatasetDistribution(TranslatableModel):
         on_delete=models.PROTECT,
         related_name="dataset_distributions",
         verbose_name=_("Statusas"),
-        help_text=_(
-            "Duomenų distribucija gali būti įgyvendinta - veikianti, kuriama, suplanuota kūrimui, pasenusi arba atsisakyta.",
-        ),
+        help_text=_("Nurodomas pateikties brandos lygmuo. Atitinka adms:status."),
         default=get_default_status,
     )
 
@@ -301,7 +318,11 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         null=True,
     )
-    name = models.CharField(_("Vardas"), max_length=255, blank=True)
+    name = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name=_("Kodinis pavadinimas"),
+    )
     level = models.IntegerField(_("Brandos lygis"), null=True, blank=True)
 
     class Meta:

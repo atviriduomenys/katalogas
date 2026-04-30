@@ -496,7 +496,7 @@ class Dataset(Resource):
             "Informacinės sistemos svarba pagal Valstybės informacinių išteklių valdymo įstatymo reikalavimus. Atitinka dcataplt:Importance."
         ),
     )
-    information_system_assesment_url = models.URLField(
+    information_system_assessment_url = models.URLField(
         null=True,
         blank=True,
         max_length=512,

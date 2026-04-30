@@ -24,7 +24,7 @@ class Migration(migrations.Migration):
         ),
         migrations.AddField(
             model_name='dataset',
-            name='information_system_assesment_url',
+            name='information_system_assessment_url',
             field=models.URLField(blank=True, help_text='URL nuoroda į informacinės sistemos svarbos vertinimo dokumentą. Atitinka dcataplt:ISImportanceAssessmentURL.', max_length=512, null=True, verbose_name='Informacinės sistemos svarbos vertinimas'),
         ),
         migrations.AddField(

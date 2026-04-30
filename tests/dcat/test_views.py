@@ -173,7 +173,7 @@ class TestDcatDatasetCreateView:
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
         form["information_system_creator"] = org.pk
-        form["information_system_assesment_url"] = "https://example.com/assessment"
+        form["information_system_assessment_url"] = "https://example.com/assessment"
         response = form.submit()
 
         dataset = Dataset.objects.filter(translations__title="Test Redirect").first()
@@ -213,7 +213,7 @@ class TestDcatDatasetCreateView:
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = publisher_org.pk
         form["information_system_creator"] = creator_org.pk
-        form["information_system_assesment_url"] = "https://example.com/assessment"
+        form["information_system_assessment_url"] = "https://example.com/assessment"
         form["landing_page"] = "https://example.com/landing"
         form["conditions"] = "Some conditions text"
         form["tags"] = "tagA, tagB"
@@ -238,7 +238,7 @@ class TestDcatDatasetCreateView:
         assert dataset.information_system_type == is_type
         assert dataset.information_system_publisher == publisher_org
         assert dataset.information_system_creator == creator_org
-        assert dataset.information_system_assesment_url == "https://example.com/assessment"
+        assert dataset.information_system_assessment_url == "https://example.com/assessment"
         assert dataset.landing_page == "https://example.com/landing"
         assert dataset.conditions == "Some conditions text"
         assert set(dataset.tags.all().values_list("name", flat=True)) == {"taga", "tagb"}
@@ -388,7 +388,7 @@ class TestDcatDatasetCreateView:
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
         form["information_system_creator"] = org.pk
-        form["information_system_assesment_url"] = "https://example.com/assessment"
+        form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
 
         child = Dataset.objects.filter(translations__title="Child Dataset").first()
@@ -418,7 +418,7 @@ class TestDcatDatasetCreateView:
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
         form["information_system_creator"] = org.pk
-        form["information_system_assesment_url"] = "https://example.com/assessment"
+        form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
 
         dataset = Dataset.objects.filter(translations__title="Test Dataset").first()
@@ -690,7 +690,7 @@ class TestDcatDatasetUpdateView:
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
         form["information_system_creator"] = org.pk
-        form["information_system_assesment_url"] = "https://example.com/assessment"
+        form["information_system_assessment_url"] = "https://example.com/assessment"
         response = form.submit()
 
         assert response.status_code == 302
@@ -739,7 +739,7 @@ class TestDcatDatasetUpdateView:
         form["information_system_type"] = new_is_type.pk
         form["information_system_publisher"] = publisher_org.pk
         form["information_system_creator"] = creator_org.pk
-        form["information_system_assesment_url"] = "https://example.com/updated-assessment"
+        form["information_system_assessment_url"] = "https://example.com/updated-assessment"
         form["landing_page"] = "https://example.com/updated"
         form["conditions"] = "Updated conditions"
         form["tags"] = "updatedTag"
@@ -757,7 +757,7 @@ class TestDcatDatasetUpdateView:
         assert dataset.information_system_type == new_is_type
         assert dataset.information_system_publisher == publisher_org
         assert dataset.information_system_creator == creator_org
-        assert dataset.information_system_assesment_url == "https://example.com/updated-assessment"
+        assert dataset.information_system_assessment_url == "https://example.com/updated-assessment"
         assert dataset.landing_page == "https://example.com/updated"
         assert dataset.conditions == "Updated conditions"
         assert set(dataset.tags.all().values_list("name", flat=True)) == {"updatedtag"}
@@ -905,7 +905,7 @@ class TestDcatDatasetUpdateView:
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
         form["information_system_creator"] = org.pk
-        form["information_system_assesment_url"] = "https://example.com/assessment"
+        form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
 
         metadata = Metadata.objects.get(dataset=dataset)
@@ -938,7 +938,7 @@ class TestDcatDatasetUpdateView:
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
         form["information_system_creator"] = org.pk
-        form["information_system_assesment_url"] = "https://example.com/assessment"
+        form["information_system_assessment_url"] = "https://example.com/assessment"
         form["parent"] = parent.pk
         form.submit()
 
@@ -970,7 +970,7 @@ class TestDcatDatasetUpdateView:
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
         form["information_system_creator"] = org.pk
-        form["information_system_assesment_url"] = "https://example.com/assessment"
+        form["information_system_assessment_url"] = "https://example.com/assessment"
         form["parent"].force_value("")
         form.submit()
 
@@ -1064,7 +1064,7 @@ class TestDcatDatasetUpdateView:
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
         form["information_system_creator"] = org.pk
-        form["information_system_assesment_url"] = "https://example.com/assessment"
+        form["information_system_assessment_url"] = "https://example.com/assessment"
         form.submit()
 
         dataset.refresh_from_db()

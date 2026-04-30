@@ -159,7 +159,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "name",
             "information_system_importance",
             "information_system_type",
-            "information_system_assesment_url",
+            "information_system_assessment_url",
             "description",
             "identifier",
             "information_system_publisher",
@@ -214,7 +214,7 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
         ).prefetch_related("translations")
         self.fields["information_system_importance"].label_from_instance = lambda obj: str(obj.translated_label)
 
-        self.fields["information_system_assesment_url"].required = True
+        self.fields["information_system_assessment_url"].required = True
 
         self.fields["languages"].queryset = Concept.objects.filter(
             concept_schemas__uri=LANGUAGE_CONCEPT_SCHEMA_URI

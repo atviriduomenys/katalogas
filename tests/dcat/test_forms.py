@@ -171,7 +171,7 @@ class TestInformationSystemResourceForm:
         assert not form.is_valid()
         assert "applicable_legislation" in form.errors
 
-    def test_information_system_assesment_url_is_required(self):
+    def test_information_system_assessment_url_is_required(self):
         organization = OrganizationFactory()
         importance_schema = ConceptSchema.objects.get(uri=Dataset.INFORMATION_SYSTEM_IMPORTANCE_SCHEMA_URI)
         importance = ConceptFactory(concept_schemas=[importance_schema])
@@ -190,7 +190,7 @@ class TestInformationSystemResourceForm:
         )
 
         assert not form.is_valid()
-        assert "information_system_assesment_url" in form.errors
+        assert "information_system_assessment_url" in form.errors
 
     def test_languages_queryset_filtered_to_language_concepts(self):
         organization = OrganizationFactory()
@@ -221,7 +221,7 @@ class TestInformationSystemResourceForm:
                 "information_system_importance": importance.pk,
                 "information_system_publisher": organization.pk,
                 "information_system_creator": organization.pk,
-                "information_system_assesment_url": "https://example.com/assessment",
+                "information_system_assessment_url": "https://example.com/assessment",
             },
         )
 

@@ -1231,7 +1231,7 @@ msgstr ""
 "on State Information Resources Management. (dcataplt:Importance)"
 
 msgid "Informacinės sistemos svarbos vertinimas"
-msgstr "Information system assessment"
+msgstr "Information system importance assessment"
 
 msgid ""
 "URL nuoroda į informacinės sistemos svarbos vertinimo dokumentą. Atitinka "

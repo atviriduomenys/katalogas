@@ -11,7 +11,8 @@ from filer.fields.file import FilerFileField
 from parler.managers import TranslatableManager
 from parler.models import TranslatableModel, TranslatedFields
 
-from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept
+from vitrina.classifiers.models import Licence, ApplicableLegislation, Concept, LANGUAGE_CONCEPT_SCHEMA_URI
+from vitrina.datasets.models import Documentation
 from vitrina.structure import AccessType
 from vitrina.structure.models import Metadata, Version
 from vitrina.helpers import get_file_extension
@@ -19,6 +20,10 @@ from vitrina.utils import translate_text
 from vitrina.datasets.tasks import update_applicable_legislation_description
 
 logger = logging.getLogger()
+
+
+DISTRIBUTION_AVAILABILITY_SCHEMA_URI = "http://publications.europa.eu/resource/authority/planned-availability"
+DISTRIBUTION_STANDARD_URI = "https://data.gov.lt/id/non-standard/DistributionStandard"
 
 
 def get_default_status() -> uuid.UUID:
@@ -127,6 +132,25 @@ class PackagingFormat(models.Model):
 
 class DatasetDistribution(TranslatableModel):
     DISTRIBUTION_STATUS_URI = "http://publications.europa.eu/resource/authority/distribution-status"
+    CHECKSUM_ALGORITHM_CHOICES = [
+        ("SHA1", "SHA1"),
+        ("SHA224", "SHA224"),
+        ("SHA256", "SHA256"),
+        ("SHA384", "SHA384"),
+        ("SHA512", "SHA512"),
+        ("SHA3-256", "SHA3-256"),
+        ("SHA3-384", "SHA3-384"),
+        ("SHA3-512", "SHA3-512"),
+        ("BLAKE2b-256", "BLAKE2b-256"),
+        ("BLAKE2b-384", "BLAKE2b-384"),
+        ("BLAKE2b-512", "BLAKE2b-512"),
+        ("BLAKE3", "BLAKE3"),
+        ("MD2", "MD2"),
+        ("MD4", "MD4"),
+        ("MD5", "MD5"),
+        ("MD6", "MD6"),
+        ("ADLER32", "ADLER32"),
+    ]
     UPLOAD_TO = "data"
     created = models.DateTimeField(blank=True, null=True, auto_now_add=True)
     modified = models.DateTimeField(blank=True, null=True, auto_now=True)
@@ -221,7 +245,19 @@ class DatasetDistribution(TranslatableModel):
 
     distribution_version = models.IntegerField(blank=True, null=True)
 
-    issued = models.CharField(max_length=255, blank=True, null=True)
+    issued = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_("Išleista"),
+        help_text=_("Data, kada pateiktis buvo pirmą kartą išleista. Atitinka dct:issued."),
+    )
+    date_modified = models.DateField(
+        blank=True,
+        null=True,
+        verbose_name=_("Atnaujinimo / pakeitimo data"),
+        help_text=_("Paskutinio pateikties atnaujinimo ar pakeitimo data. Atitinka dct:modified."),
+    )
     comment = models.TextField(blank=True, null=True)
     data_service = models.ForeignKey(
         "vitrina_datasets.Dataset",
@@ -247,6 +283,29 @@ class DatasetDistribution(TranslatableModel):
         verbose_name=_("Teisinis pagrindas"),
         related_name="dataset_distributions",
         blank=True,
+    )
+    language = models.ForeignKey(
+        Concept,
+        on_delete=models.PROTECT,
+        blank=True,
+        null=True,
+        verbose_name=_("Kalba"),
+        help_text=_("Ši savybė nurodo pateikties kalbą. Atitinka dct:language."),
+        limit_choices_to={"concept_schemas__uri": LANGUAGE_CONCEPT_SCHEMA_URI},
+    )
+    conforms_to = models.ManyToManyField(
+        Concept,
+        blank=True,
+        related_name="distribution_conforms_to",
+        verbose_name=_("Susijusi schema"),
+        help_text=_("Nurodo, kokį standartą ar schemą atitinka pateiktis. Atitinka dct:conformsTo."),
+    )
+    documentation = models.ManyToManyField(
+        Documentation,
+        blank=True,
+        related_name="distributions",
+        verbose_name=_("Puslapis (dokumentacija)"),
+        help_text=_("Nuorodos į dokumentus su informacija apie pateiktį. Atitinka foaf:page."),
     )
 
     temporal_resolution = models.CharField(
@@ -283,6 +342,41 @@ class DatasetDistribution(TranslatableModel):
     )
     is_hvd = models.BooleanField(_("Ar duomenų šaltinis yra didelės vertės"), default=False)
 
+    availability = models.ForeignKey(
+        Concept,
+        on_delete=models.PROTECT,
+        related_name="distributions",
+        blank=True,
+        null=True,
+        verbose_name=_("Prieinamumas"),
+        help_text=_(
+            "Ši savybė nurodo, kiek laiko planuojama išlaikyti duomenų rinkinio platinimą. "
+            "Atitinka dcatap:availability."
+        ),
+        limit_choices_to={"concept_schemas__uri": DISTRIBUTION_AVAILABILITY_SCHEMA_URI},
+    )
+    size = models.BigIntegerField(
+        blank=True,
+        null=True,
+        verbose_name=_("Dydis baitais"),
+        help_text=_("Pateikties dydis baitais. Atitinka dcat:byteSize."),
+    )
+    checksum_value = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        verbose_name=_("Kontrolinės sumos reikšmė"),
+        help_text=_("Šešioliktaine sistema užkoduota kontrolinės sumos reikšmė. Atitinka spdx:checksumValue."),
+    )
+    checksum_algorithm = models.CharField(
+        max_length=20,
+        blank=True,
+        null=True,
+        choices=CHECKSUM_ALGORITHM_CHOICES,
+        verbose_name=_("Kontrolinės sumos algoritmas"),
+        help_text=_("Algoritmas, naudojamas objekto kontrolinei sumai sukurti. Atitinka spdx:algorithm."),
+    )
+
     # Deprecated fields bellow
     period_start = models.DateField(
         blank=True,
@@ -297,7 +391,6 @@ class DatasetDistribution(TranslatableModel):
     type = models.CharField(max_length=255, blank=True, null=True)
     mime_type = models.CharField(max_length=255, blank=True, null=True)
     identifier = models.CharField(max_length=255, blank=True, null=True)
-    size = models.BigIntegerField(blank=True, null=True)
     filename = models.CharField(max_length=255, blank=True, null=True)
 
     metadata = GenericRelation("vitrina_structure.Metadata")
@@ -447,6 +540,15 @@ class DatasetDistribution(TranslatableModel):
 
         update_applicable_legislation_description.delay(legislation_ids_to_update)
         self.applicable_legislation.set(legislations)
+
+    def update_documentation(self, urls: list[str]) -> None:
+        documentations: list[Documentation] = []
+
+        for url in urls:
+            documentation, created = Documentation.objects.get_or_create(documentation_link=url)
+            documentations.append(documentation)
+
+        self.documentation.set(documentations)
 
     def create_or_reuse_metadata_instance_and_assign_version(self, metadata_version_id: int) -> Metadata:
         metadata_version = Version.objects.filter(pk=metadata_version_id).first()

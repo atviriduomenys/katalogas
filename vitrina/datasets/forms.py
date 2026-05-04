@@ -30,7 +30,7 @@ from treebeard.forms import MoveNodeForm
 
 from vitrina.datasets.form_helpers import (
     validate_dataset_name,
-    validate_applicable_legislation,
+    validate_urls,
     validate_identifier,
     get_contact_form_choices,
     DATA_SERVICE_STANDARD_URI,
@@ -279,7 +279,7 @@ class BaseResourceForm(TranslatableModelForm):
     def clean_applicable_legislation(self) -> list[str]:
         urls = self.cleaned_data.get("applicable_legislation", []) or []
 
-        item_errors = validate_applicable_legislation(urls)
+        item_errors = validate_urls(urls)
 
         if any(item_errors):
             self.fields["applicable_legislation"].widget.validation_errors = item_errors

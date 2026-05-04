@@ -4,41 +4,50 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.db.models import Case, When, IntegerField
 from django.forms.widgets import URLInput
-from django_select2.forms import Select2Widget
+from django_select2.forms import Select2Widget, Select2MultipleWidget
 from parler.forms import TranslatableModelForm
 
 from vitrina.classifiers.models import Concept, Licence
+from vitrina.datasets.form_helpers import validate_urls
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
+from vitrina.fields import StringListField
 from vitrina.resources.forms import CODE_ORDER
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, DISTRIBUTION_STANDARD_URI
 
 from django.utils.translation import gettext_lazy as _
 
 
 class DatasetDistributionForm(TranslatableModelForm):
+    documentation = StringListField(
+        label=_("Puslapis (dokumentacija)"),
+        help_text=_("Nuorodos į dokumentus su informacija apie pateiktį. Atitinka foaf:page."),
+        required=False,
+        unique=True,
+    )
+
     class Meta:
         model = DatasetDistribution
         fields = (
             "name",
             "access_url",
-            # Prieinamumas (dcatap:availability)
+            "availability",
             "title",
             "description",
             "data_service",
             "licence",
-            # Medijos tipas (dcat:mediaType)
+            # Medijos tipas (dcat:mediaType) 0..1
             "format",
             "compression_format",
             "packaging_format",
-            # Dydis baitais (dcat:byteSize)
-            # Politika (odrl:hasPolicy)
+            "size",
             "download_url",
-            # Kontrolinė suma (spdx:checksum)
-            # Išleista (dct:issued)
-            # Atnaujinimo / pakeitimo data (dct:modified)
-            # Kalba (dct:language)
-            # Susijusi schema (dct:conformsTo)
-            # Puslapis (dokumentacija) (foaf:page)
+            "checksum_value",
+            "checksum_algorithm",
+            "issued",
+            "date_modified",
+            "language",
+            "conforms_to",
+            "documentation",
             "conditions",
             "rights_relation",
             "spatial_resolution",
@@ -50,13 +59,19 @@ class DatasetDistributionForm(TranslatableModelForm):
             "download_url": forms.URLField,
         }
         widgets = {
+            "availability": Select2Widget,
             "data_service": Select2Widget,
             "licence": Select2Widget,
             "format": Select2Widget,
             "compression_format": Select2Widget,
             "packaging_format": Select2Widget,
+            "checksum_algorithm": Select2Widget,
             "download_url": URLInput,
             "status": Select2Widget,
+            "issued": forms.TextInput(attrs={"type": "date"}),
+            "date_modified": forms.TextInput(attrs={"type": "date"}),
+            "language": Select2Widget,
+            "conforms_to": Select2MultipleWidget,
         }
 
     def __init__(self, dataset: Dataset, *args, **kwargs) -> None:
@@ -80,6 +95,9 @@ class DatasetDistributionForm(TranslatableModelForm):
         self.fields["format"].required = False
         self.fields["compression_format"].queryset = self.fields["compression_format"].queryset.order_by("title")
         self.fields["packaging_format"].queryset = self.fields["packaging_format"].queryset.order_by("title")
+        self.fields["conforms_to"].queryset = Concept.objects.filter(
+            concept_schemas__uri=DISTRIBUTION_STANDARD_URI
+        ).prefetch_related("translations")
         self.fields["status"].queryset = (
             Concept.objects.filter(concept_schemas__uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
             .prefetch_related("translations")
@@ -97,8 +115,12 @@ class DatasetDistributionForm(TranslatableModelForm):
         if not self.resource and (default_licence := Licence.objects.filter(is_default=True).first()):
             self.initial["licence"] = default_licence
 
-        if self.resource and (resource_metadata := self.resource.metadata.first()):
-            self.initial["name"] = resource_metadata.name
+        if self.resource:
+            self.initial["documentation"] = list(
+                self.resource.documentation.values_list("documentation_link", flat=True)
+            )
+            if resource_metadata := self.resource.metadata.first():
+                self.initial["name"] = resource_metadata.name
 
     def clean(self) -> dict:
         if download_url := self.cleaned_data.get("download_url"):
@@ -121,7 +143,25 @@ class DatasetDistributionForm(TranslatableModelForm):
         if name := self.cleaned_data.get("name"):
             if not name.isascii():
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."))
-            if any(c.isupper() for c in name):
+            if any(character.isupper() for character in name):
                 raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
 
         return name
+
+    def clean_checksum_value(self) -> str:
+        if (checksum_value := self.cleaned_data.get("checksum_value")) and any(
+            character.isupper() for character in checksum_value
+        ):
+            raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
+
+        return checksum_value
+
+    def clean_documentation(self) -> list[str]:
+        documentation_urls = self.cleaned_data.get("documentation", []) or []
+
+        item_errors = validate_urls(documentation_urls)
+        if any(item_errors):
+            self.fields["documentation"].widget.validation_errors = item_errors
+            raise ValidationError(_("Yra klaidų sąraše."))
+
+        return [url for url in documentation_urls if url]  # Remove empty URL rows

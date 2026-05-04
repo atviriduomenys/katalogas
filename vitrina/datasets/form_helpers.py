@@ -69,7 +69,7 @@ def validate_dataset_name(name: str | None, dataset: Dataset | None, organizatio
             )
 
 
-def validate_applicable_legislation(urls: list[str]) -> list[str | None]:
+def validate_urls(urls: list[str]) -> list[str | None]:
     validator = URLValidator()
     item_errors = []
 

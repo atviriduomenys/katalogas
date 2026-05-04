@@ -1,12 +1,12 @@
 import pytest
 from django.contrib.contenttypes.models import ContentType
 
-from vitrina.classifiers.factories import ConceptFactory, LicenceFactory
+from vitrina.classifiers.factories import ConceptFactory, DocumentationFactory, LicenceFactory
 from vitrina.classifiers.models import ConceptSchema
 from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory
 from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.resources.factories import DatasetDistributionFactory
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import DatasetDistribution, DISTRIBUTION_STANDARD_URI
 from vitrina.structure.factories import MetadataFactory
 
 pytestmark = pytest.mark.django_db
@@ -66,6 +66,24 @@ class TestDatasetDistributionForm:
 
         assert form.initial["name"] == "my-resource-name"
 
+    def test_documentation_initial_set_from_resource_when_editing(self):
+        dataset = DatasetFactory()
+        distribution = DatasetDistributionFactory(dataset=dataset)
+        doc1 = DocumentationFactory(documentation_link="https://example.com/doc1")
+        doc2 = DocumentationFactory(documentation_link="https://example.com/doc2")
+        distribution.documentation.set([doc1, doc2])
+
+        form = DatasetDistributionForm(dataset, instance=distribution)
+
+        assert set(form.initial["documentation"]) == {"https://example.com/doc1", "https://example.com/doc2"}
+
+    def test_documentation_initial_not_set_when_creating(self):
+        dataset = DatasetFactory()
+
+        form = DatasetDistributionForm(dataset)
+
+        assert "documentation" not in form.initial
+
     def test_name_initial_not_set_when_no_metadata(self):
         dataset = DatasetFactory()
         distribution = DatasetDistributionFactory(dataset=dataset, name="")
@@ -85,6 +103,17 @@ class TestDatasetDistributionForm:
         assert non_public_service_dataset in form.fields["data_service"].queryset
         assert public_service_dataset not in form.fields["data_service"].queryset
         assert non_public_non_service_dataset not in form.fields["data_service"].queryset
+
+    def test_conforms_to_queryset_filtered_to_distribution_standard_concepts(self):
+        dataset = DatasetFactory()
+        standard_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_STANDARD_URI)
+        matching_concept = ConceptFactory(concept_schemas=[standard_schema])
+        other_concept = ConceptFactory()
+
+        form = DatasetDistributionForm(dataset)
+
+        assert matching_concept in form.fields["conforms_to"].queryset
+        assert other_concept not in form.fields["conforms_to"].queryset
 
     def test_status_queryset_filtered_to_distribution_status_concepts(self):
         dataset = DatasetFactory()
@@ -169,3 +198,51 @@ class TestDatasetDistributionForm:
         assert not form.is_valid()
         assert "name" in form.errors
         assert "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės." in form.errors["name"]
+
+    def test_uppercase_checksum_value_raises_error(self):
+        dataset = DatasetFactory()
+
+        form = DatasetDistributionForm(
+            dataset,
+            data={"access_url": "https://example.com", "checksum_value": "ABCDEF123"},
+        )
+
+        assert not form.is_valid()
+        assert "checksum_value" in form.errors
+        assert "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės." in form.errors["checksum_value"]
+
+    def test_lowercase_checksum_value_is_valid(self):
+        dataset = DatasetFactory()
+
+        form = DatasetDistributionForm(
+            dataset,
+            data={"access_url": "https://example.com", "checksum_value": "abcdef123"},
+        )
+
+        assert "checksum_value" not in form.errors
+
+    def test_invalid_documentation_url_raises_error(self):
+        dataset = DatasetFactory()
+
+        form = DatasetDistributionForm(
+            dataset,
+            data={"access_url": "https://example.com", "documentation": ["not-a-url"]},
+        )
+
+        assert not form.is_valid()
+        assert "documentation" in form.errors
+        assert "Yra klaidų sąraše." in form.errors["documentation"]
+
+    def test_valid_documentation_urls_are_accepted(self):
+        dataset = DatasetFactory()
+
+        form = DatasetDistributionForm(
+            dataset,
+            data={
+                "access_url": "https://example.com",
+                "documentation": ["https://example.com/doc1", "https://example.com/doc2"],
+            },
+        )
+
+        assert "documentation" not in form.errors
+        assert form.cleaned_data["documentation"] == ["https://example.com/doc1", "https://example.com/doc2"]

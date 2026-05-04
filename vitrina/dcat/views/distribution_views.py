@@ -61,6 +61,12 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
         distribution.name = name
         distribution.save()
 
+        if "documentation" in form.changed_data:
+            distribution.update_documentation(form.cleaned_data["documentation"])
+
+        if "conforms_to" in form.changed_data:
+            distribution.conforms_to.set(form.cleaned_data["conforms_to"])
+
         messages.success(self.request, _("Pateiktis sukurta sėkmingai!"))
         return HttpResponseRedirect(
             reverse(
@@ -125,7 +131,8 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
         return context
 
     def form_valid(self, form: DatasetDistributionForm) -> HttpResponseBase:
-        distribution = form.save()
+        distribution = form.save(commit=False)  # Skip saving m2m. We will save it manually
+        distribution.save()
 
         if metadata := distribution.metadata.first():
             metadata.name = form.cleaned_data.get("name")
@@ -133,6 +140,12 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
             metadata.description = form.cleaned_data.get("description")
             metadata.version += 1
             metadata.save()
+
+        if "documentation" in form.changed_data:
+            distribution.update_documentation(form.cleaned_data["documentation"])
+
+        if "conforms_to" in form.changed_data:
+            distribution.conforms_to.set(form.cleaned_data["conforms_to"])
 
         messages.success(self.request, _("Pateiktis atnaujinta sėkmingai!"))
         return HttpResponseRedirect(

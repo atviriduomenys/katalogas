@@ -6,7 +6,7 @@ from django.urls import reverse
 from django_webtest import DjangoTestApp
 
 from vitrina.classifiers.factories import ConceptFactory, LicenceFactory
-from vitrina.classifiers.models import ConceptSchema
+from vitrina.classifiers.models import ConceptSchema, LANGUAGE_CONCEPT_SCHEMA_URI
 from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory
 from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
 from vitrina.orgs.models import Representative
@@ -16,7 +16,11 @@ from vitrina.resources.factories import (
     FileFormat,
     PackagingFormatFactory,
 )
-from vitrina.resources.models import DatasetDistribution
+from vitrina.resources.models import (
+    DatasetDistribution,
+    DISTRIBUTION_AVAILABILITY_SCHEMA_URI,
+    DISTRIBUTION_STANDARD_URI,
+)
 from vitrina.structure.factories import MetadataFactory, VersionFactory
 from vitrina.users.factories import UserFactory
 
@@ -217,6 +221,12 @@ class TestDcatDistributionCreateView:
         packaging_format = PackagingFormatFactory()
         status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
         status = ConceptFactory(concept_schemas=[status_schema])
+        availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
+        availability = ConceptFactory(concept_schemas=[availability_schema])
+        language_schema, _ = ConceptSchema.objects.get_or_create(uri=LANGUAGE_CONCEPT_SCHEMA_URI)
+        language = ConceptFactory(concept_schemas=[language_schema])
+        standard_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_STANDARD_URI)
+        conforms_to_concept = ConceptFactory(concept_schemas=[standard_schema])
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -239,6 +249,15 @@ class TestDcatDistributionCreateView:
         form["spatial_resolution"] = "100"
         form["temporal_resolution"] = "P1D"
         form["status"] = status.pk
+        form["availability"] = availability.pk
+        form["size"] = "1024"
+        form["checksum_value"] = "abcdef123"
+        form["checksum_algorithm"] = "MD5"
+        form["issued"] = "2024-01-15"
+        form["date_modified"] = "2024-06-01"
+        form["language"] = language.pk
+        form["conforms_to"] = [conforms_to_concept.pk]
+        form["documentation"] = "https://example.com/doc"
         form.submit()
 
         distribution = DatasetDistribution.objects.filter(dataset=dataset).first()
@@ -258,6 +277,15 @@ class TestDcatDistributionCreateView:
         assert distribution.spatial_resolution == "100"
         assert distribution.temporal_resolution == "P1D"
         assert distribution.status == status
+        assert distribution.availability == availability
+        assert distribution.size == 1024
+        assert distribution.checksum_value == "abcdef123"
+        assert distribution.checksum_algorithm == "MD5"
+        assert distribution.issued == "2024-01-15"
+        assert str(distribution.date_modified) == "2024-06-01"
+        assert distribution.language == language
+        assert conforms_to_concept in distribution.conforms_to.all()
+        assert distribution.documentation.filter(documentation_link="https://example.com/doc").exists()
 
 
 class TestDcatDistributionUpdateView:
@@ -522,6 +550,12 @@ class TestDcatDistributionUpdateView:
         packaging_fmt = PackagingFormatFactory()
         status_schema, _ = ConceptSchema.objects.get_or_create(uri=DatasetDistribution.DISTRIBUTION_STATUS_URI)
         status = ConceptFactory(concept_schemas=[status_schema])
+        availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
+        availability = ConceptFactory(concept_schemas=[availability_schema])
+        language_schema, _ = ConceptSchema.objects.get_or_create(uri=LANGUAGE_CONCEPT_SCHEMA_URI)
+        language = ConceptFactory(concept_schemas=[language_schema])
+        standard_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_STANDARD_URI)
+        conforms_to_concept = ConceptFactory(concept_schemas=[standard_schema])
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -548,6 +582,15 @@ class TestDcatDistributionUpdateView:
         form["spatial_resolution"] = "200"
         form["temporal_resolution"] = "P1M"
         form["status"] = status.pk
+        form["availability"] = availability.pk
+        form["size"] = "2048"
+        form["checksum_value"] = "fedcba987"
+        form["checksum_algorithm"] = "SHA256"
+        form["issued"] = "2024-03-10"
+        form["date_modified"] = "2024-09-01"
+        form["language"] = language.pk
+        form["conforms_to"] = [conforms_to_concept.pk]
+        form["documentation"] = "https://example.com/updated-doc"
         form.submit()
 
         distribution.refresh_from_db()
@@ -565,3 +608,12 @@ class TestDcatDistributionUpdateView:
         assert distribution.spatial_resolution == "200"
         assert distribution.temporal_resolution == "P1M"
         assert distribution.status == status
+        assert distribution.availability == availability
+        assert distribution.size == 2048
+        assert distribution.checksum_value == "fedcba987"
+        assert distribution.checksum_algorithm == "SHA256"
+        assert distribution.issued == "2024-03-10"
+        assert str(distribution.date_modified) == "2024-09-01"
+        assert distribution.language == language
+        assert conforms_to_concept in distribution.conforms_to.all()
+        assert distribution.documentation.filter(documentation_link="https://example.com/updated-doc").exists()

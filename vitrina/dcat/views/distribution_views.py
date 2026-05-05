@@ -9,7 +9,7 @@ from django.utils.functional import cached_property
 from parler.views import TranslatableCreateView, TranslatableUpdateView
 
 from vitrina.datasets.models import Dataset
-from vitrina.dcat.forms.distribution_forms import DistributionForm
+from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.orgs.services import has_perm, Action
 from vitrina.resources.models import DatasetDistribution
 
@@ -22,7 +22,7 @@ from vitrina.structure.models import Version
 class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableCreateView):
     model = DatasetDistribution
     template_name = "vitrina/dcat/form.html"
-    form_class = DistributionForm
+    form_class = DatasetDistributionForm
 
     @cached_property
     def dataset(self) -> Dataset:
@@ -52,7 +52,7 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
         return context
 
-    def form_valid(self, form: DistributionForm) -> HttpResponseBase:
+    def form_valid(self, form: DatasetDistributionForm) -> HttpResponseBase:
         distribution = form.save(commit=False)
         distribution.dataset = self.dataset
 
@@ -77,7 +77,7 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableUpdateView):
     model = DatasetDistribution
     template_name = "vitrina/dcat/form.html"
-    form_class = DistributionForm
+    form_class = DatasetDistributionForm
     pk_url_kwarg = "distribution_id"
 
     def has_permission(self) -> bool:
@@ -124,7 +124,7 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
         return context
 
-    def form_valid(self, form: DistributionForm) -> HttpResponseBase:
+    def form_valid(self, form: DatasetDistributionForm) -> HttpResponseBase:
         distribution = form.save()
 
         if metadata := distribution.metadata.first():

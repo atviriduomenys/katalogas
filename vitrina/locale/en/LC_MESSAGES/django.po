@@ -2088,7 +2088,7 @@ msgid "Pateiktis sukurta sėkmingai!"
 msgstr "Distribution was created successfully!"
 
 msgid "Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."
-msgstr "Can not edit the source, when the version status is not draft."
+msgstr "Can not edit the distribution, when the version status is not draft."
 
 msgid "Duomenų rinkinio šaltinio redagavimas"
 msgstr "Dataset source edit"

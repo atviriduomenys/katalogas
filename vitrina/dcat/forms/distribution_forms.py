@@ -15,7 +15,7 @@ from vitrina.resources.models import DatasetDistribution
 from django.utils.translation import gettext_lazy as _
 
 
-class DistributionForm(TranslatableModelForm):
+class DatasetDistributionForm(TranslatableModelForm):
     class Meta:
         model = DatasetDistribution
         fields = (

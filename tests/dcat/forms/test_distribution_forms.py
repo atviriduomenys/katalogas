@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from vitrina.classifiers.factories import ConceptFactory, LicenceFactory
 from vitrina.classifiers.models import ConceptSchema
 from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory
-from vitrina.dcat.forms.distribution_forms import DistributionForm
+from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.structure.factories import MetadataFactory
@@ -12,18 +12,18 @@ from vitrina.structure.factories import MetadataFactory
 pytestmark = pytest.mark.django_db
 
 
-class TestDistributionForm:
+class TestDatasetDistributionForm:
     def test_access_url_format_is_required(self):
         dataset = DatasetFactory()
 
-        form = DistributionForm(dataset)
+        form = DatasetDistributionForm(dataset)
 
         assert form.fields["access_url"].required is True
 
     def test_data_service_and_format_not_required(self):
         dataset = DatasetFactory()
 
-        form = DistributionForm(dataset)
+        form = DatasetDistributionForm(dataset)
 
         assert not form.fields["data_service"].required
         assert not form.fields["format"].required
@@ -32,14 +32,14 @@ class TestDistributionForm:
         dataset = DatasetFactory()
         default_licence = LicenceFactory(is_default=True)
 
-        form = DistributionForm(dataset)
+        form = DatasetDistributionForm(dataset)
 
         assert form.initial["licence"] == default_licence
 
     def test_default_licence_not_set_when_no_default_licence_exists(self):
         dataset = DatasetFactory()
 
-        form = DistributionForm(dataset)
+        form = DatasetDistributionForm(dataset)
 
         assert "licence" not in form.initial
 
@@ -48,7 +48,7 @@ class TestDistributionForm:
         distribution = DatasetDistributionFactory(dataset=dataset)
         LicenceFactory(is_default=True)
 
-        form = DistributionForm(dataset, instance=distribution)
+        form = DatasetDistributionForm(dataset, instance=distribution)
 
         assert not form.initial.get("licence")
 
@@ -62,7 +62,7 @@ class TestDistributionForm:
             name="my-resource-name",
         )
 
-        form = DistributionForm(dataset, instance=distribution)
+        form = DatasetDistributionForm(dataset, instance=distribution)
 
         assert form.initial["name"] == "my-resource-name"
 
@@ -70,7 +70,7 @@ class TestDistributionForm:
         dataset = DatasetFactory()
         distribution = DatasetDistributionFactory(dataset=dataset, name="")
 
-        form = DistributionForm(dataset, instance=distribution)
+        form = DatasetDistributionForm(dataset, instance=distribution)
 
         assert not form.initial.get("name")
 
@@ -80,7 +80,7 @@ class TestDistributionForm:
         non_public_service_dataset = DatasetServiceFactory(is_public=False)
         non_public_non_service_dataset = DatasetFactory(is_public=False)
 
-        form = DistributionForm(dataset)
+        form = DatasetDistributionForm(dataset)
 
         assert non_public_service_dataset in form.fields["data_service"].queryset
         assert public_service_dataset not in form.fields["data_service"].queryset
@@ -92,7 +92,7 @@ class TestDistributionForm:
         matching_concept = ConceptFactory(concept_schemas=[status_schema])
         other_concept = ConceptFactory()
 
-        form = DistributionForm(dataset)
+        form = DatasetDistributionForm(dataset)
 
         assert matching_concept in form.fields["status"].queryset
         assert other_concept not in form.fields["status"].queryset
@@ -101,7 +101,7 @@ class TestDistributionForm:
         dataset = DatasetFactory()
         DatasetDistributionFactory(dataset=dataset, download_url="https://example.com/data.csv")
 
-        form = DistributionForm(
+        form = DatasetDistributionForm(
             dataset,
             data={
                 "access_url": "https://example.com",
@@ -117,7 +117,7 @@ class TestDistributionForm:
         dataset = DatasetFactory()
         distribution = DatasetDistributionFactory(dataset=dataset, download_url="https://example.com/data.csv")
 
-        form = DistributionForm(
+        form = DatasetDistributionForm(
             dataset,
             instance=distribution,
             data={
@@ -131,7 +131,7 @@ class TestDistributionForm:
     def test_both_rights_relation_and_conditions_raises_error(self):
         dataset = DatasetFactory()
 
-        form = DistributionForm(
+        form = DatasetDistributionForm(
             dataset,
             data={
                 "access_url": "https://example.com",
@@ -149,7 +149,7 @@ class TestDistributionForm:
     def test_non_ascii_name_raises_error(self):
         dataset = DatasetFactory()
 
-        form = DistributionForm(
+        form = DatasetDistributionForm(
             dataset,
             data={"access_url": "https://example.com", "name": "resursąs"},
         )
@@ -161,7 +161,7 @@ class TestDistributionForm:
     def test_uppercase_name_raises_error(self):
         dataset = DatasetFactory()
 
-        form = DistributionForm(
+        form = DatasetDistributionForm(
             dataset,
             data={"access_url": "https://example.com", "name": "MyResource"},
         )

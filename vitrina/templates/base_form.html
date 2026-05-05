@@ -6,6 +6,14 @@
 {% endblock %}
 {% block object_title %}{{ object_title }}{% endblock %}
 
+{% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_css %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_cms_toolbar %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_cms_toolbar %}{% include "component/after_comment.html" %}{% endblock %}
+
+{% block before_render_js %}{% include "component/before_comment.html" %}{% endblock %}
+{% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
 
 {% block parent_links %}
     {% include "component/breadcrumbs.html" %}
@@ -28,12 +36,41 @@
 {% endblock %}
 
 {% block head %}
-<style>
-    .select2-container {
-        min-height: 80px;
-    }
-
-</style>
+    <style>
+        {# Match select width #}
+        div.select, div.select select, .select2.select2-container {
+            width: 100% !important;
+        }
+        {# Match select height and border color #}
+        .select2.select2-container .select2-selection--single {
+            height: 2.5rem;
+            padding: 6px 12px;
+            border-color: #767676;
+        }
+        {# Match multiple select height and border color #}
+        .select2.select2-container .select2-selection--multiple {
+            min-height: 2.5rem;
+            border-color: #767676;
+        }
+        {# Match select border color on hover #}
+        .select2.select2-container:hover .select2-selection--single:hover,
+        .select2.select2-container:hover .select2-selection--multiple:hover
+        {
+            border-color: #b5b5b5;
+        }
+        {# Match select dropdown border color #}
+        .select2-container .select2-dropdown {
+            border-color: #767676;
+        }
+        {# Match select2 dropdown arrow #}
+        .select2-selection__arrow {
+            display: none;
+        }
+        {# Match select2 selection placeholder color #}
+        .select2.select2-container--default .select2-selection--single .select2-selection__placeholder {
+            color: #363636;
+        }
+    </style>
 {% endblock %}
 
 {% block scripts %}

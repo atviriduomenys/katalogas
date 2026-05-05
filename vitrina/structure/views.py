@@ -2209,7 +2209,7 @@ class EnumDeleteView(PermissionRequiredMixin, DeleteView):
 
 class ModelCreateView(PermissionRequiredMixin, CreateView):
     model = Metadata
-    template_name = "vitrina/structure/model_form.html"
+    template_name = "base_form.html"
     form_class = ModelCreateForm
 
     dataset: Dataset
@@ -2387,7 +2387,7 @@ class ModelDeleteView(LoginRequiredMixin, View):
 
 class ModelUpdateView(DatasetBreadcrumbsMixin, PermissionRequiredMixin, UpdateView):
     model = Metadata
-    template_name = "vitrina/structure/model_form.html"
+    template_name = "base_form.html"
     form_class = ModelUpdateForm
 
     dataset: Dataset

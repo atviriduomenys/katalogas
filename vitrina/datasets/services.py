@@ -271,8 +271,6 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
     if user.is_staff or user.is_superuser:
         return datasets
 
-    combined_filter = public_filter
-
     organization_ct = ContentType.objects.get_for_model(Organization)
     dataset_ct = ContentType.objects.get_for_model(Dataset)
 
@@ -345,6 +343,8 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
                     resource_dataset_ids.add(object_id)
                 elif effective_role in open_data_roles:
                     open_data_dataset_ids.add(object_id)
+
+    combined_filter = public_filter
 
     if resource_org_ids:
         combined_filter |= SQ(organization__in=resource_org_ids)

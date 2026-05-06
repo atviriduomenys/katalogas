@@ -31,7 +31,6 @@ from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic import DetailView, ListView, TemplateView
 from django.views.generic.edit import CreateView, UpdateView, DeleteView
-from haystack.backends import SQ
 from haystack.generic_views import FacetedSearchView
 from haystack.query import SearchQuerySet
 from itsdangerous import URLSafeSerializer
@@ -207,25 +206,17 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
             queryset = queryset.facet(field, **options)
 
         if is_manager_dataset_list(self.request):
-            # Get dataset IDs where user is a direct representative
-            dataset_ids = [
-                rep.object_id
-                for rep in self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
-            ]
-
-            # Get organization IDs where user is a representative
-            org_ids = [
-                rep.object_id
-                for rep in self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
-            ]
-
-            query = SQ()
-            for dataset_id in dataset_ids:
-                query |= SQ(id=dataset_id)
-            for org_id in org_ids:
-                query |= SQ(organization=org_id)
-
-            queryset = queryset.filter(query)
+            dataset_ct = ContentType.objects.get_for_model(Dataset)
+            organization_ct = ContentType.objects.get_for_model(Organization)
+            manager_reps = self.request.user.representative_set.filter(role__in=Representative.MANAGER_ROLES)
+            direct_dataset_ids = manager_reps.filter(content_type=dataset_ct).values_list("object_id", flat=True)
+            managed_org_ids = manager_reps.filter(content_type=organization_ct).values_list("object_id", flat=True)
+            allowed_dataset_pks = list(
+                Dataset.objects.filter(Q(pk__in=direct_dataset_ids) | Q(organization_id__in=managed_org_ids))
+                .values_list("pk", flat=True)
+                .distinct()
+            )
+            queryset = queryset.filter(django_id__in=allowed_dataset_pks)
 
         if is_org_dataset_list(self.request):
             queryset = queryset.filter(organization=self.organization.pk)

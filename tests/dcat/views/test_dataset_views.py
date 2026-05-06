@@ -169,6 +169,7 @@ class TestDcatDatasetCreateView:
         form["title"] = "Test Redirect"
         form["description"] = "Test redirect description"
         form["name"] = f"{org.name}testredirect"
+        form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
@@ -384,6 +385,7 @@ class TestDcatDatasetCreateView:
         form["title"] = "Child Dataset"
         form["description"] = "Child description"
         form["name"] = f"{org.name}child"
+        form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
@@ -414,6 +416,7 @@ class TestDcatDatasetCreateView:
         form["title"] = "Test Dataset"
         form["description"] = "Dataset description"
         form["name"] = f"{org.name}dataset"
+        form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
@@ -686,6 +689,7 @@ class TestDcatDatasetUpdateView:
         form["title"] = "Redirect Test"
         form["description"] = "Redirect description"
         form["name"] = f"{org.name}redirect"
+        form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
@@ -901,6 +905,7 @@ class TestDcatDatasetUpdateView:
         form["title"] = "New Title"
         form["description"] = "New description"
         form["name"] = f"{org.name}newname"
+        form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
@@ -934,6 +939,7 @@ class TestDcatDatasetUpdateView:
         form["title"] = "IS Title"
         form["description"] = "IS description"
         form["name"] = f"{org.name}updateis"
+        form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
@@ -966,6 +972,7 @@ class TestDcatDatasetUpdateView:
         form["title"] = "IS Title"
         form["description"] = "IS description"
         form["name"] = f"{org.name}updateis"
+        form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk
@@ -1060,6 +1067,7 @@ class TestDcatDatasetUpdateView:
         form["title"] = "IS Title"
         form["description"] = "IS description"
         form["name"] = f"{org.name}updateis"
+        form["identifier"] = "1234"
         form["information_system_importance"] = importance.pk
         form["information_system_type"] = is_type.pk
         form["information_system_publisher"] = org.pk

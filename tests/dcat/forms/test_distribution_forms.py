@@ -13,12 +13,15 @@ pytestmark = pytest.mark.django_db
 
 
 class TestDatasetDistributionForm:
-    def test_access_url_format_is_required(self):
+    def test_access_url_availability_title_description_are_required(self):
         dataset = DatasetFactory()
 
         form = DatasetDistributionForm(dataset)
 
         assert form.fields["access_url"].required is True
+        assert form.fields["availability"].required is True
+        assert form.fields["title"].required is True
+        assert form.fields["description"].required is True
 
     def test_data_service_and_format_not_required(self):
         dataset = DatasetFactory()

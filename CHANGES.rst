@@ -17,6 +17,11 @@ https://github.com/atviriduomenys/katalogas/issues/2624
 - Remove synchronous type checking (TypeCheckerError) from clean_value()
 - Fix edge case in CSV import: when prepare is empty and source is also empty, no longer produces "" as a valid quoted value
 
+https://github.com/atviriduomenys/katalogas/issues/2566
+
+- Route per-user permission filtering and the manager-dataset list filter through Elasticsearch ``terms`` queries (via a custom Haystack backend) so large primary-key sets no longer expand into Lucene boolean OR clauses. Fixes intermittent ``too_many_clauses`` 400s on ``/datasets/manager`` and any authenticated dataset list whose user has many representations.
+
+
 v 1.21.0 (2026-05-18)
 ==================
 

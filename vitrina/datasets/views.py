@@ -82,6 +82,7 @@ from vitrina.uapi.models import Agent
 from vitrina.views import HistoryView, HistoryMixin, PlanMixin
 from vitrina.datasets.mixins import DatasetBreadcrumbsMixin, Crumb
 from vitrina.datasets.services import (
+    apply_terms_filter,
     update_facet_data,
     get_frequency_and_format,
     get_requests,
@@ -216,7 +217,7 @@ class DatasetListView(PermissionRequiredMixin, PlanMixin, FacetedSearchView):
                 .values_list("pk", flat=True)
                 .distinct()
             )
-            queryset = queryset.filter(django_id__in=allowed_dataset_pks)
+            queryset = apply_terms_filter(queryset, "django_id", allowed_dataset_pks)
 
         if is_org_dataset_list(self.request):
             queryset = queryset.filter(organization=self.organization.pk)

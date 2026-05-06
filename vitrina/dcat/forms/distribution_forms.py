@@ -156,7 +156,7 @@ class DatasetDistributionForm(TranslatableModelForm):
         if (checksum_value := self.cleaned_data.get("checksum_value")) and any(
             character.isupper() for character in checksum_value
         ):
-            raise ValidationError(_("Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."))
+            raise ValidationError(_("Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."))
 
         return checksum_value
 

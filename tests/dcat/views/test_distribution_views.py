@@ -149,6 +149,8 @@ class TestDcatDistributionCreateView:
     def test_post_redirects_to_dcat_distribution_update_url(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(organization=org, is_public=False)
+        availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
+        availability = ConceptFactory(concept_schemas=[availability_schema])
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -158,6 +160,9 @@ class TestDcatDistributionCreateView:
         )
         form = app.get(url).forms["resource-form"]
         form["access_url"] = "https://example.com/data"
+        form["availability"] = availability.pk
+        form["title"] = "My Distribution"
+        form["description"] = "My description"
         response = form.submit()
 
         distribution = DatasetDistribution.objects.filter(dataset=dataset).first()
@@ -177,6 +182,8 @@ class TestDcatDistributionCreateView:
     def test_post_without_name_uses_default_distribution_name(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(organization=org, is_public=False)
+        availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
+        availability = ConceptFactory(concept_schemas=[availability_schema])
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -186,6 +193,9 @@ class TestDcatDistributionCreateView:
         )
         form = app.get(url).forms["resource-form"]
         form["access_url"] = "https://example.com/data"
+        form["availability"] = availability.pk
+        form["title"] = "My Distribution"
+        form["description"] = "My description"
         form.submit()
 
         distribution = DatasetDistribution.objects.filter(dataset=dataset).first()
@@ -195,6 +205,8 @@ class TestDcatDistributionCreateView:
     def test_post_with_name_uses_provided_name(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(organization=org, is_public=False)
+        availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
+        availability = ConceptFactory(concept_schemas=[availability_schema])
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -204,6 +216,9 @@ class TestDcatDistributionCreateView:
         )
         form = app.get(url).forms["resource-form"]
         form["access_url"] = "https://example.com/data"
+        form["availability"] = availability.pk
+        form["title"] = "My Distribution"
+        form["description"] = "My description"
         form["name"] = "myresource"
         form.submit()
 
@@ -475,7 +490,9 @@ class TestDcatDistributionUpdateView:
     def test_post_redirects_to_dcat_distribution_update_url(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(organization=org, is_public=False)
-        distribution = DatasetDistributionFactory(dataset=dataset)
+        availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
+        availability = ConceptFactory(concept_schemas=[availability_schema])
+        distribution = DatasetDistributionFactory(dataset=dataset, availability=availability)
         user = UserFactory(is_staff=True)
         app.set_user(user)
 
@@ -505,7 +522,9 @@ class TestDcatDistributionUpdateView:
     def test_post_updates_metadata_when_it_exists(self, app: DjangoTestApp):
         org = OrganizationFactory()
         dataset = DatasetFactory(organization=org, is_public=False)
-        distribution = DatasetDistributionFactory(dataset=dataset)
+        availability_schema, _ = ConceptSchema.objects.get_or_create(uri=DISTRIBUTION_AVAILABILITY_SCHEMA_URI)
+        availability = ConceptFactory(concept_schemas=[availability_schema])
+        distribution = DatasetDistributionFactory(dataset=dataset, availability=availability)
         metadata = MetadataFactory.create(
             dataset=dataset,
             content_type=ContentType.objects.get_for_model(distribution),

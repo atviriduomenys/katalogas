@@ -150,7 +150,11 @@ class BaseResourceForm(TranslatableModelForm):
 
 
 class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResourceForm):
-    identifier = forms.CharField(label=_("Identifikatorius"), required=False)
+    identifier = forms.CharField(
+        label=_("Identifikatorius"),
+        required=True,
+        help_text=_("RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."),
+    )
 
     class Meta:
         model = Dataset
@@ -167,9 +171,9 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
             "title",
             "landing_page",
             "languages",
-            "applicable_legislation",
             "conditions",
             "rights_relation",
+            "applicable_legislation",
             "tags",
         )
         widgets = {
@@ -271,10 +275,10 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
             "title",
             "agent",  # Either "agent" or "endpoint_url" is required
             "endpoint_url",
-            "endpoint_type",  # Not in DCAT. Maybe make non-required?
+            "endpoint_type",  # Not in DCAT
             "contact",
             "endpoint_description",
-            "endpoint_description_type",  # Not in DCAT. Maybe make non-required?
+            "endpoint_description_type",  # Not in DCAT
             "tags",
             "access_rights",
             "conforms_to",
@@ -310,7 +314,6 @@ class ServiceResourceForm(ContactFormMixin, BaseResourceForm):
         self.fields["description"].required = False
         self.fields["tags"].required = True
         self.fields["agent"].queryset = Agent.objects.not_archived().filter(organization=self.organization)
-        self.fields["contact"].required = True
         self.fields["license"].queryset = self.fields["license"].queryset.order_by("title")
 
     def clean(self) -> dict[str, Any]:
@@ -362,9 +365,9 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             "documentation",
             "frequency",
             "landing_page",
+            "contact",
             "languages",
             "provenance",
-            "contact",
             "spatial_resolution",
             "temporal_resolution",
             "dataset_type",
@@ -418,10 +421,10 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
             Field("conforms_to"),
             Field("documentation"),
             Field("frequency"),
+            Field("contact"),
             Field("landing_page"),
             Field("languages"),
             Field("provenance"),
-            Field("contact"),
             Field("spatial_resolution"),
             Field("temporal_resolution"),
             Field("dataset_type"),

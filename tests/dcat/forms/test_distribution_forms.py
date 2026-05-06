@@ -212,7 +212,7 @@ class TestDatasetDistributionForm:
 
         assert not form.is_valid()
         assert "checksum_value" in form.errors
-        assert "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės." in form.errors["checksum_value"]
+        assert "Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės." in form.errors["checksum_value"]
 
     def test_lowercase_checksum_value_is_valid(self):
         dataset = DatasetFactory()

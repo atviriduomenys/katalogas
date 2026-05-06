@@ -46,16 +46,28 @@
             height: 2.5rem;
             padding: 6px 12px;
             border-color: #767676;
+            position: relative;
+        }
+        {# Remove left padding to match padding on non-select2 fields #}
+        .select2.select2-container .select2-selection--single .select2-selection__rendered {
+            padding-left: 0;
         }
         {# Match multiple select height and border color #}
         .select2.select2-container .select2-selection--multiple {
             min-height: 2.5rem;
             border-color: #767676;
         }
+        {# Vertically center the clear (x) button within the field #}
+        .select2.select2-container .select2-selection--single .select2-selection__clear {
+            position: absolute;
+            right: 32px;
+            top: 50%;
+            transform: translateY(-50%);
+            margin: 0;
+        }
         {# Match select border color on hover #}
         .select2.select2-container:hover .select2-selection--single:hover,
-        .select2.select2-container:hover .select2-selection--multiple:hover
-        {
+        .select2.select2-container:hover .select2-selection--multiple:hover {
             border-color: #b5b5b5;
         }
         {# Match select dropdown border color #}

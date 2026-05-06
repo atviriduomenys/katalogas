@@ -86,6 +86,10 @@ class DatasetDistributionForm(TranslatableModelForm):
         self.helper.add_input(Submit("submit", button, css_class="button is-primary"))
 
         self.fields["access_url"].required = True
+        self.fields["availability"].required = True
+        self.fields["title"].required = True
+        self.fields["description"].required = True
+
         self.fields["data_service"].queryset = Dataset.objects.filter(
             is_public=False, subclass__name=DCATResourceSubclass.SERVICE
         ).prefetch_related("translations")

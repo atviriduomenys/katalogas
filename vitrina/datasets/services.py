@@ -304,7 +304,6 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
             elif role in open_data_roles:
                 open_data_dataset_ids.add(object_id)
 
-    # Get user's org memberships with their roles, to restrict effective role
     user_organization_map = dict(
         Representative.objects.filter(
             user=user,
@@ -344,28 +343,50 @@ def filter_out_non_public_datasets_for_user(user: User, datasets: SearchQuerySet
                 elif effective_role in open_data_roles:
                     open_data_dataset_ids.add(object_id)
 
-    combined_filter = public_filter
+    has_role_branches = (
+        bool(resource_org_ids)
+        or bool(resource_dataset_ids)
+        or bool(open_data_org_ids)
+        or bool(open_data_dataset_ids)
+        or user.is_gov_organization_resource_manager
+    )
+    if not has_role_branches:
+        return datasets.filter(public_filter)
+
+    permission_filter = Q(is_public=True, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
 
     if resource_org_ids:
-        combined_filter |= SQ(organization__in=resource_org_ids)
+        permission_filter |= Q(organization_id__in=resource_org_ids)
 
     if resource_dataset_ids:
-        combined_filter |= SQ(id__in=resource_dataset_ids)
+        permission_filter |= Q(pk__in=resource_dataset_ids)
 
     if open_data_org_ids:
-        combined_filter |= SQ(
-            organization__in=open_data_org_ids, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED)
+        permission_filter |= Q(
+            organization_id__in=open_data_org_ids,
+            access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED),
         )
 
     if open_data_dataset_ids:
-        combined_filter |= SQ(id__in=open_data_dataset_ids, access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED))
-
-    if user.is_gov_organization_resource_manager:
-        combined_filter |= SQ(
-            is_public="true", access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC)
+        permission_filter |= Q(
+            pk__in=open_data_dataset_ids,
+            access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED),
         )
 
-    return datasets.filter(combined_filter)
+    if user.is_gov_organization_resource_manager:
+        permission_filter |= Q(
+            is_public=True,
+            access_rights__in=(Dataset.PUBLIC, Dataset.RESTRICTED, Dataset.NON_PUBLIC),
+        )
+
+    allowed_dataset_pks = list(Dataset.objects.filter(permission_filter).values_list("pk", flat=True).distinct())
+    return apply_terms_filter(datasets, "django_id", allowed_dataset_pks)
+
+
+def apply_terms_filter(searchqueryset: SearchQuerySet, field: str, values) -> SearchQuerySet:
+    clone = searchqueryset._clone()
+    clone.query.add_terms_filter(field, values)
+    return clone
 
 
 def create_subscription(user, dataset):

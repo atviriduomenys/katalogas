@@ -348,7 +348,7 @@ class Dataset(Resource):
         blank=False,
         null=True,
         verbose_name=_("Atnaujinimo dažnumas"),
-        help_text=_("Duomenų atnaujinimo dažnumas. Atitinka dcat:keyword."),
+        help_text=_("Duomenų atnaujinimo dažnumas. Atitinka dct:accrualPeriodicity."),
     )
     last_update = models.DateTimeField(
         blank=True,

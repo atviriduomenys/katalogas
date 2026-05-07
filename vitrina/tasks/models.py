@@ -47,7 +47,7 @@ class Task(models.Model):
         (PROJECT, _("Project")),
         (ERROR, _("Klaida")),
         (ERROR_FREQUENCY, _("Klaida atnaujinimo dažnume")),
-        (ERROR_DISTRIBUTION, _("Klaida duomenų rinkinio duomenų šaltinyje")),
+        (ERROR_DISTRIBUTION, _("Klaida duomenų rinkinio pateiktyje")),
         (ERROR_GEOPORTAL, _("Klaida importuojant duomenis iš Geoportal")),
     )
     FILTER_TYPES = {

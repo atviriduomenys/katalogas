@@ -649,7 +649,7 @@ def get_stats_filter_options_based_on_model(model, duration, sorting, indicator,
                     {"value": "model-count", "label": _("Esybių (modelių) skaičius")},
                     {
                         "value": "distribution-count",
-                        "label": _("Duomenų šaltinių (distribucijų) skaičius"),
+                        "label": _("Pateikčių skaičius"),
                     },
                     {"value": "dataset-count", "label": _("Duomenų išteklių skaičius")},
                     {"value": "request-count", "label": _("Poreikių skaičius")},

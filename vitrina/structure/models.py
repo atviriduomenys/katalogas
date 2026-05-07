@@ -182,7 +182,7 @@ class Model(models.Model):
         models.SET_NULL,
         null=True,
         blank=True,
-        verbose_name=_("Duomenų šaltinis"),
+        verbose_name=_("Pateiktis"),
     )
     base = models.ForeignKey(
         "Base",
@@ -336,7 +336,7 @@ class Model(models.Model):
 
     def save(self, *args, **kwargs) -> None:
         if self.distribution and self.distribution.format and self.distribution.format.extension == "UAPI":
-            raise ValidationError(_("Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą distribuciją."))
+            raise ValidationError(_("Negalima priskirti Saugyklos API pateikties. Pasirinkite kitą pateiktį."))
         existing_distribution = None
 
         if self.pk:

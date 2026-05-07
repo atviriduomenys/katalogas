@@ -21,7 +21,7 @@ from vitrina.structure.models import Version
 
 class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableCreateView):
     model = DatasetDistribution
-    template_name = "vitrina/dcat/form.html"
+    template_name = "base_form.html"
     form_class = DatasetDistributionForm
 
     @cached_property
@@ -82,7 +82,7 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
 class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, TranslatableUpdateView):
     model = DatasetDistribution
-    template_name = "vitrina/dcat/form.html"
+    template_name = "base_form.html"
     form_class = DatasetDistributionForm
     pk_url_kwarg = "distribution_id"
 

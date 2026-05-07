@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-04-28 10:29+0300\n"
+"POT-Creation-Date: 2026-05-07 13:50+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,12 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+msgid "Organizacija"
+msgstr "Organization"
+
+msgid "Duomenų skelbėjas"
+msgstr "Data publisher"
 
 msgid "Versijos duomenys"
 msgstr "Version data"
@@ -52,9 +58,6 @@ msgstr "API key"
 
 msgid "Taikymo sritis"
 msgstr "Application area"
-
-msgid "Organizacija"
-msgstr "Organization"
 
 msgid "Duomenų išteklius"
 msgstr "Resource"
@@ -111,11 +114,9 @@ msgstr "Categories"
 msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
 msgstr "Update selected concept scheme concepts"
 
-#, python-brace-format
 msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
 msgstr "Successfully updated {} concept scheme concepts. Full list: <br>{}"
 
-#, python-brace-format
 msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr "Failed to download some concepts. Full list: <br>{}"
 
@@ -226,27 +227,21 @@ msgstr "Applicable legislation"
 msgid "Teisiniai pagrindai"
 msgstr "Applicable legislation"
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr "Failed to get uri: {}. Error: {}."
 
-#, python-brace-format
 msgid "{} nėra validus URI."
 msgstr "{} is not valid URI."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
 msgstr "Failed to get uri: {}. Uri response is empty."
 
-#, python-brace-format
 msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
 msgstr "Failed to get uri: {}. Response is not in RDF format."
 
-#, python-brace-format
 msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
 msgstr "Concept scheme {} does not have any \"{}\" elements."
 
-#, python-brace-format
 msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr "Concept {} does not have \"{}\" element."
 
@@ -1461,12 +1456,11 @@ msgstr ""
 "registry – within which the resources are managed."
 
 msgid "Mažiausias laiko tarpas tarp objektų duomenų ištekliuje"
-msgstr "Minimum time period resolvable in the dataset distribution."
+msgstr "Minimum time period resolvable in the resource."
 
 msgid "Mažiausias atstumas tarp objektų duomenų ištekliuje, matuojamas metrais"
 msgstr ""
-"The minimum spatial separation resolvable in a dataset distribution, "
-"measured in meters."
+"The minimum spatial separation resolvable in a resource, measured in meters."
 
 msgid "Pagrindinis API paslaugos adresas, kuriuo galima pasiekti duomenis"
 msgstr "Main API service address for accessing data"
@@ -1592,9 +1586,6 @@ msgstr "Delete"
 
 msgid "Atsisiuntimo formatas"
 msgstr "Download format"
-
-msgid "Duomenų skelbėjas"
-msgstr "Data publisher"
 
 msgid "Kontaktinė informacija"
 msgstr "Contact information"
@@ -1924,8 +1915,8 @@ msgstr "Property count"
 msgid "Esybių (modelių) skaičius"
 msgstr " Entities (Model) count"
 
-msgid "Duomenų šaltinių (distribucijų) skaičius"
-msgstr "Dataset distribution count"
+msgid "Pateikčių skaičius"
+msgstr "Distribution count"
 
 msgid "Duomenų rinkinių skaičius"
 msgstr "Dataset count"
@@ -3742,8 +3733,8 @@ msgstr "Or provide a data download link."
 msgid "Arba įkelkite duomenų failą."
 msgstr "Or upload a data file."
 
-msgid "Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."
-msgstr "Dataset distribution with this download link already exists."
+msgid "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."
+msgstr "Distribution with this download link already exists."
 
 msgid "Failo plėtinys"
 msgstr "File extension"
@@ -3812,8 +3803,8 @@ msgid "Statusas"
 msgstr "Status"
 
 msgid ""
-"Duomenų distribucija gali būti įgyvendinta - veikianti, kuriama, suplanuota "
-"kūrimui, pasenusi arba atsisakyta."
+"Pateiktis gali būti įgyvendinta - veikianti, kuriama, suplanuota kūrimui, "
+"pasenusi arba atsisakyta."
 msgstr ""
 "The distribution may be completed, developed, planned, deprecated or "
 "withdrawn."
@@ -3830,11 +3821,11 @@ msgstr "Period end"
 msgid "Prieiga"
 msgstr "Access"
 
-msgid "Atsisiųsti duomenų šaltinį"
-msgstr "Download dataset distribution"
+msgid "Atsisiųsti pateiktį"
+msgstr "Download distribution"
 
-msgid "Atidaryti duomenų šaltinį"
-msgstr "Open dataset distribution"
+msgid "Atidaryti pateiktį"
+msgstr "Open distribution"
 
 msgid "Teritorija"
 msgstr "Territory"
@@ -3854,7 +3845,7 @@ msgstr "Read structure"
 msgid "Naujas modelis"
 msgstr "New model"
 
-msgid "Naujas duomenų rinkinio šaltinis"
+msgid "Nauja duomenų rinkinio pateiktis"
 msgstr "New dataset distribution"
 
 msgid "Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."
@@ -4361,7 +4352,7 @@ msgid "Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."
 msgstr "Property indicating the data field name, a model attribute."
 
 msgid "Duomenų šaltinis"
-msgstr "Dataset distribution"
+msgstr "Data source"
 
 msgid ""
 "Duomenų lauko pavadinimas šaltinyje. Prasmė priklauso nuo resource.type."
@@ -4394,11 +4385,11 @@ msgstr ""
 "defined or whether the model name complies with naming requirements for code "
 "identifiers."
 
-msgid "Duomenų distribucija"
-msgstr "Dataset distribution"
+msgid "Pateiktis"
+msgstr "Distribution"
 
-msgid "Savybė nurodanti modelio duomenų distribuciją."
-msgstr "A property indicating the dataset distribution of a model"
+msgid "Savybė nurodanti modelio pateiktį."
+msgstr "A property indicating the distribution of a model"
 
 msgid ""
 "Savybė nurodanti modelio laukų metaduomenų matomumo ir prieinamumo lygį."
@@ -4777,9 +4768,7 @@ msgstr "Inherited model"
 msgid "Bazė"
 msgstr "Base"
 
-msgid ""
-"Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą "
-"distribuciją."
+msgid "Negalima priskirti Saugyklos API pateikties. Pasirinkite kitą pateiktį."
 msgstr ""
 "Can not assign Saugyklos API distribution. Choose a different distribution."
 
@@ -5129,7 +5118,7 @@ msgstr "Error"
 msgid "Klaida atnaujinimo dažnume"
 msgstr "Error in update frequency"
 
-msgid "Klaida duomenų rinkinio duomenų šaltinyje"
+msgid "Klaida duomenų rinkinio pateiktyje"
 msgstr "Error in dataset distribution"
 
 msgid "Klaida importuojant duomenis iš Geoportal"

@@ -535,10 +535,10 @@ class ModelCreateForm(forms.ModelForm):
         help_text=_("Savybė nurodanti modelio metaduomenų gyvavimo ciklo būseną."),
     )
     distribution = forms.ModelChoiceField(
-        label=_("Duomenų distribucija"),
+        label=_("Pateiktis"),
         required=False,
         queryset=DatasetDistribution.objects.none(),
-        help_text=_("Savybė nurodanti modelio duomenų distribuciją."),
+        help_text=_("Savybė nurodanti modelio pateiktį."),
     )
     visibility = forms.ChoiceField(
         label=_("Metaduomenų matomumas"),

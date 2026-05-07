@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-03-03 09:42+0200\n"
+"POT-Creation-Date: 2026-05-07 13:50+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -21,6 +21,9 @@ msgstr ""
 "1 : n % 1 != 0 ? 2: 3);\n"
 
 msgid "Organizacija"
+msgstr ""
+
+msgid "Duomenų skelbėjas"
 msgstr ""
 
 msgid "Versijos duomenys"
@@ -83,10 +86,6 @@ msgstr ""
 msgid "Duomenų ištekliai"
 msgstr ""
 
-#, python-brace-format
-msgid "{self.models[0].name}"
-msgstr ""
-
 msgid "kategoriją"
 msgstr ""
 
@@ -109,6 +108,15 @@ msgid "Pridėti valdymo sritį"
 msgstr ""
 
 msgid "Kategorijos"
+msgstr ""
+
+msgid "Atnaujinti pasirinktų sąvokų schemų sąvokas"
+msgstr ""
+
+msgid "Sėkmingai atnaujintos {} sąvokų schemų sąvokos. Pilnas sąrašas: <br>{}"
+msgstr ""
+
+msgid "Nepavyko atsisiųsti dalies sąvokų. Pilnas sąrašas: <br>{}"
 msgstr ""
 
 msgid "Klasifikatoriai"
@@ -209,6 +217,24 @@ msgid "Teisinis pagrindas"
 msgstr ""
 
 msgid "Teisiniai pagrindai"
+msgstr ""
+
+msgid "Nepavyko gauti uri: {}. Klaida: {}."
+msgstr ""
+
+msgid "{} nėra validus URI."
+msgstr ""
+
+msgid "Nepavyko gauti uri: {}. Uri atsakymas tuščias."
+msgstr ""
+
+msgid "Nepavyko gauti uri: {}. Gautas rezultatas nėra RDF formato."
+msgstr ""
+
+msgid "Sąvokų schemoje {} nerasta jokių \"{}\" elementų."
+msgstr ""
+
+msgid "Sąvokoje {} nerastas \"{}\" elementas."
 msgstr ""
 
 msgid "Pranešimas (lietuvių kalba)"
@@ -485,12 +511,11 @@ msgstr ""
 
 #, python-brace-format
 msgid ""
-"Pateiktas naujas prašymas: **[{self.rel_content_object.title}]({url})**."
-msgstr ""
-
-msgid ""
-"Šis duomenų rinkinys įtrauktas į {self.rel_content_object.get_title()} "
-"projektą."
+"Struktūros importavimo metu sukurtas sisteminis komentaras.<br>\n"
+"                <b>Objektas:</b> {content_type} | {content_object}<br>\n"
+"                <b>Parengimas:</b> <pre><code>{prepare}</code></pre><br>\n"
+"                <b>Nuoroda:</b> <a href=\"{uri}\">{uri}</a>\n"
+"            "
 msgstr ""
 
 msgid "Negalima atmesti — patvirtinti/atidaryti priskyrimai egzistuoja."
@@ -541,22 +566,6 @@ msgstr ""
 msgid "Metaduomenys atnaujinti</br>kataloge"
 msgstr ""
 
-#, python-brace-format
-msgid "Vėluoja {late_for.days} dieną"
-msgstr ""
-
-#, python-brace-format
-msgid "Vėluoja {late_for.days} dienas"
-msgstr ""
-
-#, python-brace-format
-msgid "Vėluoja {hours} valandą"
-msgstr ""
-
-#, python-brace-format
-msgid "Vėluoja {hours} valandas"
-msgstr ""
-
 msgid "Duomenų rinkinio pavadinimas"
 msgstr ""
 
@@ -596,6 +605,67 @@ msgstr ""
 msgid "Datasets"
 msgstr ""
 
+msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
+msgstr ""
+
+msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
+msgstr ""
+
+#, python-format
+msgid ""
+"Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
+"leidžiamų kodinio pavadinimo pradžių: „%(whitelisted)s“."
+msgstr ""
+
+#, python-format
+msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“."
+msgstr ""
+
+#, python-format
+msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
+msgstr ""
+
+msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
+msgstr ""
+
+msgid ""
+"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
+"pavadinimą."
+msgstr ""
+
+#, python-format
+msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
+msgstr ""
+
+#, python-brace-format
+msgid "Nepavyko rasti `{0}` pasirinkimų sąraše. Susisiekite su administracija."
+msgstr ""
+
+msgid "Pasirinkus agentą, šis laukas negali būti užpildytas."
+msgstr ""
+
+#, python-brace-format
+msgid "Pasirinkus agentą, API formatas privalo būti '{0}'"
+msgstr ""
+
+#, python-brace-format
+msgid "Pasirinkus agentą, API specifikacijos formatas privalo būti '{0}'"
+msgstr ""
+
+msgid "Su agentu susietos paslaugos privalo atitikti UDTS standartą."
+msgstr ""
+
+msgid "Pasirinkite agentą, arba nurodykite API adresą."
+msgstr ""
+
+msgid "Pasirinkite agentą, arba nurodykite API specifikaciją."
+msgstr ""
+
+msgid ""
+"UDTS standartą atitinkančios paslaugos privalo būti susietos su agentu. "
+"Pasirinkite agentą arba pasirinkite kitą 'Atitinka' lauko reikšmę."
+msgstr ""
+
 msgid "Duomenų ištekliaus rūšis"
 msgstr ""
 
@@ -622,13 +692,6 @@ msgid ""
 "išteklių. Atitinka dcat:contactPoint."
 msgstr ""
 
-msgid "Institucija teikianti duomenis"
-msgstr ""
-
-msgid ""
-"Subjektas, atsakingas už duomenų rinkinio parengimą. Atitinka dct:creator."
-msgstr ""
-
 msgid "Paslaugų teikėjas"
 msgstr ""
 
@@ -638,16 +701,11 @@ msgid ""
 msgstr ""
 
 msgid ""
-"Ar jūsų atstovaujama institucija yra atsakinga už šio duomenų rinkinio "
-"atvėrimą?"
-msgstr ""
-
-msgid ""
 "Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys."
 "<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
 "konkrečią nuorodą, pvz., „#17.2“.<br>Tais atvejais, kai yra keli dokumentai "
 "su priedais: „#priedas1/17.2“, „17.2/17.2.5“, kur „priedas1“ yra dokumento "
-"failo pavadinimas.<br>Atitinka eli:LegalResource."
+"failo pavadinimas.<br>Atitinka dcatap:applicableLegislation."
 msgstr ""
 
 msgid "Tėvinis išteklius"
@@ -662,34 +720,6 @@ msgstr ""
 msgid "Apriboti"
 msgstr ""
 
-msgid "Kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-msgstr ""
-
-msgid "Kodiniame pavadinime gali būti naudojamos tik mažosios raidės."
-msgstr ""
-
-#, python-format
-msgid ""
-"Kodinis pavadinimas turi prasidėti nuo „%(expected)s“ arba vieno iš "
-"leidžiamų kodinio pavadinimo pradžių: %(whitelisted)s"
-msgstr ""
-
-#, python-format
-msgid "Kodinis pavadinimas turi prasidėti nuo „%(expected)s“"
-msgstr ""
-
-#, python-format
-msgid "Po „%(prefix)s“ turi būti bent vienas simbolis."
-msgstr ""
-
-msgid "Duomenų rinkinys su šiuo kodiniu pavadinimu jau egzistuoja."
-msgstr ""
-
-msgid ""
-"Kodinis pavadinimas yra privalomas, jei duomenų rinkinys jau turi kodinį "
-"pavadinimą."
-msgstr ""
-
 msgid "Yra klaidų sąraše."
 msgstr ""
 
@@ -697,8 +727,8 @@ msgid "API adresas"
 msgstr ""
 
 msgid ""
-"Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka dcat:"
-"endpointURL."
+"Laisvu tekstu pateikiamas duomenų paslaugos galinio taško URL. Atitinka "
+"dcat:endpointURL."
 msgstr ""
 
 msgid "API specifikacija"
@@ -706,8 +736,14 @@ msgstr ""
 
 msgid ""
 "Šioje savybėje pateikiamas paslaugų, prieinamų per galinius taškus, "
-"aprašymas. Įskaitant jų operacijas, parametrus ir t. t. Atitinka dcat:"
-"endpointDescription."
+"aprašymas. Įskaitant jų operacijas, parametrus ir t. t. Atitinka "
+"dcat:endpointDescription."
+msgstr ""
+
+msgid "Atitinka"
+msgstr ""
+
+msgid "Nurodo kokį standartą atitinka paslauga. Atitinka dct:conformsTo."
 msgstr ""
 
 msgid "Ar duomenys vieši?"
@@ -765,10 +801,6 @@ msgstr ""
 msgid "Subjektas, atsakingas už IS parengimą. Atitinka dct:creator"
 msgstr ""
 
-#, python-format
-msgid "Žymėjimas turi atitikti šabloną: %(pattern)s"
-msgstr ""
-
 msgid "Laikotarpio pradžia"
 msgstr ""
 
@@ -805,14 +837,6 @@ msgstr ""
 msgid "Privaloma užpildyti \"Organizacija\" arba \"Agentas\" lauką."
 msgstr ""
 
-#, python-brace-format
-msgid "Ryšys \"{attribution}\" su šia organizacija jau egzistuoja."
-msgstr ""
-
-#, python-brace-format
-msgid "Ryšys \"{attribution}\" su šiuo agentu jau egzistuoja."
-msgstr ""
-
 msgid "Pridėti"
 msgstr ""
 
@@ -838,6 +862,9 @@ msgstr ""
 msgid "Kategorija"
 msgstr ""
 
+msgid "Rodyti pasirinktas kategorijas"
+msgstr ""
+
 msgid "Išsaugoti"
 msgstr ""
 
@@ -845,15 +872,6 @@ msgid "Ryšio tipas"
 msgstr ""
 
 msgid "Neteisinga ryšio tipo reikšmė."
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"\"{relation.inversive_title}\" ryšys su šiuo duomenų rinkiniu jau egzistuoja."
-msgstr ""
-
-#, python-brace-format
-msgid "\"{relation.title}\" ryšys su šiuo duomenų rinkiniu jau egzistuoja."
 msgstr ""
 
 msgid "Terminas"
@@ -953,16 +971,16 @@ msgid "Teisės - Aprašymas"
 msgstr ""
 
 msgid ""
-"Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka dct:"
-"rights / dct:description."
+"Laisvu tekstu pateikiamas teisių deklaracijos aprašymas. Atitinka "
+"dct:rights / dct:description."
 msgstr ""
 
 msgid "Katalogas"
 msgstr ""
 
 msgid ""
-"Katalogas, kurio turinys domina šio katalogo kontekste. Atitinka dcat:"
-"Catalog."
+"Katalogas, kurio turinys domina šio katalogo kontekste. Atitinka "
+"dcat:Catalog."
 msgstr ""
 
 msgid "Duomenų tvarkytojas"
@@ -982,16 +1000,16 @@ msgstr ""
 
 msgid ""
 "Informacija ar duomenų rinkinys yra atviri duomenys, ar jam taikomi prieigos "
-"apribojimai, ar jis nėra viešas, ar jis konfidencialus. Atitinka dct:"
-"accessRights."
+"apribojimai, ar jis nėra viešas, ar jis konfidencialus. Atitinka "
+"dct:accessRights."
 msgstr ""
 
 msgid "Žymės"
 msgstr ""
 
 msgid ""
-"Duomenų išteklių apibūdinantys raktažodžiai arba žymos. Atitinka dcat:"
-"keyword."
+"Duomenų išteklių apibūdinantys raktažodžiai arba žymos. Atitinka "
+"dcat:keyword."
 msgstr ""
 
 msgid "Geoportalo id"
@@ -1019,11 +1037,18 @@ msgstr ""
 msgid "Duomenų ištekliaus poklasis"
 msgstr ""
 
-msgid "API formatas"
+msgid "Agentas"
 msgstr ""
 
 msgid ""
-"Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:MediaTypeOrExtent."
+"Duomenų publikavimo paslaugą teikiantis agentas. Privaloma nurodyti arba "
+"Agentą arba API adresą. Atitinka dcat:endpointURL"
+msgstr ""
+
+msgid "API formatas"
+msgstr ""
+
+msgid "Struktūra, grąžinama kviečiant paslaugos URL. Atitinka dct:format."
 msgstr ""
 
 msgid "API specifikacijos formatas"
@@ -1055,16 +1080,16 @@ msgid "Laikotarpio pradžios data"
 msgstr ""
 
 msgid ""
-"Ši savybė nurodo pradžios datą, kurią apima duomenų rinkinys. Atitinka dct:"
-"temporal."
+"Ši savybė nurodo pradžios datą, kurią apima duomenų rinkinys. Atitinka "
+"dct:temporal."
 msgstr ""
 
 msgid "Laikotarpio pabaigos data"
 msgstr ""
 
 msgid ""
-"Ši savybė nurodo pabaigos datą, kurią apima duomenų rinkinys. Atitinka dct:"
-"temporal."
+"Ši savybė nurodo pabaigos datą, kurią apima duomenų rinkinys. Atitinka "
+"dct:temporal."
 msgstr ""
 
 msgid "Informacinės sistemos tvarkytojas"
@@ -1092,6 +1117,9 @@ msgstr ""
 msgid "Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."
 msgstr ""
 
+msgid "Nurodo, kokį standartą atitinka išteklius. Atitinka dct:conformsTo"
+msgstr ""
+
 msgid "Paslaugos tipas. Atitinka dct:type"
 msgstr ""
 
@@ -1104,6 +1132,9 @@ msgstr ""
 msgid "Duomenų atvėrimas"
 msgstr ""
 
+msgid "Jau įtraukta į versiją"
+msgstr ""
+
 msgid "Duomenų rinkinių atnaujinimo ataskaita"
 msgstr ""
 
@@ -1114,9 +1145,6 @@ msgid "Ryšio identifikatorius"
 msgstr ""
 
 msgid "Priskyrimo rūšis"
-msgstr ""
-
-msgid "Agentas"
 msgstr ""
 
 msgid "Apibūdinimas"
@@ -1197,70 +1225,14 @@ msgstr ""
 msgid "Naudotojui išsiųstas laiškas dėl registracijos"
 msgstr ""
 
-#, python-brace-format
-msgid "Modelis \"{model.name}\" jau egzistuoja."
-msgstr ""
-
-#, python-brace-format
-msgid "Savybė \"{name}\" jau egzistuoja."
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Duomenų lauko \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už modelio metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-
-#, python-brace-format
-msgid "Prefiksas \"{name}\" jau egzistuoja."
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už duomenų lauko metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Duomenų reikšmės \"{0}\" metaduomenų matomumo lygis \"{1}\" negali būti "
-"aukštesnis už duomenų modelio metaduomenų matomumo lygį \"{2}\". "
-msgstr ""
-
-#, python-brace-format
-msgid "Galima reikšmė \"{enum.prepare}\" jau egzistuoja."
-msgstr ""
-
-#, python-brace-format
-msgid "Parametras \"{param.prepare}\" jau egzistuoja."
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"\"{name}\" kodiniame pavadinime gali būti naudojamos tik lotyniškos raidės."
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Pirmas modelio kodinio pavadinimo simbolis turi būti didžioji raidė: "
-"\"{name}\"."
-msgstr ""
-
 msgid ""
 "Modelio kodiniame pavadinime gali būti didžiosos/mažosios raidės ir "
 "skaičiai, "
 msgstr ""
 
-#, python-brace-format
-msgid "Pirmas kodinio pavadinimo simbolis turi būti mažoji raidė: \"{name}\"."
-msgstr ""
-
-#, python-brace-format
 msgid ""
-"Kodiniame pavadinime negali būti naudojamos didžiosios raidės: \"{name}\"."
-msgstr ""
-
-msgid "Pavadinime gali būti mažosios raidės ir skaičiai, "
+"Pavadinime gali būti mažosios raidės ir skaičiai, žodžiai gali būti atskirti "
+"_ simboliu, arba . simboliu, "
 msgstr ""
 
 msgid "Duomenų rinkinių atvėrimo progresas"
@@ -1379,9 +1351,12 @@ msgstr ""
 msgid "API dokumentacijos formatas (pvz., JSON, YAML)"
 msgstr ""
 
+msgid "Nurodo kokį standartą atitinka paslauga. (pvz., UDTS)"
+msgstr ""
+
 msgid ""
-"Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys. Atitinka dct:"
-"temporal."
+"Ši savybė nurodo laikotarpį, kurį apima duomenų rinkinys. Atitinka "
+"dct:temporal."
 msgstr ""
 
 msgid ""
@@ -1438,15 +1413,6 @@ msgstr ""
 msgid "Pasirinkite kategoriją."
 msgstr ""
 
-msgid "Teritorija"
-msgstr ""
-
-msgid "Periodo pradžia"
-msgstr ""
-
-msgid "Periodo pabaiga"
-msgstr ""
-
 msgid "Dydis"
 msgstr ""
 
@@ -1487,12 +1453,6 @@ msgid "Pašalinti"
 msgstr ""
 
 msgid "Atsisiuntimo formatas"
-msgstr ""
-
-msgid "Duomenis teikianti organizacija"
-msgstr ""
-
-msgid "Institucija, atsakinga už duomenų atvėrimą"
 msgstr ""
 
 msgid "Kontaktinė informacija"
@@ -1624,6 +1584,9 @@ msgstr ""
 msgid "Pridėti panaudojimo atvejį"
 msgstr ""
 
+msgid "Laukia patvirtinimo"
+msgstr ""
+
 msgid ""
 "Šio duomenų rinkinio duomenys nėra naudojami nei viename panaudojimo "
 "atvejyje."
@@ -1726,6 +1689,9 @@ msgstr ""
 msgid "Duomenų ištekliaus būsena"
 msgstr ""
 
+msgid "Duomenų rengėjas"
+msgstr ""
+
 msgid "Žymė"
 msgstr ""
 
@@ -1783,14 +1749,6 @@ msgstr ""
 msgid "Tvarkytojo redagavimas"
 msgstr ""
 
-#, python-brace-format
-msgid "Ar tikrai norite pašalinti \"{obj.organization.title}\" iš {role}?"
-msgstr ""
-
-#, python-brace-format
-msgid "Ar tikrai norite ištrinti \"{obj}\" {role}?"
-msgstr ""
-
 msgid "Poreikių pridėjimas"
 msgstr ""
 
@@ -1820,7 +1778,7 @@ msgstr ""
 msgid "Esybių (modelių) skaičius"
 msgstr ""
 
-msgid "Duomenų šaltinių (distribucijų) skaičius"
+msgid "Pateikčių skaičius"
 msgstr ""
 
 msgid "Duomenų rinkinių skaičius"
@@ -1841,115 +1799,25 @@ msgstr ""
 msgid "Duomenų rinkinių būsenos"
 msgstr ""
 
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio būseną rinkinio "
-"įkėlimo datai"
-msgstr ""
-
-msgid "{self.get_title_for_indicator(indicator)} pagal rinkinio būseną laike"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį "
-"rinkinio įkėlimo datai"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio valdymo sritį laike"
-msgstr ""
-
 msgid "Duomenų rinkinių brandos lygiai"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio brandos lygį "
-"rinkinio įkėlimo datai"
-msgstr ""
-
-msgid "{Y_TITLES.get(indicator, '')} pagal rinkinio brandos lygį laike"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją "
-"rinkinio įkėlimo datai"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio organizaciją laike"
 msgstr ""
 
 msgid "Duomenų rinkinių žymės"
 msgstr ""
 
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio žymes rinkinio "
-"įkėlimo datai"
-msgstr ""
-
-msgid "{self.get_title_for_indicator(indicator)} pagal rinkinio žymes laike"
-msgstr ""
-
 msgid "Duomenų rinkinių formatai"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio formatą rinkinio "
-"įkėlimo datai"
-msgstr ""
-
-msgid "{self.get_title_for_indicator(indicator)} pagal rinkinio formatą laike"
 msgstr ""
 
 msgid "Duomenų rinkinių atnaujinimo dažnumas"
 msgstr ""
 
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio atnaujinimą "
-"rinkinio įkėlimo datai"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio atnaujinimą laike"
-msgstr ""
-
 msgid "Duomenų rinkinių grupės"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio grupes rinkinio "
-"įkėlimo datai"
-msgstr ""
-
-msgid "{self.get_title_for_indicator(indicator)} pagal rinkinio grupes laike"
 msgstr ""
 
 msgid "Duomenų rinkinių prieigos teisės"
 msgstr ""
 
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio prieigos teises "
-"rinkinio įkėlimo datai"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio prieigos teises "
-"laike"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją rinkinio "
-"įkėlimo datai"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio kategoriją laike"
-msgstr ""
-
 msgid "Duomenų rinkinių kiekis metuose"
-msgstr ""
-
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal rinkinio įkėlimo datą laike"
 msgstr ""
 
 msgid "Termino pašalinimas"
@@ -2336,10 +2204,6 @@ msgstr ""
 msgid "Veiksmai"
 msgstr ""
 
-#, python-brace-format
-msgid "\"{obj_display}\" prašymas pašalintas sėkmingai."
-msgstr ""
-
 msgid "Duomenų teikėjo \""
 msgstr ""
 
@@ -2412,10 +2276,10 @@ msgid ""
 "vienintelis koordinatoriaus rolės atstovas."
 msgstr ""
 
-msgid "Narys su šiuo el. pašto adresu jau egzistuoja."
+msgid "Jūs neturite teisės priskirti šios rolės."
 msgstr ""
 
-msgid "Jūs neturite teisės priskirti šios rolės."
+msgid "Narys su šiuo el. pašto adresu jau egzistuoja."
 msgstr ""
 
 msgid "Prašymas"
@@ -2594,6 +2458,9 @@ msgid "Atvirų duomenų koordinatorius"
 msgstr ""
 
 msgid "Atvirų duomenų tvarkytojas"
+msgstr ""
+
+msgid "Atvirų duomenų skelbėjas"
 msgstr ""
 
 msgid "Ataskaita"
@@ -2829,8 +2696,8 @@ msgid "Dėmesio:"
 msgstr ""
 
 msgid ""
-"Prieš pradedant registraciją įsikinkite, kad jūsų data.gov profilio el."
-"paštas sutampa su viisp sistemoje esančio profilio el.paštu. Jį galima "
+"Prieš pradedant registraciją įsikinkite, kad jūsų data.gov profilio "
+"el.paštas sutampa su viisp sistemoje esančio profilio el.paštu. Jį galima "
 "koreguoti."
 msgstr ""
 
@@ -2955,9 +2822,6 @@ msgid "Šalinti taikymo sritį"
 msgstr ""
 
 msgid "Organizacijų sujungimas"
-msgstr ""
-
-msgid "Organiacijų sujungimas"
 msgstr ""
 
 msgid "Ryšiai su duomenų ištekliais"
@@ -3090,6 +2954,9 @@ msgid ""
 "visiems. Kitu atveju bus matomas tik gavėjo ir teikėjų organizacijoms."
 msgstr ""
 
+msgid "Fizinis asmuo"
+msgstr ""
+
 msgid "Kliento pavadinimas"
 msgstr ""
 
@@ -3160,12 +3027,6 @@ msgid ""
 msgstr ""
 
 msgid "Pateikti naują panaudojimo atvejį"
-msgstr ""
-
-msgid "naujas"
-msgstr ""
-
-msgid "atmestas"
 msgstr ""
 
 msgid "Nėra panaudojimo atvejo"
@@ -3398,9 +3259,6 @@ msgstr ""
 msgid "Papildoma informacija"
 msgstr ""
 
-msgid "Šis laukas privalomas"
-msgstr ""
-
 msgid "Atgal į poreikių sąrašą"
 msgstr ""
 
@@ -3483,29 +3341,16 @@ msgstr ""
 msgid "Poreikio pateikimo data"
 msgstr ""
 
-msgid "{self.get_title_for_indicator(indicator)} pagal poreikio būseną laike"
-msgstr ""
-
 msgid "Duomenų rinkinių būsena"
 msgstr ""
 
-msgid ""
-"{self.get_title_for_indicator(indicator)} pagal duomenų rinkinio būseną laike"
-msgstr ""
-
 msgid "Poreikių organizacijos"
-msgstr ""
-
-msgid "{self.get_title_for_indicator(indicator)} pagal organizaciją laike"
 msgstr ""
 
 msgid "Poreikių valdymo sritys"
 msgstr ""
 
 msgid "Poreikių kiekis metuose"
-msgstr ""
-
-msgid "{self.get_title_for_indicator(indicator)} pagal pateikimo datą"
 msgstr ""
 
 msgid "Poreikio registravimas"
@@ -3595,6 +3440,14 @@ msgstr ""
 msgid "Duomenų paslauga"
 msgstr ""
 
+msgid ""
+"Teisės aktas, kurio pagrindu yra valdomas ir tvarkomas duomenų rinkinys."
+"<br>Norint nurodyti konkrečią vietą teisės akto dokumente, po „#“ pateikite "
+"konkrečią nuorodą, pvz., „#17.2“.<br>Tais atvejais, kai yra keli dokumentai "
+"su priedais: „#priedas1/17.2“, „17.2/17.2.5“, kur „priedas1“ yra dokumento "
+"failo pavadinimas.<br>Atitinka eli:LegalResource."
+msgstr ""
+
 msgid "Šaltinio pavadinimas"
 msgstr ""
 
@@ -3620,7 +3473,7 @@ msgstr ""
 msgid "Arba įkelkite duomenų failą."
 msgstr ""
 
-msgid "Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."
+msgid "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."
 msgstr ""
 
 msgid "Failo plėtinys"
@@ -3690,20 +3543,29 @@ msgid "Statusas"
 msgstr ""
 
 msgid ""
-"Duomenų distribucija gali būti įgyvendinta - veikianti, kuriama, suplanuota "
-"kūrimui, pasenusi arba atsisakyta."
+"Pateiktis gali būti įgyvendinta - veikianti, kuriama, suplanuota kūrimui, "
+"pasenusi arba atsisakyta."
 msgstr ""
 
 msgid "Ar duomenų šaltinis yra didelės vertės"
 msgstr ""
 
+msgid "Periodo pradžia"
+msgstr ""
+
+msgid "Periodo pabaiga"
+msgstr ""
+
 msgid "Prieiga"
 msgstr ""
 
-msgid "Atsisiųsti duomenų šaltinį"
+msgid "Atsisiųsti pateiktį"
 msgstr ""
 
-msgid "Atidaryti duomenų šaltinį"
+msgid "Atidaryti pateiktį"
+msgstr ""
+
+msgid "Teritorija"
 msgstr ""
 
 msgid "Publikuojamas saugykloje"
@@ -3721,7 +3583,7 @@ msgstr ""
 msgid "Naujas modelis"
 msgstr ""
 
-msgid "Naujas duomenų rinkinio šaltinis"
+msgid "Nauja duomenų rinkinio pateiktis"
 msgstr ""
 
 msgid "Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."
@@ -3824,8 +3686,8 @@ msgstr ""
 
 #, python-brace-format
 msgid ""
-"Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje {expected_status}."
-"Dabartinė būsena: {current_status}."
+"Veiksmas gali būti atliekamas tik sutarčiai esant būsenoje "
+"{expected_status}.Dabartinė būsena: {current_status}."
 msgstr ""
 
 msgid "PDF failas sutarčiai nėra sukurtas."
@@ -3859,6 +3721,9 @@ msgid "Failas turi būti Markdown formato (.md)."
 msgstr ""
 
 msgid "Nurodoma organizacija, kuriai priskirtas šablonas."
+msgstr ""
+
+msgid "Duomenis teikianti organizacija"
 msgstr ""
 
 msgid "Duomenų teikėjo atstovas"
@@ -4117,9 +3982,6 @@ msgstr ""
 msgid "Duomenų rinkinio ar vardų erdvės aprašymas."
 msgstr ""
 
-msgid "Reikšmė turi būti integer tipo."
-msgstr ""
-
 msgid "Aprašymas neatitinka Markdown formato."
 msgstr ""
 
@@ -4133,6 +3995,12 @@ msgstr ""
 msgid ""
 "Metaduomenų matomumas '{0}' negali būti didesnis nei duomenų lauko matomumas "
 "'{1}'."
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Galima reikšmė \"{prepare}\" su reikšme šaltinyje \"{source}\" jau "
+"egzistuoja."
 msgstr ""
 
 msgid "Nėra per ką sieti"
@@ -4177,10 +4045,6 @@ msgid ""
 "vientisumas."
 msgstr ""
 
-#, python-brace-format
-msgid "Duomenų filtre nurodytas modelyje neegzistuojantis laukas: \"{ast}\"."
-msgstr ""
-
 msgid "Savybė nurodanti duomenų lauko pavadinimą, modelio atributas."
 msgstr ""
 
@@ -4211,10 +4075,10 @@ msgid ""
 "pavadinimams keliamus reikalavimus."
 msgstr ""
 
-msgid "Duomenų distribucija"
+msgid "Pateiktis"
 msgstr ""
 
-msgid "Savybė nurodanti modelio duomenų distribuciją."
+msgid "Savybė nurodanti modelio pateiktį."
 msgstr ""
 
 msgid ""
@@ -4278,14 +4142,6 @@ msgid ""
 msgstr ""
 
 msgid "Modelis su tokiu kodiniu pavadinimu jau egzistuoja."
-msgstr ""
-
-#, python-brace-format
-msgid "Nevalidus uri \"{uri}\" formatas."
-msgstr ""
-
-#, python-brace-format
-msgid "Neatpažintas \"{prefix}\" prefiksas."
 msgstr ""
 
 msgid ""
@@ -4452,6 +4308,12 @@ msgstr ""
 msgid "Nurodo duomenų lauko tipo parametrus."
 msgstr ""
 
+msgid "Ryšio raktai"
+msgstr ""
+
+msgid "Savybės iš susieto modelio, kurios naudojamos kaip ryšio raktas."
+msgstr ""
+
 msgid "Kodiniame pavadinime negali būti naudojamos didžiosios raidės."
 msgstr ""
 
@@ -4556,9 +4418,7 @@ msgstr ""
 msgid "Bazė"
 msgstr ""
 
-msgid ""
-"Negalima priskirti Saugyklos API distribucijos. Pasirinkite kitą "
-"distribuciją."
+msgid "Negalima priskirti Saugyklos API pateikties. Pasirinkite kitą pateiktį."
 msgstr ""
 
 msgid "Susijęs modelis"
@@ -4621,32 +4481,14 @@ msgstr ""
 msgid "Invalid"
 msgstr ""
 
-#, python-brace-format
-msgid "Duomenų išteklius \"{meta.name}\" jau egzistuoja."
-msgstr ""
-
-#, python-brace-format
 msgid ""
-"\"{meta.name}\" kodiniame pavadinime gali būti naudojamos tik lotyniškos "
-"raidės."
+"Įsitikinkite, kad jis egzistuoja ir turi patvirtintą (stabilią) versiją."
 msgstr ""
 
-#, python-brace-format
+#, python-format
 msgid ""
-"\"{meta.name}\" kodiniame pavadinime gali būti naudojamos tik mažosios "
-"raidės."
-msgstr ""
-
-#, python-brace-format
-msgid "Klaida skaitant formulę \"{prepare}\"\": {e}"
-msgstr ""
-
-#, python-brace-format
-msgid "Neteisingas uri \"{uri}\" formatas."
-msgstr ""
-
-#, python-brace-format
-msgid "Prefiksas \"{prefix}\" duomenų ištekliuje neegzistuoja."
+"Nepavyko susieti savybės „%(name)s“ per nurodytą ryšį „%(ref)s“. "
+"Įsitikinkite, kad nurodytas modelis egzistuoja."
 msgstr ""
 
 msgid "Nepavyko gauti duomenų iš Saugyklos per nustatytą laiką"
@@ -4796,6 +4638,25 @@ msgstr ""
 msgid "Galiojantys keitimai"
 msgstr ""
 
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti string tipo."
+msgstr ""
+
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti integer tipo."
+msgstr ""
+
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti number tipo."
+msgstr ""
+
+#, python-brace-format
+msgid "Reikšmė \"{value}\" turi būti boolean tipo. Viena iš: {possible_values}"
+msgstr ""
+
+msgid "Savybės reikšmės tipas nėra palaikomas."
+msgstr ""
+
 msgid "Kiekis"
 msgstr ""
 
@@ -4805,10 +4666,18 @@ msgstr ""
 msgid "Negalima kurti naujos reikšmės, kai versijos būsena nėra juodraštis."
 msgstr ""
 
+#, python-brace-format
+msgid "Reikšmių duomenų lauko tipui \"{metadata_type}\" kurti negalima"
+msgstr ""
+
 msgid "Galimos reikšmės pridėjimas"
 msgstr ""
 
 msgid "Negalima redaguoti reikšmės, kai versijos būsena nėra juodraštis."
+msgstr ""
+
+#, python-brace-format
+msgid "Reikšmių duomenų lauko tipui \"{metadata_type}\" keisti negalima"
 msgstr ""
 
 msgid "Galimos reikšmės redagavimas"
@@ -4841,16 +4710,6 @@ msgid ""
 msgstr ""
 
 msgid "Duomenų lauko redagavimas"
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Pridėtas \"{model.name}\" modelio bazinis duomenų laukas \"{prop.name}\"."
-msgstr ""
-
-#, python-brace-format
-msgid ""
-"Pašalintas \"{model.name}\" modelio bazinis duomenų laukas \"{prop_name}\"."
 msgstr ""
 
 msgid "Parametro pridėjimas"
@@ -4904,7 +4763,7 @@ msgstr ""
 msgid "Klaida atnaujinimo dažnume"
 msgstr ""
 
-msgid "Klaida duomenų rinkinio duomenų šaltinyje"
+msgid "Klaida duomenų rinkinio pateiktyje"
 msgstr ""
 
 msgid "Klaida importuojant duomenis iš Geoportal"
@@ -5045,6 +4904,9 @@ msgstr ""
 msgid "Komentuoti gali tik prisijungę naudotojai"
 msgstr ""
 
+msgid "Šis laukas privalomas"
+msgstr ""
+
 msgid "VSSA Valstybės skaitmeninių sprendimų agentūra"
 msgstr ""
 
@@ -5082,9 +4944,6 @@ msgid "Atsijungti"
 msgstr ""
 
 msgid "Prisijungti"
-msgstr ""
-
-msgid "Fizinis asmuo"
 msgstr ""
 
 msgid "Duomenų paieška"
@@ -5291,9 +5150,10 @@ msgstr ""
 msgid "Gamybinė"
 msgstr ""
 
-msgid ""
-"Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "
-"publikuojami Saugykloje\"."
+msgid "Agento aplinka"
+msgstr ""
+
+msgid "Agento aplinkos"
 msgstr ""
 
 msgid ""
@@ -5302,15 +5162,8 @@ msgid ""
 msgstr ""
 
 msgid ""
-"Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."
-msgstr ""
-
-msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
-msgstr ""
-
-msgid ""
-"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
-"klaidų."
+"Šis laukas yra privalomas, jei nustatytas požymis \"Atviri duomenys "
+"publikuojami Saugykloje\"."
 msgstr ""
 
 msgid "Nurodomas Agento pavadinimas."
@@ -5326,26 +5179,6 @@ msgid ""
 "Nurodoma Agento rūšis t.y. ar bus naudojama \"Spinta\" ar kitas sprendimas."
 msgstr ""
 
-msgid "Atviri duomenys publikuojami Saugykloje"
-msgstr ""
-
-msgid ""
-"Nurodo, ar Agentas papildomai publikuoja `access=open` duomenis į atvirų "
-"duomenų Saugyklą."
-msgstr ""
-
-msgid "Atvirų duomenų publikavimo nuoroda"
-msgstr ""
-
-msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
-msgstr ""
-
-msgid "Agentas įjungtas"
-msgstr ""
-
-msgid "Nurodoma, ar Agentas yra įjungtas ar išjungtas."
-msgstr ""
-
 msgid "Agentas archyvuotas"
 msgstr ""
 
@@ -5354,10 +5187,33 @@ msgid ""
 "įprastiems platformos vartotojams"
 msgstr ""
 
-msgid "Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService."
+msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
 msgstr ""
 
-msgid "Nurodoma organizacija, kuriai priskirtas Agentas."
+msgid ""
+"Nurodoma data, kada paskutinį kartą buvo bandyta vykdyti sinchronizaciją."
+msgstr ""
+
+msgid "Ar paskutinė sinchronizacija įvyko sėkmingai?"
+msgstr ""
+
+msgid ""
+"Nurodoma, ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo "
+"klaidų."
+msgstr ""
+
+msgid "Atviri duomenys publikuojami Saugykloje"
+msgstr ""
+
+msgid ""
+"Nurodo, ar agento aplinka papildomai publikuoja `access=open` duomenis į "
+"atvirų duomenų Saugyklą."
+msgstr ""
+
+msgid "Atvirų duomenų publikavimo nuoroda"
+msgstr ""
+
+msgid "Nuoroda, kur turėtų būti publikuojami atviri duomenys."
 msgstr ""
 
 msgid "Autorizacijos kliento identifikatorius"
@@ -5371,7 +5227,7 @@ msgstr ""
 msgid "Aplinka"
 msgstr ""
 
-msgid "Aplinka, kurioje diegiamas agentas."
+msgid "Aplinka, kurioje diegiamas fizinis agentas."
 msgstr ""
 
 msgid "Autorizacijos serverio adresas"
@@ -5395,7 +5251,18 @@ msgid ""
 "agento adresas"
 msgstr ""
 
-msgid "Susietas duomenų išteklius turi būti \"paslaugos\" tipo."
+msgid "Agento aplinka įjungta"
+msgstr ""
+
+msgid "Nurodoma, ar Agento aplinka yra įjungta ar išjungta."
+msgstr ""
+
+msgid "Agento aplinka archyvuota"
+msgstr ""
+
+msgid ""
+"Nurodo ar Agento aplinka yra archyvuota. Archyvuotos aplinkos nėra "
+"pasiekiamos įprastiems platformos vartotojams."
 msgstr ""
 
 msgid "API galinis taškas"
@@ -5434,13 +5301,29 @@ msgstr ""
 msgid "Grįžti į agentus"
 msgstr ""
 
-msgid "Įjungtas"
+msgid "Pridėti aplinką"
 msgstr ""
 
-msgid "Išjungtas"
+msgid "Nurodo ar aplinka yra įjungta/išjungta."
 msgstr ""
 
-msgid "Paskutinės sinchronizacijos rezultatas"
+msgid "Aplinka, kurioje diegiamas agentas."
+msgstr ""
+
+msgid "Data ir laikas, kada buvo atlikta paskutinė užklausa iš Agento."
+msgstr ""
+
+msgid ""
+"Ar paskutinė sinchronizacija įvyko sėkmingai t.y. jos metu nekilo klaidų?"
+msgstr ""
+
+msgid "Galimi veiksmai su agento aplinka: žurnalas, redaguoti, pašalinti."
+msgstr ""
+
+msgid "Įjungta"
+msgstr ""
+
+msgid "Išjungta"
 msgstr ""
 
 msgid "Pavyko"
@@ -5452,10 +5335,25 @@ msgstr ""
 msgid "Nevykdyta"
 msgstr ""
 
-msgid "Publikuojami atviri duomenys"
+msgid "Žurnalas"
 msgstr ""
 
-msgid "Atvirų duomenų servisas"
+msgid "Nėra registruotų agento aplinkų."
+msgstr ""
+
+msgid "Grįžti į agentą"
+msgstr ""
+
+msgid "Įjungtas"
+msgstr ""
+
+msgid "Išjungtas"
+msgstr ""
+
+msgid "Paskutinės sinchronizacijos rezultatas"
+msgstr ""
+
+msgid "Publikuojami atviri duomenys"
 msgstr ""
 
 msgid "Agento prisijungimo prie Katalogo konfigūracija"
@@ -5518,11 +5416,6 @@ msgstr ""
 msgid "Pridėti agentą"
 msgstr ""
 
-msgid ""
-"Nurodo ar paskutinė sinchronizacija buvo sėkminga/nesėkminga. Taip pat, ar "
-"Agentas yra įjungtas/išjungtas."
-msgstr ""
-
 msgid "Kodinis Pavadinimas"
 msgstr ""
 
@@ -5538,25 +5431,13 @@ msgstr ""
 msgid "Data ir laikas, kada agentas buvo pridėtas į Katalogą."
 msgstr ""
 
-msgid "Data ir laikas, kada buvo atlikta paskutinė užklausa iš Agento."
-msgstr ""
-
-msgid "Duomenų Paslauga"
-msgstr ""
-
-msgid "Agentui priskirta duomenų paslauga."
-msgstr ""
-
 msgid "Galimi veiksmai su agentu: žurnalas, redaguoti, pašalinti."
-msgstr ""
-
-msgid "Žurnalas"
 msgstr ""
 
 msgid "Nėra registruotų agentų."
 msgstr ""
 
-msgid "Grįžti į agentą"
+msgid "Grįžti į agento aplinką"
 msgstr ""
 
 msgid "Užklausos informacija"
@@ -5577,16 +5458,32 @@ msgstr ""
 msgid "Pridėti Agentą"
 msgstr ""
 
-msgid ""
-"Nurodoma su Agentu susieta duomenų paslauga. Atitinka DCAT:DataService. Jei "
-"nenurodyta, duomenų paslauga bus sukurta automatiškai."
+#, python-brace-format
+msgid "Agentas '{0}' sukurtas sėkmingai!"
 msgstr ""
 
-msgid "Duomenų paslauga automatiškai sukurta kuriant agentą."
+msgid "Redaguoti Agentą"
 msgstr ""
 
 #, python-brace-format
-msgid "Agentas {self.object.title} sukurtas sėkmingai!"
+msgid "Agentas '{0}' atnaujintas sėkmingai!"
+msgstr ""
+
+msgid "Agentų trynimas laikinai išjungtas."
+msgstr ""
+
+#, python-brace-format
+msgid "Agentas '{0}' pašalintas sėkmingai!"
+msgstr ""
+
+#, python-brace-format
+msgid ""
+"Agentas '{0}' jau turi visas galimas aplinkas. Norėdami pridėti naują "
+"aplinką pašalinkite esamą(-as) aplinką(-as)"
+msgstr ""
+
+#, python-brace-format
+msgid "Aplinka '{0}' sukurta sėkmingai!"
 msgstr ""
 
 msgid ""
@@ -5598,30 +5495,30 @@ msgstr ""
 
 #, python-format
 msgid ""
-"Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento kūrimas "
-"nepavyko."
+"Nepavyko pasiekti autorizacijos serverio (%(url)s), dėl to Agento aplinkos "
+"kūrimas nepavyko."
 msgstr ""
 
 #, python-format
-msgid "Įvyko klaida, nepavyko sukurti agento. Klaida: %(exception)s"
+msgid "Įvyko klaida, nepavyko sukurti Agento aplinkos. Klaida: %(exception)s"
 msgstr ""
 
-msgid "Redaguoti Agentą"
-msgstr ""
-
-#, python-brace-format
-msgid "Agentas {self.object.title} atnaujintas sėkmingai!"
-msgstr ""
-
-msgid "Pašalinti Agentą"
+msgid "Redaguoti aplinką"
 msgstr ""
 
 #, python-brace-format
-msgid "Ar tikrai norite ištrinti Agentą: {self.object}?"
+msgid "'{0}' aplinka atnaujinta sėkmingai!"
+msgstr ""
+
+msgid "Agento aplinkų trynimas laikinai išjungtas."
 msgstr ""
 
 #, python-brace-format
-msgid "Agentas {self.object.title} pašalintas sėkmingai!"
+msgid "Ar tikrai norite ištrinti aplinką: {0}?"
+msgstr ""
+
+#, python-brace-format
+msgid "'{0}' aplinka pašalinta sėkmingai!"
 msgstr ""
 
 msgid "Asmeninė informacija"
@@ -5646,15 +5543,6 @@ msgid "Redaguoti naudotoją"
 msgstr ""
 
 msgid "Naudotojas \""
-msgstr ""
-
-msgid ""
-"Organizacijos \"{rep.content_object}\" {rep.get_role_display().lower()}: "
-msgstr ""
-
-msgid ""
-"Duomenų ištekliaus \"{rep.content_object}\" {rep.get_role_display()."
-"lower()}: "
 msgstr ""
 
 msgid "Vienkartinis prisijungimo kodas"

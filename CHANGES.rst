@@ -14,6 +14,12 @@ https://github.com/atviriduomenys/katalogas/issues/2589
 - Adds select2 css fixes to `base_form.html` so it can be used across all forms
 - Removes any duplicated custom css related to Select2 from specific forms after global fixes were introduced
 
+https://github.com/atviriduomenys/katalogas/issues/2595
+
+- Overrides `python manage.py makemessages` command to automatically include `-l en -l lt --no-location` if not provided
+- Overrides `python manage.py compilemessages` command to automatically include `-l en -l lt ` if not provided
+- Change all Lithuanian translation of "Distribution" to single term - "Pateiktis" (in line with DCAT-AP-LT)
+
 v 1.19.0 (2026-04-29)
 ==================
 

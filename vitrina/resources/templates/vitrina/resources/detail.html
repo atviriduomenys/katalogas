@@ -49,15 +49,15 @@
 
                     {% if resource.file %}
                         <a href="{{ resource.file.url }}" download >
-                            {% translate "Atsisiųsti duomenų šaltinį" %}
+                            {% translate "Atsisiųsti pateiktį" %}
                         </a>
                     {% elif resource.download_url %}
                         <a href="{{ resource.download_url }}" target="_blank">
-                            {% translate "Atidaryti duomenų šaltinį" %}
+                            {% translate "Atidaryti pateiktį" %}
                         </a>
                     {% elif resource.access_url %}
                         <a href="{{ resource.access_url }}" target="_blank">
-                            {% translate "Atidaryti duomenų šaltinį" %}
+                            {% translate "Atidaryti pateiktį" %}
                         </a>
                     {% endif %}
                 </div>

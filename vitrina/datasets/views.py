@@ -1991,7 +1991,7 @@ Y_TITLES = {
     "object-count": _("Objektų skaičius"),
     "field-count": _("Savybių (duomenų laukų) skaičius"),
     "model-count": _("Esybių (modelių) skaičius"),
-    "distribution-count": _("Duomenų šaltinių (distribucijų) skaičius"),
+    "distribution-count": _("Pateikčių skaičius"),
     "dataset-count": _("Duomenų rinkinių skaičius"),
     "request-count": _("Poreikių skaičius"),
     "project-count": _("Projektų skaičius"),

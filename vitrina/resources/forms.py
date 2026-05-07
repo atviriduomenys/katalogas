@@ -263,7 +263,7 @@ class DatasetResourceForm(TranslatableModelForm):
             if distributions_with_same_url.exists():
                 self.add_error(
                     "download_url",
-                    _("Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."),
+                    _("Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."),
                 )
 
         if rights_relation and conditions:

@@ -416,9 +416,7 @@ def test_create_resource_with_existing_download_url(app: DjangoTestApp):
     form["format"] = format.pk
     form["download_url"] = "http://www.test.com"
     resp = form.submit()
-    assert list(resp.context["form"].errors.values()) == [
-        ["Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."]
-    ]
+    assert list(resp.context["form"].errors.values()) == [["Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."]]
 
 
 @pytest.mark.django_db

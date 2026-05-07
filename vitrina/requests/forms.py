@@ -28,7 +28,7 @@ from vitrina.requests.models import Request
 from vitrina.datasets.models import Dataset
 from django.utils.html import format_html
 
-from django_select2.forms import ModelSelect2MultipleWidget
+from django_select2.forms import ModelSelect2MultipleWidget, Select2MultipleWidget
 from vitrina.orgs.forms import OrganizationPlanForm
 from vitrina.requests.models import RequestObject
 from django.contrib.contenttypes.models import ContentType
@@ -84,15 +84,12 @@ class RequestForm(TranslatableModelForm):
         queryset=Organization.public.annotate(dataset_count=Count("dataset")).order_by("-dataset_count"),
         required=False,
         help_text=_("Pasirinkimo laukas, organizacija(-os), kurioms poreikio įgyvendinimas/atsakymas yra aktualus."),
+        widget=Select2MultipleWidget(),
     )
 
     class Meta:
         model = Request
         fields = ["title", "description"]
-
-    class Media:
-        css = ModelSelect2MultipleWidget().media._css
-        js = ModelSelect2MultipleWidget().media._js
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

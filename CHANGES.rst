@@ -8,6 +8,11 @@ https://github.com/atviriduomenys/spinta/issues/1874
 
 - Add an additional error message indicating, that the external reference is not found, during manifest import.
 
+https://github.com/atviriduomenys/katalogas/issues/2589
+
+- Sets Django Tagulous to use Django vendor Select2 css/js files to match Select2 versions
+- Adds select2 css fixes to `base_form.html` so it can be used across all forms
+- Removes any duplicated custom css related to Select2 from specific forms after global fixes were introduced
 
 v 1.19.0 (2026-04-29)
 ==================

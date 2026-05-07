@@ -567,3 +567,12 @@ FLAGS = {
         {"condition": "boolean", "value": False},
     ],
 }
+
+# Force Tagulous to use same version of select2 as django admin.
+# Also, do not load jQuery, since it's loaded with bulma
+TAGULOUS_AUTOCOMPLETE_JS = (
+    "admin/js/vendor/select2/select2.full.min.js",
+    "tagulous/tagulous.js",
+    "tagulous/adaptor/select2-4.js",
+)
+TAGULOUS_AUTOCOMPLETE_CSS = {"all": ["admin/css/vendor/select2/select2.min.css"]}

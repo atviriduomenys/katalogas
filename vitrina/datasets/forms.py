@@ -739,7 +739,7 @@ class DatasetAttributionForm(forms.ModelForm):
         label=_("Organizacija"),
         required=False,
         queryset=Organization.public.all(),
-        widget=OrganizationWidget(attrs={"data-width": "100%", "data-minimum-input-length": 0}),
+        widget=OrganizationWidget(attrs={"data-minimum-input-length": 0}),
     )
 
     class Meta:

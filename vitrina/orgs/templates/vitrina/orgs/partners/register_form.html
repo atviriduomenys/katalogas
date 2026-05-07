@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base_form.html" %}
 {% load i18n %}
 
 {% block before_render_css %}{% include "component/before_comment.html" %}{% endblock %}
@@ -11,26 +11,8 @@
 {% block after_render_js %}{% include "component/after_comment.html" %}{% endblock %}
 
 {% block head %}
+    {{ block.super }}
     <style>
-        div#div_id_organization .select {
-            width: 100%;
-        }
-        div#div_id_organization .select:not(.is-multiple):not(.is-loading)::after {
-            display: none;
-        }
-        div#div_id_organization .select2-selection__arrow {
-            height: 2em;
-        }
-        #div_id_organization #select2-id_category-container {
-            line-height: 2.25em;
-        }
-        #div_id_organization .select2-selection--single {
-            height: 2.25em;
-            border-color: #767676;
-        }
-        #div_id_organization .select2-selection--single:hover{
-            border-color: #767676;
-        }
         #div_id_request_form label span.asterisk {
             display: none;
         }
@@ -48,12 +30,3 @@
     </ul>
 {% endblock %}
 {% block current_title %}{% translate "Naujo duomenų teikėjo registravimas" %}{% endblock %}
-
-{% block content %}
-    <div class="columns is-centered">
-        <div class="column is-half">
-            {% include "component/form.html" %}
-        </div>
-    </div>
-    <br/>
-{% endblock %}

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-07 13:50+0300\n"
+"POT-Creation-Date: 2026-05-08 11:11+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -2076,8 +2076,8 @@ msgstr "Page (documentation)"
 msgid "Nuorodos į dokumentus su informacija apie pateiktį. Atitinka foaf:page."
 msgstr "URL to documents about distribution. Corresponds to foaf:page."
 
-msgid "Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."
-msgstr "Dataset distribution with this download link already exists."
+msgid "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."
+msgstr "Distribution with this download link already exists."
 
 msgid "Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."
 msgstr "Checksum value can only include lowercase letters."
@@ -2094,17 +2094,17 @@ msgstr "Form creation tool cannot be used with open data resources"
 msgid "Duomenų išteklius atnaujintas sėkmingai"
 msgstr "Resource updated successfully"
 
-msgid "Naujas duomenų rinkinio šaltinis"
+msgid "Nauja duomenų rinkinio pateiktis"
 msgstr "New dataset distribution"
 
 msgid "Pateiktis sukurta sėkmingai!"
 msgstr "Distribution was created successfully!"
 
-msgid "Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."
+msgid "Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."
 msgstr "Can not edit the distribution, when the version status is not draft."
 
-msgid "Duomenų rinkinio šaltinio redagavimas"
-msgstr "Dataset source edit"
+msgid "Duomenų rinkinio pateikties redagavimas"
+msgstr "Dataset distribution edit"
 
 msgid "Pateiktis atnaujinta sėkmingai!"
 msgstr "Distribution updated successfully!"
@@ -3876,9 +3876,6 @@ msgstr "Or provide a data download link."
 msgid "Arba įkelkite duomenų failą."
 msgstr "Or upload a data file."
 
-msgid "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."
-msgstr "Distribution with this download link already exists."
-
 msgid "Failo plėtinys"
 msgstr "File extension"
 
@@ -4085,15 +4082,6 @@ msgstr "Read structure"
 
 msgid "Naujas modelis"
 msgstr "New model"
-
-msgid "Nauja duomenų rinkinio pateiktis"
-msgstr "New dataset distribution"
-
-msgid "Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."
-msgstr "Can not edit the distribution, when the version status is not draft."
-
-msgid "Duomenų rinkinio pateikties redagavimas"
-msgstr "Dataset distribution edit"
 
 msgid "Negalima trinti pateikties, kai versijos būsena nėra juodraštis."
 msgstr "Can not delete the distribution, when the version status is not draft."

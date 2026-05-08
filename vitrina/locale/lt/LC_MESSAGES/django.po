@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-07 13:50+0300\n"
+"POT-Creation-Date: 2026-05-08 11:11+0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -219,6 +219,56 @@ msgstr ""
 msgid "Teisiniai pagrindai"
 msgstr ""
 
+msgid "Identifikatorius"
+msgstr ""
+
+msgid ""
+"Naudojamas taisyklės identifikatorius. Jei nenaudojamas - nurodomas "
+"skaičius, pvz. 1. Atitinka dct:identifier."
+msgstr ""
+
+msgid "Tipas"
+msgstr ""
+
+msgid "Nurodo taisyklės tipą. Atitinka dct:type."
+msgstr ""
+
+msgid "Įgyvendina"
+msgstr ""
+
+msgid "Nurodo teisės aktą, kurį įgyvendina taisyklė. Atitinka cpsv:implements."
+msgstr ""
+
+msgid "Kalba"
+msgstr ""
+
+msgid "Nurodo taisyklės kalbą. Atitinka dct:language."
+msgstr ""
+
+msgid "Taisyklė"
+msgstr ""
+
+msgid "Taisyklės"
+msgstr ""
+
+msgid "Paslaugos kokybės puslapis"
+msgstr ""
+
+msgid "Paslaugos kokybės puslapiai"
+msgstr ""
+
+msgid "Kilmė"
+msgstr ""
+
+msgid "Kilmės"
+msgstr ""
+
+msgid "Veikla"
+msgstr ""
+
+msgid "Veiklos"
+msgstr ""
+
 msgid "Nepavyko gauti uri: {}. Klaida: {}."
 msgstr ""
 
@@ -274,9 +324,6 @@ msgid "Klausimas"
 msgstr ""
 
 msgid "Atsakymas"
-msgstr ""
-
-msgid "Tipas"
 msgstr ""
 
 msgid "Duomenys"
@@ -770,9 +817,6 @@ msgstr ""
 msgid "Užpildykite tik vieną teisių deklaracijų lauką."
 msgstr ""
 
-msgid "Identifikatorius"
-msgstr ""
-
 msgid "Informacinės sistemos pavadinimas"
 msgstr ""
 
@@ -989,10 +1033,13 @@ msgstr ""
 msgid "Duomenų išteklius viešinamas"
 msgstr ""
 
+msgid "Ši savybė nurodo duomenų ištekliaus kalbą. Atitinka dct:language."
+msgstr ""
+
 msgid "Atnaujinimo dažnumas"
 msgstr ""
 
-msgid "Duomenų atnaujinimo dažnumas. Atitinka dcat:keyword."
+msgid "Duomenų atnaujinimo dažnumas. Atitinka dct:accrualPeriodicity."
 msgstr ""
 
 msgid "Prieigos teisės"
@@ -1076,6 +1123,14 @@ msgid ""
 "įstatymo reikalavimus. Atitinka dcataplt:Importance."
 msgstr ""
 
+msgid "Informacinės sistemos svarbos vertinimas"
+msgstr ""
+
+msgid ""
+"URL nuoroda į informacinės sistemos svarbos vertinimo dokumentą. Atitinka "
+"dcataplt:ISImportanceAssessmentURL."
+msgstr ""
+
 msgid "Laikotarpio pradžios data"
 msgstr ""
 
@@ -1111,6 +1166,36 @@ msgid ""
 "Erdvės skiriamoji geba metrais. Atitinka dcat:spatialResolutionInMeters."
 msgstr ""
 
+msgid "Nurodo taisyklę, kuria vadovaujamasi. Atitinka cpsv:follows."
+msgstr ""
+
+msgid "Licencija"
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga. Atitinka "
+"dct:license."
+msgstr ""
+
+msgid "Paslaugos kokybė"
+msgstr ""
+
+msgid ""
+"Tinklalapis su išsamia informacija apie teikiamos paslaugos kokybę. Atitinka "
+"foaf:page."
+msgstr ""
+
+msgid "Deklaracija apie duomenų rinkinio kilmę. Atitinka dct:provenance."
+msgstr ""
+
+msgid "Buvo sukurtas dėl"
+msgstr ""
+
+msgid ""
+"Veikla, dėl kurios buvo sukurtas duomenų rinkinys. Atitinka "
+"prov:wasGeneratedBy."
+msgstr ""
+
 msgid "Teisės - Susijęs dokumentas"
 msgstr ""
 
@@ -1121,6 +1206,9 @@ msgid "Nurodo, kokį standartą atitinka išteklius. Atitinka dct:conformsTo"
 msgstr ""
 
 msgid "Paslaugos tipas. Atitinka dct:type"
+msgstr ""
+
+msgid "Duomenų rinkinio tipas. Atitinka dct:type."
 msgstr ""
 
 msgid "Dataset"
@@ -1320,9 +1408,6 @@ msgid "Atliktas darbas"
 msgstr ""
 
 msgid "Atlikto darbo būsena"
-msgstr ""
-
-msgid "Licencija"
 msgstr ""
 
 msgid "Ši savybė nurodo licenciją, pagal kurią platinama duomenų paslauga"
@@ -1564,9 +1649,6 @@ msgid "Uždaryti"
 msgstr ""
 
 msgid "Užduotis"
-msgstr ""
-
-msgid "Įgyvendina"
 msgstr ""
 
 msgid "Poreikis"
@@ -1827,6 +1909,52 @@ msgid "Organizacijos"
 msgstr ""
 
 msgid "vaikiniai duomenų ištekliai"
+msgstr ""
+
+msgid "RISR (registrai.lt) IS identifikavimo kodas. Atitinka dct:identifier."
+msgstr ""
+
+msgid ""
+"Nurodo kokį standartą atitinka duomenų rinkinys. Atitinka dct:conformsTo."
+msgstr ""
+
+msgid "Puslapis (dokumentacija)"
+msgstr ""
+
+msgid "Nuorodos į dokumentus su informacija apie pateiktį. Atitinka foaf:page."
+msgstr ""
+
+msgid "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."
+msgstr ""
+
+msgid "Kontrolinės sumos reikšmei gali būti naudojamos tik mažosios raidės."
+msgstr ""
+
+msgid "Vedlio negalima naudoti su šiuo duomenų ištekliaus poklasiu"
+msgstr ""
+
+msgid "Nurodytas duomenų ištekliaus poklasis neturi formos."
+msgstr ""
+
+msgid "Vedlio negalima naudoti su atvirais duomenų ištekliais"
+msgstr ""
+
+msgid "Duomenų išteklius atnaujintas sėkmingai"
+msgstr ""
+
+msgid "Nauja duomenų rinkinio pateiktis"
+msgstr ""
+
+msgid "Pateiktis sukurta sėkmingai!"
+msgstr ""
+
+msgid "Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."
+msgstr ""
+
+msgid "Duomenų rinkinio pateikties redagavimas"
+msgstr ""
+
+msgid "Pateiktis atnaujinta sėkmingai!"
 msgstr ""
 
 msgid "Pasirinkti failą"
@@ -3473,9 +3601,6 @@ msgstr ""
 msgid "Arba įkelkite duomenų failą."
 msgstr ""
 
-msgid "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."
-msgstr ""
-
 msgid "Failo plėtinys"
 msgstr ""
 
@@ -3518,16 +3643,54 @@ msgstr ""
 msgid "Suspausto failų paketo formatai"
 msgstr ""
 
-msgid "Nuoroda į svetainę iš kurios galima atsisiųsti duomenis."
+msgid ""
+"Nuoroda į svetainę, kurioje galima rasti tiesiogines duomenų atsisiuntimo "
+"nuorodas. Atitinka dcat:accessUrl."
 msgstr ""
 
 msgid "Duomenų formatas"
 msgstr ""
 
-msgid "Tiesioginė duomenų atsisiuntimo nuoroda."
+msgid "Pateikties failų formatas. Atitinka dct:format."
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo failo, kuriame yra duomenys, formatą suspaustoje formoje. "
+"Atitinka dcat:compressFormat."
+msgstr ""
+
+msgid "(Failų) Pakavimo formatas"
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo failo, kuriame yra vienas ar daugiau duomenų, formatą. "
+"Atitinka dcat:packageFormat."
+msgstr ""
+
+msgid ""
+"Tiesioginė duomenų atsisiuntimo nuoroda. Ši nuoroda turi rodyti tiesiogiai į "
+"CSV, JSON ar kito formato duomenų failą. Atitinka dcat:downloadURL."
 msgstr ""
 
 msgid "Geografinė aprėptis"
+msgstr ""
+
+msgid "Išleista"
+msgstr ""
+
+msgid "Data, kada pateiktis buvo pirmą kartą išleista. Atitinka dct:issued."
+msgstr ""
+
+msgid "Atnaujinimo / pakeitimo data"
+msgstr ""
+
+msgid ""
+"Paskutinio pateikties atnaujinimo ar pakeitimo data. Atitinka dct:modified."
+msgstr ""
+
+msgid ""
+"Duomenų paslauga, per kurią prieinama duomenų pateiktis. Atitinka "
+"dcat:accessService."
 msgstr ""
 
 msgid "Parametrizuotas"
@@ -3539,10 +3702,56 @@ msgstr ""
 msgid "Importuojamas išorinis metaduomenų katalogas"
 msgstr ""
 
+msgid "Licencija, pagal kurią platinamas pateikimas. Atitinka dct:license."
+msgstr ""
+
+msgid "Ši savybė nurodo pateikties kalbą. Atitinka dct:language."
+msgstr ""
+
+msgid "Susijusi schema"
+msgstr ""
+
+msgid ""
+"Nurodo, kokį standartą ar schemą atitinka pateiktis. Atitinka dct:conformsTo."
+msgstr ""
+
 msgid "Statusas"
 msgstr ""
 
+msgid "Nurodomas pateikties brandos lygmuo. Atitinka adms:status."
+msgstr ""
+
 msgid "Ar pateiktis yra didelės vertės"
+msgstr ""
+
+msgid "Prieinamumas"
+msgstr ""
+
+msgid ""
+"Ši savybė nurodo, kiek laiko planuojama išlaikyti duomenų rinkinio "
+"platinimą. Atitinka dcatap:availability."
+msgstr ""
+
+msgid "Dydis baitais"
+msgstr ""
+
+msgid "Pateikties dydis baitais. Atitinka dcat:byteSize."
+msgstr ""
+
+msgid "Kontrolinės sumos reikšmė"
+msgstr ""
+
+msgid ""
+"Šešioliktaine sistema užkoduota kontrolinės sumos reikšmė. Atitinka "
+"spdx:checksumValue."
+msgstr ""
+
+msgid "Kontrolinės sumos algoritmas"
+msgstr ""
+
+msgid ""
+"Algoritmas, naudojamas objekto kontrolinei sumai sukurti. Atitinka "
+"spdx:algorithm."
 msgstr ""
 
 msgid "Periodo pradžia"
@@ -3576,15 +3785,6 @@ msgid "Nuskaityti struktūrą"
 msgstr ""
 
 msgid "Naujas modelis"
-msgstr ""
-
-msgid "Nauja duomenų rinkinio pateiktis"
-msgstr ""
-
-msgid "Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."
-msgstr ""
-
-msgid "Duomenų rinkinio pateikties redagavimas"
 msgstr ""
 
 msgid "Negalima trinti pateikties, kai versijos būsena nėra juodraštis."

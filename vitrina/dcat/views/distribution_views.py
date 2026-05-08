@@ -48,7 +48,7 @@ class DcatDistributionCreateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
-        context["current_title"] = _("Naujas duomenų rinkinio šaltinis")
+        context["current_title"] = _("Nauja duomenų rinkinio pateiktis")
 
         return context
 
@@ -94,7 +94,7 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
         if (version_id := kwargs.get("version_id")) is not None:
             metadata_version = get_object_or_404(Version, pk=version_id)
             if not metadata_version.is_draft():
-                messages.error(request, _("Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."))
+                messages.error(request, _("Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."))
                 return HttpResponseRedirect(
                     reverse("organization-detail", kwargs={"pk": distribution.dataset.organization.pk})
                 )
@@ -126,7 +126,7 @@ class DcatDistributionUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Tr
 
     def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
-        context["current_title"] = _("Duomenų rinkinio šaltinio redagavimas")
+        context["current_title"] = _("Duomenų rinkinio pateikties redagavimas")
 
         return context
 

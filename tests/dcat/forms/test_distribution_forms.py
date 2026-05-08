@@ -143,7 +143,7 @@ class TestDatasetDistributionForm:
 
         assert not form.is_valid()
         assert "download_url" in form.errors
-        assert "Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja." in form.errors["download_url"]
+        assert "Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja." in form.errors["download_url"]
 
     def test_duplicate_download_url_not_raised_when_updating_self(self):
         dataset = DatasetFactory()

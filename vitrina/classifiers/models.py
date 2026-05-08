@@ -1,9 +1,11 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _, get_language
+from parler.managers import TranslatableManager
 
 from parler.models import TranslatableModel, TranslatedFields
 from treebeard.mp_tree import MP_Node, MP_NodeManager
 
+from vitrina.classifiers.managers import ConceptOrderedByLabelManager
 from vitrina.models import UUIDBaseModel
 
 LANGUAGE_CONCEPT_SCHEMA_URI = "http://publications.europa.eu/resource/authority/language"
@@ -243,6 +245,9 @@ class Concept(TranslatableModel, UUIDBaseModel):
         label=models.CharField(max_length=255, verbose_name=_("Pavadinimas")),
         description=models.TextField(verbose_name=_("Aprašymas")),
     )
+
+    objects = TranslatableManager()
+    ordered_by_label_objects = ConceptOrderedByLabelManager()
 
     class Meta:
         verbose_name = _("Sąvoka")

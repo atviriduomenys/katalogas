@@ -5,6 +5,7 @@ from vitrina.classifiers.factories import ConceptFactory, DocumentationFactory, 
 from vitrina.classifiers.models import ConceptSchema
 from vitrina.datasets.factories import DatasetFactory, DatasetServiceFactory
 from vitrina.dcat.forms.distribution_forms import DatasetDistributionForm
+from vitrina.orgs.factories import OrganizationFactory
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution, DISTRIBUTION_STANDARD_URI
 from vitrina.structure.factories import MetadataFactory
@@ -96,10 +97,11 @@ class TestDatasetDistributionForm:
         assert not form.initial.get("name")
 
     def test_data_service_queryset_includes_non_public_service_datasets(self):
-        dataset = DatasetFactory()
-        public_service_dataset = DatasetServiceFactory(is_public=True)
-        non_public_service_dataset = DatasetServiceFactory(is_public=False)
-        non_public_non_service_dataset = DatasetFactory(is_public=False)
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        public_service_dataset = DatasetServiceFactory(organization=organization, is_public=True)
+        non_public_service_dataset = DatasetServiceFactory(organization=organization, is_public=False)
+        non_public_non_service_dataset = DatasetFactory(organization=organization, is_public=False)
 
         form = DatasetDistributionForm(dataset)
 

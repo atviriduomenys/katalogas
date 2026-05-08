@@ -133,7 +133,7 @@ class DatasetDistributionForm(TranslatableModelForm):
                 same_url_dataset_distributions = same_url_dataset_distributions.exclude(pk=self.resource.pk)
 
             if same_url_dataset_distributions.exists():
-                self.add_error("download_url", _("Duomenų šaltinis su šia atsisiuntimo nuoroda jau egzistuoja."))
+                self.add_error("download_url", _("Pateiktis su šia atsisiuntimo nuoroda jau egzistuoja."))
 
         rights_relation = self.cleaned_data.get("rights_relation")
         conditions = self.cleaned_data.get("conditions")

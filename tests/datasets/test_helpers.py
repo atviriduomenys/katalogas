@@ -1,7 +1,9 @@
+from django.contrib.contenttypes.models import ContentType
+
 from vitrina.datasets.factories import DatasetFactory
 from vitrina.datasets.helpers import validate_name_prefix
-from vitrina.orgs.factories import OrganizationFactory
-from vitrina.orgs.models import WhitelistedCodeName
+from vitrina.orgs.factories import OrganizationFactory, RepresentativeFactory
+from vitrina.orgs.models import WhitelistedCodeName, Representative
 import pytest
 
 
@@ -83,3 +85,17 @@ def test_validate_name_prefix_empty_name():
     matched, main, whitelisted = validate_name_prefix("", org)
     assert matched is None
     assert main == "datasets/gov/test"
+
+
+@pytest.mark.django_db
+def test_validate_name_prefix_with_publisher_role():
+    publisher = OrganizationFactory(name="datasets/gov/publisher", whitelisted_names=[])
+    org = OrganizationFactory(name="datasets/gov/test")
+    RepresentativeFactory(
+        organization=publisher,
+        role=Representative.OPEN_DATA_PUBLISHER,
+        content_type=ContentType.objects.get_for_model(org),
+        object_id=org.pk,
+    )
+    _, _, whitelisted = validate_name_prefix("datasets/gov/test", publisher)
+    assert "datasets/gov/test" in whitelisted

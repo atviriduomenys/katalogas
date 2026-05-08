@@ -264,7 +264,7 @@ class DatasetDistribution(TranslatableModel):
         blank=True,
         help_text=_("Teisių deklaracijos nuoroda. Atitinka dct:rights / dct:relation."),
     )
-    is_hvd = models.BooleanField(_("Ar duomenų šaltinis yra didelės vertės"), default=False)
+    is_hvd = models.BooleanField(_("Ar pateiktis yra didelės vertės"), default=False)
 
     # Deprecated fields bellow
     period_start = models.DateField(

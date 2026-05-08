@@ -185,10 +185,10 @@ class DatasetResourceForm(TranslatableModelForm):
         self.helper.layout = Layout(
             Field(
                 "title",
-                placeholder=_("Šaltinio pavadinimas"),
+                placeholder=_("Pateikties pavadinimas"),
                 css_class="control is-expanded",
             ),
-            Field("description", placeholder=_("Detalus šaltinio aprašas"), rows="2"),
+            Field("description", placeholder=_("Detalus pateikties aprašas"), rows="2"),
             Field("name"),
             Field("temporal_resolution"),
             Field("spatial_resolution"),
@@ -201,7 +201,7 @@ class DatasetResourceForm(TranslatableModelForm):
             Field("compression_format"),
             Field("packaging_format"),
             Field("status"),
-            Field("file", placeholder=_("Šaltinio failas")),
+            Field("file", placeholder=_("Pateikties failas")),
             Field("download_url"),
             Field("imported"),
             Field("data_service"),

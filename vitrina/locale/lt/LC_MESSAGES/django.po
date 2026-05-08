@@ -554,7 +554,7 @@ msgstr ""
 msgid "VDA tvarkytojai"
 msgstr ""
 
-msgid "Duomenų šaltinio pirmo</br>publikavimo data saugykloje"
+msgid "Pateikties pirmo</br>publikavimo data saugykloje"
 msgstr ""
 
 msgid "Duomenų atnaujinimo</br>periodiškumas"
@@ -575,7 +575,7 @@ msgstr ""
 msgid "Duomenų rinkinio nuoroda"
 msgstr ""
 
-msgid "Duomenų šaltinio pirmo publikavimo data saugykloje"
+msgid "Pateikties pirmo publikavimo data saugykloje"
 msgstr ""
 
 msgid "Duomenų atnaujinimo periodiškumas"
@@ -1250,7 +1250,7 @@ msgstr ""
 msgid "Statistikos duomenų nerasta."
 msgstr ""
 
-msgid "Naujas šaltinis"
+msgid "Nauja pateiktis"
 msgstr ""
 
 msgid "Eksportuoti"
@@ -1437,7 +1437,7 @@ msgstr ""
 msgid "Redaguoti"
 msgstr ""
 
-msgid "Ar jūs tikrai norite ištrinti šį šaltinį?"
+msgid "Ar jūs tikrai norite ištrinti šią pateiktį?"
 msgstr ""
 
 msgid "Ištrinti"
@@ -1470,7 +1470,7 @@ msgstr ""
 msgid "Užsiprenumeruokite naujienas, susijusias su duomenų ištekliumi"
 msgstr ""
 
-msgid "Duomenų šaltiniai"
+msgid "Duomenų pateiktys"
 msgstr ""
 
 msgid "Susieti su duomenų ištekliumi"
@@ -3448,16 +3448,16 @@ msgid ""
 "failo pavadinimas.<br>Atitinka eli:LegalResource."
 msgstr ""
 
-msgid "Šaltinio pavadinimas"
+msgid "Pateikties pavadinimas"
 msgstr ""
 
-msgid "Detalus šaltinio aprašas"
+msgid "Detalus pateikties aprašas"
 msgstr ""
 
 msgid "Pateikitę geografinę padėtį"
 msgstr ""
 
-msgid "Šaltinio failas"
+msgid "Pateikties failas"
 msgstr ""
 
 msgid ""
@@ -3547,7 +3547,7 @@ msgid ""
 "pasenusi arba atsisakyta."
 msgstr ""
 
-msgid "Ar duomenų šaltinis yra didelės vertės"
+msgid "Ar pateiktis yra didelės vertės"
 msgstr ""
 
 msgid "Periodo pradžia"
@@ -3586,13 +3586,13 @@ msgstr ""
 msgid "Nauja duomenų rinkinio pateiktis"
 msgstr ""
 
-msgid "Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."
+msgid "Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."
 msgstr ""
 
-msgid "Duomenų rinkinio šaltinio redagavimas"
+msgid "Duomenų rinkinio pateikties redagavimas"
 msgstr ""
 
-msgid "Negalima trinti šaltinio, kai versijos būsena nėra juodraštis."
+msgid "Negalima trinti pateikties, kai versijos būsena nėra juodraštis."
 msgstr ""
 
 msgid "Modelio pridėjimas"

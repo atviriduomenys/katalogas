@@ -10,7 +10,7 @@ class Migration(migrations.Migration):
     dependencies = [
         ('vitrina_classifiers', '0019_activity_provenancestatement_rule_servicequalitypage_and_more'),
         ('vitrina_datasets', '0043_dataset_dataset_type_dataset_follows_and_more'),
-        ('vitrina_resources', '0014_add_data_last_updated'),
+        ('vitrina_resources', '0015_alter_datasetdistribution_status'),
     ]
 
     operations = [

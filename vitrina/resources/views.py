@@ -191,7 +191,7 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
                 pk=version_id,
             )
             if not self.metadata_version.is_draft():
-                messages.error(request, _("Negalima redaguoti šaltinio, kai versijos būsena nėra juodraštis."))
+                messages.error(request, _("Negalima redaguoti pateikties, kai versijos būsena nėra juodraštis."))
                 return redirect(self.resource.get_absolute_url())
         return super().dispatch(request, *args, **kwargs)
 
@@ -206,7 +206,7 @@ class ResourceUpdateView(LoginRequiredMixin, PermissionRequiredMixin, Translatab
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context["current_title"] = _("Duomenų rinkinio šaltinio redagavimas")
+        context["current_title"] = _("Duomenų rinkinio pateikties redagavimas")
         return context
 
     def get(self, request, *args, **kwargs):
@@ -254,7 +254,7 @@ class ResourceDeleteView(LoginRequiredMixin, PermissionRequiredMixin, DeleteView
                 pk=version_id,
             )
             if not self.metadata_version.is_draft():
-                messages.error(request, _("Negalima trinti šaltinio, kai versijos būsena nėra juodraštis."))
+                messages.error(request, _("Negalima trinti pateikties, kai versijos būsena nėra juodraštis."))
                 return redirect(self.resource.get_absolute_url())
         return super().dispatch(request, *args, **kwargs)
 

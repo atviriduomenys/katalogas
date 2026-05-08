@@ -278,9 +278,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
             return distribution.created.astimezone(tz).strftime("%Y-%m-%d %H:%M")
         return "-"
 
-    distribution_published_display.short_description = mark_safe(
-        _("Duomenų šaltinio pirmo</br>publikavimo data saugykloje")
-    )
+    distribution_published_display.short_description = mark_safe(_("Pateikties pirmo</br>publikavimo data saugykloje"))
 
     def frequency_display(self, obj):
         if obj.frequency:
@@ -421,7 +419,7 @@ class DatasetReportAdmin(RevisionCommentVersionAdmin):
             "managers": _("Tvarkytojai"),
             "vda_representatives": _("VDA tvarkytojai"),
             "dataset_url": _("Duomenų rinkinio nuoroda"),
-            "created": _("Duomenų šaltinio pirmo publikavimo data saugykloje"),
+            "created": _("Pateikties pirmo publikavimo data saugykloje"),
             "frequency": _("Duomenų atnaujinimo periodiškumas"),
             "spinta_modified": _("Duomenys atnaujinti saugykloje"),
             "modified": _("Metaduomenys atnaujinti kataloge"),

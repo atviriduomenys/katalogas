@@ -598,7 +598,7 @@ msgid "VDA tvarkytojai"
 msgstr "Managers"
 
 msgid "Pateikties pirmo</br>publikavimo data saugykloje"
-msgstr "Date of the distribution first</br>publication in the repository"
+msgstr "Date of the distribution's first</br>publication in the repository"
 
 msgid "Duomenų atnaujinimo</br>periodiškumas"
 msgstr "Data renew period"

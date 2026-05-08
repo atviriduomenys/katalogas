@@ -84,8 +84,7 @@ def validate_name_prefix(
     allowed_prefixes = [main_prefix] + list(whitelisted)
 
     representatives = Representative.objects.filter(
-        (Q(organization=organization) | Q(user__organization=organization))
-        & Q(role=Representative.OPEN_DATA_PUBLISHER)
+        (Q(organization=organization) | Q(user__organization=organization)) & Q(role=Representative.OPEN_DATA_PUBLISHER)
     )
     dataset_ct = ContentType.objects.get_for_model(Dataset)
     organization_ct = ContentType.objects.get_for_model(organization)

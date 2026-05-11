@@ -24,6 +24,9 @@ from vitrina.dcat.forms.dataset_forms import (
     DatasetResourceForm,
     InformationSystemResourceForm,
     ServiceResourceForm,
+    InformationSystemUpdateForm,
+    ServiceUpdateForm,
+    DatasetUpdateForm,
 )
 from vitrina.identifiers.factories import IdentifierFactory
 from vitrina.identifiers.models import Identifier, Agency
@@ -649,9 +652,9 @@ class TestDcatDatasetUpdateView:
     @pytest.mark.parametrize(
         "subclass_name, expected_form_class",
         [
-            (DCATResourceSubclass.INFORMATION_SYSTEM, InformationSystemResourceForm),
-            (DCATResourceSubclass.SERVICE, ServiceResourceForm),
-            (DCATResourceSubclass.DATASET, DatasetResourceForm),
+            (DCATResourceSubclass.INFORMATION_SYSTEM, InformationSystemUpdateForm),
+            (DCATResourceSubclass.SERVICE, ServiceUpdateForm),
+            (DCATResourceSubclass.DATASET, DatasetUpdateForm),
         ],
     )
     def test_get_uses_correct_form_per_subclass(self, app: DjangoTestApp, subclass_name: str, expected_form_class):

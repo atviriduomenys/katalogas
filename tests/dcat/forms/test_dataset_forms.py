@@ -1,6 +1,7 @@
 import pytest
 from django.utils.translation import override as translation_override
 from vitrina.classifiers.factories import (
+    ApplicableLegislationFactory,
     ConceptFactory,
     DocumentationFactory,
 )
@@ -14,9 +15,12 @@ from vitrina.datasets.factories import ContactFactory, DatasetFactory, DCATResou
 from vitrina.datasets.models import Dataset, DCATResourceSubclass
 from vitrina.dcat.forms.dataset_forms import (
     DatasetResourceForm,
+    DatasetUpdateForm,
     InformationSystemResourceForm,
+    InformationSystemUpdateForm,
     ServiceResourceForm,
 )
+from vitrina.identifiers.models import Agency, Identifier
 from vitrina.orgs.factories import OrganizationFactory
 from vitrina.uapi.factories import AgentFactory
 
@@ -506,24 +510,6 @@ class TestDatasetResourceForm:
         assert not form.is_valid()
         assert "temporal_start" not in form.errors
 
-    def test_documentation_initial_populated_from_instance(self):
-        organization = OrganizationFactory()
-        dataset = DatasetFactory(organization=organization)
-        doc1 = DocumentationFactory(documentation_link="https://example.com/doc1")
-        doc2 = DocumentationFactory(documentation_link="https://example.com/doc2")
-        dataset.documentation.set([doc1, doc2])
-
-        form = DatasetResourceForm(
-            organization=organization,
-            parent_dataset_id=None,
-            instance=dataset,
-        )
-
-        assert set(form.initial["documentation"]) == {
-            "https://example.com/doc1",
-            "https://example.com/doc2",
-        }
-
     def test_documentation_initial_empty_when_no_instance(self):
         organization = OrganizationFactory()
 
@@ -593,3 +579,140 @@ class TestDatasetResourceForm:
         assert "provenance" not in form.errors
         assert "dataset_type" not in form.errors
         assert "was_generated_by" not in form.errors
+
+
+class TestInformationSystemUpdateForm:
+    def test_identifier_initial_set_from_instance(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=subclass)
+        agency, _ = Agency.objects.get_or_create(
+            code=Agency.RISR_CODE,
+            defaults={
+                "name": "RISR",
+                "uri": "http://registrai.lt",
+                "identifier_validation_type": "REGEXP",
+                "identifier_validation_options": r"^\d{4}$",
+            },
+        )
+        Identifier.objects.create(
+            resource=dataset,
+            scheme_agency=agency,
+            notation="5678",
+            identifier_type=Identifier.IdentifierType.OTHER,
+        )
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert form.fields["identifier"].initial == "5678"
+
+    def test_identifier_initial_empty_when_no_identifier(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=subclass)
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert form.fields["identifier"].initial == ""
+
+    def test_applicable_legislation_initial_set_from_instance(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=subclass)
+        leg1 = ApplicableLegislationFactory(url="https://example.com/law1")
+        leg2 = ApplicableLegislationFactory(url="https://example.com/law2")
+        dataset.applicable_legislation.set([leg1, leg2])
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert set(form.initial["applicable_legislation"]) == {
+            "https://example.com/law1",
+            "https://example.com/law2",
+        }
+
+    def test_applicable_legislation_initial_empty_when_no_legislation(self):
+        organization = OrganizationFactory()
+        subclass = DCATResourceSubclassFactory(name=DCATResourceSubclass.INFORMATION_SYSTEM)
+        dataset = DatasetFactory(organization=organization, subclass=subclass)
+
+        form = InformationSystemUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert form.initial["applicable_legislation"] == []
+
+
+class TestDatasetUpdateForm:
+    def test_documentation_initial_set_from_instance(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        doc1 = DocumentationFactory(documentation_link="https://example.com/doc1")
+        doc2 = DocumentationFactory(documentation_link="https://example.com/doc2")
+        dataset.documentation.set([doc1, doc2])
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert set(form.initial["documentation"]) == {
+            "https://example.com/doc1",
+            "https://example.com/doc2",
+        }
+
+    def test_documentation_initial_empty_when_no_documentation(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert form.initial["documentation"] == []
+
+    def test_applicable_legislation_initial_set_from_instance(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+        leg1 = ApplicableLegislationFactory(url="https://example.com/law1")
+        leg2 = ApplicableLegislationFactory(url="https://example.com/law2")
+        dataset.applicable_legislation.set([leg1, leg2])
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert set(form.initial["applicable_legislation"]) == {
+            "https://example.com/law1",
+            "https://example.com/law2",
+        }
+
+    def test_applicable_legislation_initial_empty_when_no_legislation(self):
+        organization = OrganizationFactory()
+        dataset = DatasetFactory(organization=organization)
+
+        form = DatasetUpdateForm(
+            organization=organization,
+            parent_dataset_id=None,
+            instance=dataset,
+        )
+
+        assert form.initial["applicable_legislation"] == []

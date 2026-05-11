@@ -44,10 +44,10 @@ class ApplicableLegislationFormMixin(forms.Form):
 
     def __init__(self, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        instance: Dataset | None = self.instance if self.instance and self.instance.pk else None
-
-        if instance:
-            self.initial["applicable_legislation"] = list(instance.applicable_legislation.values_list("url", flat=True))
+        if self.instance.pk:
+            self.initial["applicable_legislation"] = list(
+                self.instance.applicable_legislation.values_list("url", flat=True)
+            )
 
     def clean_applicable_legislation(self) -> list[str]:
         urls = self.cleaned_data.get("applicable_legislation", []) or []
@@ -81,13 +81,13 @@ class ContactFormMixin(forms.Form):
         return None
 
     def _populate_contact_choices(self) -> None:
-        """Populate contact choices grouped by organization."""
         self.fields["contact"].choices = [("", "---------")] + get_contact_form_choices(self.organization)
-        self.fields["contact"].initial = (
-            self.instance.contact.content_object.id
-            if self.instance.contact and self.instance.contact.content_object
-            else None
-        )
+        if self.instance.pk:
+            self.fields["contact"].initial = (
+                self.instance.contact.content_object.id
+                if self.instance.contact and self.instance.contact.content_object
+                else None
+            )
 
 
 class BaseResourceForm(TranslatableModelForm):
@@ -118,7 +118,6 @@ class BaseResourceForm(TranslatableModelForm):
 
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(*args, **kwargs)
-        instance: Dataset | None = self.instance if self.instance and self.instance.pk else None
         self.helper = FormHelper()
         self.helper.attrs["novalidate"] = ""
         self.helper.form_id = "dataset-form"
@@ -130,13 +129,12 @@ class BaseResourceForm(TranslatableModelForm):
 
         if parent_dataset_id:
             self.fields["parent"].initial = parent_dataset_id
-        elif instance:
-            parent = instance.get_parent()
-            self.fields["parent"].initial = parent
-            self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=instance.pk)
+        elif self.instance.pk:
+            self.fields["parent"].initial = self.instance.get_parent()
+            self.fields["parent"].queryset = self.fields["parent"].queryset.exclude(pk=self.instance.pk)
 
-        if instance and instance.name:
-            self.initial["name"] = instance.name
+        if self.instance.pk and self.instance.name:
+            self.initial["name"] = self.instance.name
 
     def clean_name(self) -> str | None:
         name = self.cleaned_data.get("name")
@@ -186,9 +184,6 @@ class InformationSystemResourceForm(ApplicableLegislationFormMixin, BaseResource
 
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(organization, parent_dataset_id, *args, **kwargs)
-        instance = self.instance if self.instance and self.instance.pk else None
-        if instance:
-            self.fields["identifier"].initial = instance.identifier if instance.identifier else ""
 
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM, is_public=False
@@ -400,10 +395,6 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(organization, parent_dataset_id, *args, **kwargs)
 
-        instance: Dataset | None = self.instance if self.instance and self.instance.pk else None
-        if instance:
-            self.initial["documentation"] = list(instance.documentation.values_list("documentation_link", flat=True))
-
         self.fields["parent"].queryset = self.fields["parent"].queryset.filter(
             organization=self.organization, subclass__name=DCATResourceSubclass.SERVICE, is_public=False
         )
@@ -455,3 +446,19 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
                 "temporal_start",
                 _("Laikotarpio pradžios data negali būti vėlesnė nei pabaigos data."),
             )
+
+
+class InformationSystemUpdateForm(InformationSystemResourceForm):
+    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
+        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+        self.fields["identifier"].initial = self.instance.identifier or ""
+
+
+class ServiceUpdateForm(ServiceResourceForm):
+    pass
+
+
+class DatasetUpdateForm(DatasetResourceForm):
+    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
+        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+        self.initial["documentation"] = list(self.instance.documentation.values_list("documentation_link", flat=True))

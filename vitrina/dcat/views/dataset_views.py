@@ -28,6 +28,9 @@ from vitrina.dcat.forms.dataset_forms import (
     BaseResourceForm,
     ServiceResourceForm,
     DatasetResourceForm,
+    InformationSystemUpdateForm,
+    ServiceUpdateForm,
+    DatasetUpdateForm,
 )
 from vitrina.identifiers.models import Agency, Identifier
 from vitrina.orgs.models import Organization
@@ -41,6 +44,12 @@ DCAT_SUBCLASS_FORM_MAP = {
     DCATResourceSubclass.INFORMATION_SYSTEM: InformationSystemResourceForm,
     DCATResourceSubclass.SERVICE: ServiceResourceForm,
     DCATResourceSubclass.DATASET: DatasetResourceForm,
+}
+
+DCAT_SUBCLASS_UPDATE_FORM_MAP = {
+    DCATResourceSubclass.INFORMATION_SYSTEM: InformationSystemUpdateForm,
+    DCATResourceSubclass.SERVICE: ServiceUpdateForm,
+    DCATResourceSubclass.DATASET: DatasetUpdateForm,
 }
 
 
@@ -253,7 +262,7 @@ class DcatDatasetUpdateView(
         return super().dispatch(request, *args, **kwargs)
 
     def get_form_class(self) -> BaseResourceForm:
-        if (form_class := DCAT_SUBCLASS_FORM_MAP.get(self.subclass.name)) is None:
+        if (form_class := DCAT_SUBCLASS_UPDATE_FORM_MAP.get(self.subclass.name)) is None:
             raise ImproperlyConfigured(_("Nurodytas duomenų ištekliaus poklasis neturi formos."))
 
         return form_class

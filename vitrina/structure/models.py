@@ -7,14 +7,15 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from django.core.validators import MaxValueValidator
 from django.db import models
-from django.db.models import Q, Max, Avg, QuerySet
+from django.db.models import Q, Max, Avg, QuerySet, F
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 
 from vitrina.classifiers.models import Status
 from vitrina.models import UUIDBaseModel
-from vitrina.structure import VersionStatus, VersionType, AccessType
+from vitrina.structure import VersionStatus, VersionType, AccessType, UMLDiagramStatus
 from vitrina.structure.helpers import get_type_repr
+from vitrina.users.models import User
 from enum import Enum
 
 from vitrina.structure.utils import TypeChecker, get_type_checker_for_type
@@ -595,6 +596,10 @@ class Version(models.Model):
     def __str__(self):
         return f"v{self.version}"
 
+    @property
+    def title(self) -> str:
+        return self.external_version or _("Juodraštis")
+
 
 class MetadataVersion(models.Model):
     UNDEFINED = None
@@ -653,3 +658,29 @@ class ManifestValidationEntry(UUIDBaseModel):
 
     def __str__(self):
         return f"Manifest [{self.pk}] - {self.validation_status}"
+
+
+class UMLDiagram(UUIDBaseModel):
+    mermaid = models.TextField(verbose_name=_("UML diagrama mermaid sintaksės formatu."), null=True)
+    version_counter = models.IntegerField(
+        default=0, editable=False, help_text="Incremented on every structure change to detect stale UML diagrams."
+    )
+    status = models.CharField(default=UMLDiagramStatus.OUTDATED, choices=UMLDiagramStatus.choices)
+    celery_task_id = models.UUIDField(null=True, editable=False)
+    metadata_version = models.OneToOneField(
+        Version, null=False, blank=True, on_delete=models.CASCADE, related_name="uml_diagram"
+    )
+
+    def initiate_update(self, user: User | None = None) -> None:
+        from vitrina.structure.tasks import update_uml_diagram
+
+        user_id = user.pk if user else None
+        self.status = UMLDiagramStatus.PENDING
+        async_result = update_uml_diagram.delay(self.pk, _reversion_user_id=user_id)
+        self.celery_task_id = async_result.id
+        self.save(update_fields=["status", "celery_task_id", "updated_at"])
+
+    def invalidate(self) -> None:
+        self.version_counter = F("version_counter") + 1
+        self.status = UMLDiagramStatus.OUTDATED
+        self.save(update_fields=["version_counter", "status", "updated_at"])

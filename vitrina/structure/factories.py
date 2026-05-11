@@ -15,6 +15,7 @@ from vitrina.structure.models import (
     ParamItem,
     Base,
     Version,
+    UMLDiagram,
 )
 
 
@@ -111,3 +112,10 @@ class ParamItemFactory(DjangoModelFactory):
 
     param = factory.SubFactory(ParamFactory)
     metadata_version = factory.SelfAttribute("param.metadata_version")
+
+
+class UMLDiagramFactory(DjangoModelFactory):
+    class Meta:
+        model = UMLDiagram
+
+    metadata_version = factory.SubFactory(VersionFactory)

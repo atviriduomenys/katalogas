@@ -37,6 +37,8 @@ from reversion import set_comment, set_user, create_revision
 from reversion.models import Version
 from shapely.wkt import loads
 from flags.state import flag_enabled
+from celery import states as celery_states
+from celery.result import AsyncResult
 
 from vitrina.classifiers.models import Status
 from vitrina.datasets.models import Dataset
@@ -70,6 +72,8 @@ from vitrina.structure.models import (
     StatusCode,
     VersionStatus,
     Prefix,
+    UMLDiagram,
+    UMLDiagramStatus,
 )
 from vitrina.structure.models import Version as _Version
 from vitrina.structure.services import (
@@ -237,9 +241,7 @@ class DatasetStructureView(
                 )
 
         if self.metadata_version:
-            self.breadcrumb_title = (
-                self.metadata_version.external_version if self.metadata_version.external_version else _("Juodraštis")
-            )
+            self.breadcrumb_title = self.metadata_version.title
 
         allowed_visibilities = get_allowed_visibilities(self.request.user, self.object, Action.VIEW)
         self.models = Model.objects.filter(dataset=self.object, metadata_version=self.metadata_version)
@@ -288,6 +290,7 @@ class DatasetStructureView(
         context["models"] = self.models
         context["version"] = dataset.dataset_version.filter(deployed__isnull=False).order_by("-deployed").first()
         context["version_id"] = self.metadata_version.pk if self.metadata_version else None
+        context["has_structure"] = self.models.exists()
         return context
 
     def get_structure_url(self):
@@ -4371,3 +4374,109 @@ class VersionDetailView(
                 "pk": self.dataset.pk,
             },
         )
+
+
+class DatasetStructureUMLView(
+    DatasetBreadcrumbsMixin, PermissionRequiredMixin, HistoryMixin, DatasetStructureMixin, PlanMixin, TemplateView
+):
+    detail_url_name = "dataset-detail"
+    history_url_name = "dataset-structure-history"
+    plan_url_name = "dataset-plans"
+    breadcrumb_title = _("UML diagrama")
+
+    def get_template_names(self):
+        if "expanded" in self.request.GET:
+            return "vitrina/structure/uml_diagram_expanded.html"
+        return "vitrina/structure/uml_diagram.html"
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = get_object_or_404(Dataset, pk=kwargs.get("pk"))
+        if not self.has_permission():
+            return self.handle_no_permission()
+
+        return super().dispatch(request, *args, **kwargs)
+
+    def get(self, request, *args, **kwargs):
+        if not self.models:
+            messages.warning(request, _("Nerasta struktūra pasirinktai struktūros versijai."))
+            return redirect(self.get_structure_url())
+        uml_diagram, _created = UMLDiagram.objects.get_or_create(metadata_version=self.metadata_version)
+        if uml_diagram.status == UMLDiagramStatus.PENDING:
+            result = AsyncResult(str(uml_diagram.celery_task_id))
+
+            if result.state in celery_states.READY_STATES and not result.successful():
+                uml_diagram.initiate_update()
+                messages.warning(
+                    request,
+                    _(
+                        "Įvyko klaida generuojant diagramą. Bandoma diagramą generuoti iš naujo. Jeigu ši klaida kartosis, susisiekite su administracija."
+                    ),
+                )
+            else:
+                messages.info(request, _("Diagrama šiuo metu generuojama, pabandykite vėliau."))
+            return redirect(self.get_structure_url())
+
+        if uml_diagram.status == UMLDiagramStatus.OUTDATED:
+            uml_diagram.initiate_update()
+            messages.info(request, _("Užfiksuotas struktūros pasikeitimas. Diagrama pergeneruojama."))
+            return redirect(self.get_structure_url())
+
+        self.uml_diagram = uml_diagram
+        return super().get(request, *args, **kwargs)
+
+    def has_permission(self):
+        return has_perm(self.request.user, Action.VIEW, self.object)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["current_title"] = _("'{0}' struktūros UML diagrama").format(self.dataset)
+        context["publish_button"] = flag_enabled("publish_button", request=self.request)
+        context["selected_version"] = self.metadata_version
+        context["is_disabled"] = not self.metadata_version.is_draft() if self.metadata_version else True
+        context["versions"] = _Version.objects.filter(dataset=self.dataset).order_by("version")
+        context["dataset"] = self.dataset
+        context["can_view_members"] = has_perm(
+            self.request.user,
+            Action.VIEW,
+            Representative,
+            self.object,
+        )
+        context["can_manage_structure"] = self.can_manage_structure
+        context["version_id"] = self.metadata_version.pk if self.metadata_version else None
+        context["uml_diagram"] = self.uml_diagram
+        context["has_structure"] = self.models.exists()
+        return context
+
+    def get_structure_url(self):
+        if self.metadata_version:
+            return reverse(
+                "dataset-structure",
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk},
+            )
+        else:
+            return reverse(
+                "dataset-structure-no-version",
+                kwargs={
+                    "pk": self.dataset.pk,
+                },
+            )
+
+    def get_history_url(self) -> str:
+        if self.metadata_version:
+            return reverse(
+                "dataset-structure-history",
+                kwargs={"pk": self.dataset.pk, "version_id": self.metadata_version.pk},
+            )
+        else:
+            return reverse(
+                "dataset-structure-history-no-version",
+                kwargs={
+                    "pk": self.dataset.pk,
+                },
+            )
+
+    def get_breadcrumbs(self) -> List[Crumb]:
+        crumbs = self.dataset_hierarchy(self.dataset)
+        crumbs.append(Crumb(title=self.metadata_version.title, url=self.get_structure_url()))
+        crumbs.append(Crumb(title=self.breadcrumb_title, url=None, is_current=True))
+        return crumbs

@@ -18,288 +18,223 @@
 
 {% include 'vitrina/datasets/tabs.html' %}
 
-<div class="columns no-margin-bottom">
-    <div class="column is-three-quarters">
-
-        {% if errors %}
-        <div class="message is-danger">
-            <div class="message-body">
-                {% for error in errors %}
-                <p>{{ error }}</p>
-                {% endfor %}
-            </div>
+{% if errors %}
+    <div class="message is-danger">
+        <div class="message-body">
+            {% for error in errors %}
+            <p>{{ error }}</p>
+            {% endfor %}
         </div>
-        {% endif %}
+    </div>
+    {% endif %}
 
-        {% if can_manage_structure %}
-            {% if version_id %}
-                {% url "dataset-structure-export" view.kwargs.pk version_id as export_url %}
-                {% url "dataset-structure-export-openapi" view.kwargs.pk version_id as export_openapi_url %}
-            {% else %}
-                {% url "dataset-structure-export-no-version" view.kwargs.pk as export_url %}
-                {% url "dataset-structure-export-openapi-no-version" view.kwargs.pk as export_openapi_url %}
-            {% endif %}
-            <a class="button is-primary mb-5 ml-2" href="{{export_url}}">
-                {% translate "Eksportuoti" %}
-            </a>
-            {% if request.user.is_superuser %}
-                <a class="button is-primary mb-5 ml-2" href="{{ export_openapi_url }}">
-                    {% translate "Eksportuoti OpenAPI" %}
-                </a>
-            {% endif %}
-            {% if selected_version %}
-                <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
-                   {% if is_disabled %}
-                       style="pointer-events: none; opacity: 0.5;"
-                       aria-disabled="true"
-                   {% else %}
-                       href="{% url 'dataset-structure-import' view.kwargs.pk selected_version.pk %}"
-                   {% endif %}>
-                    {% translate "Importuoti" %}
-                </a>
-                <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
-                   {% if is_disabled %}
-                       style="pointer-events: none; opacity: 0.5;"
-                       aria-disabled="true"
-                   {% else %}
-                       href="{% url 'model-create' dataset.pk selected_version.pk %}"
-                   {% endif %}>
-                    {% translate "Naujas modelis" %}
-                </a>
-                {% if publish_button %}
-                    <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
-                       {% if is_disabled %}
-                           style="pointer-events: none; opacity: 0.5;"
-                           aria-disabled="true"
-                       {% else %}
-                           href="{% url 'version-create' dataset.pk selected_version.pk %}"
-                       {% endif %}>
-                        {% translate "Publikuoti versiją" %}
-                    </a>
-                {% endif %}
-            {% else %}
-                <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import-no-version' view.kwargs.pk %}">
-                    {% translate "Importuoti" %}
-                </a>
-                <a class="button is-primary mb-5 ml-2" href="{% url 'model-create-no-version' dataset.pk %}">
-                    {% translate "Naujas modelis" %}
-                </a>
-                {% if publish_button %}
-                    <a class="button is-primary mb-5 ml-2 is-disabled"
-                       style="pointer-events: none; opacity: 0.5;">
-                        {% translate "Publikuoti versiją" %}
-                    </a>
-                {% endif %}
-            {% endif %}
-        {% endif %}
+    {% include "vitrina/structure/action_buttons.html" %}
 
-        {% if models %}
-        <div class="mb-5">
-            <h4 class="custom-title is-size-4-mobile">{% translate "Keitimų žurnalas" %}</h4>
-            {% if version %}
-                <p>{% translate "Publikacijos tipas" %}: <span class="tag is-success is-light">{{ version.get_version_type_display }}</span></p>
-                <p>{% translate "Versija" %}: <span class="tag is-success is-light">{{ version }}</span></p>
-                <p>{% translate "Įsigaliojimo data" %}: {{ version.released|date:"SHORT_DATE_FORMAT" }}</p>
-                {% if version.description %}
-                    <p class="mt-1"><small>{{ version.description }}</small></p>
-                {% endif %}
-            {% else %}
-                <p>{% translate "Galiojančios versijos nėra." %}</p>
+    {% if models %}
+    <div class="mb-5">
+        <h4 class="custom-title is-size-4-mobile">{% translate "Keitimų žurnalas" %}</h4>
+        {% if version %}
+            <p>{% translate "Publikacijos tipas" %}: <span class="tag is-success is-light">{{ version.get_version_type_display }}</span></p>
+            <p>{% translate "Versija" %}: <span class="tag is-success is-light">{{ version }}</span></p>
+            <p>{% translate "Įsigaliojimo data" %}: {{ version.released|date:"SHORT_DATE_FORMAT" }}</p>
+            {% if version.description %}
+                <p class="mt-1"><small>{{ version.description }}</small></p>
             {% endif %}
-            <div class="mt-3">
-                <a href="{% url 'version-list' dataset.pk %}">{% translate "Peržiūrėti pilną keitimų sąrašą" %}</a>
-            </div>
+        {% else %}
+            <p>{% translate "Galiojančios versijos nėra." %}</p>
+        {% endif %}
+        <div class="mt-3">
+            <a href="{% url 'version-list' dataset.pk %}">{% translate "Peržiūrėti pilną keitimų sąrašą" %}</a>
         </div>
+    </div>
 
-        <h4 class="custom-title is-size-4-mobile">{% translate "Modeliai" %}</h4>
-        {% endif %}
-        {% for model in models %}
-            {% define model.metadata.first as metadata %}
-            <div class="columns no-margin-bottom">
-                    <div class="column is-10">
-                        {% if metadata.visibility is not None %}
-                            {% if metadata.visibility == 0 %}
-                                <span class="mr-1 tag is-light is-light is-rounded">
-                                    <span class="icon is-small has-tooltip-right has-text-grey"
-                                          data-tooltip="{% translate 'Metaduomenys nepublikuojami' %}">
-                                        <i class="fas fa-eye-slash"></i>
-                                    </span>
+    <h4 class="custom-title is-size-4-mobile">{% translate "Modeliai" %}</h4>
+    {% endif %}
+    {% for model in models %}
+        {% define model.metadata.first as metadata %}
+        <div class="columns no-margin-bottom">
+                <div class="column is-6">
+                    {% if metadata.visibility is not None %}
+                        {% if metadata.visibility == 0 %}
+                            <span class="mr-1 tag is-light is-light is-rounded">
+                                <span class="icon is-small has-tooltip-right has-text-grey"
+                                        data-tooltip="{% translate 'Metaduomenys nepublikuojami' %}">
+                                    <i class="fas fa-eye-slash"></i>
                                 </span>
-                            {% elif metadata.visibility == 1 %}
-                                <span class="mr-1 tag is-warning is-light is-rounded">
-                                    <span class="icon is-small has-tooltip-right"
-                                          data-tooltip="{% translate 'Naudojamas informacinės sistemos (IS) lygmeniu' %}">
-                                        <strong class="has-text-warning-dark">IS</strong>
-                                    </span>
+                            </span>
+                        {% elif metadata.visibility == 1 %}
+                            <span class="mr-1 tag is-warning is-light is-rounded">
+                                <span class="icon is-small has-tooltip-right"
+                                        data-tooltip="{% translate 'Naudojamas informacinės sistemos (IS) lygmeniu' %}">
+                                    <strong class="has-text-warning-dark">IS</strong>
                                 </span>
-                            {% elif metadata.visibility == 2 %}
-                                <span class="mr-1 tag is-success has-tooltip-right is-light is-rounded"
-                                      data-tooltip="{% translate 'Naudojamas LT lygmeniu' %}">
-                                    <span class="icon is-small">
-                                        <strong class="has-text-success-dark">LT</strong>
-                                    </span>
+                            </span>
+                        {% elif metadata.visibility == 2 %}
+                            <span class="mr-1 tag is-success has-tooltip-right is-light is-rounded"
+                                    data-tooltip="{% translate 'Naudojamas LT lygmeniu' %}">
+                                <span class="icon is-small">
+                                    <strong class="has-text-success-dark">LT</strong>
                                 </span>
-                            {% elif metadata.visibility == 3 %}
-                                <span class="mr-1 tag is-info has-tooltip-right is-light is-rounded"
-                                      data-tooltip="{% translate 'Naudojamas EU lygmeniu' %}">
-                                    <span class="icon is-small has-tooltip-right has-tooltip-multiline is-info">
-                                        <strong class="has-text-info-dark">EU</strong>
-                                    </span>
+                            </span>
+                        {% elif metadata.visibility == 3 %}
+                            <span class="mr-1 tag is-info has-tooltip-right is-light is-rounded"
+                                    data-tooltip="{% translate 'Naudojamas EU lygmeniu' %}">
+                                <span class="icon is-small has-tooltip-right has-tooltip-multiline is-info">
+                                    <strong class="has-text-info-dark">EU</strong>
                                 </span>
-                            {% endif %}
+                            </span>
                         {% endif %}
-                        <span class="pr-3 is-family-monospace" >
-                            <a id="{{ model.name }}_link_id" href="{{ model.get_absolute_url }}">{{ model.name }}</a>
+                    {% endif %}
+                    <span class="pr-3 is-family-monospace" >
+                        <a id="{{ model.name }}_link_id" href="{{ model.get_absolute_url }}">{{ model.name }}</a>
+                    </span>
+                    {% if model.base %}
+                        <span class="pr-3">
+                            base:
+                            <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
                         </span>
-                        {% if model.base %}
-                            <span class="pr-3">
-                                base:
-                                <a href="{{ model.base.model.get_absolute_url }}">{{ model.base.model.name }}</a>
-                            </span>
-                        {% endif %}
-                        {% if metadata.uri %}
-                            <span class="pr-3">
-                                uri:
-                                {% if metadata.uri_link %}
-                                    <a href="{{ model.metadata.first.uri_link }}">{{ metadata.uri }}</a>
-                                {% else %}
-                                    {{ metadata.uri }}
-                                {% endif %}
-                            </span>
-                        {% endif %}
-
-                        {% if model.access_display_value %}
-                            <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
-                        {% endif %}
-                        <br/>
-                        <small class="ml-4">
-                            {% if metadata.title %}
-                                {{ metadata.title }}
+                    {% endif %}
+                    {% if metadata.uri %}
+                        <span class="pr-3">
+                            uri:
+                            {% if metadata.uri_link %}
+                                <a href="{{ model.metadata.first.uri_link }}">{{ metadata.uri }}</a>
                             {% else %}
-                                {{ metadata.description|default:""|truncatewords:8 }}
+                                {{ metadata.uri }}
                             {% endif %}
-                        </small>
-                    </div>
-                    <div class="column is-3">
-                        {% if metadata.status.codename %}
-                            {% if metadata.status.codename == "develop" %}
-                                <span class="tag has-tooltip"
-                                      data-tooltip="{% translate 'Būsena' %}" style="background-color: #eaedfa; color: #304cd3;">
-                                    {{ metadata.status.name }}
-                                </span>
-                            {% elif metadata.status.codename == "completed" %}
-                                <span class="tag has-tooltip is-success is-light"
-                                    data-tooltip="{% translate 'Būsena' %}">
-                                    {{ metadata.status.name }}
-                                </span>
-                            {% elif metadata.status.codename == "discont" %}
-                               <span class="tag has-tooltip"
-                                     data-tooltip="{% translate 'Būsena' %}" style="background-color: #fff5e5; color: #ffa525;">
-                                    {{ metadata.status.name }}
-                               </span>
-                            {% elif metadata.status.codename == "deprecated" %}
-                                <span class="tag has-tooltip is-warning is-light"
-                                data-tooltip="{% translate 'Būsena' %}">{{ metadata.status.name }}</span>
-                            {% elif metadata.status.codename == "withdrawn" %}
-                                <span class="tag has-tooltip is-danger is-light"
-                                data-tooltip="{% translate 'Būsena' %}">
-                                    {{ metadata.status.name }}
-                                </span>
-                            {% endif %}
+                        </span>
+                    {% endif %}
+
+                    {% if model.access_display_value %}
+                        <span class="mr-3 tag is-info is-light">{{ model.access_display_value }}</span>
+                    {% endif %}
+                    <br/>
+                    <small class="ml-4">
+                        {% if metadata.title %}
+                            {{ metadata.title }}
+                        {% else %}
+                            {{ metadata.description|default:""|truncatewords:8 }}
                         {% endif %}
-                    </div>
-                    <div class="column is-1">
-                        {% if metadata.level_given or metadata.average_level %}
-                            <span>
-                                <span>{{ metadata.level_given|default:metadata.average_level|floatformat:"0" }}</span>
-                                <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                    </small>
+                </div>
+                <div class="column is-2">
+                    {% if metadata.status.codename %}
+                        {% if metadata.status.codename == "develop" %}
+                            <span class="tag has-tooltip"
+                                    data-tooltip="{% translate 'Būsena' %}" style="background-color: #eaedfa; color: #304cd3;">
+                                {{ metadata.status.name }}
+                            </span>
+                        {% elif metadata.status.codename == "completed" %}
+                            <span class="tag has-tooltip is-success is-light"
+                                data-tooltip="{% translate 'Būsena' %}">
+                                {{ metadata.status.name }}
+                            </span>
+                        {% elif metadata.status.codename == "discont" %}
+                            <span class="tag has-tooltip"
+                                    data-tooltip="{% translate 'Būsena' %}" style="background-color: #fff5e5; color: #ffa525;">
+                                {{ metadata.status.name }}
+                            </span>
+                        {% elif metadata.status.codename == "deprecated" %}
+                            <span class="tag has-tooltip is-warning is-light"
+                            data-tooltip="{% translate 'Būsena' %}">{{ metadata.status.name }}</span>
+                        {% elif metadata.status.codename == "withdrawn" %}
+                            <span class="tag has-tooltip is-danger is-light"
+                            data-tooltip="{% translate 'Būsena' %}">
+                                {{ metadata.status.name }}
                             </span>
                         {% endif %}
-                    </div>
-                    <div class="column is-1">
-                        {% if metadata.eli %}
-                            <a href="{{ metadata.eli }}"
-                               class="tag is-white has-tooltip"
-                               data-tooltip="{% translate 'ELI nuoroda' %}"
-                               target="_blank" rel="noopener noreferrer">
-                              <span class="ml-3 icon is-small has-text-grey">
-                                <i class="fas fa-link mr-1"></i>
-                                <span>ELI</span>
-                              </span>
+                    {% endif %}
+                </div>
+                <div class="column is-1">
+                    {% if metadata.level_given or metadata.average_level %}
+                        <span>
+                            <span>{{ metadata.level_given|default:metadata.average_level|floatformat:"0" }}</span>
+                            <span class="icon has-text-warning"><i class="fas fa-star"></i></span>
+                        </span>
+                    {% endif %}
+                </div>
+                <div class="column is-1">
+                    {% if metadata.eli %}
+                        <a href="{{ metadata.eli }}"
+                            class="tag is-white has-tooltip"
+                            data-tooltip="{% translate 'ELI nuoroda' %}"
+                            target="_blank" rel="noopener noreferrer">
+                            <span class="ml-3 icon is-small has-text-grey">
+                            <i class="fas fa-link mr-1"></i>
+                            <span>ELI</span>
+                            </span>
+                        </a>
+                    {% endif %}
+                </div>
+                <div class="column is-1">
+                    {% if metadata.count %}
+                            <span
+                            class="tag ml-3 icon is-small has-text-grey"
+                            data-tooltip="{% translate 'Objektų kiekis' %}"
+                            >
+                            <i class="fas fa-list mr-1"></i>
+                            <span>{{ metadata.count }}</span>
+                            </span>
+                    {% endif %}
+                </div>
+                <div class="column is-1">
+                    <div class="is-flex is-align-items-center is-justify-content-flex-end">
+                        {% if metadata.metadata_version %}
+                            {% if metadata.metadata_version.status == "DRAFT" %}
+                                <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
+                            {% elif metadata.draft and metadata.metadata_version.status != "DRAFT"%}
+                                <span class="tag is-danger is-light">{{ metadata.metadata_version.external_version}} ({% translate "rengiama" %})</span>
+                            {% elif metadata.metadata_version.external_version and not metadata.draft %}
+                                <span class="tag is-success is-light">{{ metadata.metadata_version.external_version }}</span>
+                            {% endif %}
+                        {% endif %}
+                        {% if can_manage_structure %}
+                            <a class="button is-danger is-small show-model-delete-form ml-2
+                                        {% if is_disabled %}is-disabled{% endif %}"
+                                id="delete-model-{{ model.pk }}"
+                                data-model-id="{{ model.pk }}"
+                                data-delete-url="{{ model.get_absolute_url }}delete/"
+                                title="{% translate 'Ištrinti' %}"
+                                aria-label="{% translate 'Ištrinti modelį' %}"
+                                {% if is_disabled %}
+                                    style="pointer-events: none; opacity: 0.5;"
+                                    aria-disabled="true"
+                                {% endif %}
+                            >
+                                <span class="icon is-small">
+                                    <i class="fas fa-trash"></i>
+                                </span>
                             </a>
                         {% endif %}
                     </div>
-                    <div class="column is-1">
-                        {% if metadata.count %}
-                             <span
-                             class="tag ml-3 icon is-small has-text-grey"
-                             data-tooltip="{% translate 'Objektų kiekis' %}"
-                             >
-                                <i class="fas fa-list mr-1"></i>
-                                <span>{{ metadata.count }}</span>
-                              </span>
-                        {% endif %}
-                    </div>
-                    <div class="column is-1">
-                        <div class="is-flex is-align-items-center is-justify-content-flex-end">
-                            {% if metadata.metadata_version %}
-                                {% if metadata.metadata_version.status == "DRAFT" %}
-                                    <span class="tag is-danger is-light">({% translate "rengiama" %})</span>
-                                {% elif metadata.draft and metadata.metadata_version.status != "DRAFT"%}
-                                    <span class="tag is-danger is-light">{{ metadata.metadata_version.external_version}} ({% translate "rengiama" %})</span>
-                                {% elif metadata.metadata_version.external_version and not metadata.draft %}
-                                    <span class="tag is-success is-light">{{ metadata.metadata_version.external_version }}</span>
-                                {% endif %}
-                            {% endif %}
-                            {% if can_manage_structure %}
-                                <a class="button is-danger is-small show-model-delete-form ml-2
-                                          {% if is_disabled %}is-disabled{% endif %}"
-                                   id="delete-model-{{ model.pk }}"
-                                   data-model-id="{{ model.pk }}"
-                                   data-delete-url="{{ model.get_absolute_url }}delete/"
-                                   title="{% translate 'Ištrinti' %}"
-                                   aria-label="{% translate 'Ištrinti modelį' %}"
-                                   {% if is_disabled %}
-                                       style="pointer-events: none; opacity: 0.5;"
-                                       aria-disabled="true"
-                                   {% endif %}
-                                >
-                                    <span class="icon is-small">
-                                        <i class="fas fa-trash"></i>
-                                    </span>
-                                </a>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
-            {% if can_manage_structure %}
-            <div class="modal" id="delete-model-modal-{{ model.pk }}">
-                <div class="modal-background"></div>
-                <div class="modal-card">
-                    <header class="modal-card-head">
-                        <p class="modal-card-title">{% translate "Ištrinti modelį" %} <strong>{{ model.name }}</strong> ?</p>
-                    </header>
-                    <section class="modal-card-body">
-                        {% translate "Šis veiksmas negrąžinamas." %}
-                    </section>
-                    <footer class="modal-card-foot">
-                        <button class="button close-model-delete-modal" data-model-id="{{ model.pk }}">{% translate "Atšaukti" %}</button>
-                        <button class="button is-danger model-delete-confirm"
-                                data-model-id="{{ model.pk }}"
-                                data-delete-url="{{ model.get_absolute_url }}delete/">{% translate "Ištrinti" %}</button>
-                    </footer>
                 </div>
             </div>
-            {% endif %}
-        {% endfor %}
-
-        {% if structure %}
-        <div class="mt-6">
-            {% comments obj=structure user=request.user is_structure=True %}
+        {% if can_manage_structure %}
+        <div class="modal" id="delete-model-modal-{{ model.pk }}">
+            <div class="modal-background"></div>
+            <div class="modal-card">
+                <header class="modal-card-head">
+                    <p class="modal-card-title">{% translate "Ištrinti modelį" %} <strong>{{ model.name }}</strong> ?</p>
+                </header>
+                <section class="modal-card-body">
+                    {% translate "Šis veiksmas negrąžinamas." %}
+                </section>
+                <footer class="modal-card-foot">
+                    <button class="button close-model-delete-modal" data-model-id="{{ model.pk }}">{% translate "Atšaukti" %}</button>
+                    <button class="button is-danger model-delete-confirm"
+                            data-model-id="{{ model.pk }}"
+                            data-delete-url="{{ model.get_absolute_url }}delete/">{% translate "Ištrinti" %}</button>
+                </footer>
+            </div>
         </div>
         {% endif %}
+    {% endfor %}
+
+    {% if structure %}
+    <div class="mt-6">
+        {% comments obj=structure user=request.user is_structure=True %}
     </div>
-</div>
+    {% endif %}
 <script>
     document.querySelectorAll('.show-model-delete-form').forEach(button => {
         button.addEventListener('click', (e) => {

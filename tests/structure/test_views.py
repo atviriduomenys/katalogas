@@ -27,7 +27,7 @@ from vitrina.orgs.models import Representative, Organization
 from vitrina.resources.factories import DatasetDistributionFactory
 from vitrina.resources.models import DatasetDistribution
 from vitrina.settings import SPINTA_SERVER_URL
-from vitrina.structure import VersionStatus
+from vitrina.structure import VersionStatus, UMLDiagramStatus
 from vitrina.structure.factories import (
     ModelFactory,
     MetadataFactory,
@@ -39,9 +39,20 @@ from vitrina.structure.factories import (
     ParamFactory,
     BaseFactory,
     VersionFactory,
+    UMLDiagramFactory,
 )
-from vitrina.structure.models import Metadata, Enum, EnumItem, VersionType, Model, Property, Base, PropertyList
-from vitrina.structure.services import create_structure_objects
+from vitrina.structure.models import (
+    Metadata,
+    Enum,
+    EnumItem,
+    VersionType,
+    Model,
+    Property,
+    Base,
+    PropertyList,
+    UMLDiagram,
+)
+from vitrina.structure.services import create_structure_objects, generate_mermaid_diagram
 from vitrina.users.factories import UserFactory
 from vitrina.structure.models import Version as _Version
 from vitrina.utils import RevisionComment, RevisionSource
@@ -8245,3 +8256,98 @@ def test_model_data_download_invalid_format_no_redirect(app: DjangoTestApp):
     url = reverse("model-data", args=[dataset.pk, version.pk, model.name])
     resp = app.get(f"{url}?format=exe")
     assert resp.status_code == 200
+
+
+class TestStructureUMLviews(BaseTestCreateManifest):
+    def test_uml_initiated(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+            "4,,,,Licence,,,,,,,,,,,,,,\n"
+            "5,,,,,id,integer,,,,,,,,,,,,\n"
+            "6,,,,,catalog,ref,Catalog,,,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,,\n"
+            "7,,,,Catalog,,,,,,,,,,,,,,\n"
+            "8,,,,,id,integer,,,,,,,,,,,,\n"
+        )
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        version = create_structure_objects(structure)
+        assert not UMLDiagram.objects.filter(metadata_version=version).exists()
+
+        celer_task_id = uuid.uuid4()
+
+        with patch("vitrina.structure.tasks.update_uml_diagram.delay") as mock_task:
+            mock_task.return_value = Mock(id=celer_task_id)
+            response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]))
+            mock_task.assert_called_once()
+        assert response.status_code == 302
+        uml_diagram = UMLDiagram.objects.get(metadata_version=version)
+        assert uml_diagram.celery_task_id == celer_task_id
+        assert uml_diagram.status == UMLDiagramStatus.PENDING
+
+    def test_uml_reinitiated(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+            "4,,,,Licence,,,,,,,,,,,,,,\n"
+            "5,,,,,id,integer,,,,,,,,,,,,\n"
+            "6,,,,,catalog,ref,Catalog,,,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,,\n"
+            "7,,,,Catalog,,,,,,,,,,,,,,\n"
+            "8,,,,,id,integer,,,,,,,,,,,,\n"
+        )
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        version = create_structure_objects(structure)
+        celery_task_id = uuid.uuid4()
+        UMLDiagramFactory(metadata_version=version, status=UMLDiagramStatus.PENDING, celery_task_id=celery_task_id)
+
+        with (
+            patch("vitrina.structure.tasks.update_uml_diagram.delay") as mock_task,
+            patch("vitrina.structure.views.AsyncResult") as mock_result,
+        ):
+            mock_task.return_value = Mock(id=celery_task_id)
+            mock_result.return_value.state = "FAILURE"
+            mock_result.return_value.successful.return_value = False
+            response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]))
+            mock_task.assert_called_once()
+
+        assert response.status_code == 302
+        response = response.follow()
+
+    @pytest.mark.parametrize("expanded", (True, False))
+    def test_uml_view(self, app: DjangoTestApp, expanded: bool):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+            "4,,,,Licence,,,,,,,,,,,,,,\n"
+            "5,,,,,id,integer,,,,,,,,,,,,\n"
+            "6,,,,,catalog,ref,Catalog,,,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,,\n"
+            "7,,,,Catalog,,,,,,,,,,,,,,\n"
+            "8,,,,,id,integer,,,,,,,,,,,,\n"
+        )
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        version = create_structure_objects(structure)
+        mermaid = generate_mermaid_diagram(structure.dataset, version)
+
+        UMLDiagramFactory(metadata_version=version, status=UMLDiagramStatus.UP_TO_DATE, mermaid=mermaid)
+
+        url_params = "?expanded" if expanded else ""
+        response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + url_params)
+
+        assert response.status_code == 200
+        assert mermaid in response.text
+        expected_template = "uml_diagram_expanded.html" if expanded else "uml_diagram.html"
+        assert any(expected_template in t.name for t in response.templates)

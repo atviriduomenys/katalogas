@@ -53,6 +53,10 @@ from vitrina.structure.models import (
 )
 from vitrina.tasks.models import Task
 from vitrina.users.models import User
+from spinta.core.context import create_context
+from spinta.manifests.mermaid.helpers import write_mermaid_manifest
+from spinta.manifests.components import ManifestPath
+from spinta.cli.manifest import _read_and_return_manifest
 
 logger = logging.getLogger(__name__)
 
@@ -2470,3 +2474,21 @@ def get_allowed_visibilities(
             allowed_visibilities.add(visibility)
 
     return allowed_visibilities
+
+
+def generate_mermaid_diagram(dataset: Dataset, version: Version) -> str:
+    context = create_context("cli")
+
+    stream = _export_dataset_structure_to_stringio(dataset, version)
+    manifest_path = ManifestPath(type="tabular", path=None, file=stream)
+    manifest = _read_and_return_manifest(
+        context,
+        [manifest_path],
+        external=True,
+        format_names=False,
+        order_by=None,
+        rename_duplicates=False,
+        verbose=False,
+        check_config=False,
+    )
+    return write_mermaid_manifest(context, manifest, dataset.name)

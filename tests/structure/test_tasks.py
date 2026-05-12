@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.contrib.sites.models import Site
 from factory.django import FileField
 from vitrina.structure.factories import UMLDiagramFactory
 from vitrina.datasets.factories import DatasetStructureFactory, FilerFileFactory, DatasetFactory
@@ -53,3 +55,15 @@ id : integer [0..1]
 """
         in uml_diagram.mermaid
     )
+
+    base_url = f"{settings.META_SITE_PROTOCOL}://{Site.objects.get_current().domain}"
+    dataset_pk = structure.dataset.pk
+    version_pk = version.pk
+    assert (
+        f"click `datasets/gov/ivpk/adp/Licence` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Licence/"'
+    ) in uml_diagram.mermaid
+    assert (
+        f"click `datasets/gov/ivpk/adp/Catalog` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Catalog/"'
+    ) in uml_diagram.mermaid

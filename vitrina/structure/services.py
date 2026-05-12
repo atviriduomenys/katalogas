@@ -15,7 +15,9 @@ from pyproj import Transformer
 import vitrina.datasets.structure as struct
 
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.sites.models import Site
 from django.db import models
+from django.urls import reverse
 from django.utils.translation import gettext, gettext_lazy as _, get_language
 
 from vitrina import settings
@@ -2491,4 +2493,43 @@ def generate_mermaid_diagram(dataset: Dataset, version: Version) -> str:
         verbose=False,
         check_config=False,
     )
-    return write_mermaid_manifest(context, manifest, dataset.name)
+    mermaid = write_mermaid_manifest(context, manifest, dataset.name)
+    mermaid_click_links = _generate_mermaid_model_click_links(dataset, version)
+    return mermaid + "\n" + mermaid_click_links
+
+
+def _generate_mermaid_model_click_links(dataset: Dataset, version: Version) -> str:
+    model_ids: set[int] = set(
+        Model.objects.filter(dataset=dataset, metadata_version=version).values_list("pk", flat=True)
+    )
+    for dep in dataset.get_dependent_models(version=version):
+        child_id = dep.get("child_model_id")
+        if child_id is not None:
+            model_ids.add(child_id)
+
+    if not model_ids:
+        return ""
+
+    models = (
+        Model.objects.filter(pk__in=model_ids)
+        .select_related("dataset", "metadata_version")
+        .prefetch_related("metadata")
+    )
+
+    base_url = f"{settings.META_SITE_PROTOCOL}://{Site.objects.get_current().domain}"
+
+    click_lines: list[str] = []
+    for model in models:
+        full_name = model.full_name
+        basename = model.name
+        path = reverse(
+            "model-structure",
+            kwargs={
+                "pk": model.dataset_id,
+                "version_id": model.metadata_version_id,
+                "model": basename,
+            },
+        )
+        click_lines.append(f'click `{full_name}` href "{base_url}{path}"')
+
+    return "\n".join(click_lines)

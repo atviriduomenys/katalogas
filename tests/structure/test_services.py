@@ -1,5 +1,7 @@
 import pytest
+from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
+from django.contrib.sites.models import Site
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
@@ -28,7 +30,11 @@ from vitrina.structure.models import (
     Property,
     PropertyList,
 )
-from vitrina.structure.services import create_structure_objects, generate_mermaid_diagram
+from vitrina.structure.services import (
+    create_structure_objects,
+    generate_mermaid_diagram,
+    _generate_mermaid_model_click_links,
+)
 from vitrina.users.factories import UserFactory
 
 
@@ -3197,3 +3203,49 @@ id : integer [0..1]
 """
         in mermaid
     )
+
+    base_url = f"{settings.META_SITE_PROTOCOL}://{Site.objects.get_current().domain}"
+    dataset_pk = structure.dataset.pk
+    version_pk = version.pk
+    assert (
+        f"click `datasets/gov/ivpk/adp/Licence` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Licence/"'
+    ) in mermaid
+    assert (
+        f"click `datasets/gov/ivpk/adp/Catalog` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Catalog/"'
+    ) in mermaid
+
+
+@pytest.mark.django_db
+def test_generate_mermaid_model_click_links(app: DjangoTestApp):
+    manifest = (
+        "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+        "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+        "4,,,,Licence,,,,,,,,,,,,,,\n"
+        "5,,,,,id,integer,,,,,,,,,,,,\n"
+        ",,,,,,,,,,,,,,,,,,\n"
+        "7,,,,Catalog,,,,,,,,,,,,,,\n"
+        "8,,,,,id,integer,,,,,,,,,,,,\n"
+    )
+    structure = DatasetStructureFactory(
+        file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)),
+        dataset=DatasetFactory(),
+    )
+    structure.dataset.current_structure = structure
+    structure.dataset.save()
+    version = create_structure_objects(structure)
+
+    result = _generate_mermaid_model_click_links(structure.dataset, version)
+
+    base_url = f"{settings.META_SITE_PROTOCOL}://{Site.objects.get_current().domain}"
+    dataset_pk = structure.dataset.pk
+    version_pk = version.pk
+    assert (
+        f"click `datasets/gov/ivpk/adp/Licence` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Licence/"'
+    ) in result
+    assert (
+        f"click `datasets/gov/ivpk/adp/Catalog` href "
+        f'"{base_url}/datasets/{dataset_pk}/versions/{version_pk}/models/Catalog/"'
+    ) in result

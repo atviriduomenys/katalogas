@@ -61,6 +61,25 @@
          });
 
          viewportElement.addEventListener('wheel', panzoom.zoomWithWheel, { passive: false });
+
+         // Prevent clicks when dragging
+         let pointerDownPos = null;
+         let suppressClick = false;
+         sceneElement.addEventListener('pointerdown', (e) => {
+           pointerDownPos = { x: e.clientX, y: e.clientY };
+           suppressClick = false;
+         });
+         sceneElement.addEventListener('pointerup', (e) => {
+           if (pointerDownPos && Math.hypot(e.clientX - pointerDownPos.x, e.clientY - pointerDownPos.y) > 5) {
+             suppressClick = true;
+           }
+         });
+         sceneElement.addEventListener('click', (e) => {
+           if (suppressClick) {
+             e.preventDefault();
+             e.stopPropagation();
+           }
+         }, true);
       </script>
    </body>
 </html>

@@ -6,6 +6,7 @@ from http import HTTPStatus
 import pytest
 from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
+from django.utils.html import escape
 from django_webtest import DjangoTestApp
 from unittest.mock import Mock, patch
 
@@ -8348,7 +8349,8 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         response = app.get(reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + url_params)
 
         assert response.status_code == 200
-        assert mermaid in response.text
+        expected_mermaid = mermaid if expanded else escape(mermaid)
+        assert expected_mermaid in response.text
         expected_template = "uml_diagram_expanded.html" if expanded else "uml_diagram.html"
         assert any(expected_template in t.name for t in response.templates)
 

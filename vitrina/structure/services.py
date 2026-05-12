@@ -15,7 +15,6 @@ from pyproj import Transformer
 import vitrina.datasets.structure as struct
 
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.sites.models import Site
 from django.db import models
 from django.urls import reverse
 from django.utils.translation import gettext, gettext_lazy as _, get_language
@@ -2516,7 +2515,7 @@ def _generate_mermaid_model_click_links(dataset: Dataset, version: Version) -> s
         .prefetch_related("metadata")
     )
 
-    base_url = f"{settings.META_SITE_PROTOCOL}://{Site.objects.get_current().domain}"
+    base_url = f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}"
 
     click_lines: list[str] = []
     for model in models:

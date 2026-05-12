@@ -1,7 +1,6 @@
 import pytest
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
-from django.contrib.sites.models import Site
 from django.urls import reverse
 from django_webtest import DjangoTestApp
 from factory.django import FileField
@@ -3204,7 +3203,7 @@ id : integer [0..1]
         in mermaid
     )
 
-    base_url = f"{settings.META_SITE_PROTOCOL}://{Site.objects.get_current().domain}"
+    base_url = f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}"
     dataset_pk = structure.dataset.pk
     version_pk = version.pk
     assert (
@@ -3238,7 +3237,7 @@ def test_generate_mermaid_model_click_links(app: DjangoTestApp):
 
     result = _generate_mermaid_model_click_links(structure.dataset, version)
 
-    base_url = f"{settings.META_SITE_PROTOCOL}://{Site.objects.get_current().domain}"
+    base_url = f"{settings.META_SITE_PROTOCOL}://{settings.META_SITE_DOMAIN}"
     dataset_pk = structure.dataset.pk
     version_pk = version.pk
     assert (

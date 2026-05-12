@@ -4,7 +4,7 @@
 
 {% block current_title %}
     <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-        <span>{% translate "Duomenų rinkinio struktūra" %}</span>
+        <span>{% translate "Duomenų ištekliaus struktūra" %}</span>
         {% if versions %}
             {% include "version_picker.html" with url_name="dataset-structure" dataset=dataset versions=versions selected_version=selected_version %}
         {% endif %}
@@ -28,7 +28,72 @@
     </div>
     {% endif %}
 
-    {% include "vitrina/structure/action_buttons.html" %}
+    {% if can_manage_structure %}
+        {% if version_id %}
+            {% url "dataset-structure-export" view.kwargs.pk version_id as export_url %}
+            {% url "dataset-structure-export-openapi" view.kwargs.pk version_id as export_openapi_url %}
+        {% else %}
+            {% url "dataset-structure-export-no-version" view.kwargs.pk as export_url %}
+            {% url "dataset-structure-export-openapi-no-version" view.kwargs.pk as export_openapi_url %}
+        {% endif %}
+        <a class="button is-primary mb-5 ml-2" href="{{export_url}}">
+            {% translate "Eksportuoti" %}
+        </a>
+        {% if request.user.is_superuser %}
+            <a class="button is-primary mb-5 ml-2" href="{{ export_openapi_url }}">
+                {% translate "Eksportuoti OpenAPI" %}
+            </a>
+        {% endif %}
+        {% if selected_version %}
+            <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
+                {% if is_disabled %}
+                    style="pointer-events: none; opacity: 0.5;"
+                    aria-disabled="true"
+                {% else %}
+                    href="{% url 'dataset-structure-import' view.kwargs.pk selected_version.pk %}"
+                {% endif %}>
+                {% translate "Importuoti" %}
+            </a>
+            <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
+                {% if is_disabled %}
+                    style="pointer-events: none; opacity: 0.5;"
+                    aria-disabled="true"
+                {% else %}
+                    href="{% url 'model-create' dataset.pk selected_version.pk %}"
+                {% endif %}>
+                {% translate "Naujas modelis" %}
+            </a>
+            {% if publish_button %}
+                <a class="button mb-5 ml-2 is-primary {% if is_disabled %}is-disabled{% endif %}"
+                    {% if is_disabled %}
+                        style="pointer-events: none; opacity: 0.5;"
+                        aria-disabled="true"
+                    {% else %}
+                        href="{% url 'version-create' dataset.pk selected_version.pk %}"
+                    {% endif %}>
+                    {% translate "Publikuoti versiją" %}
+                </a>
+            {% endif %}
+        {% else %}
+            <a class="button is-primary mb-5 ml-2" href="{% url 'dataset-structure-import-no-version' view.kwargs.pk %}">
+                {% translate "Importuoti" %}
+            </a>
+            <a class="button is-primary mb-5 ml-2" href="{% url 'model-create-no-version' dataset.pk %}">
+                {% translate "Naujas modelis" %}
+            </a>
+            {% if publish_button %}
+                <a class="button is-primary mb-5 ml-2 is-disabled"
+                    style="pointer-events: none; opacity: 0.5;">
+                    {% translate "Publikuoti versiją" %}
+                </a>
+            {% endif %}
+        {% endif %}
+    {% endif %}
+    {% if has_structure and selected_version %}
+        <a href="{% url 'dataset-structure-uml-view' dataset.pk selected_version.pk %}" class="button is-primary mb-5 ml-2">
+            {% translate "UML Diagrama" %}
+        </a>
+    {% endif %}
 
     {% if models %}
     <div class="mb-5">

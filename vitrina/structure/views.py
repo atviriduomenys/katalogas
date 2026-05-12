@@ -4421,6 +4421,12 @@ class DatasetStructureUMLView(
             messages.info(request, _("Užfiksuotas struktūros pasikeitimas. Diagrama pergeneruojama."))
             return redirect(self.get_structure_url())
 
+        if request.GET.get("download") == "mmd":
+            filename = self.dataset.name.split("/")[-1] or f"uml-{self.dataset.pk}"
+            response = HttpResponse(uml_diagram.mermaid or "", content_type="text/plain; charset=utf-8")
+            response["Content-Disposition"] = f'attachment; filename="{filename}.mmd"'
+            return response
+
         self.uml_diagram = uml_diagram
         return super().get(request, *args, **kwargs)
 

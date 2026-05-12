@@ -8351,3 +8351,32 @@ class TestStructureUMLviews(BaseTestCreateManifest):
         assert mermaid in response.text
         expected_template = "uml_diagram_expanded.html" if expanded else "uml_diagram.html"
         assert any(expected_template in t.name for t in response.templates)
+
+    def test_uml_download_mmd(self, app: DjangoTestApp):
+        user = UserFactory(is_staff=True)
+        app.set_user(user)
+        manifest = (
+            "id,dataset,resource,base,model,property,type,ref,source,prepare,count,level,status,visibility,access,uri,eli,title,description\n"
+            "1,datasets/gov/ivpk/adp,,,,,,,,,,,,,,,,,\n"
+            "4,,,,Licence,,,,,,,,,,,,,,\n"
+            "5,,,,,id,integer,,,,,,,,,,,,\n"
+            ",,,,,,,,,,,,,,,,,,\n"
+            "7,,,,Catalog,,,,,,,,,,,,,,\n"
+            "8,,,,,id,integer,,,,,,,,,,,,\n"
+        )
+        structure = DatasetStructureFactory(file=FilerFileFactory(file=FileField(filename="file.csv", data=manifest)))
+        structure.dataset.current_structure = structure
+        structure.dataset.save()
+        version = create_structure_objects(structure)
+        mermaid = generate_mermaid_diagram(structure.dataset, version)
+        UMLDiagramFactory(metadata_version=version, status=UMLDiagramStatus.UP_TO_DATE, mermaid=mermaid)
+
+        response = app.get(
+            reverse("dataset-structure-uml-view", args=[structure.dataset.pk, version.pk]) + "?download=mmd"
+        )
+
+        assert response.status_code == 200
+        assert response["Content-Type"] == "text/plain; charset=utf-8"
+        expected_filename = structure.dataset.name.split("/")[-1]
+        assert response["Content-Disposition"] == f'attachment; filename="{expected_filename}.mmd"'
+        assert response.body.decode() == mermaid

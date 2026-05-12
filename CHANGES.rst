@@ -1,7 +1,12 @@
 Changes
 #######
 
-v 1.20.0 (current)
+v 1.21.0 (current)
+==================
+
+
+
+v 1.20.0 (2026-05-12)
 ==================
 
 https://github.com/atviriduomenys/spinta/issues/1874

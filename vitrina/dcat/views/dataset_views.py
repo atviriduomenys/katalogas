@@ -23,6 +23,7 @@ from vitrina.datasets.view_helpers import (
     create_dataset_representative_and_attribution,
     create_tasks_and_notify_subscribers_about_dataset_update,
 )
+from vitrina.dcat.view_helpers import save_dataset_relations, save_dataset_attribution
 from vitrina.dcat.forms.dataset_forms import (
     InformationSystemResourceForm,
     BaseResourceForm,
@@ -395,6 +396,10 @@ class DcatDatasetUpdateView(
                 self.object.add_self_as_root()
             else:
                 self.object.move(selected_parent, "sorted-child")
+            self.object.refresh_from_db()  # Refresh needed after moving tree nodes
+
+        save_dataset_relations(self.request, self.object, form)
+        save_dataset_attribution(self.request, self.object, form)
 
         messages.success(self.request, _("Duomenų išteklius atnaujintas sėkmingai"))
 

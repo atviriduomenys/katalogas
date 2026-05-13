@@ -20,7 +20,14 @@ from vitrina.datasets.form_helpers import (
     DATA_SERVICE_STANDARD_URI,
     DATASET_STANDARD_URI,
 )
-from vitrina.datasets.models import Dataset, Contact, DCATResourceSubclass
+from vitrina.datasets.models import (
+    Attribution,
+    Dataset,
+    Contact,
+    DCATResourceSubclass,
+    Relation,
+)
+from vitrina.dcat.widgets import DatasetMultipleWidget, OrganizationMultipleWidget
 from vitrina.fields import StringListField
 from vitrina.helpers import inline_fields
 from vitrina.orgs.models import Organization
@@ -449,16 +456,108 @@ class DatasetResourceForm(ApplicableLegislationFormMixin, ContactFormMixin, Base
 
 
 class InformationSystemUpdateForm(InformationSystemResourceForm):
+    has_part = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.CATALOG),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Priklauso duomenų katalogams"),
+        help_text=_(
+            "Ši savybė nurodo susijusius katalogus, kurie yra aprašyto katalogo dalis. "
+            "Pildoma, kai institucijos turi nuosavus metaduomenų katalogus. Atitinka dct:hasPart."
+        ),
+    )
+    related_information_system = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Susijusios informacinės sistemos (teikia duomenis į)"),
+        help_text=_(
+            "Informacinės sistemos, kurios domina ar yra susijusios su šia informacinė sistema. Susijusios "
+            "sistemos yra tos, kurios turi integracijas ir yra įvardintos nuostatuose. "
+            "Atitinka dcataplt:dcataplt:informationSystem."
+        ),
+    )
+    relates_to_information_system = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.INFORMATION_SYSTEM),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Susijusios informacinės sistemos (gauna duomenis iš)"),
+        help_text=_(
+            "Informacinės sistemos, kurios teikia duomenis šiai IS. Susijusios sistemos yra tos, kurios turi "
+            "integracijas ir yra įvardintos nuostatuose. Atitinka dcataplt:relatesToInformationSystem."
+        ),
+    )
+
+    class Meta:
+        model = Dataset
+        fields = InformationSystemResourceForm.Meta.fields + (
+            "has_part",
+            "related_information_system",
+            "relates_to_information_system",
+        )
+        widgets = InformationSystemResourceForm.Meta.widgets
+
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(organization, parent_dataset_id, *args, **kwargs)
         self.fields["identifier"].initial = self.instance.identifier or ""
+        if self.instance.pk:
+            self.initial["has_part"] = self.fields["has_part"].queryset.filter(
+                related_datasets__relation__name=Relation.CATALOG,
+                related_datasets__dataset=self.instance,
+            )
+            self.initial["relates_to_information_system"] = self.fields["related_information_system"].queryset.filter(
+                dataset_relations__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
+                dataset_relations__part_of=self.instance,
+            )
+            self.initial["related_information_system"] = self.fields["relates_to_information_system"].queryset.filter(
+                related_datasets__relation__name=Relation.RELATES_TO_INFORMATION_SYSTEM,
+                related_datasets__dataset=self.instance,
+            )
 
 
 class ServiceUpdateForm(ServiceResourceForm):
-    pass
+    serves_datasets = forms.ModelMultipleChoiceField(
+        queryset=Dataset.objects.filter(subclass__name=DCATResourceSubclass.DATASET),
+        widget=DatasetMultipleWidget(),
+        required=False,
+        label=_("Pateikia duomenų rinkinius"),
+        help_text=_("Duomenų paslaugos teikiami duomenų rinkiniai. Atitinka dct:servesDataset."),
+    )
+
+    class Meta:
+        model = Dataset
+        fields = ServiceResourceForm.Meta.fields + ("serves_datasets",)
+        widgets = ServiceResourceForm.Meta.widgets
+
+    def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
+        super().__init__(organization, parent_dataset_id, *args, **kwargs)
+        if self.instance.pk:
+            self.initial["serves_datasets"] = self.fields["serves_datasets"].queryset.filter(
+                related_datasets__relation__name=Relation.SERVICE,
+                related_datasets__dataset=self.instance,
+            )
 
 
 class DatasetUpdateForm(DatasetResourceForm):
+    qualified_attribution = forms.ModelMultipleChoiceField(
+        queryset=Organization.objects.all(),
+        widget=OrganizationMultipleWidget(),
+        required=False,
+        label=_("Kvalifikuotas priskyrimas"),
+        help_text=_("Organizacija atsakinga už šį duomenų rinkinį. Atitinka prov:qualifiedAttribution."),
+    )
+
+    class Meta:
+        model = Dataset
+        fields = DatasetResourceForm.Meta.fields + ("qualified_attribution",)
+        widgets = DatasetResourceForm.Meta.widgets
+
     def __init__(self, organization: Organization, parent_dataset_id: int | None, *args, **kwargs) -> None:
         super().__init__(organization, parent_dataset_id, *args, **kwargs)
         self.initial["documentation"] = list(self.instance.documentation.values_list("documentation_link", flat=True))
+        if self.instance.pk:
+            self.initial["qualified_attribution"] = self.instance.datasetattribution_set.filter(
+                attribution__name=Attribution.CONTRIBUTOR
+            ).values_list("organization_id", flat=True)
+
+        self.helper.layout.append(Field("qualified_attribution"))
